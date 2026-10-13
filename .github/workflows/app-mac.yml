@@ -1,0 +1,41 @@
+name: App Mac (Heavent Admin)
+
+on:
+  push:
+    branches: [main]
+    paths: ["desktop/**", ".github/workflows/app-mac.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  dmg:
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - name: Construire les .dmg (Apple Silicon et Intel)
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run dist
+      - name: Vérifier les apps
+        run: |
+          for app in dist/mac*/Heavent\ Admin.app; do
+            echo "== $app"; codesign --verify --deep --strict "$app" && echo "signature ad hoc OK"
+            lipo -archs "$app/Contents/MacOS/Heavent Admin"
+          done
+          ls -lh dist/*.dmg
+      - name: Publier la version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="app-mac-v$VERSION-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" dist/*.dmg --title "Heavent Admin $VERSION (Mac)" --notes "Application Mac de l'administration Heavent. Apple Silicon (M1/M2/M3/M4) : fichier arm64. Mac Intel : fichier x64." --repo "$GITHUB_REPOSITORY"

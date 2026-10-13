@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Heavent Admin</title>
+<style>
+  body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#FAF7EE;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;color:#141414}
+  .c{text-align:center;max-width:420px;padding:24px}
+  h1{font-size:22px;margin:0 0 8px}
+  p{color:#666;line-height:1.5;margin:0 0 20px}
+  button{background:#C8B560;color:#141414;border:0;border-radius:8px;padding:10px 22px;font-size:15px;font-weight:600;cursor:pointer}
+  small{display:block;margin-top:14px;color:#999}
+</style></head>
+<body><div class="c">
+  <h1>Pas de connexion</h1>
+  <p>L'administration Heavent n'est pas joignable. Vérifie ta connexion internet : l'app réessaie toute seule.</p>
+  <button onclick="location.href='https://heaventagency.com/admin-auth'">Réessayer</button>
+  <small id="t"></small>
+</div>
+<script>
+  let n = 10; const t = document.getElementById('t');
+  setInterval(() => { n--; t.textContent = `Nouvel essai dans ${n} s`; if (n <= 0) location.href = 'https://heaventagency.com/admin-auth'; }, 1000);
+</script></body></html>
