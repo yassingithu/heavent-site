@@ -11,10 +11,13 @@
 <body><div class="c">
   <h1>Pas de connexion</h1>
   <p>L'administration Heavent n'est pas joignable. Vérifie ta connexion internet : l'app réessaie toute seule.</p>
-  <button onclick="location.href='https://heaventagency.com/admin-auth'">Réessayer</button>
+  <button onclick="location.href='https://heaventagency.com/admin-auth?app=1'">Réessayer</button>
   <small id="t"></small>
+  <small id="e" style="margin-top:6px"></small>
 </div>
 <script>
+  const q = new URLSearchParams(location.search);
+  if (q.get('code')) document.getElementById('e').textContent = `Détail technique : ${q.get('detail') || ''} (${q.get('code')})`;
   let n = 10; const t = document.getElementById('t');
-  setInterval(() => { n--; t.textContent = `Nouvel essai dans ${n} s`; if (n <= 0) location.href = 'https://heaventagency.com/admin-auth'; }, 1000);
+  setInterval(() => { n--; t.textContent = `Nouvel essai dans ${n} s`; if (n <= 0) location.href = 'https://heaventagency.com/admin-auth?app=1'; }, 1000);
 </script></body></html>

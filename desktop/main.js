@@ -4,7 +4,8 @@ const path = require("path");
 const fs = require("fs");
 
 const SITE = "https://heaventagency.com";
-const ACCUEIL = `${SITE}/admin-auth`;
+// « ?app=1 » : adresse propre à l'app (évite d'anciennes redirections gardées en mémoire par le cache)
+const ACCUEIL = `${SITE}/admin-auth?app=1`;
 const HOTES_AUTORISES = ["heaventagency.com", "www.heaventagency.com"];
 const SUFFIXE_UA = "HeaventAdminApp/1.0";
 
@@ -77,11 +78,20 @@ function creerFenetre() {
   });
 
   // Pas de connexion : page d'attente qui réessaie toute seule
-  fenetre.webContents.on("did-fail-load", (_e, code, _desc, url, principal) => {
+  let cacheVide = false;
+  fenetre.webContents.on("did-fail-load", async (_e, code, desc, url, principal) => {
     if (!principal || code === -3 /* navigation annulée */) return;
     if (url && url.startsWith("file:")) return;
-    fenetre.loadFile(path.join(__dirname, "offline.html"));
+    // Boucle de redirection, cache abîmé… : on vide le cache une fois et on réessaie avant d'afficher l'écran d'erreur
+    if (!cacheVide) {
+      cacheVide = true;
+      await session.defaultSession.clearCache();
+      fenetre.loadURL(ACCUEIL);
+      return;
+    }
+    fenetre.loadFile(path.join(__dirname, "offline.html"), { query: { code: String(code), detail: desc || "" } });
   });
+  fenetre.webContents.on("did-finish-load", () => { if (!fenetre.webContents.getURL().startsWith("file:")) cacheVide = false; });
 
   fenetre.loadURL(ACCUEIL);
 }

@@ -1,7 +1,7 @@
 {
   "name": "heavent-admin",
   "productName": "Heavent Admin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Application Mac de l'administration Heavent People Agency",
   "author": "Heavent People Agency",
   "main": "main.js",
