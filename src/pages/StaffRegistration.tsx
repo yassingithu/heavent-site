@@ -45,7 +45,8 @@ const formSchema = z.object({
   adresse_complete: z.string().min(10, "L'adresse complète est requise"),
   code_postal: z.string().min(4, "Le code postal est requis"),
   nationalite: z.string().min(1, "La nationalité est requise"),
-  date_naissance: z.date(),
+  date_naissance: z.coerce.date({ invalid_type_error: "La date de naissance est requise", required_error: "La date de naissance est requise" })
+    .refine((d) => { const a = (Date.now() - d.getTime()) / 31557600000; return a >= 16 && a <= 80; }, "Vérifiez la date de naissance"),
   lieu_naissance: z.string().min(1, "Le lieu de naissance est requis"),
   situation_familiale: z.string().min(1, "La situation familiale est requise"),
   numero_identite: z.string().min(5, "Le numéro d'identité est requis"),
@@ -75,7 +76,9 @@ const StaffRegistration = () => {
   const getSavedFormData = () => {
     try {
       const saved = localStorage.getItem('staffRegistrationData');
-      return saved ? JSON.parse(saved) : {};
+      const d = saved ? JSON.parse(saved) : {};
+      if (d.date_naissance) d.date_naissance = String(d.date_naissance).slice(0, 10);
+      return d;
     } catch {
       return {};
     }
@@ -96,7 +99,6 @@ const StaffRegistration = () => {
       rgpdConsent: false,
       password: "",
       confirmPassword: "",
-      date_naissance: new Date(),
       ...getSavedFormData(), // Restaurer les données sauvegardées
     }
   });
@@ -150,120 +152,23 @@ const StaffRegistration = () => {
     setIsSubmitting(true);
     
     try {
-      console.log("🔐 Vérification si l'email existe déjà...");
-      
-      // Vérifier d'abord si l'email existe déjà dans notre base staff
-      const { data: existingStaff, error: checkError } = await supabase
-        .rpc('staff_email_exists', { p_email: data.email });
-
-      if (checkError) {
-        console.error("Erreur vérification email:", checkError);
-      }
-
-      if (existingStaff) {
-        throw new Error("Un compte avec cet email existe déjà. Essayez de vous connecter ou utilisez un autre email.");
-      }
-
-      console.log("✅ Email disponible, création du compte...");
-
-      // 1. Créer le compte utilisateur avec Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: {
-            first_name: data.prenom,
-            last_name: data.nom
-          }
-        }
+      // Création du compte + fiche côté serveur (compte directement actif, pas d'email de confirmation à attendre)
+      const { data: rep, error } = await supabase.functions.invoke("inscription-staff", {
+        body: { ...data, email: data.email.trim().toLowerCase(), date_naissance: format(new Date(data.date_naissance), "yyyy-MM-dd") },
       });
-
-      console.log("📧 Réponse auth:", authData, authError);
-
-      if (authError) {
-        // Gestion spécifique des erreurs d'auth
-        if (authError.message.includes("User already registered")) {
-          throw new Error("Un compte avec cet email existe déjà. Essayez de vous connecter.");
-        } else if (authError.message.includes("Password")) {
-          throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
-        } else if (authError.message.includes("Email")) {
-          throw new Error("L'adresse email n'est pas valide.");
-        }
-        throw new Error(authError.message);
+      if (error || rep?.error) {
+        let message = rep?.error as string | undefined;
+        try { message = message ?? (await (error as any)?.context?.json())?.error; } catch { /* réponse illisible */ }
+        throw new Error(message ?? "Le serveur n'a pas répondu. Vérifiez votre connexion et réessayez.");
       }
 
-      if (!authData.user) {
-        throw new Error("Erreur lors de la création du compte utilisateur");
-      }
+      localStorage.removeItem('staffRegistrationData');
+      // Connexion automatique à l'espace staff
+      await supabase.auth.signInWithPassword({ email: data.email.trim().toLowerCase(), password: data.password });
 
-      console.log("✅ Compte auth créé, insertion données staff...");
+      toast({ title: "Inscription réussie !", description: "Votre espace staff est prêt." });
+      setStep(6);
 
-      // 2. Insérer les données staff dans la base de données
-      const { error: staffError } = await supabase
-        .from('staff')
-        .insert({
-          email: data.email,
-          nom: data.nom,
-          prenom: data.prenom,
-          telephone: data.telephone,
-          age: parseInt(data.age),
-          genre: data.genre,
-          ville: data.ville,
-          taille: parseInt(data.taille),
-          pointure: data.pointure,
-          taille_confection: data.taille_confection,
-          taille_pantalon: data.taille_pantalon,
-          taille_haut: data.taille_haut,
-          couleur_cheveux: data.couleur_cheveux,
-          couleur_yeux: data.couleur_yeux,
-          competences: data.competences,
-          langues: data.langues,
-          experience: data.experience,
-          permis: data.permis,
-          disponibilites: data.availability.join(', '),
-          photo: data.photoPortrait || null,
-          photo_plein_pied: data.photoPleinPied || null,
-          identite: data.carteIdentite || null,
-          adresse_complete: data.adresse_complete,
-          code_postal: data.code_postal,
-          nationalite: data.nationalite,
-          date_naissance: data.date_naissance ? format(new Date(data.date_naissance), 'yyyy-MM-dd') : null,
-          lieu_naissance: data.lieu_naissance,
-          situation_familiale: data.situation_familiale,
-          numero_identite: data.numero_identite,
-          numero_securite_sociale: data.numero_securite_sociale || null,
-          iban: data.iban || null,
-          niveau_etudes: data.niveau_etudes,
-          nom_urgence: data.nom_urgence,
-          telephone_urgence: data.telephone_urgence,
-        });
-
-      if (staffError) {
-        console.error('❌ Erreur insertion staff:', staffError);
-        
-        // Si c'est une erreur de duplicate email, supprimer le compte auth créé
-        if (staffError.code === '23505' && staffError.message.includes('staff_email_unique')) {
-          try {
-            await supabase.auth.admin.deleteUser(authData.user.id);
-          } catch (deleteError) {
-            console.error('Erreur suppression compte auth:', deleteError);
-          }
-          throw new Error("Un compte avec cet email existe déjà. Si vous avez déjà un compte, essayez de vous connecter.");
-        }
-        
-        throw new Error("Erreur lors de l'enregistrement de vos données. Veuillez réessayer.");
-      }
-
-      console.log("✅ Inscription complète réussie !");
-
-      toast({
-        title: "Inscription réussie !",
-        description: "Votre compte a été créé. Un email de confirmation vous a été envoyé.",
-      });
-      
-      setStep(6); // Page de confirmation
-      
     } catch (error: any) {
       console.error('❌ Erreur inscription:', error);
       
@@ -290,6 +195,25 @@ const StaffRegistration = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Formulaire refusé : on dit quoi corriger et on revient à l'étape concernée (avant, le bouton ne faisait rien)
+  const ETAPE_DU_CHAMP: Record<string, number> = {
+    nom: 1, prenom: 1, age: 1, genre: 1, ville: 1, telephone: 1, email: 1,
+    adresse_complete: 2, code_postal: 2, nationalite: 2, date_naissance: 2, lieu_naissance: 2, situation_familiale: 2, numero_identite: 2, niveau_etudes: 2, nom_urgence: 2, telephone_urgence: 2, numero_securite_sociale: 2, iban: 2,
+    taille: 3, taille_pantalon: 3, taille_haut: 3, pointure: 3, taille_confection: 3, couleur_cheveux: 3, couleur_yeux: 3, competences: 3, langues: 3, experience: 3,
+    availability: 4, photoPortrait: 4, photoPleinPied: 4, carteIdentite: 4,
+    password: 5, confirmPassword: 5, rgpdConsent: 5,
+  };
+  const onInvalid = (errs: Record<string, any>) => {
+    const champs = Object.keys(errs);
+    const etape = Math.min(...champs.map((c) => ETAPE_DU_CHAMP[c] ?? 5));
+    setStep(etape);
+    toast({
+      title: "Il manque des informations",
+      description: champs.map((c) => errs[c]?.message).filter(Boolean).slice(0, 4).join(" · ") || "Vérifiez les champs en rouge.",
+      variant: "destructive",
+    });
   };
 
   const nextStep = () => setStep(prev => Math.min(prev + 1, 6));
@@ -368,11 +292,11 @@ const StaffRegistration = () => {
             <CheckCircle className="text-green-500 mx-auto mb-4" size={64} />
             <h2 className="text-2xl font-bold mb-4">Inscription réussie !</h2>
             <p className="text-muted-foreground mb-6">
-              Votre compte a été créé avec succès. Vérifiez votre email pour confirmer votre compte, puis connectez-vous à votre espace staff.
+              Votre compte est créé et déjà actif. Vous pouvez dès maintenant indiquer vos disponibilités dans votre espace staff. Un email de bienvenue vous a été envoyé.
             </p>
             <div className="space-y-3">
-              <Button onClick={() => navigate("/auth")} className="w-full">
-                Me connecter
+              <Button onClick={() => navigate("/staff-dashboard")} className="w-full">
+                Accéder à mon espace staff
               </Button>
               <Button variant="outline" onClick={() => navigate("/")} className="w-full">
                 Retour à l'accueil
@@ -411,7 +335,7 @@ const StaffRegistration = () => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
             {step === 1 && (
               <Card className="animate-fade-in">
                 <CardHeader>
@@ -612,6 +536,20 @@ const StaffRegistration = () => {
                         <p className="text-sm text-destructive mt-1">{errors.lieu_naissance.message}</p>
                       )}
                     </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="date_naissance">Date de naissance *</Label>
+                    <Input
+                      id="date_naissance"
+                      type="date"
+                      max={new Date().toISOString().slice(0, 10)}
+                      {...register("date_naissance")}
+                      className={`max-w-[220px] ${errors.date_naissance ? "border-destructive" : ""}`}
+                    />
+                    {errors.date_naissance && (
+                      <p className="text-sm text-destructive mt-1">{errors.date_naissance.message as string}</p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1117,8 +1055,6 @@ const StaffRegistration = () => {
                       onClick={(e) => {
                         console.log("=== BOUTON CLIC ===");
                         console.log("Button clicked, form valid:", Object.keys(errors).length === 0);
-                        // Nettoyer le localStorage une fois le formulaire soumis
-                        localStorage.removeItem('staffRegistrationData');
                         console.log("Form errors:", errors);
                         console.log("RGPD consent:", watch("rgpdConsent"));
                         if (!watch("rgpdConsent")) {
