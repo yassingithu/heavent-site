@@ -157,7 +157,8 @@ if (process.env.BETA_LIVE) {
       const r = await page.goto(LIVE + p, { waitUntil: "domcontentloaded" });
       verifier(r && r.status() === 200, `${p} répond ${r?.status()}`);
       await page.waitForTimeout(p === "/" ? 4500 : 1500);
-      verifier(await page.locator("h1, h2").count(), `${p} : page vide`);
+      const texte = (await page.locator("main").innerText().catch(() => "")).trim();
+      verifier(texte.length > 40, `${p} : page vide`);
     }
     await page.goto(LIVE + "/devis-mariage"); await page.waitForTimeout(2000);
     await page.getByRole("button", { name: /Envoyer ma demande/ }).click(); await page.waitForTimeout(800);

@@ -19,7 +19,7 @@ export const PAGES_SEO = {
   },
   mariage: {
     chemin: "/devis-mariage",
-    titre: "Wedding planner et hôtesses pour mariage au Maroc | Devis gratuit | Heavent",
+    titre: "Wedding planner et hôtesses de mariage au Maroc | Heavent",
     description: "Organisation de mariage complète ou partielle, hôtesses d'accueil, coordination jour J à Marrakech, Rabat, Casablanca. Devis personnalisé gratuit.",
     motsCles: "wedding planner Maroc, organisation mariage Marrakech, hôtesse mariage, wedding planner Rabat, mariage Casablanca, coordination jour J",
   },

@@ -13,7 +13,8 @@ import {
   ArrowRight,
   Sparkles
 } from "lucide-react";
-import heroImage from "@/assets/hero-staff.jpg";
+import heroImage from "@/assets/hero-staff.webp";
+import heroImageMobile from "@/assets/hero-staff-mobile.webp";
 
 const Home = () => {
   const { t } = useTranslation();
@@ -71,7 +72,7 @@ const Home = () => {
       {/* Hero Section */}
       <section 
         className="relative min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), url(${heroImage})` }}
+        style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), url(${typeof window !== "undefined" && window.innerWidth < 768 ? heroImageMobile : heroImage})` }}
       >
         <div className="container mx-auto px-4 text-center text-white">
           <div className="max-w-4xl mx-auto animate-fade-in">

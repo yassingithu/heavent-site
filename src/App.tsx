@@ -29,7 +29,7 @@ const queryClient = new QueryClient();
 const App = () => {
   // L'écran d'accueil animé ne s'affiche qu'une fois par visite (pas à chaque changement de page ni rechargement)
   const [showSplash, setShowSplash] = useState(() => {
-    try { return !navigator.userAgent.includes("HeaventAdminApp") && !sessionStorage.getItem("heavent-splash-vu") && !window.location.pathname.startsWith("/admin") && !window.location.pathname.startsWith("/staff"); } catch { return false; }
+    try { return !(window as unknown as { __pagePregeneree?: boolean }).__pagePregeneree && !navigator.userAgent.includes("HeaventAdminApp") && !sessionStorage.getItem("heavent-splash-vu") && !window.location.pathname.startsWith("/admin") && !window.location.pathname.startsWith("/staff"); } catch { return false; }
   });
   const finSplash = () => { try { sessionStorage.setItem("heavent-splash-vu", "1"); } catch { /* navigation privée */ } setShowSplash(false); };
 

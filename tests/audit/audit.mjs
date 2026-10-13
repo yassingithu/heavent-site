@@ -49,11 +49,13 @@ for (const url of pages) {
   const html = await (await fetch(url)).text();
   for (const m of html.matchAll(/href="(\/[^"#?]*)"/g)) if (!m[1].startsWith("/assets/")) liens.add(m[1]);
 }
+const PRIVEES = ["/admin", "/admin-auth", "/auth", "/staff-dashboard", "/auth/callback", "/rgpd"];
 for (const l of liens) {
+  const fichier = /\.(png|jpe?g|webp|svg|ico|xml|txt|pdf)$/i.test(l);
   const r = await fetch(SITE + l, { redirect: "follow" });
-  const html = await r.text();
-  const introuvable = r.status >= 400 || (/<title>Agence d'hôtesses et événementiel au Maroc/.test(html) && l !== "/" && !["/admin", "/admin-auth", "/auth", "/staff-dashboard", "/auth/callback", "/rgpd"].includes(l) && !pages.includes(SITE + l));
-  note(introuvable ? "attention" : "ok", `${l} ${introuvable ? "→ page inexistante (affiche l'accueil ou une erreur)" : "→ OK"}`);
+  const inconnu = !fichier && !PRIVEES.includes(l) && l !== "/" && !pages.includes(SITE + l);
+  const probleme = r.status >= 400 || inconnu;
+  note(probleme ? "attention" : "ok", `${l} ${probleme ? `→ ${r.status >= 400 ? `erreur ${r.status}` : "lien vers une page absente du sitemap"}` : "→ OK"}`);
 }
 
 // 3. Sécurité et performances serveur
