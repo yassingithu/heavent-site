@@ -75,7 +75,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
               />
               
               <img 
-                src="/lovable-uploads/df0014d7-d697-4525-a5ee-71cf8fa774ab.png" 
+                src="/df0014d7-d697-4525-a5ee-71cf8fa774ab.png" 
                 alt="Heavent People Agency" 
                 className="relative h-24 w-auto md:h-32 drop-shadow-2xl"
                 style={{

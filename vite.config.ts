@@ -14,6 +14,8 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
+  // Tous les fichiers à la racine : plus simple à déposer chez one.com
+  build: { assetsDir: "" },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

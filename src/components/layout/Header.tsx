@@ -29,7 +29,7 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <img 
-              src="/lovable-uploads/df0014d7-d697-4525-a5ee-71cf8fa774ab.png" 
+              src="/df0014d7-d697-4525-a5ee-71cf8fa774ab.png" 
               alt="Heavent People Agency" 
               className="h-16 w-auto md:h-20"
               style={{

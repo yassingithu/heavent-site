@@ -14,7 +14,7 @@ const Footer = () => {
           <div className="md:col-span-2">
             <Link to="/" className="flex items-center space-x-2 mb-4">
               <img 
-                src="/lovable-uploads/df0014d7-d697-4525-a5ee-71cf8fa774ab.png" 
+                src="/df0014d7-d697-4525-a5ee-71cf8fa774ab.png" 
                 alt="Heavent People Agency" 
                 className="h-18 w-auto md:h-20"
                 style={{
