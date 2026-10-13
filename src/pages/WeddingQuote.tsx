@@ -69,6 +69,7 @@ const WeddingQuote = () => {
   ];
 
   const budgetRanges = [
+    "Moins de 50 000 MAD",
     "50 000 MAD - 100 000 MAD",
     "100 000 MAD - 200 000 MAD",
     "200 000 MAD - 350 000 MAD",

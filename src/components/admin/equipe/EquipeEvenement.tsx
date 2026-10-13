@@ -11,7 +11,7 @@ import { CRENEAUX, Dispo, libelleDispo } from "@/components/admin/staff/Planning
 import { telechargerContrats } from "./contratPdf";
 import { telechargerFichesProfil } from "@/components/admin/staff/FichesProfilStaff";
 
-interface StaffMini { id: string; nom: string; prenom: string; ville: string | null; taux_horaire: number | null }
+interface StaffMini { id: string; nom: string; prenom: string; ville: string | null; taux_horaire: number | null; genre?: string | null }
 interface Affectation {
   id: string; staff_id: string; date_jour: string; heures: number; poste: string; taux_horaire: number;
   heure_debut: string | null; heure_fin: string | null; statut: string; contrat_id: string | null;
@@ -61,7 +61,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
   const charger = useCallback(async () => {
     if (!devisId || !dates.length) return;
     const [s, d, a, o] = await Promise.all([
-      supabase.from("staff").select("id, nom, prenom, ville, taux_horaire").order("nom"),
+      supabase.from("staff").select("id, nom, prenom, ville, taux_horaire, genre").order("nom"),
       supabase.from("disponibilites").select("*").in("date_jour", dates),
       supabase.from("affectations").select("*").eq("devis_id", devisId).order("date_jour"),
       supabase.from("affectations").select("staff_id, date_jour, devis(numero)").in("date_jour", dates).neq("devis_id", devisId).neq("statut", "annule"),
@@ -97,7 +97,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
       const dispo = dispos.find((x) => x.staff_id === staffId && x.date_jour === d && x.disponible && !x.creneau && x.heure_debut);
       return {
         devis_id: devisId, staff_id: staffId, date_jour: d,
-        poste: modele?.poste ?? "Hôte / hôtesse d'accueil",
+        poste: modele?.poste ?? (/^h(omme)?$/i.test(String(s?.genre ?? "").trim()) ? "Steward / hôte d'accueil" : /^f(emme)?$/i.test(String(s?.genre ?? "").trim()) ? "Hôtesse d'accueil" : "Hôte / hôtesse d'accueil"),
         heures: modele?.heures ?? 8,
         taux_horaire: modele?.taux_horaire ?? Number(s?.taux_horaire ?? 60),
         heure_debut: modele?.heure_debut ?? horaireEquipe.debut ?? dispo?.heure_debut ?? null,
