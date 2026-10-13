@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { estAdmin } from "@/lib/admin";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,7 +27,6 @@ import FichesPaieMensuelles from "@/components/admin/paie/FichesPaieMensuelles";
 import ContratsEvenements from "@/components/admin/equipe/ContratsEvenements";
 import DevisParStatut from "@/components/admin/devis/DevisParStatut";
 
-const ADMIN_EMAIL = "i.chaigari@heaventagency.com";
 
 interface Staff {
   id: string;
@@ -132,6 +132,7 @@ const Admin = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [contrats, setContrats] = useState<Contrat[]>([]);
   const [fichesPaie, setFichesPaie] = useState<FichePaie[]>([]);
@@ -223,12 +224,16 @@ const Admin = () => {
   // Redirect if not authenticated or not admin
   useEffect(() => {
     if (!authLoading) {
-      if (!user || !session || user.email !== ADMIN_EMAIL) {
+      if (!user || !session) {
         navigate("/admin-auth");
         return;
       }
-      // Only fetch data if user is authenticated and is admin
-      fetchData();
+      // Accès réservé aux emails de la table « admins »
+      estAdmin().then((ok) => {
+        setIsAdmin(ok);
+        if (!ok) { navigate("/admin-auth"); return; }
+        fetchData();
+      });
     }
   }, [user, session, authLoading, navigate]);
 
@@ -734,7 +739,7 @@ const Admin = () => {
 
   const changeStaffPassword = async () => {
     // Vérifier que l'utilisateur connecté est l'admin
-    if (!user || user.email !== ADMIN_EMAIL) {
+    if (!user || !isAdmin) {
       toast({
         title: "Accès refusé",
         description: "Seul l'administrateur peut changer les mots de passe",
@@ -915,7 +920,7 @@ const Admin = () => {
     );
   }
 
-  if (!user || user.email !== ADMIN_EMAIL) {
+  if (!user || !isAdmin) {
     return null; // Will redirect
   }
 
@@ -928,103 +933,73 @@ const Admin = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      {/* Header avec déconnexion */}
-      <div className="flex justify-between items-center mb-8">
+    <div className="container mx-auto px-3 py-4 sm:p-6">
+      {/* En-tête avec déconnexion */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Administration</h1>
-          <p className="text-muted-foreground">Gestion complète du personnel et des demandes</p>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1">Administration</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Gestion complète du personnel et des demandes</p>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <Shield className="h-4 w-4" />
-            <span>{user?.email}</span>
+        <div className="flex items-center justify-between sm:justify-end gap-3 min-w-0">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+            <Shield className="h-4 w-4 shrink-0" />
+            <span className="truncate">{user?.email}</span>
           </div>
-          <Button variant="outline" onClick={handleSignOut}>
+          <Button variant="outline" size="sm" onClick={handleSignOut} className="shrink-0">
             <LogOut className="h-4 w-4 mr-2" />
             Déconnexion
           </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+      {/* Chiffres clés */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 mb-5 sm:mb-8">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Staff</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{staff.length}</div>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between text-xs sm:text-sm font-medium text-muted-foreground"><span>Staff</span><Users className="h-4 w-4" /></div>
+            <div className="text-xl sm:text-2xl font-bold mt-1">{staff.length}</div>
           </CardContent>
         </Card>
-        
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Contrats</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{contrats.length}</div>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between text-xs sm:text-sm font-medium text-muted-foreground"><span>Contrats</span><FileText className="h-4 w-4" /></div>
+            <div className="text-xl sm:text-2xl font-bold mt-1">{contrats.length}</div>
           </CardContent>
         </Card>
-
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fiches Paie</CardTitle>
-            <Euro className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{fichesPaie.length}</div>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between text-xs sm:text-sm font-medium text-muted-foreground"><span>Fiches paie</span><Euro className="h-4 w-4" /></div>
+            <div className="text-xl sm:text-2xl font-bold mt-1">{fichesPaie.length}</div>
           </CardContent>
         </Card>
-        
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Devis Entreprise</CardTitle>
-            <Building className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{devisEntreprise.length}</div>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between text-xs sm:text-sm font-medium text-muted-foreground"><span>Devis entreprise</span><Building className="h-4 w-4" /></div>
+            <div className="text-xl sm:text-2xl font-bold mt-1">{devisEntreprise.length}</div>
           </CardContent>
         </Card>
-        
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Devis Événement</CardTitle>
-            <Heart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{devisMariage.length}</div>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between text-xs sm:text-sm font-medium text-muted-foreground"><span>Devis événement</span><Heart className="h-4 w-4" /></div>
+            <div className="text-xl sm:text-2xl font-bold mt-1">{devisMariage.length}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Data Tables */}
+      {/* Onglets : 2 lignes de 5 sur smartphone, 1 ligne sur ordinateur */}
       <Tabs value={ongletAdmin} onValueChange={setOngletAdmin} className="w-full">
-        <div className="overflow-x-auto">
-          <TabsList className="grid w-full min-w-[1000px] grid-cols-10 sm:min-w-0">
-            <TabsTrigger value="devis-rapide" className="text-xs sm:text-sm flex items-center space-x-1">
-              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Devis</span>
-            </TabsTrigger>
-            <TabsTrigger value="staff" className="text-xs sm:text-sm">👥 <span className="hidden sm:inline">Personnel</span></TabsTrigger>
-            <TabsTrigger value="disponibilites" className="text-xs sm:text-sm">📅 <span className="hidden sm:inline">Dispo</span></TabsTrigger>
-            <TabsTrigger value="envoyer-devis" className="text-xs sm:text-sm flex items-center space-x-1">
-              <Send className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Envoyer</span>
-            </TabsTrigger>
-            <TabsTrigger value="contrats" className="text-xs sm:text-sm">📋 <span className="hidden sm:inline">Contrats</span></TabsTrigger>
-            <TabsTrigger value="fiches" className="text-xs sm:text-sm">💰 <span className="hidden sm:inline">Fiches</span></TabsTrigger>
-            <TabsTrigger value="entreprise" className="text-xs sm:text-sm">🏢 <span className="hidden sm:inline">Entreprise</span></TabsTrigger>
-            <TabsTrigger value="mariage" className="text-xs sm:text-sm">💒 <span className="hidden sm:inline">Événement</span></TabsTrigger>
-            <TabsTrigger value="devis-envoyes" className="text-xs sm:text-sm">📤 <span className="hidden sm:inline">Envoyés</span></TabsTrigger>
-            <TabsTrigger value="securite" className="text-xs sm:text-sm flex items-center space-x-1">
-              <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Sécurité</span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
+        <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 h-auto gap-1 p-1">
+          <TabsTrigger value="devis-rapide" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><FileText className="h-4 w-4" /><span>Devis</span></TabsTrigger>
+          <TabsTrigger value="staff" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>👥</span><span>Personnel</span></TabsTrigger>
+          <TabsTrigger value="disponibilites" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>📅</span><span>Dispo</span></TabsTrigger>
+          <TabsTrigger value="envoyer-devis" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><Send className="h-4 w-4" /><span>Envoyer</span></TabsTrigger>
+          <TabsTrigger value="contrats" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>📋</span><span>Contrats</span></TabsTrigger>
+          <TabsTrigger value="fiches" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>💰</span><span>Paie</span></TabsTrigger>
+          <TabsTrigger value="entreprise" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>🏢</span><span>Entreprise</span></TabsTrigger>
+          <TabsTrigger value="mariage" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>💒</span><span>Événement</span></TabsTrigger>
+          <TabsTrigger value="devis-envoyes" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>📤</span><span>Envoyés</span></TabsTrigger>
+          <TabsTrigger value="securite" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><Shield className="h-4 w-4" /><span>Sécurité</span></TabsTrigger>
+        </TabsList>
 
         <TabsContent value="devis-rapide" className="space-y-4">
           <DevisRapide

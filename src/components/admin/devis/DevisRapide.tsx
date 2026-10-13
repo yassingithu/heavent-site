@@ -391,7 +391,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   return (
     <Tabs value={onglet} onValueChange={setOnglet} className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <TabsList>
+        <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="liste">Mes devis</TabsTrigger>
           <TabsTrigger value="editeur" disabled={!form}>{form?.numero ?? (form ? "Nouveau devis" : "Éditeur")}</TabsTrigger>
           <TabsTrigger value="catalogue">Catalogue de prix</TabsTrigger>
@@ -540,7 +540,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                         <div key={cat} className="flex flex-wrap gap-2 items-center">
                           <span className="text-xs uppercase tracking-wide text-muted-foreground w-24">{cat}</span>
                           {items.map((p) => (
-                            <Button key={p.id} size="sm" variant="secondary" onClick={() => ajouterDuCatalogue(p)}>
+                            <Button key={p.id} size="sm" variant="secondary" className="h-auto min-h-9 max-w-full whitespace-normal text-left py-1.5" onClick={() => ajouterDuCatalogue(p)}>
                               + {p.designation} <span className="ml-1 text-muted-foreground">{money(p.prix_unitaire, devise)}</span>
                             </Button>
                           ))}

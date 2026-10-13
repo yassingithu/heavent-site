@@ -237,3 +237,7 @@ All colors MUST be HSL. Color scheme: white, black, gold (#C8B560)
     transform: scale(1);
   }
 }
+/* Smartphone : champs en 16 px minimum, sinon l'iPhone zoome à chaque saisie */
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px !important; }
+}

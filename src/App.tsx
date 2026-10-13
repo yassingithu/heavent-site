@@ -21,14 +21,19 @@ import Auth from "./pages/Auth";
 import StaffDashboard from "./pages/StaffDashboard";
 import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
+import RetourEnHaut from "./components/RetourEnHaut";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [showSplash, setShowSplash] = useState(true);
+  // L'écran d'accueil animé ne s'affiche qu'une fois par visite (pas à chaque changement de page ni rechargement)
+  const [showSplash, setShowSplash] = useState(() => {
+    try { return !sessionStorage.getItem("heavent-splash-vu") && !window.location.pathname.startsWith("/admin") && !window.location.pathname.startsWith("/staff"); } catch { return false; }
+  });
+  const finSplash = () => { try { sessionStorage.setItem("heavent-splash-vu", "1"); } catch { /* navigation privée */ } setShowSplash(false); };
 
   if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+    return <SplashScreen onComplete={finSplash} />;
   }
 
   return (
@@ -38,6 +43,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <RetourEnHaut />
           <Layout>
             <Routes>
               <Route path="/" element={<Home />} />

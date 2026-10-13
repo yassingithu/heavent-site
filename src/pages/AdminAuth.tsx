@@ -9,8 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { Shield } from "lucide-react";
+import { estAdmin } from "@/lib/admin";
 
-const ADMIN_EMAIL = "i.chaigari@heaventagency.com";
 
 const AdminAuth = () => {
   const { t } = useTranslation();
@@ -42,8 +42,8 @@ const AdminAuth = () => {
 
   // Redirect if already authenticated and is admin
   useEffect(() => {
-    if (user && session && user.email === ADMIN_EMAIL) {
-      navigate("/admin");
+    if (user && session) {
+      estAdmin().then((ok) => ok && navigate("/admin"));
     }
   }, [user, session, navigate]);
 
@@ -51,20 +51,9 @@ const AdminAuth = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Vérifier que c'est le bon email admin
-    if (email !== ADMIN_EMAIL) {
-      toast({
-        title: "Accès refusé",
-        description: "Seul l'administrateur peut accéder à cette section",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
-
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
 
@@ -85,7 +74,7 @@ const AdminAuth = () => {
         return;
       }
 
-      if (data.user && data.user.email === ADMIN_EMAIL) {
+      if (data.user && (await estAdmin())) {
         toast({
           title: "Connexion réussie",
           description: "Redirection vers l'administration...",
@@ -104,60 +93,6 @@ const AdminAuth = () => {
       toast({
         title: "Erreur",
         description: "Une erreur inattendue s'est produite",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignUp = async () => {
-    // Créer le compte admin s'il n'existe pas
-    if (email !== ADMIN_EMAIL) {
-      toast({
-        title: "Accès refusé",
-        description: "Seul l'administrateur peut créer ce compte",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const redirectUrl = `${window.location.origin}/admin`;
-      
-      const { data, error } = await supabase.auth.signUp({
-        email: ADMIN_EMAIL,
-        password: "Im@ne2025yassin",
-        options: {
-          emailRedirectTo: redirectUrl
-        }
-      });
-
-      if (error) {
-        if (error.message.includes("User already registered")) {
-          toast({
-            title: "Compte existant",
-            description: "Le compte administrateur existe déjà. Connectez-vous.",
-          });
-        } else {
-          toast({
-            title: "Erreur",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
-        return;
-      }
-
-      toast({
-        title: "Compte créé",
-        description: "Le compte administrateur a été créé avec succès",
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer le compte",
         variant: "destructive",
       });
     } finally {
