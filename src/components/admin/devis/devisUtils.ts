@@ -194,9 +194,9 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
   .devis-doc, .devis-doc * { box-sizing: border-box; margin: 0; }
   .devis-doc { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; color: #2a2a2a; font-size: 11.5px; width: 794px; min-height: 1123px; background: #fff; line-height: 1.45; display: flex; flex-direction: column; }
   .devis-doc .serif { font-family: "Playfair Display", Georgia, serif; }
-  .devis-doc .band { background: #fff; color: ${noir}; padding: 34px 44px 26px; display: flex; justify-content: space-between; align-items: center; position: relative; }
+  .devis-doc .band { background: #fff; color: ${noir}; padding: 26px 44px 20px; display: flex; justify-content: space-between; align-items: center; position: relative; }
   .devis-doc .band::after { content: ""; position: absolute; left: 44px; right: 44px; bottom: 0; height: 3px; background: linear-gradient(90deg, ${orFonce}, ${or}, ${orFonce}); }
-  .devis-doc .band img { height: 82px; display: block; }
+  .devis-doc .band img { height: 130px; display: block; }
   .devis-doc .titre { text-align: right; }
   .devis-doc .titre .mot { font-family: "Playfair Display", Georgia, serif; font-size: 44px; letter-spacing: 8px; color: ${or}; line-height: 1; }
   .devis-doc .titre .num { margin-top: 10px; font-size: 13px; letter-spacing: 1px; color: ${noir}; font-weight: 600; }

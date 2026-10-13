@@ -39,7 +39,7 @@ export const cssBase = () => {
   .doc-heavent, .doc-heavent * { box-sizing: border-box; margin: 0; }
   .doc-heavent { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; color: #2a2a2a; font-size: 11.5px; width: 794px; min-height: 1118px; background: #fff; line-height: 1.45; display: flex; flex-direction: column; }
   .doc-heavent .entete { padding: 30px 44px 22px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid ${or}; margin: 0 44px; padding-left: 0; padding-right: 0; }
-  .doc-heavent .entete img { height: 70px; }
+  .doc-heavent .entete img { height: 110px; }
   .doc-heavent .entete .titre { text-align: right; }
   .doc-heavent .entete .titre .mot { font-family: "Playfair Display", Georgia, serif; font-size: 30px; letter-spacing: 5px; color: ${or}; line-height: 1.05; }
   .doc-heavent .entete .titre .sous { margin-top: 6px; font-size: 11px; color: #777; }
