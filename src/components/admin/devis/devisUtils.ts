@@ -171,7 +171,7 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
     .filter((l) => l.designation.trim())
     .map(
       (l) => `<tr>
-        <td><strong>${esc(l.designation)}</strong>${l.description ? `<div class="desc">${esc(l.description)}</div>` : ""}</td>
+        <td><div class="des">${esc(l.designation)}</div>${l.description ? `<div class="desc">${esc(l.description)}</div>` : ""}</td>
         <td class="n">${esc(l.quantite)}</td>
         <td class="n">${l.unite === "forfait" ? "—" : `${esc(l.duree)} ${esc(uniteCourt(l.unite))}`}</td>
         <td class="n">${money(l.prix_unitaire, devise)}</td>
@@ -189,90 +189,129 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
     d.nb_personnes && `<div><span>Invités / participants</span>${esc(d.nb_personnes)}</div>`,
   ].filter(Boolean).join("");
 
+  const or = "#C8B560", orFonce = "#A8933F", noir = "#141414", creme = "#FAF7EE";
   const css = `
-  .devis-doc, .devis-doc * { box-sizing: border-box; }
-  .devis-doc { font-family: "Helvetica Neue", Arial, sans-serif; color: #1f2937; font-size: 12px; width: 794px; padding: 40px 44px; background: #fff; line-height: 1.4; }
-  .devis-doc .head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #b8860b; padding-bottom: 14px; }
-  .devis-doc .head img { height: 60px; }
-  .devis-doc .agence { text-align: right; font-size: 11px; line-height: 1.55; color: #4b5563; }
-  .devis-doc .agence strong { font-size: 14px; color: #111827; }
-  .devis-doc h1 { font-size: 26px; letter-spacing: 2px; color: #b8860b; margin: 18px 0 2px; font-weight: 700; }
-  .devis-doc .meta { color: #6b7280; }
-  .devis-doc .grid { display: flex; gap: 16px; margin: 18px 0; }
-  .devis-doc .box { flex: 1; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; }
-  .devis-doc .box h3 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; color: #b8860b; letter-spacing: 1px; }
-  .devis-doc .box div { margin: 2px 0; }
-  .devis-doc .box span { display: inline-block; min-width: 130px; color: #6b7280; }
-  .devis-doc table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-  .devis-doc th { background: #111827; color: #fff; font-weight: 600; padding: 8px; text-align: left; font-size: 11px; }
-  .devis-doc td { padding: 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+  .devis-doc, .devis-doc * { box-sizing: border-box; margin: 0; }
+  .devis-doc { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; color: #2a2a2a; font-size: 11.5px; width: 794px; min-height: 1123px; background: #fff; line-height: 1.45; display: flex; flex-direction: column; }
+  .devis-doc .serif { font-family: "Playfair Display", Georgia, serif; }
+  .devis-doc .band { background: ${noir}; color: #fff; padding: 34px 44px 30px; display: flex; justify-content: space-between; align-items: center; position: relative; }
+  .devis-doc .band::after { content: ""; position: absolute; left: 0; right: 0; bottom: -5px; height: 5px; background: linear-gradient(90deg, ${orFonce}, ${or}, ${orFonce}); }
+  .devis-doc .band img { height: 82px; display: block; }
+  .devis-doc .titre { text-align: right; }
+  .devis-doc .titre .mot { font-family: "Playfair Display", Georgia, serif; font-size: 44px; letter-spacing: 8px; color: ${or}; line-height: 1; }
+  .devis-doc .titre .num { margin-top: 10px; font-size: 13px; letter-spacing: 1px; color: #fff; font-weight: 600; }
+  .devis-doc .titre .dates { margin-top: 3px; font-size: 10.5px; color: #bdbdbd; }
+  .devis-doc .corps { padding: 30px 44px 10px; flex: 1; }
+  .devis-doc .parties { display: flex; gap: 18px; }
+  .devis-doc .partie { flex: 1; padding: 14px 16px; border-left: 3px solid ${or}; background: ${creme}; }
+  .devis-doc .partie.client { background: #fff; border: 1px solid #ece6d3; border-left: 3px solid ${noir}; }
+  .devis-doc .etiquette { font-size: 9.5px; letter-spacing: 2px; text-transform: uppercase; color: ${orFonce}; font-weight: 700; margin-bottom: 6px; }
+  .devis-doc .partie .nom { font-family: "Playfair Display", Georgia, serif; font-size: 15px; color: ${noir}; margin-bottom: 3px; }
+  .devis-doc .partie div { margin: 1px 0; color: #4a4a4a; }
+  .devis-doc .infos { display: flex; gap: 10px; margin: 18px 0 22px; }
+  .devis-doc .info { flex: 1; border: 1px solid #ece6d3; border-radius: 4px; padding: 9px 12px; }
+  .devis-doc .info .v { font-weight: 600; color: ${noir}; font-size: 12px; margin-top: 2px; }
+  .devis-doc table { width: 100%; border-collapse: collapse; }
+  .devis-doc thead th { background: ${noir}; color: ${or}; font-weight: 600; padding: 10px 10px; text-align: left; font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase; }
+  .devis-doc tbody td { padding: 10px; border-bottom: 1px solid #efe9d8; vertical-align: top; }
+  .devis-doc tbody tr:nth-child(even) td { background: ${creme}; }
   .devis-doc tr { page-break-inside: avoid; }
   .devis-doc .n { text-align: right; white-space: nowrap; }
-  .devis-doc .desc { color: #6b7280; font-size: 11px; margin-top: 2px; white-space: pre-line; }
-  .devis-doc .totaux { margin-left: auto; width: 330px; margin-top: 12px; page-break-inside: avoid; }
-  .devis-doc .totaux div { display: flex; justify-content: space-between; padding: 4px 0; }
-  .devis-doc .totaux .ttc { border-top: 2px solid #111827; margin-top: 4px; padding-top: 8px; font-size: 15px; font-weight: 700; }
-  .devis-doc .totaux .acompte { color: #b8860b; font-weight: 600; }
-  .devis-doc .conditions { margin-top: 20px; font-size: 11px; color: #4b5563; white-space: pre-line; page-break-inside: avoid; }
-  .devis-doc .signature { display: flex; gap: 24px; margin-top: 28px; page-break-inside: avoid; }
-  .devis-doc .signature > div { flex: 1; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; min-height: 130px; font-size: 11px; color: #4b5563; }
-  .devis-doc .signature .label { text-transform: uppercase; letter-spacing: 1px; font-size: 10px; color: #b8860b; font-weight: 600; margin-bottom: 6px; }
-  .devis-doc .signature .sign { font-family: "Playfair Display", Georgia, serif; font-style: italic; font-size: 24px; color: #111827; margin: 6px 0 2px; }
-  .devis-doc .signature .fonction { font-weight: 600; color: #111827; }
-  .devis-doc .foot { margin-top: 26px; border-top: 1px solid #e5e7eb; padding-top: 8px; text-align: center; font-size: 9.5px; color: #6b7280; line-height: 1.5; }
+  .devis-doc .des { font-weight: 600; color: ${noir}; }
+  .devis-doc .desc { color: #777; font-size: 10.5px; margin-top: 2px; white-space: pre-line; }
+  .devis-doc .bas { display: flex; gap: 22px; margin-top: 18px; align-items: flex-start; page-break-inside: avoid; }
+  .devis-doc .conditions { flex: 1; font-size: 10.5px; color: #555; white-space: pre-line; padding-top: 4px; }
+  .devis-doc .conditions .etiquette { margin-bottom: 4px; }
+  .devis-doc .conditions p + .etiquette { margin-top: 12px; }
+  .devis-doc .totaux { width: 300px; border: 1px solid #ece6d3; }
+  .devis-doc .totaux .l { display: flex; justify-content: space-between; padding: 7px 14px; border-bottom: 1px solid #f1ecdd; }
+  .devis-doc .totaux .l span:first-child { color: #666; }
+  .devis-doc .totaux .ttc { background: ${noir}; color: #fff; padding: 12px 14px; border-bottom: none; align-items: baseline; }
+  .devis-doc .totaux .ttc span:first-child { color: ${or}; letter-spacing: 2px; text-transform: uppercase; font-size: 10px; font-weight: 700; }
+  .devis-doc .totaux .ttc span:last-child { font-family: "Playfair Display", Georgia, serif; font-size: 20px; color: #fff; }
+  .devis-doc .totaux .acompte { background: ${creme}; border-bottom: none; }
+  .devis-doc .totaux .acompte span { color: ${orFonce} !important; font-weight: 600; }
+  .devis-doc .signature { display: flex; gap: 22px; margin-top: 26px; page-break-inside: avoid; }
+  .devis-doc .signature > div { flex: 1; padding: 14px 16px; min-height: 128px; font-size: 10.5px; color: #555; }
+  .devis-doc .signature .agence { background: ${creme}; border-top: 3px solid ${or}; }
+  .devis-doc .signature .client { border: 1px dashed #cfc6a8; }
+  .devis-doc .signature .sign { font-family: "Playfair Display", Georgia, serif; font-style: italic; font-size: 26px; color: ${noir}; margin: 4px 0 0; }
+  .devis-doc .signature .fonction { font-weight: 600; color: ${orFonce}; letter-spacing: .5px; margin-bottom: 6px; }
+  .devis-doc .pied { background: ${noir}; color: #cfcfcf; padding: 14px 44px; font-size: 9.5px; text-align: center; line-height: 1.6; margin-top: 24px; }
+  .devis-doc .pied b { color: ${or}; font-weight: 600; letter-spacing: 1px; }
+  .devis-doc .pied .sep { color: ${or}; padding: 0 6px; }
   `;
 
+  const sep = '<span class="sep">◆</span>';
+  const infos = [
+    d.titre && ["Événement", d.titre],
+    d.date_evenement && ["Date", `${dateFr(d.date_evenement)}${d.date_fin_evenement ? ` → ${dateFr(d.date_fin_evenement)}` : ""}`],
+    d.lieu && ["Lieu", d.lieu],
+    d.nb_personnes && ["Invités", d.nb_personnes],
+  ].filter(Boolean) as [string, string][];
+
   const html = `<div class="devis-doc">
-<div class="head">
-  <img src="${esc(logoUrl)}" alt="Heavent People Agency" crossorigin="anonymous">
-  <div class="agence">
-    <strong>${esc(p?.raison_sociale ?? "Heavent People Agency")}</strong><br>
-    ${adresse ? `${esc(adresse)}<br>` : ""}
-    ${p?.telephone ? `${esc(p.telephone)}<br>` : ""}
-    ${p?.email ? `${esc(p.email)}<br>` : ""}
-    ${p?.site_web ? esc(p.site_web) : ""}
+<div class="band">
+  <img src="${esc(logoUrl)}" alt="Heavent People Agency">
+  <div class="titre">
+    <div class="mot">DEVIS</div>
+    <div class="num">N° ${esc(d.numero ?? "brouillon")}</div>
+    <div class="dates">Émis le ${dateFr(d.date_emission)}${d.date_validite ? ` · Valable jusqu'au ${dateFr(d.date_validite)}` : ""}</div>
   </div>
 </div>
-<h1>DEVIS</h1>
-<div class="meta">N° <strong>${esc(d.numero ?? "(non enregistré)")}</strong> · Émis le ${dateFr(d.date_emission)}${d.date_validite ? ` · Valable jusqu'au ${dateFr(d.date_validite)}` : ""}</div>
-<div class="grid">
-  <div class="box"><h3>Client</h3>
-    ${d.client_societe ? `<div><strong>${esc(d.client_societe)}</strong></div>` : ""}
-    <div>${esc(d.client_nom)}</div>
-    ${d.client_adresse ? `<div>${esc(d.client_adresse)}</div>` : ""}
-    ${d.client_telephone ? `<div>${esc(d.client_telephone)}</div>` : ""}
-    ${d.client_email ? `<div>${esc(d.client_email)}</div>` : ""}
-    ${d.client_ice ? `<div>ICE : ${esc(d.client_ice)}</div>` : ""}
+<div class="corps">
+  <div class="parties">
+    <div class="partie">
+      <div class="etiquette">Émis par</div>
+      <div class="nom">${esc(p?.raison_sociale ?? "Heavent People Agency")}</div>
+      ${adresse ? `<div>${esc(adresse)}</div>` : ""}
+      ${p?.telephone ? `<div>${esc(p.telephone)}</div>` : ""}
+      ${p?.email ? `<div>${esc(p.email)}</div>` : ""}
+      ${p?.site_web ? `<div>${esc(p.site_web)}</div>` : ""}
+    </div>
+    <div class="partie client">
+      <div class="etiquette">Destinataire</div>
+      <div class="nom">${esc(d.client_societe || d.client_nom)}</div>
+      ${d.client_societe ? `<div>À l'attention de ${esc(d.client_nom)}</div>` : ""}
+      ${d.client_adresse ? `<div>${esc(d.client_adresse)}</div>` : ""}
+      ${d.client_telephone ? `<div>${esc(d.client_telephone)}</div>` : ""}
+      ${d.client_email ? `<div>${esc(d.client_email)}</div>` : ""}
+      ${d.client_ice ? `<div>ICE : ${esc(d.client_ice)}</div>` : ""}
+    </div>
   </div>
-  <div class="box"><h3>Prestation</h3>${evenement || "<div>—</div>"}</div>
-</div>
-<table>
-  <thead><tr><th>Désignation</th><th class="n">Qté</th><th class="n">Durée</th><th class="n">Prix unitaire HT</th><th class="n">Remise</th><th class="n">Total HT</th></tr></thead>
-  <tbody>${rows}</tbody>
-</table>
-<div class="totaux">
-  <div><span>Total HT</span><span>${money(t.ht, devise)}</span></div>
-  ${t.remise ? `<div><span>Remise (${esc(d.remise_globale_pct)} %)</span><span>- ${money(t.remise, devise)}</span></div><div><span>Net HT</span><span>${money(t.base, devise)}</span></div>` : ""}
-  <div><span>TVA (${esc(d.taux_tva)} %)</span><span>${money(t.tva, devise)}</span></div>
-  <div class="ttc"><span>Total TTC</span><span>${money(t.ttc, devise)}</span></div>
-  ${d.acompte_pct ? `<div class="acompte"><span>Acompte à la commande (${esc(d.acompte_pct)} %)</span><span>${money(t.acompte, devise)}</span></div>` : ""}
-</div>
-${d.conditions ? `<div class="conditions"><strong>Conditions :</strong>\n${esc(d.conditions)}</div>` : ""}
-${p?.rib ? `<div class="conditions"><strong>Règlement par virement :</strong> RIB ${esc(p.rib)}</div>` : ""}
-<div class="signature">
-  <div>
-    <div class="label">Pour l'agence</div>
-    <div class="sign">${esc(SIGNATAIRE.nom)}</div>
-    <div class="fonction">${esc(SIGNATAIRE.fonction)}</div>
-    ${adresse ? `<div>${esc(adresse)}</div>` : ""}
-    <div>${[p?.telephone, p?.email].filter(Boolean).map(esc).join(" · ")}</div>
+  ${infos.length ? `<div class="infos">${infos.map(([k, v]) => `<div class="info"><div class="etiquette">${k}</div><div class="v">${esc(v)}</div></div>`).join("")}</div>` : '<div style="height:22px"></div>'}
+  <table>
+    <thead><tr><th>Prestation</th><th class="n">Qté</th><th class="n">Durée</th><th class="n">P.U. HT</th><th class="n">Remise</th><th class="n">Total HT</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="bas">
+    <div class="conditions">
+      ${d.conditions ? `<div class="etiquette">Conditions</div><p>${esc(d.conditions)}</p>` : ""}
+      ${p?.rib ? `<div class="etiquette">Règlement</div><p>Par virement bancaire — RIB ${esc(p.rib)}</p>` : ""}
+    </div>
+    <div class="totaux">
+      <div class="l"><span>Total HT</span><span>${money(t.ht, devise)}</span></div>
+      ${t.remise ? `<div class="l"><span>Remise ${esc(d.remise_globale_pct)} %</span><span>- ${money(t.remise, devise)}</span></div><div class="l"><span>Net HT</span><span>${money(t.base, devise)}</span></div>` : ""}
+      <div class="l"><span>TVA ${esc(d.taux_tva)} %</span><span>${money(t.tva, devise)}</span></div>
+      <div class="l ttc"><span>Total TTC</span><span>${money(t.ttc, devise)}</span></div>
+      ${d.acompte_pct ? `<div class="l acompte"><span>Acompte ${esc(d.acompte_pct)} %</span><span>${money(t.acompte, devise)}</span></div>` : ""}
+    </div>
   </div>
-  <div>
-    <div class="label">Bon pour accord</div>
-    <div>Date, cachet et signature du client,<br>précédés de la mention « Bon pour accord ».</div>
+  <div class="signature">
+    <div class="agence">
+      <div class="etiquette">Pour l'agence</div>
+      <div class="sign">${esc(SIGNATAIRE.nom)}</div>
+      <div class="fonction">${esc(SIGNATAIRE.fonction)}</div>
+      ${adresse ? `<div>${esc(adresse)}</div>` : ""}
+      <div>${[p?.telephone, p?.email].filter(Boolean).map(esc).join(" · ")}</div>
+    </div>
+    <div class="client">
+      <div class="etiquette">Bon pour accord</div>
+      <div>Date, cachet et signature du client,<br>précédés de la mention « Bon pour accord ».</div>
+    </div>
   </div>
 </div>
-<div class="foot">${mentions}</div>
+<div class="pied"><b>${esc((p?.raison_sociale ?? "Heavent People Agency").toUpperCase())}</b>${adresse ? `${sep}${esc(adresse)}` : ""}<br>${[p?.rc && `RC ${esc(p.rc)}`, p?.ice && `ICE ${esc(p.ice)}`, p?.if_fiscal && `IF ${esc(p.if_fiscal)}`, p?.patente && `Patente ${esc(p.patente)}`].filter(Boolean).join(sep)}</div>
 </div>`;
   return { css, html };
 }
