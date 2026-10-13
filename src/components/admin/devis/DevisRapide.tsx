@@ -40,7 +40,7 @@ interface Props {
   onDemandesChange?: () => void;
 }
 
-const LOGO = "/logo-devis-blanc.png";
+const LOGO = "/logo-devis-noir.png";
 const toNum = (v: string) => (v === "" ? 0 : Number(v.replace(",", ".")));
 
 export default function DevisRapide({ demandesEntreprise, demandesMariage, onDemandesChange }: Props) {

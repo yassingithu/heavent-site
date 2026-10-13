@@ -194,17 +194,17 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
   .devis-doc, .devis-doc * { box-sizing: border-box; margin: 0; }
   .devis-doc { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; color: #2a2a2a; font-size: 11.5px; width: 794px; min-height: 1123px; background: #fff; line-height: 1.45; display: flex; flex-direction: column; }
   .devis-doc .serif { font-family: "Playfair Display", Georgia, serif; }
-  .devis-doc .band { background: ${noir}; color: #fff; padding: 34px 44px 30px; display: flex; justify-content: space-between; align-items: center; position: relative; }
-  .devis-doc .band::after { content: ""; position: absolute; left: 0; right: 0; bottom: -5px; height: 5px; background: linear-gradient(90deg, ${orFonce}, ${or}, ${orFonce}); }
+  .devis-doc .band { background: #fff; color: ${noir}; padding: 34px 44px 26px; display: flex; justify-content: space-between; align-items: center; position: relative; }
+  .devis-doc .band::after { content: ""; position: absolute; left: 44px; right: 44px; bottom: 0; height: 3px; background: linear-gradient(90deg, ${orFonce}, ${or}, ${orFonce}); }
   .devis-doc .band img { height: 82px; display: block; }
   .devis-doc .titre { text-align: right; }
   .devis-doc .titre .mot { font-family: "Playfair Display", Georgia, serif; font-size: 44px; letter-spacing: 8px; color: ${or}; line-height: 1; }
-  .devis-doc .titre .num { margin-top: 10px; font-size: 13px; letter-spacing: 1px; color: #fff; font-weight: 600; }
-  .devis-doc .titre .dates { margin-top: 3px; font-size: 10.5px; color: #bdbdbd; }
+  .devis-doc .titre .num { margin-top: 10px; font-size: 13px; letter-spacing: 1px; color: ${noir}; font-weight: 600; }
+  .devis-doc .titre .dates { margin-top: 3px; font-size: 10.5px; color: #888; }
   .devis-doc .corps { padding: 30px 44px 10px; flex: 1; }
   .devis-doc .parties { display: flex; gap: 18px; }
   .devis-doc .partie { flex: 1; padding: 14px 16px; border-left: 3px solid ${or}; background: ${creme}; }
-  .devis-doc .partie.client { background: #fff; border: 1px solid #ece6d3; border-left: 3px solid ${noir}; }
+  .devis-doc .partie.client { background: #fff; border: 1px solid #ece6d3; border-left: 3px solid ${or}; }
   .devis-doc .etiquette { font-size: 9.5px; letter-spacing: 2px; text-transform: uppercase; color: ${orFonce}; font-weight: 700; margin-bottom: 6px; }
   .devis-doc .partie .nom { font-family: "Playfair Display", Georgia, serif; font-size: 15px; color: ${noir}; margin-bottom: 3px; }
   .devis-doc .partie div { margin: 1px 0; color: #4a4a4a; }
@@ -212,7 +212,7 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
   .devis-doc .info { flex: 1; border: 1px solid #ece6d3; border-radius: 4px; padding: 9px 12px; }
   .devis-doc .info .v { font-weight: 600; color: ${noir}; font-size: 12px; margin-top: 2px; }
   .devis-doc table { width: 100%; border-collapse: collapse; }
-  .devis-doc thead th { background: ${noir}; color: ${or}; font-weight: 600; padding: 10px 10px; text-align: left; font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase; }
+  .devis-doc thead th { background: ${or}; color: #fff; font-weight: 600; padding: 10px 10px; text-align: left; font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase; }
   .devis-doc tbody td { padding: 10px; border-bottom: 1px solid #efe9d8; vertical-align: top; }
   .devis-doc tbody tr:nth-child(even) td { background: ${creme}; }
   .devis-doc tr { page-break-inside: avoid; }
@@ -226,8 +226,8 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
   .devis-doc .totaux { width: 300px; border: 1px solid #ece6d3; }
   .devis-doc .totaux .l { display: flex; justify-content: space-between; padding: 7px 14px; border-bottom: 1px solid #f1ecdd; }
   .devis-doc .totaux .l span:first-child { color: #666; }
-  .devis-doc .totaux .ttc { background: ${noir}; color: #fff; padding: 12px 14px; border-bottom: none; align-items: baseline; }
-  .devis-doc .totaux .ttc span:first-child { color: ${or}; letter-spacing: 2px; text-transform: uppercase; font-size: 10px; font-weight: 700; }
+  .devis-doc .totaux .ttc { background: ${or}; color: #fff; padding: 12px 14px; border-bottom: none; align-items: baseline; }
+  .devis-doc .totaux .ttc span:first-child { color: #fff; letter-spacing: 2px; text-transform: uppercase; font-size: 10px; font-weight: 700; }
   .devis-doc .totaux .ttc span:last-child { font-family: "Playfair Display", Georgia, serif; font-size: 20px; color: #fff; }
   .devis-doc .totaux .acompte { background: ${creme}; border-bottom: none; }
   .devis-doc .totaux .acompte span { color: ${orFonce} !important; font-weight: 600; }
@@ -237,9 +237,9 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
   .devis-doc .signature .client { border: 1px dashed #cfc6a8; }
   .devis-doc .signature .sign { font-family: "Playfair Display", Georgia, serif; font-style: italic; font-size: 26px; color: ${noir}; margin: 4px 0 0; }
   .devis-doc .signature .fonction { font-weight: 600; color: ${orFonce}; letter-spacing: .5px; margin-bottom: 6px; }
-  .devis-doc .pied { background: ${noir}; color: #cfcfcf; padding: 14px 44px; font-size: 9.5px; text-align: center; line-height: 1.6; margin-top: 24px; }
-  .devis-doc .pied b { color: ${or}; font-weight: 600; letter-spacing: 1px; }
-  .devis-doc .pied .sep { color: ${or}; padding: 0 6px; }
+  .devis-doc .pied { background: ${creme}; border-top: 3px solid ${or}; color: #666; padding: 14px 44px; font-size: 9.5px; text-align: center; line-height: 1.6; margin-top: 24px; }
+  .devis-doc .pied b { color: ${orFonce}; font-weight: 600; letter-spacing: 1px; }
+  .devis-doc .pied .sep { color: ${orFonce}; padding: 0 6px; }
   `;
 
   const sep = '<span class="sep">◆</span>';
