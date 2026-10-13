@@ -1,3 +1,4 @@
+import { getCaller, deny } from "../_shared/auth.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 
@@ -223,6 +224,12 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { contract_id, language = 'fr' } = await req.json();
+    const caller = await getCaller(req);
+    if (!caller) return deny();
+    if (!caller.isAdmin) {
+      const { data: c } = await supabase.from('contrats').select('staff_id').eq('id', contract_id).maybeSingle();
+      if (!c || c.staff_id !== caller.staffId) return deny();
+    }
 
     if (!contract_id) {
       return new Response(

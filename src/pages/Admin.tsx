@@ -16,9 +16,10 @@ import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, Messa
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, FUNCTIONS_URL } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { User, Session } from "@supabase/supabase-js";
+import DevisRapide from "@/components/admin/devis/DevisRapide";
 
 const ADMIN_EMAIL = "i.chaigari@heaventagency.com";
 
@@ -400,10 +401,12 @@ const Admin = () => {
       }, 0);
 
       // Envoyer l'email avec le devis professionnel
-      const response = await fetch('https://dlxaqkaivjkxtqyxswls.supabase.co/functions/v1/send-email', {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const response = await fetch(`${FUNCTIONS_URL}/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionData.session?.access_token ?? ''}`,
         },
         body: JSON.stringify({
           type: 'quote',
@@ -986,9 +989,13 @@ const Admin = () => {
       </div>
 
       {/* Data Tables */}
-      <Tabs defaultValue="staff" className="w-full">
+      <Tabs defaultValue="devis-rapide" className="w-full">
         <div className="overflow-x-auto">
-          <TabsList className="grid w-full min-w-[900px] grid-cols-9 sm:min-w-0">
+          <TabsList className="grid w-full min-w-[1000px] grid-cols-10 sm:min-w-0">
+            <TabsTrigger value="devis-rapide" className="text-xs sm:text-sm flex items-center space-x-1">
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Devis</span>
+            </TabsTrigger>
             <TabsTrigger value="staff" className="text-xs sm:text-sm">👥 <span className="hidden sm:inline">Personnel</span></TabsTrigger>
             <TabsTrigger value="disponibilites" className="text-xs sm:text-sm">📅 <span className="hidden sm:inline">Dispo</span></TabsTrigger>
             <TabsTrigger value="envoyer-devis" className="text-xs sm:text-sm flex items-center space-x-1">
@@ -1006,6 +1013,14 @@ const Admin = () => {
             </TabsTrigger>
           </TabsList>
         </div>
+
+        <TabsContent value="devis-rapide" className="space-y-4">
+          <DevisRapide
+            demandesEntreprise={devisEntreprise as any}
+            demandesMariage={devisMariage as any}
+            onDemandesChange={fetchData}
+          />
+        </TabsContent>
 
         {/* Disponibilités Tab */}
         <TabsContent value="disponibilites" className="space-y-4">

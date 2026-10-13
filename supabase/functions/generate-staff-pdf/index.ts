@@ -1,3 +1,4 @@
+import { getCaller, deny } from "../_shared/auth.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 
@@ -372,6 +373,8 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { staff_id } = await req.json();
+    const caller = await getCaller(req);
+    if (!caller || (!caller.isAdmin && caller.staffId !== staff_id)) return deny();
 
     if (!staff_id) {
       return new Response(
@@ -401,14 +404,14 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("🖼️ Chemin photo brut:", staffData.photo);
     
     // Test direct de l'URL
-    const testUrl = `https://dlxaqkaivjkxtqyxswls.supabase.co/storage/v1/object/public/photos/${staffData.photo}`;
+    const testUrl = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/photos/${staffData.photo}`;
     console.log("🔗 URL photo test:", testUrl);
     
     // Construire l'URL de la photo CORRECTE
     let photoUrl = null;
     if (staffData.photo) {
       // URL directe vers le storage Supabase
-      photoUrl = `https://dlxaqkaivjkxtqyxswls.supabase.co/storage/v1/object/public/photos/photos/${staffData.photo}`;
+      photoUrl = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/photos/photos/${staffData.photo}`;
     }
     
     console.log("🔗 URL photo finale:", photoUrl);

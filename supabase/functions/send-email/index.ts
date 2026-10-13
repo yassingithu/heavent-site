@@ -1,3 +1,4 @@
+import { getCaller, deny } from "../_shared/auth.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
@@ -28,6 +29,10 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { type, data }: EmailRequest = await req.json();
+    if (type === 'quote') {
+      const caller = await getCaller(req);
+      if (!caller?.isAdmin) return deny();
+    }
 
     let subject = "";
     let htmlContent = "";

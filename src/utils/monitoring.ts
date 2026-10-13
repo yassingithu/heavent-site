@@ -1,3 +1,4 @@
+import { FUNCTIONS_URL } from "@/integrations/supabase/client";
 // Utilitaires de monitoring et maintenance du site
 
 export interface HealthCheck {
@@ -79,7 +80,7 @@ export class SiteMonitor {
         data: { test: true }
       };
 
-      const response = await fetch('https://dlxaqkaivjkxtqyxswls.supabase.co/functions/v1/send-email', {
+      const response = await fetch(`${FUNCTIONS_URL}/send-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(testData),

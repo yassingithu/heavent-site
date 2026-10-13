@@ -1,3 +1,4 @@
+import { FUNCTIONS_URL } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet-async";
@@ -88,7 +89,7 @@ const WeddingQuote = () => {
     setIsSubmitting(true);
     
     try {
-      const response = await fetch('https://dlxaqkaivjkxtqyxswls.supabase.co/functions/v1/send-email', {
+      const response = await fetch(`${FUNCTIONS_URL}/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

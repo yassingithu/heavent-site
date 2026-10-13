@@ -152,10 +152,7 @@ const StaffRegistration = () => {
       
       // Vérifier d'abord si l'email existe déjà dans notre base staff
       const { data: existingStaff, error: checkError } = await supabase
-        .from('staff')
-        .select('email')
-        .eq('email', data.email)
-        .maybeSingle();
+        .rpc('staff_email_exists', { p_email: data.email });
 
       if (checkError) {
         console.error("Erreur vérification email:", checkError);

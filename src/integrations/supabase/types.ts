@@ -293,6 +293,263 @@ export type Database = {
           },
         ]
       }
+      catalogue_prestations: {
+        Row: {
+          actif: boolean
+          categorie: string
+          created_at: string
+          description: string | null
+          designation: string
+          id: string
+          ordre: number
+          prix_unitaire: number
+          unite: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          categorie?: string
+          created_at?: string
+          description?: string | null
+          designation: string
+          id?: string
+          ordre?: number
+          prix_unitaire?: number
+          unite?: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          categorie?: string
+          created_at?: string
+          description?: string | null
+          designation?: string
+          id?: string
+          ordre?: number
+          prix_unitaire?: number
+          unite?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      devis: {
+        Row: {
+          acompte_pct: number
+          client_adresse: string | null
+          client_email: string | null
+          client_ice: string | null
+          client_nom: string
+          client_societe: string | null
+          client_telephone: string | null
+          conditions: string | null
+          created_at: string
+          date_emission: string
+          date_envoi: string | null
+          date_evenement: string | null
+          date_fin_evenement: string | null
+          date_validite: string | null
+          demande_entreprise_id: string | null
+          demande_mariage_id: string | null
+          devise: string
+          id: string
+          lieu: string | null
+          nb_personnes: number | null
+          notes_internes: string | null
+          numero: string | null
+          remise_globale_pct: number
+          statut: string
+          taux_tva: number
+          titre: string | null
+          total_ht: number
+          total_remise: number
+          total_ttc: number
+          total_tva: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          acompte_pct?: number
+          client_adresse?: string | null
+          client_email?: string | null
+          client_ice?: string | null
+          client_nom: string
+          client_societe?: string | null
+          client_telephone?: string | null
+          conditions?: string | null
+          created_at?: string
+          date_emission?: string
+          date_envoi?: string | null
+          date_evenement?: string | null
+          date_fin_evenement?: string | null
+          date_validite?: string | null
+          demande_entreprise_id?: string | null
+          demande_mariage_id?: string | null
+          devise?: string
+          id?: string
+          lieu?: string | null
+          nb_personnes?: number | null
+          notes_internes?: string | null
+          numero?: string | null
+          remise_globale_pct?: number
+          statut?: string
+          taux_tva?: number
+          titre?: string | null
+          total_ht?: number
+          total_remise?: number
+          total_ttc?: number
+          total_tva?: number
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          acompte_pct?: number
+          client_adresse?: string | null
+          client_email?: string | null
+          client_ice?: string | null
+          client_nom?: string
+          client_societe?: string | null
+          client_telephone?: string | null
+          conditions?: string | null
+          created_at?: string
+          date_emission?: string
+          date_envoi?: string | null
+          date_evenement?: string | null
+          date_fin_evenement?: string | null
+          date_validite?: string | null
+          demande_entreprise_id?: string | null
+          demande_mariage_id?: string | null
+          devise?: string
+          id?: string
+          lieu?: string | null
+          nb_personnes?: number | null
+          notes_internes?: string | null
+          numero?: string | null
+          remise_globale_pct?: number
+          statut?: string
+          taux_tva?: number
+          titre?: string | null
+          total_ht?: number
+          total_remise?: number
+          total_ttc?: number
+          total_tva?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      devis_lignes: {
+        Row: {
+          created_at: string
+          description: string | null
+          designation: string
+          devis_id: string
+          duree: number
+          id: string
+          ordre: number
+          prix_unitaire: number
+          quantite: number
+          remise_pct: number
+          total_ht: number | null
+          unite: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          designation: string
+          devis_id: string
+          duree?: number
+          id?: string
+          ordre?: number
+          prix_unitaire?: number
+          quantite?: number
+          remise_pct?: number
+          total_ht?: number | null
+          unite?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          designation?: string
+          devis_id?: string
+          duree?: number
+          id?: string
+          ordre?: number
+          prix_unitaire?: number
+          quantite?: number
+          remise_pct?: number
+          total_ht?: number | null
+          unite?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devis_lignes_devis_id_fkey"
+            columns: ["devis_id"]
+            isOneToOne: false
+            referencedRelation: "devis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parametres_agence: {
+        Row: {
+          adresse: string | null
+          conditions: string | null
+          devise: string
+          email: string | null
+          ice: string | null
+          id: number
+          if_fiscal: string | null
+          patente: string | null
+          raison_sociale: string
+          rc: string | null
+          rib: string | null
+          site_web: string | null
+          taux_tva: number
+          telephone: string | null
+          updated_at: string
+          validite_jours: number
+          ville: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          conditions?: string | null
+          devise?: string
+          email?: string | null
+          ice?: string | null
+          id?: number
+          if_fiscal?: string | null
+          patente?: string | null
+          raison_sociale?: string
+          rc?: string | null
+          rib?: string | null
+          site_web?: string | null
+          taux_tva?: number
+          telephone?: string | null
+          updated_at?: string
+          validite_jours?: number
+          ville?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          conditions?: string | null
+          devise?: string
+          email?: string | null
+          ice?: string | null
+          id?: number
+          if_fiscal?: string | null
+          patente?: string | null
+          raison_sociale?: string
+          rc?: string | null
+          rib?: string | null
+          site_web?: string | null
+          taux_tva?: number
+          telephone?: string | null
+          updated_at?: string
+          validite_jours?: number
+          ville?: string | null
+        }
+        Relationships: []
+      }
       staff: {
         Row: {
           adresse_complete: string | null
@@ -418,7 +675,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
+      staff_email_exists: { Args: { p_email: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

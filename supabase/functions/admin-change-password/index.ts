@@ -1,3 +1,4 @@
+import { getCaller, deny } from "../_shared/auth.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 
@@ -18,6 +19,8 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     // Parse request body
     const { userEmail, newPassword } = await req.json();
+    const caller = await getCaller(req);
+    if (!caller?.isAdmin) return deny();
     console.log("Changing password for user:", userEmail);
 
     if (!userEmail || !newPassword) {

@@ -1,3 +1,4 @@
+import { getCaller, deny } from "../_shared/auth.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -410,6 +411,8 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { staff_ids } = await req.json();
+    const caller = await getCaller(req);
+    if (!caller?.isAdmin) return deny();
 
     if (!staff_ids || !Array.isArray(staff_ids)) {
       return new Response(
