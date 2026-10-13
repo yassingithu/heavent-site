@@ -286,9 +286,9 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
           image: { type: "jpeg", quality: 0.95 },
           html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
           jsPDF: { unit: "px", format: [794, 1123], orientation: "portrait", hotfixes: ["px_scaling"] },
-          pagebreak: { mode: ["css", "legacy"] },
+          pagebreak: { mode: ["css"], before: ".suite", avoid: ["tr", ".art", ".signature", ".bas"] },
         })
-        .from(conteneur.querySelector(".devis-doc") as HTMLElement)
+        .from(conteneur.querySelector(".devis-pages") as HTMLElement)
         .save();
       toast({ title: "PDF téléchargé", description: nomFichierDevis(d) });
     } catch (e: any) {

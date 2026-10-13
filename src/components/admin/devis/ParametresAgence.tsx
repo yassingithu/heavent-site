@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Save } from "lucide-react";
 import { Parametres } from "./devisUtils";
+import { CGV_DEFAUT, CONDITIONS_CONTRAT_DEFAUT } from "@/lib/conditions";
 
 const CHAMPS: { key: keyof Parametres; label: string; type?: string }[] = [
   { key: "raison_sociale", label: "Raison sociale" },
@@ -59,6 +60,21 @@ export default function ParametresAgence({ value, onSaved }: { value: Parametres
         <div>
           <Label>Conditions par défaut (reprises sur chaque nouveau devis)</Label>
           <Textarea rows={3} value={p.conditions ?? ""} onChange={(e) => setP({ ...p, conditions: e.target.value })} />
+        </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <Label>Conditions générales de vente (2ᵉ page de chaque devis)</Label>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setP({ ...p, cgv: CGV_DEFAUT })}>Rétablir le texte par défaut</Button>
+          </div>
+          <Textarea rows={14} className="text-xs" value={p.cgv ?? CGV_DEFAUT} onChange={(e) => setP({ ...p, cgv: e.target.value })} />
+          <p className="text-xs text-muted-foreground mt-1">Un article = un titre sur une ligne, le texte en dessous, puis une ligne vide.</p>
+        </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <Label>Conditions de la mission (2ᵉ page de chaque contrat)</Label>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setP({ ...p, conditions_contrat: CONDITIONS_CONTRAT_DEFAUT })}>Rétablir le texte par défaut</Button>
+          </div>
+          <Textarea rows={12} className="text-xs" value={p.conditions_contrat ?? CONDITIONS_CONTRAT_DEFAUT} onChange={(e) => setP({ ...p, conditions_contrat: e.target.value })} />
         </div>
         <Button onClick={save}><Save className="h-4 w-4 mr-1" /> Enregistrer</Button>
       </CardContent>

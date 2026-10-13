@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { CGV_DEFAUT, articlesHtml } from "@/lib/conditions";
 import { fr } from "date-fns/locale";
 
 export type Unite = "heure" | "jour" | "forfait" | "unite" | "personne";
@@ -57,6 +58,8 @@ export interface Parametres {
   devise: string;
   validite_jours: number;
   conditions: string | null;
+  cgv?: string | null;
+  conditions_contrat?: string | null;
 }
 
 export interface DevisForm {
@@ -192,7 +195,7 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
   const or = "#C8B560", orFonce = "#A8933F", noir = "#141414", creme = "#FAF7EE";
   const css = `
   .devis-doc, .devis-doc * { box-sizing: border-box; margin: 0; }
-  .devis-doc { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; color: #2a2a2a; font-size: 11.5px; width: 794px; min-height: 1123px; background: #fff; line-height: 1.45; display: flex; flex-direction: column; }
+  .devis-doc { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; color: #2a2a2a; font-size: 11.5px; width: 794px; min-height: 1118px; background: #fff; line-height: 1.45; display: flex; flex-direction: column; }
   .devis-doc .serif { font-family: "Playfair Display", Georgia, serif; }
   .devis-doc .band { background: #fff; color: ${noir}; padding: 26px 44px 20px; display: flex; justify-content: space-between; align-items: center; position: relative; }
   .devis-doc .band::after { content: ""; position: absolute; left: 44px; right: 44px; bottom: 0; height: 3px; background: linear-gradient(90deg, ${orFonce}, ${or}, ${orFonce}); }
@@ -240,6 +243,14 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
   .devis-doc .pied { background: ${creme}; border-top: 3px solid ${or}; color: #666; padding: 14px 44px; font-size: 9.5px; text-align: center; line-height: 1.6; margin-top: 24px; }
   .devis-doc .pied b { color: ${orFonce}; font-weight: 600; letter-spacing: 1px; }
   .devis-doc .pied .sep { color: ${orFonce}; padding: 0 6px; }
+  .devis-doc.cgv .corps { padding-top: 22px; }
+  .devis-doc.cgv h2 { font-family: "Playfair Display", Georgia, serif; font-size: 20px; color: ${noir}; margin-bottom: 4px; font-weight: 600; }
+  .devis-doc.cgv .intro { color: #777; font-size: 10px; margin-bottom: 12px; }
+  .devis-doc.cgv .cols { column-count: 2; column-gap: 26px; }
+  .devis-doc.cgv .art { break-inside: avoid; margin-bottom: 9px; }
+  .devis-doc.cgv .art h4 { font-size: 9.5px; letter-spacing: 1.2px; text-transform: uppercase; color: ${orFonce}; margin-bottom: 2px; }
+  .devis-doc.cgv .art p { font-size: 9.6px; line-height: 1.45; text-align: justify; color: #444; }
+  .devis-doc.cgv .accord { margin-top: 10px; padding: 10px 14px; border: 1px dashed #cfc6a8; font-size: 10px; color: #555; }
   `;
 
   const sep = '<span class="sep">◆</span>';
@@ -250,7 +261,7 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
     d.nb_personnes && ["Invités", d.nb_personnes],
   ].filter(Boolean) as [string, string][];
 
-  const html = `<div class="devis-doc">
+  const html = `<div class="devis-pages"><div class="devis-doc">
 <div class="band">
   <img src="${esc(logoUrl)}" alt="Heavent People Agency">
   <div class="titre">
@@ -312,7 +323,16 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
   </div>
 </div>
 <div class="pied"><b>${esc((p?.raison_sociale ?? "Heavent People Agency").toUpperCase())}</b>${adresse ? `${sep}${esc(adresse)}` : ""}<br>${[p?.rc && `RC ${esc(p.rc)}`, p?.ice && `ICE ${esc(p.ice)}`, p?.if_fiscal && `IF ${esc(p.if_fiscal)}`, p?.patente && `Patente ${esc(p.patente)}`].filter(Boolean).join(sep)}</div>
-</div>`;
+</div>
+<div class="devis-doc cgv suite">
+  <div class="band"><img src="${esc(logoUrl)}" alt="Heavent People Agency"><div class="titre"><div class="mot" style="font-size:26px;letter-spacing:4px">CONDITIONS</div><div class="num">GÉNÉRALES DE VENTE</div><div class="dates">Annexe au devis N° ${esc(d.numero ?? "brouillon")}</div></div></div>
+  <div class="corps">
+    <div class="intro">Les présentes conditions font partie intégrante du devis. Leur acceptation résulte de la signature du devis avec la mention « Bon pour accord ».</div>
+    <div class="cols">${articlesHtml(p?.cgv?.trim() ? p.cgv : CGV_DEFAUT, esc)}</div>
+    <div class="accord">Paraphe du client : ……………………</div>
+  </div>
+  <div class="pied"><b>${esc((p?.raison_sociale ?? "Heavent People Agency").toUpperCase())}</b>${adresse ? `${sep}${esc(adresse)}` : ""}<br>${[p?.rc && `RC ${esc(p.rc)}`, p?.ice && `ICE ${esc(p.ice)}`, p?.if_fiscal && `IF ${esc(p.if_fiscal)}`, p?.patente && `Patente ${esc(p.patente)}`].filter(Boolean).join(sep)}</div>
+</div></div>`;
   return { css, html };
 }
 

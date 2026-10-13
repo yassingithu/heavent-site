@@ -565,6 +565,8 @@ export type Database = {
       }
       parametres_agence: {
         Row: {
+          cgv: string | null
+          conditions_contrat: string | null
           adresse: string | null
           conditions: string | null
           devise: string
@@ -584,6 +586,8 @@ export type Database = {
           ville: string | null
         }
         Insert: {
+          cgv?: string | null
+          conditions_contrat?: string | null
           adresse?: string | null
           conditions?: string | null
           devise?: string
@@ -603,6 +607,8 @@ export type Database = {
           ville?: string | null
         }
         Update: {
+          cgv?: string | null
+          conditions_contrat?: string | null
           adresse?: string | null
           conditions?: string | null
           devise?: string
