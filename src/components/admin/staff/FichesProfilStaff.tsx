@@ -86,7 +86,7 @@ export default function FichesProfilStaff() {
   const [edition, setEdition] = useState<string | null>(null);
 
   const chargerStaff = () =>
-    supabase.from("staff").select("id, nom, prenom, email, ville, langues, genre").order("nom").then(({ data }) => setStaff((data ?? []) as StaffComplet[]));
+    supabase.from("staff").select("id, nom, prenom, email, ville, langues, genre, banni").order("nom").then(({ data }) => setStaff((data ?? []) as StaffComplet[]));
   useEffect(() => { chargerStaff(); }, []);
 
   const filtres = useMemo(() => {
@@ -134,10 +134,10 @@ export default function FichesProfilStaff() {
         ) : (
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {filtres.map((s) => (
-              <label key={s.id} className="flex items-center gap-3 border rounded-md p-2 cursor-pointer hover:bg-muted/50">
+              <label key={s.id} className={`flex items-center gap-3 border rounded-md p-2 cursor-pointer hover:bg-muted/50 ${s.banni ? "opacity-60" : ""}`}>
                 <Checkbox checked={selection.has(s.id)} onCheckedChange={() => basculer(s.id)} />
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{s.prenom} {s.nom}</div>
+                  <div className="font-medium truncate">{s.prenom} {s.nom} {s.banni && <span className="ml-1 text-[10px] uppercase tracking-wide bg-red-100 text-red-700 rounded px-1.5 py-0.5">Banni</span>}</div>
                   <div className="text-xs text-muted-foreground truncate">{[s.ville, s.langues].filter(Boolean).join(" · ") || s.email}</div>
                 </div>
                 <Button size="icon" variant="ghost" title="Modifier la fiche / mot de passe" onClick={(e) => { e.preventDefault(); setEdition(s.id); }}>

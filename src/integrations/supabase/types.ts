@@ -638,6 +638,9 @@ export type Database = {
       staff: {
         Row: {
           taux_horaire: number
+          banni: boolean
+          banni_le: string | null
+          motif_bannissement: string | null
           updated_at: string | null
           adresse_complete: string | null
           age: number | null
@@ -679,6 +682,9 @@ export type Database = {
         }
         Insert: {
           taux_horaire?: number
+          banni?: boolean
+          banni_le?: string | null
+          motif_bannissement?: string | null
           updated_at?: string | null
           adresse_complete?: string | null
           age?: number | null
@@ -720,6 +726,9 @@ export type Database = {
         }
         Update: {
           taux_horaire?: number
+          banni?: boolean
+          banni_le?: string | null
+          motif_bannissement?: string | null
           updated_at?: string | null
           adresse_complete?: string | null
           age?: number | null

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { KeyRound, Save } from "lucide-react";
+import { Ban, KeyRound, Save, UserCheck } from "lucide-react";
 
 export const LANGUES = ["Arabe", "Darija", "Amazigh", "Français", "Anglais", "Espagnol", "Allemand", "Italien", "Portugais", "Chinois", "Russe", "Turc"];
 
@@ -41,6 +41,7 @@ export default function EditionStaff({ staffId, onClose, onSaved }: Props) {
   const [s, setS] = useState<Record<string, any> | null>(null);
   const [mdp, setMdp] = useState({ a: "", b: "" });
   const [enCours, setEnCours] = useState(false);
+  const [motif, setMotif] = useState("");
 
   useEffect(() => {
     setS(null); setMdp({ a: "", b: "" });
@@ -56,7 +57,7 @@ export default function EditionStaff({ staffId, onClose, onSaved }: Props) {
   const enregistrer = async () => {
     if (!s) return;
     setEnCours(true);
-    const { id, email, created_at, updated_at, ...maj } = s;
+    const { id, email, created_at, updated_at, banni, banni_le, motif_bannissement, ...maj } = s;
     for (const sec of SECTIONS) for (const c of sec.champs) {
       if (c.type === "number") maj[c.k] = maj[c.k] === "" || maj[c.k] == null ? null : Number(maj[c.k]);
       if (c.type === "date" && !maj[c.k]) maj[c.k] = null;
@@ -69,18 +70,40 @@ export default function EditionStaff({ staffId, onClose, onSaved }: Props) {
     onSaved?.();
   };
 
+  /** Appelle la fonction de gestion du compte et renvoie le vrai message d'erreur s'il y en a un. */
+  const compte = async (body: Record<string, unknown>): Promise<{ ok: boolean; data?: any; message?: string }> => {
+    const { data, error } = await supabase.functions.invoke("admin-change-password", { body: { userEmail: s!.email, ...body } });
+    if (!error && !data?.error) return { ok: true, data };
+    let message = data?.error as string | undefined;
+    try { message = message ?? (await (error as any)?.context?.json())?.error; } catch { /* réponse illisible */ }
+    return { ok: false, message: message ?? "Le serveur n'a pas répondu, réessaie dans un instant." };
+  };
+
   const changerMotDePasse = async () => {
     if (mdp.a.length < 8) { toast({ title: "Mot de passe trop court", description: "8 caractères minimum", variant: "destructive" }); return; }
     if (mdp.a !== mdp.b) { toast({ title: "Les deux mots de passe ne correspondent pas", variant: "destructive" }); return; }
     setEnCours(true);
-    const { data, error } = await supabase.functions.invoke("admin-change-password", { body: { userEmail: s!.email, newPassword: mdp.a } });
+    const r = await compte({ newPassword: mdp.a });
     setEnCours(false);
-    if (error || data?.error) {
-      toast({ title: "Erreur", description: data?.error ?? "Le mot de passe n'a pas pu être changé (cette personne a-t-elle déjà créé son compte ?)", variant: "destructive" });
-      return;
-    }
+    if (!r.ok) { toast({ title: "Mot de passe non changé", description: r.message, variant: "destructive" }); return; }
     setMdp({ a: "", b: "" });
-    toast({ title: "Mot de passe changé", description: `Communique-le à ${s!.prenom} : il / elle pourra se connecter sur l'espace staff.` });
+    toast({
+      title: r.data?.cree ? "Compte créé" : "Mot de passe changé",
+      description: `${s!.prenom} peut se connecter sur l'espace staff avec ${s!.email} et ce mot de passe.`,
+    });
+  };
+
+  const basculerBannissement = async () => {
+    const bannir = !s!.banni;
+    if (bannir && !window.confirm(`Bannir ${s!.prenom} ${s!.nom} ? Il / elle ne pourra plus se connecter et n'apparaîtra plus dans les disponibilités ni dans le choix des équipes.`)) return;
+    setEnCours(true);
+    const r = await compte({ action: bannir ? "ban" : "unban", motif: motif.trim() || undefined });
+    setEnCours(false);
+    if (!r.ok) { toast({ title: "Action impossible", description: r.message, variant: "destructive" }); return; }
+    setS({ ...s, banni: bannir, banni_le: bannir ? new Date().toISOString() : null, motif_bannissement: bannir ? motif.trim() || null : null });
+    setMotif("");
+    toast({ title: bannir ? "Crew banni" : "Crew réactivé", description: bannir ? `${s!.prenom} ne peut plus se connecter.` : `${s!.prenom} peut de nouveau se connecter.` });
+    onSaved?.();
   };
 
   return (
@@ -122,11 +145,29 @@ export default function EditionStaff({ staffId, onClose, onSaved }: Props) {
 
             <div className="border-t pt-4">
               <div className="text-sm font-semibold mb-1 flex items-center gap-2"><KeyRound className="h-4 w-4" /> Nouveau mot de passe</div>
-              <p className="text-xs text-muted-foreground mb-2">En cas d'oubli : choisis un nouveau mot de passe et communique-le à la personne.</p>
+              <p className="text-xs text-muted-foreground mb-2">En cas d'oubli : choisis un nouveau mot de passe et communique-le à la personne. Si elle n'a pas encore de compte de connexion, il est créé avec ce mot de passe.</p>
               <div className="grid gap-2 sm:grid-cols-3">
                 <Input type="password" placeholder="Nouveau mot de passe" value={mdp.a} onChange={(e) => setMdp({ ...mdp, a: e.target.value })} />
                 <Input type="password" placeholder="Confirmer" value={mdp.b} onChange={(e) => setMdp({ ...mdp, b: e.target.value })} />
                 <Button variant="outline" onClick={changerMotDePasse} disabled={enCours || !mdp.a}>Changer le mot de passe</Button>
+              </div>
+            </div>
+
+            <div className={`border-t pt-4 ${s.banni ? "bg-red-50 -mx-6 px-6 pb-4" : ""}`}>
+              <div className="text-sm font-semibold mb-1 flex items-center gap-2"><Ban className="h-4 w-4" /> {s.banni ? "Crew banni" : "Bannir ce crew"}</div>
+              {s.banni ? (
+                <p className="text-xs text-muted-foreground mb-2">
+                  Banni le {s.banni_le ? new Date(s.banni_le).toLocaleDateString("fr-FR") : "—"}{s.motif_bannissement ? ` · Motif : ${s.motif_bannissement}` : ""}.
+                  Il / elle ne peut plus se connecter et n'apparaît plus dans les disponibilités ni dans le choix des équipes. Ses contrats et fiches de paie passés sont conservés.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground mb-2">La personne ne pourra plus se connecter à l'espace staff et disparaîtra des disponibilités et du choix des équipes. Ses contrats et fiches de paie sont conservés. Tu peux la réactiver à tout moment.</p>
+              )}
+              <div className="flex flex-col sm:flex-row gap-2">
+                {!s.banni && <Input placeholder="Motif (optionnel, interne)" value={motif} onChange={(e) => setMotif(e.target.value)} />}
+                <Button variant={s.banni ? "outline" : "destructive"} onClick={basculerBannissement} disabled={enCours} className="shrink-0">
+                  {s.banni ? <><UserCheck className="h-4 w-4 mr-1" /> Réactiver</> : <><Ban className="h-4 w-4 mr-1" /> Bannir</>}
+                </Button>
               </div>
             </div>
           </div>

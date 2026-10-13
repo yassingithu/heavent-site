@@ -40,7 +40,7 @@ export default function PlanningDispos() {
   useEffect(() => {
     (async () => {
       const [s, d, af] = await Promise.all([
-        supabase.from("staff").select("id, nom, prenom, ville").order("nom"),
+        supabase.from("staff").select("id, nom, prenom, ville").eq("banni", false).order("nom"),
         supabase.from("disponibilites").select("*").gte("date_jour", de).lte("date_jour", a),
         supabase.from("affectations").select("staff_id, date_jour, devis(titre, numero, client_nom)").gte("date_jour", de).lte("date_jour", a).neq("statut", "annule"),
       ]);
