@@ -1,0 +1,60 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { dateFr, mad } from "@/lib/pdf";
+import { telechargerContrats } from "./contratPdf";
+
+/** Contrats générés depuis les devis, regroupés par événement. */
+export default function ContratsEvenements() {
+  const { toast } = useToast();
+  const [contrats, setContrats] = useState<any[]>([]);
+  const [enCours, setEnCours] = useState(false);
+
+  useEffect(() => {
+    supabase.from("contrats").select("id, titre, date_debut, date_fin, total_heures, salaire_brut, dates, devis_id, staff(nom, prenom), devis(numero, titre, date_evenement)")
+      .not("devis_id", "is", null).order("date_debut", { ascending: false })
+      .then(({ data }) => setContrats(data ?? []));
+  }, []);
+
+  const groupes = contrats.reduce<Record<string, any[]>>((acc, c) => { (acc[c.devis_id] ??= []).push(c); return acc; }, {});
+
+  const telecharger = async (ids: string[]) => {
+    setEnCours(true);
+    try { await telechargerContrats(ids); } catch (e) { console.error(e); toast({ title: "Erreur", description: "PDF non créé", variant: "destructive" }); }
+    finally { setEnCours(false); }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Contrats par événement</CardTitle>
+        <p className="text-sm text-muted-foreground">Ils se créent depuis un devis, rubrique « Équipe de l'événement » : un contrat par personne et par événement, avec toutes ses dates.</p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {Object.keys(groupes).length === 0 && <p className="text-sm text-muted-foreground">Aucun contrat d'événement pour l'instant.</p>}
+        {Object.entries(groupes).map(([devisId, liste]) => (
+          <div key={devisId} className="border rounded-md p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <div>
+                <div className="font-medium">{liste[0].devis?.titre || "Événement"} <span className="text-xs text-muted-foreground font-mono">{liste[0].devis?.numero}</span></div>
+                <div className="text-xs text-muted-foreground">{liste.length} contrat(s)</div>
+              </div>
+              <Button size="sm" disabled={enCours} onClick={() => telecharger(liste.map((c) => c.id))}><Download className="h-4 w-4 mr-1" /> Tous (PDF)</Button>
+            </div>
+            <div className="divide-y">
+              {liste.map((c) => (
+                <div key={c.id} className="flex items-center justify-between gap-2 py-1.5 text-sm">
+                  <div>{c.staff?.prenom} {c.staff?.nom} <span className="text-muted-foreground">· {(c.dates ?? []).length} date(s) · {dateFr(c.date_debut)}{c.date_fin && c.date_fin !== c.date_debut ? ` → ${dateFr(c.date_fin)}` : ""} · {c.total_heures} h · {mad(c.salaire_brut)}</span></div>
+                  <Button size="icon" variant="ghost" disabled={enCours} onClick={() => telecharger([c.id])}><Download className="h-4 w-4" /></Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}

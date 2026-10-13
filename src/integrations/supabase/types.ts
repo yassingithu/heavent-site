@@ -14,8 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      affectations: {
+        Row: {
+          contrat_id: string | null
+          created_at: string
+          date_jour: string
+          devis_id: string
+          heure_debut: string | null
+          heure_fin: string | null
+          heures: number
+          id: string
+          poste: string
+          staff_id: string
+          statut: string
+          taux_horaire: number
+        }
+        Insert: {
+          contrat_id?: string | null
+          created_at?: string
+          date_jour: string
+          devis_id: string
+          heure_debut?: string | null
+          heure_fin?: string | null
+          heures?: number
+          id?: string
+          poste?: string
+          staff_id: string
+          statut?: string
+          taux_horaire?: number
+        }
+        Update: {
+          contrat_id?: string | null
+          created_at?: string
+          date_jour?: string
+          devis_id?: string
+          heure_debut?: string | null
+          heure_fin?: string | null
+          heures?: number
+          id?: string
+          poste?: string
+          staff_id?: string
+          statut?: string
+          taux_horaire?: number
+        }
+        Relationships: [
+          { foreignKeyName: "affectations_devis_id_fkey"; columns: ["devis_id"]; isOneToOne: false; referencedRelation: "devis"; referencedColumns: ["id"] },
+          { foreignKeyName: "affectations_staff_id_fkey"; columns: ["staff_id"]; isOneToOne: false; referencedRelation: "staff"; referencedColumns: ["id"] },
+        ]
+      }
       contrats: {
         Row: {
+          devis_id: string | null
+          dates: Json | null
+          lieu: string | null
+          total_heures: number | null
           created_at: string
           date_debut: string
           date_fin: string | null
@@ -32,6 +84,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          devis_id?: string | null
+          dates?: Json | null
+          lieu?: string | null
+          total_heures?: number | null
           created_at?: string
           date_debut: string
           date_fin?: string | null
@@ -48,6 +104,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          devis_id?: string | null
+          dates?: Json | null
+          lieu?: string | null
+          total_heures?: number | null
           created_at?: string
           date_debut?: string
           date_fin?: string | null
@@ -64,6 +124,7 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          { foreignKeyName: "contrats_devis_id_fkey"; columns: ["devis_id"]; isOneToOne: false; referencedRelation: "devis"; referencedColumns: ["id"] },
           {
             foreignKeyName: "contrats_staff_id_fkey"
             columns: ["staff_id"]
@@ -239,6 +300,10 @@ export type Database = {
       }
       fiches_paie: {
         Row: {
+          details: Json | null
+          cnss: number | null
+          amo: number | null
+          generee_auto: boolean
           annee: number
           created_at: string
           deductions: number | null
@@ -254,6 +319,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          details?: Json | null
+          cnss?: number | null
+          amo?: number | null
+          generee_auto?: boolean
           annee: number
           created_at?: string
           deductions?: number | null
@@ -269,6 +338,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          details?: Json | null
+          cnss?: number | null
+          amo?: number | null
+          generee_auto?: boolean
           annee?: number
           created_at?: string
           deductions?: number | null
@@ -552,6 +625,8 @@ export type Database = {
       }
       staff: {
         Row: {
+          taux_horaire: number
+          updated_at: string | null
           adresse_complete: string | null
           age: number | null
           code_postal: string | null
@@ -591,6 +666,8 @@ export type Database = {
           ville: string | null
         }
         Insert: {
+          taux_horaire?: number
+          updated_at?: string | null
           adresse_complete?: string | null
           age?: number | null
           code_postal?: string | null
@@ -630,6 +707,8 @@ export type Database = {
           ville?: string | null
         }
         Update: {
+          taux_horaire?: number
+          updated_at?: string | null
           adresse_complete?: string | null
           age?: number | null
           code_postal?: string | null
@@ -677,6 +756,7 @@ export type Database = {
     Functions: {
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       staff_email_exists: { Args: { p_email: string }; Returns: boolean }
+      generer_fiches_paie: { Args: { p_annee: number; p_mois: number }; Returns: number }
     }
     Enums: {
       [_ in never]: never

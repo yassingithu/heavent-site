@@ -20,6 +20,10 @@ import { supabase, FUNCTIONS_URL } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { User, Session } from "@supabase/supabase-js";
 import DevisRapide from "@/components/admin/devis/DevisRapide";
+import FichesProfilStaff from "@/components/admin/staff/FichesProfilStaff";
+import PlanningDispos from "@/components/admin/staff/PlanningDispos";
+import FichesPaieMensuelles from "@/components/admin/paie/FichesPaieMensuelles";
+import ContratsEvenements from "@/components/admin/equipe/ContratsEvenements";
 
 const ADMIN_EMAIL = "i.chaigari@heaventagency.com";
 
@@ -1024,6 +1028,7 @@ const Admin = () => {
 
         {/* Disponibilités Tab */}
         <TabsContent value="disponibilites" className="space-y-4">
+          <PlanningDispos />
           <Card>
             <CardHeader>
               <CardTitle>Disponibilités du Personnel</CardTitle>
@@ -1292,6 +1297,7 @@ const Admin = () => {
 
         {/* Personnel Tab */}
         <TabsContent value="staff" className="space-y-4">
+          <FichesProfilStaff />
           {/* Recherche par date */}
           <Card>
             <CardHeader>
@@ -1439,6 +1445,7 @@ const Admin = () => {
 
         {/* Contrats Tab */}
         <TabsContent value="contrats" className="space-y-4">
+          <ContratsEvenements />
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Gestion des Contrats</CardTitle>
@@ -1657,6 +1664,7 @@ const Admin = () => {
 
         {/* Fiches de Paie Tab */}
         <TabsContent value="fiches" className="space-y-4">
+          <FichesPaieMensuelles />
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Gestion des Fiches de Paie</CardTitle>

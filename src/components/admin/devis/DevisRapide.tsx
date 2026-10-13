@@ -18,6 +18,7 @@ import {
 } from "./devisUtils";
 import CataloguePrestations from "./CataloguePrestations";
 import ParametresAgence from "./ParametresAgence";
+import EquipeEvenement from "@/components/admin/equipe/EquipeEvenement";
 
 interface DemandeEntreprise {
   id: string; nom: string; prenom: string; email: string; telephone?: string | null; entreprise: string;
@@ -471,6 +472,14 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   <div><Label>Nombre d'invités / participants</Label><Input type="number" min={0} value={form.nb_personnes} onChange={(e) => set("nb_personnes", e.target.value)} /></div>
                 </CardContent>
               </Card>
+
+              <EquipeEvenement
+                devisId={form.id}
+                titre={form.titre}
+                lieu={form.lieu}
+                dateDebut={form.date_evenement}
+                dateFin={form.date_fin_evenement}
+              />
 
               <Card>
                 <CardHeader className="space-y-3">
