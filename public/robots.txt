@@ -1,0 +1,33 @@
+# Heavent People Agency - Robots.txt
+User-agent: Googlebot
+Allow: /
+Disallow: /admin
+Disallow: /admin-auth
+Disallow: /auth
+Disallow: /staff-dashboard
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin
+Disallow: /admin-auth
+Disallow: /auth
+Disallow: /staff-dashboard
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin-auth
+Disallow: /auth
+Disallow: /staff-dashboard
+
+# Sitemap location
+Sitemap: https://heavent.ma/sitemap.xml
+
+# Crawl delay for politeness
+Crawl-delay: 1

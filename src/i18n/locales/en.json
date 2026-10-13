@@ -1,0 +1,389 @@
+{
+  "nav": {
+    "home": "Home",
+    "staffRegistration": "Staff Registration",
+    "business": "Business",
+    "weddings": "Weddings",
+    "about": "About",
+    "contact": "Contact",
+    "joinTeam": "Join the Team",
+    "staffSpace": "Staff Space"
+  },
+  "home": {
+    "heroTitle": "Exceptional Events",
+    "heroSubtitle": "Creator of Unique Experiences",
+    "heroDescription": "Heavent People Agency transforms your events into unforgettable moments thanks to our team of passionate professionals.",
+    "getQuote": "Get a Quote",
+    "joinUs": "Join Us",
+    "whyChooseTitle": "Why choose",
+    "whyChooseTitleBrand": "Heavent People Agency?",
+    "whyChooseDescription": "Recognized expertise and personalized service for all your events",
+    "experience": {
+      "title": "10+ Years of Experience",
+      "description": "Recognized expertise in luxury events"
+    },
+    "team": {
+      "title": "Professional Team",
+      "description": "Hosts and hostesses trained to the highest standards"
+    },
+    "service": {
+      "title": "Tailor-Made Service",
+      "description": "Each service adapted to your specific needs"
+    },
+    "satisfaction": {
+      "title": "Satisfaction Guaranteed",
+      "description": "Your success is our absolute priority"
+    },
+    "servicesTitle": "Our Services",
+    "servicesSubtitle": "A complete range of services for all your events",
+    "hostess": {
+      "title": "Hosts & Hostesses",
+      "description": "Professional and elegant reception for your corporate events"
+    },
+    "wedding": {
+      "title": "Wedding Services",
+      "description": "Complete support to make your wedding a perfect day"
+    },
+    "event": {
+      "title": "Event Management",
+      "description": "Organization and coordination of custom events"
+    },
+    "ctaTitle": "Ready to create an exceptional event?",
+    "ctaDescription": "Contact us today to discuss your project",
+    "contactUs": "Contact Us"
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "A question? A project? Let's talk about it together",
+    "form": {
+      "name": "Full Name",
+      "email": "Email",
+      "subject": "Subject",
+      "message": "Message",
+      "send": "Send Message",
+      "sending": "Sending...",
+      "success": "Message Sent!",
+      "successDescription": "Your message has been sent successfully. We will respond within 24 hours.",
+      "error": "Error",
+      "errorDescription": "An error occurred while sending. Please try again.",
+      "sendAnother": "Send Another Message"
+    },
+    "info": {
+      "phone": "Phone",
+      "phoneDescription": "Monday to Friday, 9am-6pm",
+      "email": "Email",
+      "emailDescription": "Response within 24h",
+      "address": "Address",
+      "addressValue": "Rabat, Morocco",
+      "addressDescription": "Appointment on request",
+      "instagram": "Instagram",
+      "instagramDescription": "Follow our achievements"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "businessQuote": "Business Quote",
+      "businessQuoteDescription": "Quote request for corporate event",
+      "weddingQuote": "Wedding Quote",
+      "weddingQuoteDescription": "Quote request for wedding services"
+    }
+  },
+  "staff": {
+    "title": "Registration",
+    "titleBrand": "Hosts & Hostesses",
+    "subtitle": "Join our team and participate in prestigious events",
+    "step": "Step",
+    "of": "of",
+    "personalInfo": {
+      "title": "Personal Information",
+      "description": "Enter your basic information",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "age": "Age",
+      "gender": "Gender",
+      "genderPlaceholder": "Select",
+      "male": "Male",
+      "female": "Female",
+      "city": "City",
+      "cityPlaceholder": "Select your city",
+      "phone": "Phone",
+      "email": "Email"
+    },
+    "measurements": {
+      "title": "Measurements & Experience",
+      "description": "Additional information and professional experience",
+      "height": "Height (cm)",
+      "chest": "Chest (cm)",
+      "waist": "Waist (cm)",
+      "hips": "Hips (cm)",
+      "drivingLicense": "I have a driving license",
+      "experience": "Professional Experience",
+      "experienceDescription": "Describe your experience in events, hospitality, or related fields..."
+    },
+    "availability": {
+      "title": "Availability & Documents",
+      "description": "Final information to complete your registration",
+      "weekAvailability": "Weekly Availability",
+      "documents": "Documents to Upload",
+      "portraitPhoto": "Portrait Photo",
+      "fullBodyPhoto": "Full Body Photo",
+      "idCard": "ID Card (front/back)",
+      "gdprConsent": "I accept that my personal data be processed in accordance with the",
+      "privacyPolicy": "privacy policy",
+      "gdprDescription": "and GDPR. This data will be used only for my application."
+    },
+    "days": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "cities": {
+      "rabat": "Rabat",
+      "casablanca": "Casablanca",
+      "marrakech": "Marrakech",
+      "fes": "Fez",
+      "tanger": "Tangier",
+      "agadir": "Agadir",
+      "meknes": "Meknes",
+      "oujda": "Oujda",
+      "kenitra": "Kenitra",
+      "tetouan": "Tetouan",
+      "other": "Other city"
+    },
+    "buttons": {
+      "continue": "Continue",
+      "previous": "Previous",
+      "submit": "Submit My Application",
+      "submitting": "Submitting..."
+    },
+    "success": {
+      "title": "Registration Successful!",
+      "description": "Your application has been sent successfully. Our team will review it and contact you within 48 hours.",
+      "backHome": "Back to Home"
+    },
+    "errors": {
+      "nameMin": "Name must contain at least 2 characters",
+      "firstNameMin": "First name must contain at least 2 characters",
+      "emailInvalid": "Invalid email",
+      "ageRequired": "Age is required",
+      "genderRequired": "Gender is required",
+      "cityRequired": "City is required",
+      "heightRequired": "Height is required",
+      "chestRequired": "Chest measurement is required",
+      "waistRequired": "Waist measurement is required",
+      "hipsRequired": "Hip measurement is required",
+      "experienceMin": "Experience must be detailed (minimum 10 characters)",
+      "availabilityMin": "Select at least one day of availability",
+      "gdprRequired": "You must accept the GDPR conditions"
+    }
+  },
+  "common": {
+    "required": "*",
+    "chooseFile": "Choose File",
+    "uploading": "Uploading...",
+    "fileUploaded": "✓ File Uploaded",
+    "required_field": "Required",
+    "select": "Select"
+  },
+  "about": {
+    "hero_title": "Our Story",
+    "hero_description": "For over 10 years, Heavent People Agency has been supporting businesses and individuals in creating exceptional events. Our expertise and passion make every project a memorable success.",
+    "stats": {
+      "years_experience": "Years of experience",
+      "successful_events": "Successful events",
+      "satisfied_clients": "Satisfied clients",
+      "partner_companies": "Partner companies"
+    },
+    "story_title": "Recognized expertise",
+    "story_paragraphs": {
+      "p1": "Heavent People Agency was born from the desire to revolutionize events in Morocco. Founded by a passionate team, our agency quickly established itself as a reference in the sector.",
+      "p2": "Our unique approach combines traditional know-how and innovation, allowing us to create events that leave a lasting impression. Whether for a prestigious corporate event or an intimate wedding, we put our expertise at the service of your dreams.",
+      "p3": "Today, we are proud to count among our clients the largest Belgian companies and to have contributed to the happiness of hundreds of couples on their special day."
+    },
+    "quality_cards": {
+      "premium_quality": "Premium Quality",
+      "premium_desc": "Guaranteed high-end service",
+      "expert_team": "Expert Team",
+      "expert_desc": "Trained and qualified professionals",
+      "custom_made": "Custom Made",
+      "custom_desc": "Each project is unique",
+      "reliability": "Reliability",
+      "reliability_desc": "Keeping commitments"
+    },
+    "values_title": "Our Values",
+    "values_description": "The principles that guide our action and make our difference",
+    "values": {
+      "excellence": {
+        "title": "Excellence",
+        "description": "We are committed to offering exceptional service at every event, by rigorously selecting our staff and maintaining the highest quality standards."
+      },
+      "passion": {
+        "title": "Passion",
+        "description": "Events are our passion. We put our whole heart into every project to create unique and memorable moments."
+      },
+      "professionalism": {
+        "title": "Professionalism",
+        "description": "Our experienced team guarantees impeccable professional service, adapted to the requirements of each client and type of event."
+      },
+      "innovation": {
+        "title": "Innovation",
+        "description": "We stay tuned to the latest trends to offer creative and modern solutions that make a lasting impression."
+      }
+    },
+    "services_title": "Our Expertise",
+    "services_description": "Complete services for all your events",
+    "services": {
+      "event_staffing": {
+        "title": "Event Staffing",
+        "description": "Professional hosts and hostesses for all types of corporate events",
+        "tags": ["Conferences", "Trade Shows", "Launches", "Seminars"]
+      },
+      "corporate_events": {
+        "title": "Corporate Events",
+        "description": "Complete organization of custom corporate events",
+        "tags": ["Team Building", "Parties", "Training", "AGM"]
+      },
+      "wedding_services": {
+        "title": "Wedding Services",
+        "description": "Personalized support to create the wedding of your dreams",
+        "tags": ["Wedding Planning", "Coordination", "Entertainment", "Decoration"]
+      }
+    },
+    "cta_title": "Ready to create your exceptional event?",
+    "cta_description": "Contact us now to discuss your project. Our team will support you at every step.",
+    "contact_us": "Contact us",
+    "request_quote": "Request a quote"
+  },
+  "dashboard": {
+    "staff_space": "Staff Space",
+    "logout": "Sign Out",
+    "loading": "Loading...",
+    "contracts_tab": "Contracts",
+    "payslips_tab": "Payslips",
+    "availability_tab": "Availability",
+    "contracts": {
+      "title": "My work contracts",
+      "description": "View your work contracts and their details",
+      "no_contracts": "No contracts available",
+      "type": "Type",
+      "start": "Start",
+      "end": "End",
+      "hours_week": "Hours/week",
+      "hourly_rate": "Hourly rate",
+      "gross_salary": "Gross salary",
+      "download_fr": "Download (FR)",
+      "download_en": "Download (EN)",
+      "download_ar": "Download (AR)",
+      "downloadable_before": "Downloadable before service start",
+      "contract_downloaded": "Contract downloaded",
+      "download_success": "File downloaded successfully",
+      "download_error": "Unable to download contract"
+    },
+    "payslips": {
+      "title": "My payslips",
+      "description": "Download your payslips in PDF",
+      "no_payslips": "No payslips available",
+      "gross_salary": "Gross salary",
+      "net_salary": "Net salary",
+      "hours": "Hours",
+      "bonus": "Bonus",
+      "download_pdf": "Download PDF",
+      "available_from": "Available from",
+      "fifth_working_day": "(5th working day of following month)",
+      "payslip_downloaded": "Payslip downloaded",
+      "opens_new_tab": "Your payslip opens in a new tab",
+      "download_error": "Unable to download payslip"
+    },
+    "availability": {
+      "title": "My availability",
+      "description": "Click on a date to manage your time slots",
+      "multiple_selection": "Multiple date selection",
+      "multiple_description": "Select multiple dates to apply the same slots",
+      "selected_dates": "Selected dates:",
+      "manage_slots": "Manage slots for these dates",
+      "previous": "Previous",
+      "next": "Next",
+      "legend": "Legend:",
+      "morning": "M = Morning (8am-12pm)",
+      "afternoon": "AF = Afternoon (12pm-6pm)",
+      "evening": "E = Evening (6pm-10pm)",
+      "click_date": "Click on a date to manage slots",
+      "availability_updated": "Availability updated",
+      "slot_added": "added",
+      "slot_removed": "removed",
+      "slots_updated": "Slots updated",
+      "slot_applied": "applied to",
+      "dates": "date(s)",
+      "slot_deleted": "Slot deleted",
+      "deletion_success": "Slot deleted successfully",
+      "error": "Error",
+      "update_error": "Unable to update availability",
+      "delete_error": "Unable to delete slot"
+    },
+    "account_not_found": "Account not found",
+    "register_first": "Your email is not registered as staff. Please register first."
+  },
+  "auth": {
+    "staff_login": "Staff Login",
+    "admin_login": "Administrator Login",
+    "connect_to_space": "Connect to your personal space",
+    "connect_admin_space": "Access to administration interface",
+    "email": "Email",
+    "password": "Password",
+    "email_placeholder": "your.email@example.com",
+    "password_placeholder": "••••••••",
+    "connecting": "Connecting...",
+    "sign_in": "Sign In",
+    "forgot_password": "Forgot password?",
+    "no_account": "Don't have an account yet?",
+    "register_as_staff": "Register as staff",
+    "password_recovery": "Password Recovery",
+    "enter_email_reset": "Enter your email to receive a reset link",
+    "sending": "Sending...",
+    "send_link": "Send Link",
+    "back_to_login": "Back to login",
+    "login_error": "Login Error",
+    "invalid_credentials": "Incorrect email or password",
+    "error": "Error",
+    "unexpected_error": "An unexpected error occurred",
+    "login_success": "Login successful",
+    "redirecting": "Redirecting to your space...",
+    "email_sent": "Email sent",
+    "check_email_reset": "Check your email to reset your password"
+  },
+  "wedding_quote": {
+    "title": "Wedding Quote Request",
+    "subtitle": "Let's create your dream wedding together",
+    "project_title": "Your wedding project",
+    "project_description": "Share your wedding details with us to receive a personalized quote",
+    "couples_section": "The future bride and groom",
+    "bride_name": "Bride's first name",
+    "groom_name": "Groom's first name",
+    "wedding_details": "Your wedding details",
+    "wedding_date": "Wedding date",
+    "guest_count": "Number of guests",
+    "main_location": "Main location (city/region)",
+    "select_city": "Select main city",
+    "ceremony_location": "Ceremony location (optional)",
+    "reception_location": "Reception location (optional)",
+    "estimated_budget": "Estimated budget",
+    "total_budget": "Total budget for services",
+    "select_budget": "Select a range",
+    "desired_services": "Desired services",
+    "select_services": "Select all services that interest you",
+    "contact": "Contact",
+    "email": "Email",
+    "phone": "Phone",
+    "special_requests": "Special requests or additional information",
+    "special_placeholder": "Describe your special wishes, wedding style envisioned, specific constraints, inspirations...",
+    "submitting": "Sending...",
+    "submit": "Send my quote request",
+    "request_sent": "Request sent!",
+    "success_message": "Your wedding quote request has been sent successfully. Our specialized team will review it and contact you within 24h to arrange a meeting and discuss your project in detail.",
+    "back_home": "Back to home",
+    "required": "required"
+  }
+}

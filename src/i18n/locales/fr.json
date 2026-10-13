@@ -1,0 +1,389 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "staffRegistration": "Inscription Staff",
+    "business": "Entreprises",
+    "weddings": "Événement",
+    "about": "À propos",
+    "contact": "Contact",
+    "joinTeam": "Rejoindre l'équipe",
+    "staffSpace": "Espace Staff"
+  },
+  "home": {
+    "heroTitle": "Événements d'Exception",
+    "heroSubtitle": "Créateur d'Expériences Uniques",
+    "heroDescription": "Heavent People Agency transforme vos événements en moments inoubliables grâce à notre équipe de professionnels passionnés.",
+    "getQuote": "Demander un devis",
+    "joinUs": "Nous rejoindre",
+    "whyChooseTitle": "Pourquoi choisir",
+    "whyChooseTitleBrand": "Heavent People Agency ?",
+    "whyChooseDescription": "Une expertise reconnue et un service personnalisé pour tous vos événements",
+    "experience": {
+      "title": "10+ Années d'Expérience",
+      "description": "Une expertise reconnue dans l'événementiel de luxe"
+    },
+    "team": {
+      "title": "Équipe Professionnelle",
+      "description": "Des hôtes et hôtesses formés aux plus hauts standards"
+    },
+    "service": {
+      "title": "Service Sur-Mesure",
+      "description": "Chaque prestation adaptée à vos besoins spécifiques"
+    },
+    "satisfaction": {
+      "title": "Satisfaction Garantie",
+      "description": "Votre réussite est notre priorité absolue"
+    },
+    "servicesTitle": "Nos Services",
+    "servicesSubtitle": "Une gamme complète de prestations pour tous vos événements",
+    "hostess": {
+      "title": "Hôtes & Hôtesses",
+      "description": "Accueil professionnel et élégant pour vos événements d'entreprise"
+    },
+    "wedding": {
+      "title": "Prestations Mariage",
+      "description": "Accompagnement complet pour faire de votre mariage un jour parfait"
+    },
+    "event": {
+      "title": "Événementiel",
+      "description": "Organisation et coordination d'événements sur mesure"
+    },
+    "ctaTitle": "Prêt à créer un événement exceptionnel ?",
+    "ctaDescription": "Contactez-nous dès aujourd'hui pour discuter de votre projet",
+    "contactUs": "Nous contacter"
+  },
+  "contact": {
+    "title": "Nous Contacter",
+    "subtitle": "Une question ? Un projet ? Parlons-en ensemble",
+    "form": {
+      "name": "Nom complet",
+      "email": "Email",
+      "subject": "Sujet",
+      "message": "Message",
+      "send": "Envoyer le message",
+      "sending": "Envoi en cours...",
+      "success": "Message envoyé !",
+      "successDescription": "Votre message a été envoyé avec succès. Nous vous répondrons sous 24h.",
+      "error": "Erreur",
+      "errorDescription": "Une erreur est survenue lors de l'envoi. Veuillez réessayer.",
+      "sendAnother": "Envoyer un autre message"
+    },
+    "info": {
+      "phone": "Téléphone",
+      "phoneDescription": "Du lundi au vendredi, 9h-18h",
+      "email": "Email",
+      "emailDescription": "Réponse sous 24h",
+      "address": "Adresse",
+      "addressValue": "Rabat, Maroc",
+      "addressDescription": "Rendez-vous sur demande",
+      "instagram": "Instagram",
+      "instagramDescription": "Suivez nos réalisations"
+    },
+    "quickActions": {
+      "title": "Actions rapides",
+      "businessQuote": "Devis Entreprise",
+      "businessQuoteDescription": "Demande de devis pour événement d'entreprise",
+      "weddingQuote": "Devis Événement",
+      "weddingQuoteDescription": "Demande de devis pour prestations d'événement"
+    }
+  },
+  "staff": {
+    "title": "Inscription",
+    "titleBrand": "Hôtes & Hôtesses",
+    "subtitle": "Rejoignez notre équipe et participez à des événements prestigieux",
+    "step": "Étape",
+    "of": "sur",
+    "personalInfo": {
+      "title": "Informations personnelles",
+      "description": "Renseignez vos informations de base",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "age": "Âge",
+      "gender": "Genre",
+      "genderPlaceholder": "Sélectionner",
+      "male": "Homme",
+      "female": "Femme",
+      "city": "Ville",
+      "cityPlaceholder": "Sélectionner votre ville",
+      "phone": "Téléphone",
+      "email": "Email"
+    },
+    "measurements": {
+      "title": "Mensurations & Expérience",
+      "description": "Informations complémentaires et expérience professionnelle",
+      "height": "Taille (cm)",
+      "chest": "Tour de poitrine (cm)",
+      "waist": "Tour de taille (cm)",
+      "hips": "Tour de hanches (cm)",
+      "drivingLicense": "J'ai le permis de conduire",
+      "experience": "Expérience professionnelle",
+      "experienceDescription": "Décrivez votre expérience dans l'événementiel, l'accueil, ou domaines connexes..."
+    },
+    "availability": {
+      "title": "Disponibilités & Documents",
+      "description": "Dernières informations pour finaliser votre inscription",
+      "weekAvailability": "Disponibilités dans la semaine",
+      "documents": "Documents à télécharger",
+      "portraitPhoto": "Photo portrait",
+      "fullBodyPhoto": "Photo plein pied",
+      "idCard": "Carte d'identité (recto/verso)",
+      "gdprConsent": "J'accepte que mes données personnelles soient traitées conformément à la",
+      "privacyPolicy": "politique de confidentialité",
+      "gdprDescription": "et au RGPD. Ces données seront utilisées uniquement dans le cadre de ma candidature."
+    },
+    "days": {
+      "monday": "Lundi",
+      "tuesday": "Mardi",
+      "wednesday": "Mercredi",
+      "thursday": "Jeudi",
+      "friday": "Vendredi",
+      "saturday": "Samedi",
+      "sunday": "Dimanche"
+    },
+    "cities": {
+      "rabat": "Rabat",
+      "casablanca": "Casablanca",
+      "marrakech": "Marrakech",
+      "fes": "Fès",
+      "tanger": "Tanger",
+      "agadir": "Agadir",
+      "meknes": "Meknès",
+      "oujda": "Oujda",
+      "kenitra": "Kénitra",
+      "tetouan": "Tétouan",
+      "other": "Autre ville"
+    },
+    "buttons": {
+      "continue": "Continuer",
+      "previous": "Précédent",
+      "submit": "Envoyer ma candidature",
+      "submitting": "Envoi en cours..."
+    },
+    "success": {
+      "title": "Inscription réussie !",
+      "description": "Votre candidature a été envoyée avec succès. Notre équipe va l'examiner et vous contacter sous 48h.",
+      "backHome": "Retour à l'accueil"
+    },
+    "errors": {
+      "nameMin": "Le nom doit contenir au moins 2 caractères",
+      "firstNameMin": "Le prénom doit contenir au moins 2 caractères",
+      "emailInvalid": "Email invalide",
+      "ageRequired": "L'âge est requis",
+      "genderRequired": "Le genre est requis",
+      "cityRequired": "La ville est requise",
+      "heightRequired": "La taille est requise",
+      "chestRequired": "Le tour de poitrine est requis",
+      "waistRequired": "Le tour de taille est requis",
+      "hipsRequired": "Le tour de hanches est requis",
+      "experienceMin": "L'expérience doit être détaillée (minimum 10 caractères)",
+      "availabilityMin": "Sélectionnez au moins un jour de disponibilité",
+      "gdprRequired": "Vous devez accepter les conditions RGPD"
+    }
+  },
+  "common": {
+    "required": "*",
+    "chooseFile": "Choisir un fichier",
+    "uploading": "Upload...",
+    "fileUploaded": "✓ Fichier uploadé",
+    "required_field": "Requis",
+    "select": "Sélectionner"
+  },
+  "about": {
+    "hero_title": "Notre Histoire",
+    "hero_description": "Depuis plus de 10 ans, Heavent People Agency accompagne entreprises et particuliers dans la création d'événements exceptionnels. Notre expertise et notre passion font de chaque projet une réussite mémorable.",
+    "stats": {
+      "years_experience": "Années d'expérience",
+      "successful_events": "Événements réussis",
+      "satisfied_clients": "Clients satisfaits",
+      "partner_companies": "Entreprises partenaires"
+    },
+    "story_title": "Une expertise reconnue",
+    "story_paragraphs": {
+      "p1": "Heavent People Agency est née de la volonté de révolutionner l'événementiel au Maroc. Fondée par une équipe passionnée, notre agence s'est rapidement imposée comme une référence dans le secteur.",
+      "p2": "Notre approche unique combine savoir-faire traditionnel et innovation, permettant de créer des événements qui marquent durablement les esprits. Que ce soit pour un événement corporate prestigieux ou un mariage intimiste, nous mettons notre expertise au service de vos rêves.",
+      "p3": "Aujourd'hui, nous sommes fiers de compter parmi nos clients les plus grandes entreprises belges et d'avoir contribué au bonheur de centaines de couples lors de leur jour J."
+    },
+    "quality_cards": {
+      "premium_quality": "Qualité Premium",
+      "premium_desc": "Service haut de gamme garanti",
+      "expert_team": "Équipe Experte",
+      "expert_desc": "Professionnels formés et qualifiés",
+      "custom_made": "Sur Mesure",
+      "custom_desc": "Chaque projet est unique",
+      "reliability": "Fiabilité",
+      "reliability_desc": "Respect des engagements"
+    },
+    "values_title": "Nos Valeurs",
+    "values_description": "Les principes qui guident notre action et font notre différence",
+    "values": {
+      "excellence": {
+        "title": "Excellence",
+        "description": "Nous nous engageons à offrir un service d'exception à chaque événement, en sélectionnant rigoureusement notre personnel et en maintenant les plus hauts standards de qualité."
+      },
+      "passion": {
+        "title": "Passion",
+        "description": "L'événementiel est notre passion. Nous mettons tout notre cœur dans chaque projet pour créer des moments uniques et mémorables."
+      },
+      "professionalism": {
+        "title": "Professionnalisme",
+        "description": "Notre équipe expérimentée garantit un service professionnel irréprochable, adapté aux exigences de chaque client et type d'événement."
+      },
+      "innovation": {
+        "title": "Innovation",
+        "description": "Nous restons à l'écoute des dernières tendances pour proposer des solutions créatives et modernes qui marquent les esprits."
+      }
+    },
+    "services_title": "Nos Expertises",
+    "services_description": "Des services complets pour tous vos événements",
+    "services": {
+      "event_staffing": {
+        "title": "Staffing Événementiel",
+        "description": "Hôtes et hôtesses professionnels pour tous types d'événements d'entreprise",
+        "tags": ["Congrès", "Salons", "Lancements", "Séminaires"]
+      },
+      "corporate_events": {
+        "title": "Événements Corporate",
+        "description": "Organisation complète d'événements d'entreprise sur mesure",
+        "tags": ["Team Building", "Soirées", "Formations", "AG"]
+      },
+      "wedding_services": {
+        "title": "Prestations Mariage",
+        "description": "Accompagnement personnalisé pour créer le mariage de vos rêves",
+        "tags": ["Wedding Planning", "Coordination", "Animation", "Décoration"]
+      }
+    },
+    "cta_title": "Prêt à créer votre événement d'exception ?",
+    "cta_description": "Contactez-nous dès maintenant pour discuter de votre projet. Notre équipe vous accompagnera à chaque étape.",
+    "contact_us": "Nous contacter",
+    "request_quote": "Demander un devis"
+  },
+  "dashboard": {
+    "staff_space": "Espace Staff",
+    "logout": "Déconnexion",
+    "loading": "Chargement...",
+    "contracts_tab": "Contrats",
+    "payslips_tab": "Fiches de paie",
+    "availability_tab": "Disponibilités",
+    "contracts": {
+      "title": "Mes contrats de travail",
+      "description": "Consultez vos contrats de travail et leurs détails",
+      "no_contracts": "Aucun contrat disponible",
+      "type": "Type",
+      "start": "Début",
+      "end": "Fin",
+      "hours_week": "Heures/semaine",
+      "hourly_rate": "Taux horaire",
+      "gross_salary": "Salaire brut",
+      "download_fr": "Télécharger (FR)",
+      "download_en": "Télécharger (EN)",
+      "download_ar": "Télécharger (AR)",
+      "downloadable_before": "Téléchargeable avant le début de la prestation",
+      "contract_downloaded": "Contrat téléchargé",
+      "download_success": "Le fichier a été téléchargé avec succès",
+      "download_error": "Impossible de télécharger le contrat"
+    },
+    "payslips": {
+      "title": "Mes fiches de paie",
+      "description": "Téléchargez vos fiches de paie en PDF",
+      "no_payslips": "Aucune fiche de paie disponible",
+      "gross_salary": "Salaire brut",
+      "net_salary": "Salaire net",
+      "hours": "Heures",
+      "bonus": "Prime",
+      "download_pdf": "Télécharger PDF",
+      "available_from": "Disponible à partir du",
+      "fifth_working_day": "(5ème jour ouvrable du mois suivant)",
+      "payslip_downloaded": "Fiche de paie téléchargée",
+      "opens_new_tab": "Votre fiche de paie s'ouvre dans un nouvel onglet",
+      "download_error": "Impossible de télécharger la fiche de paie"
+    },
+    "availability": {
+      "title": "Mes disponibilités",
+      "description": "Cliquez sur une date pour gérer vos créneaux horaires",
+      "multiple_selection": "Sélection multiple de dates",
+      "multiple_description": "Sélectionnez plusieurs dates pour appliquer les mêmes créneaux",
+      "selected_dates": "Dates sélectionnées :",
+      "manage_slots": "Gérer les créneaux pour ces dates",
+      "previous": "Précédent",
+      "next": "Suivant",
+      "legend": "Légende :",
+      "morning": "M = Matin (8h-12h)",
+      "afternoon": "AM = Après-midi (12h-18h)",
+      "evening": "S = Soir (18h-22h)",
+      "click_date": "Cliquez sur une date pour gérer les créneaux",
+      "availability_updated": "Disponibilité mise à jour",
+      "slot_added": "ajouté",
+      "slot_removed": "retiré",
+      "slots_updated": "Créneaux mis à jour",
+      "slot_applied": "appliqué à",
+      "dates": "date(s)",
+      "slot_deleted": "Créneau supprimé",
+      "deletion_success": "Le créneau a été supprimé avec succès",
+      "error": "Erreur",
+      "update_error": "Impossible de mettre à jour la disponibilité",
+      "delete_error": "Impossible de supprimer le créneau"
+    },
+    "account_not_found": "Compte non trouvé",
+    "register_first": "Votre email n'est pas enregistré comme staff. Veuillez vous inscrire d'abord."
+  },
+  "auth": {
+    "staff_login": "Connexion Staff",
+    "admin_login": "Connexion Administrateur",
+    "connect_to_space": "Connectez-vous à votre espace personnel",
+    "connect_admin_space": "Accès à l'interface d'administration",
+    "email": "Email",
+    "password": "Mot de passe",
+    "email_placeholder": "votre.email@exemple.com",
+    "password_placeholder": "••••••••",
+    "connecting": "Connexion...",
+    "sign_in": "Se connecter",
+    "forgot_password": "Mot de passe oublié ?",
+    "no_account": "Vous n'avez pas encore de compte ?",
+    "register_as_staff": "S'inscrire comme staff",
+    "password_recovery": "Récupération de mot de passe",
+    "enter_email_reset": "Entrez votre email pour recevoir un lien de réinitialisation",
+    "sending": "Envoi...",
+    "send_link": "Envoyer le lien",
+    "back_to_login": "Retour à la connexion",
+    "login_error": "Erreur de connexion",
+    "invalid_credentials": "Email ou mot de passe incorrect",
+    "error": "Erreur",
+    "unexpected_error": "Une erreur inattendue s'est produite",
+    "login_success": "Connexion réussie",
+    "redirecting": "Redirection vers votre espace...",
+    "email_sent": "Email envoyé",
+    "check_email_reset": "Vérifiez votre boîte mail pour réinitialiser votre mot de passe"
+  },
+  "wedding_quote": {
+    "title": "Demande de Devis Événement",
+    "subtitle": "Créons ensemble l'événement de vos rêves",
+    "project_title": "Votre projet",
+    "project_description": "Partagez-nous les détails de votre événement pour recevoir un devis personnalisé",
+    "couples_section": "Les futurs mariés",
+    "bride_name": "Prénom de la mariée",
+    "groom_name": "Prénom du marié",
+    "wedding_details": "Détails de votre mariage",
+    "wedding_date": "Date du mariage",
+    "guest_count": "Nombre d'invités",
+    "main_location": "Lieu principal (ville/région)",
+    "select_city": "Sélectionner la ville principale",
+    "ceremony_location": "Lieu de cérémonie (optionnel)",
+    "reception_location": "Lieu de réception (optionnel)",
+    "estimated_budget": "Budget estimé",
+    "total_budget": "Budget total pour les prestations",
+    "select_budget": "Sélectionner une fourchette",
+    "desired_services": "Prestations souhaitées",
+    "select_services": "Sélectionnez toutes les prestations qui vous intéressent",
+    "contact": "Contact",
+    "email": "Email",
+    "phone": "Téléphone",
+    "special_requests": "Demandes spéciales ou informations complémentaires",
+    "special_placeholder": "Décrivez vos souhaits particuliers, le style de mariage envisagé, contraintes spécifiques, inspirations...",
+    "submitting": "Envoi en cours...",
+    "submit": "Envoyer ma demande de devis",
+    "request_sent": "Demande envoyée !",
+    "success_message": "Votre demande de devis mariage a été envoyée avec succès. Notre équipe spécialisée va l'examiner et vous contacter sous 24h pour organiser un rendez-vous et discuter de votre projet en détail.",
+    "back_home": "Retour à l'accueil",
+    "required": "requis"
+  }
+}

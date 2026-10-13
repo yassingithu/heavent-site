@@ -1,0 +1,389 @@
+{
+  "nav": {
+    "home": "الرئيسية",
+    "staffRegistration": "تسجيل الموظفين",
+    "business": "الشركات",
+    "weddings": "الأعراس",
+    "about": "حول",
+    "contact": "اتصل",
+    "joinTeam": "انضم للفريق",
+    "staffSpace": "منطقة الموظفين"
+  },
+  "home": {
+    "heroTitle": "أحداث استثنائية",
+    "heroSubtitle": "مبدع التجارب الفريدة",
+    "heroDescription": "وكالة هيفينت بيبل تحول أحداثكم إلى لحظات لا تُنسى بفضل فريقنا من المحترفين المتحمسين.",
+    "getQuote": "احصل على عرض سعر",
+    "joinUs": "انضم إلينا",
+    "whyChooseTitle": "لماذا تختار",
+    "whyChooseTitleBrand": "وكالة هيفينت بيبل؟",
+    "whyChooseDescription": "خبرة معترف بها وخدمة شخصية لجميع أحداثكم",
+    "experience": {
+      "title": "+10 سنوات من الخبرة",
+      "description": "خبرة معترف بها في الأحداث الفاخرة"
+    },
+    "team": {
+      "title": "فريق محترف",
+      "description": "مضيفون ومضيفات مدربون على أعلى المعايير"
+    },
+    "service": {
+      "title": "خدمة مخصصة",
+      "description": "كل خدمة مُكيفة لاحتياجاتكم المحددة"
+    },
+    "satisfaction": {
+      "title": "الرضا مضمون",
+      "description": "نجاحكم هو أولويتنا المطلقة"
+    },
+    "servicesTitle": "خدماتنا",
+    "servicesSubtitle": "مجموعة كاملة من الخدمات لجميع أحداثكم",
+    "hostess": {
+      "title": "المضيفون والمضيفات",
+      "description": "استقبال مهني وأنيق لأحداث شركتكم"
+    },
+    "wedding": {
+      "title": "خدمات الزفاف",
+      "description": "مرافقة كاملة لجعل زفافكم يوماً مثالياً"
+    },
+    "event": {
+      "title": "إدارة الأحداث",
+      "description": "تنظيم وتنسيق الأحداث المخصصة"
+    },
+    "ctaTitle": "مستعد لإنشاء حدث استثنائي؟",
+    "ctaDescription": "اتصل بنا اليوم لمناقشة مشروعك",
+    "contactUs": "اتصل بنا"
+  },
+  "contact": {
+    "title": "اتصل بنا",
+    "subtitle": "سؤال؟ مشروع؟ دعونا نتحدث معاً",
+    "form": {
+      "name": "الاسم الكامل",
+      "email": "البريد الإلكتروني",
+      "subject": "الموضوع",
+      "message": "الرسالة",
+      "send": "إرسال الرسالة",
+      "sending": "جاري الإرسال...",
+      "success": "تم إرسال الرسالة!",
+      "successDescription": "تم إرسال رسالتك بنجاح. سنرد عليك خلال 24 ساعة.",
+      "error": "خطأ",
+      "errorDescription": "حدث خطأ أثناء الإرسال. يرجى المحاولة مرة أخرى.",
+      "sendAnother": "إرسال رسالة أخرى"
+    },
+    "info": {
+      "phone": "الهاتف",
+      "phoneDescription": "من الاثنين إلى الجمعة، 9ص-6م",
+      "email": "البريد الإلكتروني",
+      "emailDescription": "رد خلال 24 ساعة",
+      "address": "العنوان",
+      "addressValue": "الرباط، المغرب",
+      "addressDescription": "موعد عند الطلب",
+      "instagram": "إنستغرام",
+      "instagramDescription": "تابع إنجازاتنا"
+    },
+    "quickActions": {
+      "title": "إجراءات سريعة",
+      "businessQuote": "عرض سعر للشركات",
+      "businessQuoteDescription": "طلب عرض سعر لحدث الشركة",
+      "weddingQuote": "عرض سعر الزفاف",
+      "weddingQuoteDescription": "طلب عرض سعر لخدمات الزفاف"
+    }
+  },
+  "staff": {
+    "title": "التسجيل",
+    "titleBrand": "المضيفون والمضيفات",
+    "subtitle": "انضم إلى فريقنا وشارك في الأحداث المرموقة",
+    "step": "الخطوة",
+    "of": "من",
+    "personalInfo": {
+      "title": "المعلومات الشخصية",
+      "description": "أدخل معلوماتك الأساسية",
+      "firstName": "الاسم الأول",
+      "lastName": "اسم العائلة",
+      "age": "العمر",
+      "gender": "الجنس",
+      "genderPlaceholder": "اختر",
+      "male": "ذكر",
+      "female": "أنثى",
+      "city": "المدينة",
+      "cityPlaceholder": "اختر مدينتك",
+      "phone": "الهاتف",
+      "email": "البريد الإلكتروني"
+    },
+    "measurements": {
+      "title": "القياسات والخبرة",
+      "description": "معلومات إضافية وخبرة مهنية",
+      "height": "الطول (سم)",
+      "chest": "محيط الصدر (سم)",
+      "waist": "محيط الخصر (سم)",
+      "hips": "محيط الوركين (سم)",
+      "drivingLicense": "لدي رخصة قيادة",
+      "experience": "الخبرة المهنية",
+      "experienceDescription": "اشرح خبرتك في الأحداث، الضيافة، أو المجالات ذات الصلة..."
+    },
+    "availability": {
+      "title": "التوفر والمستندات",
+      "description": "معلومات أخيرة لإكمال تسجيلك",
+      "weekAvailability": "التوفر الأسبوعي",
+      "documents": "المستندات للتحميل",
+      "portraitPhoto": "صورة شخصية",
+      "fullBodyPhoto": "صورة كاملة الجسم",
+      "idCard": "بطاقة الهوية (الوجه/الظهر)",
+      "gdprConsent": "أوافق على معالجة بياناتي الشخصية وفقاً لـ",
+      "privacyPolicy": "سياسة الخصوصية",
+      "gdprDescription": "و GDPR. ستُستخدم هذه البيانات فقط لطلبي."
+    },
+    "days": {
+      "monday": "الاثنين",
+      "tuesday": "الثلاثاء",
+      "wednesday": "الأربعاء",
+      "thursday": "الخميس",
+      "friday": "الجمعة",
+      "saturday": "السبت",
+      "sunday": "الأحد"
+    },
+    "cities": {
+      "rabat": "الرباط",
+      "casablanca": "الدار البيضاء",
+      "marrakech": "مراكش",
+      "fes": "فاس",
+      "tanger": "طنجة",
+      "agadir": "أكادير",
+      "meknes": "مكناس",
+      "oujda": "وجدة",
+      "kenitra": "القنيطرة",
+      "tetouan": "تطوان",
+      "other": "مدينة أخرى"
+    },
+    "buttons": {
+      "continue": "متابعة",
+      "previous": "السابق",
+      "submit": "إرسال طلبي",
+      "submitting": "جاري الإرسال..."
+    },
+    "success": {
+      "title": "تم التسجيل بنجاح!",
+      "description": "تم إرسال طلبك بنجاح. سيراجعه فريقنا ويتصل بك خلال 48 ساعة.",
+      "backHome": "العودة للرئيسية"
+    },
+    "errors": {
+      "nameMin": "يجب أن يحتوي الاسم على حرفين على الأقل",
+      "firstNameMin": "يجب أن يحتوي الاسم الأول على حرفين على الأقل",
+      "emailInvalid": "بريد إلكتروني غير صالح",
+      "ageRequired": "العمر مطلوب",
+      "genderRequired": "الجنس مطلوب",
+      "cityRequired": "المدينة مطلوبة",
+      "heightRequired": "الطول مطلوب",
+      "chestRequired": "قياس الصدر مطلوب",
+      "waistRequired": "قياس الخصر مطلوب",
+      "hipsRequired": "قياس الوركين مطلوب",
+      "experienceMin": "يجب تفصيل الخبرة (10 أحرف كحد أدنى)",
+      "availabilityMin": "اختر يوماً واحداً على الأقل من التوفر",
+      "gdprRequired": "يجب قبول شروط GDPR"
+    }
+  },
+  "common": {
+    "required": "*",
+    "chooseFile": "اختر ملف",
+    "uploading": "جاري التحميل...",
+    "fileUploaded": "✓ تم تحميل الملف",
+    "required_field": "مطلوب",
+    "select": "اختر"
+  },
+  "about": {
+    "hero_title": "قصتنا",
+    "hero_description": "لأكثر من 10 سنوات، تدعم وكالة Heavent People الشركات والأفراد في إنشاء فعاليات استثنائية. خبرتنا وشغفنا يجعلان كل مشروع نجاحًا لا يُنسى.",
+    "stats": {
+      "years_experience": "سنوات من الخبرة",
+      "successful_events": "فعاليات ناجحة",
+      "satisfied_clients": "عملاء راضون",
+      "partner_companies": "شركات شريكة"
+    },
+    "story_title": "خبرة معترف بها",
+    "story_paragraphs": {
+      "p1": "وُلدت وكالة Heavent People من الرغبة في إحداث ثورة في مجال الفعاليات في المغرب. تأسست من قبل فريق متحمس، وسرعان ما رسخت وكالتنا نفسها كمرجع في القطاع.",
+      "p2": "نهجنا الفريد يجمع بين المعرفة التقليدية والابتكار، مما يسمح لنا بإنشاء فعاليات تترك انطباعًا دائمًا. سواء كان لحدث شركة مرموق أو زفاف حميم، نضع خبرتنا في خدمة أحلامكم.",
+      "p3": "اليوم، نحن فخورون بأن نضم بين عملائنا أكبر الشركات البلجيكية وأن نساهم في سعادة مئات الأزواج في يومهم الخاص."
+    },
+    "quality_cards": {
+      "premium_quality": "جودة ممتازة",
+      "premium_desc": "خدمة راقية مضمونة",
+      "expert_team": "فريق خبير",
+      "expert_desc": "محترفون مدربون ومؤهلون",
+      "custom_made": "مصنوع خصيصًا",
+      "custom_desc": "كل مشروع فريد",
+      "reliability": "الموثوقية",
+      "reliability_desc": "احترام الالتزامات"
+    },
+    "values_title": "قيمنا",
+    "values_description": "المبادئ التي توجه عملنا وتصنع اختلافنا",
+    "values": {
+      "excellence": {
+        "title": "التميز",
+        "description": "نحن ملتزمون بتقديم خدمة استثنائية في كل حدث، من خلال اختيار موظفينا بعناية والحفاظ على أعلى معايير الجودة."
+      },
+      "passion": {
+        "title": "الشغف",
+        "description": "الفعاليات هي شغفنا. نضع كل قلبنا في كل مشروع لخلق لحظات فريدة لا تُنسى."
+      },
+      "professionalism": {
+        "title": "الاحترافية",
+        "description": "فريقنا ذو الخبرة يضمن خدمة مهنية لا تشوبها شائبة، مكيفة مع متطلبات كل عميل ونوع الحدث."
+      },
+      "innovation": {
+        "title": "الابتكار",
+        "description": "نبقى مطلعين على أحدث الاتجاهات لتقديم حلول إبداعية وحديثة تترك انطباعًا دائمًا."
+      }
+    },
+    "services_title": "خبراتنا",
+    "services_description": "خدمات شاملة لجميع فعالياتكم",
+    "services": {
+      "event_staffing": {
+        "title": "موظفو الفعاليات",
+        "description": "مضيفون ومضيفات محترفون لجميع أنواع فعاليات الشركات",
+        "tags": ["مؤتمرات", "معارض", "إطلاقات", "ندوات"]
+      },
+      "corporate_events": {
+        "title": "فعاليات الشركات",
+        "description": "تنظيم كامل لفعاليات الشركات المخصصة",
+        "tags": ["بناء الفريق", "حفلات", "تدريب", "جمعية عامة"]
+      },
+      "wedding_services": {
+        "title": "خدمات الزفاف",
+        "description": "دعم شخصي لإنشاء زفاف أحلامكم",
+        "tags": ["تخطيط الزفاف", "التنسيق", "الترفيه", "الديكور"]
+      }
+    },
+    "cta_title": "مستعد لإنشاء حدثك الاستثنائي؟",
+    "cta_description": "اتصل بنا الآن لمناقشة مشروعك. سيدعمك فريقنا في كل خطوة.",
+    "contact_us": "اتصل بنا",
+    "request_quote": "طلب عرض أسعار"
+  },
+  "dashboard": {
+    "staff_space": "منطقة الموظفين",
+    "logout": "تسجيل الخروج",
+    "loading": "جاري التحميل...",
+    "contracts_tab": "العقود",
+    "payslips_tab": "قسائم الراتب",
+    "availability_tab": "التوفر",
+    "contracts": {
+      "title": "عقود العمل الخاصة بي",
+      "description": "عرض عقود العمل وتفاصيلها",
+      "no_contracts": "لا توجد عقود متاحة",
+      "type": "النوع",
+      "start": "البداية",
+      "end": "النهاية",
+      "hours_week": "ساعات/أسبوع",
+      "hourly_rate": "المعدل بالساعة",
+      "gross_salary": "الراتب الإجمالي",
+      "download_fr": "تحميل (FR)",
+      "download_en": "تحميل (EN)",
+      "download_ar": "تحميل (AR)",
+      "downloadable_before": "قابل للتحميل قبل بدء الخدمة",
+      "contract_downloaded": "تم تحميل العقد",
+      "download_success": "تم تحميل الملف بنجاح",
+      "download_error": "غير قادر على تحميل العقد"
+    },
+    "payslips": {
+      "title": "قسائم الراتب الخاصة بي",
+      "description": "تحميل قسائم الراتب بصيغة PDF",
+      "no_payslips": "لا توجد قسائم راتب متاحة",
+      "gross_salary": "الراتب الإجمالي",
+      "net_salary": "الراتب الصافي",
+      "hours": "الساعات",
+      "bonus": "المكافأة",
+      "download_pdf": "تحميل PDF",
+      "available_from": "متاح من",
+      "fifth_working_day": "(اليوم الخامس من الشهر التالي)",
+      "payslip_downloaded": "تم تحميل قسيمة الراتب",
+      "opens_new_tab": "تفتح قسيمة الراتب في علامة تبويب جديدة",
+      "download_error": "غير قادر على تحميل قسيمة الراتب"
+    },
+    "availability": {
+      "title": "توفري",
+      "description": "انقر على تاريخ لإدارة الفترات الزمنية",
+      "multiple_selection": "تحديد تواريخ متعددة",
+      "multiple_description": "حدد تواريخ متعددة لتطبيق نفس الفترات",
+      "selected_dates": "التواريخ المحددة:",
+      "manage_slots": "إدارة الفترات لهذه التواريخ",
+      "previous": "السابق",
+      "next": "التالي",
+      "legend": "وسيلة الإيضاح:",
+      "morning": "ص = الصباح (8ص-12م)",
+      "afternoon": "بع = بعد الظهر (12م-6م)",
+      "evening": "م = المساء (6م-10م)",
+      "click_date": "انقر على تاريخ لإدارة الفترات",
+      "availability_updated": "تم تحديث التوفر",
+      "slot_added": "مضاف",
+      "slot_removed": "محذوف",
+      "slots_updated": "تم تحديث الفترات",
+      "slot_applied": "مطبق على",
+      "dates": "تاريخ/تواريخ",
+      "slot_deleted": "تم حذف الفترة",
+      "deletion_success": "تم حذف الفترة بنجاح",
+      "error": "خطأ",
+      "update_error": "غير قادر على تحديث التوفر",
+      "delete_error": "غير قادر على حذف الفترة"
+    },
+    "account_not_found": "الحساب غير موجود",
+    "register_first": "بريدك الإلكتروني غير مسجل كموظف. يرجى التسجيل أولاً."
+  },
+  "auth": {
+    "staff_login": "تسجيل دخول الموظفين",
+    "admin_login": "تسجيل دخول المدير",
+    "connect_to_space": "قم بتسجيل الدخول إلى مساحتك الشخصية",
+    "connect_admin_space": "الوصول إلى واجهة الإدارة",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "email_placeholder": "your.email@example.com",
+    "password_placeholder": "••••••••",
+    "connecting": "جاري الاتصال...",
+    "sign_in": "تسجيل الدخول",
+    "forgot_password": "نسيت كلمة المرور؟",
+    "no_account": "ليس لديك حساب بعد؟",
+    "register_as_staff": "التسجيل كموظف",
+    "password_recovery": "استعادة كلمة المرور",
+    "enter_email_reset": "أدخل بريدك الإلكتروني لتلقي رابط إعادة التعيين",
+    "sending": "جاري الإرسال...",
+    "send_link": "إرسال الرابط",
+    "back_to_login": "العودة إلى تسجيل الدخول",
+    "login_error": "خطأ في تسجيل الدخول",
+    "invalid_credentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+    "error": "خطأ",
+    "unexpected_error": "حدث خطأ غير متوقع",
+    "login_success": "تم تسجيل الدخول بنجاح",
+    "redirecting": "جاري إعادة التوجيه إلى مساحتك...",
+    "email_sent": "تم إرسال البريد الإلكتروني",
+    "check_email_reset": "تحقق من بريدك الإلكتروني لإعادة تعيين كلمة المرور"
+  },
+  "wedding_quote": {
+    "title": "طلب عرض أسعار الزفاف",
+    "subtitle": "دعونا ننشئ زفاف أحلامكم معًا",
+    "project_title": "مشروع زفافكم",
+    "project_description": "شاركونا تفاصيل زفافكم للحصول على عرض أسعار مخصص",
+    "couples_section": "العروسان المستقبليان",
+    "bride_name": "اسم العروس الأول",
+    "groom_name": "اسم العريس الأول",
+    "wedding_details": "تفاصيل زفافكم",
+    "wedding_date": "تاريخ الزفاف",
+    "guest_count": "عدد الضيوف",
+    "main_location": "الموقع الرئيسي (المدينة/المنطقة)",
+    "select_city": "اختر المدينة الرئيسية",
+    "ceremony_location": "موقع الحفل (اختياري)",
+    "reception_location": "موقع الاستقبال (اختياري)",
+    "estimated_budget": "الميزانية المقدرة",
+    "total_budget": "الميزانية الإجمالية للخدمات",
+    "select_budget": "اختر نطاق",
+    "desired_services": "الخدمات المرغوبة",
+    "select_services": "اختر جميع الخدمات التي تهمك",
+    "contact": "التواصل",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "special_requests": "طلبات خاصة أو معلومات إضافية",
+    "special_placeholder": "صف رغباتكم الخاصة، نمط الزفاف المتصور، القيود المحددة، الإلهام...",
+    "submitting": "جاري الإرسال...",
+    "submit": "إرسال طلب عرض الأسعار",
+    "request_sent": "تم إرسال الطلب!",
+    "success_message": "تم إرسال طلب عرض أسعار الزفاف بنجاح. سيقوم فريقنا المتخصص بمراجعته والتواصل معكم خلال 24 ساعة لترتيب اجتماع ومناقشة مشروعكم بالتفصيل.",
+    "back_home": "العودة للرئيسية",
+    "required": "مطلوب"
+  }
+}
