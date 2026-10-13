@@ -1,7 +1,7 @@
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
+import Seo from "@/components/Seo";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Helmet } from "react-helmet-async";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -148,14 +148,7 @@ const WeddingQuote = () => {
 
   return (
     <div>
-      <Helmet>
-        <title>Devis Événement Personnalisé | Heavent People Agency</title>
-        <meta name="description" content="Demandez votre devis gratuit pour votre événement au Maroc. Mariage, anniversaire, fiançailles - Organisation sur mesure par des professionnels." />
-        <meta name="keywords" content="devis événement Maroc, organisation mariage, wedding planner Maroc, devis gratuit événement" />
-        <meta property="og:title" content="Devis Événement | Heavent People Agency" />
-        <meta property="og:description" content="Créons ensemble l'événement de vos rêves. Devis personnalisé gratuit." />
-        <link rel="canonical" href="https://heavent.ma/devis-mariage" />
-      </Helmet>
+      <Seo page="mariage" />
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/30 py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">

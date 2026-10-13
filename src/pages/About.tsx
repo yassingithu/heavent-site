@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
+import Seo from "@/components/Seo";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
-import { Helmet } from "react-helmet-async";
 import { 
   Award, 
   Users, 
@@ -66,14 +66,7 @@ const About = () => {
 
   return (
     <div>
-      <Helmet>
-        <title>À Propos | Notre Histoire | Heavent People Agency Maroc</title>
-        <meta name="description" content="Découvrez l'histoire de Heavent People Agency, agence événementielle de prestige au Maroc. +10 ans d'expérience, 500+ événements réussis, 98% de clients satisfaits." />
-        <meta name="keywords" content="Heavent People Agency, agence événementielle Maroc, histoire entreprise, événements prestige, équipe professionnelle" />
-        <meta property="og:title" content="À Propos de Heavent People Agency" />
-        <meta property="og:description" content="Notre expertise et notre passion au service de vos événements exceptionnels depuis plus de 10 ans." />
-        <link rel="canonical" href="https://heavent.ma/a-propos" />
-      </Helmet>
+      <Seo page="apropos" />
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="py-24 bg-gradient-to-b from-background to-accent/30">

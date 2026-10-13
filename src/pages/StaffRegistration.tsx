@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import Seo from "@/components/Seo";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -13,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { FileUpload } from "@/components/ui/file-upload";
 import { toast, useToast } from "@/hooks/use-toast";
 import { CheckCircle, User, Ruler, Calendar, Upload, Lock } from "lucide-react";
+import { ParcoursInscription, Confettis } from "@/components/inscription/ParcoursInscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -69,6 +71,8 @@ type FormData = z.infer<typeof formSchema>;
 const StaffRegistration = () => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Nouvelle étape : on remonte en haut pour voir la progression et les nouvelles questions
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -284,13 +288,26 @@ const StaffRegistration = () => {
     nextStep();
   };
 
+  // Progression « en direct » : se remplit à chaque réponse donnée
+  const valeurs = watch();
+  const CHAMPS_OBLIGATOIRES = ['nom', 'prenom', 'age', 'genre', 'ville', 'telephone', 'email', 'adresse_complete', 'code_postal', 'nationalite',
+    'date_naissance', 'lieu_naissance', 'situation_familiale', 'numero_identite', 'niveau_etudes', 'nom_urgence', 'telephone_urgence', 'taille',
+    'taille_pantalon', 'taille_haut', 'pointure', 'taille_confection', 'couleur_cheveux', 'couleur_yeux', 'competences', 'langues', 'experience',
+    'availability', 'password', 'confirmPassword', 'rgpdConsent'] as const;
+  const champsRemplis = CHAMPS_OBLIGATOIRES.filter((c) => {
+    const v = (valeurs as any)[c];
+    return Array.isArray(v) ? v.length > 0 : typeof v === "boolean" ? v : v != null && String(v).trim() !== "";
+  }).length;
+
   if (step === 6) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-accent/30 flex items-center justify-center py-12">
         <Card className="max-w-md mx-4 text-center">
           <CardContent className="p-8">
-            <CheckCircle className="text-green-500 mx-auto mb-4" size={64} />
-            <h2 className="text-2xl font-bold mb-4">Inscription réussie !</h2>
+            <Confettis />
+            <div className="text-6xl mb-3" aria-hidden>🏆</div>
+            <div className="inline-block text-xs uppercase tracking-widest bg-primary/15 text-primary font-semibold rounded-full px-3 py-1 mb-3">Badge débloqué · Membre de la team Heavent</div>
+            <h2 className="text-2xl font-bold mb-4">Bienvenue dans l'équipe !</h2>
             <p className="text-muted-foreground mb-6">
               Votre compte est créé et déjà actif. Vous pouvez dès maintenant indiquer vos disponibilités dans votre espace staff. Un email de bienvenue vous a été envoyé.
             </p>
@@ -311,29 +328,18 @@ const StaffRegistration = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/30 py-12">
       <div className="container mx-auto px-4">
+        <Seo page="inscription" />
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-serif font-bold mb-4">
               Inscription <span className="text-primary">Hôtes & Hôtesses</span>
             </h1>
             <p className="text-xl text-muted-foreground">
-              Rejoignez notre équipe et participez à des événements prestigieux
+              Rejoins la team et participe à des événements prestigieux — 5 petites étapes, environ 7 minutes ⏱️
             </p>
           </div>
 
-          {/* Progress Bar */}
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium">Étape {step} sur 5</span>
-              <span className="text-sm text-muted-foreground">{Math.round((Math.min(step, 5) / 5) * 100)}%</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-2">
-              <div 
-                className="bg-primary h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(Math.min(step, 5) / 5) * 100}%` }}
-              />
-            </div>
-          </div>
+          <ParcoursInscription etape={Math.min(step, 5)} remplis={champsRemplis} total={CHAMPS_OBLIGATOIRES.length} />
 
           <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
             {step === 1 && (

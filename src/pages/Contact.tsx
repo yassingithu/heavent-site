@@ -1,9 +1,9 @@
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
+import Seo from "@/components/Seo";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
-import { Helmet } from "react-helmet-async";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -145,14 +145,7 @@ const Contact = () => {
 
   return (
     <div>
-      <Helmet>
-        <title>Contact | Nous Contacter | Heavent People Agency Maroc</title>
-        <meta name="description" content="Contactez Heavent People Agency pour votre projet événementiel au Maroc. Devis gratuit, conseil personnalisé. ☎️ +212 6 10 93 96 55 📧 info@heaventagency.com" />
-        <meta name="keywords" content="contact Heavent People Agency, devis événement Maroc, projet événementiel, consultation gratuite" />
-        <meta property="og:title" content="Contact | Heavent People Agency" />
-        <meta property="og:description" content="Une question ? Un projet ? Parlons-en ensemble. Contactez notre équipe d'experts." />
-        <link rel="canonical" href="https://heavent.ma/contact" />
-      </Helmet>
+      <Seo page="contact" />
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="py-24 bg-gradient-to-b from-background to-accent/30">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -9,18 +9,18 @@ import "./i18n/index.ts";
 import SplashScreen from "./components/SplashScreen";
 import Layout from "./components/layout/Layout";
 import Home from "./pages/Home";
-import StaffRegistration from "./pages/StaffRegistration";
-import BusinessQuote from "./pages/BusinessQuote";
-import WeddingQuote from "./pages/WeddingQuote";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import Admin from "./pages/Admin";
-import AdminAuth from "./pages/AdminAuth";
-import Auth from "./pages/Auth";
-import StaffDashboard from "./pages/StaffDashboard";
-import AuthCallback from "./pages/AuthCallback";
-import NotFound from "./pages/NotFound";
+const StaffRegistration = lazy(() => import("./pages/StaffRegistration"));
+const BusinessQuote = lazy(() => import("./pages/BusinessQuote"));
+const WeddingQuote = lazy(() => import("./pages/WeddingQuote"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const Admin = lazy(() => import("./pages/Admin"));
+const AdminAuth = lazy(() => import("./pages/AdminAuth"));
+const Auth = lazy(() => import("./pages/Auth"));
+const StaffDashboard = lazy(() => import("./pages/StaffDashboard"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 import RetourEnHaut from "./components/RetourEnHaut";
 
 const queryClient = new QueryClient();
@@ -45,6 +45,7 @@ const App = () => {
         <BrowserRouter>
           <RetourEnHaut />
           <Layout>
+            <Suspense fallback={<div className="min-h-[60vh]" />}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/inscription-staff" element={<StaffRegistration />} />
@@ -61,6 +62,7 @@ const App = () => {
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </Layout>
         </BrowserRouter>
       </TooltipProvider>

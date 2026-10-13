@@ -1,0 +1,9 @@
+# Heavent People Agency
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin-auth
+Disallow: /auth
+Disallow: /staff-dashboard
+
+Sitemap: https://heaventagency.com/sitemap.xml

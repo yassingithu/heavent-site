@@ -1,3 +1,4 @@
+import Seo from "@/components/Seo";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -306,6 +307,7 @@ const Auth = () => {
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 p-4 sm:p-6 lg:p-8">
+      <Seo noindex />
       <Card className="w-full max-w-sm sm:max-w-md shadow-xl border-0 bg-white/95 backdrop-blur-sm">
         <CardHeader className="text-center pb-4 sm:pb-6">
           <CardTitle className="text-xl sm:text-2xl font-bold">{t('auth.staff_login')}</CardTitle>

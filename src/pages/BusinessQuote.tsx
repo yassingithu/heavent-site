@@ -1,6 +1,6 @@
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
+import Seo from "@/components/Seo";
 import { useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -116,14 +116,7 @@ const BusinessQuote = () => {
 
   return (
     <div>
-      <Helmet>
-        <title>Devis Entreprise | Événements Corporate Maroc | Heavent People Agency</title>
-        <meta name="description" content="Demandez votre devis gratuit pour votre événement d'entreprise au Maroc. Staffing professionnel, hôtes et hôtesses pour congrès, salons, séminaires." />
-        <meta name="keywords" content="devis entreprise Maroc, staffing événementiel, hôte hôtesse, événement corporate, congrès salon Maroc" />
-        <meta property="og:title" content="Devis Entreprise | Heavent People Agency" />
-        <meta property="og:description" content="Solutions professionnelles pour vos événements d'entreprise. Devis gratuit et personnalisé." />
-        <link rel="canonical" href="https://heavent.ma/devis-entreprise" />
-      </Helmet>
+      <Seo page="entreprise" />
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/30 py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">

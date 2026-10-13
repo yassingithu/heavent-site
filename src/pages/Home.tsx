@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
+import Seo from "@/components/Seo";
 import { useTranslation } from "react-i18next";
-import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -67,16 +67,7 @@ const Home = () => {
 
   return (
     <div>
-      <Helmet>
-        <title>Heavent People Agency - Événements d'Exception au Maroc</title>
-        <meta name="description" content="Agence événementielle de prestige au Maroc. Hôtes, hôtesses et organisation d'événements corporate, mariages et prestations sur mesure. +10 ans d'expérience." />
-        <meta name="keywords" content="événementiel Maroc, hôtesse événement, organisateur mariage, staff événementiel, prestations luxe, Rabat, Casablanca" />
-        <meta property="og:title" content="Heavent People Agency - Événements d'Exception" />
-        <meta property="og:description" content="Créateur d'expériences uniques au Maroc. Transformez vos événements en moments inoubliables." />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://heavent.ma" />
-        <link rel="canonical" href="https://heavent.ma" />
-      </Helmet>
+      <Seo page="accueil" />
       {/* Hero Section */}
       <section 
         className="relative min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat"
@@ -84,6 +75,9 @@ const Home = () => {
       >
         <div className="container mx-auto px-4 text-center text-white">
           <div className="max-w-4xl mx-auto animate-fade-in">
+            <p className="uppercase tracking-[0.2em] text-xs md:text-sm text-primary/90 mb-4">
+              Agence d'hôtesses & d'événementiel · Rabat · Casablanca · Marrakech
+            </p>
             <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6">
               {t('home.heroTitle')}
               <span className="block text-primary">{t('home.heroSubtitle')}</span>
@@ -227,6 +221,32 @@ const Home = () => {
       </section>
 
       {/* Final CTA Section */}
+      {/* Partout au Maroc (contenu local utile aux clients… et à Google) */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4 text-center">Hôtesses d'accueil et staff événementiel partout au Maroc</h2>
+          <p className="text-lg text-muted-foreground text-center max-w-3xl mx-auto mb-10">
+            Salons, congrès, lancements de produit, soirées d'entreprise ou mariages : nous sélectionnons des hôtes et hôtesses
+            bilingues (français, arabe, anglais), formés à l'accueil haut de gamme, et nous gérons pour vous contrats, tenues et coordination sur place.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              ["Rabat", "Siège de l'agence : accueil protocolaire, congrès, ambassades et institutions."],
+              ["Casablanca", "Salons professionnels, lancements de marque, séminaires et soirées d'entreprise."],
+              ["Marrakech", "Mariages, événements de prestige, incentives et accueil VIP dans les palaces."],
+              ["Tanger", "Congrès, inaugurations et événements corporate dans la région du Nord."],
+              ["Agadir", "Séminaires, événements hôteliers et animations commerciales."],
+              ["Fès", "Congrès et événements culturels ; nos équipes se déplacent aussi partout au Maroc, sur devis."],
+            ].map(([ville, texte]) => (
+              <div key={ville} className="rounded-lg border bg-card p-5">
+                <h3 className="font-semibold text-lg mb-1">Hôtesses à {ville}</h3>
+                <p className="text-sm text-muted-foreground">{texte}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="py-24 bg-foreground text-background">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">

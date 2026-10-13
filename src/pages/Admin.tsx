@@ -1,3 +1,4 @@
+import Seo from "@/components/Seo";
 import { useState, useEffect } from "react";
 import { estAdmin } from "@/lib/admin";
 import { useNavigate } from "react-router-dom";
@@ -934,6 +935,7 @@ const Admin = () => {
 
   return (
     <div className="container mx-auto px-3 py-4 sm:p-6">
+      <Seo noindex />
       {/* En-tête avec déconnexion */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 sm:mb-8">
         <div>

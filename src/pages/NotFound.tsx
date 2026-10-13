@@ -1,3 +1,4 @@
+import Seo from "@/components/Seo";
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-accent/30 px-4">
+      <Seo noindex />
       <Card className="max-w-md w-full text-center animate-fade-in">
         <CardContent className="p-8">
           <div className="text-8xl font-bold text-primary mb-4">404</div>

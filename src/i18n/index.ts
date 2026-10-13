@@ -31,7 +31,8 @@ i18n
     },
 
     detection: {
-      order: ['localStorage', 'navigator', 'htmlTag'],
+      // Français par défaut (site et Google) ; le visiteur peut changer de langue avec le sélecteur
+      order: ['localStorage', 'htmlTag'],
       caches: ['localStorage'],
     },
   });
