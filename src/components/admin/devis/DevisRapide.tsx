@@ -107,15 +107,50 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     setOnglet("editeur");
   };
 
+  /** Pré-remplit le devis avec les prestations du catalogue correspondant aux services cochés par le client. */
+  const lignesDepuisDemandeMariage = (dem: DemandeMariage): Ligne[] => {
+    const services = (dem.services ?? "").toLowerCase();
+    const texte = `${dem.remarques ?? ""}`.toLowerCase();
+    const invites = Number(dem.nb_invites || 0);
+    const res: Ligne[] = [];
+    const ajouter = (designation: string, quantite = 1, duree = 1, description?: string) => {
+      const c = catalogue.find((x) => x.actif && x.designation === designation);
+      if (!c) return;
+      res.push({ ...ligneVide(), designation: c.designation, description: description ?? c.description ?? "", quantite, duree,
+        unite: c.unite as Ligne["unite"], prix_unitaire: Number(c.prix_unitaire) });
+    };
+    if (services.includes("wedding planner")) ajouter("Organisation complète du mariage");
+    if (services.includes("hôtesse")) {
+      // Le client précise souvent le nombre dans ses remarques : « 3 hôtesses et 2 stewards »
+      const nb = (re: RegExp) => Number(texte.match(re)?.[1] ?? 0);
+      const hotesses = nb(/(\d+)\s*h[oô]tesses?/), hotes = nb(/(\d+)\s*(?:stewards?|h[oô]tes\b)/);
+      const bilingue = /bilingue|trilingue|fran[cç]ais.*arabe|arabe.*fran[cç]ais|anglais/.test(texte);
+      const modele = bilingue ? "Hôtesse bilingue" : "Hôtesses d'accueil invités (mariage)";
+      if (hotesses || hotes) {
+        if (hotesses) ajouter(modele, hotesses, 1, bilingue ? "Hôtesses d'accueil bilingues pour l'accueil et le placement des invités" : undefined);
+        if (hotes) { ajouter(modele, hotes, 1, `Stewards${bilingue ? " bilingues" : ""} — accueil, orientation et placement des invités`); res[res.length - 1].designation = `Steward${bilingue ? " bilingue" : ""}`; }
+      } else ajouter(modele, Math.max(2, Math.ceil(invites / 50)));
+    }
+    if (services.includes("traiteur")) ajouter("Traiteur mariage (menu complet)", invites || 1);
+    if (services.includes("dj")) ajouter("DJ / animation musicale");
+    if (services.includes("décoration")) ajouter("Décoration et art floral");
+    if (services.includes("photographe")) ajouter("Photographe mariage");
+    if (services.includes("vidéaste")) ajouter("Vidéaste mariage");
+    if (services.includes("transport")) ajouter("Transport des invités (navette)", Math.max(1, Math.ceil(invites / 50)));
+    if (services.includes("cérémonie")) res.push({ ...ligneVide(), designation: "Officiant / maître de cérémonie", description: "Cérémonie personnalisée", unite: "forfait", prix_unitaire: 6000 });
+    return res.length ? res : [ligneVide()];
+  };
+
   const depuisDemandeMariage = (dem: DemandeMariage) => {
     const f = nouveauDevis(params);
     setForm({
       ...f, type: "mariage", demande_mariage_id: dem.id,
       client_nom: `${dem.prenom} ${dem.nom}`.trim(), client_email: dem.email ?? "", client_telephone: dem.telephone ?? "",
-      titre: dem.type_evenement || "Mariage",
+      titre: `${dem.type_evenement || "Mariage"} ${[dem.nom, dem.prenom].filter(Boolean).join(" & ")}`.trim(),
       date_evenement: dem.date_mariage ?? "", lieu: dem.lieu ?? "",
       nb_personnes: dem.nb_invites ? String(dem.nb_invites) : "",
       notes_internes: [dem.services && `Services demandés : ${dem.services}`, dem.remarques && `Remarques : ${dem.remarques}`].filter(Boolean).join("\n"),
+      lignes: lignesDepuisDemandeMariage(dem),
     });
     setOnglet("editeur");
   };

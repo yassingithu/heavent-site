@@ -98,9 +98,12 @@ export async function telechargerContrats(contratIds: string[], nom?: string) {
   const { data: agence } = await supabase.from("parametres_agence").select("*").eq("id", 1).maybeSingle();
   const liste = (contrats ?? []) as any[];
   liste.sort((a, b) => `${a.staff?.nom}${a.staff?.prenom}`.localeCompare(`${b.staff?.nom}${b.staff?.prenom}`));
+  // Le staff n'a pas accès à la table devis : on retombe sur les infos copiées dans le contrat
+  liste.forEach((c) => { c.devis = { titre: c.devis?.titre ?? c.evenement ?? "", numero: c.devis?.numero ?? c.devis_numero ?? "", lieu: c.devis?.lieu ?? c.lieu }; });
   const pages = liste.flatMap((c) => [pageContrat(c, c.staff ?? {}, c.devis, agence), pageConditions(c, c.staff ?? {}, c.devis, agence)]);
   const fichier = nom ?? (liste.length === 1
     ? nomFichier("Contrat", liste[0].staff?.prenom, liste[0].staff?.nom, liste[0].devis?.numero)
     : nomFichier("Contrats", liste[0]?.devis?.numero, `${liste.length}`));
+  if (!liste.length) throw new Error("Contrat introuvable");
   await telechargerPdf(pages, cssContrat, fichier);
 }

@@ -27,6 +27,14 @@ interface Props {
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const jourFr = (s: string) => new Date(s + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 
+/** Durée en heures entre deux horaires "HH:MM" (une fin à minuit ou après minuit compte sur le jour suivant). */
+export function dureeHeures(debut: string, fin: string) {
+  const m = (s: string) => { const [h, mi] = s.split(":").map(Number); return h * 60 + (mi || 0); };
+  let d = m(fin) - m(debut);
+  if (d <= 0) d += 24 * 60;
+  return Math.round((d / 60) * 100) / 100;
+}
+
 export function datesEvenement(debut: string, fin: string) {
   if (!debut) return [];
   const res: string[] = [];
@@ -46,6 +54,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
   const [occupes, setOccupes] = useState<{ staff_id: string; date_jour: string; numero: string | null }[]>([]);
   const [ajoutManuel, setAjoutManuel] = useState("");
   const [enCours, setEnCours] = useState(false);
+  const [horaireEquipe, setHoraireEquipe] = useState<{ debut: string | null; fin: string | null }>({ debut: null, fin: null });
 
   useEffect(() => { if (!dates.includes(jour)) setJour(dates[0] ?? ""); }, [dates, jour]);
 
@@ -91,7 +100,9 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
         poste: modele?.poste ?? "Hôte / hôtesse d'accueil",
         heures: modele?.heures ?? 8,
         taux_horaire: modele?.taux_horaire ?? Number(s?.taux_horaire ?? 60),
-        heure_debut: dispo?.heure_debut ?? null, heure_fin: dispo?.heure_fin ?? null,
+        heure_debut: modele?.heure_debut ?? horaireEquipe.debut ?? dispo?.heure_debut ?? null,
+        heure_fin: modele?.heure_fin ?? horaireEquipe.fin ?? dispo?.heure_fin ?? null,
+        ...(modele || !horaireEquipe.debut || !horaireEquipe.fin ? {} : { heures: dureeHeures(horaireEquipe.debut, horaireEquipe.fin) }),
       };
     });
     if (!rows.length) return;
@@ -117,15 +128,36 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
     await syncSilencieux(staffId);
   };
 
+  /** Horaires d'une personne : les heures par jour sont recalculées (ex. 16:00 → 00:00 = 8 h). */
+  const changerHoraire = async (staffId: string, l: Affectation, debut: string, fin: string) => {
+    if ((l.heure_debut?.slice(0, 5) ?? "") === debut && (l.heure_fin?.slice(0, 5) ?? "") === fin) return;
+    const patch: Partial<Affectation> = { heure_debut: debut || null, heure_fin: fin || null };
+    if (debut && fin) patch.heures = dureeHeures(debut, fin);
+    await majPersonne(staffId, patch);
+  };
+
+  /** Applique les mêmes horaires à toute l'équipe (et aux personnes ajoutées ensuite). */
+  const appliquerHoraireEquipe = async () => {
+    const { debut, fin } = horaireEquipe;
+    if (!devisId || !debut || !fin) return;
+    const patch = { heure_debut: debut, heure_fin: fin, heures: dureeHeures(debut, fin) };
+    const { error } = await supabase.from("affectations").update(patch).eq("devis_id", devisId);
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+    for (const { staff_id } of equipe) await syncSilencieux(staff_id);
+    toast({ title: "Horaires appliqués", description: `${debut} – ${fin} (${patch.heures} h) pour toute l'équipe, contrats mis à jour` });
+    charger();
+  };
+
   /**
    * Crée, met à jour ou supprime le contrat d'une personne pour CET événement,
    * à partir de ses affectations (un contrat par personne et par événement, avec toutes ses dates).
    */
   const syncContrat = async (staffId: string): Promise<string | null> => {
     if (!devisId) return null;
-    const [{ data: lignes }, { data: exist }] = await Promise.all([
+    const [{ data: lignes }, { data: exist }, { data: dv }] = await Promise.all([
       supabase.from("affectations").select("*").eq("devis_id", devisId).eq("staff_id", staffId).neq("statut", "annule").order("date_jour"),
       supabase.from("contrats").select("id").eq("devis_id", devisId).eq("staff_id", staffId).maybeSingle(),
+      supabase.from("devis").select("numero, titre").eq("id", devisId).maybeSingle(),
     ]);
     const actives = (lignes ?? []) as Affectation[];
     if (!actives.length) {
@@ -140,6 +172,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
       dates: actives.map((l) => ({ date: l.date_jour, heures: Number(l.heures), heure_debut: l.heure_debut, heure_fin: l.heure_fin })),
       heures_prestations: Math.round(total), total_heures: total, taux_horaire: Number(actives[0].taux_horaire), salaire_brut: brut,
       lieu: lieu || null, description: `Mission : ${titre || "événement"}`, statut: "actif",
+      evenement: titre || dv?.titre || null, devis_numero: dv?.numero ?? null,
     };
     const res = exist
       ? await supabase.from("contrats").update(contrat).eq("id", exist.id).select("id").single()
@@ -249,6 +282,14 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
           </div>
         </div>
 
+        <div className="flex flex-wrap items-end gap-2 rounded-md bg-[#FAF7EE] border border-[#ece6d3] p-3">
+          <div className="text-sm font-medium w-full">Horaires de l'équipe</div>
+          <div className="flex items-center gap-1 text-xs">De <Input className="h-8 w-28" type="time" value={horaireEquipe.debut ?? ""} onChange={(e) => setHoraireEquipe((h) => ({ ...h, debut: e.target.value || null }))} /></div>
+          <div className="flex items-center gap-1 text-xs">à <Input className="h-8 w-28" type="time" value={horaireEquipe.fin ?? ""} onChange={(e) => setHoraireEquipe((h) => ({ ...h, fin: e.target.value || null }))} /></div>
+          {horaireEquipe.debut && horaireEquipe.fin && <span className="text-xs text-muted-foreground">= {dureeHeures(horaireEquipe.debut, horaireEquipe.fin)} h / jour</span>}
+          <Button size="sm" variant="outline" disabled={!horaireEquipe.debut || !horaireEquipe.fin || !equipe.length} onClick={appliquerHoraireEquipe}>Appliquer à toute l'équipe</Button>
+        </div>
+
         <div>
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <div className="text-sm font-medium">Équipe retenue ({equipe.length} personne{equipe.length > 1 ? "s" : ""})</div>
@@ -277,10 +318,15 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
                       </span>
                     ))}
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Input className="h-8" defaultValue={lignes[0].poste} onBlur={(e) => e.target.value !== lignes[0].poste && majPersonne(staff_id, { poste: e.target.value })} title="Poste" />
-                    <div className="flex items-center gap-1 text-xs"><Input className="h-8" type="number" min={0} step="0.5" defaultValue={lignes[0].heures} onBlur={(e) => Number(e.target.value) !== Number(lignes[0].heures) && majPersonne(staff_id, { heures: Number(e.target.value) })} /> h / jour</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    <Input className="h-8 col-span-2 sm:col-span-1" defaultValue={lignes[0].poste} onBlur={(e) => e.target.value !== lignes[0].poste && majPersonne(staff_id, { poste: e.target.value })} title="Poste (ex. Hôtesse, Steward)" />
+                    <div className="flex items-center gap-1 text-xs" title="Heure de début">De <Input key={`d${lignes[0].heure_debut}`} className="h-8" type="time" defaultValue={lignes[0].heure_debut?.slice(0, 5) ?? ""} onBlur={(e) => changerHoraire(staff_id, lignes[0], e.target.value, lignes[0].heure_fin?.slice(0, 5) ?? "")} /></div>
+                    <div className="flex items-center gap-1 text-xs" title="Heure de fin">à <Input key={`f${lignes[0].heure_fin}`} className="h-8" type="time" defaultValue={lignes[0].heure_fin?.slice(0, 5) ?? ""} onBlur={(e) => changerHoraire(staff_id, lignes[0], lignes[0].heure_debut?.slice(0, 5) ?? "", e.target.value)} /></div>
+                    <div className="flex items-center gap-1 text-xs"><Input key={`h${lignes[0].heures}`} className="h-8" type="number" min={0} step="0.5" defaultValue={lignes[0].heures} onBlur={(e) => Number(e.target.value) !== Number(lignes[0].heures) && majPersonne(staff_id, { heures: Number(e.target.value) })} /> h / jour</div>
                     <div className="flex items-center gap-1 text-xs"><Input className="h-8" type="number" min={0} step="1" defaultValue={lignes[0].taux_horaire} onBlur={(e) => Number(e.target.value) !== Number(lignes[0].taux_horaire) && majPersonne(staff_id, { taux_horaire: Number(e.target.value) })} /> MAD/h</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Payé au staff : {Math.round(lignes.reduce((t, l) => t + Number(l.heures) * Number(l.taux_horaire), 0))} MAD brut ({lignes.reduce((t, l) => t + Number(l.heures), 0)} h)
                   </div>
                 </div>
               ))}

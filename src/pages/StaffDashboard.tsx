@@ -13,6 +13,8 @@ import { FileText, Download, Calendar as CalendarIcon, LogOut, User as UserIcon,
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay, isWeekend, addDays, isAfter, isBefore } from "date-fns";
 import { fr } from "date-fns/locale";
 import { TimeSlotSelector } from "@/components/TimeSlotSelector";
+import { telechargerContrats } from "@/components/admin/equipe/contratPdf";
+import { telechargerFichesPaie } from "@/components/admin/paie/FichesPaieMensuelles";
 
 interface Contrat {
   id: string;
@@ -25,6 +27,11 @@ interface Contrat {
   taux_horaire?: number;
   description?: string;
   statut: string;
+  evenement?: string | null;
+  devis_numero?: string | null;
+  lieu?: string | null;
+  total_heures?: number | null;
+  dates?: { date: string; heures: number; heure_debut?: string | null; heure_fin?: string | null }[] | null;
 }
 
 interface FichePaie {
@@ -130,7 +137,7 @@ const StaffDashboard = () => {
           .eq("staff_id", staff.id)
           .order("created_at", { ascending: false });
         
-        setContrats(contratsData || []);
+        setContrats((contratsData || []) as unknown as Contrat[]);
 
         // Récupérer les fiches de paie
         const { data: fichesData } = await supabase
@@ -384,110 +391,33 @@ const StaffDashboard = () => {
   };
 
   // Fonction pour calculer le 5ème jour ouvrable du mois
-  const getFifthWorkingDay = (year: number, month: number) => {
-    let date = new Date(year, month, 1); // Premier jour du mois
-    let workingDays = 0;
-    
-    while (workingDays < 5) {
-      if (!isWeekend(date)) {
-        workingDays++;
-      }
-      if (workingDays < 5) {
-        date = addDays(date, 1);
-      }
-    }
-    
-    return date;
-  };
+  const [telechargement, setTelechargement] = useState<string | null>(null);
 
-  // Fonction pour vérifier si on peut télécharger une fiche de paie
-  const canDownloadPayslip = (year: number, month: number) => {
-    const today = new Date();
-    const fifthWorkingDay = getFifthWorkingDay(year, month + 1); // +1 car on veut le mois suivant
-    return isAfter(today, fifthWorkingDay) || isSameDay(today, fifthWorkingDay);
-  };
-
-  // Fonction pour vérifier si on peut télécharger un contrat (avant la prestation)
-  const canDownloadContract = (dateDebut: string) => {
-    const today = new Date();
-    const contractStartDate = new Date(dateDebut);
-    return isBefore(today, contractStartDate) || isSameDay(today, contractStartDate);
-  };
-
-  // Fonction pour générer et télécharger un contrat PDF
-  const downloadContractPDF = async (contractId: string, language: string = 'fr') => {
+  // Contrat : PDF généré directement dans le navigateur (contrat + conditions)
+  const downloadContractPDF = async (contractId: string) => {
+    setTelechargement(contractId);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-contract-pdf', {
-        body: { contract_id: contractId, language }
-      });
-
-      if (error) throw error;
-
-      // Créer un blob avec le HTML retourné et le télécharger directement
-      const blob = new Blob([data], { type: 'text/html' });
-      const url = window.URL.createObjectURL(blob);
-      
-      // Créer un lien de téléchargement temporaire
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `contrat-${contractId}-${language}-${Date.now()}.html`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Nettoyer l'URL
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: "Contrat téléchargé",
-        description: "Le fichier a été téléchargé avec succès",
-      });
+      await telechargerContrats([contractId]);
+      toast({ title: "Contrat téléchargé", description: "Le PDF a été enregistré" });
     } catch (error) {
       console.error('Erreur génération contrat:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de télécharger le contrat",
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: "Impossible de télécharger le contrat", variant: "destructive" });
+    } finally {
+      setTelechargement(null);
     }
   };
 
-  // Fonction pour générer et télécharger une fiche de paie PDF
+  // Fiche de paie : PDF généré directement dans le navigateur
   const downloadPayslipPDF = async (payslipId: string) => {
+    setTelechargement(payslipId);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-staff-pdf', {
-        body: { 
-          staff_id: staffInfo?.id,
-          type: 'payslip',
-          payslip_id: payslipId
-        }
-      });
-
-      if (error) throw error;
-
-      // Créer un blob avec le HTML retourné
-      const blob = new Blob([data], { type: 'text/html' });
-      const url = window.URL.createObjectURL(blob);
-      
-      // Ouvrir dans un nouvel onglet pour impression ou sauvegarde PDF
-      const newWindow = window.open(url, '_blank');
-      if (newWindow) {
-        newWindow.onload = () => {
-          window.URL.revokeObjectURL(url);
-        };
-      }
-
-      toast({
-        title: "Fiche de paie téléchargée",
-        description: "Votre fiche de paie s'ouvre dans un nouvel onglet",
-      });
+      await telechargerFichesPaie([payslipId]);
+      toast({ title: "Fiche de paie téléchargée", description: "Le PDF a été enregistré" });
     } catch (error) {
       console.error('Erreur génération fiche de paie:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de télécharger la fiche de paie",
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: "Impossible de télécharger la fiche de paie", variant: "destructive" });
+    } finally {
+      setTelechargement(null);
     }
   };
 
@@ -582,78 +512,45 @@ const StaffDashboard = () => {
                 ) : (
                   <div className="space-y-4">
                     {contrats.map((contrat) => {
-                      const contractDownloadable = canDownloadContract(contrat.date_debut);
+                      const lignes = (contrat.dates ?? []).slice().sort((x, y) => x.date.localeCompare(y.date));
                       return (
                         <div key={contrat.id} className="border rounded-lg p-3 sm:p-4">
-                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 space-y-2 sm:space-y-0">
-                            <h3 className="font-semibold text-sm sm:text-base">{contrat.titre}</h3>
-                            <div className="flex items-center space-x-2">
-                              <Badge variant={contrat.statut === "actif" ? "default" : "secondary"}>
-                                {contrat.statut}
-                              </Badge>
-                              {contractDownloadable ? (
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                              ) : (
-                                <Clock className="h-4 w-4 text-orange-500" />
-                              )}
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-2">
+                            <div>
+                              <h3 className="font-semibold text-sm sm:text-base">{contrat.evenement || contrat.titre}</h3>
+                              <p className="text-xs text-muted-foreground">{[contrat.titre, contrat.lieu, contrat.devis_numero].filter(Boolean).join(" · ")}</p>
                             </div>
+                            <Badge variant={contrat.statut === "actif" ? "default" : "secondary"}>{contrat.statut}</Badge>
                           </div>
                           <div className="space-y-1 text-sm">
-                            <p><span className="font-medium">{t('dashboard.contracts.type')}:</span> {contrat.type_contrat}</p>
-                            <p><span className="font-medium">{t('dashboard.contracts.start')}:</span> {format(new Date(contrat.date_debut), "dd MMMM yyyy", { locale: fr })}</p>
-                            {contrat.date_fin && (
-                              <p><span className="font-medium">{t('dashboard.contracts.end')}:</span> {format(new Date(contrat.date_fin), "dd MMMM yyyy", { locale: fr })}</p>
-                            )}
-                            {contrat.heures_prestations && (
-                              <p><span className="font-medium">{t('dashboard.contracts.hours_week')}:</span> {contrat.heures_prestations}h</p>
+                            {lignes.length > 0 ? (
+                              <div>
+                                <span className="font-medium">Dates :</span>
+                                <ul className="mt-1 space-y-0.5">
+                                  {lignes.map((l) => (
+                                    <li key={l.date} className="text-sm">
+                                      {format(new Date(l.date + "T12:00:00"), "EEEE dd MMMM yyyy", { locale: fr })}
+                                      {l.heure_debut && l.heure_fin ? ` · ${l.heure_debut.slice(0, 5)} – ${l.heure_fin.slice(0, 5)}` : ""} · {l.heures} h
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ) : (
+                              <p><span className="font-medium">{t('dashboard.contracts.start')}:</span> {format(new Date(contrat.date_debut), "dd MMMM yyyy", { locale: fr })}</p>
                             )}
                             {contrat.taux_horaire && (
                               <p><span className="font-medium">{t('dashboard.contracts.hourly_rate')}:</span> {contrat.taux_horaire} DH/h</p>
                             )}
                             {contrat.salaire_brut && (
-                              <p><span className="font-medium">{t('dashboard.contracts.gross_salary')}:</span> {contrat.salaire_brut} DH</p>
+                              <p><span className="font-medium">{t('dashboard.contracts.gross_salary')}:</span> {contrat.salaire_brut} DH{contrat.total_heures ? ` (${contrat.total_heures} h)` : ""}</p>
                             )}
                           </div>
-                          {contrat.description && (
-                            <p className="text-sm text-muted-foreground mt-2">{contrat.description}</p>
-                          )}
-                          <div className="mt-3 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => downloadContractPDF(contrat.id, 'fr')}
-                              disabled={!contractDownloadable}
-                              className="text-xs sm:text-sm"
-                            >
+                          <div className="mt-3">
+                            <Button variant="outline" size="sm" onClick={() => downloadContractPDF(contrat.id)} disabled={telechargement === contrat.id} className="text-xs sm:text-sm">
                               <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                              {t('dashboard.contracts.download_fr')}
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => downloadContractPDF(contrat.id, 'en')}
-                              disabled={!contractDownloadable}
-                              className="text-xs sm:text-sm"
-                            >
-                              <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                              {t('dashboard.contracts.download_en')}
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => downloadContractPDF(contrat.id, 'ar')}
-                              disabled={!contractDownloadable}
-                              className="text-xs sm:text-sm"
-                            >
-                              <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                              {t('dashboard.contracts.download_ar')}
+                              {telechargement === contrat.id ? "Création du PDF…" : "Télécharger mon contrat (PDF)"}
                             </Button>
                           </div>
-                          {!contractDownloadable && (
-                             <p className="text-xs text-orange-600 mt-2">
-                               ⏰ {t('dashboard.contracts.downloadable_before')} ({format(new Date(contrat.date_debut), "dd/MM/yyyy", { locale: fr })})
-                             </p>
-                          )}
                         </div>
                       );
                     })}
@@ -682,61 +579,38 @@ const StaffDashboard = () => {
                   </p>
                 ) : (
                   <div className="space-y-4">
-                    {fichesPaie.map((fiche) => {
-                      const payslipDownloadable = canDownloadPayslip(fiche.annee, fiche.mois);
-                      const fifthWorkingDay = getFifthWorkingDay(fiche.annee, fiche.mois + 1);
-                      
-                      return (
-                        <div key={fiche.id} className="border rounded-lg p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <h3 className="font-semibold">
-                              {format(new Date(fiche.annee, fiche.mois - 1), "MMMM yyyy", { locale: fr })}
-                            </h3>
-                            <div className="flex items-center space-x-2">
-                              <Badge variant={fiche.statut === "paye" ? "default" : "secondary"}>
-                                {fiche.statut}
-                              </Badge>
-                              {payslipDownloadable ? (
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                              ) : (
-                                <Clock className="h-4 w-4 text-orange-500" />
-                              )}
-                            </div>
+                    {fichesPaie.map((fiche) => (
+                      <div key={fiche.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-semibold capitalize">
+                            {format(new Date(fiche.annee, fiche.mois - 1), "MMMM yyyy", { locale: fr })}
+                          </h3>
+                          <Badge variant={fiche.statut === "paye" ? "default" : "secondary"}>
+                            {fiche.statut === "paye" ? <><CheckCircle className="h-3 w-3 mr-1" /> Payée</> : fiche.statut === "validee" ? "Validée" : <><Clock className="h-3 w-3 mr-1" /> En préparation</>}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p><span className="font-medium">{t('dashboard.payslips.gross_salary')}:</span> {fiche.salaire_brut} DH</p>
+                            <p><span className="font-medium">{t('dashboard.payslips.net_salary')}:</span> {fiche.salaire_net} DH</p>
                           </div>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                               <p><span className="font-medium">{t('dashboard.payslips.gross_salary')}:</span> {fiche.salaire_brut} DH</p>
-                               <p><span className="font-medium">{t('dashboard.payslips.net_salary')}:</span> {fiche.salaire_net} DH</p>
-                             </div>
-                             <div>
-                               {fiche.heures_travaillees && (
-                                 <p><span className="font-medium">{t('dashboard.payslips.hours')}:</span> {fiche.heures_travaillees}h</p>
-                               )}
-                               {fiche.prime && fiche.prime > 0 && (
-                                 <p><span className="font-medium">{t('dashboard.payslips.bonus')}:</span> {fiche.prime}€</p>
-                               )}
-                            </div>
-                          </div>
-                          <div className="mt-3">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => downloadPayslipPDF(fiche.id)}
-                              disabled={!payslipDownloadable}
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              {t('dashboard.payslips.download_pdf')}
-                            </Button>
-                            {!payslipDownloadable && (
-                               <p className="text-xs text-orange-600 mt-2">
-                                 ⏰ {t('dashboard.payslips.available_from')} {format(fifthWorkingDay, "dd MMMM yyyy", { locale: fr })} 
-                                 {t('dashboard.payslips.fifth_working_day')}
-                               </p>
-                            )}
+                          <div>
+                            {fiche.heures_travaillees ? (
+                              <p><span className="font-medium">{t('dashboard.payslips.hours')}:</span> {fiche.heures_travaillees}h</p>
+                            ) : null}
+                            {fiche.prime && fiche.prime > 0 ? (
+                              <p><span className="font-medium">{t('dashboard.payslips.bonus')}:</span> {fiche.prime} DH</p>
+                            ) : null}
                           </div>
                         </div>
-                      );
-                    })}
+                        <div className="mt-3">
+                          <Button variant="outline" size="sm" onClick={() => downloadPayslipPDF(fiche.id)} disabled={telechargement === fiche.id}>
+                            <Download className="h-4 w-4 mr-2" />
+                            {telechargement === fiche.id ? "Création du PDF…" : t('dashboard.payslips.download_pdf')}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </CardContent>

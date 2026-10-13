@@ -21,6 +21,11 @@ const list = (v: unknown) => (Array.isArray(v) ? v.join(", ") : v);
 const intOrNull = (v: unknown) => { const n = parseInt(String(v ?? "")); return Number.isFinite(n) ? n : null; };
 const dateOrNull = (v: unknown) => (v && /^\d{4}-\d{2}-\d{2}/.test(String(v)) ? String(v).slice(0, 10) : null);
 
+const SERVICES_MARIAGE: Record<string, string> = {
+  dj: "DJ / Animation musicale", decoration: "Décoration", photo: "Photographe", video: "Vidéaste", catering: "Traiteur",
+  transport: "Transport", ceremony: "Officiant de cérémonie", hostess: "Hôtes/Hôtesses d'accueil", planning: "Wedding planner",
+};
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...corsHeaders } });
 
@@ -40,17 +45,21 @@ const handler = async (req: Request): Promise<Response> => {
         break;
 
       case "wedding": {
-        subject = `Nouvelle demande de devis mariage - ${data.brideName} & ${data.groomName}`;
-        html = `<h2>Nouvelle demande de devis mariage</h2>
-          ${row("Mariés", `${data.brideName} & ${data.groomName}`)}${row("Email", data.contactEmail)}${row("Téléphone", data.contactPhone)}
-          ${row("Date du mariage", data.weddingDate)}${row("Lieu principal", data.weddingLocation)}${row("Lieu de cérémonie", data.ceremonyLocation)}
+        // Le formulaire envoie eventDate / eventLocation / eventType (anciens noms acceptés aussi)
+        const date = data.eventDate ?? data.weddingDate;
+        const lieu = data.eventLocation ?? data.weddingLocation ?? data.ceremonyLocation ?? data.receptionLocation;
+        const services = list(Array.isArray(data.services) ? data.services.map((x: string) => SERVICES_MARIAGE[x] ?? x) : data.services);
+        subject = `Nouvelle demande de devis ${data.eventType || "mariage"} - ${data.brideName}${data.groomName ? ` & ${data.groomName}` : ""}`;
+        html = `<h2>Nouvelle demande de devis ${e(data.eventType || "mariage")}</h2>
+          ${row("Contact", `${data.brideName}${data.groomName ? ` & ${data.groomName}` : ""}`)}${row("Email", data.contactEmail)}${row("Téléphone", data.contactPhone)}
+          ${row("Type d'événement", data.eventType)}${row("Date", date)}${row("Lieu", lieu)}${row("Lieu de cérémonie", data.ceremonyLocation)}
           ${row("Lieu de réception", data.receptionLocation)}${row("Nombre d'invités", data.guestCount)}${row("Budget estimé", data.budget)}
-          ${row("Services demandés", list(data.services))}${row("Demandes spéciales", data.specialRequests)}`;
+          ${row("Prestations demandées", services)}<p><strong>Demandes spéciales :</strong></p><p style="white-space:pre-line">${e(data.specialRequests || "Aucune")}</p>`;
         const { error } = await supabase.from("devis_mariage").insert({
-          nom: data.brideName, prenom: data.groomName, email: data.contactEmail, telephone: data.contactPhone,
-          date_mariage: dateOrNull(data.weddingDate),
-          lieu: data.weddingLocation || data.ceremonyLocation || data.receptionLocation,
-          nb_invites: intOrNull(data.guestCount), services: list(data.services) || null, remarques: data.specialRequests,
+          nom: data.brideName, prenom: data.groomName || "", email: data.contactEmail, telephone: data.contactPhone,
+          type_evenement: data.eventType || "Mariage", date_mariage: dateOrNull(date), lieu: lieu || null,
+          nb_invites: intOrNull(data.guestCount), services: services || null,
+          remarques: [data.specialRequests, data.budget && `Budget : ${data.budget}`, data.ceremonyLocation && `Cérémonie : ${data.ceremonyLocation}`, data.receptionLocation && `Réception : ${data.receptionLocation}`].filter(Boolean).join("\n") || null,
         });
         if (error) { console.error(error); return json({ error: "Erreur lors de l'enregistrement de la demande" }, 500); }
         break;

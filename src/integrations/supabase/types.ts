@@ -65,6 +65,8 @@ export type Database = {
       contrats: {
         Row: {
           devis_id: string | null
+          evenement: string | null
+          devis_numero: string | null
           dates: Json | null
           lieu: string | null
           total_heures: number | null
@@ -85,6 +87,8 @@ export type Database = {
         }
         Insert: {
           devis_id?: string | null
+          evenement?: string | null
+          devis_numero?: string | null
           dates?: Json | null
           lieu?: string | null
           total_heures?: number | null
@@ -105,6 +109,8 @@ export type Database = {
         }
         Update: {
           devis_id?: string | null
+          evenement?: string | null
+          devis_numero?: string | null
           dates?: Json | null
           lieu?: string | null
           total_heures?: number | null
