@@ -1,0 +1,62 @@
+name: Agent bêta-testeur
+
+# À chaque modification du site, chaque jeudi, et à la demande : rejoue les parcours client, crew et admin.
+on:
+  push:
+    branches: [main]
+    paths: ["src/**", "index.html", "public/**", "tests/beta/**"]
+  schedule:
+    - cron: "23 6 * * 4"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  beta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Installer le navigateur de test
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Construire le site
+        run: npm run build
+      - name: Bêta-test
+        id: beta
+        continue-on-error: true
+        env:
+          BETA_LIVE: "1"
+        run: |
+          npx vite preview --host 127.0.0.1 --port 4173 --strictPort &
+          npx --yes wait-on http://127.0.0.1:4173 -t 60000
+          node tests/beta/beta.mjs http://127.0.0.1:4173
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: captures-beta
+          path: beta-captures
+      - name: Publier le rapport
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat rapport-beta.md >> "$GITHUB_STEP_SUMMARY"
+          gh label create beta-test --color 141414 --description "Rapports du bêta-testeur" 2>/dev/null || true
+          numero=$(gh issue list --label beta-test --state open --json number --jq '.[0].number')
+          if [ "${{ steps.beta.outcome }}" = "failure" ]; then
+            if [ -n "$numero" ]; then gh issue comment "$numero" --body-file rapport-beta.md
+            else gh issue create --title "Bêta-test : un parcours ne fonctionne plus" --label beta-test --body-file rapport-beta.md; fi
+          elif [ -n "$numero" ]; then
+            gh issue comment "$numero" --body "Tous les parcours fonctionnent à nouveau ✅"; gh issue close "$numero"
+          fi
+      - name: Échec si un parcours casse
+        if: steps.beta.outcome == 'failure'
+        run: exit 1

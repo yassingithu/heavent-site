@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./i18n/index.ts";
 import SplashScreen from "./components/SplashScreen";
 import Layout from "./components/layout/Layout";
@@ -21,6 +21,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const StaffDashboard = lazy(() => import("./pages/StaffDashboard"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const MentionsLegales = lazy(() => import("./pages/MentionsLegales"));
 import RetourEnHaut from "./components/RetourEnHaut";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,8 @@ const App = () => {
               <Route path="/a-propos" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/politique-confidentialite" element={<PrivacyPolicy />} />
+              <Route path="/mentions-legales" element={<MentionsLegales />} />
+              <Route path="/rgpd" element={<Navigate to="/politique-confidentialite" replace />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin-auth" element={<AdminAuth />} />
               <Route path="/auth" element={<Auth />} />

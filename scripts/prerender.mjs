@@ -14,9 +14,10 @@ const PUBLIQUES = [
   { chemin: "/a-propos", priorite: "0.7", frequence: "monthly" },
   { chemin: "/contact", priorite: "0.7", frequence: "monthly" },
   { chemin: "/politique-confidentialite", priorite: "0.3", frequence: "yearly" },
+  { chemin: "/mentions-legales", priorite: "0.2", frequence: "yearly" },
 ];
 // Espaces privés et anciennes adresses : l'application seule, jamais indexée
-const PRIVEES = ["admin", "admin-auth", "auth", "auth/callback", "staff-dashboard", "mentions-legales", "rgpd"];
+const PRIVEES = ["admin", "admin-auth", "auth", "auth/callback", "staff-dashboard", "rgpd"];
 
 const shell = readFileSync("dist/index.html", "utf8");
 const shellPrive = shell.replace("<head>", '<head>\n    <meta name="robots" content="noindex, nofollow" />');

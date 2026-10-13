@@ -1,0 +1,41 @@
+name: Agent d'audit
+
+# Chaque lundi matin (et à la demande) : SEO, liens, sécurité, base de données, Lighthouse.
+# Le rapport est publié dans l'onglet « Issues » du dépôt (GitHub t'envoie un email).
+on:
+  schedule:
+    - cron: "41 5 * * 1"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["tests/audit/**", "deploy/site/**"]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Audit du site et de l'application
+        id: audit
+        continue-on-error: true
+        run: node tests/audit/audit.mjs
+      - name: Publier le rapport
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat rapport-audit.md >> "$GITHUB_STEP_SUMMARY"
+          gh label create audit --color C8B560 --description "Rapports de l'agent d'audit" 2>/dev/null || true
+          numero=$(gh issue list --label audit --state open --json number --jq '.[0].number')
+          if [ -n "$numero" ]; then gh issue comment "$numero" --body-file rapport-audit.md
+          else gh issue create --title "Rapports de l'agent d'audit" --label audit --body-file rapport-audit.md; fi
+      - name: Signaler un problème grave
+        if: steps.audit.outcome == 'failure'
+        run: exit 1

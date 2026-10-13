@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 desktop/node_modules
 desktop/dist
+rapport-audit.md
+rapport-beta.md
+beta-captures
