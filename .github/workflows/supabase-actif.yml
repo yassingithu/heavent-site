@@ -1,0 +1,41 @@
+name: Maintien actif (Supabase + site)
+
+# Le plan gratuit de Supabase met le projet en pause après une semaine sans activité.
+# Ce petit passage automatique, tous les 2 jours, le garde éveillé.
+on:
+  schedule:
+    - cron: "17 6 */2 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Réveiller la base Supabase
+        run: |
+          code=$(curl -s -o reponse.txt -w "%{http_code}" -X POST \
+            "https://mapiwnsjsluiwmnulhqk.supabase.co/rest/v1/rpc/maintenir_actif" \
+            -H "apikey: sb_publishable_FuR1ZTbO1AX8nVdtVz9KYQ_0pJQs7dz" \
+            -H "Content-Type: application/json" -d '{}')
+          echo "Réponse $code : $(cat reponse.txt)"
+          test "$code" = "200"
+      - name: Vérifier que le site répond
+        run: test "$(curl -s -o /dev/null -w '%{http_code}' https://heaventagency.com/)" = "200"
+
+      # GitHub coupe les tâches planifiées d'un dépôt sans aucun commit depuis 60 jours : on l'évite.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Garder le dépôt actif
+        run: |
+          dernier=$(git log -1 --format=%ct)
+          age=$(( ( $(date +%s) - dernier ) / 86400 ))
+          echo "Dernier commit il y a $age jours"
+          if [ "$age" -ge 45 ]; then
+            git config user.name "heavent-bot"; git config user.email "actions@github.com"
+            git commit --allow-empty -m "Maintien actif automatique"
+            git push
+          fi
