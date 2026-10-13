@@ -90,7 +90,11 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       date_evenement: dem.date_evenement ?? "", lieu: dem.lieu ?? "",
       nb_personnes: dem.nb_personnes ? String(dem.nb_personnes) : "",
       notes_internes: dem.remarques ? `Demande du client : ${dem.remarques}` : "",
-      lignes: dem.nb_staff ? [{ ...ligneVide(), designation: "Hôte / hôtesse d'accueil", quantite: dem.nb_staff, duree: 8 }] : [ligneVide()],
+      lignes: dem.nb_staff ? [(() => {
+        const h = catalogue.find((c) => c.actif && c.categorie === "staff" && c.unite === "jour");
+        return { ...ligneVide(), designation: h?.designation ?? "Hôte / hôtesse d'accueil", description: h?.description ?? "",
+          quantite: dem.nb_staff!, duree: 1, unite: "jour" as const, prix_unitaire: Number(h?.prix_unitaire ?? 0) };
+      })()] : [ligneVide()],
     });
     setOnglet("editeur");
   };
@@ -161,10 +165,17 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       [lignes[i], lignes[j]] = [lignes[j], lignes[i]];
       return { ...f, lignes };
     });
+  const joursEvenement = () => {
+    if (!form?.date_evenement || !form.date_fin_evenement) return 1;
+    const n = Math.round((new Date(form.date_fin_evenement).getTime() - new Date(form.date_evenement).getTime()) / 86400000) + 1;
+    return n > 0 ? n : 1;
+  };
   const ajouterDuCatalogue = (p: Prestation) =>
     ajouterLigne({
       designation: p.designation, description: p.description ?? "",
-      quantite: 1, duree: p.unite === "forfait" || p.unite === "unite" ? 1 : form?.lignes[0]?.duree || 1,
+      // quantité = nombre de personnes de la ligne précédente, durée = nombre de jours de l'événement
+      quantite: p.unite === "forfait" ? 1 : (form?.lignes.filter((l) => l.designation.trim()).slice(-1)[0]?.quantite || 1),
+      duree: p.unite === "jour" || p.unite === "personne" ? joursEvenement() : 1,
       unite: p.unite as Ligne["unite"], prix_unitaire: Number(p.prix_unitaire), remise_pct: 0,
     });
 

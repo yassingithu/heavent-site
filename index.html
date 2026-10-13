@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
   <head>
+    <script>
+      // Retour depuis un dossier de page (/admin, /contact…) : on remet l'adresse demandée
+      try { var r = sessionStorage.getItem("spa-redirect"); if (r) { sessionStorage.removeItem("spa-redirect"); history.replaceState(null, "", r.replace(/\/+$/, "") || "/"); } } catch (e) {}
+    </script>
     <meta charset="UTF-8" />
     <link rel="icon" href="/lovable-uploads/df0014d7-d697-4525-a5ee-71cf8fa774ab.png" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
