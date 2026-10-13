@@ -10,10 +10,9 @@ DirectorySlash Off
   RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
   RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
 
-  # /page/ → /page
-  RewriteCond %{REQUEST_URI} ^(.+)/$
-  RewriteCond %{DOCUMENT_ROOT}%1/index.html -f
-  RewriteRule ^ %1 [R=301,L]
+  # NB : pas de redirection /page/ → /page. Les anciennes adresses redirigeaient /page → /page/ (redirection
+  # mémorisée par les navigateurs) : rediriger dans l'autre sens créerait une boucle. Les deux formes affichent
+  # la même page, et la balise « canonical » indique à Google la bonne adresse.
 
   # /page → page pré-générée /page/index.html (contenu lisible directement par Google)
   RewriteCond %{REQUEST_FILENAME}/index.html -f
