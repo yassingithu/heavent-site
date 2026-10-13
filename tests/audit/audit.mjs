@@ -8,6 +8,17 @@ const SITE = "https://heaventagency.com";
 const SUPABASE = "https://mapiwnsjsluiwmnulhqk.supabase.co";
 const CLE = "sb_publishable_FuR1ZTbO1AX8nVdtVz9KYQ_0pJQs7dz";
 const graves = [], avertissements = [], ok = [];
+// L'hébergeur limite les requêtes trop rapprochées (erreur 429) : on espace les appels et on réessaie.
+const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
+const fetchOriginal = globalThis.fetch;
+globalThis.fetch = async (url, opts) => {
+  for (let essai = 0; ; essai++) {
+    await attendre(String(url).startsWith(SITE) || String(url).includes("heaventagency") ? 700 : 0);
+    const r = await fetchOriginal(url, opts);
+    if (r.status !== 429 || essai >= 4) return r;
+    await attendre(3000 * (essai + 1));
+  }
+};
 const lignes = [];
 const titre = (t) => lignes.push(`\n## ${t}\n`);
 const note = (niveau, texte) => { (niveau === "grave" ? graves : niveau === "attention" ? avertissements : ok).push(texte); lignes.push(`- ${niveau === "grave" ? "🔴" : niveau === "attention" ? "🟠" : "🟢"} ${texte}`); };
