@@ -10,10 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowDown, ArrowUp, Copy, FileText, Plus, Printer, Save, Search, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Download, FileText, Plus, Save, Search, Trash2, X } from "lucide-react";
 import {
   DevisForm, Ligne, Parametres, Prestation, STATUTS, UNITES,
-  calculerTotaux, dateFr, devisHtml, ligneVide, money, nouveauDevis, today, totalLigne,
+  calculerTotaux, dateFr, devisMarkup, nomFichierDevis, ligneVide, money, nouveauDevis, today, totalLigne,
 } from "./devisUtils";
 import CataloguePrestations from "./CataloguePrestations";
 import ParametresAgence from "./ParametresAgence";
@@ -112,12 +112,12 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     setOnglet("editeur");
   };
 
-  const ouvrir = async (id: string, dupliquer = false) => {
+  const chargerDevis = async (id: string, dupliquer = false): Promise<DevisForm | null> => {
     const [{ data: d, error }, { data: lignes }] = await Promise.all([
       supabase.from("devis").select("*").eq("id", id).single(),
       supabase.from("devis_lignes").select("*").eq("devis_id", id).order("ordre"),
     ]);
-    if (error || !d) { toast({ title: "Erreur", description: "Devis introuvable", variant: "destructive" }); return; }
+    if (error || !d) { toast({ title: "Erreur", description: "Devis introuvable", variant: "destructive" }); return null; }
     const f: DevisForm = {
       id: dupliquer ? undefined : d.id,
       numero: dupliquer ? null : d.numero,
@@ -139,6 +139,12 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       })),
     };
     if (f.lignes.length === 0) f.lignes = [ligneVide()];
+    return f;
+  };
+
+  const ouvrir = async (id: string, dupliquer = false) => {
+    const f = await chargerDevis(id, dupliquer);
+    if (!f) return;
     setForm(f);
     setOnglet("editeur");
   };
@@ -250,21 +256,56 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     }
   };
 
-  const imprimer = async () => {
-    const saved = await enregistrer();
-    if (!saved) return;
-    const w = window.open("", "_blank");
-    if (!w) { toast({ title: "Fenêtre bloquée", description: "Autorise les pop-ups pour ce site.", variant: "destructive" }); return; }
-    // Logo intégré directement dans le document pour qu'il s'affiche et s'imprime à coup sûr
-    let logoSrc = `${window.location.origin}${LOGO}`;
+  const [pdfEnCours, setPdfEnCours] = useState(false);
+
+  /** Génère le PDF du devis et le télécharge directement (sans fenêtre d'impression). */
+  const genererPdf = async (d: DevisForm) => {
+    setPdfEnCours(true);
+    const conteneur = document.createElement("div");
     try {
-      const blob = await fetch(LOGO).then((r) => r.blob());
-      logoSrc = await new Promise<string>((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result as string); fr.readAsDataURL(blob); });
-    } catch { /* on garde l'URL */ }
-    w.document.open();
-    w.document.write(devisHtml(saved, params, logoSrc));
-    w.document.close();
-    w.onload = () => setTimeout(() => w.print(), 300);
+      // Logo intégré au document pour qu'il apparaisse à coup sûr dans le PDF
+      let logoSrc = `${window.location.origin}${LOGO}`;
+      try {
+        const blob = await fetch(LOGO).then((r) => r.blob());
+        logoSrc = await new Promise<string>((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result as string); fr.readAsDataURL(blob); });
+      } catch { /* on garde l'URL */ }
+
+      const { css, html } = devisMarkup(d, params, logoSrc);
+      conteneur.style.cssText = "position:fixed;left:-10000px;top:0;z-index:-1;";
+      conteneur.innerHTML = `<style>${css}</style>${html}`;
+      document.body.appendChild(conteneur);
+      await document.fonts?.ready;
+
+      const html2pdf = (await import("html2pdf.js")).default;
+      await html2pdf()
+        .set({
+          margin: 0,
+          filename: nomFichierDevis(d),
+          image: { type: "jpeg", quality: 0.95 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+          jsPDF: { unit: "px", format: [794, 1123], orientation: "portrait", hotfixes: ["px_scaling"] },
+          pagebreak: { mode: ["css", "legacy"] },
+        })
+        .from(conteneur.querySelector(".devis-doc") as HTMLElement)
+        .save();
+      toast({ title: "PDF téléchargé", description: nomFichierDevis(d) });
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: "Erreur", description: "Le PDF n'a pas pu être généré", variant: "destructive" });
+    } finally {
+      conteneur.remove();
+      setPdfEnCours(false);
+    }
+  };
+
+  const telechargerPdf = async () => {
+    const saved = await enregistrer();
+    if (saved) await genererPdf(saved);
+  };
+
+  const telechargerPdfDepuisListe = async (id: string) => {
+    const d = await chargerDevis(id);
+    if (d) await genererPdf(d);
   };
 
   const changerStatut = async (id: string, statut: string) => {
@@ -379,6 +420,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                         </Select>
                       </TableCell>
                       <TableCell className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <Button size="icon" variant="ghost" title="Télécharger le PDF" disabled={pdfEnCours} onClick={() => telechargerPdfDepuisListe(d.id)}><Download className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" title="Dupliquer" onClick={() => ouvrir(d.id, true)}><Copy className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" title="Supprimer" onClick={() => supprimer(d.id, d.numero)}><Trash2 className="h-4 w-4 text-red-600" /></Button>
                       </TableCell>
@@ -527,7 +569,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
               </Card>
               <div className="grid gap-2">
                 <Button onClick={() => enregistrer()} disabled={saving}><Save className="h-4 w-4 mr-1" /> Enregistrer</Button>
-                <Button variant="outline" onClick={imprimer} disabled={saving}><Printer className="h-4 w-4 mr-1" /> Aperçu / PDF</Button>
+                <Button variant="outline" onClick={telechargerPdf} disabled={saving || pdfEnCours}><Download className="h-4 w-4 mr-1" /> {pdfEnCours ? "Création du PDF…" : "Télécharger le PDF"}</Button>
                 <Button variant="outline" onClick={() => enregistrer("envoye")} disabled={saving}>Marquer comme envoyé</Button>
                 <Button variant="ghost" onClick={() => { setForm(null); setOnglet("liste"); }}>Fermer</Button>
               </div>
