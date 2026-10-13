@@ -97,12 +97,16 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
     if (!rows.length) return;
     const { error } = await supabase.from("affectations").insert(rows);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+    await syncSilencieux(staffId);
+    toast({ title: "Contrat à jour", description: `${s ? `${s.prenom} ${s.nom}` : "Personne"} ajouté(e) — contrat créé avec ses dates` });
     charger();
   };
 
   const retirer = async (id: string) => {
+    const staffId = affects.find((a) => a.id === id)?.staff_id;
     const { error } = await supabase.from("affectations").delete().eq("id", id);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+    if (staffId) await syncSilencieux(staffId);
     charger();
   };
 
@@ -110,38 +114,55 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
     const { error } = await supabase.from("affectations").update(patch).eq("devis_id", devisId!).eq("staff_id", staffId);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
     setAffects((l) => l.map((a) => (a.staff_id === staffId ? { ...a, ...patch } : a)));
+    await syncSilencieux(staffId);
   };
 
-  /** Un contrat par personne pour cet événement, avec toutes ses dates. */
+  /**
+   * Crée, met à jour ou supprime le contrat d'une personne pour CET événement,
+   * à partir de ses affectations (un contrat par personne et par événement, avec toutes ses dates).
+   */
+  const syncContrat = async (staffId: string): Promise<string | null> => {
+    if (!devisId) return null;
+    const [{ data: lignes }, { data: exist }] = await Promise.all([
+      supabase.from("affectations").select("*").eq("devis_id", devisId).eq("staff_id", staffId).neq("statut", "annule").order("date_jour"),
+      supabase.from("contrats").select("id").eq("devis_id", devisId).eq("staff_id", staffId).maybeSingle(),
+    ]);
+    const actives = (lignes ?? []) as Affectation[];
+    if (!actives.length) {
+      if (exist) await supabase.from("contrats").delete().eq("id", exist.id);
+      return null;
+    }
+    const total = actives.reduce((t, l) => t + Number(l.heures), 0);
+    const brut = Math.round(actives.reduce((t, l) => t + Number(l.heures) * Number(l.taux_horaire), 0) * 100) / 100;
+    const contrat = {
+      staff_id: staffId, devis_id: devisId, titre: actives[0].poste, type_contrat: "cdd",
+      date_debut: actives[0].date_jour, date_fin: actives[actives.length - 1].date_jour,
+      dates: actives.map((l) => ({ date: l.date_jour, heures: Number(l.heures), heure_debut: l.heure_debut, heure_fin: l.heure_fin })),
+      heures_prestations: Math.round(total), total_heures: total, taux_horaire: Number(actives[0].taux_horaire), salaire_brut: brut,
+      lieu: lieu || null, description: `Mission : ${titre || "événement"}`, statut: "actif",
+    };
+    const res = exist
+      ? await supabase.from("contrats").update(contrat).eq("id", exist.id).select("id").single()
+      : await supabase.from("contrats").insert(contrat).select("id").single();
+    if (res.error) throw res.error;
+    await supabase.from("affectations").update({ contrat_id: res.data.id }).eq("devis_id", devisId).eq("staff_id", staffId);
+    return res.data.id;
+  };
+
+  const syncSilencieux = async (staffId: string) => {
+    try { await syncContrat(staffId); } catch (e: any) { toast({ title: "Contrat non mis à jour", description: e.message, variant: "destructive" }); }
+  };
+
+  /** Met à jour tous les contrats de l'événement et renvoie leurs identifiants. */
   const genererContrats = async (): Promise<string[]> => {
     if (!devisId) return [];
     setEnCours(true);
     try {
-      const { data: existants } = await supabase.from("contrats").select("id, staff_id").eq("devis_id", devisId);
       const ids: string[] = [];
-      for (const { staff_id, lignes } of equipe) {
-        const actives = lignes.filter((l) => l.statut !== "annule");
-        if (!actives.length) continue;
-        const total = actives.reduce((t, l) => t + Number(l.heures), 0);
-        const taux = Number(actives[0].taux_horaire);
-        const brut = Math.round(actives.reduce((t, l) => t + Number(l.heures) * Number(l.taux_horaire), 0) * 100) / 100;
-        const contrat = {
-          staff_id, devis_id: devisId, titre: actives[0].poste, type_contrat: "cdd",
-          date_debut: actives[0].date_jour, date_fin: actives[actives.length - 1].date_jour,
-          dates: actives.map((l) => ({ date: l.date_jour, heures: Number(l.heures), heure_debut: l.heure_debut, heure_fin: l.heure_fin })),
-          heures_prestations: Math.round(total), total_heures: total, taux_horaire: taux, salaire_brut: brut,
-          lieu: lieu || null, description: `Mission : ${titre || "événement"}`, statut: "actif",
-        };
-        const exist = (existants ?? []).find((c) => c.staff_id === staff_id);
-        const res = exist
-          ? await supabase.from("contrats").update(contrat).eq("id", exist.id).select("id").single()
-          : await supabase.from("contrats").insert(contrat).select("id").single();
-        if (res.error) throw res.error;
-        ids.push(res.data.id);
-        await supabase.from("affectations").update({ contrat_id: res.data.id }).eq("devis_id", devisId).eq("staff_id", staff_id);
+      for (const { staff_id } of equipe) {
+        const id = await syncContrat(staff_id);
+        if (id) ids.push(id);
       }
-      toast({ title: "Contrats prêts", description: `${ids.length} contrat(s) pour cet événement` });
-      charger();
       return ids;
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message ?? "Contrats non générés", variant: "destructive" });
@@ -266,7 +287,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
             </div>
           )}
           <p className="text-xs text-muted-foreground mt-2">
-            Un contrat par personne et par événement, avec toutes ses dates. Les heures et le taux horaire (payé au staff) servent aussi à la fiche de paie du mois.
+            Le contrat se crée automatiquement dès qu'une personne est ajoutée (un contrat par personne et par événement, avec toutes ses dates) et se met à jour à chaque changement. Les heures et le taux horaire (payé au staff) servent aussi à la fiche de paie du mois.
           </p>
         </div>
       </CardContent>

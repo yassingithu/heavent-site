@@ -19,6 +19,7 @@ import {
 import CataloguePrestations from "./CataloguePrestations";
 import ParametresAgence from "./ParametresAgence";
 import EquipeEvenement from "@/components/admin/equipe/EquipeEvenement";
+import { devisModifie } from "./DevisParStatut";
 
 interface DemandeEntreprise {
   id: string; nom: string; prenom: string; email: string; telephone?: string | null; entreprise: string;
@@ -71,7 +72,12 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     setParams(p.data as Parametres | null);
   };
 
-  useEffect(() => { charger(); }, []);
+  useEffect(() => {
+    charger();
+    const rafraichir = () => charger();
+    window.addEventListener("heavent:devis-modifie", rafraichir);
+    return () => window.removeEventListener("heavent:devis-modifie", rafraichir);
+  }, []);
 
   const totaux = useMemo(
     () => (form ? calculerTotaux(form.lignes, form.remise_globale_pct, form.taux_tva, form.acompte_pct) : null),
@@ -150,6 +156,14 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     setForm(f);
     setOnglet("editeur");
   };
+
+  useEffect(() => {
+    const enAttente = (window as any).__heaventDevisAOuvrir;
+    if (enAttente) { (window as any).__heaventDevisAOuvrir = null; ouvrir(enAttente); }
+    const f = (e: Event) => { (window as any).__heaventDevisAOuvrir = null; ouvrir((e as CustomEvent<string>).detail); };
+    window.addEventListener("heavent:ouvrir-devis", f);
+    return () => window.removeEventListener("heavent:ouvrir-devis", f);
+  });
 
   // ---------- édition ----------
   const set = <K extends keyof DevisForm>(k: K, v: DevisForm[K]) => setForm((f) => (f ? { ...f, [k]: v } : f));
@@ -247,7 +261,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       };
       setForm(next);
       toast({ title: "Devis enregistré", description: next.numero ?? "" });
-      charger();
+      devisModifie();
       return next;
     } catch (e: any) {
       console.error(e);
@@ -313,7 +327,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   const changerStatut = async (id: string, statut: string) => {
     const { error } = await supabase.from("devis").update({ statut, ...(statut === "envoye" ? { date_envoi: new Date().toISOString() } : {}) }).eq("id", id);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
-    charger();
+    devisModifie();
   };
 
   const supprimer = async (id: string, numero: string | null) => {

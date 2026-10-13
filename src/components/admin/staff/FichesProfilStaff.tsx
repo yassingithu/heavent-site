@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, Search } from "lucide-react";
+import { Download, Pencil, Search } from "lucide-react";
+import EditionStaff from "./EditionStaff";
 import { COULEURS, dateFr, enDataUrl, enteteDoc, esc, logo, nomFichier, photoUrl, piedAgence, telechargerPdf, InfosAgence } from "@/lib/pdf";
 
 type StaffComplet = Record<string, any> & { id: string; nom: string; prenom: string; email: string };
@@ -82,10 +83,11 @@ export default function FichesProfilStaff() {
   const [selection, setSelection] = useState<Set<string>>(new Set());
   const [recherche, setRecherche] = useState("");
   const [enCours, setEnCours] = useState(false);
+  const [edition, setEdition] = useState<string | null>(null);
 
-  useEffect(() => {
+  const chargerStaff = () =>
     supabase.from("staff").select("id, nom, prenom, email, ville, langues, genre").order("nom").then(({ data }) => setStaff((data ?? []) as StaffComplet[]));
-  }, []);
+  useEffect(() => { chargerStaff(); }, []);
 
   const filtres = useMemo(() => {
     const q = recherche.trim().toLowerCase();
@@ -112,7 +114,7 @@ export default function FichesProfilStaff() {
   return (
     <Card>
       <CardHeader className="space-y-3">
-        <CardTitle className="text-base">Fiches profil (PDF)</CardTitle>
+        <CardTitle className="text-base">Mon équipe — fiches profil</CardTitle>
         <div className="flex flex-wrap gap-2 items-center">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="h-4 w-4 absolute left-2 top-3 text-muted-foreground" />
@@ -138,6 +140,9 @@ export default function FichesProfilStaff() {
                   <div className="font-medium truncate">{s.prenom} {s.nom}</div>
                   <div className="text-xs text-muted-foreground truncate">{[s.ville, s.langues].filter(Boolean).join(" · ") || s.email}</div>
                 </div>
+                <Button size="icon" variant="ghost" title="Modifier la fiche / mot de passe" onClick={(e) => { e.preventDefault(); setEdition(s.id); }}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 <Button size="icon" variant="ghost" title="Fiche PDF" disabled={enCours} onClick={(e) => { e.preventDefault(); telecharger([s.id]); }}>
                   <Download className="h-4 w-4" />
                 </Button>
@@ -146,6 +151,7 @@ export default function FichesProfilStaff() {
           </div>
         )}
       </CardContent>
+      <EditionStaff staffId={edition} onClose={() => setEdition(null)} onSaved={chargerStaff} />
     </Card>
   );
 }

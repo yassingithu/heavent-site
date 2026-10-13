@@ -17,6 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 
+const LANGUES = ["Arabe", "Darija", "Amazigh", "Français", "Anglais", "Espagnol", "Allemand", "Italien", "Portugais", "Chinois", "Russe", "Turc"];
+
 const formSchema = z.object({
   nom: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   prenom: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
@@ -897,13 +899,35 @@ const StaffRegistration = () => {
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="langues">Langues parlées *</Label>
-                      <Textarea
-                        id="langues"
-                        placeholder="Ex: Français (natif), Anglais (courant), Arabe (bases)"
-                        rows={3}
-                        {...register("langues")}
-                        className={errors.langues ? "border-destructive" : ""}
+                      <Label>Langues parlées * <span className="text-muted-foreground font-normal">(coche tout ce que tu parles)</span></Label>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {LANGUES.map((langue) => {
+                          const choisies = (watch("langues") || "").split(",").map((l) => l.trim()).filter(Boolean);
+                          const coche = choisies.includes(langue);
+                          return (
+                            <label key={langue} className="flex items-center gap-2 text-sm cursor-pointer">
+                              <Checkbox
+                                checked={coche}
+                                onCheckedChange={(v) => {
+                                  const suivantes = v ? [...choisies, langue] : choisies.filter((l) => l !== langue);
+                                  setValue("langues", LANGUES.filter((l) => suivantes.includes(l)).concat(suivantes.filter((l) => !LANGUES.includes(l))).join(", "), { shouldValidate: true });
+                                }}
+                              />
+                              {langue}
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <Input
+                        className="mt-2"
+                        placeholder="Autre langue (facultatif)"
+                        onBlur={(e) => {
+                          const autre = e.target.value.trim();
+                          if (!autre) return;
+                          const choisies = (watch("langues") || "").split(",").map((l) => l.trim()).filter(Boolean);
+                          if (!choisies.includes(autre)) setValue("langues", [...choisies, autre].join(", "), { shouldValidate: true });
+                          e.target.value = "";
+                        }}
                       />
                       {errors.langues && (
                         <p className="text-sm text-destructive mt-1">{errors.langues.message}</p>

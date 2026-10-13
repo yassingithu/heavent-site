@@ -24,6 +24,7 @@ import FichesProfilStaff from "@/components/admin/staff/FichesProfilStaff";
 import PlanningDispos from "@/components/admin/staff/PlanningDispos";
 import FichesPaieMensuelles from "@/components/admin/paie/FichesPaieMensuelles";
 import ContratsEvenements from "@/components/admin/equipe/ContratsEvenements";
+import DevisParStatut from "@/components/admin/devis/DevisParStatut";
 
 const ADMIN_EMAIL = "i.chaigari@heaventagency.com";
 
@@ -191,6 +192,13 @@ const Admin = () => {
   });
 
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [ongletAdmin, setOngletAdmin] = useState("devis-rapide");
+
+  useEffect(() => {
+    const versDevis = () => setOngletAdmin("devis-rapide");
+    window.addEventListener("heavent:ouvrir-devis", versDevis);
+    return () => window.removeEventListener("heavent:ouvrir-devis", versDevis);
+  }, []);
 
   useEffect(() => {
     // Set up auth state listener
@@ -993,7 +1001,7 @@ const Admin = () => {
       </div>
 
       {/* Data Tables */}
-      <Tabs defaultValue="devis-rapide" className="w-full">
+      <Tabs value={ongletAdmin} onValueChange={setOngletAdmin} className="w-full">
         <div className="overflow-x-auto">
           <TabsList className="grid w-full min-w-[1000px] grid-cols-10 sm:min-w-0">
             <TabsTrigger value="devis-rapide" className="text-xs sm:text-sm flex items-center space-x-1">
@@ -1840,6 +1848,7 @@ const Admin = () => {
 
         {/* Devis Entreprise Tab */}
         <TabsContent value="entreprise" className="space-y-4">
+          <DevisParStatut titre="Devis entreprise" types={["entreprise"]} vide="Aucun devis de type Entreprise." />
           <Card>
             <CardHeader>
               <CardTitle>Demandes de Devis Entreprise</CardTitle>
@@ -1883,6 +1892,7 @@ const Admin = () => {
 
         {/* Devis Événement Tab */}
         <TabsContent value="mariage" className="space-y-4">
+          <DevisParStatut titre="Devis événements et mariages" types={["mariage", "evenement"]} vide="Aucun devis de type Mariage ou Événement." />
           <Card>
             <CardHeader>
               <CardTitle>Demandes de Devis Événement</CardTitle>
@@ -1955,6 +1965,9 @@ const Admin = () => {
 
         {/* Devis Envoyés Tab */}
         <TabsContent value="devis-envoyes" className="space-y-4">
+          <DevisParStatut titre="Devis envoyés" statuts={["envoye"]} vide="Aucun devis envoyé en attente de réponse." />
+          <DevisParStatut titre="Devis acceptés" statuts={["accepte"]} vide="Aucun devis accepté pour l'instant." />
+          <DevisParStatut titre="Devis refusés" statuts={["refuse"]} vide="Aucun devis refusé." />
           <div className="grid grid-cols-1 gap-6">
             
             {/* Devis Entreprise Envoyés */}
