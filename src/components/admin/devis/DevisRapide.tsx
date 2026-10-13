@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import logoDevis from "@/assets/logo-devis-noir.png";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ interface Props {
   onDemandesChange?: () => void;
 }
 
-const LOGO = "/logo-devis-noir.png";
+const LOGO = logoDevis;
 const toNum = (v: string) => (v === "" ? 0 : Number(v.replace(",", ".")));
 
 export default function DevisRapide({ demandesEntreprise, demandesMariage, onDemandesChange }: Props) {
@@ -264,7 +265,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     const conteneur = document.createElement("div");
     try {
       // Logo intégré au document pour qu'il apparaisse à coup sûr dans le PDF
-      let logoSrc = `${window.location.origin}${LOGO}`;
+      let logoSrc = LOGO;
       try {
         const blob = await fetch(LOGO).then((r) => r.blob());
         logoSrc = await new Promise<string>((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result as string); fr.readAsDataURL(blob); });
