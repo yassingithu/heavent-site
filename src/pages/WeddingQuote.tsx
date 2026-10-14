@@ -1,5 +1,6 @@
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
+import bandeauMariage from "@/assets/evt-assiette-or-bandeau.webp";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -152,6 +153,8 @@ const WeddingQuote = () => {
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/30 py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
+          <img src={bandeauMariage} alt="Table de réception dressée avec assiettes dorées et bougies" width={1200} height={480} decoding="async"
+            className="w-full aspect-[5/2] object-cover rounded-2xl mb-8 elegant-shadow" />
           <div className="text-center mb-8">
             <h1 className="text-4xl font-serif font-bold mb-4">
               Demande de Devis <span className="text-primary">Événement</span>
