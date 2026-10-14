@@ -34,8 +34,10 @@ export default function ParametresAgence({ value, onSaved }: { value: Parametres
   if (!p) return null;
 
   const save = async () => {
+    // La signature de l'employeur s'enregistre à part (bloc dédié) : on ne l'écrase pas ici
+    const { signature_employeur, signataire_employeur, ...reste } = p as any;
     const { error } = await supabase.from("parametres_agence").update({
-      ...p, taux_tva: Number(p.taux_tva) || 0, validite_jours: Number(p.validite_jours) || 30,
+      ...reste, taux_tva: Number(p.taux_tva) || 0, validite_jours: Number(p.validite_jours) || 30,
     }).eq("id", 1);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Informations enregistrées" });

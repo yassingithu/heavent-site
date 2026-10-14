@@ -1,3 +1,4 @@
+import { signatureEmployeurHtml } from "@/lib/signatureEmployeur";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -53,7 +54,10 @@ function pagePaie(f: any, agence: InfosAgence | null) {
       ${Number(f.deductions) > Number(f.cnss || 0) + Number(f.amo || 0) + 0.01 ? `<div><span>Autres retenues</span><span>- ${mad(Number(f.deductions) - Number(f.cnss || 0) - Number(f.amo || 0))}</span></div>` : ""}
       <div class="net"><span>NET À PAYER</span><span>${mad(f.salaire_net)}</span></div>
     </div>
-    <p style="margin-top:18px;color:#888;font-size:10px">Bulletin établi le ${dateFr(new Date().toISOString().slice(0, 10))}. À conserver sans limitation de durée.</p>
+    <div class="insecable" style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-top:18px">
+      <p style="color:#888;font-size:10px;margin:0">Bulletin établi à Rabat le ${dateFr(new Date().toISOString().slice(0, 10))}.<br>À conserver sans limitation de durée.</p>
+      <div style="min-width:200px"><div style="font-size:10px;color:#777">Pour l'employeur</div>${signatureEmployeurHtml(48)}</div>
+    </div>
   </div>
   ${piedAgence(agence)}
 </div>`;

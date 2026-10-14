@@ -1,3 +1,4 @@
+import { signatureEmployeurHtml } from "@/lib/signatureEmployeur";
 import { supabase } from "@/integrations/supabase/client";
 import { CONDITIONS_CONTRAT_DEFAUT, articlesHtml } from "@/lib/conditions";
 import { dateFr, esc, mad, nomFichier, telechargerPdf, InfosAgence } from "@/lib/pdf";
@@ -85,7 +86,7 @@ function pageContrat(c: any, s: any, ev: Evenement, agence: InfosAgence | null, 
       <div class="nom">${esc(agence?.raison_sociale ?? "Heavent People Agency")}</div>
       ${adresse ? `<div>${esc(adresse)}</div>` : ""}
       <div>${[agence?.rc && `RC ${esc(agence.rc)}`, agence?.ice && `ICE ${esc(agence.ice)}`].filter(Boolean).join(" · ")}</div>
-      <div>Représentée par Mme Imane CHAIGARI, CEO</div>
+      <div>Représentée par Mme Imane CHAIGARI, CEO — Heavent Agency SARL</div>
     </div>
     <div class="partie client">
       <div class="etiquette">Le / la salarié(e)</div>
@@ -132,9 +133,9 @@ function pageContrat(c: any, s: any, ev: Evenement, agence: InfosAgence | null, 
   <div class="signature">
     <div class="agence">
       <div class="etiquette">Pour l'employeur</div>
-      <div class="sign">Imane CHAIGARI</div>
-      <div class="fonction">CEO — Heavent People Agency</div>
-      <div>Fait à Rabat, le ${aujourdhui}</div>
+      ${signatureEmployeurHtml(54, c.employeur_signe_le
+        ? `Signé électroniquement à Rabat le ${esc(new Date(c.employeur_signe_le).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" }))}`
+        : `Fait à Rabat, le ${aujourdhui}`)}
     </div>
     <div class="client"${c.signe_le ? ' style="border:1px solid #cfe8d5;background:#f6fbf7"' : ""}>
       <div class="etiquette">Le / la salarié(e)</div>
@@ -150,14 +151,22 @@ ${piedHtml(agence)}
 </div>`;
 }
 
-function pageConditions(s: any, ev: Evenement, agence: any) {
+function pageConditions(c: any, s: any, ev: Evenement, agence: any) {
   const texte = agence?.conditions_contrat?.trim() ? agence.conditions_contrat : CONDITIONS_CONTRAT_DEFAUT;
   return `<div class="devis-doc cgv suite">
   <div class="band"><img src="${esc(logoDevis)}" alt="Heavent People Agency"><div class="titre"><div class="mot" style="font-size:26px;letter-spacing:4px">CONDITIONS</div><div class="num">DE LA MISSION</div><div class="dates">Annexe au contrat de ${esc(s.prenom ?? "")} ${esc(s.nom ?? "")}${ev.numero ? ` · ${esc(ev.numero)}` : ""}</div></div></div>
   <div class="corps">
     <div class="intro">Les conditions ci-dessous font partie intégrante du contrat de mission${ev.titre ? ` pour « ${esc(ev.titre)} »` : ""}.</div>
     <div class="cols">${articlesHtml(texte, esc)}</div>
-    <div class="accord">Paraphe du / de la salarié(e) : ……………………&nbsp;&nbsp;&nbsp;&nbsp;Paraphe de l'employeur : ……………………</div>
+    <div class="accord" style="display:flex;gap:28px;align-items:flex-end;flex-wrap:wrap">
+      <div><div style="font-size:10px;color:#777">Pour l'employeur</div>${signatureEmployeurHtml(40)}</div>
+      ${c.signe_le
+        ? `<div><div style="font-size:10px;color:#777">Lu et approuvé par le / la salarié(e)</div>
+            <img src="${esc(c.signature_image ?? "")}" alt="" style="height:40px;display:block;margin:4px 0 2px">
+            <div style="font-weight:600;color:#141414">${esc(c.signature_nom ?? "")}</div>
+            <div style="font-size:9.5px;color:#2f6b3d">Conditions acceptées électroniquement le ${esc(new Date(c.conditions_acceptees_le ?? c.signe_le).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" }))}</div></div>`
+        : `<div>Paraphe du / de la salarié(e) : ……………………</div>`}
+    </div>
   </div>
   ${piedHtml(agence)}
 </div>`;
@@ -174,7 +183,7 @@ export async function telechargerContrats(contratIds: string[], nom?: string) {
   // Le staff n'a pas accès à la table devis : on retombe sur les infos copiées dans le contrat
   const pages = liste.flatMap((c, i) => {
     const ev: Evenement = { titre: c.devis?.titre ?? c.evenement ?? "", numero: c.devis?.numero ?? c.devis_numero ?? "", lieu: c.devis?.lieu ?? c.lieu };
-    return [pageContrat(c, c.staff ?? {}, ev, agence, i > 0), pageConditions(c.staff ?? {}, ev, agence)];
+    return [pageContrat(c, c.staff ?? {}, ev, agence, i > 0), pageConditions(c, c.staff ?? {}, ev, agence)];
   });
   const ref = liste[0].devis?.numero ?? liste[0].devis_numero ?? liste[0].evenement;
   const fichier = nom ?? (liste.length === 1

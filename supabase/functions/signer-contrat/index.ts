@@ -7,6 +7,8 @@ import { Resend } from "npm:resend@2.0.0";
  * Signature électronique d'un contrat par le crew (loi 53-05 : signature électronique simple).
  * - seul le crew concerné peut signer son contrat ;
  * - idéalement 24 h avant le début de la mission, au plus tard le dernier jour du mois de la mission ;
+ * - en acceptant, le crew signe aussi les conditions de la mission (annexe) ; l'employeur contresigne
+ *   au même moment (Imane CHAIGARI, CEO — Heavent Agency SARL ; signature imprimée par le site) ;
  * - on garde une preuve : date, nom saisi, image de la signature, adresse IP, navigateur, empreinte du contenu signé.
  */
 const ADMIN_EMAIL = "i.chaigari@heaventagency.com";
@@ -60,12 +62,15 @@ const handler = async (req: Request): Promise<Response> => {
     if (Date.now() > fin.getTime())
       return json({ error: "Le délai de signature est dépassé (fin du mois de la mission). Contacte l'agence." }, 410);
 
+    const { data: agence } = await admin.from("parametres_agence").select("conditions_contrat").eq("id", 1).maybeSingle();
     const contenu = JSON.stringify({ titre: c.titre, evenement: c.evenement, lieu: c.lieu, dates: c.dates, taux: c.taux_horaire, brut: c.salaire_brut });
     const preuve = {
       ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
       navigateur: req.headers.get("user-agent"),
       email: caller.email,
       empreinte_contenu: await empreinte(contenu),
+      // texte des conditions accepté (vide = texte par défaut du site)
+      empreinte_conditions: await empreinte(agence?.conditions_contrat?.trim() ?? "defaut"),
       limite_signature: limite.toISOString(),
       fin_signature: fin.toISOString(),
       signe_en_retard: Date.now() > limite.getTime(),
@@ -73,6 +78,9 @@ const handler = async (req: Request): Promise<Response> => {
     const signeLe = new Date().toISOString();
     const { error } = await admin.from("contrats").update({
       signe_le: signeLe, signature_nom: String(nom).trim().slice(0, 120), signature_image: image,
+      conditions_acceptees_le: signeLe,
+      employeur_signe_le: signeLe,
+      employeur_signataire: "Imane CHAIGARI, CEO — Heavent Agency SARL",
       signature_preuve: { ...(c.signature_preuve ?? {}), ...preuve, signe_le: signeLe },
     }).eq("id", contratId);
     if (error) return json({ error: "Signature non enregistrée : " + error.message }, 500);
@@ -81,7 +89,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (cle) {
       await new Resend(cle).emails.send({
         from: FROM, to: [ADMIN_EMAIL], subject: `Contrat signé — ${c.staff?.prenom} ${c.staff?.nom}`,
-        html: `<p><b>${c.staff?.prenom} ${c.staff?.nom}</b> a signé son contrat « ${c.evenement ?? c.titre} » le ${new Date(signeLe).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" })}${Date.now() > limite.getTime() ? " (en retard : après le délai de 24 h avant la mission)" : ""}.</p>`,
+        html: `<p><b>${c.staff?.prenom} ${c.staff?.nom}</b> a signé son contrat « ${c.evenement ?? c.titre} » le ${new Date(signeLe).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" })}${Date.now() > limite.getTime() ? " (en retard : après le délai de 24 h avant la mission)" : ""}, avec les conditions de la mission.</p><p>Le contrat a été contresigné automatiquement par l'employeur (Imane CHAIGARI, CEO).</p>`,
       }).catch(() => {});
     }
     return json({ success: true, signe_le: signeLe });

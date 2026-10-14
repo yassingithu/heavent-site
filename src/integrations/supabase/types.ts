@@ -73,6 +73,10 @@ export type Database = {
           signature_preuve: Json | null
           rappel_signature_le: string | null
           rappels_signature: number
+          employeur_signature_image: string | null
+          employeur_signataire: string | null
+          employeur_signe_le: string | null
+          conditions_acceptees_le: string | null
           dates: Json | null
           lieu: string | null
           total_heures: number | null
@@ -101,6 +105,10 @@ export type Database = {
           signature_preuve?: Json | null
           rappel_signature_le?: string | null
           rappels_signature?: number
+          employeur_signature_image?: string | null
+          employeur_signataire?: string | null
+          employeur_signe_le?: string | null
+          conditions_acceptees_le?: string | null
           dates?: Json | null
           lieu?: string | null
           total_heures?: number | null
@@ -129,6 +137,10 @@ export type Database = {
           signature_preuve?: Json | null
           rappel_signature_le?: string | null
           rappels_signature?: number
+          employeur_signature_image?: string | null
+          employeur_signataire?: string | null
+          employeur_signe_le?: string | null
+          conditions_acceptees_le?: string | null
           dates?: Json | null
           lieu?: string | null
           total_heures?: number | null

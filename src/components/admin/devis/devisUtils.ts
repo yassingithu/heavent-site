@@ -1,3 +1,4 @@
+import { SIGNATAIRE_EMPLOYEUR, signatureEmployeurHtml } from "@/lib/signatureEmployeur";
 import { format } from "date-fns";
 import { CGV_DEFAUT, articlesHtml } from "@/lib/conditions";
 import { fr } from "date-fns/locale";
@@ -154,7 +155,7 @@ export function nouveauDevis(p?: Parametres | null): DevisForm {
 const esc = (s: unknown) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 
-export const SIGNATAIRE = { nom: "Imane CHAIGARI", fonction: "CEO — Heavent People Agency" };
+export const SIGNATAIRE = SIGNATAIRE_EMPLOYEUR;
 
 /** Contenu du devis (styles limités à .devis-doc pour pouvoir l'insérer dans la page et le convertir en PDF). */
 /** Mise en page commune des documents élégants (devis, contrats) : classe .devis-doc */
@@ -316,8 +317,7 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
   <div class="signature">
     <div class="agence">
       <div class="etiquette">Pour l'agence</div>
-      <div class="sign">${esc(SIGNATAIRE.nom)}</div>
-      <div class="fonction">${esc(SIGNATAIRE.fonction)}</div>
+      ${signatureEmployeurHtml(54)}
       ${adresse ? `<div>${esc(adresse)}</div>` : ""}
       <div>${[p?.telephone, p?.email].filter(Boolean).map(esc).join(" · ")}</div>
     </div>

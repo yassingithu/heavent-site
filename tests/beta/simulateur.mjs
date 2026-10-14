@@ -6,7 +6,7 @@ export function nouvelleBase() {
   return {
     staff: F.staff.map((s) => ({ ...s, banni: false })), disponibilites: F.dispos.map((d) => ({ ...d })),
     affectations: [], contrats: [], fiches_paie: [], devis: [], devis_lignes: [],
-    catalogue_prestations: F.catalogue, parametres_agence: F.param, devis_entreprise: [],
+    catalogue_prestations: F.catalogue, parametres_agence: F.param.map((p) => ({ ...p })), devis_entreprise: [],
     devis_mariage: F.dem.map((d) => ({ ...d })), admins: [{ email: "admin@heavent.test" }],
     appelsFonctions: [],
   };
@@ -58,7 +58,9 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       base.appelsFonctions.push({ nom, corps });
       if (nom === "signer-contrat") {
         const c = base.contrats.find((x) => x.id === corps.contratId);
-        if (c) Object.assign(c, { signe_le: new Date().toISOString(), signature_nom: corps.nom, signature_image: corps.image });
+        const t = new Date().toISOString();
+        if (c) Object.assign(c, { signe_le: t, signature_nom: corps.nom, signature_image: corps.image, conditions_acceptees_le: t,
+          employeur_signe_le: t, employeur_signataire: "Imane CHAIGARI, CEO — Heavent Agency SARL" });
         return route.fulfill({ json: { success: true } });
       }
       if (nom === "admin-change-password" && corps.action === "ban") base.staff.filter((s) => s.email === corps.userEmail).forEach((s) => { s.banni = true; });

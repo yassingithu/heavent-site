@@ -157,31 +157,43 @@ await scenario("Admin : créer, modifier et supprimer un contrat à la main", as
 });
 
 // 3 ter. Signature du contrat en ligne par le crew (24 h avant conseillé, jusqu'à la fin du mois au plus tard)
-await scenario("Crew : signer son contrat en ligne (rappels, retard, fin du mois)", async (notes) => {
+await scenario("Crew : signer contrat + conditions (contresignés par l'employeur)", async (notes) => {
   const base = nouvelleBase();
   const crew = base.staff[0];
   const jour = (j) => new Date(Date.now() + j * 864e5).toISOString().slice(0, 10);
   const moisDernier = (() => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); return d.toISOString().slice(0, 10); })();
-  const c = (id, evenement, date, h) => ({ id, staff_id: crew.id, titre: "Hôtesse", type_contrat: "cdd", statut: "actif", evenement, date_debut: date, date_fin: date, taux_horaire: 60, total_heures: 4, salaire_brut: 240, dates: [{ date, heures: 4, heure_debut: h, heure_fin: "23:00" }] });
+  const c = (id, evenement, date, h) => ({ id, staff_id: crew.id, titre: "Hôtesse", type_contrat: "cdd", statut: "actif", evenement, lieu: "Rabat", date_debut: date, date_fin: date, taux_horaire: 60, total_heures: 4, salaire_brut: 240, dates: [{ date, heures: 4, heure_debut: h, heure_fin: "23:00" }] });
   base.contrats.push(c("cA", "Salon futur", jour(10), "09:00"), c("cB", "Soirée demain", jour(0.5), "00:00"), c("cC", "Gala ancien", moisDernier, "19:00"));
+  const dessiner = async (page, id) => {
+    const zone = page.getByTestId(id); await zone.scrollIntoViewIfNeeded(); const b = await zone.boundingBox();
+    await page.mouse.move(b.x + 20, b.y + 50); await page.mouse.down();
+    for (let i = 0; i < 40; i++) await page.mouse.move(b.x + 20 + i * 6, b.y + 50 + Math.sin(i / 3) * 25, { steps: 2 });
+    await page.mouse.up();
+  };
+
+  // 2. Le crew signe (contrat + conditions) sur son téléphone
   const { page, ctx, erreurs } = await contexte(navigateur, base, crew.email, { mobile: true });
   await connecter(page, BASE, crew.email, "/staff-dashboard");
-  const onglet = page.getByRole("tab", { name: /contrat/i }); if (await onglet.count()) { await onglet.first().click(); await page.waitForTimeout(600); }
   verifier(await page.getByText("À signer — en retard").count(), "le contrat en retard (encore signable) n'est pas signalé");
   verifier(await page.getByText("Non signé — délai dépassé").count(), "le contrat d'un mois passé n'est pas fermé");
   verifier(await page.getByRole("button", { name: /Lire et signer/ }).count() === 2, "il faut 2 contrats signables (à temps + en retard)");
   await page.getByRole("button", { name: /Lire et signer/ }).first().click(); await page.waitForTimeout(1000);
-  const zone = page.getByTestId("zone-signature"); await zone.scrollIntoViewIfNeeded(); const b = await zone.boundingBox();
-  await page.mouse.move(b.x + 20, b.y + 60); await page.mouse.down();
-  for (let i = 0; i < 40; i++) await page.mouse.move(b.x + 20 + i * 6, b.y + 60 + Math.sin(i / 3) * 30, { steps: 2 });
-  await page.mouse.up();
+  await page.getByTestId("conditions-mission").locator("summary").click(); await page.waitForTimeout(300);
+  verifier((await page.getByTestId("conditions-mission").innerText()).includes("Confidentialité"), "les conditions ne sont pas lisibles avant de signer");
+  await page.screenshot({ path: `${CAPTURES}/3-signature-fenetre.png` });
+  await dessiner(page, "zone-signature");
   await page.getByRole("dialog").getByRole("checkbox").click();
   await page.getByRole("button", { name: "Signer le contrat" }).click(); await page.waitForTimeout(1500);
-  await page.screenshot({ path: `${CAPTURES}/3-signature.png`, fullPage: true });
   const appel = base.appelsFonctions.find((a) => a.nom === "signer-contrat");
   verifier(appel && appel.corps.image?.startsWith("data:image/png") && appel.corps.accepte, "signature non envoyée");
   verifier(await page.getByText("Signé ✓").count(), "le contrat n'apparaît pas comme signé");
-  notes.push("contrat à temps, en retard (signable) et d'un mois passé (fermé) bien distingués ; signature au doigt envoyée");
+  const signe = base.contrats.find((x) => x.id === "cA");
+  verifier(signe.conditions_acceptees_le && signe.employeur_signe_le, "conditions ou contresignature employeur manquantes");
+  await page.screenshot({ path: `${CAPTURES}/3-signature.png`, fullPage: true });
+  // 3. Le PDF du contrat signé porte les deux signatures
+  const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 30000 }), page.getByRole("button", { name: /Télécharger mon contrat/ }).first().click()]);
+  await dl.saveAs(`${CAPTURES}/contrat-signe.pdf`);
+  notes.push("contrat + conditions signés par le crew et contresignés ; PDF téléchargé");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
 });
