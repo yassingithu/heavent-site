@@ -1,2 +1,59 @@
 -- Les contrats créés à la main (sans devis) comptent aussi dans les fiches de paie du mois.
--- Voir la définition complète de generer_fiches_paie appliquée en base (union affectations + contrats.dates).
+CREATE OR REPLACE FUNCTION public.generer_fiches_paie(p_annee integer, p_mois integer)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  n int := 0;
+  r record;
+begin
+  if auth.uid() is not null and not public.is_admin() then
+    raise exception 'Accès refusé';
+  end if;
+
+  for r in
+    with lignes as (
+      -- Missions issues des devis (équipe de l'événement)
+      select a.staff_id, a.date_jour, a.heures, a.taux_horaire as taux, a.poste,
+             coalesce(d.titre, d.client_societe, d.client_nom) as evenement, d.numero
+      from public.affectations a join public.devis d on d.id = a.devis_id
+      where a.statut = 'confirme'
+      union all
+      -- Contrats créés à la main (sans devis)
+      select c.staff_id, (x->>'date')::date, coalesce((x->>'heures')::numeric, 0),
+             coalesce((x->>'taux')::numeric, c.taux_horaire, 0), c.titre, coalesce(c.evenement, c.description), null
+      from public.contrats c cross join lateral jsonb_array_elements(coalesce(c.dates, '[]'::jsonb)) x
+      where c.devis_id is null and c.statut <> 'annule'
+    )
+    select l.staff_id,
+           sum(l.heures) as heures,
+           round(sum(l.heures * l.taux), 2) as brut,
+           jsonb_agg(jsonb_build_object('date', l.date_jour, 'evenement', l.evenement, 'numero', l.numero, 'poste', l.poste,
+             'heures', l.heures, 'taux', l.taux, 'montant', round(l.heures * l.taux, 2)) order by l.date_jour) as details
+    from lignes l
+    where extract(year from l.date_jour) = p_annee and extract(month from l.date_jour) = p_mois
+    group by l.staff_id
+  loop
+    insert into public.fiches_paie as f
+      (staff_id, mois, annee, heures_travaillees, salaire_brut, cnss, amo, deductions, prime, salaire_net, details, statut, generee_auto)
+    values
+      (r.staff_id, p_mois, p_annee, r.heures, r.brut,
+       round(least(r.brut, 6000) * 0.0448, 2), round(r.brut * 0.0226, 2),
+       round(least(r.brut, 6000) * 0.0448, 2) + round(r.brut * 0.0226, 2), 0,
+       r.brut - round(least(r.brut, 6000) * 0.0448, 2) - round(r.brut * 0.0226, 2),
+       r.details, 'en_attente', true)
+    on conflict (staff_id, mois, annee) do update set
+      heures_travaillees = excluded.heures_travaillees,
+      salaire_brut = excluded.salaire_brut,
+      cnss = excluded.cnss, amo = excluded.amo, deductions = excluded.deductions,
+      salaire_net = excluded.salaire_net + coalesce(f.prime, 0),
+      details = excluded.details, generee_auto = true
+    where f.statut = 'en_attente';
+    n := n + 1;
+  end loop;
+  return n;
+end;
+$function$
+;
