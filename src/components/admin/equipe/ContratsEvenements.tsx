@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Pencil, Trash2 } from "lucide-react";
+import { ouvrirDevis } from "@/components/admin/devis/DevisParStatut";
 import { dateFr, mad } from "@/lib/pdf";
 import { telechargerContrats } from "./contratPdf";
 
@@ -13,11 +14,21 @@ export default function ContratsEvenements() {
   const [contrats, setContrats] = useState<any[]>([]);
   const [enCours, setEnCours] = useState(false);
 
-  useEffect(() => {
-    supabase.from("contrats").select("id, titre, date_debut, date_fin, total_heures, salaire_brut, dates, devis_id, staff(nom, prenom), devis(numero, titre, date_evenement)")
+  const charger = () =>
+    supabase.from("contrats").select("id, titre, date_debut, date_fin, total_heures, salaire_brut, dates, devis_id, staff_id, staff(nom, prenom), devis(numero, titre, date_evenement)")
       .not("devis_id", "is", null).order("date_debut", { ascending: false })
       .then(({ data }) => setContrats(data ?? []));
-  }, []);
+  useEffect(() => { charger(); }, []);
+
+  // Supprime la personne de l'équipe de cet événement (sinon le contrat serait recréé) puis le contrat
+  const supprimer = async (c: any) => {
+    if (!window.confirm(`Retirer ${c.staff?.prenom ?? ""} ${c.staff?.nom ?? ""} de l'événement « ${c.devis?.titre ?? ""} » et supprimer son contrat ?`)) return;
+    const a = await supabase.from("affectations").delete().eq("devis_id", c.devis_id).eq("staff_id", c.staff_id);
+    const r = a.error ? a : await supabase.from("contrats").delete().eq("id", c.id);
+    if (r.error) { toast({ title: "Erreur", description: r.error.message, variant: "destructive" }); return; }
+    toast({ title: "Contrat supprimé", description: "La personne est retirée de l'équipe. Pense à recalculer la paie du mois si elle était déjà calculée." });
+    charger();
+  };
 
   const groupes = contrats.reduce<Record<string, any[]>>((acc, c) => { (acc[c.devis_id] ??= []).push(c); return acc; }, {});
 
@@ -31,7 +42,7 @@ export default function ContratsEvenements() {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Contrats par événement</CardTitle>
-        <p className="text-sm text-muted-foreground">Ils se créent depuis un devis, rubrique « Équipe de l'événement » : un contrat par personne et par événement, avec toutes ses dates.</p>
+        <p className="text-sm text-muted-foreground">Ils se créent depuis un devis, rubrique « Équipe de l'événement » : un contrat par personne et par événement, avec toutes ses dates. Le crayon ouvre le devis pour changer les dates, horaires ou heures.</p>
       </CardHeader>
       <CardContent className="space-y-3">
         {Object.keys(groupes).length === 0 && <p className="text-sm text-muted-foreground">Aucun contrat d'événement pour l'instant.</p>}
@@ -48,7 +59,11 @@ export default function ContratsEvenements() {
               {liste.map((c) => (
                 <div key={c.id} className="flex items-center justify-between gap-2 py-1.5 text-sm">
                   <div>{c.staff?.prenom} {c.staff?.nom} <span className="text-muted-foreground">· {(c.dates ?? []).length} date(s) · {dateFr(c.date_debut)}{c.date_fin && c.date_fin !== c.date_debut ? ` → ${dateFr(c.date_fin)}` : ""} · {c.total_heures} h · {mad(c.salaire_brut)}</span></div>
-                  <Button size="icon" variant="ghost" disabled={enCours} onClick={() => telecharger([c.id])}><Download className="h-4 w-4" /></Button>
+                  <div className="flex gap-1 shrink-0">
+                    <Button size="icon" variant="ghost" title="Modifier les dates, horaires et heures (dans le devis)" onClick={() => ouvrirDevis(c.devis_id)}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" title="Contrat PDF" disabled={enCours} onClick={() => telecharger([c.id])}><Download className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" title="Supprimer" className="text-red-600 hover:text-red-700" onClick={() => supprimer(c)}><Trash2 className="h-4 w-4" /></Button>
+                  </div>
                 </div>
               ))}
             </div>

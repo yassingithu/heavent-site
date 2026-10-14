@@ -1,0 +1,2 @@
+-- Les contrats créés à la main (sans devis) comptent aussi dans les fiches de paie du mois.
+-- Voir la définition complète de generer_fiches_paie appliquée en base (union affectations + contrats.dates).

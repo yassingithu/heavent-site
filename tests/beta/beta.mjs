@@ -126,6 +126,36 @@ await scenario("Admin : corriger les dispos, changer un mot de passe, bannir un 
   await ctx.close();
 });
 
+// 3 bis. Contrat créé à la main : heures, modification, suppression
+await scenario("Admin : créer, modifier et supprimer un contrat à la main", async (notes) => {
+  const base = nouvelleBase();
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Contrats$/ }).click(); await page.waitForTimeout(1000);
+  await page.getByRole("button", { name: /Nouveau contrat/ }).click(); await page.waitForTimeout(800);
+  const dlg = page.getByRole("dialog");
+  await dlg.getByRole("combobox").first().click(); await page.getByRole("option").first().click();
+  await dlg.locator('input[placeholder^="ex. Salon"]').fill("Salon de l'Auto");
+  await dlg.locator("input[type=date]").first().fill("2026-11-05");
+  await dlg.locator("input[type=time]").nth(0).fill("10:00"); await dlg.locator("input[type=time]").nth(1).fill("16:00");
+  await dlg.getByRole("button", { name: /Ajouter une date/ }).click();
+  await dlg.getByRole("button", { name: "Enregistrer" }).click(); await page.waitForTimeout(1200);
+  const c = base.contrats[0];
+  verifier(c && c.total_heures === 12 && c.dates.length === 2 && c.dates[0].heure_debut === "10:00", "contrat manuel mal enregistré : " + JSON.stringify(c?.dates));
+  notes.push(`contrat créé : 2 dates, ${c.total_heures} h, ${c.salaire_brut} MAD brut`);
+  await page.getByRole("button", { name: /Modifier/ }).first().click(); await page.waitForTimeout(1000);
+  await page.getByRole("dialog").locator("input[type=number]").first().fill("4");
+  await page.getByRole("dialog").getByRole("button", { name: "Enregistrer" }).click(); await page.waitForTimeout(1200);
+  verifier(base.contrats[0].total_heures === 10, `modification non prise en compte (${base.contrats[0].total_heures} h)`);
+  notes.push("heures modifiées (10 h)");
+  page.on("dialog", (d) => d.accept());
+  await page.getByTitle("Supprimer").first().click(); await page.waitForTimeout(1000);
+  verifier(base.contrats.length === 0, "contrat non supprimé");
+  notes.push("contrat supprimé");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
 // 4. Affichage smartphone : rien ne dépasse de l'écran
 await scenario("Affichage smartphone (pages publiques et admin)", async (notes) => {
   const base = nouvelleBase();

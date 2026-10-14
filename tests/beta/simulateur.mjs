@@ -21,6 +21,8 @@ function correspond(ligne, params) {
     if (op === "gte" && !(String(c) >= val)) return false;
     if (op === "lte" && !(String(c) <= val)) return false;
     if (op === "ilike" && String(c).toLowerCase() !== val.toLowerCase()) return false;
+    if (op === "is" && val === "null" && c != null) return false;
+    if (op === "not" && val === "is.null" && c == null) return false;
     if (op === "in") { const l = val.replace(/^\(|\)$/g, "").split(",").map((x) => x.replace(/"/g, "")); if (!l.includes(String(c))) return false; }
   }
   return true;
