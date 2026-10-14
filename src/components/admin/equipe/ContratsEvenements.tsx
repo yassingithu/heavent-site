@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Pencil, Trash2 } from "lucide-react";
 import { ouvrirDevis } from "@/components/admin/devis/DevisParStatut";
 import { dateFr, mad } from "@/lib/pdf";
-import { BADGE_SIGNATURE, etatSignature } from "@/lib/signature";
+import { BADGE_SIGNATURE, dateHeureFr, etatSignature } from "@/lib/signature";
 import { telechargerContrats } from "./contratPdf";
 
 /** Contrats générés depuis les devis, regroupés par événement. */
@@ -16,7 +16,7 @@ export default function ContratsEvenements() {
   const [enCours, setEnCours] = useState(false);
 
   const charger = () =>
-    supabase.from("contrats").select("id, titre, date_debut, date_fin, total_heures, salaire_brut, dates, statut, signe_le, devis_id, staff_id, staff(nom, prenom), devis(numero, titre, date_evenement)")
+    supabase.from("contrats").select("id, titre, date_debut, date_fin, total_heures, salaire_brut, dates, statut, signe_le, signature_nom, devis_id, staff_id, staff(nom, prenom), devis(numero, titre, date_evenement)")
       .not("devis_id", "is", null).order("date_debut", { ascending: false })
       .then(({ data }) => setContrats(data ?? []));
   useEffect(() => { charger(); }, []);
@@ -52,14 +52,15 @@ export default function ContratsEvenements() {
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
               <div>
                 <div className="font-medium">{liste[0].devis?.titre || "Événement"} <span className="text-xs text-muted-foreground font-mono">{liste[0].devis?.numero}</span></div>
-                <div className="text-xs text-muted-foreground">{liste.length} contrat(s)</div>
+                <div className="text-xs text-muted-foreground">{liste.length} contrat(s) · <span className="text-emerald-800 font-medium">{liste.filter((c) => c.signe_le).length}/{liste.length} signé(s)</span></div>
               </div>
               <Button size="sm" disabled={enCours} onClick={() => telecharger(liste.map((c) => c.id))}><Download className="h-4 w-4 mr-1" /> Tous (PDF)</Button>
             </div>
             <div className="divide-y">
               {liste.map((c) => (
                 <div key={c.id} className="flex items-center justify-between gap-2 py-1.5 text-sm">
-                  <div>{c.staff?.prenom} {c.staff?.nom} {(() => { const b = BADGE_SIGNATURE[etatSignature(c)]; return <span className={`text-[11px] font-medium rounded-full px-2 py-0.5 ${b.classe}`}>{b.texte}</span>; })()} <span className="text-muted-foreground">· {(c.dates ?? []).length} date(s) · {dateFr(c.date_debut)}{c.date_fin && c.date_fin !== c.date_debut ? ` → ${dateFr(c.date_fin)}` : ""} · {c.total_heures} h · {mad(c.salaire_brut)}</span></div>
+                  <div>{c.staff?.prenom} {c.staff?.nom} {(() => { const b = BADGE_SIGNATURE[etatSignature(c)]; return <span className={`text-[11px] font-medium rounded-full px-2 py-0.5 ${b.classe}`}>{b.texte}</span>; })()} <span className="text-muted-foreground">· {(c.dates ?? []).length} date(s) · {dateFr(c.date_debut)}{c.date_fin && c.date_fin !== c.date_debut ? ` → ${dateFr(c.date_fin)}` : ""} · {c.total_heures} h · {mad(c.salaire_brut)}</span>
+                    {c.signe_le && <div className="text-xs text-emerald-800">Signé le {dateHeureFr(c.signe_le)}{c.signature_nom ? ` par ${c.signature_nom}` : ""} · contresigné par l'employeur</div>}</div>
                   <div className="flex gap-1 shrink-0">
                     <Button size="icon" variant="ghost" title="Modifier les dates, horaires et heures (dans le devis)" onClick={() => ouvrirDevis(c.devis_id)}><Pencil className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" title="Contrat PDF" disabled={enCours} onClick={() => telecharger([c.id])}><Download className="h-4 w-4" /></Button>

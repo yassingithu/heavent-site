@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, FileSignature, Plus, UserPlus, X } from "lucide-react";
 import { CRENEAUX, Dispo, libelleDispo } from "@/components/admin/staff/PlanningDispos";
 import { telechargerContrats } from "./contratPdf";
+import { BADGE_SIGNATURE, dateHeureFr, etatSignature } from "@/lib/signature";
 import { telechargerFichesProfil } from "@/components/admin/staff/FichesProfilStaff";
 
 interface StaffMini { id: string; nom: string; prenom: string; ville: string | null; taux_horaire: number | null; genre?: string | null }
@@ -54,6 +55,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
   const [occupes, setOccupes] = useState<{ staff_id: string; date_jour: string; numero: string | null }[]>([]);
   const [ajoutManuel, setAjoutManuel] = useState("");
   const [enCours, setEnCours] = useState(false);
+  const [signatures, setSignatures] = useState<Record<string, any>>({});
   const [horaireEquipe, setHoraireEquipe] = useState<{ debut: string | null; fin: string | null }>({ debut: null, fin: null });
 
   useEffect(() => { if (!dates.includes(jour)) setJour(dates[0] ?? ""); }, [dates, jour]);
@@ -67,6 +69,8 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
       supabase.from("affectations").select("staff_id, date_jour, devis(numero)").in("date_jour", dates).neq("devis_id", devisId).neq("statut", "annule"),
     ]);
     setStaff((s.data ?? []) as StaffMini[]);
+    supabase.from("contrats").select("staff_id, statut, signe_le, signature_nom, dates, date_debut, date_fin").eq("devis_id", devisId)
+      .then(({ data }) => setSignatures(Object.fromEntries((data ?? []).map((c) => [c.staff_id, c]))));
     setDispos((d.data ?? []) as Dispo[]);
     setAffects((a.data ?? []) as Affectation[]);
     setOccupes(((o.data ?? []) as any[]).map((x) => ({ staff_id: x.staff_id, date_jour: x.date_jour, numero: x.devis?.numero ?? null })));
@@ -307,7 +311,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
               {equipe.map(({ staff_id, lignes }) => (
                 <div key={staff_id} className="border rounded-md p-3 space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="font-medium">{nomStaff(staff_id)}</div>
+                    <div className="font-medium">{nomStaff(staff_id)} {signatures[staff_id] && (() => { const c = signatures[staff_id]; const b = BADGE_SIGNATURE[etatSignature(c)]; return <span title={c.signe_le ? `Signé le ${dateHeureFr(c.signe_le)}` : undefined} className={`ml-1 text-[11px] font-medium rounded-full px-2 py-0.5 ${b.classe}`}>{b.texte}</span>; })()}</div>
                     <Button size="sm" variant="ghost" disabled={enCours} onClick={() => telechargerUn(staff_id)}><FileSignature className="h-4 w-4 mr-1" /> Contrat</Button>
                   </div>
                   <div className="flex flex-wrap gap-1">

@@ -16,6 +16,7 @@ import { fr } from "date-fns/locale";
 import { TimeSlotSelector } from "@/components/TimeSlotSelector";
 import { telechargerContrats } from "@/components/admin/equipe/contratPdf";
 import SignatureContrat from "@/components/contrat/SignatureContrat";
+import RemarquesContrat from "@/components/contrat/RemarquesContrat";
 import { BADGE_SIGNATURE, dateHeureFr, etatSignature, finSignature, limiteSignature } from "@/lib/signature";
 import { telechargerFichesPaie } from "@/components/admin/paie/FichesPaieMensuelles";
 
@@ -578,6 +579,7 @@ const StaffDashboard = () => {
                               {telechargement === contrat.id ? "Création du PDF…" : "Télécharger mon contrat (PDF)"}
                             </Button>
                           </div>
+                          {staffInfo?.id && <RemarquesContrat contrat={contrat} staffId={staffInfo.id} />}
                         </div>
                       );
                     })}

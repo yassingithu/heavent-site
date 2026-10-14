@@ -1,4 +1,6 @@
 import Seo from "@/components/Seo";
+import RemarquesCrews from "@/components/admin/equipe/RemarquesCrews";
+import SuiviSignatures from "@/components/admin/equipe/SuiviSignatures";
 import { useState, useEffect } from "react";
 import { estAdmin } from "@/lib/admin";
 import { useNavigate } from "react-router-dom";
@@ -1431,6 +1433,8 @@ const Admin = () => {
 
         {/* Contrats Tab */}
         <TabsContent value="contrats" className="space-y-4">
+          <RemarquesCrews />
+          <SuiviSignatures />
           <ContratsEvenements />
           <ContratsManuels />
         </TabsContent>

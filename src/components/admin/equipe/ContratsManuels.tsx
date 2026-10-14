@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, Pencil, Plus, Trash2 } from "lucide-react";
 import { dateFr, mad } from "@/lib/pdf";
-import { BADGE_SIGNATURE, etatSignature } from "@/lib/signature";
+import { BADGE_SIGNATURE, dateHeureFr, etatSignature } from "@/lib/signature";
 import { telechargerContrats } from "./contratPdf";
 import EditionContrat from "./EditionContrat";
 
@@ -18,7 +18,7 @@ export default function ContratsManuels() {
   const [enCours, setEnCours] = useState(false);
 
   const charger = () =>
-    supabase.from("contrats").select("id, titre, evenement, lieu, statut, date_debut, date_fin, total_heures, heures_prestations, salaire_brut, taux_horaire, dates, signe_le, staff(nom, prenom)")
+    supabase.from("contrats").select("id, titre, evenement, lieu, statut, date_debut, date_fin, total_heures, heures_prestations, salaire_brut, taux_horaire, dates, signe_le, signature_nom, staff(nom, prenom)")
       .is("devis_id", null).order("date_debut", { ascending: false })
       .then(({ data }) => setContrats(data ?? []));
   useEffect(() => { charger(); }, []);
@@ -65,6 +65,7 @@ export default function ContratsManuels() {
                       {c.evenement ? `${c.evenement} · ` : ""}{dateFr(c.date_debut)}{c.date_fin && c.date_fin !== c.date_debut ? ` → ${dateFr(c.date_fin)}` : ""}
                       {" · "}{(c.dates ?? []).length || 1} date(s) · {heures != null ? `${heures} h` : "heures non indiquées"} · {mad(c.salaire_brut)}
                     </div>
+                    {c.signe_le && <div className="text-xs text-emerald-800">Signé le {dateHeureFr(c.signe_le)}{c.signature_nom ? ` par ${c.signature_nom}` : ""} · contresigné par l'employeur</div>}
                   </div>
                   <div className="flex gap-1">
                     <Button size="sm" variant="outline" onClick={() => setEdition(c.id)}><Pencil className="h-4 w-4 mr-1" /> Modifier</Button>

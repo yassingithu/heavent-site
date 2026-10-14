@@ -193,9 +193,64 @@ await scenario("Crew : signer contrat + conditions (contresignés par l'employeu
   // 3. Le PDF du contrat signé porte les deux signatures
   const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 30000 }), page.getByRole("button", { name: /Télécharger mon contrat/ }).first().click()]);
   await dl.saveAs(`${CAPTURES}/contrat-signe.pdf`);
+  // 4. L'admin voit le contrat signé dans l'onglet Contrats
+  { const a = await contexte(navigateur, base, ADMIN);
+    await connecter(a.page, BASE, ADMIN, "/admin");
+    await a.page.getByRole("tab", { name: /Contrats$/ }).click(); await a.page.waitForTimeout(1200);
+    const suivi = a.page.getByTestId("suivi-signatures");
+    verifier((await suivi.innerText()).includes("Signé le"), "l'admin ne voit pas le contrat signé");
+    verifier(await a.page.getByText(/contresigné par l'employeur/).count(), "la contresignature n'est pas indiquée côté admin");
+    await a.page.screenshot({ path: `${CAPTURES}/3-admin-signatures.png` });
+    verifier(!a.erreurs.length, "erreurs JavaScript (admin) : " + a.erreurs.join(" ; "));
+    await a.ctx.close(); }
   notes.push("contrat + conditions signés par le crew et contresignés ; PDF téléchargé");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
+});
+
+// 3 quater. Remarques du crew sur son contrat (heures en plus, frais) → visibles et traitées par l'admin
+await scenario("Crew : remarque « heures en plus » sur un contrat → l'admin l'accepte", async (notes) => {
+  const base = nouvelleBase();
+  const crew = base.staff[0];
+  const date = new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
+  base.contrats.push({ id: "cR", staff_id: crew.id, titre: "Hôtesse", type_contrat: "cdd", statut: "actif", evenement: "Soirée gala", lieu: "Rabat", date_debut: date, date_fin: date, taux_horaire: 60, total_heures: 8, salaire_brut: 480, dates: [{ date, heures: 8, heure_debut: "16:00", heure_fin: "00:00" }] });
+  { const { page, ctx, erreurs } = await contexte(navigateur, base, crew.email, { mobile: true });
+    await connecter(page, BASE, crew.email, "/staff-dashboard");
+    await page.getByRole("button", { name: /Ajouter une remarque/ }).click();
+    await page.getByRole("combobox", { name: "Jour concerné" }).selectOption(date).catch(() => {});
+    await page.getByPlaceholder("Heures en plus").fill("1.5");
+    await page.getByTestId("remarques-crew").locator("textarea").fill("La soirée a fini à 1 h 30 à la demande du client.");
+    await page.getByRole("button", { name: "Envoyer à l'agence" }).click(); await page.waitForTimeout(1200);
+    const r = base.remarques_contrat?.[0];
+    verifier(r && r.type === "heures_sup" && Number(r.heures) === 1.5 && r.contrat_id === "cR", "remarque non enregistrée");
+    verifier(await page.getByText("Envoyée — en attente").count(), "le crew ne voit pas sa remarque");
+    // frais
+    await page.getByRole("button", { name: /Ajouter une remarque/ }).click();
+    await page.getByRole("button", { name: /Frais/ }).click();
+    await page.getByPlaceholder("Montant (MAD)").fill("120");
+    await page.getByTestId("remarques-crew").locator("textarea").fill("Taxi retour, reçu disponible.");
+    await page.getByRole("button", { name: "Envoyer à l'agence" }).click(); await page.waitForTimeout(1200);
+    verifier(base.remarques_contrat.length === 2 && Number(base.remarques_contrat[1].montant) === 120, "frais non enregistrés");
+    await page.screenshot({ path: `${CAPTURES}/3-remarques-crew.png`, fullPage: true });
+    verifier(!erreurs.length, "erreurs JavaScript (crew) : " + erreurs.join(" ; "));
+    await ctx.close(); }
+  { const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+    await connecter(page, BASE, ADMIN, "/admin");
+    await page.getByRole("tab", { name: /Contrats$/ }).click(); await page.waitForTimeout(1200);
+    const carte = page.getByTestId("remarques-admin");
+    verifier((await carte.innerText()).includes("2 nouvelles"), "l'admin ne voit pas les 2 nouvelles remarques");
+    verifier((await carte.innerText()).includes("+1.5 h") && (await carte.innerText()).includes("120 MAD"), "détail heures / montant absent côté admin");
+    await carte.getByPlaceholder(/Réponse au crew/).first().fill("OK, ajouté sur ta fiche de paie.");
+    await carte.getByRole("button", { name: "Accepter" }).first().click(); await page.waitForTimeout(1000);
+    verifier(base.remarques_contrat.some((r) => r.statut === "acceptee" && r.reponse?.includes("fiche de paie")), "acceptation non enregistrée");
+    await page.screenshot({ path: `${CAPTURES}/3-remarques-admin.png` });
+    verifier(!erreurs.length, "erreurs JavaScript (admin) : " + erreurs.join(" ; "));
+    await ctx.close(); }
+  { const { page, ctx } = await contexte(navigateur, base, crew.email, { mobile: true });
+    await connecter(page, BASE, crew.email, "/staff-dashboard");
+    verifier(await page.getByText("Acceptée ✓").count() && await page.getByText(/Réponse de l'agence/).count(), "le crew ne voit pas la réponse de l'agence");
+    await ctx.close(); }
+  notes.push("heures en plus + frais envoyés par le crew, vus et acceptés par l'admin, réponse visible côté crew");
 });
 
 // 4. Affichage smartphone : rien ne dépasse de l'écran

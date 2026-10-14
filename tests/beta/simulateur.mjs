@@ -75,13 +75,14 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     if (req.method() === "GET") {
       let lignes = base[t];
       if (!admin) {
-        if (["contrats", "fiches_paie", "affectations", "disponibilites"].includes(t)) lignes = lignes.filter((r) => r.staff_id === moi()?.id);
+        if (["contrats", "fiches_paie", "affectations", "disponibilites", "remarques_contrat"].includes(t)) lignes = lignes.filter((r) => r.staff_id === moi()?.id);
         if (t === "staff") lignes = lignes.filter((r) => r.email === email);
         if (["devis", "devis_lignes", "devis_mariage", "devis_entreprise", "admins"].includes(t)) lignes = [];
       }
       const r = lignes.filter((x) => correspond(x, params)).map((x) => {
         const y = { ...x };
         if (select?.includes("staff(")) y.staff = base.staff.find((s) => s.id === x.staff_id) ?? null;
+        if (select?.includes("contrats(")) { const c = base.contrats.find((s) => s.id === x.contrat_id); y.contrats = c ? { ...c, devis: admin ? base.devis.find((d) => d.id === c.devis_id) ?? null : null } : null; }
         if (select?.includes("devis(")) y.devis = admin ? base.devis.find((s) => s.id === x.devis_id) ?? null : null;
         return y;
       });
@@ -89,7 +90,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     }
     if (req.method() === "POST") {
       const corps = [].concat(JSON.parse(req.postData()));
-      const ins = corps.map((b) => ({ id: t + Math.random().toString(36).slice(2), statut: t === "affectations" ? "confirme" : b.statut ?? "brouillon", ...b }));
+      const ins = corps.map((b) => ({ id: t + Math.random().toString(36).slice(2), statut: t === "affectations" ? "confirme" : t === "remarques_contrat" ? "nouvelle" : b.statut ?? "brouillon", created_at: new Date().toISOString(), ...b }));
       if (t === "devis") ins.forEach((d) => { d.numero = "DEV-2026-0099"; d.date_validite = "2026-11-12"; d.total_ttc = 0; });
       base[t].push(...ins);
       return route.fulfill({ status: 201, json: unique ? ins[0] : ins });
