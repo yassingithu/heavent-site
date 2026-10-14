@@ -67,6 +67,12 @@ export type Database = {
           devis_id: string | null
           evenement: string | null
           devis_numero: string | null
+          signe_le: string | null
+          signature_nom: string | null
+          signature_image: string | null
+          signature_preuve: Json | null
+          rappel_signature_le: string | null
+          rappels_signature: number
           dates: Json | null
           lieu: string | null
           total_heures: number | null
@@ -89,6 +95,12 @@ export type Database = {
           devis_id?: string | null
           evenement?: string | null
           devis_numero?: string | null
+          signe_le?: string | null
+          signature_nom?: string | null
+          signature_image?: string | null
+          signature_preuve?: Json | null
+          rappel_signature_le?: string | null
+          rappels_signature?: number
           dates?: Json | null
           lieu?: string | null
           total_heures?: number | null
@@ -111,6 +123,12 @@ export type Database = {
           devis_id?: string | null
           evenement?: string | null
           devis_numero?: string | null
+          signe_le?: string | null
+          signature_nom?: string | null
+          signature_image?: string | null
+          signature_preuve?: Json | null
+          rappel_signature_le?: string | null
+          rappels_signature?: number
           dates?: Json | null
           lieu?: string | null
           total_heures?: number | null

@@ -15,6 +15,8 @@ import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameD
 import { fr } from "date-fns/locale";
 import { TimeSlotSelector } from "@/components/TimeSlotSelector";
 import { telechargerContrats } from "@/components/admin/equipe/contratPdf";
+import SignatureContrat from "@/components/contrat/SignatureContrat";
+import { BADGE_SIGNATURE, dateHeureFr, etatSignature, finSignature, limiteSignature } from "@/lib/signature";
 import { telechargerFichesPaie } from "@/components/admin/paie/FichesPaieMensuelles";
 
 interface Contrat {
@@ -33,6 +35,8 @@ interface Contrat {
   lieu?: string | null;
   total_heures?: number | null;
   dates?: { date: string; heures: number; heure_debut?: string | null; heure_fin?: string | null }[] | null;
+  signe_le?: string | null;
+  signature_nom?: string | null;
 }
 
 interface FichePaie {
@@ -393,6 +397,7 @@ const StaffDashboard = () => {
 
   // Fonction pour calculer le 5ème jour ouvrable du mois
   const [telechargement, setTelechargement] = useState<string | null>(null);
+  const [aSigner, setASigner] = useState<Contrat | null>(null);
 
   // Contrat : PDF généré directement dans le navigateur (contrat + conditions)
   const downloadContractPDF = async (contractId: string) => {
@@ -522,7 +527,7 @@ const StaffDashboard = () => {
                               <h3 className="font-semibold text-sm sm:text-base">{contrat.evenement || contrat.titre}</h3>
                               <p className="text-xs text-muted-foreground">{[contrat.titre, contrat.lieu, contrat.devis_numero].filter(Boolean).join(" · ")}</p>
                             </div>
-                            <Badge variant={contrat.statut === "actif" ? "default" : "secondary"}>{contrat.statut}</Badge>
+                            {(() => { const b = BADGE_SIGNATURE[etatSignature(contrat)]; return <span className={`text-xs font-medium rounded-full px-2.5 py-1 ${b.classe}`}>{b.texte}</span>; })()}
                           </div>
                           <div className="space-y-1 text-sm">
                             {lignes.length > 0 ? (
@@ -547,6 +552,26 @@ const StaffDashboard = () => {
                               <p><span className="font-medium">{t('dashboard.contracts.gross_salary')}:</span> {contrat.salaire_brut} DH{contrat.total_heures ? ` (${contrat.total_heures} h)` : ""}</p>
                             )}
                           </div>
+                          {etatSignature(contrat) === "a_signer" && (
+                            <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm">
+                              <div className="font-medium text-amber-900">✍️ Ce contrat attend ta signature</div>
+                              <div className="text-amber-800 text-xs mb-2">Merci de le signer avant le {dateHeureFr(limiteSignature(contrat))} (24 h avant la mission). Dernier délai : {dateHeureFr(finSignature(contrat))}.</div>
+                              <Button size="sm" onClick={() => setASigner(contrat)}>Lire et signer mon contrat</Button>
+                            </div>
+                          )}
+                          {etatSignature(contrat) === "en_retard" && (
+                            <div className="mt-3 rounded-md border border-orange-300 bg-orange-50 p-3 text-sm">
+                              <div className="font-medium text-orange-900">⏰ Signature en retard</div>
+                              <div className="text-orange-800 text-xs mb-2">Ce contrat devait être signé 24 h avant la mission. Tu peux encore le signer jusqu'au {dateHeureFr(finSignature(contrat))} — un rappel t'est envoyé par e-mail tous les 2 jours.</div>
+                              <Button size="sm" onClick={() => setASigner(contrat)}>Lire et signer mon contrat</Button>
+                            </div>
+                          )}
+                          {etatSignature(contrat) === "ferme" && (
+                            <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-800">Le délai de signature (fin du mois de la mission) est dépassé. Contacte l'agence.</div>
+                          )}
+                          {contrat.signe_le && (
+                            <div className="mt-3 text-xs text-emerald-800">Signé le {dateHeureFr(contrat.signe_le)}{contrat.signature_nom ? ` par ${contrat.signature_nom}` : ""}.</div>
+                          )}
                           <div className="mt-3">
                             <Button variant="outline" size="sm" onClick={() => downloadContractPDF(contrat.id)} disabled={telechargement === contrat.id} className="text-xs sm:text-sm">
                               <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -798,6 +823,7 @@ const StaffDashboard = () => {
               </div>
             )}
           </TabsContent>
+        <SignatureContrat contrat={aSigner} nomStaff={staffInfo ? `${staffInfo.prenom} ${staffInfo.nom}` : ""} onClose={() => setASigner(null)} onSigne={loadData} />
         </Tabs>
 
       </div>

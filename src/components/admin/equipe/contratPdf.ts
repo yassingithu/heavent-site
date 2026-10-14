@@ -136,10 +136,13 @@ function pageContrat(c: any, s: any, ev: Evenement, agence: InfosAgence | null, 
       <div class="fonction">CEO — Heavent People Agency</div>
       <div>Fait à Rabat, le ${aujourdhui}</div>
     </div>
-    <div class="client">
+    <div class="client"${c.signe_le ? ' style="border:1px solid #cfe8d5;background:#f6fbf7"' : ""}>
       <div class="etiquette">Le / la salarié(e)</div>
       <div>${esc(s.prenom ?? "")} ${esc(s.nom ?? "")}</div>
-      <div style="margin-top:6px">Signature précédée de la mention<br>« Lu et approuvé ».</div>
+      ${c.signe_le
+        ? `<img src="${esc(c.signature_image ?? "")}" alt="Signature" style="height:58px;margin:4px 0 2px;display:block">
+           <div style="font-size:9.5px;color:#2f6b3d">Lu et approuvé — signé électroniquement par ${esc(c.signature_nom ?? "")}<br>le ${esc(new Date(c.signe_le).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" }))}${c.signature_preuve?.empreinte_contenu ? ` · réf. ${esc(String(c.signature_preuve.empreinte_contenu).slice(0, 12))}` : ""}</div>`
+        : `<div style="margin-top:6px">Signature précédée de la mention<br>« Lu et approuvé ».</div>`}
     </div>
   </div>
 </div>

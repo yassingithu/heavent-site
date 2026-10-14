@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, Pencil, Plus, Trash2 } from "lucide-react";
 import { dateFr, mad } from "@/lib/pdf";
+import { BADGE_SIGNATURE, etatSignature } from "@/lib/signature";
 import { telechargerContrats } from "./contratPdf";
 import EditionContrat from "./EditionContrat";
 
@@ -17,7 +18,7 @@ export default function ContratsManuels() {
   const [enCours, setEnCours] = useState(false);
 
   const charger = () =>
-    supabase.from("contrats").select("id, titre, evenement, lieu, statut, date_debut, date_fin, total_heures, heures_prestations, salaire_brut, taux_horaire, dates, staff(nom, prenom)")
+    supabase.from("contrats").select("id, titre, evenement, lieu, statut, date_debut, date_fin, total_heures, heures_prestations, salaire_brut, taux_horaire, dates, signe_le, staff(nom, prenom)")
       .is("devis_id", null).order("date_debut", { ascending: false })
       .then(({ data }) => setContrats(data ?? []));
   useEffect(() => { charger(); }, []);
@@ -57,7 +58,8 @@ export default function ContratsManuels() {
                   <div className="min-w-0">
                     <div className="font-medium">
                       {c.staff?.prenom} {c.staff?.nom} <span className="text-muted-foreground font-normal">· {c.titre}</span>
-                      {c.statut !== "actif" && <Badge variant="secondary" className="ml-2">{c.statut === "annule" ? "Annulé" : "Terminé"}</Badge>}
+                      {c.statut === "termine" && <Badge variant="secondary" className="ml-2">Terminé</Badge>}
+                      {(() => { const b = BADGE_SIGNATURE[etatSignature(c)]; return <span className={`ml-2 text-[11px] font-medium rounded-full px-2 py-0.5 ${b.classe}`}>{b.texte}</span>; })()}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {c.evenement ? `${c.evenement} · ` : ""}{dateFr(c.date_debut)}{c.date_fin && c.date_fin !== c.date_debut ? ` → ${dateFr(c.date_fin)}` : ""}

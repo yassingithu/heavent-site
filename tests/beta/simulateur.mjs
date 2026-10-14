@@ -56,6 +56,11 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     if (url.pathname.includes("/functions/v1/")) {
       const nom = url.pathname.split("/").pop(); const corps = req.postData() ? JSON.parse(req.postData()) : {};
       base.appelsFonctions.push({ nom, corps });
+      if (nom === "signer-contrat") {
+        const c = base.contrats.find((x) => x.id === corps.contratId);
+        if (c) Object.assign(c, { signe_le: new Date().toISOString(), signature_nom: corps.nom, signature_image: corps.image });
+        return route.fulfill({ json: { success: true } });
+      }
       if (nom === "admin-change-password" && corps.action === "ban") base.staff.filter((s) => s.email === corps.userEmail).forEach((s) => { s.banni = true; });
       return route.fulfill({ json: { success: true, cree: !corps.action } });
     }
