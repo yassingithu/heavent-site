@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Save } from "lucide-react";
 import { Parametres } from "./devisUtils";
-import { CGV_DEFAUT, CONDITIONS_CONTRAT_DEFAUT } from "@/lib/conditions";
+import { CGV_DEFAUT, CGV_NAWAR_DEFAUT, CONDITIONS_CONTRAT_DEFAUT } from "@/lib/conditions";
 
 const CHAMPS: { key: keyof Parametres; label: string; type?: string }[] = [
   { key: "raison_sociale", label: "Raison sociale" },
@@ -70,6 +70,13 @@ export default function ParametresAgence({ value, onSaved }: { value: Parametres
           </div>
           <Textarea rows={14} className="text-xs" value={p.cgv ?? CGV_DEFAUT} onChange={(e) => setP({ ...p, cgv: e.target.value })} />
           <p className="text-xs text-muted-foreground mt-1">Un article = un titre sur une ligne, le texte en dessous, puis une ligne vide.</p>
+        </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <Label>Conditions générales Nawar — bar à parfums (2ᵉ page des devis au logo Nawar)</Label>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setP({ ...p, cgv_nawar: CGV_NAWAR_DEFAUT })}>Rétablir le texte par défaut</Button>
+          </div>
+          <Textarea rows={12} className="text-xs" value={p.cgv_nawar ?? CGV_NAWAR_DEFAUT} onChange={(e) => setP({ ...p, cgv_nawar: e.target.value })} />
         </div>
         <div>
           <div className="flex items-center justify-between">

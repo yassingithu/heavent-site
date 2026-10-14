@@ -267,7 +267,11 @@ await scenario("Admin : devis Nawar bar à parfums (logo Nawar, 80 MAD par parfu
   const ligne1 = page.locator(".border.rounded-md.p-3").filter({ has: page.locator('input[value="Parfums — bar à parfums Nawar"]') }).first();
   const champs = ligne1.locator("input[type=number]");
   verifier((await champs.nth(2).inputValue()) === "80", "le prix par parfum n'est pas 80");
+  verifier((await champs.nth(0).inputValue()) === "50", "le devis Nawar ne démarre pas au minimum de 50 parfums");
+  await champs.nth(0).fill("30"); await page.waitForTimeout(200);
+  verifier(await page.getByTestId("minimum-nawar").count(), "pas d'alerte sous le minimum de 50 parfums");
   await champs.nth(0).fill("250"); await champs.nth(2).fill("75");
+  verifier(!(await page.getByTestId("minimum-nawar").count()), "l'alerte minimum reste affichée à 250 parfums");
   await page.waitForTimeout(300);
   verifier((await page.locator("body").innerText()).replace(/\s/g, "").includes("18750,00"), "le total des parfums (250 × 75) n'est pas recalculé");
   verifier(await page.getByText("Logo Nawar — bar à parfums").count(), "le logo Nawar n'est pas choisi");

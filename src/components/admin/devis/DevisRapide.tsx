@@ -101,14 +101,14 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
         unite: c.unite as Ligne["unite"], prix_unitaire: Number(c.prix_unitaire) } : null;
     };
     const parfums: Ligne = { ...ligneVide(), designation: "Parfums — bar à parfums Nawar", description: "Prix par parfum",
-      quantite: 100, duree: 1, unite: "unite", prix_unitaire: 80 };
+      quantite: 50, duree: 1, unite: "unite", prix_unitaire: 80 };
     setForm({
-      ...f, type: "evenement", marque: "nawar", titre: "Bar à parfums Nawar",
+      ...f, type: "evenement", marque: "nawar", titre: "Bar à parfums Nawar", acompte_pct: 50,
       lignes: [parfums, cat("Animateur / animatrice promotionnel(le)", 2) ?? cat("Hôtesse d'accueil", 2), cat("Transport du staff (même ville)", 2)]
         .filter(Boolean) as Ligne[],
     });
     setOnglet("editeur");
-    toast({ title: "Devis Nawar prêt (logo Nawar)", description: "Indique le client, ajuste le nombre de parfums et le prix (80 MAD par défaut), puis le personnel et le transport." });
+    toast({ title: "Devis Nawar prêt (logo Nawar)", description: "Indique le client. Minimum 50 parfums : ajuste la quantité et le prix (80 MAD par défaut), puis le personnel et le transport." });
   };
 
   const depuisDemandeEntreprise = (dem: DemandeEntreprise) => {
@@ -570,6 +570,10 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
               <Card>
                 <CardHeader className="space-y-3">
                   <CardTitle className="text-base">Prestations</CardTitle>
+                  {form.marque === "nawar" && (() => {
+                    const nb = form.lignes.filter((l) => /parfum/i.test(l.designation)).reduce((t, l) => t + (Number(l.quantite) || 0), 0);
+                    return nb < 50 ? <p className="text-xs rounded-md border border-amber-300 bg-amber-50 text-amber-900 p-2" data-testid="minimum-nawar">⚠️ {nb} parfum(s) au devis : le minimum facturé est de 50 parfums (conditions Nawar, article 2).</p> : null;
+                  })()}
                   {Object.keys(parCategorie).length > 0 ? (
                     <div className="space-y-2">
                       <p className="text-xs text-muted-foreground">Ajout rapide depuis ton catalogue :</p>

@@ -605,6 +605,7 @@ export type Database = {
       parametres_agence: {
         Row: {
           cgv: string | null
+          cgv_nawar: string | null
           conditions_contrat: string | null
           adresse: string | null
           conditions: string | null
@@ -626,6 +627,7 @@ export type Database = {
         }
         Insert: {
           cgv?: string | null
+          cgv_nawar?: string | null
           conditions_contrat?: string | null
           adresse?: string | null
           conditions?: string | null
@@ -647,6 +649,7 @@ export type Database = {
         }
         Update: {
           cgv?: string | null
+          cgv_nawar?: string | null
           conditions_contrat?: string | null
           adresse?: string | null
           conditions?: string | null
