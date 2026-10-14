@@ -285,6 +285,28 @@ await scenario("Admin : devis Nawar bar à parfums (logo Nawar, 80 MAD par parfu
   await ctx.close();
 });
 
+// 3 sexies. Paie : une fiche dont toutes les missions ont été supprimées disparaît au recalcul
+await scenario("Paie : « Calculer le mois » retire les fiches sans mission (jamais les fiches payées)", async (notes) => {
+  const base = nouvelleBase();
+  const [a, b, c] = base.staff;
+  const m = new Date(); const annee = m.getFullYear(), mois = m.getMonth() + 1;
+  const jour = `${annee}-${String(mois).padStart(2, "0")}-10`;
+  const fiche = (id, staff_id, statut) => ({ id, staff_id, mois, annee, heures_travaillees: 7, salaire_brut: 420, cnss: 18.82, amo: 9.49, deductions: 28.31, prime: 0, salaire_net: 391.69, statut, generee_auto: true, details: [] });
+  base.fiches_paie.push(fiche("orpheline", a.id, "en_attente"), fiche("payee", b.id, "payee"), fiche("avec-contrat", c.id, "en_attente"));
+  base.contrats.push({ id: "cm", staff_id: c.id, devis_id: null, titre: "Hôtesse", statut: "actif", date_debut: jour, date_fin: jour, taux_horaire: 60, total_heures: 7, salaire_brut: 420, dates: [{ date: jour, heures: 7 }] });
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Paie$/ }).click(); await page.waitForTimeout(1000);
+  await page.getByRole("button", { name: "Calculer le mois" }).click(); await page.waitForTimeout(1500);
+  const ids = base.fiches_paie.map((f) => f.id);
+  verifier(!ids.includes("orpheline"), "la fiche sans mission est toujours là");
+  verifier(ids.includes("payee"), "une fiche payée a été supprimée !");
+  verifier(ids.includes("avec-contrat"), "une fiche avec un contrat du mois a été supprimée !");
+  notes.push("fiche sans mission retirée ; fiche payée et fiche avec contrat conservées");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
 // 4. Affichage smartphone : rien ne dépasse de l'écran
 await scenario("Affichage smartphone (pages publiques et admin)", async (notes) => {
   const base = nouvelleBase();

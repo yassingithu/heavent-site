@@ -94,12 +94,35 @@ export default function FichesPaieMensuelles() {
   }, [annee, mois]);
   useEffect(() => { charger(); }, [charger]);
 
+  /**
+   * Retire les fiches calculées automatiquement, encore « en attente », dont toutes les missions du mois
+   * ont été supprimées. Une fiche validée, payée ou saisie à la main n'est jamais touchée.
+   */
+  const retirerFichesSansMission = async (): Promise<number> => {
+    const debut = `${annee}-${String(mois).padStart(2, "0")}-01`;
+    const fin = new Date(Date.UTC(annee, mois, 0)).toISOString().slice(0, 10);
+    const [{ data: fichesMois }, { data: aff }, { data: manuels }] = await Promise.all([
+      supabase.from("fiches_paie").select("id, staff_id").eq("annee", annee).eq("mois", mois).eq("statut", "en_attente").eq("generee_auto", true),
+      supabase.from("affectations").select("staff_id").eq("statut", "confirme").not("devis_id", "is", null).gte("date_jour", debut).lte("date_jour", fin),
+      supabase.from("contrats").select("staff_id, dates").is("devis_id", null).neq("statut", "annule"),
+    ]);
+    const avecTravail = new Set<string>((aff ?? []).map((a: any) => a.staff_id));
+    (manuels ?? []).forEach((c: any) => {
+      if (((c.dates ?? []) as any[]).some((d) => d?.date >= debut && d?.date <= fin && Number(d?.heures) > 0)) avecTravail.add(c.staff_id);
+    });
+    const orphelines = (fichesMois ?? []).filter((f: any) => !avecTravail.has(f.staff_id)).map((f: any) => f.id);
+    if (!orphelines.length) return 0;
+    const { error } = await supabase.from("fiches_paie").delete().in("id", orphelines);
+    return error ? 0 : orphelines.length;
+  };
+
   const generer = async () => {
     setEnCours(true);
     const { data, error } = await supabase.rpc("generer_fiches_paie" as any, { p_annee: annee, p_mois: mois });
+    const retirees = error ? 0 : await retirerFichesSansMission();
     setEnCours(false);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Fiches à jour", description: `${data ?? 0} fiche(s) calculée(s) à partir des événements du mois` });
+    toast({ title: "Fiches à jour", description: `${data ?? 0} fiche(s) calculée(s) à partir des événements du mois${retirees ? ` · ${retirees} fiche(s) sans mission retirée(s)` : ""}` });
     charger();
   };
 

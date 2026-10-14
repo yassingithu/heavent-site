@@ -1,5 +1,5 @@
--- EN ATTENTE : pas encore appliqué sur la base (la suppression demande la confirmation de Yassin).
--- Une fois appliqué, déplacer ce fichier dans supabase/migrations/.
+-- NON APPLIQUÉ (la base demande une confirmation qui n'arrive pas) : remplacé par le nettoyage fait par l'admin
+-- du site dans FichesPaieMensuelles.tsx (retirerFichesSansMission). Gardé pour référence.
 -- « Calculer le mois » retire aussi les fiches automatiques, encore en attente,
 -- dont toutes les missions ont été supprimées (une fiche validée ou payée n'est jamais touchée).
 CREATE OR REPLACE FUNCTION public.generer_fiches_paie(p_annee integer, p_mois integer)
