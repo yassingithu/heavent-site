@@ -107,7 +107,7 @@ export async function telechargerPdf(pages: string[], css: string, nomFichier: s
         image: { type: "jpeg", quality: 0.95 },
         html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
         jsPDF: { unit: "px", format: [794, 1123], orientation: "portrait", hotfixes: ["px_scaling"] },
-        pagebreak: { mode: ["css"], before: ".suite", avoid: ["tr", ".insecable", ".article", ".signatures"] },
+        pagebreak: { mode: ["css"], before: ".suite", avoid: ["tr", ".insecable", ".article", ".signatures", ".art", ".signature", ".remun", ".bas"] },
       })
       .from(conteneur.querySelector(".lot") as HTMLElement)
       .save();

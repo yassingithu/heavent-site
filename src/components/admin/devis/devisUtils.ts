@@ -157,43 +157,10 @@ const esc = (s: unknown) =>
 export const SIGNATAIRE = { nom: "Imane CHAIGARI", fonction: "CEO — Heavent People Agency" };
 
 /** Contenu du devis (styles limités à .devis-doc pour pouvoir l'insérer dans la page et le convertir en PDF). */
-export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string) {
-  const devise = p?.devise ?? "MAD";
-  const t = calculerTotaux(d.lignes, d.remise_globale_pct, d.taux_tva, d.acompte_pct);
-  const adresse = [p?.adresse, p?.ville].filter(Boolean).join(", ");
-  const mentions = [
-    p?.raison_sociale ?? "Heavent People Agency",
-    adresse,
-    p?.rc && `RC ${p.rc}`,
-    p?.ice && `ICE ${p.ice}`,
-    p?.if_fiscal && `IF ${p.if_fiscal}`,
-    p?.patente && `Patente ${p.patente}`,
-  ].filter(Boolean).map(esc).join(" · ");
-
-  const rows = d.lignes
-    .filter((l) => l.designation.trim())
-    .map(
-      (l) => `<tr>
-        <td><div class="des">${esc(l.designation)}</div>${l.description ? `<div class="desc">${esc(l.description)}</div>` : ""}</td>
-        <td class="n">${esc(l.quantite)}</td>
-        <td class="n">${l.unite === "forfait" ? "—" : `${esc(l.duree)} ${esc(uniteCourt(l.unite))}`}</td>
-        <td class="n">${money(l.prix_unitaire, devise)}</td>
-        <td class="n">${l.remise_pct ? `${esc(l.remise_pct)} %` : ""}</td>
-        <td class="n">${money(totalLigne(l), devise)}</td>
-      </tr>`
-    )
-    .join("");
-
-  const evenement = [
-    d.titre && `<div><span>Événement</span>${esc(d.titre)}</div>`,
-    d.date_evenement &&
-      `<div><span>Date</span>${dateFr(d.date_evenement)}${d.date_fin_evenement ? ` au ${dateFr(d.date_fin_evenement)}` : ""}</div>`,
-    d.lieu && `<div><span>Lieu</span>${esc(d.lieu)}</div>`,
-    d.nb_personnes && `<div><span>Invités / participants</span>${esc(d.nb_personnes)}</div>`,
-  ].filter(Boolean).join("");
-
+/** Mise en page commune des documents élégants (devis, contrats) : classe .devis-doc */
+export function cssDevis() {
   const or = "#C8B560", orFonce = "#A8933F", noir = "#141414", creme = "#FAF7EE";
-  const css = `
+  return `
   .devis-doc, .devis-doc * { box-sizing: border-box; margin: 0; }
   .devis-doc { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; color: #2a2a2a; font-size: 11.5px; width: 794px; min-height: 1118px; background: #fff; line-height: 1.45; display: flex; flex-direction: column; }
   .devis-doc .serif { font-family: "Playfair Display", Georgia, serif; }
@@ -252,6 +219,44 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
   .devis-doc.cgv .art p { font-size: 9.6px; line-height: 1.45; text-align: justify; color: #444; }
   .devis-doc.cgv .accord { margin-top: 10px; padding: 10px 14px; border: 1px dashed #cfc6a8; font-size: 10px; color: #555; }
   `;
+}
+
+export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string) {
+  const devise = p?.devise ?? "MAD";
+  const t = calculerTotaux(d.lignes, d.remise_globale_pct, d.taux_tva, d.acompte_pct);
+  const adresse = [p?.adresse, p?.ville].filter(Boolean).join(", ");
+  const mentions = [
+    p?.raison_sociale ?? "Heavent People Agency",
+    adresse,
+    p?.rc && `RC ${p.rc}`,
+    p?.ice && `ICE ${p.ice}`,
+    p?.if_fiscal && `IF ${p.if_fiscal}`,
+    p?.patente && `Patente ${p.patente}`,
+  ].filter(Boolean).map(esc).join(" · ");
+
+  const rows = d.lignes
+    .filter((l) => l.designation.trim())
+    .map(
+      (l) => `<tr>
+        <td><div class="des">${esc(l.designation)}</div>${l.description ? `<div class="desc">${esc(l.description)}</div>` : ""}</td>
+        <td class="n">${esc(l.quantite)}</td>
+        <td class="n">${l.unite === "forfait" ? "—" : `${esc(l.duree)} ${esc(uniteCourt(l.unite))}`}</td>
+        <td class="n">${money(l.prix_unitaire, devise)}</td>
+        <td class="n">${l.remise_pct ? `${esc(l.remise_pct)} %` : ""}</td>
+        <td class="n">${money(totalLigne(l), devise)}</td>
+      </tr>`
+    )
+    .join("");
+
+  const evenement = [
+    d.titre && `<div><span>Événement</span>${esc(d.titre)}</div>`,
+    d.date_evenement &&
+      `<div><span>Date</span>${dateFr(d.date_evenement)}${d.date_fin_evenement ? ` au ${dateFr(d.date_fin_evenement)}` : ""}</div>`,
+    d.lieu && `<div><span>Lieu</span>${esc(d.lieu)}</div>`,
+    d.nb_personnes && `<div><span>Invités / participants</span>${esc(d.nb_personnes)}</div>`,
+  ].filter(Boolean).join("");
+
+  const css = cssDevis();
 
   const sep = '<span class="sep">◆</span>';
   const infos = [
