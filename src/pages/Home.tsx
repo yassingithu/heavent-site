@@ -15,9 +15,6 @@ import {
 } from "lucide-react";
 import heroImage from "@/assets/hero-staff.webp";
 import heroImageMobile from "@/assets/hero-staff-mobile.webp";
-import imgHotesses from "@/assets/evt-conference.webp";
-import imgMariage from "@/assets/evt-mariage-table.webp";
-import imgEvenement from "@/assets/evt-reception.webp";
 
 const Home = () => {
   const { t } = useTranslation();
@@ -28,27 +25,21 @@ const Home = () => {
       title: t('home.hostess.title'),
       description: t('home.hostess.description'),
       link: "/devis-entreprise",
-      color: "text-blue-600",
-      image: imgHotesses,
-      alt: "Dîner de gala d'entreprise avec accueil des invités",
+      color: "text-blue-600"
     },
     {
       icon: Heart,
       title: t('home.wedding.title'),
       description: t('home.wedding.description'),
       link: "/devis-mariage",
-      color: "text-pink-600",
-      image: imgMariage,
-      alt: "Table de mariage dressée avec fleurs et bougies",
+      color: "text-pink-600"
     },
     {
       icon: Building2,
       title: t('home.event.title'),
       description: t('home.event.description'),
       link: "/devis-entreprise",
-      color: "text-primary",
-      image: imgEvenement,
-      alt: "Salle de réception éclairée pour une soirée événementielle",
+      color: "text-primary"
     }
   ];
 
@@ -127,11 +118,9 @@ const Home = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             {services.map((service, index) => (
-              <Card key={index} className="hover-lift elegant-shadow group cursor-pointer overflow-hidden">
-                <img src={service.image} alt={service.alt} loading="lazy" decoding="async" width={800} height={600}
-                  className="w-full aspect-[4/3] object-cover transition-transform duration-700 group-hover:scale-105" />
-                <CardContent className="p-8 pt-0 text-center">
-                  <div className={`inline-flex p-3 rounded-full bg-accent mb-6 -mt-7 relative ring-4 ring-background ${service.color}`}>
+              <Card key={index} className="hover-lift elegant-shadow group cursor-pointer">
+                <CardContent className="p-8 text-center">
+                  <div className={`inline-flex p-3 rounded-full bg-accent mb-6 ${service.color}`}>
                     <service.icon size={32} />
                   </div>
                   <h3 className="text-2xl font-semibold mb-4">{service.title}</h3>

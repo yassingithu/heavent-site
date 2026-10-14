@@ -1,6 +1,5 @@
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
-import bandeauEntreprise from "@/assets/evt-conference-bandeau.webp";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -121,8 +120,6 @@ const BusinessQuote = () => {
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/30 py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
-          <img src={bandeauEntreprise} alt="Salle de conférence et dîner de gala d'entreprise" width={1200} height={480} decoding="async"
-            className="w-full aspect-[5/2] object-cover rounded-2xl mb-8 elegant-shadow" />
           <div className="text-center mb-8">
             <h1 className="text-4xl font-serif font-bold mb-4">
               Demande de Devis <span className="text-primary">Entreprise</span>
