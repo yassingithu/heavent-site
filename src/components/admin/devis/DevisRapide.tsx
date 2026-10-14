@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import logoDevis from "@/assets/logo-devis-noir.png";
+import logoNawar from "@/assets/logo-nawar.png";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,7 +60,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
 
   const charger = async () => {
     const [d, c, p] = await Promise.all([
-      supabase.from("devis").select("id, numero, type, client_nom, client_societe, titre, date_evenement, total_ttc, statut, date_emission, devise").order("created_at", { ascending: false }),
+      supabase.from("devis").select("id, numero, type, marque, client_nom, client_societe, titre, date_evenement, total_ttc, statut, date_emission, devise").order("created_at", { ascending: false }),
       supabase.from("catalogue_prestations").select("*").order("categorie").order("ordre").order("designation"),
       supabase.from("parametres_agence").select("*").eq("id", 1).maybeSingle(),
     ]);
@@ -89,7 +90,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   const nouveau = () => { setForm(nouveauDevis(params)); setOnglet("editeur"); };
 
   /**
-   * Devis spécial Nawar Perfumes : parfums à 80 MAD l'unité (prix et quantité modifiables),
+   * Devis bar à parfums Nawar (logo Nawar) : parfums à 80 MAD l'unité (prix et quantité modifiables),
    * avec le personnel et le transport pré-ajoutés — tout reste modifiable / supprimable.
    */
   const nouveauNawar = () => {
@@ -99,15 +100,15 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       return c ? { ...ligneVide(), designation: c.designation, description: c.description ?? "", quantite, duree,
         unite: c.unite as Ligne["unite"], prix_unitaire: Number(c.prix_unitaire) } : null;
     };
-    const parfums: Ligne = { ...ligneVide(), designation: "Parfums Nawar Perfumes", description: "Prix par parfum",
+    const parfums: Ligne = { ...ligneVide(), designation: "Parfums — bar à parfums Nawar", description: "Prix par parfum",
       quantite: 100, duree: 1, unite: "unite", prix_unitaire: 80 };
     setForm({
-      ...f, type: "entreprise", client_societe: "Nawar Perfumes", titre: "Prestation Nawar Perfumes",
+      ...f, type: "evenement", marque: "nawar", titre: "Bar à parfums Nawar",
       lignes: [parfums, cat("Animateur / animatrice promotionnel(le)", 2) ?? cat("Hôtesse d'accueil", 2), cat("Transport du staff (même ville)", 2)]
         .filter(Boolean) as Ligne[],
     });
     setOnglet("editeur");
-    toast({ title: "Devis Nawar Perfumes prêt", description: "Ajuste le nombre de parfums et le prix (80 MAD par défaut), puis le personnel et le transport." });
+    toast({ title: "Devis Nawar prêt (logo Nawar)", description: "Indique le client, ajuste le nombre de parfums et le prix (80 MAD par défaut), puis le personnel et le transport." });
   };
 
   const depuisDemandeEntreprise = (dem: DemandeEntreprise) => {
@@ -187,6 +188,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       id: dupliquer ? undefined : d.id,
       numero: dupliquer ? null : d.numero,
       type: d.type as DevisForm["type"],
+      marque: ((d as any).marque ?? "heavent") as DevisForm["marque"],
       demande_entreprise_id: dupliquer ? null : d.demande_entreprise_id,
       demande_mariage_id: dupliquer ? null : d.demande_mariage_id,
       client_nom: d.client_nom, client_societe: d.client_societe ?? "", client_email: d.client_email ?? "",
@@ -268,7 +270,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     setSaving(true);
     try {
       const payload = {
-        type: form.type,
+        type: form.type, marque: form.marque ?? "heavent",
         demande_entreprise_id: form.demande_entreprise_id ?? null,
         demande_mariage_id: form.demande_mariage_id ?? null,
         client_nom: form.client_nom.trim(),
@@ -337,9 +339,10 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     const conteneur = document.createElement("div");
     try {
       // Logo intégré au document pour qu'il apparaisse à coup sûr dans le PDF
-      let logoSrc = LOGO;
+      const logo = d.marque === "nawar" ? logoNawar : LOGO;
+      let logoSrc = logo;
       try {
-        const blob = await fetch(LOGO).then((r) => r.blob());
+        const blob = await fetch(logo).then((r) => r.blob());
         logoSrc = await new Promise<string>((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result as string); fr.readAsDataURL(blob); });
       } catch { /* on garde l'URL */ }
 
@@ -420,7 +423,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
           <TabsTrigger value="parametres">Infos agence</TabsTrigger>
         </TabsList>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={nouveauNawar}><Plus className="h-4 w-4 mr-1" /> Devis Nawar Perfumes</Button>
+          <Button variant="outline" onClick={nouveauNawar}><Plus className="h-4 w-4 mr-1" /> Devis Nawar — bar à parfums</Button>
           <Button onClick={nouveau}><Plus className="h-4 w-4 mr-1" /> Nouveau devis</Button>
         </div>
       </div>
@@ -483,7 +486,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 <TableBody>
                   {filtres.map((d) => (
                     <TableRow key={d.id} className="cursor-pointer" onClick={() => ouvrir(d.id)}>
-                      <TableCell className="font-mono text-xs">{d.numero}<div className="text-muted-foreground">{dateFr(d.date_emission)}</div></TableCell>
+                      <TableCell className="font-mono text-xs">{d.numero}{(d as any).marque === "nawar" && <span className="ml-1 font-sans rounded bg-[#f5ecd2] text-[#8a6d1f] px-1.5 py-0.5 text-[10px]">Nawar</span>}<div className="text-muted-foreground">{dateFr(d.date_emission)}</div></TableCell>
                       <TableCell>{d.client_societe || d.client_nom}{d.client_societe && <div className="text-xs text-muted-foreground">{d.client_nom}</div>}</TableCell>
                       <TableCell>{d.titre || "—"}<div className="text-xs text-muted-foreground">{dateFr(d.date_evenement)}</div></TableCell>
                       <TableCell className="text-right font-medium whitespace-nowrap">{money(d.total_ttc, d.devise)}</TableCell>
@@ -517,14 +520,23 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-base">{form.numero ? `Devis ${form.numero}` : "Nouveau devis"}</CardTitle>
-                  <Select value={form.type} onValueChange={(v) => set("type", v as DevisForm["type"])}>
-                    <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="evenement">Événement</SelectItem>
-                      <SelectItem value="entreprise">Entreprise</SelectItem>
-                      <SelectItem value="mariage">Mariage</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-wrap gap-2">
+                    <Select value={form.marque ?? "heavent"} onValueChange={(v) => set("marque", v as DevisForm["marque"])}>
+                      <SelectTrigger className="w-[190px]" aria-label="Logo du devis"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="heavent">Logo Heavent</SelectItem>
+                        <SelectItem value="nawar">Logo Nawar — bar à parfums</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={form.type} onValueChange={(v) => set("type", v as DevisForm["type"])}>
+                      <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="evenement">Événement</SelectItem>
+                        <SelectItem value="entreprise">Entreprise</SelectItem>
+                        <SelectItem value="mariage">Mariage</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </CardHeader>
                 <CardContent className="grid gap-3 sm:grid-cols-2">
                   <div><Label>Nom du contact *</Label><Input value={form.client_nom} onChange={(e) => set("client_nom", e.target.value)} /></div>

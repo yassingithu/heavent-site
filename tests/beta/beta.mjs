@@ -254,23 +254,27 @@ await scenario("Crew : remarque « heures en plus » sur un contrat → l'admin 
 });
 
 // 3 quinquies. Devis spécial Nawar Perfumes (parfums à 80 MAD, prix ajustable, personnel + transport)
-await scenario("Admin : devis Nawar Perfumes (80 MAD par parfum, ajustable)", async (notes) => {
+await scenario("Admin : devis Nawar bar à parfums (logo Nawar, 80 MAD par parfum ajustable)", async (notes) => {
   const base = nouvelleBase();
   base.catalogue_prestations = [...base.catalogue_prestations];
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("button", { name: "Devis Nawar Perfumes" }).click(); await page.waitForTimeout(800);
+  await page.getByRole("button", { name: /Devis Nawar/ }).click(); await page.waitForTimeout(800);
   const desig = page.getByPlaceholder(/Désignation/);
-  verifier((await desig.first().inputValue()) === "Parfums Nawar Perfumes", "la ligne parfums n'est pas en tête");
+  verifier((await desig.first().inputValue()) === "Parfums — bar à parfums Nawar", "la ligne parfums n'est pas en tête");
   verifier(await desig.count() >= 2, "personnel / transport non pré-ajoutés");
   const prix = page.locator("input[type=number]").filter({ has: page.locator("xpath=.") });
-  const ligne1 = page.locator(".border.rounded-md.p-3").filter({ has: page.locator('input[value="Parfums Nawar Perfumes"]') }).first();
+  const ligne1 = page.locator(".border.rounded-md.p-3").filter({ has: page.locator('input[value="Parfums — bar à parfums Nawar"]') }).first();
   const champs = ligne1.locator("input[type=number]");
   verifier((await champs.nth(2).inputValue()) === "80", "le prix par parfum n'est pas 80");
   await champs.nth(0).fill("250"); await champs.nth(2).fill("75");
   await page.waitForTimeout(300);
   verifier((await page.locator("body").innerText()).replace(/\s/g, "").includes("18750,00"), "le total des parfums (250 × 75) n'est pas recalculé");
-  verifier(await page.locator('input[value="Nawar Perfumes"]').count(), "le client Nawar Perfumes n'est pas pré-rempli");
+  verifier(await page.getByText("Logo Nawar — bar à parfums").count(), "le logo Nawar n'est pas choisi");
+  await page.getByText("Nom du contact").locator("..").locator("input").fill("Client test");
+  const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 40000 }), page.getByRole("button", { name: "Télécharger le PDF" }).click()]);
+  await dl.saveAs(`${CAPTURES}/devis-nawar.pdf`);
+  verifier(base.devis[0]?.marque === "nawar", "la marque Nawar n'est pas enregistrée avec le devis");
   await page.screenshot({ path: `${CAPTURES}/5-devis-nawar.png`, fullPage: true });
   notes.push("devis pré-rempli (parfums 80 MAD + personnel + transport), quantité et prix modifiés : 250 × 75 = 18 750 MAD");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));

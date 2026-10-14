@@ -462,6 +462,7 @@ export type Database = {
           devise: string
           id: string
           lieu: string | null
+          marque: string
           nb_personnes: number | null
           notes_internes: string | null
           numero: string | null
@@ -496,6 +497,7 @@ export type Database = {
           devise?: string
           id?: string
           lieu?: string | null
+          marque?: string
           nb_personnes?: number | null
           notes_internes?: string | null
           numero?: string | null
@@ -530,6 +532,7 @@ export type Database = {
           devise?: string
           id?: string
           lieu?: string | null
+          marque?: string
           nb_personnes?: number | null
           notes_internes?: string | null
           numero?: string | null
