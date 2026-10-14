@@ -88,6 +88,28 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   // ---------- ouverture d'un devis ----------
   const nouveau = () => { setForm(nouveauDevis(params)); setOnglet("editeur"); };
 
+  /**
+   * Devis spécial Nawar Perfumes : parfums à 80 MAD l'unité (prix et quantité modifiables),
+   * avec le personnel et le transport pré-ajoutés — tout reste modifiable / supprimable.
+   */
+  const nouveauNawar = () => {
+    const f = nouveauDevis(params);
+    const cat = (designation: string, quantite: number, duree = 1): Ligne | null => {
+      const c = catalogue.find((x) => x.actif && x.designation === designation);
+      return c ? { ...ligneVide(), designation: c.designation, description: c.description ?? "", quantite, duree,
+        unite: c.unite as Ligne["unite"], prix_unitaire: Number(c.prix_unitaire) } : null;
+    };
+    const parfums: Ligne = { ...ligneVide(), designation: "Parfums Nawar Perfumes", description: "Prix par parfum",
+      quantite: 100, duree: 1, unite: "unite", prix_unitaire: 80 };
+    setForm({
+      ...f, type: "entreprise", client_societe: "Nawar Perfumes", titre: "Prestation Nawar Perfumes",
+      lignes: [parfums, cat("Animateur / animatrice promotionnel(le)", 2) ?? cat("Hôtesse d'accueil", 2), cat("Transport du staff (même ville)", 2)]
+        .filter(Boolean) as Ligne[],
+    });
+    setOnglet("editeur");
+    toast({ title: "Devis Nawar Perfumes prêt", description: "Ajuste le nombre de parfums et le prix (80 MAD par défaut), puis le personnel et le transport." });
+  };
+
   const depuisDemandeEntreprise = (dem: DemandeEntreprise) => {
     const f = nouveauDevis(params);
     setForm({
@@ -397,7 +419,10 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
           <TabsTrigger value="catalogue">Catalogue de prix</TabsTrigger>
           <TabsTrigger value="parametres">Infos agence</TabsTrigger>
         </TabsList>
-        <Button onClick={nouveau}><Plus className="h-4 w-4 mr-1" /> Nouveau devis</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={nouveauNawar}><Plus className="h-4 w-4 mr-1" /> Devis Nawar Perfumes</Button>
+          <Button onClick={nouveau}><Plus className="h-4 w-4 mr-1" /> Nouveau devis</Button>
+        </div>
       </div>
 
       {/* ------------------------- LISTE ------------------------- */}
