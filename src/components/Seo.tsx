@@ -41,6 +41,12 @@ export const PAGES_SEO = {
     description: "Contactez Heavent People Agency pour vos hôtesses, votre événement ou votre mariage au Maroc. Téléphone +212 6 10 93 96 55, réponse sous 24 h.",
     motsCles: "contact agence hôtesses Maroc, devis événement Maroc",
   },
+  jeu: {
+    chemin: "/cree-ton-evenement",
+    titre: "Crée ton événement de rêve | Simulateur mariage et événement | Heavent",
+    description: "Composez votre mariage ou votre événement en quelques minutes : tables, arche, fleurs, piste, DJ… Visualisez la scène, suivez votre budget et demandez votre devis.",
+    motsCles: "simulateur mariage Maroc, budget mariage Maroc, décoration mariage, organiser son événement, wedding planner Maroc",
+  },
   mentions: {
     chemin: "/mentions-legales",
     titre: "Mentions légales | Heavent People Agency",

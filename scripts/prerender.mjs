@@ -13,6 +13,7 @@ const PUBLIQUES = [
   { chemin: "/inscription-staff", priorite: "0.8", frequence: "monthly" },
   { chemin: "/a-propos", priorite: "0.7", frequence: "monthly" },
   { chemin: "/contact", priorite: "0.7", frequence: "monthly" },
+  { chemin: "/cree-ton-evenement", priorite: "0.8", frequence: "monthly" },
   { chemin: "/politique-confidentialite", priorite: "0.3", frequence: "yearly" },
   { chemin: "/mentions-legales", priorite: "0.2", frequence: "yearly" },
 ];

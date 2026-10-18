@@ -94,6 +94,12 @@ const Home = () => {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 bg-white/10 border-white/20 text-white hover:bg-white/20">
+                <Link to="/cree-ton-evenement">
+                  {t('home.createEvent')}
+                  <Sparkles className="ml-2" size={20} />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 bg-white/10 border-white/20 text-white hover:bg-white/20">
                 <Link to="/inscription-staff">
                   {t('home.joinUs')}
                   <Users className="ml-2" size={20} />
