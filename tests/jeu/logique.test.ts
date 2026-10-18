@@ -1,5 +1,6 @@
 // Tests de la logique du jeu « Crée ton événement de rêve » : node tests/jeu/lancer.mjs
 import assert from "node:assert/strict";
+import { decoderCreation, encoderCreation } from "../../src/components/jeu-evenement/partage";
 import {
   calculerBudget, evaluerMissions, nouvelleCreation, placeLibre, placesPrevues, proposerDisposition, reglagesParDefaut, tailleGrille, trouverPlace,
 } from "../../src/components/jeu-evenement/logique";
@@ -56,5 +57,18 @@ for (const [invites, budget, type] of [[120, 80000, "mariage"], [300, 150000, "m
   const bb = calculerBudget(d);
   console.log(`  ${type} ${invites} invités, budget ${budget} → ${d.elements.length} éléments, ${placesPrevues(d)} places, ${bb.total} MAD, missions ${evaluerMissions(d).filter((x) => x.ok).length}/3`);
   if (budget >= 20000) assert.equal(bb.depassement, 0, `budget ${type} ${invites}`);
+}
+// Partage : la création encodée dans le lien revient identique (sans coordonnée), lien abîmé → null
+{
+  const d = proposerDisposition({ ...reglagesParDefaut(), invites: 300, budget: 250000, type: "mariage", ambiance: "orientale", lieu: "jardin" });
+  d.elements[0].couleur = "#7C2436"; d.elements[1].tourne = !d.elements[1].tourne && false;
+  const code = encoderCreation(d);
+  const r = decoderCreation(code)!;
+  assert.deepEqual(r.reglages, d.reglages);
+  assert.deepEqual(r.elements.map(({ uid, ...x }) => ({ ...x, tourne: !!x.tourne })), d.elements.map(({ uid, ...x }) => ({ ...x, tourne: !!x.tourne, couleur: x.couleur })));
+  assert.deepEqual(r.centres.actif, d.centres.actif);
+  assert.ok(code.length < 2000, `lien court (${code.length} caractères pour ${d.elements.length} éléments)`);
+  assert.equal(decoderCreation("abc"), null); assert.equal(decoderCreation(""), null);
+  console.log(`  partage : ${d.elements.length} éléments → lien de ${code.length} caractères, relu à l'identique`);
 }
 console.log("✅ logique du jeu : tous les tests passent");

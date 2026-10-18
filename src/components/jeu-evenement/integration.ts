@@ -48,6 +48,13 @@ export async function envoyerDemandeDevis(d: DemandeDevis): Promise<{ envoye: bo
           centres: c.centres.actif ? CENTRES_DE_TABLE.nom : null,
           honneur: libelle("honneur", c.reglages.type).nom,
           texte: d.texte,
+          // Pour créer le devis ligne par ligne dans l'admin (prix repris du catalogue au moment du devis)
+          configuration: {
+            version: 1, type: c.reglages.type, invites: c.reglages.invites,
+            elements: c.elements.reduce<Record<string, number>>((acc, e) => { acc[e.type] = (acc[e.type] ?? 0) + 1; return acc; }, {}),
+            centres: c.centres.actif ? c.elements.filter((e) => e.type === "table_ronde" || e.type === "table_rect").length : 0,
+            libelles: Object.fromEntries([...new Set(c.elements.map((e) => e.type))].map((t) => [t, libelle(t, c.reglages.type).nom])),
+          },
         },
       }),
     });

@@ -90,7 +90,18 @@ const handler = async (req: Request): Promise<Response> => {
           ${row("Options choisies", options)}${tableau}
           <p><strong>Message :</strong></p><p style="white-space:pre-line">${e(data.message || "Aucun")}</p>
           <p style="color:#888;font-size:12px">La demande est aussi enregistrée dans l'administration : onglet « Événement », et dans « Devis » parmi les demandes en attente, pour créer le devis en un clic.</p>`;
+        // Configuration du jeu, nettoyée : nombre d'éléments par type, pour créer le devis ligne par ligne
+        const brut = data.configuration && typeof data.configuration === "object" ? data.configuration : null;
+        const nombres = (o: unknown) => Object.fromEntries(Object.entries(o && typeof o === "object" ? o as Record<string, unknown> : {})
+          .filter(([k, v]) => /^[a-z_]{2,20}$/.test(k) && Number.isInteger(v) && (v as number) > 0 && (v as number) <= 500).slice(0, 30));
+        const configuration = brut ? {
+          version: 1, type: String(brut.type ?? "").slice(0, 20), invites: intOrNull(brut.invites),
+          elements: nombres(brut.elements), centres: Number.isInteger(brut.centres) && brut.centres >= 0 && brut.centres <= 500 ? brut.centres : 0,
+          libelles: Object.fromEntries(Object.entries(brut.libelles && typeof brut.libelles === "object" ? brut.libelles : {})
+            .filter(([k]) => /^[a-z_]{2,20}$/.test(k)).slice(0, 30).map(([k, v]) => [k, String(v).slice(0, 60)])),
+        } : null;
         const { error } = await supabase.from("devis_mariage").insert({
+          configuration,
           nom: prenom, prenom: "", email, telephone: String(data.telephone ?? "").slice(0, 40) || null,
           type_evenement: String(data.typeEvenement ?? "Événement").slice(0, 60), date_mariage: dateOrNull(data.date),
           lieu: cap(String(data.ville).slice(0, 120)) || null, nb_invites: intOrNull(data.invites),

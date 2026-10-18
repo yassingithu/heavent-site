@@ -117,6 +117,25 @@ const mission = (p, id) => p.locator(`[data-mission="${id}"]`).first().getAttrib
   await p.keyboard.press("Escape");
   ok("récapitulatif + téléchargements avec aperçu : PDF et PNG valides");
 
+  // Partage : WhatsApp + lien qui rouvre la même création
+  await p.getByRole("button", { name: "Partager ma création" }).click(); await p.waitForTimeout(300);
+  const wa = await p.getByTestId("partage-whatsapp").getAttribute("href");
+  assert.ok(wa.startsWith("https://wa.me/?text=") && decodeURIComponent(wa).includes("#creation="), "lien WhatsApp avec la création");
+  const lienPartage = await p.locator("#lien-partage").inputValue();
+  assert.doesNotMatch(decodeURIComponent(wa), /salma|example/i);
+  await p.keyboard.press("Escape");
+  const nbAvant = await p.locator("[data-uid]").count();
+  const p2 = await ctx.newPage(); p2.on("pageerror", (e) => erreurs.push(e.message));
+  await p2.goto(lienPartage.replace("https://heaventagency.com", BASE).replace(/^http:\/\/[^/]+/, BASE)); await p2.waitForTimeout(1200);
+  assert.ok(await p2.getByTestId("vue-partagee").isVisible(), "vue « création partagée »");
+  assert.equal(await p2.locator("[data-uid]").count(), nbAvant, "même nombre d'éléments");
+  await p2.screenshot({ path: `${CAPT}/8-partage.png`, fullPage: true });
+  await p2.getByRole("button", { name: "Créer la mienne à partir de celle-ci" }).click(); await p2.waitForTimeout(500);
+  assert.equal(await nb(p2), nbAvant, "création reprise dans le jeu");
+  assert.equal(new URL(p2.url()).hash, "", "le lien est nettoyé");
+  await p2.close();
+  ok(`partage : WhatsApp + lien qui rouvre la même création (${nbAvant} éléments), reprise possible`);
+
   // Demande de devis : 1) le serveur refuse → message d'échec + téléchargement, jamais « envoyée »
   let corpsEnvoye = null, reponseServeur = { status: 500, json: { error: "Erreur lors de l'enregistrement de la demande" } };
   await ctx.route(/functions\/v1\/send-email/, async (r) => { corpsEnvoye = JSON.parse(r.request().postData()); await r.fulfill(reponseServeur); });

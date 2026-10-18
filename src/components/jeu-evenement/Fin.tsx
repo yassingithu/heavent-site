@@ -9,10 +9,11 @@ import {
 } from "./recapitulatif";
 import { INTEGRATION_ACTIVE, envoyerDemandeDevis } from "./integration";
 import Scene from "./Scene";
+import { lienPartage } from "./partage";
 import { Bouton } from "./ui";
 
-export function Recapitulatif({ creation, cols, rows, onModifier, onTelecharger, onDevis }: {
-  creation: Creation; cols: number; rows: number; onModifier: () => void; onTelecharger: (svg: SVGSVGElement | null) => void; onDevis: () => void;
+export function Recapitulatif({ creation, cols, rows, onModifier, onTelecharger, onDevis, onPartager }: {
+  creation: Creation; cols: number; rows: number; onModifier: () => void; onTelecharger: (svg: SVGSVGElement | null) => void; onDevis: () => void; onPartager: () => void;
 }) {
   const svg = useRef<SVGSVGElement>(null);
   const b = calculerBudget(creation);
@@ -62,6 +63,7 @@ export function Recapitulatif({ creation, cols, rows, onModifier, onTelecharger,
       <div className="flex flex-wrap justify-center gap-3">
         <Bouton variante="secondaire" onClick={onModifier}>Modifier ma création</Bouton>
         <Bouton variante="secondaire" onClick={() => onTelecharger(svg.current)}>Télécharger mon récapitulatif</Bouton>
+        <Bouton variante="secondaire" onClick={onPartager}>Partager ma création</Bouton>
         <Bouton onClick={onDevis}>Demander un devis pour cet événement</Bouton>
       </div>
     </div>
@@ -239,5 +241,67 @@ export function FenetreDevis({ ouvert, onFermer, creation }: { ouvert: boolean; 
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ── Partage de la création ──────────────────────────────────────────────────
+export function FenetrePartage({ ouvert, onFermer, creation }: { ouvert: boolean; onFermer: () => void; creation: Creation }) {
+  const [copie, setCopie] = useState(false);
+  const lien = ouvert ? lienPartage(creation) : "";
+  const type = TYPES_EVENEMENT.find((t) => t.id === creation.reglages.type)!;
+  const message = `Regarde ${type.article.replace(/^votre /, "le ").replace(/^vos /, "les ")} que j'imagine avec Heavent ✨ ${creation.reglages.invites} invités, ambiance ${nomAmbiance(creation).toLowerCase()}.`;
+  useEffect(() => { if (ouvert) setCopie(false); }, [ouvert]);
+  const copier = async () => {
+    try { await navigator.clipboard.writeText(lien); setCopie(true); }
+    catch { const champ = document.getElementById("lien-partage") as HTMLInputElement | null; champ?.select(); }
+  };
+  const partagerNatif = async () => { try { await navigator.share({ title: "Mon événement Heavent", text: message, url: lien }); } catch { /* annulé */ } };
+  return (
+    <Dialog open={ouvert} onOpenChange={(v) => !v && onFermer()}>
+      <DialogContent className="max-w-md bg-[#FBF8F1]">
+        <DialogHeader>
+          <DialogTitle className="font-serif text-2xl">Partager ma création</DialogTitle>
+          <DialogDescription>Montrez votre scène à vos proches : le lien l'ouvre telle quelle, et ils peuvent la reprendre à leur tour. Aucune coordonnée n'y figure.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <a href={`https://wa.me/?text=${encodeURIComponent(`${message}\n${lien}`)}`} target="_blank" rel="noopener noreferrer" data-testid="partage-whatsapp"
+            className="flex items-center justify-center gap-2 rounded-full min-h-12 bg-[#25D366] text-white font-medium hover:bg-[#1EBE5B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A74E]">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3a.4.4 0 0 0 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.5-.3Z" /></svg>
+            Envoyer sur WhatsApp
+          </a>
+          {typeof navigator !== "undefined" && "share" in navigator && <Bouton variante="secondaire" className="w-full" onClick={partagerNatif}>Partager autrement…</Bouton>}
+          <div>
+            <label htmlFor="lien-partage" className="text-xs font-medium">Lien de votre création</label>
+            <div className="flex gap-2 mt-1">
+              <input id="lien-partage" readOnly value={lien} onFocus={(e) => e.currentTarget.select()} className="flex-1 min-w-0 rounded-xl border border-[#DCCBA6] bg-white px-3 min-h-11 text-xs" />
+              <Bouton variante="secondaire" onClick={copier}>{copie ? "Copié ✓" : "Copier"}</Bouton>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Ce que voit la personne qui ouvre un lien partagé. */
+export function VuePartagee({ creation, cols, rows, onReprendre, onZero }: { creation: Creation; cols: number; rows: number; onReprendre: () => void; onZero: () => void }) {
+  const b = calculerBudget(creation);
+  const type = TYPES_EVENEMENT.find((t) => t.id === creation.reglages.type)!;
+  return (
+    <div className="space-y-5" data-testid="vue-partagee">
+      <div className="text-center space-y-2">
+        <p className="uppercase tracking-[0.25em] text-xs text-[#8C6D22]">Une création partagée avec vous</p>
+        <h2 className="font-serif text-3xl sm:text-4xl">{type.nom} · {creation.reglages.invites} invités</h2>
+        <p className="text-sm text-[#5E554A]">Ambiance {nomAmbiance(creation).toLowerCase()}, {nomLieu(creation).toLowerCase()} · estimation {format(b.total)}</p>
+      </div>
+      <div className="rounded-[2rem] bg-white border border-[#EADFC8] p-3 shadow-[0_20px_60px_-35px_rgba(140,109,34,0.5)] max-w-4xl mx-auto">
+        <Scene creation={creation} cols={cols} rows={rows} lectureSeule />
+      </div>
+      <p className="text-sm text-center text-[#4A4238] max-w-2xl mx-auto">{optionsChoisies(creation).join(" · ")}</p>
+      <div className="flex flex-wrap justify-center gap-3">
+        <Bouton onClick={onReprendre} className="px-6">Créer la mienne à partir de celle-ci</Bouton>
+        <Bouton variante="secondaire" onClick={onZero}>Commencer de zéro</Bouton>
+      </div>
+    </div>
   );
 }

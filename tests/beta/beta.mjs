@@ -307,6 +307,46 @@ await scenario("Paie : « Calculer le mois » retire les fiches sans mission (ja
   await ctx.close();
 });
 
+// 3 septies. Demande venue du jeu → devis complet en un clic, aux prix du catalogue
+await scenario("Admin : demande du jeu → devis ligne par ligne aux prix du catalogue", async (notes) => {
+  const base = nouvelleBase();
+  base.devis_mariage = [{ id: "jeu1", nom: "Salma", prenom: "", email: "salma@example.com", type_evenement: "Mariage", date_mariage: "2026-12-12", lieu: "Rabat", nb_invites: 100,
+    services: "DJ / Animation musicale, Décoration, Traiteur", remarques: "Demande créée avec le jeu", statut: "en_attente", created_at: "2026-10-18T12:00:00Z",
+    configuration: { version: 1, type: "mariage", invites: 100, elements: { table_ronde: 10, dj: 1, buffet: 1, arche: 1 }, centres: 10, libelles: { honneur: "Table d'honneur" } } }];
+  base.catalogue_prestations = [...base.catalogue_prestations,
+    { id: "j1", categorie: "decoration", designation: "Table ronde 10 places", description: "Chaises et nappe comprises", unite: "unite", prix_unitaire: 450, actif: true, ordre: 40, jeu_element: "table_ronde" },
+    { id: "j2", categorie: "mariage", designation: "DJ / animation musicale", description: null, unite: "forfait", prix_unitaire: 12000, actif: true, ordre: 22, jeu_element: "dj" },
+    { id: "j3", categorie: "mariage", designation: "Traiteur mariage (menu complet)", description: null, unite: "personne", prix_unitaire: 450, actif: true, ordre: 20, jeu_element: "buffet" },
+    { id: "j4", categorie: "decoration", designation: "Arche décorative", description: null, unite: "forfait", prix_unitaire: 4500, actif: true, ordre: 43, jeu_element: "arche" },
+    { id: "j5", categorie: "decoration", designation: "Centre de table", description: null, unite: "unite", prix_unitaire: 180, actif: true, ordre: 45, jeu_element: "centres" }];
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await connecter(page, BASE, ADMIN, "/admin");
+  verifier(await page.getByText(/Créé avec le jeu/).count(), "la demande du jeu n'est pas signalée");
+  await page.getByRole("button", { name: /Faire le devis/ }).first().click(); await page.waitForTimeout(1000);
+  const valeurs = await page.getByPlaceholder(/Désignation/).evaluateAll((els) => els.map((e) => e.value));
+  for (const d of ["Table ronde 10 places", "DJ / animation musicale", "Traiteur mariage (menu complet)", "Arche décorative", "Centre de table"]) verifier(valeurs.includes(d), `ligne manquante : ${d}`);
+  const texte = (await page.locator("body").innerText()).replace(/\s/g, "");
+  // 10×450 + 12000 + 100×450 + 4500 + 10×180 = 67 800 HT
+  verifier(texte.includes("67800,00"), "total HT attendu 67 800 MAD (prix du catalogue × quantités)");
+  await page.screenshot({ path: `${CAPTURES}/7-devis-depuis-jeu.png`, fullPage: true });
+  notes.push("5 lignes créées automatiquement, total HT 67 800 MAD conforme au catalogue");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
+// 3 octies. Bouton WhatsApp : sur les pages publiques, jamais dans l'admin
+await scenario("Bouton WhatsApp (pages publiques uniquement, message adapté)", async (notes) => {
+  const base = nouvelleBase();
+  const { page, ctx } = await contexte(navigateur, base, ADMIN, { mobile: true });
+  await page.goto(BASE + "/devis-mariage"); await page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await page.reload(); await page.waitForTimeout(800);
+  const lien = await page.getByTestId("bouton-whatsapp").getAttribute("href");
+  verifier(lien?.startsWith("https://wa.me/212610939655?text=") && decodeURIComponent(lien).includes("mariage"), "lien WhatsApp incorrect : " + lien);
+  await connecter(page, BASE, ADMIN, "/admin");
+  verifier(!(await page.getByTestId("bouton-whatsapp").count()), "le bouton WhatsApp ne doit pas apparaître dans l'admin");
+  notes.push("présent sur /devis-mariage avec message « mariage », absent de l'admin");
+  await ctx.close();
+});
+
 // 4. Affichage smartphone : rien ne dépasse de l'écran
 await scenario("Affichage smartphone (pages publiques et admin)", async (notes) => {
   const base = nouvelleBase();

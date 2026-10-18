@@ -36,6 +36,13 @@ export function tailleGrille(invites: number) {
   return { cols, rows };
 }
 
+/** Grille d'une création : selon les invités, agrandie pour contenir tous les éléments posés. */
+export function grilleDe(c: Creation) {
+  const g = tailleGrille(c.reglages.invites);
+  c.elements.forEach((e) => { const { w, h } = emprise(e); g.cols = Math.max(g.cols, e.x + w); g.rows = Math.max(g.rows, e.y + h); });
+  return g;
+}
+
 export function emprise(e: Pick<Element, "type" | "tourne">) {
   const d = defElement(e.type);
   return e.tourne ? { w: d.h, h: d.w } : { w: d.w, h: d.h };

@@ -2,6 +2,7 @@ import { ReactNode, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
+import BoutonWhatsApp from "@/components/BoutonWhatsApp";
 
 interface LayoutProps {
   children: ReactNode;
@@ -51,6 +52,7 @@ const Layout = ({ children }: LayoutProps) => {
         {children}
       </main>
       <Footer />
+      <BoutonWhatsApp />
     </div>
   );
 };

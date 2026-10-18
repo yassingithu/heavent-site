@@ -31,6 +31,8 @@ interface DemandeMariage {
   id: string; nom: string; prenom: string; email: string; telephone?: string | null; type_evenement?: string | null;
   date_mariage?: string | null; lieu?: string | null; nb_invites?: number | null; services?: string | null;
   remarques?: string | null; statut?: string | null; created_at?: string | null;
+  /** Demande venue du jeu « Crée ton événement » : nombre d'éléments par type */
+  configuration?: { invites?: number | null; elements?: Record<string, number>; centres?: number; libelles?: Record<string, string> } | null;
 }
 interface DevisRow {
   id: string; numero: string | null; type: string; client_nom: string; client_societe: string | null;
@@ -164,6 +166,30 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     return res.length ? res : [ligneVide()];
   };
 
+  /**
+   * Demande venue du jeu : une ligne de devis par prestation du catalogue reliée au jeu,
+   * avec les prix ACTUELS du catalogue (fixe × nombre d'éléments, « personne » × nombre d'invités).
+   */
+  const lignesDepuisConfiguration = (dem: DemandeMariage): Ligne[] | null => {
+    const conf = dem.configuration;
+    if (!conf?.elements || !Object.keys(conf.elements).length) return null;
+    const invites = Number(conf.invites ?? dem.nb_invites ?? 0) || 0;
+    const quantites: Record<string, number> = { ...conf.elements, ...(conf.centres ? { centres: conf.centres } : {}) };
+    const res: Ligne[] = [];
+    const sansPrix: string[] = [];
+    for (const [type, n] of Object.entries(quantites)) {
+      const lignesCat = catalogue.filter((c) => c.actif && (c as any).jeu_element === type).sort((a, b) => a.ordre - b.ordre);
+      if (!lignesCat.length) { sansPrix.push(conf.libelles?.[type] ?? type); continue; }
+      for (const c of lignesCat) {
+        const parPersonne = c.unite === "personne";
+        res.push({ ...ligneVide(), designation: type === "honneur" && conf.libelles?.honneur ? conf.libelles.honneur : c.designation,
+          description: c.description ?? "", quantite: parPersonne ? invites : n, duree: 1, unite: c.unite as Ligne["unite"], prix_unitaire: Number(c.prix_unitaire) });
+      }
+    }
+    if (sansPrix.length) res.push({ ...ligneVide(), designation: sansPrix.join(", "), description: "Élément(s) du jeu sans prix au catalogue : à chiffrer", quantite: 1, unite: "forfait" });
+    return res.length ? res : null;
+  };
+
   const depuisDemandeMariage = (dem: DemandeMariage) => {
     const f = nouveauDevis(params);
     setForm({
@@ -173,8 +199,9 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       date_evenement: dem.date_mariage ?? "", lieu: dem.lieu ?? "",
       nb_personnes: dem.nb_invites ? String(dem.nb_invites) : "",
       notes_internes: [dem.services && `Services demandés : ${dem.services}`, dem.remarques && `Remarques : ${dem.remarques}`].filter(Boolean).join("\n"),
-      lignes: lignesDepuisDemandeMariage(dem),
+      lignes: lignesDepuisConfiguration(dem) ?? lignesDepuisDemandeMariage(dem),
     });
+    if (dem.configuration?.elements) toast({ title: "Devis créé depuis le jeu", description: "Une ligne par élément choisi, aux prix actuels de ton catalogue. Ajuste ce qu'il faut puis enregistre." });
     setOnglet("editeur");
   };
 
@@ -443,6 +470,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                       {" · "}{dateFr(kind === "entreprise" ? (d as DemandeEntreprise).date_evenement : (d as DemandeMariage).date_mariage) || "date à définir"}
                       {d.lieu ? ` · ${d.lieu}` : ""}
                     </span>
+                    {kind === "mariage" && (d as DemandeMariage).configuration?.elements && <span className="ml-2 rounded-full bg-[#F4E9CF] text-[#7A5F1E] px-2 py-0.5 text-[11px]">✨ Créé avec le jeu · devis prérempli</span>}
                   </div>
                   <Button size="sm" variant="outline" onClick={() => kind === "entreprise" ? depuisDemandeEntreprise(d as DemandeEntreprise) : depuisDemandeMariage(d as DemandeMariage)}>
                     <FileText className="h-4 w-4 mr-1" /> Faire le devis

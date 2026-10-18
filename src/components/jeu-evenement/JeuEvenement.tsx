@@ -7,21 +7,25 @@ import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TypeElement, defElement, libelle, TYPES_EVENEMENT } from "./config";
 import {
-  Creation, Reglages, Sauvegarde, calculerBudget, effacerSauvegarde, emprise, evaluerMissions, lireSauvegarde, nouvelId, nouvelleCreation,
+  Creation, Reglages, Sauvegarde, grilleDe, calculerBudget, effacerSauvegarde, emprise, evaluerMissions, lireSauvegarde, nouvelId, nouvelleCreation,
   placeLibre, proposerDisposition, reglagesParDefaut, sauvegarder, tailleGrille, trouverPlace,
 } from "./logique";
 import Scene, { ModeScene } from "./Scene";
 import { Accueil, Personnalisation } from "./Ecrans";
 import { Catalogue, JaugeBudget, Missions, PanneauSelection } from "./Panneaux";
-import { FenetreDevis, FenetreTelechargement, Recapitulatif } from "./Fin";
+import { FenetreDevis, FenetrePartage, FenetreTelechargement, Recapitulatif, VuePartagee } from "./Fin";
+import { creationDansLien, oublierLien } from "./partage";
 import { Bouton, Confettis } from "./ui";
 import { chargerTarifs } from "./tarifs";
 
-type Etape = "accueil" | "reglages" | "jeu" | "recap";
+type Etape = "accueil" | "reglages" | "jeu" | "recap" | "partage";
 
 export default function JeuEvenement() {
   const [sauvegarde, setSauvegarde] = useState<Sauvegarde | null>(() => lireSauvegarde());
-  const [etape, setEtape] = useState<Etape>("accueil");
+  // Lien partagé (#creation=…) : on montre d'abord la création reçue
+  const [partagee] = useState<Creation | null>(() => (typeof window !== "undefined" ? creationDansLien() : null));
+  const [etape, setEtape] = useState<Etape>(() => (partagee ? "partage" : "accueil"));
+  const [partage, setPartage] = useState(false);
   const [creation, setCreation] = useState<Creation>(() => nouvelleCreation());
   const [historique, setHistorique] = useState<Creation[]>([]);
   const [selection, setSelection] = useState<string | null>(null);
@@ -154,6 +158,7 @@ export default function JeuEvenement() {
   const aller = (e: Etape) => { setEtape(e); setMode(null); setSelection(null); requestAnimationFrame(() => haut.current?.scrollIntoView({ behavior: "smooth", block: "start" })); };
   const commencer = () => { effacerSauvegarde(); setSauvegarde(null); setCreation(nouvelleCreation(reglagesParDefaut())); setHistorique([]); aller("reglages"); };
   const reprendre = () => { if (!sauvegarde) return; setCreation(sauvegarde.creation); setHistorique([]); aller(sauvegarde.etape); };
+  const reprendrePartagee = () => { if (!partagee) return; oublierLien(); setCreation(partagee); setHistorique([]); aller("jeu"); };
   const reinitialiser = () => {
     modifier((c) => ({ ...c, elements: [], centres: { actif: false } }));
     setConfirmerReset(false); setSelection(null); dire("La scène a été vidée. Vous pouvez annuler.");
@@ -171,6 +176,10 @@ export default function JeuEvenement() {
     <div ref={haut} className="text-[#2A2420] scroll-mt-24" onKeyDown={surClavier}>
       <div aria-live="polite" className="sr-only" data-testid="annonce">{annonce}</div>
       <Confettis actif={fete} />
+
+      {etape === "partage" && partagee && (
+        <VuePartagee creation={partagee} cols={grilleDe(partagee).cols} rows={grilleDe(partagee).rows} onReprendre={reprendrePartagee} onZero={() => { oublierLien(); commencer(); }} />
+      )}
 
       {etape === "accueil" && <Accueil sauvegarde={sauvegarde} onCommencer={commencer} onReprendre={reprendre} />}
 
@@ -192,6 +201,7 @@ export default function JeuEvenement() {
               <Bouton variante="secondaire" onClick={annuler} disabled={!historique.length} aria-label="Annuler la dernière action">↶ Annuler</Bouton>
               <Bouton variante="discret" onClick={() => setConfirmerReset(true)} disabled={!creation.elements.length && !creation.centres.actif}>Réinitialiser</Bouton>
               <Bouton variante="discret" onClick={() => aller("reglages")}>Mes choix</Bouton>
+              <Bouton variante="discret" onClick={() => setPartage(true)} disabled={!creation.elements.length}>Partager</Bouton>
             </div>
           </div>
 
@@ -284,11 +294,12 @@ export default function JeuEvenement() {
 
       {etape === "recap" && (
         <Recapitulatif creation={creation} cols={cols} rows={rows} onModifier={() => aller("jeu")}
-          onTelecharger={(svg) => { svgRecap.current = svg; setTelechargement(true); }} onDevis={() => setDevis(true)} />
+          onTelecharger={(svg) => { svgRecap.current = svg; setTelechargement(true); }} onDevis={() => setDevis(true)} onPartager={() => setPartage(true)} />
       )}
 
       <FenetreTelechargement ouvert={telechargement} onFermer={() => setTelechargement(false)} creation={creation} svg={svgRecap} />
       <FenetreDevis ouvert={devis} onFermer={() => setDevis(false)} creation={creation} />
+      <FenetrePartage ouvert={partage} onFermer={() => setPartage(false)} creation={creation} />
 
       <Dialog open={confirmerReset} onOpenChange={setConfirmerReset}>
         <DialogContent className="max-w-md bg-[#FBF8F1]">
