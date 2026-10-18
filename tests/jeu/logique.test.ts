@@ -1,6 +1,9 @@
 // Tests de la logique du jeu « Crée ton événement de rêve » : node tests/jeu/lancer.mjs
 import assert from "node:assert/strict";
 import { MODELES } from "../../src/components/jeu-evenement/config";
+import { TRADUCTIONS } from "../../src/components/jeu-evenement/traductions";
+import { definirLangue, enFrancais, tr } from "../../src/components/jeu-evenement/langue";
+import { clesDuJeu } from "./cles-traduction";
 import { creationDepuisModele } from "../../src/components/jeu-evenement/logique";
 import { decoderCreation, encoderCreation } from "../../src/components/jeu-evenement/partage";
 import {
@@ -96,5 +99,21 @@ for (const m of MODELES) {
   assert.ok(evaluerMissions(c).every((x) => x.ok), `${m.nom} : 3 missions remplies`);
   for (const t of new Set(m.extras)) assert.ok(c.elements.some((e) => e.type === t), `${m.nom} contient ${t}`);
   console.log(`  modèle ${m.nom} : ${c.elements.length} éléments, ${b.total} MAD / ${c.reglages.budget}, 3/3 missions`);
+}
+// Traductions : chaque phrase du jeu existe en anglais et en arabe, avec les mêmes variables
+{
+  const vars = (t: string) => [...t.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(",");
+  const cles = clesDuJeu();
+  const manquantes = cles.filter((k) => !TRADUCTIONS[k]);
+  assert.deepEqual(manquantes, [], "phrases sans traduction");
+  for (const k of cles) assert.equal(vars(TRADUCTIONS[k].en), vars(k), `variables anglaises : ${k}`);
+  definirLangue("en"); assert.equal(tr("{n} invités", { n: 120 }), "120 guests");
+  const c = proposerDisposition({ ...reglagesParDefaut(), invites: 50 });
+  assert.match(evaluerMissions(c)[0].titre, /Plan enough seats/);
+  assert.equal(enFrancais(() => tr("Missions")), "Missions"); assert.equal(tr("Missions"), "Missions");
+  definirLangue("ar"); assert.equal(tr("Annuler"), "إلغاء");
+  assert.ok(calculerBudget(c).lignes.some((l) => /طاولة/.test(l.libelle)), "libellés du budget en arabe");
+  definirLangue("fr"); assert.equal(tr("Annuler"), "Annuler");
+  console.log(`  traductions : ${cles.length} phrases en anglais et en arabe, variables conservées`);
 }
 console.log("✅ logique du jeu : tous les tests passent");
