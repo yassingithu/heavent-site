@@ -72,6 +72,39 @@ function Chaise({ x, y, angle, c }: { x: number; y: number; angle: number; c: st
   );
 }
 
+/** Personnage du personnel (vue isométrique, centré sur sa case). */
+function Personne({ x, y, haut, bas, accessoire, peau = "#E2B894", cheveux = "#3B2A20", jupe = false }: {
+  x: number; y: number; haut: string; bas: string; accessoire?: "plateau" | "tablette" | "noeud"; peau?: string; cheveux?: string; jupe?: boolean;
+}) {
+  const [sx, sy] = pt(x, y);
+  const contour = teinte(haut, 0.4);
+  return (
+    <g>
+      <ellipse cx={sx} cy={sy} rx={11} ry={5.5} fill="#000" opacity={0.12} />
+      {jupe ? (
+        <path d={`M${sx - 4},${sy - 22} L${sx + 4},${sy - 22} L${sx + 7},${sy - 8} L${sx - 7},${sy - 8} Z`} fill={bas} stroke={teinte(bas, 0.35)} strokeWidth={0.5} />
+      ) : (
+        <><rect x={sx - 4.6} y={sy - 22} width={4} height={21} rx={1.5} fill={bas} /><rect x={sx + 0.6} y={sy - 22} width={4} height={21} rx={1.5} fill={teinte(bas, 0.15)} /></>
+      )}
+      {jupe && <><rect x={sx - 4} y={sy - 9} width={2.6} height={8.5} rx={1} fill={peau} /><rect x={sx + 1.4} y={sy - 9} width={2.6} height={8.5} rx={1} fill={teinte(peau, 0.08)} /></>}
+      <rect x={sx - 3.6} y={sy - 1.6} width={3.2} height={1.8} rx={0.8} fill="#1E1E1E" /><rect x={sx + 0.8} y={sy - 1.6} width={3.2} height={1.8} rx={0.8} fill="#1E1E1E" />
+      <path d={`M${sx - 6.5},${sy - 38} Q${sx},${sy - 41} ${sx + 6.5},${sy - 38} L${sx + 5.5},${sy - 21} L${sx - 5.5},${sy - 21} Z`} fill={haut} stroke={contour} strokeWidth={0.5} />
+      <rect x={sx - 9} y={sy - 37} width={3} height={13} rx={1.5} fill={teinte(haut, 0.1)} />
+      <rect x={sx + 6} y={sy - 37} width={3} height={13} rx={1.5} fill={teinte(haut, 0.1)} />
+      <circle cx={sx} cy={sy - 45} r={5.4} fill={peau} />
+      <path d={`M${sx - 5.6},${sy - 45} Q${sx - 5},${sy - 52.5} ${sx},${sy - 51.5} Q${sx + 5.5},${sy - 52.5} ${sx + 5.6},${sy - 45} Q${sx + 2},${sy - 49} ${sx - 5.6},${sy - 45} Z`} fill={cheveux} />
+      {accessoire === "noeud" && <><path d={`M${sx - 3},${sy - 38.5} L${sx},${sy - 37} L${sx - 3},${sy - 35.5} Z M${sx + 3},${sy - 38.5} L${sx},${sy - 37} L${sx + 3},${sy - 35.5} Z`} fill="#141414" /><path d={`M${sx - 2},${sy - 39.5} L${sx + 2},${sy - 39.5} L${sx},${sy - 33} Z`} fill="#FFFFFF" opacity={0.9} /></>}
+      {accessoire === "plateau" && (
+        <g>
+          <ellipse cx={sx + 11} cy={sy - 37} rx={8} ry={3} fill="#D9D9D9" stroke="#9A9A9A" strokeWidth={0.5} />
+          {[-4, 0, 4].map((dx) => <path key={dx} d={`M${sx + 11 + dx - 1.6},${sy - 44} L${sx + 11 + dx + 1.6},${sy - 44} L${sx + 11 + dx + 0.8},${sy - 38.5} L${sx + 11 + dx - 0.8},${sy - 38.5} Z`} fill="#F3E3B0" stroke="#C9B26A" strokeWidth={0.4} />)}
+        </g>
+      )}
+      {accessoire === "tablette" && <rect x={sx - 12} y={sy - 33} width={6} height={8} rx={1} fill="#2A2A2A" stroke="#C9A74E" strokeWidth={0.6} />}
+    </g>
+  );
+}
+
 // ── Sol et décor du lieu ────────────────────────────────────────────────────
 export function Sol({ cols, rows, lieu }: { cols: number; rows: number; lieu: Lieu }) {
   const L = LIEUX.find((l) => l.id === lieu)!;
@@ -356,6 +389,40 @@ export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
           {[[0.55, 0.3], [1.1, 0.3], [0.32, 1.0]].map(([u, v], i) => <Boite key={i} x={e.x + u} y={e.y + v} w={0.28} h={0.18} z={12} ht={9} c={teinte(palette.fleurs, -0.1)} />)}
           <Cylindre cx={e.x + 1.25} cy={e.y + 1.2} r={0.3} ht={10} c="#B08E6A" />
           <Cylindre cx={e.x + 1.75} cy={e.y + 1.75} r={0.17} ht={10} c={tissu} />
+        </g>
+      );
+    }
+    case "hotesse": {
+      const tenue = ctx.couleur ?? (palette.accent === "#2B2B2B" ? "#2B2B2B" : teinte(palette.deco, 0.15));
+      return <Personne x={cx} y={cy} haut={tenue} bas={teinte(tenue, 0.25)} jupe accessoire="tablette" cheveux="#2E1F17" />;
+    }
+    case "serveur": {
+      const tablier = ctx.couleur ?? "#2B2B2B";
+      return <Personne x={cx} y={cy} haut="#F7F5F0" bas={tablier} accessoire="plateau" cheveux="#1F1A17" peau="#D9A882" />;
+    }
+    case "maitre_hotel": {
+      const costume = ctx.couleur ?? "#232733";
+      return <Personne x={cx} y={cy} haut={costume} bas={teinte(costume, 0.1)} accessoire="noeud" cheveux="#6B5A4C" peau="#E7C3A0" />;
+    }
+    case "nawar": {
+      const l = local(e);
+      const or = "#C9A74E";
+      const flacons = Array.from({ length: 8 }, (_, i) => l.p(0.2 + i * 0.22, 0.2));
+      const teintes = ["#E9B8BC", "#F3E3B0", "#C7DCE6", "#E8D3A8", "#D9B6D6", "#BFD8C2", "#F2C9A0", "#E9B8BC"];
+      const essais = Array.from({ length: 5 }, (_, i) => l.p(0.35 + i * 0.32, 0.7));
+      const [ex, ey] = l.p(1, 0.08);
+      const [esx, esy] = pt(ex, ey, 78);
+      return (
+        <g>
+          <Boite {...l.r(0.05, 0.04, 1.9, 0.16)} ht={40} c="#F4EFE6" />
+          <Boite {...l.r(0.05, 0.04, 1.9, 0.16)} z={40} ht={2} c={or} />
+          {flacons.map(([x, y], i) => { const [fx, fy] = pt(x, y, 42); return <g key={i}><rect x={fx - 2.6} y={fy - 9} width={5.2} height={9} rx={2} fill={teintes[i]} stroke={teinte(teintes[i], 0.3)} strokeWidth={0.4} opacity={0.95} /><rect x={fx - 1.3} y={fy - 12} width={2.6} height={3} rx={0.6} fill={or} /></g>; })}
+          <Boite {...l.r(0.05, 0.42, 1.9, 0.5)} ht={28} c="#FBF8F1" />
+          <Boite {...l.r(0.02, 0.4, 1.96, 0.54)} z={28} ht={2} c={or} />
+          {essais.map(([x, y], i) => { const [fx, fy] = pt(x, y, 30); return <g key={i}><path d={`M${fx - 2.4},${fy} L${fx + 2.4},${fy} L${fx + 2},${fy - 6} Q${fx},${fy - 8} ${fx - 2},${fy - 6} Z`} fill={teintes[(i * 3) % 8]} stroke={teinte(teintes[(i * 3) % 8], 0.3)} strokeWidth={0.4} /><circle cx={fx} cy={fy - 8.5} r={1.4} fill={or} /></g>; })}
+          <rect x={esx - 16} y={esy - 12} width={32} height={12} rx={2} fill="#141414" />
+          <text x={esx} y={esy - 3.5} textAnchor="middle" fontSize={7} fontFamily="Georgia, serif" letterSpacing={1.2} fill={or}>NAWAR</text>
+          <line x1={esx} y1={esy} x2={pt(ex, ey, 42)[0]} y2={pt(ex, ey, 42)[1]} stroke={or} strokeWidth={1} />
         </g>
       );
     }

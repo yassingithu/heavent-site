@@ -1,5 +1,7 @@
 // Tests de la logique du jeu « Crée ton événement de rêve » : node tests/jeu/lancer.mjs
 import assert from "node:assert/strict";
+import { MODELES } from "../../src/components/jeu-evenement/config";
+import { creationDepuisModele } from "../../src/components/jeu-evenement/logique";
 import { decoderCreation, encoderCreation } from "../../src/components/jeu-evenement/partage";
 import {
   calculerBudget, evaluerMissions, nouvelleCreation, placeLibre, placesPrevues, proposerDisposition, reglagesParDefaut, tailleGrille, trouverPlace,
@@ -70,5 +72,29 @@ for (const [invites, budget, type] of [[120, 80000, "mariage"], [300, 150000, "m
   assert.ok(code.length < 2000, `lien court (${code.length} caractères pour ${d.elements.length} éléments)`);
   assert.equal(decoderCreation("abc"), null); assert.equal(decoderCreation(""), null);
   console.log(`  partage : ${d.elements.length} éléments → lien de ${code.length} caractères, relu à l'identique`);
+}
+// Bar à parfums Nawar : 80 MAD par invité, 50 parfums minimum ; personnel au prix fixe
+{
+  const c = nouvelleCreation({ ...reglagesParDefaut(), invites: 30 });
+  c.elements.push({ uid: "n", type: "nawar", x: 0, y: 0 }, { uid: "h1", type: "hotesse", x: 3, y: 0 }, { uid: "h2", type: "hotesse", x: 4, y: 0 }, { uid: "m", type: "maitre_hotel", x: 5, y: 0 });
+  const b = calculerBudget(c);
+  const nawar = b.lignes.find((l) => l.libelle.includes("Nawar"))!;
+  assert.equal(nawar.total, 50 * 80, "30 invités → 50 parfums minimum");
+  assert.match(nawar.detail, /minimum 50/);
+  assert.equal(b.lignes.find((l) => l.libelle.includes("Hôtesse"))!.total, 2 * 900);
+  assert.equal(b.total, 4000 + 1800 + 1200);
+  c.reglages.invites = 120;
+  assert.equal(calculerBudget(c).lignes.find((l) => l.libelle.includes("Nawar"))!.total, 120 * 80, "au-delà du minimum : 1 parfum par invité");
+  assert.ok(evaluerMissions(c).find((m) => m.id === "convivial")!.ok, "le bar à parfums est une animation conviviale");
+  console.log("  Nawar : 30 invités → 4 000 MAD (minimum 50 parfums), 120 invités → 9 600 MAD ; personnel au prix du catalogue");
+}
+// Modèles : complets (3 missions), dans leur budget, avec leurs extras
+for (const m of MODELES) {
+  const c = creationDepuisModele(m.id)!;
+  const b = calculerBudget(c);
+  assert.equal(b.depassement, 0, `${m.nom} dans son budget`);
+  assert.ok(evaluerMissions(c).every((x) => x.ok), `${m.nom} : 3 missions remplies`);
+  for (const t of new Set(m.extras)) assert.ok(c.elements.some((e) => e.type === t), `${m.nom} contient ${t}`);
+  console.log(`  modèle ${m.nom} : ${c.elements.length} éléments, ${b.total} MAD / ${c.reglages.budget}, 3/3 missions`);
 }
 console.log("✅ logique du jeu : tous les tests passent");

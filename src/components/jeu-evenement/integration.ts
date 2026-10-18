@@ -27,6 +27,8 @@ function services(c: Creation) {
   if (t.has("arche") || t.has("fleurs") || t.has("guirlandes") || c.centres.actif) s.push("Décoration");
   if (t.has("buffet")) s.push("Traiteur");
   if (t.has("photobooth")) s.push("Photobooth");
+  if (t.has("nawar")) s.push("Bar à parfums Nawar");
+  if (t.has("hotesse") || t.has("serveur") || t.has("maitre_hotel")) s.push("Hôtes/Hôtesses et service");
   return s.join(", ");
 }
 

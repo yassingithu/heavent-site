@@ -14,7 +14,8 @@ export function appliquerTarifs(lignes: LigneTarif[]) {
   const parElement = new Map<string, { fixe: number; parInvite: number }>();
   for (const l of lignes) {
     const t = parElement.get(l.jeu_element) ?? { fixe: 0, parInvite: 0 };
-    if (l.unite === "personne") t.parInvite += Number(l.prix_unitaire) || 0; else t.fixe += Number(l.prix_unitaire) || 0;
+    // Unité « personne » = par invité ; le parfum Nawar est facturé par parfum, donc par invité aussi
+    if (l.unite === "personne" || l.jeu_element === "nawar") t.parInvite += Number(l.prix_unitaire) || 0; else t.fixe += Number(l.prix_unitaire) || 0;
     parElement.set(l.jeu_element, t);
   }
   for (const d of CATALOGUE) {

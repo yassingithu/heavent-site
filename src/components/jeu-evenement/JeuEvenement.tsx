@@ -58,7 +58,8 @@ export default function JeuEvenement() {
   const budget = useMemo(() => calculerBudget(creation), [creation]);
 
   // Prix du catalogue interne (Admin → Devis → Catalogue de prix) : on recalcule dès qu'ils arrivent
-  useEffect(() => { chargerTarifs().then((n) => { if (n) setCreation((c) => ({ ...c })); }); }, []);
+  const [tarifs, setTarifs] = useState(0);
+  useEffect(() => { chargerTarifs().then((n) => { if (n) { setTarifs(n); setCreation((c) => ({ ...c })); } }); }, []);
 
   // Sauvegarde automatique (aucune coordonnée personnelle)
   useEffect(() => { if (etape === "jeu" || etape === "recap") sauvegarder({ creation, etape }); }, [creation, etape]);
@@ -181,7 +182,8 @@ export default function JeuEvenement() {
         <VuePartagee creation={partagee} cols={grilleDe(partagee).cols} rows={grilleDe(partagee).rows} onReprendre={reprendrePartagee} onZero={() => { oublierLien(); commencer(); }} />
       )}
 
-      {etape === "accueil" && <Accueil sauvegarde={sauvegarde} onCommencer={commencer} onReprendre={reprendre} />}
+      {etape === "accueil" && <Accueil sauvegarde={sauvegarde} onCommencer={commencer} onReprendre={reprendre} tarifs={tarifs}
+        onModele={(c) => { effacerSauvegarde(); setSauvegarde(null); setCreation(c); setHistorique([]); aller("jeu"); }} />}
 
       {etape === "reglages" && (
         <Personnalisation reglages={creation.reglages} enCours={creation.elements.length > 0}

@@ -1,11 +1,39 @@
 // Écran d'accueil et personnalisation initiale.
 import { useMemo } from "react";
-import { AMBIANCES, LIEUX, LIMITES_INVITES, TYPES_EVENEMENT, format, libelle } from "./config";
-import { Creation, Reglages, Sauvegarde, nouvelleCreation, palette } from "./logique";
+import { AMBIANCES, LIEUX, LIMITES_INVITES, MODELES, TYPES_EVENEMENT, format, libelle } from "./config";
+import { Creation, Reglages, Sauvegarde, calculerBudget, creationDepuisModele, grilleDe, nouvelleCreation, palette } from "./logique";
 import Scene from "./Scene";
 import { Bouton, Puce } from "./ui";
 
-export function Accueil({ sauvegarde, onCommencer, onReprendre }: { sauvegarde: Sauvegarde | null; onCommencer: () => void; onReprendre: () => void }) {
+/** Vignettes des modèles prêts à l'emploi. */
+function Modeles({ onModele, tarifs }: { onModele: (c: Creation) => void; tarifs: number }) {
+  // Recalculé quand les prix du catalogue sont chargés
+  const apercus = useMemo(() => MODELES.map((m) => ({ m, c: creationDepuisModele(m.id)! })), [tarifs]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <section className="lg:col-span-2 space-y-3" aria-labelledby="titre-modeles">
+      <h2 id="titre-modeles" className="font-serif text-2xl text-[#2A2420]">Ou partez d'un modèle</h2>
+      <p className="text-sm text-[#6B6155]">Une scène toute prête, que vous modifiez ensuite comme vous voulez.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        {apercus.map(({ m, c }) => {
+          const g = grilleDe(c);
+          return (
+            <button key={m.id} onClick={() => onModele(creationDepuisModele(m.id)!)} data-modele={m.id}
+              className="text-left rounded-2xl border border-[#EADFC8] bg-white hover:border-[#C9A74E] hover:shadow-[0_16px_40px_-28px_rgba(140,109,34,0.6)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A74E] overflow-hidden">
+              <div className="bg-[#FBF8F1] p-1.5 pointer-events-none" aria-hidden><Scene creation={c} cols={g.cols} rows={g.rows} lectureSeule /></div>
+              <div className="p-3">
+                <div className="font-medium text-[#2A2420]">{m.nom}</div>
+                <div className="text-xs text-[#6B6155] mt-0.5">{m.description}</div>
+                <div className="text-xs text-[#8C6D22] mt-1.5">Environ {format(calculerBudget(c).total)}</div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+export function Accueil({ sauvegarde, onCommencer, onReprendre, onModele, tarifs = 0 }: { sauvegarde: Sauvegarde | null; onCommencer: () => void; onReprendre: () => void; onModele: (c: Creation) => void; tarifs?: number }) {
   const apercu = useMemo<Creation>(() => ({
     ...nouvelleCreation({ type: "mariage", invites: 60, budget: 60000, lieu: "jardin", ambiance: "romantique" }),
     centres: { actif: true },
@@ -44,6 +72,7 @@ export function Accueil({ sauvegarde, onCommencer, onReprendre }: { sauvegarde: 
       <div className="rounded-[2rem] bg-white/70 border border-[#EADFC8] p-3 shadow-[0_20px_60px_-30px_rgba(140,109,34,0.45)]" aria-hidden>
         <Scene creation={apercu} cols={7} rows={5} lectureSeule />
       </div>
+      <Modeles onModele={onModele} tarifs={tarifs} />
     </div>
   );
 }

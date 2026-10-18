@@ -179,9 +179,11 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       const lignesCat = catalogue.filter((c) => c.actif && (c as any).jeu_element === type).sort((a, b) => a.ordre - b.ordre);
       if (!lignesCat.length) { sansPrix.push(conf.libelles?.[type] ?? type); continue; }
       for (const c of lignesCat) {
-        const parPersonne = c.unite === "personne";
+        // Parfums Nawar : un par invité, 50 minimum
+        const parPersonne = c.unite === "personne" || type === "nawar";
+        const qte = type === "nawar" ? Math.max(invites, 50) : invites;
         res.push({ ...ligneVide(), designation: type === "honneur" && conf.libelles?.honneur ? conf.libelles.honneur : c.designation,
-          description: c.description ?? "", quantite: parPersonne ? invites : n, duree: 1, unite: c.unite as Ligne["unite"], prix_unitaire: Number(c.prix_unitaire) });
+          description: c.description ?? "", quantite: parPersonne ? qte : n, duree: 1, unite: c.unite as Ligne["unite"], prix_unitaire: Number(c.prix_unitaire) });
       }
     }
     if (sansPrix.length) res.push({ ...ligneVide(), designation: sansPrix.join(", "), description: "Élément(s) du jeu sans prix au catalogue : à chiffrer", quantite: 1, unite: "forfait" });

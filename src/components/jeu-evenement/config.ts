@@ -56,9 +56,10 @@ export const NUANCIER: { nom: string; valeur: string }[] = [
 // ── Catalogue ───────────────────────────────────────────────────────────────
 export type TypeElement =
   | "table_ronde" | "table_rect" | "honneur" | "arche" | "fleurs" | "guirlandes" | "piste"
-  | "dj" | "buffet" | "bar" | "photobooth" | "lounge" | "gateau";
+  | "dj" | "buffet" | "bar" | "photobooth" | "lounge" | "gateau"
+  | "nawar" | "hotesse" | "serveur" | "maitre_hotel";
 
-export type Categorie = "places" | "decoration" | "lumiere" | "animation" | "gourmand" | "detente";
+export type Categorie = "places" | "decoration" | "lumiere" | "animation" | "gourmand" | "detente" | "personnel";
 export const CATEGORIES: { id: Categorie; nom: string }[] = [
   { id: "places", nom: "Tables et places" },
   { id: "decoration", nom: "Décoration" },
@@ -66,6 +67,7 @@ export const CATEGORIES: { id: Categorie; nom: string }[] = [
   { id: "animation", nom: "Animation" },
   { id: "gourmand", nom: "Buffet et boissons" },
   { id: "detente", nom: "Espaces conviviaux" },
+  { id: "personnel", nom: "Personnel" },
 ];
 
 /** Quelle couleur de l'élément le visiteur peut personnaliser. */
@@ -84,6 +86,8 @@ export interface DefElement {
   prix: number;
   /** Coût par invité, compté UNE seule fois quel que soit le nombre d'éléments de ce type */
   prixParInvite?: number;
+  /** Nombre minimum facturé pour le coût par invité (ex. 50 parfums minimum pour le bar Nawar) */
+  minimumInvites?: number;
   /** Places assises apportées (chaises comprises dans le prix de la table) */
   places?: number | Partial<Record<TypeEvenement, number>>;
   couleur?: CleCouleur;
@@ -105,6 +109,10 @@ export const CATALOGUE: DefElement[] = [
   { id: "bar", categorie: "gourmand", nom: "Bar à boissons", description: "Comptoir, barman, jus frais et boissons sans alcool.", w: 2, h: 1, prix: 1500, prixParInvite: 50, role: "convivial" },
   { id: "gateau", categorie: "gourmand", nom: "Pièce montée", description: "Gâteau à étages présenté sur sa table.", w: 1, h: 1, prix: 600, prixParInvite: 20, couleur: "fleurs" },
   { id: "lounge", categorie: "detente", nom: "Espace lounge", description: "Canapés, poufs et table basse pour se poser.", w: 2, h: 2, prix: 3000, couleur: "deco", role: "convivial" },
+  { id: "nawar", categorie: "animation", nom: "Bar à parfums Nawar", description: "Chaque invité compose son parfum avec notre parfumeur, et repart avec son flacon. 50 parfums minimum.", w: 2, h: 1, prix: 0, prixParInvite: 80, minimumInvites: 50, role: "convivial" },
+  { id: "hotesse", categorie: "personnel", nom: "Hôtesse d'accueil", description: "Accueil et placement des invités, vestiaire, orientation. Journée de 8 h.", w: 1, h: 1, prix: 900, couleur: "deco" },
+  { id: "serveur", categorie: "personnel", nom: "Serveur / serveuse", description: "Service à table, cocktail et débarrassage. Journée de 8 h.", w: 1, h: 1, prix: 700, couleur: "deco" },
+  { id: "maitre_hotel", categorie: "personnel", nom: "Maître d'hôtel", description: "Coordonne le service et l'équipe le jour J. Journée de 8 h.", w: 1, h: 1, prix: 1200, couleur: "deco" },
 ];
 
 /** Option « centres de table » : posée sur toutes les tables, facturée par table. */
@@ -161,3 +169,25 @@ export const MISSIONS = [
   { id: "convivial", titre: "Ajouter une animation ou un espace convivial" },
 ] as const;
 export type IdMission = (typeof MISSIONS)[number]["id"];
+
+// ── Modèles prêts à l'emploi (point de départ modifiable) ──────────────────
+export interface Modele {
+  id: string; nom: string; description: string;
+  reglages: { type: TypeEvenement; invites: number; budget: number; lieu: Lieu; ambiance: Ambiance };
+  /** Éléments ajoutés à la disposition proposée */
+  extras: TypeElement[];
+}
+export const MODELES: Modele[] = [
+  { id: "mariage-oriental", nom: "Mariage oriental", description: "200 invités en salle, bordeaux et or, bar à parfums et équipe de service.",
+    reglages: { type: "mariage", invites: 200, budget: 250000, lieu: "salle", ambiance: "orientale" },
+    extras: ["nawar", "maitre_hotel", "serveur", "serveur", "serveur", "hotesse", "hotesse"] },
+  { id: "mariage-jardin", nom: "Mariage champêtre", description: "120 invités en jardin, ambiance romantique et guirlandes lumineuses.",
+    reglages: { type: "mariage", invites: 120, budget: 160000, lieu: "jardin", ambiance: "romantique" },
+    extras: ["hotesse", "serveur", "serveur"] },
+  { id: "anniversaire-boheme", nom: "Anniversaire bohème", description: "40 invités sur une terrasse, lounge et photobooth.",
+    reglages: { type: "anniversaire", invites: 40, budget: 50000, lieu: "terrasse", ambiance: "boheme" },
+    extras: ["hotesse"] },
+  { id: "soiree-entreprise", nom: "Soirée d'entreprise", description: "150 invités, scène, cocktail, hôtesses d'accueil et bar à parfums.",
+    reglages: { type: "pro", invites: 150, budget: 200000, lieu: "salle", ambiance: "moderne" },
+    extras: ["nawar", "hotesse", "hotesse", "hotesse", "serveur", "serveur", "maitre_hotel"] },
+];

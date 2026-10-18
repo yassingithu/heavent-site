@@ -1,6 +1,6 @@
 // Logique du jeu, sans affichage : grille, placement, budget, missions, disposition proposée, sauvegarde.
 import {
-  AMBIANCES, Ambiance, BUDGET_DEFAUT, CENTRES_DE_TABLE, CleCouleur, LIMITES_INVITES, Lieu, MISSIONS, IdMission,
+  MODELES, AMBIANCES, Ambiance, BUDGET_DEFAUT, CENTRES_DE_TABLE, CleCouleur, LIMITES_INVITES, Lieu, MISSIONS, IdMission,
   TypeElement, TypeEvenement, defElement, libelle, placesDe,
 } from "./config";
 
@@ -81,10 +81,13 @@ export function calculerBudget(c: Creation) {
     const d = defElement(id);
     const fixe = d.prix * n;
     // Le coût par invité (repas, boissons, parts de gâteau) ne compte qu'une fois, même avec 2 buffets.
-    const parInvite = d.prixParInvite ? d.prixParInvite * invites : 0;
+    // Minimum facturé (ex. 50 parfums pour le bar Nawar, même pour 30 invités)
+    const qte = Math.max(invites, d.minimumInvites ?? 0);
+    const parInvite = d.prixParInvite ? d.prixParInvite * qte : 0;
     lignes.push({
       libelle: libelle(id, type).nom, quantite: n, fixe, parInvite, total: fixe + parInvite,
-      detail: [d.prix ? `${n} × ${d.prix}` : "", d.prixParInvite ? `${d.prix ? "+ " : ""}${d.prixParInvite} × ${invites} invités` : ""].filter(Boolean).join(" "),
+      detail: [d.prix ? `${n} × ${d.prix}` : "",
+        d.prixParInvite ? `${d.prix ? "+ " : ""}${d.prixParInvite} × ${qte} ${qte > invites ? `(minimum ${d.minimumInvites})` : "invités"}` : ""].filter(Boolean).join(" "),
     });
   }
   const nbTables = (parType.get("table_ronde") ?? 0) + (parType.get("table_rect") ?? 0);
@@ -162,6 +165,23 @@ export function proposerDisposition(r: Reglages): Creation {
   for (const [t, g] of [["lounge", 0], ["photobooth", 0], ["fleurs", 0], ["arche", 0], ["gateau", 0], ["dj", 0], ["guirlandes", 1], ["bar", 0], ["buffet", 0]] as [TypeElement, number][]) retirer(t, g);
   if (calculerBudget(c).depassement > 0) c.centres.actif = false;
   if (calculerBudget(c).depassement > 0 && els.some((e) => e.type === "piste") && els.some((e) => e.type === "bar")) retirer("piste", 0);
+  return c;
+}
+
+/** Création à partir d'un modèle : disposition proposée + extras (personnel, bar à parfums…), budget ajusté. */
+export function creationDepuisModele(id: string): Creation | null {
+  const m = MODELES.find((x) => x.id === id);
+  if (!m) return null;
+  const c = proposerDisposition({ ...m.reglages });
+  const g = tailleGrille(m.reglages.invites);
+  // Personnel près de l'entrée (devant), bar à parfums sur un côté
+  for (const t of m.extras) {
+    const cible = t === "nawar" ? { x: g.cols - 2, y: g.rows / 2 + 2 } : { x: g.cols / 2, y: g.rows - 1 };
+    const p = trouverPlace(c.elements, t, g.cols, g.rows, cible);
+    if (p) c.elements.push({ uid: nouvelId(), type: t, x: p.x, y: p.y });
+  }
+  const total = calculerBudget(c).total;
+  if (total > c.reglages.budget) c.reglages.budget = Math.ceil(total / 10000) * 10000;
   return c;
 }
 
