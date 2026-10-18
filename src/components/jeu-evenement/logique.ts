@@ -1,4 +1,5 @@
 // Logique du jeu, sans affichage : grille, placement, budget, missions, disposition proposée, sauvegarde.
+import { tr } from "./langue";
 import {
   MODELES, AMBIANCES, Ambiance, BUDGET_DEFAUT, CENTRES_DE_TABLE, CleCouleur, LIMITES_INVITES, Lieu, MISSIONS, IdMission,
   TypeElement, TypeEvenement, defElement, libelle, placesDe,
@@ -87,13 +88,13 @@ export function calculerBudget(c: Creation) {
     lignes.push({
       libelle: libelle(id, type).nom, quantite: n, fixe, parInvite, total: fixe + parInvite,
       detail: [d.prix ? `${n} × ${d.prix}` : "",
-        d.prixParInvite ? `${d.prix ? "+ " : ""}${d.prixParInvite} × ${qte} ${qte > invites ? `(minimum ${d.minimumInvites})` : "invités"}` : ""].filter(Boolean).join(" "),
+        d.prixParInvite ? `${d.prix ? "+ " : ""}${d.prixParInvite} × ${qte} ${qte > invites ? tr("(minimum {n})", { n: d.minimumInvites ?? 0 }) : tr("invités")}` : ""].filter(Boolean).join(" "),
     });
   }
   const nbTables = (parType.get("table_ronde") ?? 0) + (parType.get("table_rect") ?? 0);
   if (c.centres.actif && nbTables) {
     const t = CENTRES_DE_TABLE.prixParTable * nbTables;
-    lignes.push({ libelle: CENTRES_DE_TABLE.nom, quantite: nbTables, fixe: t, parInvite: 0, total: t, detail: `${nbTables} × ${CENTRES_DE_TABLE.prixParTable}` });
+    lignes.push({ libelle: tr(CENTRES_DE_TABLE.nom), quantite: nbTables, fixe: t, parInvite: 0, total: t, detail: `${nbTables} × ${CENTRES_DE_TABLE.prixParTable}` });
   }
   lignes.sort((a, b) => b.total - a.total);
   const total = lignes.reduce((s, l) => s + l.total, 0);
@@ -116,11 +117,15 @@ export function evaluerMissions(c: Creation): EtatMission[] {
   const eclairage = roles.has("eclairage");
   const convivial = roles.has("convivial");
   const etat: Record<IdMission, { ok: boolean; aide: string }> = {
-    places: { ok: manque === 0, aide: manque ? `Il manque ${manque} place${manque > 1 ? "s" : ""} (${places} / ${c.reglages.invites}).` : `${places} places pour ${c.reglages.invites} invités.` },
-    ambiance: { ok: deco && eclairage, aide: deco && eclairage ? "Décoration et éclairage en place." : [!deco && "ajoutez une décoration (arche, fleurs ou centres de table)", !eclairage && "ajoutez un éclairage (guirlandes)"].filter(Boolean).join(" et ").replace(/^./, (s) => s.toUpperCase()) + "." },
-    convivial: { ok: convivial, aide: convivial ? "Vos invités ont de quoi se retrouver." : "Ajoutez une piste, un DJ, un bar, un photobooth ou un lounge." },
+    places: { ok: manque === 0, aide: manque
+      ? tr(manque > 1 ? "Il manque {n} places ({p} / {i})." : "Il manque {n} place ({p} / {i}).", { n: manque, p: places, i: c.reglages.invites })
+      : tr("{p} places pour {i} invités.", { p: places, i: c.reglages.invites }) },
+    ambiance: { ok: deco && eclairage, aide: deco && eclairage ? tr("Décoration et éclairage en place.")
+      : !deco && !eclairage ? tr("Ajoutez une décoration (arche, fleurs ou centres de table) et un éclairage (guirlandes).")
+      : !deco ? tr("Ajoutez une décoration (arche, fleurs ou centres de table).") : tr("Ajoutez un éclairage (guirlandes).") },
+    convivial: { ok: convivial, aide: convivial ? tr("Vos invités ont de quoi se retrouver.") : tr("Ajoutez une piste, un DJ, un bar, un photobooth ou un lounge.") },
   };
-  return MISSIONS.map((m) => ({ id: m.id, titre: m.titre, ...etat[m.id] }));
+  return MISSIONS.map((m) => ({ id: m.id, titre: tr(m.titre), ...etat[m.id] }));
 }
 
 // ── « Propose-moi une disposition » ─────────────────────────────────────────

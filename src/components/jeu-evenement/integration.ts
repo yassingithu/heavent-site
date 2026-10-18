@@ -13,7 +13,8 @@ import { FUNCTIONS_URL } from "@/integrations/supabase/client";
 import { CENTRES_DE_TABLE, libelle } from "./config";
 import { Creation, calculerBudget, placesPrevues } from "./logique";
 import type { Coordonnees } from "./recapitulatif";
-import { nomAmbiance, nomLieu, nomType, optionsChoisies } from "./recapitulatif";
+import { nomAmbiance, nomLieu, nomType, optionsChoisies, texteDemande } from "./recapitulatif";
+import { enFrancais, tr } from "./langue";
 
 export const INTEGRATION_ACTIVE = true;
 
@@ -33,12 +34,11 @@ function services(c: Creation) {
 }
 
 export async function envoyerDemandeDevis(d: DemandeDevis): Promise<{ envoye: boolean; message?: string }> {
-  const c = d.creation; const k = d.coordonnees; const b = calculerBudget(c);
   try {
-    const r = await fetch(`${FUNCTIONS_URL}/send-email`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    // La demande part toujours en français vers l'agence, quelle que soit la langue du visiteur
+    const corps = enFrancais(() => {
+      const c = d.creation; const k = d.coordonnees; const b = calculerBudget(c);
+      return JSON.stringify({
         type: "jeu",
         data: {
           prenom: k.prenom.trim(), email: k.email.trim(), telephone: k.telephone.trim(), ville: k.ville.trim(), message: k.message.trim(),
@@ -49,7 +49,8 @@ export async function envoyerDemandeDevis(d: DemandeDevis): Promise<{ envoye: bo
           lignes: b.lignes.map((l) => ({ libelle: l.libelle, detail: l.detail, total: l.total })),
           centres: c.centres.actif ? CENTRES_DE_TABLE.nom : null,
           honneur: libelle("honneur", c.reglages.type).nom,
-          texte: d.texte,
+          texte: texteDemande(c, k),
+          langue_visiteur: document.documentElement.lang || "fr",
           // Pour créer le devis ligne par ligne dans l'admin (prix repris du catalogue au moment du devis)
           configuration: {
             version: 1, type: c.reglages.type, invites: c.reglages.invites,
@@ -58,12 +59,13 @@ export async function envoyerDemandeDevis(d: DemandeDevis): Promise<{ envoye: bo
             libelles: Object.fromEntries([...new Set(c.elements.map((e) => e.type))].map((t) => [t, libelle(t, c.reglages.type).nom])),
           },
         },
-      }),
+      });
     });
+    const r = await fetch(`${FUNCTIONS_URL}/send-email`, { method: "POST", headers: { "Content-Type": "application/json" }, body: corps });
     const j = await r.json().catch(() => ({}));
     if (r.ok && j?.success) return { envoye: true };
-    return { envoye: false, message: j?.error ?? "Le serveur n'a pas pu enregistrer la demande." };
+    return { envoye: false, message: j?.error ?? tr("Le serveur n'a pas pu enregistrer la demande.") };
   } catch {
-    return { envoye: false, message: "Connexion impossible pour le moment." };
+    return { envoye: false, message: tr("Connexion impossible pour le moment.") };
   }
 }

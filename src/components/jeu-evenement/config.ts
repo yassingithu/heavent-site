@@ -7,8 +7,10 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+import { localeNombres, tr } from "./langue";
+
 export const DEVISE = "MAD";
-export const format = (n: number) => `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Math.round(n))} ${DEVISE}`;
+export const format = (n: number) => `${new Intl.NumberFormat(localeNombres(), { maximumFractionDigits: 0 }).format(Math.round(n))} ${DEVISE}`;
 
 export const LIMITES_INVITES = { min: 10, max: 500, defaut: 120 };
 export const BUDGET_DEFAUT = 120000;
@@ -150,11 +152,18 @@ export const LIBELLES: Partial<Record<TypeEvenement, Partial<Record<TypeElement,
 
 export const defElement = (id: TypeElement) => CATALOGUE.find((d) => d.id === id)!;
 
+/** Nom et description d'un élément, adaptés au type d'événement et traduits dans la langue du site. */
 export function libelle(id: TypeElement, type: TypeEvenement) {
   const d = defElement(id);
   const l = LIBELLES[type]?.[id];
-  return { nom: l?.nom ?? d.nom, description: l?.description ?? d.description };
+  return { nom: tr(l?.nom ?? d.nom), description: tr(l?.description ?? d.description) };
 }
+
+// Textes de configuration traduits (le français reste la référence dans ce fichier)
+export const nomTypeEv = (id: TypeEvenement) => tr(TYPES_EVENEMENT.find((t) => t.id === id)!.nom);
+export const nomLieuEv = (id: Lieu) => tr(LIEUX.find((l) => l.id === id)!.nom);
+export const nomAmbianceEv = (id: Ambiance) => tr(AMBIANCES.find((a) => a.id === id)!.nom);
+export const mentionEstimation = () => tr(MENTION_ESTIMATION);
 
 export function placesDe(id: TypeElement, type: TypeEvenement): number {
   const p = defElement(id).places;

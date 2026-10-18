@@ -5,7 +5,9 @@
  */
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TypeElement, defElement, libelle, TYPES_EVENEMENT } from "./config";
+import { TypeElement, defElement, libelle, nomTypeEv } from "./config";
+import { useTranslation } from "react-i18next";
+import { definirLangue, estRtl, tr } from "./langue";
 import {
   Creation, Reglages, Sauvegarde, grilleDe, calculerBudget, effacerSauvegarde, emprise, evaluerMissions, lireSauvegarde, nouvelId, nouvelleCreation,
   placeLibre, proposerDisposition, reglagesParDefaut, sauvegarder, tailleGrille, trouverPlace,
@@ -21,6 +23,10 @@ import { chargerTarifs } from "./tarifs";
 type Etape = "accueil" | "reglages" | "jeu" | "recap" | "partage";
 
 export default function JeuEvenement() {
+  // Langue du site (fr / en / ar) : le jeu suit le sélecteur de langue
+  const { i18n } = useTranslation();
+  definirLangue(i18n.language);
+  const lng = i18n.language;
   const [sauvegarde, setSauvegarde] = useState<Sauvegarde | null>(() => lireSauvegarde());
   // Lien partagé (#creation=…) : on montre d'abord la création reçue
   const [partagee] = useState<Creation | null>(() => (typeof window !== "undefined" ? creationDansLien() : null));
@@ -54,8 +60,8 @@ export default function JeuEvenement() {
     return g;
   }, [creation]);
 
-  const missions = useMemo(() => evaluerMissions(creation), [creation]);
-  const budget = useMemo(() => calculerBudget(creation), [creation]);
+  const missions = useMemo(() => evaluerMissions(creation), [creation, lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  const budget = useMemo(() => calculerBudget(creation), [creation, lng]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Prix du catalogue interne (Admin → Devis → Catalogue de prix) : on recalcule dès qu'ils arrivent
   const [tarifs, setTarifs] = useState(0);
@@ -71,7 +77,7 @@ export default function JeuEvenement() {
     const nouvelle = missions.find((m) => m.ok && precedentes.current[m.id] === false);
     precedentes.current = Object.fromEntries(missions.map((m) => [m.id, m.ok]));
     if (nouvelle) {
-      setCelebre(nouvelle.id); setAnnonce(`Mission accomplie : ${nouvelle.titre}`);
+      setCelebre(nouvelle.id); setAnnonce(tr("Mission accomplie : {m}", { m: nouvelle.titre }));
       const t = setTimeout(() => setCelebre(null), 1400);
       return () => clearTimeout(t);
     }
@@ -79,7 +85,7 @@ export default function JeuEvenement() {
   const toutReussi = missions.every((m) => m.ok) && budget.depassement === 0;
   const dejaFete = useRef(false);
   useEffect(() => {
-    if (etape === "jeu" && toutReussi && !dejaFete.current) { dejaFete.current = true; setFete(true); setAnnonce("Bravo, les trois missions sont remplies dans votre budget !"); setTimeout(() => setFete(false), 3000); }
+    if (etape === "jeu" && toutReussi && !dejaFete.current) { dejaFete.current = true; setFete(true); setAnnonce(tr("Bravo, les trois missions sont remplies dans votre budget !")); setTimeout(() => setFete(false), 3000); }
     if (!toutReussi) dejaFete.current = false;
   }, [toutReussi, etape]);
 
@@ -92,7 +98,7 @@ export default function JeuEvenement() {
   const annuler = () => {
     setHistorique((h) => {
       if (!h.length) return h;
-      setCreation(h[h.length - 1]); setSelection(null); setMode(null); dire("Dernière action annulée.");
+      setCreation(h[h.length - 1]); setSelection(null); setMode(null); dire(tr("Dernière action annulée."));
       return h.slice(0, -1);
     });
   };
@@ -101,15 +107,15 @@ export default function JeuEvenement() {
   const placer = (type: TypeElement, x: number, y: number) => {
     const uid = nouvelId();
     modifier((c) => ({ ...c, elements: [...c.elements, { uid, type, x, y }] }));
-    setMode(null); setSelection(uid); dire(`${libelle(type, creation.reglages.type).nom} ajouté(e) à la scène.`);
+    setMode(null); setSelection(uid); dire(tr("{nom} ajouté(e) à la scène.", { nom: libelle(type, creation.reglages.type).nom }));
   };
   const placerAuto = (type: TypeElement) => {
     const p = trouverPlace(creation.elements, type, cols, rows) ?? trouverPlace(creation.elements, type, cols, rows, undefined, true);
-    if (!p) { dire("Plus de place libre pour cet élément : retirez ou déplacez un autre élément."); return; }
+    if (!p) { dire(tr("Plus de place libre pour cet élément : retirez ou déplacez un autre élément.")); return; }
     const tourne = !placeLibre(creation.elements, { type, ...p }, cols, rows);
     const uid = nouvelId();
     modifier((c) => ({ ...c, elements: [...c.elements, { uid, type, x: p.x, y: p.y, tourne }] }));
-    setMode(null); setSelection(uid); dire(`${libelle(type, creation.reglages.type).nom} ajouté(e) à la scène.`);
+    setMode(null); setSelection(uid); dire(tr("{nom} ajouté(e) à la scène.", { nom: libelle(type, creation.reglages.type).nom }));
   };
   const deplacer = (uid: string, x: number, y: number) => {
     modifier((c) => ({ ...c, elements: c.elements.map((e) => (e.uid === uid ? { ...e, x, y } : e)) }));
@@ -118,18 +124,18 @@ export default function JeuEvenement() {
   const pas = (dx: number, dy: number) => {
     const e = creation.elements.find((x) => x.uid === selection); if (!e) return;
     const cand = { ...e, x: e.x + dx, y: e.y + dy };
-    if (placeLibre(creation.elements, cand, cols, rows, e.uid)) deplacer(e.uid, cand.x, cand.y); else dire("Cette place est occupée ou hors de la scène.");
+    if (placeLibre(creation.elements, cand, cols, rows, e.uid)) deplacer(e.uid, cand.x, cand.y); else dire(tr("Cette place est occupée ou hors de la scène."));
   };
   const tourner = () => {
     const e = creation.elements.find((x) => x.uid === selection); if (!e) return;
     const cand = { ...e, tourne: !e.tourne };
     if (placeLibre(creation.elements, cand, cols, rows, e.uid)) modifier((c) => ({ ...c, elements: c.elements.map((x) => (x.uid === e.uid ? cand : x)) }));
-    else dire("Pas assez de place pour tourner cet élément ici : déplacez-le d'abord.");
+    else dire(tr("Pas assez de place pour tourner cet élément ici : déplacez-le d'abord."));
   };
   const dupliquer = () => {
     const e = creation.elements.find((x) => x.uid === selection); if (!e) return;
     const p = trouverPlace(creation.elements, e.type, cols, rows, { x: e.x + 1, y: e.y + 1 }, e.tourne);
-    if (!p) { dire("Plus de place libre pour dupliquer cet élément."); return; }
+    if (!p) { dire(tr("Plus de place libre pour dupliquer cet élément.")); return; }
     const uid = nouvelId();
     modifier((c) => ({ ...c, elements: [...c.elements, { ...e, uid, x: p.x, y: p.y }] }));
     setSelection(uid);
@@ -137,7 +143,7 @@ export default function JeuEvenement() {
   const supprimer = () => {
     const e = creation.elements.find((x) => x.uid === selection); if (!e) return;
     modifier((c) => ({ ...c, elements: c.elements.filter((x) => x.uid !== e.uid) }));
-    setSelection(null); setMode(null); dire(`${libelle(e.type, creation.reglages.type).nom} retiré(e). Vous pouvez annuler.`);
+    setSelection(null); setMode(null); dire(tr("{nom} retiré(e). Vous pouvez annuler.", { nom: libelle(e.type, creation.reglages.type).nom }));
   };
   const couleur = (col: string, tous = false) => {
     const e = creation.elements.find((x) => x.uid === selection); if (!e) return;
@@ -162,19 +168,19 @@ export default function JeuEvenement() {
   const reprendrePartagee = () => { if (!partagee) return; oublierLien(); setCreation(partagee); setHistorique([]); aller("jeu"); };
   const reinitialiser = () => {
     modifier((c) => ({ ...c, elements: [], centres: { actif: false } }));
-    setConfirmerReset(false); setSelection(null); dire("La scène a été vidée. Vous pouvez annuler.");
+    setConfirmerReset(false); setSelection(null); dire(tr("La scène a été vidée. Vous pouvez annuler."));
   };
   const proposer = () => {
     const p = proposerDisposition(creation.reglages);
     modifier(() => p); setSelection(null); setMode(null);
-    dire("Voici une disposition adaptée à vos choix : modifiez-la librement.");
+    dire(tr("Voici une disposition adaptée à vos choix : modifiez-la librement."));
   };
 
   const sel = creation.elements.find((e) => e.uid === selection) ?? null;
-  const typeNom = TYPES_EVENEMENT.find((t) => t.id === creation.reglages.type)!.nom;
+  const typeNom = nomTypeEv(creation.reglages.type);
 
   return (
-    <div ref={haut} className="text-[#2A2420] scroll-mt-24" onKeyDown={surClavier}>
+    <div ref={haut} className="text-[#2A2420] scroll-mt-24" onKeyDown={surClavier} dir={estRtl() ? "rtl" : "ltr"} lang={lng}>
       <div aria-live="polite" className="sr-only" data-testid="annonce">{annonce}</div>
       <Confettis actif={fete} />
 
@@ -195,21 +201,21 @@ export default function JeuEvenement() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="uppercase tracking-[0.2em] text-[11px] text-[#8C6D22]">{typeNom} · {creation.reglages.invites} invités</p>
-              <h2 className="font-serif text-2xl sm:text-3xl">Composez votre scène</h2>
+              <p className="uppercase tracking-[0.2em] text-[11px] text-[#8C6D22]">{typeNom} · {tr("{n} invités", { n: creation.reglages.invites })}</p>
+              <h2 className="font-serif text-2xl sm:text-3xl">{tr("Composez votre scène")}</h2>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Bouton variante="secondaire" onClick={proposer}>Propose-moi une disposition</Bouton>
-              <Bouton variante="secondaire" onClick={annuler} disabled={!historique.length} aria-label="Annuler la dernière action">↶ Annuler</Bouton>
-              <Bouton variante="discret" onClick={() => setConfirmerReset(true)} disabled={!creation.elements.length && !creation.centres.actif}>Réinitialiser</Bouton>
-              <Bouton variante="discret" onClick={() => aller("reglages")}>Mes choix</Bouton>
-              <Bouton variante="discret" onClick={() => setPartage(true)} disabled={!creation.elements.length}>Partager</Bouton>
+              <Bouton variante="secondaire" onClick={proposer}>{tr("Propose-moi une disposition")}</Bouton>
+              <Bouton variante="secondaire" onClick={annuler} disabled={!historique.length} aria-label={tr("Annuler la dernière action")}>↶ {tr("Annuler")}</Bouton>
+              <Bouton variante="discret" onClick={() => setConfirmerReset(true)} disabled={!creation.elements.length && !creation.centres.actif}>{tr("Réinitialiser")}</Bouton>
+              <Bouton variante="discret" onClick={() => aller("reglages")}>{tr("Mes choix")}</Bouton>
+              <Bouton variante="discret" onClick={() => setPartage(true)} disabled={!creation.elements.length}>{tr("Partager")}</Bouton>
             </div>
           </div>
 
           {fete && (
             <div role="status" className="rounded-2xl border border-[#E3C98A] bg-gradient-to-r from-[#FBF3DF] to-[#F8E6E6] px-4 py-3 text-sm motion-safe:animate-in motion-safe:fade-in">
-              ✨ <b>Bravo !</b> Vos trois missions sont remplies, dans votre budget. Découvrez votre événement quand vous voulez.
+              ✨ <b>{tr("Bravo !")}</b> {tr("Vos trois missions sont remplies, dans votre budget. Découvrez votre événement quand vous voulez.")}
             </div>
           )}
 
@@ -218,42 +224,42 @@ export default function JeuEvenement() {
               {mode && (
                 <div className="rounded-2xl bg-[#2A2420] text-[#FBF8F1] px-4 py-2.5 flex flex-wrap items-center gap-2 text-sm" role="status">
                   <span className="flex-1 min-w-[200px]">
-                    {mode.type === "placer" ? <>Touchez une zone libre de la scène pour placer « {libelle(mode.element, creation.reglages.type).nom} ».</> : <>Touchez la nouvelle place de l'élément.</>}
+                    {mode.type === "placer" ? tr("Touchez une zone libre de la scène pour placer « {nom} ».", { nom: libelle(mode.element, creation.reglages.type).nom }) : tr("Touchez la nouvelle place de l'élément.")}
                   </span>
-                  {mode.type === "placer" && <button className="rounded-full bg-[#C9A74E] text-[#2A2420] px-3 min-h-9 font-medium" onClick={() => placerAuto(mode.element)}>Placer automatiquement</button>}
-                  <button className="rounded-full border border-white/40 px-3 min-h-9" onClick={() => setMode(null)}>Annuler</button>
+                  {mode.type === "placer" && <button className="rounded-full bg-[#C9A74E] text-[#2A2420] px-3 min-h-9 font-medium" onClick={() => placerAuto(mode.element)}>{tr("Placer automatiquement")}</button>}
+                  <button className="rounded-full border border-white/40 px-3 min-h-9" onClick={() => setMode(null)}>{tr("Annuler")}</button>
                 </div>
               )}
               <div className="relative rounded-[1.75rem] bg-white border border-[#EADFC8] shadow-[0_20px_60px_-35px_rgba(140,109,34,0.5)] overflow-hidden">
                 <div className="overflow-auto max-h-[70vh]" data-testid="scene-conteneur">
                   <div style={{ width: `${zoom * 100}%` }}>
                     <Scene creation={creation} cols={cols} rows={rows} selection={selection} mode={mode}
-                      onPlacer={placer} onDeplacer={deplacer} onSelection={(u) => { setSelection(u); }} onCaseRefusee={() => dire("Cette zone est occupée ou trop petite : choisissez une zone en vert.")} />
+                      onPlacer={placer} onDeplacer={deplacer} onSelection={(u) => { setSelection(u); }} onCaseRefusee={() => dire(tr("Cette zone est occupée ou trop petite : choisissez une zone en vert."))} />
                   </div>
                 </div>
                 <div className="absolute right-2 top-2 flex gap-1">
-                  <button className="h-9 w-9 rounded-full bg-white/90 border border-[#E3D6BA] shadow-sm" aria-label="Zoom avant" onClick={() => setZoom((z) => Math.min(2.5, z + 0.5))}>+</button>
-                  <button className="h-9 w-9 rounded-full bg-white/90 border border-[#E3D6BA] shadow-sm" aria-label="Zoom arrière" onClick={() => setZoom((z) => Math.max(1, z - 0.5))} disabled={zoom === 1}>−</button>
+                  <button className="h-9 w-9 rounded-full bg-white/90 border border-[#E3D6BA] shadow-sm" aria-label={tr("Zoom avant")} onClick={() => setZoom((z) => Math.min(2.5, z + 0.5))}>+</button>
+                  <button className="h-9 w-9 rounded-full bg-white/90 border border-[#E3D6BA] shadow-sm" aria-label={tr("Zoom arrière")} onClick={() => setZoom((z) => Math.max(1, z - 0.5))} disabled={zoom === 1}>−</button>
                 </div>
                 {sel && !mode && (
                   <div className="lg:hidden border-t border-[#EFE5CF] bg-[#FFFDF8] px-3 py-2.5" data-testid="barre-mobile">
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-sm font-medium truncate">{libelle(sel.type, creation.reglages.type).nom}</div>
-                      <button className="text-xs text-[#6B6155] underline shrink-0" onClick={() => setSelection(null)}>Terminé</button>
+                      <button className="text-xs text-[#6B6155] underline shrink-0" onClick={() => setSelection(null)}>{tr("Terminé")}</button>
                     </div>
-                    <p className="text-[11px] text-[#6B6155] mb-2">Faites-la glisser avec le doigt, ou utilisez les flèches.</p>
+                    <p className="text-[11px] text-[#6B6155] mb-2">{tr("Faites-la glisser avec le doigt, ou utilisez les flèches.")}</p>
                     <div className="flex flex-wrap items-center gap-1.5">
                       {([["↖", -1, 0, "Vers le fond, à gauche"], ["↗", 0, -1, "Vers le fond, à droite"], ["↙", 0, 1, "Vers l'avant, à gauche"], ["↘", 1, 0, "Vers l'avant, à droite"]] as const).map(([f, dx, dy, nom]) => (
-                        <button key={f} className="h-11 w-11 rounded-xl border border-[#E3D6BA] bg-white text-lg active:bg-[#F6EEDC]" aria-label={nom} onClick={() => pas(dx, dy)}>{f}</button>
+                        <button key={f} className="h-11 w-11 rounded-xl border border-[#E3D6BA] bg-white text-lg active:bg-[#F6EEDC]" aria-label={tr(nom)} onClick={() => pas(dx, dy)}>{f}</button>
                       ))}
-                      {defElement(sel.type).w !== defElement(sel.type).h && <button className="h-11 px-3 rounded-xl border border-[#E3D6BA] bg-white text-sm" onClick={tourner}>Tourner</button>}
-                      <button className="h-11 px-3 rounded-xl border border-[#E7C3BF] bg-white text-sm text-[#9B2C2C]" onClick={supprimer}>Supprimer</button>
+                      {defElement(sel.type).w !== defElement(sel.type).h && <button className="h-11 px-3 rounded-xl border border-[#E3D6BA] bg-white text-sm" onClick={tourner}>{tr("Tourner")}</button>}
+                      <button className="h-11 px-3 rounded-xl border border-[#E7C3BF] bg-white text-sm text-[#9B2C2C]" onClick={supprimer}>{tr("Supprimer")}</button>
                     </div>
                   </div>
                 )}
                 {!creation.elements.length && !mode && (
                   <div className="absolute inset-x-0 top-3 mx-auto w-fit max-w-[90%] rounded-full bg-white/90 border border-[#EADFC8] px-4 py-1.5 text-xs text-[#5E554A] text-center">
-                    Choisissez un élément dans le catalogue, ou laissez-nous « proposer une disposition ».
+                    {tr("Choisissez un élément dans le catalogue, ou laissez-nous « proposer une disposition ».")}
                   </div>
                 )}
               </div>
@@ -269,13 +275,13 @@ export default function JeuEvenement() {
               </div>
             </div>
 
-            <aside className="space-y-3 lg:sticky lg:top-20 min-w-0" aria-label="Catalogue et suivi">
+            <aside className="space-y-3 lg:sticky lg:top-20 min-w-0" aria-label={tr("Catalogue et suivi")}>
               <div className="hidden lg:block space-y-3">
                 <JaugeBudget creation={creation} onAjuster={() => aller("reglages")} />
                 <Missions missions={missions} celebre={celebre} />
               </div>
               <div className="rounded-2xl border border-[#EADFC8] bg-[#FFFDF8] p-3">
-                <h3 className="font-serif text-base mb-2 px-1">Catalogue</h3>
+                <h3 className="font-serif text-base mb-2 px-1">{tr("Catalogue")}</h3>
                 <Catalogue creation={creation} enPlacement={mode?.type === "placer" ? mode.element : null}
                   onChoisir={(t) => {
                     setSelection(null);
@@ -289,7 +295,7 @@ export default function JeuEvenement() {
           </div>
 
           <div className="sticky bottom-3 z-10 flex justify-center">
-            <Bouton onClick={() => aller("recap")} className="px-6 shadow-lg">Découvrir mon événement</Bouton>
+            <Bouton onClick={() => aller("recap")} className="px-6 shadow-lg">{tr("Découvrir mon événement")}</Bouton>
           </div>
         </div>
       )}
@@ -306,12 +312,12 @@ export default function JeuEvenement() {
       <Dialog open={confirmerReset} onOpenChange={setConfirmerReset}>
         <DialogContent className="max-w-md bg-[#FBF8F1]">
           <DialogHeader>
-            <DialogTitle className="font-serif">Réinitialiser la scène ?</DialogTitle>
-            <DialogDescription>Tous les éléments placés seront retirés. Vos choix (type, invités, budget, lieu, ambiance) sont conservés, et vous pourrez annuler juste après.</DialogDescription>
+            <DialogTitle className="font-serif">{tr("Réinitialiser la scène ?")}</DialogTitle>
+            <DialogDescription>{tr("Tous les éléments placés seront retirés. Vos choix (type, invités, budget, lieu, ambiance) sont conservés, et vous pourrez annuler juste après.")}</DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2">
-            <Bouton variante="discret" onClick={() => setConfirmerReset(false)}>Garder ma scène</Bouton>
-            <Bouton variante="danger" onClick={reinitialiser}>Oui, tout retirer</Bouton>
+            <Bouton variante="discret" onClick={() => setConfirmerReset(false)}>{tr("Garder ma scène")}</Bouton>
+            <Bouton variante="danger" onClick={reinitialiser}>{tr("Oui, tout retirer")}</Bouton>
           </div>
         </DialogContent>
       </Dialog>

@@ -1,4 +1,5 @@
 // Scène isométrique : affichage, placement (glisser-déposer ou toucher), déplacement et sélection.
+import { tr } from "./langue";
 import { forwardRef, useEffect, useMemo, useRef, useState, KeyboardEvent, PointerEvent as RPointerEvent, DragEvent } from "react";
 import { TypeElement, libelle } from "./config";
 import { Creation, Element, couleurDe, emprise, palette, placeLibre } from "./logique";
@@ -141,7 +142,7 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
     <svg
       ref={(n) => { svgLocal.current = n; if (typeof ref === "function") ref(n); else if (ref) ref.current = n; }}
       viewBox={`0 0 ${largeur} ${hauteur}`} xmlns="http://www.w3.org/2000/svg"
-      role="img" aria-label={`Scène de l'événement : ${elements.length} élément${elements.length > 1 ? "s" : ""} placé${elements.length > 1 ? "s" : ""}`}
+      role="img" aria-label={tr(elements.length > 1 ? "Scène de l'événement : {n} éléments placés" : "Scène de l'événement : {n} élément placé", { n: elements.length })}
       className="block w-full h-auto select-none" style={{ touchAction: mode ? "none" : "manipulation", cursor: mode ? "crosshair" : "default" }}
       onPointerMove={surMouvement} onPointerUp={surRelache} onPointerLeave={() => { if (!glisse.current) setSurvol(null); }}
       onPointerCancel={() => { glisse.current = null; setSurvol(null); }}
@@ -158,13 +159,13 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
         <DecorArriere cols={cols} rows={rows} lieu={reglages.lieu} />
         <Sol cols={cols} rows={rows} lieu={reglages.lieu} />
         {sel && <polygon points={contourEmprise(sel.x, sel.y, emprise(sel).w, emprise(sel).h)} fill="#C9A74E" fillOpacity={0.22} stroke="#A8862F" strokeWidth={2} strokeDasharray="6 4" />}
-        {mode && !survol && <text x={pt(cols / 2, rows / 2)[0]} y={pt(cols / 2, rows / 2)[1]} textAnchor="middle" fontSize={14} fill="#8A7A58" opacity={0.7} style={{ pointerEvents: "none" }}>Touchez une zone libre</text>}
+        {mode && !survol && <text x={pt(cols / 2, rows / 2)[0]} y={pt(cols / 2, rows / 2)[1]} textAnchor="middle" fontSize={14} fill="#8A7A58" opacity={0.7} style={{ pointerEvents: "none" }}>{tr("Touchez une zone libre")}</text>}
         {ordre.map((e) => {
           const { nom } = libelle(e.type, reglages.type);
           const enDeplacement = (survol?.ignorer === e.uid) || (mode?.type === "deplacer" && mode.uid === e.uid);
           return (
             <g key={e.uid} data-element={e.type} data-uid={e.uid} data-x={e.x} data-y={e.y} role={lectureSeule ? undefined : "button"} tabIndex={lectureSeule ? undefined : 0}
-              aria-label={lectureSeule ? undefined : `${nom}${selection === e.uid ? " (sélectionné)" : ""}`}
+              aria-label={lectureSeule ? undefined : `${nom}${selection === e.uid ? ` ${tr("(sélectionné)")}` : ""}`}
               onPointerDown={(ev) => surAppuiElement(ev, e)} onKeyDown={(ev) => clavierElement(ev, e)}
               opacity={enDeplacement ? 0.35 : 1} style={{ cursor: lectureSeule ? "default" : mode ? "crosshair" : "grab", pointerEvents: mode ? "none" : "auto", outline: "none", touchAction: lectureSeule ? "auto" : "none" }}>
               <DessinElement e={e} ctx={ctx(e)} />
