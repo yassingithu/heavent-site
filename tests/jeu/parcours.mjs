@@ -182,10 +182,34 @@ const mission = (p, id) => p.locator(`[data-mission="${id}"]`).first().getAttrib
   const svg = p.locator('[data-testid="scene-conteneur"] svg'); const bb = await svg.boundingBox();
   await p.touchscreen.tap(bb.x + bb.width * 0.5, bb.y + bb.height * 0.62); await p.waitForTimeout(400);
   assert.equal(await nb(p), 1, "placement au toucher");
-  await p.getByRole("button", { name: "Choisir une nouvelle place" }).tap(); await p.waitForTimeout(800);
-  const b2 = await svg.boundingBox(); await p.touchscreen.tap(b2.x + b2.width * 0.35, b2.y + b2.height * 0.55); await p.waitForTimeout(300);
-  await p.getByRole("button", { name: "Vers l'avant, à droite" }).tap();
-  await p.getByRole("button", { name: "Supprimer" }).tap(); assert.equal(await nb(p), 0);
+  // Glisser la table avec le doigt (vrai geste tactile)
+  const t = p.locator('[data-testid="scene-conteneur"] [data-uid]').first();
+  await t.scrollIntoViewIfNeeded();
+  const avantDoigt = [await t.getAttribute("data-x"), await t.getAttribute("data-y")];
+  const tb = await t.boundingBox();
+  const cdp = await ctx.newCDPSession(p);
+  const pt0 = { x: tb.x + tb.width / 2, y: tb.y + tb.height * 0.6 };
+  const scrollAvant = await p.evaluate(() => scrollY);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [pt0] });
+  const sc = await p.locator('[data-testid="scene-conteneur"] svg').boundingBox();
+  const cible = { x: sc.x + sc.width * 0.5, y: sc.y + sc.height * 0.66 };
+  const dir = { x: (cible.x - pt0.x) || 40, y: (cible.y - pt0.y) || 20 };
+  const k = 45 / Math.hypot(dir.x, dir.y);
+  for (let i = 1; i <= 12; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: pt0.x + dir.x * k * i / 12, y: pt0.y + dir.y * k * i / 12 }] });
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); await p.waitForTimeout(300);
+  const apresDoigt = [await t.getAttribute("data-x"), await t.getAttribute("data-y")];
+  assert.notDeepEqual(apresDoigt, avantDoigt, "la table suit le doigt");
+  assert.equal(await p.evaluate(() => scrollY), scrollAvant, "la page ne défile pas pendant le glisser");
+  ok(`smartphone : table glissée au doigt (${avantDoigt} → ${apresDoigt}) sans faire défiler la page`);
+  // Barre rapide sous la scène : flèche puis « Terminé »
+  await t.tap(); await p.waitForTimeout(200);
+  const barre = p.getByTestId("barre-mobile"); assert.ok(await barre.isVisible(), "barre rapide visible");
+  const x0 = await t.getAttribute("data-x");
+  await barre.getByRole("button", { name: "Vers le fond, à gauche" }).tap(); await p.waitForTimeout(150);
+  assert.equal(Number(await t.getAttribute("data-x")), Number(x0) - 1, "flèche de la barre rapide");
+  await p.screenshot({ path: `${CAPT}/7-mobile-barre.png` });
+  await barre.getByRole("button", { name: "Vers l'avant, à droite" }).tap();
+  await p.getByTestId("barre-mobile").getByRole("button", { name: "Supprimer" }).tap(); assert.equal(await nb(p), 0);
   await p.getByRole("button", { name: "Propose-moi une disposition" }).tap(); await p.waitForTimeout(400);
   const largeur = await p.evaluate(() => document.documentElement.scrollWidth);
   assert.ok(largeur <= 391, `pas de débordement horizontal (${largeur}px)`);

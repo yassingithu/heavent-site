@@ -141,7 +141,7 @@ export function PanneauSelection({ creation, element, enDeplacement, onCouleur, 
         </div>
       )}
 
-      <div>
+      <div className="hidden lg:block">
         <div className="text-xs font-medium mb-1.5">Déplacer</div>
         <div className="flex flex-wrap items-center gap-2">
           <Bouton variante={enDeplacement ? "principal" : "secondaire"} onClick={onDeplacer} aria-pressed={enDeplacement}>{enDeplacement ? "Touchez la nouvelle place…" : "Choisir une nouvelle place"}</Bouton>
@@ -158,7 +158,7 @@ export function PanneauSelection({ creation, element, enDeplacement, onCouleur, 
         <Bouton variante="secondaire" onClick={onDupliquer}>Dupliquer</Bouton>
         <Bouton variante="danger" onClick={onSupprimer}>Supprimer</Bouton>
       </div>
-      <p className="text-[11px] text-[#6B6155]">Au clavier : flèches pour déplacer, Suppr pour retirer, Échap pour désélectionner.</p>
+      <p className="text-[11px] text-[#6B6155]">Astuce : faites glisser l'élément directement sur la scène (souris ou doigt). Au clavier : flèches pour déplacer, Suppr pour retirer, Échap pour désélectionner.</p>
     </section>
   );
 }

@@ -5,7 +5,7 @@
  */
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TypeElement, libelle, TYPES_EVENEMENT } from "./config";
+import { TypeElement, defElement, libelle, TYPES_EVENEMENT } from "./config";
 import {
   Creation, Reglages, Sauvegarde, calculerBudget, effacerSauvegarde, emprise, evaluerMissions, lireSauvegarde, nouvelId, nouvelleCreation,
   placeLibre, proposerDisposition, reglagesParDefaut, sauvegarder, tailleGrille, trouverPlace,
@@ -219,10 +219,26 @@ export default function JeuEvenement() {
                       onPlacer={placer} onDeplacer={deplacer} onSelection={(u) => { setSelection(u); }} onCaseRefusee={() => dire("Cette zone est occupée ou trop petite : choisissez une zone en vert.")} />
                   </div>
                 </div>
-                <div className="absolute right-2 bottom-2 flex gap-1">
+                <div className="absolute right-2 top-2 flex gap-1">
                   <button className="h-9 w-9 rounded-full bg-white/90 border border-[#E3D6BA] shadow-sm" aria-label="Zoom avant" onClick={() => setZoom((z) => Math.min(2.5, z + 0.5))}>+</button>
                   <button className="h-9 w-9 rounded-full bg-white/90 border border-[#E3D6BA] shadow-sm" aria-label="Zoom arrière" onClick={() => setZoom((z) => Math.max(1, z - 0.5))} disabled={zoom === 1}>−</button>
                 </div>
+                {sel && !mode && (
+                  <div className="lg:hidden border-t border-[#EFE5CF] bg-[#FFFDF8] px-3 py-2.5" data-testid="barre-mobile">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-sm font-medium truncate">{libelle(sel.type, creation.reglages.type).nom}</div>
+                      <button className="text-xs text-[#6B6155] underline shrink-0" onClick={() => setSelection(null)}>Terminé</button>
+                    </div>
+                    <p className="text-[11px] text-[#6B6155] mb-2">Faites-la glisser avec le doigt, ou utilisez les flèches.</p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {([["↖", -1, 0, "Vers le fond, à gauche"], ["↗", 0, -1, "Vers le fond, à droite"], ["↙", 0, 1, "Vers l'avant, à gauche"], ["↘", 1, 0, "Vers l'avant, à droite"]] as const).map(([f, dx, dy, nom]) => (
+                        <button key={f} className="h-11 w-11 rounded-xl border border-[#E3D6BA] bg-white text-lg active:bg-[#F6EEDC]" aria-label={nom} onClick={() => pas(dx, dy)}>{f}</button>
+                      ))}
+                      {defElement(sel.type).w !== defElement(sel.type).h && <button className="h-11 px-3 rounded-xl border border-[#E3D6BA] bg-white text-sm" onClick={tourner}>Tourner</button>}
+                      <button className="h-11 px-3 rounded-xl border border-[#E7C3BF] bg-white text-sm text-[#9B2C2C]" onClick={supprimer}>Supprimer</button>
+                    </div>
+                  </div>
+                )}
                 {!creation.elements.length && !mode && (
                   <div className="absolute inset-x-0 top-3 mx-auto w-fit max-w-[90%] rounded-full bg-white/90 border border-[#EADFC8] px-4 py-1.5 text-xs text-[#5E554A] text-center">
                     Choisissez un élément dans le catalogue, ou laissez-nous « proposer une disposition ».

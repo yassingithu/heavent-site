@@ -1,5 +1,5 @@
 // Scène isométrique : affichage, placement (glisser-déposer ou toucher), déplacement et sélection.
-import { forwardRef, useMemo, useRef, useState, KeyboardEvent, PointerEvent as RPointerEvent, DragEvent } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState, KeyboardEvent, PointerEvent as RPointerEvent, DragEvent } from "react";
 import { TypeElement, libelle } from "./config";
 import { Creation, Element, couleurDe, emprise, palette, placeLibre } from "./logique";
 import { DecorArriere, DessinElement, Sol, TH, TW, contourEmprise, pt } from "./dessins";
@@ -27,6 +27,13 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
   const svgLocal = useRef<SVGSVGElement | null>(null);
   const [survol, setSurvol] = useState<{ type: TypeElement; x: number; y: number; tourne?: boolean; ignorer?: string } | null>(null);
   const glisse = useRef<{ uid: string; dx: number; dy: number; depart: [number, number]; bouge: boolean } | null>(null);
+  // Au doigt : tant qu'un élément est tenu, la page ne défile pas (sinon le navigateur « vole » le geste).
+  useEffect(() => {
+    const svg = svgLocal.current; if (!svg) return;
+    const bloquer = (ev: TouchEvent) => { if (glisse.current) ev.preventDefault(); };
+    svg.addEventListener("touchmove", bloquer, { passive: false });
+    return () => svg.removeEventListener("touchmove", bloquer);
+  }, []);
   const { reglages, elements, centres } = creation;
   const pal = palette(reglages.ambiance);
 
@@ -98,7 +105,7 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
   const surAppuiElement = (ev: RPointerEvent, e: Element) => {
     if (lectureSeule || mode) return;
     ev.stopPropagation();
-    if (ev.pointerType !== "mouse") { onSelection?.(e.uid); return; } // au toucher : on sélectionne, le déplacement se fait par « Déplacer »
+    // Souris ou doigt : on « tient » l'élément ; s'il bouge d'une case c'est un déplacement, sinon une simple sélection.
     const g = versGrille(ev.clientX, ev.clientY); if (!g) return;
     glisse.current = { uid: e.uid, dx: g.gx - e.x, dy: g.gy - e.y, depart: [e.x, e.y], bouge: false };
     (ev.currentTarget as SVGGElement).ownerSVGElement?.setPointerCapture?.(ev.pointerId);
@@ -137,6 +144,7 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
       role="img" aria-label={`Scène de l'événement : ${elements.length} élément${elements.length > 1 ? "s" : ""} placé${elements.length > 1 ? "s" : ""}`}
       className="block w-full h-auto select-none" style={{ touchAction: mode ? "none" : "manipulation", cursor: mode ? "crosshair" : "default" }}
       onPointerMove={surMouvement} onPointerUp={surRelache} onPointerLeave={() => { if (!glisse.current) setSurvol(null); }}
+      onPointerCancel={() => { glisse.current = null; setSurvol(null); }}
       onDragOver={surSurvolGlisse} onDrop={surDepot} onDragLeave={() => setSurvol(null)}
     >
       <defs>
@@ -158,7 +166,7 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
             <g key={e.uid} data-element={e.type} data-uid={e.uid} data-x={e.x} data-y={e.y} role={lectureSeule ? undefined : "button"} tabIndex={lectureSeule ? undefined : 0}
               aria-label={lectureSeule ? undefined : `${nom}${selection === e.uid ? " (sélectionné)" : ""}`}
               onPointerDown={(ev) => surAppuiElement(ev, e)} onKeyDown={(ev) => clavierElement(ev, e)}
-              opacity={enDeplacement ? 0.35 : 1} style={{ cursor: lectureSeule ? "default" : mode ? "crosshair" : "grab", pointerEvents: mode ? "none" : "auto", outline: "none" }}>
+              opacity={enDeplacement ? 0.35 : 1} style={{ cursor: lectureSeule ? "default" : mode ? "crosshair" : "grab", pointerEvents: mode ? "none" : "auto", outline: "none", touchAction: lectureSeule ? "auto" : "none" }}>
               <DessinElement e={e} ctx={ctx(e)} />
             </g>
           );
