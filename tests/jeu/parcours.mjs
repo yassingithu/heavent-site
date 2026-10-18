@@ -117,25 +117,32 @@ const mission = (p, id) => p.locator(`[data-mission="${id}"]`).first().getAttrib
   await p.keyboard.press("Escape");
   ok("récapitulatif + téléchargements avec aperçu : PDF et PNG valides");
 
-  // Demande de devis : démonstration, jamais de faux envoi
+  // Demande de devis : 1) le serveur refuse → message d'échec + téléchargement, jamais « envoyée »
+  let corpsEnvoye = null, reponseServeur = { status: 500, json: { error: "Erreur lors de l'enregistrement de la demande" } };
+  await ctx.route(/functions\/v1\/send-email/, async (r) => { corpsEnvoye = JSON.parse(r.request().postData()); await r.fulfill(reponseServeur); });
   await p.getByRole("button", { name: "Demander un devis pour cet événement" }).click(); await p.waitForTimeout(300);
-  await p.getByRole("button", { name: "Préparer ma demande" }).click();
+  await p.getByRole("button", { name: "Envoyer ma demande" }).click();
   assert.ok(await p.getByText("Indiquez votre prénom.").isVisible());
   await p.locator("#devis-prenom").fill("Salma"); await p.locator("#devis-email").fill("salma@example.com");
   await p.getByRole("checkbox", { name: "Je ne sais pas encore" }).check(); await p.locator("#devis-ville").fill("Rabat");
-  await p.getByRole("button", { name: "Préparer ma demande" }).click(); await p.waitForTimeout(300);
-  const zone = p.getByTestId("demande-preparee");
-  assert.match(await zone.innerText(), /n'a pas été envoyée/);
-  const page = await p.locator("body").innerText();
-  assert.doesNotMatch(page, /bien été (envoyée|transmise)|envoyée avec succès|demande envoyée/i, "aucun faux message d'envoi");
+  await p.getByRole("button", { name: "Envoyer ma demande" }).click(); await p.waitForTimeout(500);
+  assert.match(await p.getByTestId("demande-preparee").innerText(), /n'a pas pu être envoyée/);
+  assert.doesNotMatch(await p.locator("body").innerText(), /demande est envoyée|Demande envoyée à Heavent/i, "pas de faux message de succès");
   const [txt] = await Promise.all([p.waitForEvent("download"), p.getByRole("button", { name: "Télécharger ma demande" }).click()]);
   await txt.saveAs(`${CAPT}/demande.txt`);
   const contenu = readFileSync(`${CAPT}/demande.txt`, "utf8");
   assert.match(contenu, /Salma/); assert.match(contenu, /CONFIGURATION DE L'ÉVÉNEMENT/); assert.match(contenu, /Table ronde/);
+  // 2) le serveur confirme → succès, configuration complète transmise
+  reponseServeur = { status: 200, json: { success: true } };
+  await p.getByRole("button", { name: "Réessayer l'envoi" }).click(); await p.waitForTimeout(500);
+  assert.ok(await p.getByTestId("demande-envoyee").isVisible(), "succès affiché");
+  assert.equal(corpsEnvoye.type, "jeu");
+  assert.equal(corpsEnvoye.data.prenom, "Salma"); assert.equal(corpsEnvoye.data.invites, 100);
+  assert.ok(corpsEnvoye.data.lignes.length > 0 && corpsEnvoye.data.estimation > 0 && corpsEnvoye.data.texte.includes("CONFIGURATION"));
   await p.screenshot({ path: `${CAPT}/4-devis.png` });
   const stock = await p.evaluate(() => JSON.stringify(localStorage));
   assert.doesNotMatch(stock, /salma|example\.com/i, "aucune coordonnée en stockage local");
-  ok("devis de démonstration : erreurs claires, demande téléchargée avec la configuration, aucun faux envoi, aucune coordonnée stockée");
+  ok("devis : échec serveur → message clair + téléchargement ; succès → demande envoyée avec toute la configuration ; aucune coordonnée stockée");
 
   assert.deepEqual(erreurs, [], "erreurs JavaScript");
   await ctx.close();

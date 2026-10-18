@@ -7,7 +7,7 @@ Page de démonstration : `/cree-ton-evenement` (non indexée, absente du menu).
 import JeuEvenement from "@/components/jeu-evenement/JeuEvenement";
 <JeuEvenement />
 ```
-Aucun backend. La création (sans coordonnées) est sauvegardée dans `localStorage` (`heavent-jeu-evenement-v1`).
+La demande de devis est enregistrée dans l'admin (onglet Événement) et envoyée par e-mail. La création (sans coordonnées) est sauvegardée dans `localStorage` (`heavent-jeu-evenement-v1`).
 
 ## Où modifier quoi
 | Quoi | Fichier |
@@ -19,7 +19,7 @@ Aucun backend. La création (sans coordonnées) est sauvegardée dans `localStor
 | Couleurs de l'interface (ivoire, doré…) | `ui.tsx` → `C` et classes des boutons |
 | Calcul du budget, missions, disposition proposée | `logique.ts` |
 | Dessins SVG des éléments | `dessins.tsx` |
-| Brancher un vrai système de devis | `integration.ts` (`INTEGRATION_ACTIVE`, `envoyerDemandeDevis`) |
+| Envoi des demandes de devis (fonction send-email, type « jeu ») | `integration.ts` + `supabase/functions/send-email` |
 
 ## Tests
 ```

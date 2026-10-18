@@ -69,6 +69,54 @@ const handler = async (req: Request): Promise<Response> => {
         break;
       }
 
+      case "jeu": {
+        // Demande envoyée depuis le jeu « Crée ton événement de rêve » (configuration jointe)
+        const email = String(data.email ?? "").trim();
+        const prenom = String(data.prenom ?? "").trim().slice(0, 80);
+        if (!prenom || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || !String(data.ville ?? "").trim())
+          return json({ error: "Prénom, e-mail et ville sont obligatoires." }, 400);
+        const mad = (n: unknown) => `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(n) || 0)} MAD`;
+        const lignes = (Array.isArray(data.lignes) ? data.lignes : []).slice(0, 40);
+        const tableau = `<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px">${lignes.map((l: any) =>
+          `<tr><td style="padding:6px;border-bottom:1px solid #eee">${e(l.libelle)}<br><span style="color:#888;font-size:12px">${e(l.detail)}</span></td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap">${e(mad(l.total))}</td></tr>`).join("")}
+          <tr><td style="padding:6px;font-weight:bold">Estimation illustrative</td><td style="padding:6px;text-align:right;font-weight:bold">${e(mad(data.estimation))}</td></tr></table>`;
+        const options = list(Array.isArray(data.options) ? data.options.slice(0, 40) : data.options);
+        const dateTxt = dateOrNull(data.date) ? new Date(String(data.date) + "T12:00:00").toLocaleDateString("fr-FR") : "Pas encore fixée";
+        subject = `Nouvelle demande « Crée ton événement » — ${prenom} (${data.typeEvenement ?? "événement"})`;
+        html = `<h2>Nouvelle demande depuis « Crée ton événement de rêve »</h2>
+          ${row("Prénom", prenom)}${row("Email", email)}${row("Téléphone", data.telephone)}${row("Ville ou lieu", cap(data.ville))}${row("Date souhaitée", dateTxt)}
+          ${row("Type d'événement", data.typeEvenement)}${row("Ambiance", data.ambiance)}${row("Lieu choisi", data.lieu)}
+          ${row("Invités", data.invites)}${row("Places prévues", data.places)}${row("Budget souhaité", mad(data.budget))}
+          ${row("Options choisies", options)}${tableau}
+          <p><strong>Message :</strong></p><p style="white-space:pre-line">${e(data.message || "Aucun")}</p>
+          <p style="color:#888;font-size:12px">La demande est aussi enregistrée dans l'administration : onglet « Événement », et dans « Devis » parmi les demandes en attente, pour créer le devis en un clic.</p>`;
+        const { error } = await supabase.from("devis_mariage").insert({
+          nom: prenom, prenom: "", email, telephone: String(data.telephone ?? "").slice(0, 40) || null,
+          type_evenement: String(data.typeEvenement ?? "Événement").slice(0, 60), date_mariage: dateOrNull(data.date),
+          lieu: cap(String(data.ville).slice(0, 120)) || null, nb_invites: intOrNull(data.invites),
+          services: String(data.services ?? "").slice(0, 300) || null,
+          remarques: [`Demande créée avec le jeu « Crée ton événement de rêve ».`, data.message && `Message : ${data.message}`, String(data.texte ?? "").slice(0, 8000)].filter(Boolean).join("\n\n"),
+        });
+        if (error) { console.error(error); return json({ error: "Erreur lors de l'enregistrement de la demande" }, 500); }
+        // Confirmation au visiteur avec son récapitulatif (un échec d'email ne bloque pas la demande)
+        if (resend) {
+          await resend.emails.send({
+            from: FROM, to: [email], reply_to: ADMIN_EMAIL, subject: "Votre demande de devis — Heavent People Agency",
+            html: `<div style="font-family:Arial,sans-serif;max-width:640px;color:#2a2420">
+              <p>Bonjour ${e(prenom)},</p>
+              <p>Merci pour votre demande ! Nous avons bien reçu la création de ${e(String(data.typeEvenement ?? "votre événement").toLowerCase())} que vous avez composée, et nous revenons vers vous sous 24 h.</p>
+              <div style="background:#FAF7EE;border:1px solid #ece6d3;border-radius:8px;padding:12px 16px">
+                <b>${e(data.typeEvenement)}</b> · ambiance ${e(String(data.ambiance ?? "").toLowerCase())} · ${e(String(data.lieu ?? "").toLowerCase())}<br>
+                ${e(data.invites)} invités · ${e(dateTxt)} · ${e(cap(data.ville))}<br>Options : ${e(options)}
+                ${tableau}
+                <p style="font-size:12px;color:#777;margin:0">Estimation illustrative des éléments sélectionnés, hors prestations non incluses. Le tarif final sera confirmé sur devis.</p>
+              </div>
+              <p>À très vite,<br>Imane CHAIGARI — CEO, Heavent People Agency<br>+212 6 10 93 96 55 · ${ADMIN_EMAIL}</p></div>`,
+          }).catch((err: unknown) => console.error("Confirmation visiteur non envoyée", err));
+        }
+        break;
+      }
+
       case "business": {
         subject = `Nouvelle demande de devis entreprise - ${data.companyName}`;
         html = `<h2>Nouvelle demande de devis entreprise</h2>

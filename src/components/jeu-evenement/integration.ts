@@ -1,24 +1,60 @@
 /**
  * ─────────────────────────────────────────────────────────────────────────────
  *  POINT D'INTÉGRATION — demande de devis
- *  Pour l'instant, AUCUN service n'est branché : le formulaire est une démonstration
- *  et propose seulement de télécharger la demande préparée.
- *
- *  Pour brancher un vrai système plus tard :
- *   1. mettre INTEGRATION_ACTIVE à true ;
- *   2. remplir envoyerDemandeDevis() (par ex. supabase.functions.invoke("send-email", …)
- *      ou un insert dans la table des demandes) et renvoyer { envoye: true } SEULEMENT
- *      si le service a confirmé la réception.
+ *  La demande part vers la fonction « send-email » (type « jeu ») :
+ *   - elle est enregistrée dans l'admin, onglet Événement (table devis_mariage) ;
+ *   - l'agence reçoit un e-mail avec toute la configuration ;
+ *   - le visiteur reçoit une confirmation avec son récapitulatif.
+ *  { envoye: true } n'est renvoyé QUE si le serveur a confirmé l'enregistrement.
  *  Les coordonnées ne sont jamais enregistrées dans le navigateur (localStorage).
  * ─────────────────────────────────────────────────────────────────────────────
  */
-import type { Creation } from "./logique";
+import { FUNCTIONS_URL } from "@/integrations/supabase/client";
+import { CENTRES_DE_TABLE, libelle } from "./config";
+import { Creation, calculerBudget, placesPrevues } from "./logique";
 import type { Coordonnees } from "./recapitulatif";
+import { nomAmbiance, nomLieu, nomType, optionsChoisies } from "./recapitulatif";
 
-export const INTEGRATION_ACTIVE = false;
+export const INTEGRATION_ACTIVE = true;
 
 export interface DemandeDevis { coordonnees: Coordonnees; creation: Creation; texte: string }
 
-export async function envoyerDemandeDevis(_demande: DemandeDevis): Promise<{ envoye: boolean; message?: string }> {
-  return { envoye: false, message: "Aucun service de devis n'est encore connecté (démonstration)." };
+/** Prestations au format des demandes du site, pour pré-remplir le devis dans l'admin. */
+function services(c: Creation) {
+  const t = new Set(c.elements.map((e) => e.type));
+  const s: string[] = [];
+  if (t.has("dj")) s.push("DJ / Animation musicale");
+  if (t.has("arche") || t.has("fleurs") || t.has("guirlandes") || c.centres.actif) s.push("Décoration");
+  if (t.has("buffet")) s.push("Traiteur");
+  if (t.has("photobooth")) s.push("Photobooth");
+  return s.join(", ");
+}
+
+export async function envoyerDemandeDevis(d: DemandeDevis): Promise<{ envoye: boolean; message?: string }> {
+  const c = d.creation; const k = d.coordonnees; const b = calculerBudget(c);
+  try {
+    const r = await fetch(`${FUNCTIONS_URL}/send-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "jeu",
+        data: {
+          prenom: k.prenom.trim(), email: k.email.trim(), telephone: k.telephone.trim(), ville: k.ville.trim(), message: k.message.trim(),
+          date: k.dateInconnue ? null : k.date || null,
+          typeEvenement: nomType(c), ambiance: nomAmbiance(c), lieu: nomLieu(c),
+          invites: c.reglages.invites, places: placesPrevues(c), budget: c.reglages.budget, estimation: b.total,
+          options: optionsChoisies(c), services: services(c),
+          lignes: b.lignes.map((l) => ({ libelle: l.libelle, detail: l.detail, total: l.total })),
+          centres: c.centres.actif ? CENTRES_DE_TABLE.nom : null,
+          honneur: libelle("honneur", c.reglages.type).nom,
+          texte: d.texte,
+        },
+      }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j?.success) return { envoye: true };
+    return { envoye: false, message: j?.error ?? "Le serveur n'a pas pu enregistrer la demande." };
+  } catch {
+    return { envoye: false, message: "Connexion impossible pour le moment." };
+  }
 }

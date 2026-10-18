@@ -141,9 +141,10 @@ export function FenetreDevis({ ouvert, onFermer, creation }: { ouvert: boolean; 
   // Les coordonnées restent en mémoire uniquement : jamais dans le stockage du navigateur.
   const [k, setK] = useState<Coordonnees>(VIDE);
   const [erreurs, setErreurs] = useState<Partial<Record<keyof Coordonnees, string>>>({});
-  const [prete, setPrete] = useState<string | null>(null);
-  const [message, setMessage] = useState<string>("");
-  useEffect(() => { if (!ouvert) { setK(VIDE); setPrete(null); setErreurs({}); } }, [ouvert]);
+  const [etat, setEtat] = useState<"saisie" | "envoi" | "envoye" | "echec" | "demo">("saisie");
+  const [texte, setTexte] = useState("");
+  const [message, setMessage] = useState("");
+  useEffect(() => { if (!ouvert) { setK(VIDE); setEtat("saisie"); setErreurs({}); setTexte(""); } }, [ouvert]);
 
   const set = <F extends keyof Coordonnees>(f: F, v: Coordonnees[F]) => setK((x) => ({ ...x, [f]: v }));
   const valider = async () => {
@@ -154,13 +155,15 @@ export function FenetreDevis({ ouvert, onFermer, creation }: { ouvert: boolean; 
     if (!k.ville.trim()) e.ville = "Indiquez la ville ou le lieu.";
     setErreurs(e);
     if (Object.keys(e).length) return;
-    const texte = texteDemande(creation, k);
-    if (INTEGRATION_ACTIVE) {
-      const r = await envoyerDemandeDevis({ coordonnees: k, creation, texte });
-      setMessage(r.envoye ? "Votre demande a bien été transmise." : r.message ?? "La demande n'a pas pu être transmise.");
-    } else setMessage("");
-    setPrete(texte);
+    const t = texteDemande(creation, k);
+    setTexte(t);
+    if (!INTEGRATION_ACTIVE) { setEtat("demo"); return; }
+    setEtat("envoi");
+    const r = await envoyerDemandeDevis({ coordonnees: k, creation, texte: t });
+    if (r.envoye) setEtat("envoye");
+    else { setMessage(r.message ?? ""); setEtat("echec"); }
   };
+  const telecharger = () => telechargerFichier(`demande-devis-${new Date().toISOString().slice(0, 10)}.txt`, texte);
   const champ = (f: keyof Coordonnees, label: string, props: Record<string, unknown> = {}, facultatif = false) => (
     <div>
       <label htmlFor={`devis-${f}`} className="text-sm font-medium">{label}{facultatif && <span className="font-normal text-[#6B6155]"> (facultatif)</span>}</label>
@@ -170,16 +173,19 @@ export function FenetreDevis({ ouvert, onFermer, creation }: { ouvert: boolean; 
     </div>
   );
   return (
-    <Dialog open={ouvert} onOpenChange={(v) => !v && onFermer()}>
+    <Dialog open={ouvert} onOpenChange={(v) => !v && etat !== "envoi" && onFermer()}>
       <DialogContent className="max-w-xl max-h-[92vh] overflow-y-auto bg-[#FBF8F1]">
         <DialogHeader>
-          <DialogTitle className="font-serif text-2xl">Demander un devis pour cet événement</DialogTitle>
+          <DialogTitle className="font-serif text-2xl">{etat === "envoye" ? "Merci, votre demande est envoyée" : "Demander un devis pour cet événement"}</DialogTitle>
           <DialogDescription>
-            <span className="inline-block rounded-full bg-[#F4E3C4] text-[#6A4E12] px-2.5 py-0.5 text-xs font-medium mr-1">Démonstration</span>
-            Ce formulaire n'envoie rien pour l'instant : il prépare votre demande, avec votre création jointe, à télécharger.
+            {etat === "envoye"
+              ? "Nous l'avons bien reçue avec votre création. Nous revenons vers vous sous 24 h."
+              : INTEGRATION_ACTIVE
+                ? "Votre création (type, ambiance, invités, éléments, estimation) est jointe automatiquement à votre demande."
+                : "Démonstration : ce formulaire prépare votre demande à télécharger, sans l'envoyer."}
           </DialogDescription>
         </DialogHeader>
-        {!prete ? (
+        {(etat === "saisie" || etat === "envoi") && (
           <form className="space-y-3" noValidate onSubmit={(e) => { e.preventDefault(); valider(); }}>
             {champ("prenom", "Prénom", { autoComplete: "given-name" })}
             {champ("email", "Adresse e-mail", { type: "email", autoComplete: "email", inputMode: "email" })}
@@ -198,19 +204,36 @@ export function FenetreDevis({ ouvert, onFermer, creation }: { ouvert: boolean; 
               <label htmlFor="devis-message" className="text-sm font-medium">Message <span className="font-normal text-[#6B6155]">(facultatif)</span></label>
               <textarea id="devis-message" rows={3} value={k.message} onChange={(e) => set("message", e.target.value)} className="mt-1 w-full rounded-xl border border-[#DCCBA6] bg-white px-3 py-2" />
             </div>
-            <p className="text-xs text-[#6B6155]">Votre création (type, ambiance, invités, éléments, estimation) sera jointe automatiquement.</p>
-            <div className="flex flex-wrap gap-2"><Bouton type="submit">Préparer ma demande</Bouton><Bouton type="button" variante="discret" onClick={onFermer}>Annuler</Bouton></div>
-          </form>
-        ) : (
-          <div className="space-y-3" data-testid="demande-preparee">
-            <div className="rounded-xl bg-[#FFF7E6] border border-[#F0D9A8] p-3 text-sm text-[#5C4512]" role="status">
-              {message || "Mode démonstration : votre demande n'a pas été envoyée. Téléchargez-la pour la garder ou nous la transmettre."}
-            </div>
-            <textarea readOnly value={prete} rows={12} aria-label="Contenu de la demande préparée" className="w-full rounded-xl border border-[#E3D6BA] bg-white p-3 text-xs font-mono" />
+            <p className="text-xs text-[#6B6155]">Vos coordonnées servent uniquement à vous répondre (loi 09-08). Elles ne sont pas conservées sur cet appareil.</p>
             <div className="flex flex-wrap gap-2">
-              <Bouton onClick={() => telechargerFichier(`demande-devis-${new Date().toISOString().slice(0, 10)}.txt`, prete)}>Télécharger ma demande</Bouton>
-              <Bouton variante="secondaire" onClick={() => setPrete(null)}>Modifier mes informations</Bouton>
-              <Bouton variante="discret" onClick={onFermer}>Fermer</Bouton>
+              <Bouton type="submit" disabled={etat === "envoi"}>{etat === "envoi" ? "Envoi…" : INTEGRATION_ACTIVE ? "Envoyer ma demande" : "Préparer ma demande"}</Bouton>
+              <Bouton type="button" variante="discret" onClick={onFermer} disabled={etat === "envoi"}>Annuler</Bouton>
+            </div>
+          </form>
+        )}
+        {etat === "envoye" && (
+          <div className="space-y-3" data-testid="demande-envoyee">
+            <div className="rounded-xl bg-[#EEF6EA] border border-[#CFE3C5] p-3 text-sm text-[#2F5A2A]" role="status">
+              ✓ Demande envoyée à Heavent People Agency. Une confirmation avec votre récapitulatif arrive sur {k.email}.
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Bouton variante="secondaire" onClick={telecharger}>Garder une copie (.txt)</Bouton>
+              <Bouton onClick={onFermer}>Fermer</Bouton>
+            </div>
+          </div>
+        )}
+        {(etat === "echec" || etat === "demo") && (
+          <div className="space-y-3" data-testid="demande-preparee">
+            <div className={`rounded-xl p-3 text-sm ${etat === "echec" ? "bg-[#FBEDEB] border border-[#EFC9C4] text-[#8A2E26]" : "bg-[#FFF7E6] border border-[#F0D9A8] text-[#5C4512]"}`} role={etat === "echec" ? "alert" : "status"}>
+              {etat === "echec"
+                ? <>Votre demande n'a pas pu être envoyée{message ? ` (${message})` : ""}. Réessayez, ou téléchargez-la et écrivez-nous à info@heaventagency.com.</>
+                : "Mode démonstration : votre demande n'a pas été envoyée. Téléchargez-la pour la garder ou nous la transmettre."}
+            </div>
+            <textarea readOnly value={texte} rows={10} aria-label="Contenu de la demande" className="w-full rounded-xl border border-[#E3D6BA] bg-white p-3 text-xs font-mono" />
+            <div className="flex flex-wrap gap-2">
+              {etat === "echec" && <Bouton onClick={valider}>Réessayer l'envoi</Bouton>}
+              <Bouton variante={etat === "echec" ? "secondaire" : "principal"} onClick={telecharger}>Télécharger ma demande</Bouton>
+              <Bouton variante="discret" onClick={() => setEtat("saisie")}>Modifier mes informations</Bouton>
             </div>
           </div>
         )}

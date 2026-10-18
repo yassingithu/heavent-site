@@ -98,7 +98,6 @@ export function texteDemande(c: Creation, k: Coordonnees) {
   const b = calculerBudget(c);
   return [
     "DEMANDE DE DEVIS — préparée avec « Crée ton événement de rêve »",
-    "(Démonstration : cette demande n'a pas été envoyée.)",
     "",
     `Prénom : ${k.prenom}`, `E-mail : ${k.email}`, `Téléphone : ${k.telephone || "—"}`,
     `Date souhaitée : ${k.dateInconnue || !k.date ? "Je ne sais pas encore" : new Date(k.date + "T12:00:00").toLocaleDateString("fr-FR")}`,
