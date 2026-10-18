@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Menu, X } from "lucide-react";
@@ -10,11 +11,20 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const { t } = useTranslation();
+  // « Réalisations » n'apparaît qu'une fois au moins une réalisation publiée (jamais de page vide)
+  const [realisations, setRealisations] = useState(false);
+  useEffect(() => {
+    let annule = false;
+    supabase.from("realisations").select("id", { count: "exact", head: true }).eq("publie", true)
+      .then(({ count }) => { if (!annule) setRealisations((count ?? 0) > 0); }, () => {});
+    return () => { annule = true; };
+  }, []);
 
   const navigation = [
     { name: t('nav.home'), href: "/" },
     { name: t('nav.business'), href: "/devis-entreprise" },
     { name: t('nav.weddings'), href: "/devis-mariage" },
+    ...(realisations ? [{ name: t('nav.realisations'), href: "/realisations" }] : []),
     { name: t('nav.about'), href: "/a-propos" },
     { name: t('nav.contact'), href: "/contact" },
   ];
@@ -71,6 +81,8 @@ const Header = () => {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+            aria-expanded={isMenuOpen}
             className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground"
           >
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}

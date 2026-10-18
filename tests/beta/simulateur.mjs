@@ -52,7 +52,15 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     const req = route.request(); const url = new URL(req.url());
     if (url.pathname.includes("/auth/v1/user")) return route.fulfill({ json: { id: "u-" + email, email, aud: "authenticated", role: "authenticated" } });
     if (url.pathname.includes("/auth/v1/token")) { const b = JSON.parse(req.postData() || "{}"); return route.fulfill({ json: { access_token: "x", refresh_token: "y", token_type: "bearer", expires_in: 3600, user: { id: "u", email: b.email, aud: "authenticated", role: "authenticated" } } }); }
-    if (url.pathname.includes("/storage/")) return route.fulfill({ status: 404, body: "" });
+    if (url.pathname.includes("/storage/")) {
+      // Stockage simulé : on garde les fichiers envoyés et on les resservit
+      base.fichiers ??= {};
+      const m = url.pathname.match(/\/storage\/v1\/object\/(?:public\/)?(.+)$/);
+      if (m && req.method() === "POST") { base.fichiers[m[1]] = req.postDataBuffer(); return route.fulfill({ json: { Key: m[1] } }); }
+      if (m && req.method() === "GET" && base.fichiers[m[1]]) return route.fulfill({ status: 200, body: base.fichiers[m[1]], contentType: "image/jpeg" });
+      if (req.method() === "DELETE") return route.fulfill({ json: [] });
+      return route.fulfill({ status: 404, body: "" });
+    }
     if (url.pathname.includes("/functions/v1/")) {
       const nom = url.pathname.split("/").pop(); const corps = req.postData() ? JSON.parse(req.postData()) : {};
       base.appelsFonctions.push({ nom, corps });
@@ -94,6 +102,11 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     const m = url.pathname.match(/\/rest\/v1\/(\w+)/); if (!m) return route.fulfill({ json: {} });
     const t = m[1]; base[t] ??= []; const params = [...url.searchParams.entries()]; const select = url.searchParams.get("select");
     const unique = (req.headers()["accept"] || "").includes("vnd.pgrst.object");
+    if (req.method() === "HEAD") {
+      let lignes = base[t].filter((x) => correspond(x, params));
+      if (!admin && t === "realisations") lignes = lignes.filter((r) => r.publie);
+      return route.fulfill({ status: 200, headers: { "content-range": `0-${Math.max(0, lignes.length - 1)}/${lignes.length}`, "access-control-expose-headers": "content-range" }, body: "" });
+    }
     if (req.method() === "GET") {
       let lignes = base[t];
       if (!admin) {

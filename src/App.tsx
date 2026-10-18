@@ -24,6 +24,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const MentionsLegales = lazy(() => import("./pages/MentionsLegales"));
 const CreeTonEvenement = lazy(() => import("./pages/CreeTonEvenement"));
 const MonDevis = lazy(() => import("./pages/MonDevis"));
+const Realisations = lazy(() => import("./pages/Realisations"));
 import RetourEnHaut from "./components/RetourEnHaut";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ const App = () => {
               <Route path="/mentions-legales" element={<MentionsLegales />} />
               <Route path="/cree-ton-evenement" element={<CreeTonEvenement />} />
               <Route path="/mon-devis/:token" element={<MonDevis />} />
+              <Route path="/realisations" element={<Realisations />} />
               <Route path="/rgpd" element={<Navigate to="/politique-confidentialite" replace />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin-auth" element={<AdminAuth />} />

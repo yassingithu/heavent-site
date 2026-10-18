@@ -47,6 +47,12 @@ export const PAGES_SEO = {
     description: "Composez votre mariage ou votre événement en quelques minutes : tables, arche, fleurs, piste, DJ… Visualisez la scène, suivez votre budget et demandez votre devis.",
     motsCles: "simulateur mariage Maroc, budget mariage Maroc, décoration mariage, organiser son événement, wedding planner Maroc",
   },
+  realisations: {
+    chemin: "/realisations",
+    titre: "Nos réalisations | Mariages et événements au Maroc | Heavent",
+    description: "Mariages, fêtes, soirées d'entreprise et salons organisés par Heavent People Agency à Rabat, Casablanca et Marrakech, en photos.",
+    motsCles: "réalisations mariage Maroc, décoration mariage photos, événementiel Rabat, organisation événement Casablanca",
+  },
   mentions: {
     chemin: "/mentions-legales",
     titre: "Mentions légales | Heavent People Agency",

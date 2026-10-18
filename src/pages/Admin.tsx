@@ -6,6 +6,8 @@ import { estAdmin } from "@/lib/admin";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import TableauDeBord from "@/components/admin/TableauDeBord";
+import RealisationsAdmin from "@/components/admin/RealisationsAdmin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -993,7 +995,8 @@ const Admin = () => {
 
       {/* Onglets : 2 lignes de 5 sur smartphone, 1 ligne sur ordinateur */}
       <Tabs value={ongletAdmin} onValueChange={setOngletAdmin} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 h-auto gap-1 p-1">
+        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 h-auto gap-1 p-1">
+          <TabsTrigger value="tableau" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>📊</span><span>Bilan</span></TabsTrigger>
           <TabsTrigger value="devis-rapide" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><FileText className="h-4 w-4" /><span>Devis</span></TabsTrigger>
           <TabsTrigger value="staff" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>👥</span><span>Personnel</span></TabsTrigger>
           <TabsTrigger value="disponibilites" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>📅</span><span>Dispo</span></TabsTrigger>
@@ -1003,8 +1006,17 @@ const Admin = () => {
           <TabsTrigger value="entreprise" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>🏢</span><span>Entreprise</span></TabsTrigger>
           <TabsTrigger value="mariage" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>💒</span><span>Événement</span></TabsTrigger>
           <TabsTrigger value="devis-envoyes" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>📤</span><span>Envoyés</span></TabsTrigger>
+          <TabsTrigger value="realisations" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>📸</span><span>Photos</span></TabsTrigger>
           <TabsTrigger value="securite" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><Shield className="h-4 w-4" /><span>Sécurité</span></TabsTrigger>
         </TabsList>
+
+        <TabsContent value="tableau" className="space-y-4">
+          <TableauDeBord demandesMariage={devisMariage as any} demandesEntreprise={devisEntreprise as any} onOuvrirDevis={() => setOngletAdmin("devis-rapide")} />
+        </TabsContent>
+
+        <TabsContent value="realisations" className="space-y-4">
+          <RealisationsAdmin />
+        </TabsContent>
 
         <TabsContent value="devis-rapide" className="space-y-4">
           <DevisRapide

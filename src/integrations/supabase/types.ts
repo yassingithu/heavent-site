@@ -629,6 +629,12 @@ export type Database = {
           },
         ]
       }
+      realisations: {
+        Row: { id: string; titre: string; type_evenement: string; lieu: string | null; date_evenement: string | null; description: string | null; photos: string[]; publie: boolean; ordre: number; created_at: string }
+        Insert: { id?: string; titre: string; type_evenement?: string; lieu?: string | null; date_evenement?: string | null; description?: string | null; photos?: string[]; publie?: boolean; ordre?: number; created_at?: string }
+        Update: { id?: string; titre?: string; type_evenement?: string; lieu?: string | null; date_evenement?: string | null; description?: string | null; photos?: string[]; publie?: boolean; ordre?: number; created_at?: string }
+        Relationships: []
+      }
       parametres_agence: {
         Row: {
           lien_avis_google: string | null

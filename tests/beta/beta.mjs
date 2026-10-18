@@ -344,6 +344,63 @@ await scenario("Devis envoyé au client → signature en ligne sur smartphone �
   await ctx.close();
 });
 
+// 3 decies. Bilan de l'activité + réalisations en photos publiées sur le site
+await scenario("Admin : bilan de l'activité, puis réalisations en photos publiées sur le site", async (notes) => {
+  const base = nouvelleBase();
+  const mois = new Date().toISOString().slice(0, 7);
+  const ilYa = (j) => new Date(Date.now() - j * 864e5).toISOString();
+  const dansJ = (j) => new Date(Date.now() + j * 864e5).toISOString().slice(0, 10);
+  base.devis = [
+    { id: "d1", numero: "DEV-1", client_nom: "Salma", titre: "Mariage Salma & Karim", statut: "accepte", total_ttc: 60000, date_emission: `${mois}-01`, date_envoi: ilYa(3), signe_le: new Date().toISOString(), date_evenement: dansJ(20), relances: 0 },
+    { id: "d2", numero: "DEV-2", client_nom: "Société Atlas", titre: "Salon", statut: "envoye", total_ttc: 24000, date_emission: `${mois}-01`, date_envoi: ilYa(7), signe_le: null, date_evenement: dansJ(40), relances: 1 },
+  ];
+  base.devis_mariage = [
+    { id: "m1", nom: "Nora", created_at: new Date().toISOString(), statut: "en_attente", configuration: { elements: { table_ronde: 12, dj: 1, nawar: 1 } } },
+    { id: "m2", nom: "Ali", created_at: new Date().toISOString(), statut: "en_attente", configuration: { elements: { table_ronde: 8, photobooth: 1 } } },
+  ];
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  page.on("dialog", (d) => d.accept());
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Bilan/ }).click(); await page.waitForTimeout(1200);
+  const bilan = await page.getByTestId("tableau-de-bord").innerText();
+  verifier(/Demandes ce mois-ci\s*2/.test(bilan), "les 2 demandes du mois ne sont pas comptées");
+  verifier(bilan.replace(/\s/g, "").includes("60000MAD"), "le chiffre signé du mois (60 000 MAD) n'apparaît pas");
+  verifier(bilan.includes("Mariage Salma & Karim"), "l'événement confirmé à venir n'est pas listé");
+  verifier(bilan.includes("Société Atlas"), "le devis sans réponse depuis 7 jours n'est pas listé");
+  verifier(/Table ronde\s*2/.test(await page.getByTestId("choix-jeu").innerText()), "les choix du jeu ne sont pas comptés");
+  await page.screenshot({ path: `${CAPTURES}/10-bilan.png`, fullPage: true });
+  notes.push("bilan : demandes du mois, chiffre signé, événements à venir, devis sans réponse, choix du jeu");
+
+  await page.getByRole("tab", { name: /Photos/ }).click(); await page.waitForTimeout(600);
+  await page.getByRole("button", { name: "Ajouter" }).click();
+  await page.getByPlaceholder("Ex. Mariage de Salma & Karim").fill("Mariage de Salma & Karim");
+  await page.getByPlaceholder(/Palais des Congrès/).fill("Rabat");
+  await page.getByTestId("photos-realisation").setInputFiles([new URL("../../public/lovable-uploads/df0014d7-d697-4525-a5ee-71cf8fa774ab.png", import.meta.url).pathname, new URL("../../public/lovable-uploads/8d6b5162-f9c8-419e-a6f0-2f2949d8d05f.png", import.meta.url).pathname]);
+  await page.waitForTimeout(2500);
+  await page.getByRole("switch").click();
+  await page.getByRole("button", { name: "Enregistrer" }).click(); await page.waitForTimeout(1000);
+  const r = base.realisations?.[0];
+  verifier(r?.publie && r.photos.length === 2 && r.photos.every((u) => u.includes("/assets/realisations/")), "la réalisation et ses 2 photos ne sont pas enregistrées : " + JSON.stringify(r));
+  notes.push("réalisation créée avec 2 photos (réduites et envoyées dans le stockage) et publiée");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+
+  // Visiteur : le menu propose « Réalisations », la galerie s'affiche et s'ouvre en grand
+  const v = await contexte(navigateur, base, "visiteur@exemple.ma", { mobile: true });
+  await v.page.goto(`${BASE}/realisations`); await v.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await v.page.reload(); await v.page.waitForTimeout(1800);
+  verifier(await v.page.getByTestId("galerie").getByText("Mariage de Salma & Karim").count(), "la réalisation n'apparaît pas dans la galerie");
+  await v.page.getByRole("button", { name: "Ouvrir le menu" }).tap(); await v.page.waitForTimeout(500);
+  verifier(await v.page.getByRole("link", { name: "Réalisations" }).count(), "le lien « Réalisations » n'apparaît pas dans le menu");
+  await v.page.keyboard.press("Escape").catch(() => {});
+  await v.page.goto(`${BASE}/realisations`); await v.page.waitForTimeout(1500);
+  await v.page.getByTestId("galerie").locator("button").first().tap(); await v.page.waitForTimeout(600);
+  verifier(await v.page.getByText("1 / 2").count(), "la visionneuse ne montre pas les 2 photos");
+  await v.page.screenshot({ path: `${CAPTURES}/11-realisations.png` });
+  verifier(!v.erreurs.length, "erreurs JavaScript (visiteur) : " + v.erreurs.join(" ; "));
+  await v.ctx.close();
+  notes.push("visiteur : lien dans le menu, galerie et visionneuse (1 / 2)");
+});
+
 // 3 sexies. Paie : une fiche dont toutes les missions ont été supprimées disparaît au recalcul
 await scenario("Paie : « Calculer le mois » retire les fiches sans mission (jamais les fiches payées)", async (notes) => {
   const base = nouvelleBase();
