@@ -7,6 +7,7 @@
    de la page un script qui lit `deploy/site/fichiers.json` sur GitHub (raw, au commit voulu) et fait un
    `PUT https://filemanager.one.com/api/webspace/2/drive/heaventagency.com/data/httpd.www/<chemin>` par fichier
    (dossier `assets/` d'abord, `index.html` en dernier ; `?targetCharset=utf-8` pour les fichiers texte).
+   Nouvelle page = nouveau dossier : le créer d'abord avec `PUT …/httpd.www/<dossier>/` (barre finale), sinon l'envoi répond 404.
 4. `.htaccess` (dans `public/`) : adresses propres (/contact), redirection www → sans www, compression, cache d'un an sur /assets.
 
 Contrôles automatiques après chaque mise en ligne : workflows « Agent d'audit » et « Agent bêta-testeur » (onglet Actions / Issues).

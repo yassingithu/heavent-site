@@ -77,7 +77,7 @@ export function calculerBudget(c: Creation) {
     const parInvite = d.prixParInvite ? d.prixParInvite * invites : 0;
     lignes.push({
       libelle: libelle(id, type).nom, quantite: n, fixe, parInvite, total: fixe + parInvite,
-      detail: [`${n} × ${d.prix}`, d.prixParInvite ? `+ ${d.prixParInvite} × ${invites} invités` : ""].filter(Boolean).join(" "),
+      detail: [d.prix ? `${n} × ${d.prix}` : "", d.prixParInvite ? `${d.prix ? "+ " : ""}${d.prixParInvite} × ${invites} invités` : ""].filter(Boolean).join(" "),
     });
   }
   const nbTables = (parType.get("table_ronde") ?? 0) + (parType.get("table_rect") ?? 0);

@@ -11,6 +11,12 @@ import { Bouton } from "./ui";
 /** Petite vignette SVG d'un élément, dessinée comme dans la scène. */
 /** Hauteur visible de chaque élément au-dessus du sol (pour cadrer les vignettes). */
 const HAUTEUR: Partial<Record<TypeElement, number>> = { arche: 135, guirlandes: 100, photobooth: 72, fleurs: 70, honneur: 66, gateau: 66, dj: 56, bar: 52, lounge: 32, piste: 8 };
+/** « 1 500 MAD + 50 MAD / invité », « 450 MAD / invité » ou « 12 000 MAD ». */
+export const prixTexte = (prix: number, parInvite?: number, long = false) => {
+  const pi = parInvite ? `${format(parInvite)} ${long ? "par invité" : "/ invité"}` : "";
+  return prix || !pi ? [format(prix), pi].filter(Boolean).join(long ? " plus " : " + ") : pi;
+};
+
 export function Miniature({ type, creation, taille = 56 }: { type: TypeElement; creation: Creation; taille?: number }) {
   const { w, h } = emprise({ type });
   const ht = HAUTEUR[type] ?? 36;
@@ -51,7 +57,7 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
                 onDragEnd={() => { (window as any).__heaventGlisse = undefined; }}
                 onClick={() => onChoisir(d.id)}
                 aria-pressed={actif}
-                aria-label={`${l.nom} : ${format(d.prix)}${d.prixParInvite ? ` plus ${format(d.prixParInvite)} par invité` : ""}${places ? `, ${places} places` : ""}. Ajouter à la scène`}
+                aria-label={`${l.nom} : ${prixTexte(d.prix, d.prixParInvite, true)}${places ? `, ${places} places` : ""}. Ajouter à la scène`}
                 className={`w-full flex items-center gap-3 rounded-2xl border p-2.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A74E] ${actif ? "border-[#C9A74E] bg-[#FBF3DF]" : "border-[#EADFC8] bg-white hover:border-[#D8C391] hover:shadow-sm"}`}
               >
                 <Miniature type={d.id} creation={creation} />
@@ -59,7 +65,7 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
                   <div className="font-medium text-sm text-[#2A2420]">{l.nom}</div>
                   <div className="text-xs text-[#6B6155] line-clamp-2">{l.description}</div>
                   <div className="text-xs mt-0.5 text-[#8C6D22] font-medium">
-                    {format(d.prix)}{d.prixParInvite ? ` + ${format(d.prixParInvite)} / invité` : ""}{places ? ` · ${places} places` : ""}
+                    {prixTexte(d.prix, d.prixParInvite)}{places ? ` · ${places} places` : ""}
                   </div>
                 </div>
               </button>
@@ -105,7 +111,7 @@ export function PanneauSelection({ creation, element, enDeplacement, onCouleur, 
         <div className="flex-1 min-w-0">
           <h3 className="font-serif text-lg leading-tight">{l.nom}</h3>
           <p className="text-xs text-[#6B6155]">{l.description}</p>
-          <p className="text-xs text-[#8C6D22] font-medium mt-1">{format(d.prix)}{d.prixParInvite ? ` + ${format(d.prixParInvite)} par invité (compté une fois)` : ""}{places ? ` · ${places} places` : ""}</p>
+          <p className="text-xs text-[#8C6D22] font-medium mt-1">{prixTexte(d.prix, d.prixParInvite, true)}{d.prixParInvite ? " (compté une fois)" : ""}{places ? ` · ${places} places` : ""}</p>
         </div>
         <button onClick={onFermer} className="rounded-full h-9 w-9 hover:bg-[#F1E8D8] text-[#6B6155]" aria-label="Fermer le panneau">✕</button>
       </div>
