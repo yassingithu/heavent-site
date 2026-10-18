@@ -401,6 +401,29 @@ await scenario("Admin : bilan de l'activité, puis réalisations en photos publi
   notes.push("visiteur : lien dans le menu, galerie et visionneuse (1 / 2)");
 });
 
+// 3 undecies. Le client ne signe pas : il demande d'abord un rendez-vous (mention « montant évolutif » affichée)
+await scenario("Devis : le client préfère un rendez-vous plutôt que signer", async (notes) => {
+  const base = nouvelleBase();
+  base.devis = [{ id: "dv1", numero: "DEV-2026-0120", type: "mariage", marque: "heavent", client_nom: "Nora Alaoui", client_email: "nora@example.com", titre: "Mariage Nora", statut: "envoye",
+    total_ttc: 48000, remise_globale_pct: 0, taux_tva: 20, acompte_pct: 50, date_emission: "2026-10-18", date_validite: "2099-12-31", date_envoi: new Date().toISOString(), lien_token: "11111111-2222-3333-4444-555555555555", relances: 0 }];
+  base.devis_lignes = [{ id: "l1", devis_id: "dv1", ordre: 0, designation: "Décoration complète", description: null, quantite: 1, duree: 1, unite: "forfait", prix_unitaire: 40000, remise_pct: 0 }];
+  const c = await contexte(navigateur, base, "nora@example.com", { mobile: true });
+  await c.page.goto(`${BASE}/mon-devis/11111111-2222-3333-4444-555555555555`); await c.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await c.page.reload(); await c.page.waitForTimeout(1500);
+  verifier(/premier rendez-vous/.test(await c.page.getByTestId("mention-montant").innerText()), "la mention « montant évolutif » n'apparaît pas");
+  await c.page.getByTestId("ouvrir-rdv").tap();
+  await c.page.locator("#rdv-dispo").fill("Samedi matin");
+  await c.page.locator("#rdv-message").fill("Nous aimerions voir les options de décoration");
+  await c.page.getByTestId("envoyer-rdv").tap(); await c.page.waitForTimeout(1200);
+  verifier(base.devis[0].rdv_demande_le && base.devis[0].relances === 2, "la demande de rendez-vous n'est pas enregistrée (ou les relances continuent)");
+  verifier(!base.devis[0].signe_le && base.devis[0].statut === "envoye", "le devis ne doit pas être signé");
+  verifier(await c.page.getByTestId("rdv-envoye").isVisible(), "pas de confirmation de la demande de rendez-vous");
+  verifier(await c.page.getByTestId("bloc-signature").isVisible(), "le client doit pouvoir encore signer plus tard");
+  await c.page.screenshot({ path: `${CAPTURES}/12-devis-rdv.png`, fullPage: true });
+  verifier(!c.erreurs.length, "erreurs JavaScript : " + c.erreurs.join(" ; "));
+  await c.ctx.close();
+  notes.push("mention affichée ; rendez-vous demandé sans signer, relances arrêtées, signature toujours possible");
+});
+
 // 3 sexies. Paie : une fiche dont toutes les missions ont été supprimées disparaît au recalcul
 await scenario("Paie : « Calculer le mois » retire les fiches sans mission (jamais les fiches payées)", async (notes) => {
   const base = nouvelleBase();

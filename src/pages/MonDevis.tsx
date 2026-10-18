@@ -6,10 +6,10 @@ import ZoneSignature, { ZoneSignatureRef } from "@/components/contrat/ZoneSignat
 import { NUMERO_WHATSAPP } from "@/components/BoutonWhatsApp";
 import { CGV_DEFAUT, CGV_NAWAR_DEFAUT } from "@/lib/conditions";
 import {
-  DevisForm, Parametres, calculerTotaux, dateFr, dateHeureFr, devisDepuisBase, money, totalLigne, uniteCourt,
+  DevisForm, MENTION_MONTANT_EVOLUTIF, Parametres, calculerTotaux, dateFr, dateHeureFr, devisDepuisBase, money, totalLigne, uniteCourt,
 } from "@/components/admin/devis/devisUtils";
 import { telechargerDevisPdf } from "@/components/admin/devis/devisPdf";
-import { CheckCircle2, Download, FileText, Loader2, MessageCircle } from "lucide-react";
+import { CalendarClock, CheckCircle2, Download, FileText, Loader2, MessageCircle } from "lucide-react";
 
 type Etat = "chargement" | "introuvable" | "pret";
 
@@ -132,6 +132,7 @@ export default function MonDevis() {
             {devis.acompte_pct > 0 && <Ligne libelle={`Acompte ${devis.acompte_pct} % à la commande`} valeur={money(t.acompte, devise)} fort />}
           </div>
         </section>
+        <p className="text-xs text-[#6B6155] text-center max-w-2xl mx-auto" data-testid="mention-montant">{MENTION_MONTANT_EVOLUTIF}</p>
 
         {devis.conditions && (
           <section className="rounded-2xl border border-[#EADFC8] bg-white px-5 sm:px-7 py-4">
@@ -153,7 +154,16 @@ export default function MonDevis() {
             <Contact />
           </section>
         ) : (
-          <Signature token={token} devis={devis} onSigne={charger} />
+          <>
+            {devis.rdv_demande_le && (
+              <div className="rounded-2xl border border-[#F0D9A8] bg-[#FFF7E6] p-4 text-sm text-[#5C4512] flex gap-3" data-testid="rdv-envoye" role="status">
+                <CalendarClock className="h-5 w-5 shrink-0" />
+                <div>Votre demande de rendez-vous a bien été envoyée le {dateHeureFr(devis.rdv_demande_le)}. Nous vous contactons pour en fixer la date. Vous pouvez aussi signer ce devis dès maintenant si vous le souhaitez.</div>
+              </div>
+            )}
+            <Signature token={token} devis={devis} onSigne={charger} />
+            {!devis.rdv_demande_le && <RendezVous token={token} onEnvoye={charger} />}
+          </>
         )}
 
         <div className="text-center text-sm text-[#6B6155] pb-6">
@@ -191,7 +201,7 @@ function Signature({ token, devis, onSigne }: { token: string; devis: DevisForm;
     <section className="rounded-3xl border-2 border-[#C8B560] bg-white p-5 sm:p-7 space-y-4" data-testid="bloc-signature">
       <div>
         <h2 className="font-serif text-2xl">Bon pour accord</h2>
-        <p className="text-sm text-[#5E554A]">Signez en ligne pour confirmer votre réservation. Votre signature est apposée sur le devis et ses conditions générales.</p>
+        <p className="text-sm text-[#5E554A]">Signez en ligne pour confirmer votre réservation. Votre signature est apposée sur le devis et ses conditions générales. Si les services ou prestataires évoluent après notre rendez-vous, nous vous enverrons un devis ajusté.</p>
       </div>
       <div>
         <label htmlFor="nom-signataire" className="text-sm font-medium">Nom et prénom du signataire</label>
@@ -209,6 +219,55 @@ function Signature({ token, devis, onSigne }: { token: string; devis: DevisForm;
         {envoi && <Loader2 className="h-4 w-4 animate-spin" />} {envoi ? "Signature…" : "Signer le devis"}
       </button>
       <p className="text-xs text-[#6B6155]">Signature électronique simple (loi 53-05) : la date, l'heure et l'appareil utilisé sont enregistrés comme preuve. Vous recevrez une confirmation par e-mail.</p>
+    </section>
+  );
+}
+
+/** Pas prêt à signer : le client garde son devis (PDF) ou demande d'abord un rendez-vous. */
+function RendezVous({ token, onEnvoye }: { token: string; onEnvoye: () => void }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [dispo, setDispo] = useState("");
+  const [message, setMessage] = useState("");
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const envoyer = async () => {
+    setEnvoi(true); setErreur("");
+    const { data, error } = await supabase.functions.invoke("signer-devis", { body: { token, action: "rdv", message, disponibilites: dispo } });
+    let msg = data?.error as string | undefined;
+    if (error && !msg) { try { msg = (await (error as any).context?.json())?.error; } catch { /* */ } }
+    setEnvoi(false);
+    if (error || data?.error) return setErreur(msg ?? "La demande n'a pas pu être envoyée. Réessayez ou écrivez-nous sur WhatsApp.");
+    onEnvoye();
+  };
+  return (
+    <section className="rounded-3xl border border-[#EADFC8] bg-white p-5 sm:p-7 space-y-3" data-testid="bloc-rdv">
+      <h2 className="font-serif text-xl">Pas encore prêt(e) à signer ?</h2>
+      <p className="text-sm text-[#5E554A]">Aucune obligation : vous pouvez simplement garder ce devis (bouton « Télécharger le PDF » plus haut), ou nous rencontrer d'abord pour affiner les services et les prestataires. Le devis sera ajusté si besoin.</p>
+      {!ouvert ? (
+        <button onClick={() => setOuvert(true)} data-testid="ouvrir-rdv"
+          className="inline-flex items-center gap-2 rounded-full border border-[#DCCBA6] px-5 min-h-11 text-sm font-medium hover:bg-[#FAF7EE]">
+          <CalendarClock className="h-4 w-4" /> Je préfère d'abord un rendez-vous
+        </button>
+      ) : (
+        <div className="space-y-3">
+          <div>
+            <label htmlFor="rdv-dispo" className="text-sm font-medium">Vos disponibilités <span className="font-normal text-[#6B6155]">(facultatif)</span></label>
+            <input id="rdv-dispo" value={dispo} onChange={(e) => setDispo(e.target.value)} placeholder="Ex. en semaine après 18 h, ou samedi matin"
+              className="mt-1 w-full rounded-xl border border-[#DCCBA6] bg-white px-3 min-h-11" />
+          </div>
+          <div>
+            <label htmlFor="rdv-message" className="text-sm font-medium">Un mot pour nous <span className="font-normal text-[#6B6155]">(facultatif)</span></label>
+            <textarea id="rdv-message" rows={3} value={message} onChange={(e) => setMessage(e.target.value)} className="mt-1 w-full rounded-xl border border-[#DCCBA6] bg-white px-3 py-2" />
+          </div>
+          {erreur && <p className="text-sm text-[#8A2E26]" role="alert">{erreur}</p>}
+          <div className="flex flex-wrap gap-2">
+            <button onClick={envoyer} disabled={envoi} data-testid="envoyer-rdv" className="inline-flex items-center gap-2 rounded-full bg-[#141414] text-white px-6 min-h-11 font-medium disabled:opacity-60">
+              {envoi && <Loader2 className="h-4 w-4 animate-spin" />} Demander un rendez-vous
+            </button>
+            <button onClick={() => setOuvert(false)} className="rounded-full px-4 min-h-11 text-sm text-[#5E554A]">Annuler</button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

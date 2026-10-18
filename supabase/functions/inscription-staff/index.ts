@@ -2,6 +2,7 @@ import { corsHeaders } from "../_shared/auth.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 import { Resend } from "npm:resend@2.0.0";
+import { avecOriginal, traduireChamps } from "../_shared/traduire.ts";
 
 /**
  * Inscription d'un crew depuis le site : crée le compte de connexion (déjà confirmé, pas d'email de
@@ -46,12 +47,14 @@ const handler = async (req: Request): Promise<Response> => {
       return json({ error: deja ? "Un compte avec cet email existe déjà. Connectez-vous, ou utilisez « Mot de passe oublié »." : "Création du compte impossible : " + errCompte.message }, deja ? 409 : 500);
     }
 
-    // 2. Fiche du crew
+    // 2. Fiche du crew (textes libres traduits en français pour l'agence, original conservé)
+    const t = await traduireChamps(d, ["competences", "langues", "experience", "couleur_cheveux", "couleur_yeux"]);
+    const fr = (k: keyof typeof t, max = 2000) => txt(avecOriginal(t[k]), max);
     const fiche = {
       email, nom: txt(d.nom, 100), prenom: txt(d.prenom, 100), telephone: txt(d.telephone, 40), age: int(d.age), genre: txt(d.genre, 40),
       ville: txt(d.ville, 100), taille: int(d.taille), pointure: txt(d.pointure, 20), taille_confection: txt(d.taille_confection, 20),
-      taille_pantalon: txt(d.taille_pantalon, 20), taille_haut: txt(d.taille_haut, 20), couleur_cheveux: txt(d.couleur_cheveux, 40),
-      couleur_yeux: txt(d.couleur_yeux, 40), competences: txt(d.competences), langues: txt(d.langues, 300), experience: txt(d.experience),
+      taille_pantalon: txt(d.taille_pantalon, 20), taille_haut: txt(d.taille_haut, 20), couleur_cheveux: fr("couleur_cheveux", 200),
+      couleur_yeux: fr("couleur_yeux", 200), competences: fr("competences"), langues: fr("langues", 600), experience: fr("experience", 4000),
       permis: !!d.permis, disponibilites: txt(Array.isArray(d.availability) ? d.availability.join(", ") : d.availability, 300),
       photo: txt(d.photoPortrait, 300), photo_plein_pied: txt(d.photoPleinPied, 300), identite: txt(d.carteIdentite, 300),
       adresse_complete: txt(d.adresse_complete, 300), code_postal: txt(d.code_postal, 20), nationalite: txt(d.nationalite, 60),

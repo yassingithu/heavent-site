@@ -25,7 +25,8 @@ function emailRelance(d: any, n: number) {
       <b>Devis ${e(d.numero)}</b>${d.titre ? ` — ${e(d.titre)}` : ""}<br>Total TTC : <b>${mad(d.total_ttc)}</b>
       ${d.date_validite ? `<br>Valable jusqu'au ${e(dateFr(d.date_validite))}` : ""}</div>
     <p style="margin:22px 0"><a href="${lien}" style="background:#141414;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;display:inline-block">Consulter et signer mon devis</a></p>
-    <p style="font-size:13px;color:#555">Une question, une modification ? Répondez simplement à cet e-mail ou appelez-nous au +212 6 10 93 96 55.</p>
+    <p style="font-size:13px;color:#555">Une question, une modification ? Répondez simplement à cet e-mail, appelez-nous au +212 6 10 93 96 55, ou demandez un rendez-vous directement depuis la page de votre devis.</p>
+    <p style="font-size:12px;color:#777">Ce devis est établi d'après les informations transmises. Son montant peut évoluer en fonction des services et des prestataires retenus lors d'un premier rendez-vous.</p>
     <p>Bien à vous,<br>Imane CHAIGARI — CEO, Heavent People Agency</p></div>`;
 }
 function emailAvis(d: any, lien: string) {
@@ -48,7 +49,7 @@ serve(async (req) => {
   const rapport: { relances: string[]; avis: string[] } = { relances: [], avis: [] };
 
   // 1. Relances
-  const { data: envoyes } = await db.from("devis").select("*").eq("statut", "envoye").is("signe_le", null).not("client_email", "is", null).not("date_envoi", "is", null).lt("relances", 2);
+  const { data: envoyes } = await db.from("devis").select("*").eq("statut", "envoye").is("signe_le", null).not("client_email", "is", null).not("date_envoi", "is", null).is("rdv_demande_le", null).lt("relances", 2);
   for (const d of envoyes ?? []) {
     if (d.date_validite && d.date_validite < aujourdhui) continue;
     const depuis = (maintenant - new Date(d.date_envoi).getTime()) / JOUR;

@@ -23,7 +23,8 @@ export function emailDevis(d: any, intro: string) {
       ${d.date_validite ? `Valable jusqu'au ${e(dateFr(d.date_validite))}` : ""}
     </div>
     <p style="margin:22px 0"><a href="${lien}" style="background:#141414;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;display:inline-block">Consulter et signer mon devis</a></p>
-    <p style="font-size:13px;color:#555">Vous pouvez le lire en détail, le télécharger en PDF et donner votre accord en ligne en quelques secondes, depuis votre téléphone ou votre ordinateur.</p>
+    <p style="font-size:13px;color:#555">Vous pouvez le lire en détail, le télécharger en PDF et donner votre accord en ligne en quelques secondes, depuis votre téléphone ou votre ordinateur. Vous préférez en parler d'abord ? Vous pourrez aussi, depuis cette page, demander un rendez-vous sans signer.</p>
+    <p style="font-size:12px;color:#777">Ce devis est établi d'après les informations transmises. Son montant peut évoluer en fonction des services et des prestataires retenus lors d'un premier rendez-vous.</p>
     <p>À votre écoute pour toute question,<br>Imane CHAIGARI — CEO, Heavent People Agency<br>+212 6 10 93 96 55 · ${ADMIN_EMAIL}</p></div>`;
 }
 

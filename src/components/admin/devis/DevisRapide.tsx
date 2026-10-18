@@ -36,7 +36,7 @@ interface DemandeMariage {
 interface DevisRow {
   id: string; numero: string | null; type: string; client_nom: string; client_societe: string | null;
   titre: string | null; date_evenement: string | null; total_ttc: number; statut: string; date_emission: string;
-  devise: string; signe_le?: string | null; relances?: number | null;
+  devise: string; signe_le?: string | null; relances?: number | null; rdv_demande_le?: string | null;
 }
 
 interface Props {
@@ -60,7 +60,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
 
   const charger = async () => {
     const [d, c, p] = await Promise.all([
-      supabase.from("devis").select("id, numero, type, marque, client_nom, client_societe, titre, date_evenement, total_ttc, statut, date_emission, devise, signe_le, relances").order("created_at", { ascending: false }),
+      supabase.from("devis").select("id, numero, type, marque, client_nom, client_societe, titre, date_evenement, total_ttc, statut, date_emission, devise, signe_le, relances, rdv_demande_le").order("created_at", { ascending: false }),
       supabase.from("catalogue_prestations").select("*").order("categorie").order("ordre").order("designation"),
       supabase.from("parametres_agence").select("*").eq("id", 1).maybeSingle(),
     ]);
@@ -523,6 +523,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                       <TableCell>{d.titre || "—"}<div className="text-xs text-muted-foreground">{dateFr(d.date_evenement)}</div></TableCell>
                       <TableCell className="text-right font-medium whitespace-nowrap">{money(d.total_ttc, d.devise)}
                         {d.signe_le ? <div className="text-[11px] font-normal text-green-700">✍️ Signé en ligne</div>
+                          : d.rdv_demande_le ? <div className="text-[11px] font-normal text-amber-700">📅 RDV demandé avant signature</div>
                           : d.statut === "envoye" && d.relances ? <div className="text-[11px] font-normal text-muted-foreground">{d.relances} relance{d.relances > 1 ? "s" : ""} auto</div> : null}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
@@ -705,6 +706,12 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
               <div className="grid gap-2">
                 <Button onClick={() => enregistrer()} disabled={saving}><Save className="h-4 w-4 mr-1" /> Enregistrer</Button>
                 <Button variant="outline" onClick={telechargerPdf} disabled={saving || pdfEnCours}><Download className="h-4 w-4 mr-1" /> {pdfEnCours ? "Création du PDF…" : "Télécharger le PDF"}</Button>
+                {form.rdv_demande_le && !form.signe_le && (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900" data-testid="rdv-demande">
+                    📅 Le client a demandé un rendez-vous avant de signer ({dateHeureFr(form.rdv_demande_le)}).
+                    {form.rdv_message && <div className="mt-1 whitespace-pre-line">{form.rdv_message}</div>}
+                  </div>
+                )}
                 <Button variant="outline" onClick={envoyerAuClient} disabled={saving || envoiEnCours || !!form.signe_le} data-testid="envoyer-client">
                   <Send className="h-4 w-4 mr-1" /> {envoiEnCours ? "Envoi…" : form.date_envoi ? "Renvoyer au client pour signature" : "Envoyer au client pour signature"}
                 </Button>

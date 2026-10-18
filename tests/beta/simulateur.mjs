@@ -81,6 +81,10 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
         const d = base.devis.find((x) => x.lien_token === corps.token);
         if (!d) return route.fulfill({ status: 404, json: { error: "Ce devis n'est plus disponible." } });
         if (d.signe_le) return route.fulfill({ status: 409, json: { error: "Ce devis a déjà été signé." } });
+        if (corps.action === "rdv") {
+          Object.assign(d, { rdv_demande_le: new Date().toISOString(), rdv_message: [corps.disponibilites && `Disponibilités : ${corps.disponibilites}`, corps.message && `Message : ${corps.message}`].filter(Boolean).join("\n"), relances: 2 });
+          return route.fulfill({ json: { success: true, rdv: true } });
+        }
         if (!corps.accepte || String(corps.nom ?? "").trim().length < 3 || String(corps.image ?? "").length < 1500)
           return route.fulfill({ status: 400, json: { error: "Signature incomplète." } });
         Object.assign(d, { signe_le: new Date().toISOString(), signature_nom: corps.nom, signature_image: corps.image, statut: "accepte" });

@@ -102,7 +102,13 @@ export interface DevisForm {
   signe_le?: string | null;
   signature_nom?: string | null;
   signature_image?: string | null;
+  /** Le client a préféré demander un rendez-vous avant de signer */
+  rdv_demande_le?: string | null;
+  rdv_message?: string | null;
 }
+
+/** Mention portée sur chaque devis (page client, PDF, e-mails). */
+export const MENTION_MONTANT_EVOLUTIF = "Ce devis est établi d\'après les informations transmises. Son montant peut évoluer en fonction des services et des prestataires retenus lors d\'un premier rendez-vous.";
 
 /** Ligne de la base → formulaire de devis (admin et page client). */
 export function devisDepuisBase(d: any, lignes: any[]): DevisForm {
@@ -122,6 +128,7 @@ export function devisDepuisBase(d: any, lignes: any[]): DevisForm {
     })),
     lien_token: d.lien_token ?? null, date_envoi: d.date_envoi ?? null, relances: d.relances ?? 0,
     signe_le: d.signe_le ?? null, signature_nom: d.signature_nom ?? null, signature_image: d.signature_image ?? null,
+    rdv_demande_le: d.rdv_demande_le ?? null, rdv_message: d.rdv_message ?? null,
   };
 }
 
@@ -345,6 +352,7 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
     <div class="conditions">
       ${d.conditions ? `<div class="etiquette">Conditions</div><p>${esc(d.conditions)}</p>` : ""}
       ${p?.rib ? `<div class="etiquette">Règlement</div><p>Par virement bancaire — RIB ${esc(p.rib)}</p>` : ""}
+      <div class="etiquette">Bon à savoir</div><p>${esc(MENTION_MONTANT_EVOLUTIF)}</p>
     </div>
     <div class="totaux">
       <div class="l"><span>Total HT</span><span>${money(t.ht, devise)}</span></div>

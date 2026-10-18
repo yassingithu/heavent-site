@@ -168,6 +168,7 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
               aria-label={lectureSeule ? undefined : `${nom}${selection === e.uid ? ` ${tr("(sélectionné)")}` : ""}`}
               onPointerDown={(ev) => surAppuiElement(ev, e)} onKeyDown={(ev) => clavierElement(ev, e)}
               opacity={enDeplacement ? 0.35 : 1} style={{ cursor: lectureSeule ? "default" : mode ? "crosshair" : "grab", pointerEvents: mode ? "none" : "auto", outline: "none", touchAction: lectureSeule ? "auto" : "none" }}>
+              {!lectureSeule && <title>{nom}</title>}
               <DessinElement e={e} ctx={ctx(e)} />
             </g>
           );

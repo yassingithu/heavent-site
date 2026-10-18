@@ -2,10 +2,13 @@ import { corsHeaders } from "../_shared/auth.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 import { Resend } from "npm:resend@2.0.0";
+import { avecOriginal, htmlTraduit, versFrancais } from "../_shared/traduire.ts";
 
 /**
- * Signature en ligne d'un devis par le client (« Bon pour accord »), depuis le lien reçu par e-mail.
- * Le devis passe en « Accepté » ; l'agence et le client reçoivent un e-mail (avec le RIB et l'acompte).
+ * Depuis le lien reçu par e-mail, le client peut :
+ *  - signer le devis en ligne (« Bon pour accord ») : le devis passe en « Accepté », e-mails avec RIB et acompte ;
+ *  - ou, s'il ne souhaite pas signer tout de suite, demander d'abord un rendez-vous (action « rdv ») :
+ *    l'agence est prévenue (message traduit en français si besoin) et les relances automatiques s'arrêtent.
  */
 const ADMIN_EMAIL = "i.chaigari@heaventagency.com";
 const FROM = "Heavent People Agency <noreply@heaventagency.com>";
@@ -18,11 +21,45 @@ async function empreinte(t: string) {
   return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/** Le client ne signe pas tout de suite : il préfère un premier rendez-vous. */
+async function demanderRendezVous(token: string, message: string, disponibilites: string) {
+  const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", { auth: { persistSession: false } });
+  const { data: d } = await db.from("devis").select("*").eq("lien_token", token).maybeSingle();
+  if (!d || d.statut === "annule") return json({ error: "Ce devis n'est plus disponible. Contactez-nous." }, 404);
+  if (d.signe_le) return json({ error: "Ce devis a déjà été signé." }, 409);
+  const [tm, td] = await Promise.all([versFrancais(message), versFrancais(disponibilites)]);
+  const note = [td.texte && `Disponibilités : ${avecOriginal(td)}`, tm.texte && `Message : ${avecOriginal(tm)}`].filter(Boolean).join("\n") || null;
+  const { error } = await db.from("devis").update({ rdv_demande_le: new Date().toISOString(), rdv_message: note, relances: 2 }).eq("id", d.id);
+  if (error) return json({ error: "Demande non enregistrée : " + error.message }, 500);
+  const cle = Deno.env.get("RESEND_API_KEY");
+  if (cle) {
+    const resend = new Resend(cle);
+    await resend.emails.send({
+      from: FROM, to: [ADMIN_EMAIL], reply_to: d.client_email || undefined,
+      subject: `📅 Rendez-vous demandé avant signature — devis ${d.numero} (${d.client_nom})`,
+      html: `<p><b>${e(d.client_nom)}</b>${d.client_societe ? ` (${e(d.client_societe)})` : ""} ne souhaite pas signer tout de suite le devis <b>${e(d.numero)}</b> « ${e(d.titre ?? "")} » (${mad(d.total_ttc)} TTC) : il ou elle préfère d'abord un rendez-vous.</p>
+        ${td.texte ? `<p><b>Disponibilités :</b> ${htmlTraduit(td, e)}</p>` : ""}
+        ${tm.texte ? `<p><b>Message :</b><br><span style="white-space:pre-line">${htmlTraduit(tm, e)}</span></p>` : ""}
+        <p>Contact : ${e(d.client_email ?? "")}${d.client_telephone ? ` · ${e(d.client_telephone)}` : ""}</p>
+        <p style="color:#888;font-size:12px">Les relances automatiques de ce devis sont arrêtées. Le client peut toujours le signer plus tard depuis son lien.</p>`,
+    }).catch(() => {});
+    if (d.client_email) await resend.emails.send({
+      from: FROM, to: [d.client_email], reply_to: ADMIN_EMAIL, subject: `Votre demande de rendez-vous — devis ${d.numero}`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:620px;color:#2a2420"><p>Bonjour ${e(d.client_nom)},</p>
+        <p>Merci ! Nous avons bien noté que vous souhaitez d'abord un rendez-vous pour affiner votre projet. Nous vous contactons très vite pour en fixer la date.</p>
+        <p>Votre devis reste consultable, et vous pourrez le signer à tout moment : <a href="https://heaventagency.com/mon-devis/${e(d.lien_token)}">voir mon devis</a>.</p>
+        <p>À très vite,<br>Imane CHAIGARI — CEO, Heavent People Agency<br>+212 6 10 93 96 55 · ${ADMIN_EMAIL}</p></div>`,
+    }).catch(() => {});
+  }
+  return json({ success: true, rdv: true });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { token, nom, image, accepte } = await req.json();
+    const { token, nom, image, accepte, action, message, disponibilites } = await req.json();
     if (!/^[0-9a-f-]{36}$/i.test(String(token ?? ""))) return json({ error: "Lien invalide." }, 400);
+    if (action === "rdv") return await demanderRendezVous(String(token), String(message ?? "").slice(0, 2000), String(disponibilites ?? "").slice(0, 300));
     if (!accepte) return json({ error: "Cochez « J'ai lu et j'accepte »." }, 400);
     if (!nom || String(nom).trim().length < 3) return json({ error: "Écrivez votre nom complet." }, 400);
     if (!/^data:image\/png;base64,/.test(String(image ?? "")) || String(image).length < 1500 || String(image).length > 400_000)

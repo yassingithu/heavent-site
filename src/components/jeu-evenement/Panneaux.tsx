@@ -11,7 +11,7 @@ import { Bouton } from "./ui";
 
 /** Petite vignette SVG d'un élément, dessinée comme dans la scène. */
 /** Hauteur visible de chaque élément au-dessus du sol (pour cadrer les vignettes). */
-const HAUTEUR: Partial<Record<TypeElement, number>> = { arche: 135, guirlandes: 100, photobooth: 72, fleurs: 70, honneur: 66, gateau: 66, dj: 56, bar: 52, lounge: 32, piste: 8, nawar: 80, hotesse: 54, serveur: 54, maitre_hotel: 54 };
+const HAUTEUR: Partial<Record<TypeElement, number>> = { arche: 135, guirlandes: 100, photobooth: 72, fleurs: 70, honneur: 66, gateau: 66, dj: 56, bar: 52, lounge: 32, piste: 8, nawar: 80, hotesse: 54, serveur: 54, maitre_hotel: 54, fauteuils: 58, table_haute: 40, amaria: 112, mur_fleurs: 94, candelabre: 82, allee: 22, the: 32 };
 /** « 1 500 MAD + 50 MAD / invité », « 450 MAD / invité » ou « 12 000 MAD ». */
 export const prixTexte = (prix: number, parInvite?: number, long = false) => {
   const pi = parInvite ? `${format(parInvite)} ${long ? tr("par invité") : tr("/ invité")}` : "";
@@ -46,10 +46,11 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
         ))}
       </div>
       <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2" aria-label={tr("Éléments à ajouter")}>
-        {CATALOGUE.filter((d) => d.categorie === cat).map((d) => {
+        {CATALOGUE.filter((d) => d.categorie === cat && (!d.types || d.types.includes(t))).map((d) => {
           const l = libelle(d.id, t);
           const places = placesDe(d.id, t);
           const actif = enPlacement === d.id;
+          const surScene = creation.elements.filter((e) => e.type === d.id).length;
           return (
             <li key={d.id}>
               <button
@@ -62,8 +63,11 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
                 className={`w-full flex items-center gap-3 rounded-2xl border p-2.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A74E] ${actif ? "border-[#C9A74E] bg-[#FBF3DF]" : "border-[#EADFC8] bg-white hover:border-[#D8C391] hover:shadow-sm"}`}
               >
                 <Miniature type={d.id} creation={creation} />
-                <div className="min-w-0">
-                  <div className="font-medium text-sm text-[#2A2420]">{l.nom}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-sm text-[#2A2420] flex items-center gap-2">
+                    <span>{l.nom}</span>
+                    {surScene > 0 && <span className="shrink-0 rounded-full bg-[#F1E4C2] text-[#6F5518] text-[10px] font-semibold px-1.5 py-0.5" data-sur-scene={surScene}>{tr("× {n} sur la scène", { n: surScene })}</span>}
+                  </div>
                   <div className="text-xs text-[#6B6155] line-clamp-2">{l.description}</div>
                   <div className="text-xs mt-0.5 text-[#8C6D22] font-medium">
                     {prixTexte(d.prix, d.prixParInvite)}{places ? ` · ${tr("{n} places", { n: places })}` : ""}

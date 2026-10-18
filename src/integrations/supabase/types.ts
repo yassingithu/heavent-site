@@ -446,6 +446,8 @@ export type Database = {
       }
       devis: {
         Row: {
+          rdv_demande_le: string | null
+          rdv_message: string | null
           lien_token: string
           signe_le: string | null
           signature_nom: string | null
@@ -489,6 +491,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rdv_demande_le?: string | null
+          rdv_message?: string | null
           lien_token?: string
           signe_le?: string | null
           signature_nom?: string | null
@@ -532,6 +536,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rdv_demande_le?: string | null
+          rdv_message?: string | null
           lien_token?: string
           signe_le?: string | null
           signature_nom?: string | null

@@ -141,7 +141,9 @@ export function proposerDisposition(r: Reglages): Creation {
   };
   const mx = cols / 2, my = rows / 2;
   const pro = r.type === "pro";
-  // Fond de scène : table d'honneur (ou scène) au milieu du fond, arche au premier plan (entrée)
+  // Fond de scène : fauteuils des mariés (mariage, fiançailles), table d'honneur (ou scène), arche au premier plan (entrée)
+  const maries = r.type === "mariage" || r.type === "fiancailles";
+  if (maries) poser("fauteuils", { x: mx - 4, y: 0 });
   poser("honneur", { x: mx - 1.5, y: 0 });
   if (!pro) poser("gateau", { x: mx + 2, y: 0 });
   poser("piste", { x: mx - 1.5, y: 2 });
@@ -154,6 +156,8 @@ export function proposerDisposition(r: Reglages): Creation {
   poser("guirlandes", { x: 0, y: 0 }); poser("guirlandes", { x: cols - 1, y: 0 });
   if (r.invites > 80) { poser("guirlandes", { x: 0, y: rows - 1 }); poser("guirlandes", { x: cols - 1, y: rows - 1 }); }
   poser("fleurs", { x: mx - 3, y: 0 }); poser("fleurs", { x: mx + 3, y: 0 });
+  // Tables hautes près du bar pour le cocktail (à partir de 60 invités)
+  if (r.invites >= 60) { poser("table_haute", { x: cols - 3, y: my - 2 }); poser("table_haute", { x: cols - 3, y: my + 1 }); }
   // Tables autour de la piste jusqu'à avoir assez de places
   const besoin = () => r.invites - els.reduce((s, e) => s + placesDe(e.type, r.type), 0);
   while (besoin() > 0) {
@@ -167,7 +171,7 @@ export function proposerDisposition(r: Reglages): Creation {
       els.splice(els.map((e) => e.type).lastIndexOf(type), 1);
     }
   };
-  for (const [t, g] of [["lounge", 0], ["photobooth", 0], ["fleurs", 0], ["arche", 0], ["gateau", 0], ["dj", 0], ["guirlandes", 1], ["bar", 0], ["buffet", 0]] as [TypeElement, number][]) retirer(t, g);
+  for (const [t, g] of [["table_haute", 0], ["lounge", 0], ["photobooth", 0], ["fauteuils", 0], ["fleurs", 0], ["arche", 0], ["gateau", 0], ["dj", 0], ["guirlandes", 1], ["bar", 0], ["buffet", 0]] as [TypeElement, number][]) retirer(t, g);
   if (calculerBudget(c).depassement > 0) c.centres.actif = false;
   if (calculerBudget(c).depassement > 0 && els.some((e) => e.type === "piste") && els.some((e) => e.type === "bar")) retirer("piste", 0);
   return c;
@@ -181,7 +185,13 @@ export function creationDepuisModele(id: string): Creation | null {
   const g = tailleGrille(m.reglages.invites);
   // Personnel près de l'entrée (devant), bar à parfums sur un côté
   for (const t of m.extras) {
-    const cible = t === "nawar" ? { x: g.cols - 2, y: g.rows / 2 + 2 } : { x: g.cols / 2, y: g.rows - 1 };
+    // Chaque extra à sa place logique : fond de scène, entrée, côtés…
+    const cibles: Partial<Record<TypeElement, { x: number; y: number }>> = {
+      nawar: { x: g.cols - 2, y: g.rows / 2 + 2 }, mur_fleurs: { x: g.cols / 2 + 3, y: 0 }, amaria: { x: 2, y: g.rows - 3 },
+      allee: { x: g.cols / 2 + 1, y: g.rows - 3 }, the: { x: 0, y: g.rows / 2 + 3 }, candelabre: { x: g.cols / 2, y: 2 },
+      table_haute: { x: g.cols - 3, y: g.rows / 2 },
+    };
+    const cible = cibles[t] ?? { x: g.cols / 2, y: g.rows - 1 };
     const p = trouverPlace(c.elements, t, g.cols, g.rows, cible);
     if (p) c.elements.push({ uid: nouvelId(), type: t, x: p.x, y: p.y });
   }

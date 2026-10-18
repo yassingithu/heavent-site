@@ -59,7 +59,8 @@ export const NUANCIER: { nom: string; valeur: string }[] = [
 export type TypeElement =
   | "table_ronde" | "table_rect" | "honneur" | "arche" | "fleurs" | "guirlandes" | "piste"
   | "dj" | "buffet" | "bar" | "photobooth" | "lounge" | "gateau"
-  | "nawar" | "hotesse" | "serveur" | "maitre_hotel";
+  | "nawar" | "hotesse" | "serveur" | "maitre_hotel"
+  | "fauteuils" | "table_haute" | "amaria" | "mur_fleurs" | "candelabre" | "allee" | "the";
 
 export type Categorie = "places" | "decoration" | "lumiere" | "animation" | "gourmand" | "detente" | "personnel";
 export const CATEGORIES: { id: Categorie; nom: string }[] = [
@@ -95,6 +96,8 @@ export interface DefElement {
   couleur?: CleCouleur;
   /** Pour les missions */
   role?: "decoration" | "eclairage" | "convivial";
+  /** Proposé seulement pour ces types d'événement (tous par défaut) */
+  types?: TypeEvenement[];
 }
 
 export const CATALOGUE: DefElement[] = [
@@ -115,6 +118,14 @@ export const CATALOGUE: DefElement[] = [
   { id: "hotesse", categorie: "personnel", nom: "Hôtesse d'accueil", description: "Accueil et placement des invités, vestiaire, orientation. Journée de 8 h.", w: 1, h: 1, prix: 900, couleur: "deco" },
   { id: "serveur", categorie: "personnel", nom: "Serveur / serveuse", description: "Service à table, cocktail et débarrassage. Journée de 8 h.", w: 1, h: 1, prix: 700, couleur: "deco" },
   { id: "maitre_hotel", categorie: "personnel", nom: "Maître d'hôtel", description: "Coordonne le service et l'équipe le jour J. Journée de 8 h.", w: 1, h: 1, prix: 1200, couleur: "deco" },
+  // Ajouts (toujours en fin de liste : l'ordre sert aux liens de partage)
+  { id: "fauteuils", categorie: "places", nom: "Fauteuils des mariés", description: "Deux fauteuils d'apparat sur une petite estrade fleurie, pour trôner face aux invités.", w: 2, h: 1, prix: 2500, places: 2, couleur: "deco", role: "decoration" },
+  { id: "table_haute", categorie: "places", nom: "Table haute", description: "Mange-debout nappé pour le cocktail ; vos invités s'y retrouvent debout.", w: 1, h: 1, prix: 250, couleur: "nappe", role: "convivial" },
+  { id: "amaria", categorie: "decoration", nom: "Amaria", description: "Le palanquin doré qui porte les mariés pour leur entrée, avec ses porteurs.", w: 2, h: 2, prix: 4000, couleur: "deco", role: "decoration", types: ["mariage", "fiancailles"] },
+  { id: "mur_fleurs", categorie: "decoration", nom: "Mur de fleurs", description: "Grand mur fleuri, parfait en fond de scène ou pour les photos.", w: 3, h: 1, prix: 6000, couleur: "fleurs", role: "decoration" },
+  { id: "candelabre", categorie: "lumiere", nom: "Candélabre", description: "Grand chandelier à bougies pour une lumière douce et élégante.", w: 1, h: 1, prix: 800, couleur: "deco", role: "eclairage" },
+  { id: "allee", categorie: "decoration", nom: "Allée d'entrée", description: "Tapis, bougies et fleurs pour accueillir vos invités ou l'entrée des mariés.", w: 1, h: 3, prix: 1800, couleur: "fleurs", role: "decoration" },
+  { id: "the", categorie: "gourmand", nom: "Service à thé marocain", description: "Table à thé, théières et pâtisseries marocaines, servis par notre équipe.", w: 2, h: 1, prix: 1500, prixParInvite: 15, couleur: "nappe", role: "convivial" },
 ];
 
 /** Option « centres de table » : posée sur toutes les tables, facturée par table. */
@@ -127,21 +138,28 @@ export const CENTRES_DE_TABLE = {
 /** Intitulés adaptés au type d'événement (ce qui n'est pas listé garde le nom du catalogue). */
 export const LIBELLES: Partial<Record<TypeEvenement, Partial<Record<TypeElement, { nom: string; description?: string }>>>> = {
   fiancailles: {
+    fauteuils: { nom: "Fauteuils des fiancés", description: "Deux fauteuils d'apparat sur une petite estrade fleurie, pour les fiancés." },
+    amaria: { nom: "Amaria des fiancés" },
     honneur: { nom: "Table des fiancés", description: "La table des fiancés et de leurs familles." },
     gateau: { nom: "Gâteau des fiançailles" },
   },
   anniversaire: {
+    fauteuils: { nom: "Fauteuils d'honneur", description: "Deux fauteuils d'apparat pour la personne fêtée et son invité(e)." },
     honneur: { nom: "Table des hôtes", description: "La table de la personne fêtée et de ses proches." },
     gateau: { nom: "Gâteau d'anniversaire", description: "Gâteau à étages et bougies." },
     arche: { nom: "Arche de ballons et fleurs" },
   },
   babyshower: {
+    fauteuils: { nom: "Fauteuil de la future maman", description: "Un fauteuil d'honneur fleuri pour la future maman et un pour son invitée." },
     honneur: { nom: "Table de la future maman", description: "Une table d'honneur douce pour la future maman et ses proches." },
     gateau: { nom: "Gâteau et douceurs" },
     piste: { nom: "Espace jeux", description: "Un espace dégagé pour les jeux et animations." },
     dj: { nom: "Ambiance musicale", description: "Sonorisation et playlist." },
   },
   pro: {
+    fauteuils: { nom: "Fauteuils VIP", description: "Deux fauteuils d'honneur pour vos invités de marque ou une interview." },
+    the: { nom: "Pause thé marocaine", description: "Thé à la menthe et pâtisseries marocaines pour vos pauses." },
+    allee: { nom: "Allée d'accueil", description: "Tapis, bougies et fleurs pour accueillir vos invités." },
     honneur: { nom: "Scène et pupitre", description: "Estrade, pupitre et écran pour les prises de parole." },
     arche: { nom: "Mur photocall", description: "Mur décoré à vos couleurs pour les photos." },
     gateau: { nom: "Pause sucrée", description: "Mignardises et gâteaux présentés sur table." },
@@ -189,14 +207,14 @@ export interface Modele {
 export const MODELES: Modele[] = [
   { id: "mariage-oriental", nom: "Mariage oriental", description: "200 invités en salle, bordeaux et or, bar à parfums et équipe de service.",
     reglages: { type: "mariage", invites: 200, budget: 250000, lieu: "salle", ambiance: "orientale" },
-    extras: ["nawar", "maitre_hotel", "serveur", "serveur", "serveur", "hotesse", "hotesse"] },
+    extras: ["amaria", "mur_fleurs", "the", "candelabre", "candelabre", "nawar", "maitre_hotel", "serveur", "serveur", "serveur", "hotesse", "hotesse"] },
   { id: "mariage-jardin", nom: "Mariage champêtre", description: "120 invités en jardin, ambiance romantique et guirlandes lumineuses.",
     reglages: { type: "mariage", invites: 120, budget: 160000, lieu: "jardin", ambiance: "romantique" },
-    extras: ["hotesse", "serveur", "serveur"] },
+    extras: ["allee", "candelabre", "candelabre", "hotesse", "serveur", "serveur"] },
   { id: "anniversaire-boheme", nom: "Anniversaire bohème", description: "40 invités sur une terrasse, lounge et photobooth.",
     reglages: { type: "anniversaire", invites: 40, budget: 50000, lieu: "terrasse", ambiance: "boheme" },
     extras: ["hotesse"] },
   { id: "soiree-entreprise", nom: "Soirée d'entreprise", description: "150 invités, scène, cocktail, hôtesses d'accueil et bar à parfums.",
     reglages: { type: "pro", invites: 150, budget: 200000, lieu: "salle", ambiance: "moderne" },
-    extras: ["nawar", "hotesse", "hotesse", "hotesse", "serveur", "serveur", "maitre_hotel"] },
+    extras: ["table_haute", "table_haute", "the", "nawar", "hotesse", "hotesse", "hotesse", "serveur", "serveur", "maitre_hotel"] },
 ];
