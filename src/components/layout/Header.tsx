@@ -13,7 +13,6 @@ const Header = () => {
 
   const navigation = [
     { name: t('nav.home'), href: "/" },
-    { name: t('nav.staffRegistration'), href: "/inscription-staff" },
     { name: t('nav.business'), href: "/devis-entreprise" },
     { name: t('nav.weddings'), href: "/devis-mariage" },
     { name: t('nav.about'), href: "/a-propos" },
