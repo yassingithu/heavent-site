@@ -1,0 +1,382 @@
+// Dessins SVG en vue isométrique 2D : sol, décor du lieu et chaque élément du catalogue.
+import { Fragment, ReactNode } from "react";
+import { Lieu, LIEUX, Palette, TypeEvenement } from "./config";
+import { Element, emprise } from "./logique";
+
+export const TW = 64; // largeur d'une case à l'écran
+export const TH = 32; // hauteur d'une case à l'écran
+
+/** Point de la grille (x, y) à la hauteur z → coordonnées écran (avant translation de la scène). */
+export const pt = (x: number, y: number, z = 0): [number, number] => [((x - y) * TW) / 2, ((x + y) * TH) / 2 - z];
+const pts = (l: [number, number][]) => l.map(([a, b]) => `${a.toFixed(1)},${b.toFixed(1)}`).join(" ");
+
+/** Assombrit (amt > 0) ou éclaircit (amt < 0) une couleur hexadécimale. */
+export function teinte(hex: string, amt: number) {
+  const n = parseInt(hex.replace("#", ""), 16);
+  const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(amt >= 0 ? v * (1 - amt) : v + (255 - v) * -amt));
+  return `#${c.map((v) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, "0")).join("")}`;
+}
+
+// ── Formes de base ──────────────────────────────────────────────────────────
+/** Parallélépipède posé sur la grille : x, y, largeur, profondeur, hauteur de départ, hauteur. */
+export function Boite({ x, y, w, h, z = 0, ht, c, contour = true }: { x: number; y: number; w: number; h: number; z?: number; ht: number; c: string; contour?: boolean }) {
+  const s = contour ? teinte(c, 0.35) : "none";
+  return (
+    <g strokeWidth={0.6} stroke={s} strokeLinejoin="round">
+      <polygon points={pts([pt(x, y + h, z), pt(x + w, y + h, z), pt(x + w, y + h, z + ht), pt(x, y + h, z + ht)])} fill={teinte(c, 0.12)} />
+      <polygon points={pts([pt(x + w, y, z), pt(x + w, y + h, z), pt(x + w, y + h, z + ht), pt(x + w, y, z + ht)])} fill={teinte(c, 0.24)} />
+      <polygon points={pts([pt(x, y, z + ht), pt(x + w, y, z + ht), pt(x + w, y + h, z + ht), pt(x, y + h, z + ht)])} fill={c} />
+    </g>
+  );
+}
+
+/** Cylindre (table ronde, gâteau, colonne) centré en (cx, cy), rayon r en cases. */
+export function Cylindre({ cx, cy, r, z = 0, ht, c, haut }: { cx: number; cy: number; r: number; z?: number; ht: number; c: string; haut?: string }) {
+  const [sx, sy] = pt(cx, cy, z);
+  const rx = (r * TW) / Math.SQRT2, ry = (r * TH) / Math.SQRT2;
+  const s = teinte(c, 0.35);
+  return (
+    <g strokeWidth={0.6} stroke={s}>
+      <path d={`M${sx - rx},${sy - ht} L${sx - rx},${sy} A${rx},${ry} 0 0 0 ${sx + rx},${sy} L${sx + rx},${sy - ht} Z`} fill={teinte(c, 0.14)} />
+      <ellipse cx={sx} cy={sy - ht} rx={rx} ry={ry} fill={haut ?? c} />
+    </g>
+  );
+}
+
+const Rond = ({ x, y, z, r, c, o = 1 }: { x: number; y: number; z: number; r: number; c: string; o?: number }) => {
+  const [sx, sy] = pt(x, y, z);
+  return <circle cx={sx} cy={sy} r={r} fill={c} opacity={o} />;
+};
+
+/** Bouquet : grappe de fleurs et de feuilles centrée en (x, y, z). */
+function Bouquet({ x, y, z, c, taille = 1 }: { x: number; y: number; z: number; c: string; taille?: number }) {
+  const [sx, sy] = pt(x, y, z);
+  const f = (dx: number, dy: number, r: number, col: string, k: number) => <circle key={k} cx={sx + dx * taille} cy={sy + dy * taille} r={r * taille} fill={col} stroke={teinte(col, 0.25)} strokeWidth={0.5} />;
+  const vert = "#7E9A6A";
+  return (
+    <g>
+      {[[-9, 2, 4.5], [9, 1, 4.5], [0, 5, 4], [-4, -6, 4], [6, -5, 4]].map(([dx, dy, r], i) => <ellipse key={`v${i}`} cx={sx + dx * taille} cy={sy + dy * taille} rx={r * taille} ry={r * 0.6 * taille} fill={vert} />)}
+      {[[-5, -1, 5], [4, -2, 5.5], [0, -7, 5], [-1, 3, 4.5], [7, 3, 4], [-8, -5, 3.5]].map(([dx, dy, r], i) => f(dx, dy, r, i % 3 === 2 ? teinte(c, -0.35) : i % 2 ? teinte(c, 0.08) : c, i))}
+    </g>
+  );
+}
+
+function Chaise({ x, y, angle, c }: { x: number; y: number; angle: number; c: string }) {
+  // Assise + dossier tourné à l'opposé de la table
+  const bx = x + Math.cos(angle) * 0.13, by = y + Math.sin(angle) * 0.13;
+  return (
+    <g>
+      <Boite x={x - 0.12} y={y - 0.12} w={0.24} h={0.24} ht={9} c={c} />
+      <Boite x={bx - 0.07} y={by - 0.07} w={0.14} h={0.14} z={9} ht={11} c={teinte(c, 0.05)} />
+    </g>
+  );
+}
+
+// ── Sol et décor du lieu ────────────────────────────────────────────────────
+export function Sol({ cols, rows, lieu }: { cols: number; rows: number; lieu: Lieu }) {
+  const L = LIEUX.find((l) => l.id === lieu)!;
+  const cases: ReactNode[] = [];
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    const c = lieu === "salle" ? L.sol[(x + Math.floor(y / 2)) % 2] : L.sol[(x + y) % 2];
+    cases.push(<polygon key={`${x}-${y}`} points={pts([pt(x, y), pt(x + 1, y), pt(x + 1, y + 1), pt(x, y + 1)])} fill={c} stroke={teinte(c, 0.06)} strokeWidth={0.5} />);
+  }
+  const ep = 12; // épaisseur du socle
+  return (
+    <g>
+      <polygon points={pts([pt(0, rows), pt(cols, rows), pt(cols, rows, -ep), pt(0, rows, -ep)])} fill={teinte(L.bord, 0.1)} />
+      <polygon points={pts([pt(cols, 0), pt(cols, rows), pt(cols, rows, -ep), pt(cols, 0, -ep)])} fill={teinte(L.bord, 0.25)} />
+      {cases}
+    </g>
+  );
+}
+
+function Arbre({ x, y, k }: { x: number; y: number; k: number }) {
+  const [sx, sy] = pt(x, y);
+  const v = ["#8FAE77", "#7FA06A", "#9DBA84"][k % 3];
+  return (
+    <g>
+      <rect x={sx - 3} y={sy - 40} width={6} height={40} fill="#8B6B4E" />
+      <circle cx={sx} cy={sy - 58} r={24} fill={v} /><circle cx={sx - 14} cy={sy - 46} r={16} fill={teinte(v, 0.08)} /><circle cx={sx + 14} cy={sy - 48} r={17} fill={teinte(v, -0.12)} />
+    </g>
+  );
+}
+
+/** Murs, arbres ou garde-corps derrière la scène, selon le lieu. */
+export function DecorArriere({ cols, rows, lieu }: { cols: number; rows: number; lieu: Lieu }) {
+  if (lieu === "salle") {
+    const H = 120;
+    const fenetres = (n: number, axe: "x" | "y") => Array.from({ length: Math.floor(n / 3) }, (_, i) => {
+      const a = 1 + i * 3;
+      const p = axe === "x" ? [pt(a, 0, 26), pt(a + 1.2, 0, 26), pt(a + 1.2, 0, 96), pt(a, 0, 96)] : [pt(0, a, 26), pt(0, a + 1.2, 26), pt(0, a + 1.2, 96), pt(0, a, 96)];
+      return <polygon key={`${axe}${i}`} points={pts(p as [number, number][])} fill="#DCE8EF" stroke="#C9B48A" strokeWidth={2} />;
+    });
+    return (
+      <g>
+        <polygon points={pts([pt(0, 0), pt(cols, 0), pt(cols, 0, H), pt(0, 0, H)])} fill="#F5EEE1" stroke="#E2D5BC" />
+        <polygon points={pts([pt(0, 0), pt(0, rows), pt(0, rows, H), pt(0, 0, H)])} fill="#EDE3D1" stroke="#E2D5BC" />
+        {fenetres(cols, "x")}{fenetres(rows, "y")}
+        <polygon points={pts([pt(0, 0, H), pt(cols, 0, H), pt(cols, 0, H - 8), pt(0, 0, H - 8)])} fill="#E3D3B1" />
+        <polygon points={pts([pt(0, 0, H), pt(0, rows, H), pt(0, rows, H - 8), pt(0, 0, H - 8)])} fill="#D9C8A4" />
+      </g>
+    );
+  }
+  if (lieu === "jardin") {
+    const arbres: [number, number][] = [[-1.2, -1.2], [cols * 0.35, -1.6], [cols * 0.7, -1.4], [cols + 0.2, -1.3], [-1.6, rows * 0.4], [-1.4, rows * 0.8]];
+    return <g>{arbres.map(([x, y], i) => <Arbre key={i} x={x} y={y} k={i} />)}</g>;
+  }
+  // terrasse : garde-corps et plantes en pot
+  const poteaux = (n: number, axe: "x" | "y") => Array.from({ length: n + 1 }, (_, i) => {
+    const [a, b] = axe === "x" ? pt(i, 0) : pt(0, i);
+    return <line key={`${axe}${i}`} x1={a} y1={b} x2={a} y2={b - 30} stroke="#BFB3A0" strokeWidth={2} />;
+  });
+  const pot = (x: number, y: number) => (
+    <g key={`${x}${y}`}><Cylindre cx={x} cy={y} r={0.22} ht={14} c="#C98261" /><Bouquet x={x} y={y} z={22} c="#9DAE89" taille={1.2} /></g>
+  );
+  return (
+    <g>
+      {poteaux(cols, "x")}{poteaux(rows, "y")}
+      <polyline points={pts([pt(0, rows, 30), pt(0, 0, 30), pt(cols, 0, 30)])} fill="none" stroke="#A89A84" strokeWidth={3} />
+      {pot(0.3, 0.3)}{pot(cols - 0.3, 0.3)}{pot(0.3, rows - 0.3)}
+    </g>
+  );
+}
+
+// ── Les éléments ────────────────────────────────────────────────────────────
+export interface ContexteDessin { palette: Palette; type: TypeEvenement; centres: { actif: boolean; couleur?: string }; couleur?: string }
+
+/** Coordonnées locales (u le long du grand côté, v en profondeur) → grille, selon la rotation. */
+function local(e: Element) {
+  const { w, h } = emprise(e);
+  const t = !!e.tourne;
+  return {
+    L: w, P: h, t,
+    p: (u: number, v: number): [number, number] => (t ? [e.x + v, e.y + u] : [e.x + u, e.y + v]),
+    r: (u: number, v: number, du: number, dv: number) => (t ? { x: e.x + v, y: e.y + u, w: dv, h: du } : { x: e.x + u, y: e.y + v, w: du, h: dv }),
+  };
+}
+
+export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
+  const { palette } = ctx;
+  const coul = ctx.couleur ?? palette.nappe;
+  const chaise = ctx.palette.accent === "#2B2B2B" ? "#F2F2F2" : teinte(palette.deco, -0.45);
+  const { w, h } = emprise(e);
+  const cx = e.x + w / 2, cy = e.y + h / 2;
+
+  switch (e.type) {
+    case "table_ronde": {
+      const n = 10, R = 0.8;
+      const chaises = Array.from({ length: n }, (_, i) => {
+        const a = (i / n) * Math.PI * 2;
+        return { x: cx + Math.cos(a) * R, y: cy + Math.sin(a) * R, a, avant: Math.cos(a) + Math.sin(a) > 0 };
+      });
+      const centre = ctx.centres.actif;
+      return (
+        <g>
+          {chaises.filter((c) => !c.avant).map((c, i) => <Chaise key={`a${i}`} x={c.x} y={c.y} angle={c.a} c={chaise} />)}
+          <Cylindre cx={cx} cy={cy} r={0.56} ht={17} c={coul} haut={teinte(coul, -0.15)} />
+          {Array.from({ length: 8 }, (_, i) => { const a = (i / 8) * Math.PI * 2; return <Rond key={`p${i}`} x={cx + Math.cos(a) * 0.38} y={cy + Math.sin(a) * 0.38} z={17} r={2.2} c="#FFFFFF" o={0.9} />; })}
+          {centre && <><Cylindre cx={cx} cy={cy} r={0.07} z={17} ht={5} c="#E9E4D8" /><Bouquet x={cx} y={cy} z={27} c={ctx.centres.couleur ?? palette.fleurs} taille={0.85} /></>}
+          {chaises.filter((c) => c.avant).map((c, i) => <Chaise key={`b${i}`} x={c.x} y={c.y} angle={c.a} c={chaise} />)}
+        </g>
+      );
+    }
+    case "table_rect": {
+      const l = local(e);
+      const arriere = [0.4, 1.0, 1.6].map((u) => l.p(u, 0.08));
+      const avant = [0.4, 1.0, 1.6].map((u) => l.p(u, 0.92));
+      const ang = (dir: number) => (l.t ? (dir < 0 ? Math.PI : 0) : dir < 0 ? -Math.PI / 2 : Math.PI / 2);
+      const t = l.r(0.1, 0.24, 1.8, 0.52);
+      const [mx, my] = l.p(1, 0.5);
+      return (
+        <g>
+          {arriere.map(([x, y], i) => <Chaise key={`a${i}`} x={x} y={y} angle={ang(-1)} c={chaise} />)}
+          <Boite {...t} ht={16} c={coul} />
+          {ctx.centres.actif && <Bouquet x={mx} y={my} z={22} c={ctx.centres.couleur ?? palette.fleurs} taille={0.75} />}
+          {avant.map(([x, y], i) => <Chaise key={`b${i}`} x={x} y={y} angle={ang(1)} c={chaise} />)}
+        </g>
+      );
+    }
+    case "honneur": {
+      const l = local(e);
+      if (ctx.type === "pro") {
+        const [px, py] = l.p(2.5, 0.75);
+        return (
+          <g>
+            <Boite {...l.r(0, 0, l.L, l.P)} ht={8} c="#6E5B48" />
+            <Boite {...l.r(0.3, 0.05, 2.4, 0.08)} z={8} ht={64} c="#2F3540" />
+            <Boite {...l.r(0.38, 0.13, 2.24, 0.01)} z={16} ht={48} c="#9CC3DA" contour={false} />
+            <Boite x={px - 0.15} y={py - 0.12} w={0.3} h={0.24} z={8} ht={30} c={palette.deco} />
+          </g>
+        );
+      }
+      const nb = ctx.type === "babyshower" ? 4 : 6;
+      const sieges = Array.from({ length: nb }, (_, i) => l.p(0.3 + (2.4 / (nb - 1)) * i, 0.22));
+      const fleurs = Array.from({ length: 7 }, (_, i) => l.p(0.2 + i * 0.43, 0.92));
+      return (
+        <g>
+          <Boite {...l.r(0.05, 0, 2.9, 0.06)} ht={52} c={teinte(palette.deco, -0.55)} />
+          {sieges.map(([x, y], i) => <Chaise key={i} x={x} y={y} angle={l.t ? Math.PI : -Math.PI / 2} c={teinte(chaise, -0.2)} />)}
+          <Boite {...l.r(0.1, 0.42, 2.8, 0.5)} ht={19} c={coul} />
+          {fleurs.map(([x, y], i) => <Bouquet key={i} x={x} y={y} z={19} c={ctx.couleur && e.type === "honneur" ? palette.fleurs : palette.fleurs} taille={0.55} />)}
+        </g>
+      );
+    }
+    case "arche": {
+      const l = local(e);
+      const fl = ctx.couleur ?? palette.fleurs;
+      if (ctx.type === "pro") {
+        return (
+          <g>
+            <Boite {...l.r(0.1, 0.4, 1.8, 0.12)} ht={72} c={teinte(palette.deco, -0.3)} />
+            {Array.from({ length: 4 }, (_, i) => Array.from({ length: 3 }, (_, j) => { const [x, y] = l.p(0.4 + i * 0.4, 0.52); return <Rond key={`${i}${j}`} x={x} y={y} z={18 + j * 18} r={3} c={teinte(palette.deco, 0.3)} o={0.8} />; }))}
+            <Bouquet x={l.p(0.15, 0.6)[0]} y={l.p(0.15, 0.6)[1]} z={10} c={fl} /><Bouquet x={l.p(1.85, 0.6)[0]} y={l.p(1.85, 0.6)[1]} z={10} c={fl} />
+          </g>
+        );
+      }
+      const [ax, ay] = l.p(0.25, 0.5), [bx, by] = l.p(1.75, 0.5);
+      const A = pt(ax, ay, 78), B = pt(bx, by, 78);
+      const C: [number, number] = [(A[0] + B[0]) / 2, Math.min(A[1], B[1]) - 52];
+      const bez = (t: number): [number, number] => [(1 - t) ** 2 * A[0] + 2 * (1 - t) * t * C[0] + t * t * B[0], (1 - t) ** 2 * A[1] + 2 * (1 - t) * t * C[1] + t * t * B[1]];
+      const poteau = palette.accent === "#2B2B2B" ? "#2B2B2B" : "#F4EFE6";
+      return (
+        <g>
+          <Boite x={ax - 0.06} y={ay - 0.06} w={0.12} h={0.12} ht={78} c={poteau} />
+          <Boite x={bx - 0.06} y={by - 0.06} w={0.12} h={0.12} ht={78} c={poteau} />
+          <path d={`M${A[0]},${A[1]} Q${C[0]},${C[1]} ${B[0]},${B[1]}`} fill="none" stroke={poteau} strokeWidth={6} strokeLinecap="round" />
+          {Array.from({ length: 11 }, (_, i) => { const [x, y] = bez(i / 10); return <g key={i}><circle cx={x} cy={y} r={i % 2 ? 5 : 7} fill={i % 3 === 1 ? teinte(fl, -0.35) : fl} stroke={teinte(fl, 0.25)} strokeWidth={0.5} /><ellipse cx={x + 5} cy={y + 4} rx={4} ry={2.5} fill="#7E9A6A" /></g>; })}
+          <Bouquet x={ax} y={ay} z={6} c={fl} taille={1.1} /><Bouquet x={bx} y={by} z={6} c={fl} taille={1.1} />
+        </g>
+      );
+    }
+    case "fleurs": {
+      const col = palette.accent === "#2B2B2B" ? "#2B2B2B" : "#F4EFE6";
+      return <g><Cylindre cx={cx} cy={cy} r={0.16} ht={36} c={col} /><Bouquet x={cx} y={cy} z={46} c={ctx.couleur ?? palette.fleurs} taille={1.35} /></g>;
+    }
+    case "guirlandes": {
+      const poteau = ctx.couleur ?? palette.deco;
+      const [sx, sy] = pt(cx, cy, 92);
+      const fils = [[-46, 30], [46, 30], [-6, 52]];
+      return (
+        <g>
+          <ellipse cx={pt(cx, cy)[0]} cy={pt(cx, cy)[1]} rx={40} ry={20} fill="#FFE7A3" opacity={0.35} />
+          <Boite x={cx - 0.04} y={cy - 0.04} w={0.08} h={0.08} ht={92} c={poteau} />
+          {fils.map(([dx, dy], i) => {
+            const ex = sx + dx, ey = sy + dy, mxx = sx + dx / 2, myy = sy + dy / 2 + 14;
+            return (
+              <g key={i}>
+                <path d={`M${sx},${sy} Q${mxx},${myy} ${ex},${ey}`} fill="none" stroke="#5B4B3A" strokeWidth={0.8} />
+                {Array.from({ length: 6 }, (_, k) => { const t = (k + 1) / 7; const x = (1 - t) ** 2 * sx + 2 * (1 - t) * t * mxx + t * t * ex; const y = (1 - t) ** 2 * sy + 2 * (1 - t) * t * myy + t * t * ey; return <g key={k}><circle cx={x} cy={y + 2} r={4.5} fill="#FFE7A3" opacity={0.45} /><circle cx={x} cy={y + 2} r={2.2} fill="#FFF3C9" stroke="#E6B84E" strokeWidth={0.5} /></g>; })}
+              </g>
+            );
+          })}
+        </g>
+      );
+    }
+    case "piste": {
+      const [a, b] = ctx.couleur ? [teinte(ctx.couleur, -0.6), ctx.couleur] : palette.piste;
+      const n = 6, s = w / n;
+      const dalles: ReactNode[] = [];
+      for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+        const x = e.x + i * s, y = e.y + j * s;
+        dalles.push(<polygon key={`${i}-${j}`} points={pts([pt(x, y, 4), pt(x + s, y, 4), pt(x + s, y + s, 4), pt(x, y + s, 4)])} fill={(i + j) % 2 ? b : a} stroke={teinte(b, 0.2)} strokeWidth={0.4} />);
+      }
+      return (
+        <g>
+          <Boite x={e.x} y={e.y} w={w} h={h} ht={4} c={teinte(b, 0.15)} />
+          {dalles}
+          {[[0.7, 0.8], [2.1, 1.3], [1.4, 2.3]].map(([u, v], i) => { const [x, y] = pt(e.x + u, e.y + v, 4); return <path key={i} d={`M${x},${y - 5} L${x + 1.6},${y - 1.6} L${x + 5},${y} L${x + 1.6},${y + 1.6} L${x},${y + 5} L${x - 1.6},${y + 1.6} L${x - 5},${y} L${x - 1.6},${y - 1.6} Z`} fill="#FFFFFF" opacity={0.85} />; })}
+        </g>
+      );
+    }
+    case "dj": {
+      const l = local(e);
+      const accent = ctx.couleur ?? palette.deco;
+      const [d1x, d1y] = l.p(0.75, 0.6), [d2x, d2y] = l.p(1.25, 0.6);
+      return (
+        <g>
+          <Boite {...l.r(0.02, 0.05, 0.32, 0.32)} ht={50} c="#2A2A2A" />
+          <Boite {...l.r(1.66, 0.05, 0.32, 0.32)} ht={50} c="#2A2A2A" />
+          <Boite {...l.r(0.38, 0.35, 1.24, 0.55)} ht={30} c="#333333" />
+          <Boite {...l.r(0.38, 0.86, 1.24, 0.04)} z={8} ht={10} c={accent} contour={false} />
+          <Cylindre cx={d1x} cy={d1y} r={0.17} z={30} ht={2} c="#1B1B1B" haut="#555" />
+          <Cylindre cx={d2x} cy={d2y} r={0.17} z={30} ht={2} c="#1B1B1B" haut="#555" />
+          <Rond x={d1x} y={d1y} z={32} r={2} c="#D9D9D9" /><Rond x={d2x} y={d2y} z={32} r={2} c="#D9D9D9" />
+        </g>
+      );
+    }
+    case "buffet": {
+      const l = local(e);
+      const plats = [0.5, 1.5, 2.5].map((u) => l.p(u, 0.55));
+      const mets = ["#D9A441", "#9DAE89", "#C9705A"];
+      return (
+        <g>
+          <Boite {...l.r(0.06, 0.22, 2.88, 0.62)} ht={17} c={coul} />
+          {plats.map(([x, y], i) => <g key={i}><Cylindre cx={x} cy={y} r={0.2} z={17} ht={6} c="#CFCFCF" haut="#EDEDED" /><Rond x={x} y={y} z={24} r={5} c={mets[i]} o={0.9} /></g>)}
+        </g>
+      );
+    }
+    case "bar": {
+      const l = local(e);
+      const bouteilles = Array.from({ length: 7 }, (_, i) => l.p(0.25 + i * 0.25, 0.18));
+      const verres = Array.from({ length: 4 }, (_, i) => l.p(0.4 + i * 0.4, 0.78));
+      const cb = ["#7A9A6A", "#C98261", "#D9A441", "#9CC3DA", "#B05A6A", "#7A9A6A", "#D9A441"];
+      return (
+        <g>
+          <Boite {...l.r(0.05, 0.04, 1.9, 0.18)} ht={44} c="#7A5C43" />
+          {bouteilles.map(([x, y], i) => { const [sx, sy] = pt(x, y, 44); return <rect key={i} x={sx - 2} y={sy - 13} width={4} height={13} rx={1.5} fill={cb[i]} />; })}
+          <Boite {...l.r(0.05, 0.42, 1.9, 0.5)} ht={30} c="#8A6A4F" />
+          <Boite {...l.r(0.02, 0.4, 1.96, 0.54)} z={30} ht={2} c="#D8C3A1" />
+          {verres.map(([x, y], i) => { const [sx, sy] = pt(x, y, 32); return <path key={i} d={`M${sx - 2.5},${sy - 7} L${sx + 2.5},${sy - 7} L${sx + 1.5},${sy} L${sx - 1.5},${sy} Z`} fill="#E8F1F5" stroke="#9FB7C4" strokeWidth={0.5} />; })}
+        </g>
+      );
+    }
+    case "photobooth": {
+      const l = local(e);
+      const fond = ctx.couleur ?? palette.fleurs;
+      const [tx, ty] = l.p(1, 0.85);
+      const [hx, hy] = pt(tx, ty, 34);
+      return (
+        <g>
+          <Boite {...l.r(0.1, 0.05, 1.8, 0.1)} ht={66} c={teinte(fond, -0.25)} />
+          {Array.from({ length: 5 }, (_, i) => { const [x, y] = l.p(0.3 + i * 0.35, 0.16); return <Bouquet key={i} x={x} y={y} z={46 + (i % 2) * 10} c={fond} taille={0.6} />; })}
+          {[-7, 0, 7].map((dx, i) => { const [bx, by] = pt(tx, ty); return <line key={i} x1={hx} y1={hy} x2={bx + dx} y2={by + (i === 1 ? -3 : 3)} stroke="#3A3A3A" strokeWidth={1.2} />; })}
+          <rect x={hx - 7} y={hy - 9} width={14} height={9} rx={2} fill="#2A2A2A" /><circle cx={hx} cy={hy - 4.5} r={2.6} fill="#8FB3C9" />
+        </g>
+      );
+    }
+    case "lounge": {
+      const c = ctx.couleur ?? palette.deco;
+      const tissu = teinte(c, -0.25);
+      return (
+        <g>
+          <Boite x={e.x + 0.1} y={e.y + 0.08} w={1.8} h={0.14} ht={26} c={tissu} />
+          <Boite x={e.x + 0.1} y={e.y + 0.08} w={0.14} h={1.5} ht={26} c={tissu} />
+          <Boite x={e.x + 0.24} y={e.y + 0.22} w={1.66} h={0.42} ht={12} c={teinte(tissu, -0.15)} />
+          <Boite x={e.x + 0.24} y={e.y + 0.64} w={0.42} h={0.94} ht={12} c={teinte(tissu, -0.15)} />
+          {[[0.55, 0.3], [1.1, 0.3], [0.32, 1.0]].map(([u, v], i) => <Boite key={i} x={e.x + u} y={e.y + v} w={0.28} h={0.18} z={12} ht={9} c={teinte(palette.fleurs, -0.1)} />)}
+          <Cylindre cx={e.x + 1.25} cy={e.y + 1.2} r={0.3} ht={10} c="#B08E6A" />
+          <Cylindre cx={e.x + 1.75} cy={e.y + 1.75} r={0.17} ht={10} c={tissu} />
+        </g>
+      );
+    }
+    case "gateau": {
+      const ruban = ctx.couleur ?? palette.fleurs;
+      const blanc = "#FFFDF7";
+      return (
+        <g>
+          <Cylindre cx={cx} cy={cy} r={0.42} ht={16} c={palette.nappe} haut={teinte(palette.nappe, -0.15)} />
+          <Cylindre cx={cx} cy={cy} r={0.27} z={16} ht={13} c={blanc} />
+          <Cylindre cx={cx} cy={cy} r={0.27} z={17} ht={2} c={ruban} haut={blanc} />
+          <Cylindre cx={cx} cy={cy} r={0.2} z={29} ht={12} c={blanc} />
+          <Cylindre cx={cx} cy={cy} r={0.2} z={30} ht={2} c={ruban} haut={blanc} />
+          <Cylindre cx={cx} cy={cy} r={0.13} z={41} ht={10} c={blanc} />
+          <Bouquet x={cx} y={cy} z={55} c={ruban} taille={0.55} />
+        </g>
+      );
+    }
+  }
+  return <Fragment />;
+}
+
+/** Contour de l'emprise au sol (sélection, aperçu de placement). */
+export const contourEmprise = (x: number, y: number, w: number, h: number) => pts([pt(x, y), pt(x + w, y), pt(x + w, y + h), pt(x, y + h)]);

@@ -15,6 +15,7 @@ const CATEGORIES = [
   { value: "mariage", label: "Mariage" },
   { value: "evenementiel", label: "Événementiel" },
   { value: "logistique", label: "Logistique" },
+  { value: "decoration", label: "Décoration et mobilier" },
   { value: "autre", label: "Autre" },
 ];
 
@@ -78,7 +79,10 @@ export default function CataloguePrestations({ items, devise, onChange }: { item
                     <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </TableCell>
-                <TableCell><Input value={val(p, "designation")} onChange={(e) => edit(p.id, { designation: e.target.value })} /></TableCell>
+                <TableCell>
+                  <Input value={val(p, "designation")} onChange={(e) => edit(p.id, { designation: e.target.value })} />
+                  {(p as any).jeu_element && <span className="mt-1 inline-block text-[10px] rounded-full bg-[#F4E9CF] text-[#7A5F1E] px-2 py-0.5" title="Ce prix est utilisé par le jeu « Crée ton événement de rêve »">Prix utilisé par le jeu</span>}
+                </TableCell>
                 <TableCell>
                   <Select value={val(p, "unite")} onValueChange={(v) => maj(p.id, { unite: v })}>
                     <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>

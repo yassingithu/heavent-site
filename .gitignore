@@ -27,3 +27,5 @@ desktop/dist
 rapport-audit.md
 rapport-beta.md
 beta-captures
+tests/jeu/.logique.test.mjs
+jeu-captures/

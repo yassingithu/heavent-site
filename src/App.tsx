@@ -22,6 +22,7 @@ const StaffDashboard = lazy(() => import("./pages/StaffDashboard"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const MentionsLegales = lazy(() => import("./pages/MentionsLegales"));
+const CreeTonEvenement = lazy(() => import("./pages/CreeTonEvenement"));
 import RetourEnHaut from "./components/RetourEnHaut";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => {
               <Route path="/contact" element={<Contact />} />
               <Route path="/politique-confidentialite" element={<PrivacyPolicy />} />
               <Route path="/mentions-legales" element={<MentionsLegales />} />
+              <Route path="/cree-ton-evenement" element={<CreeTonEvenement />} />
               <Route path="/rgpd" element={<Navigate to="/politique-confidentialite" replace />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin-auth" element={<AdminAuth />} />
