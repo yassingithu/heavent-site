@@ -63,11 +63,33 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
           employeur_signe_le: t, employeur_signataire: "Imane CHAIGARI, CEO — Heavent Agency SARL" });
         return route.fulfill({ json: { success: true } });
       }
+      if (nom === "envoyer-devis") {
+        const d = base.devis.find((x) => x.id === corps.devisId);
+        if (!d?.client_email) return route.fulfill({ status: 400, json: { error: "Ajoutez l'e-mail du client dans le devis avant de l'envoyer." } });
+        Object.assign(d, { statut: d.statut === "brouillon" ? "envoye" : d.statut, date_envoi: new Date().toISOString(), relances: 0 });
+        return route.fulfill({ json: { success: true, lien: `https://heaventagency.com/mon-devis/${d.lien_token}` } });
+      }
+      if (nom === "signer-devis") {
+        const d = base.devis.find((x) => x.lien_token === corps.token);
+        if (!d) return route.fulfill({ status: 404, json: { error: "Ce devis n'est plus disponible." } });
+        if (d.signe_le) return route.fulfill({ status: 409, json: { error: "Ce devis a déjà été signé." } });
+        if (!corps.accepte || String(corps.nom ?? "").trim().length < 3 || String(corps.image ?? "").length < 1500)
+          return route.fulfill({ status: 400, json: { error: "Signature incomplète." } });
+        Object.assign(d, { signe_le: new Date().toISOString(), signature_nom: corps.nom, signature_image: corps.image, statut: "accepte" });
+        return route.fulfill({ json: { success: true } });
+      }
       if (nom === "admin-change-password" && corps.action === "ban") base.staff.filter((s) => s.email === corps.userEmail).forEach((s) => { s.banni = true; });
       return route.fulfill({ json: { success: true, cree: !corps.action } });
     }
     if (url.pathname.includes("/rpc/is_admin")) return route.fulfill({ json: admin });
     if (url.pathname.includes("/rpc/generer_fiches_paie")) return route.fulfill({ json: genererFiches(base) });
+    if (url.pathname.includes("/rpc/devis_public")) {
+      const { p_token } = JSON.parse(req.postData() || "{}");
+      const d = base.devis.find((x) => x.lien_token === p_token && x.statut !== "annule");
+      if (!d) return route.fulfill({ json: null });
+      const { notes_internes, ...visible } = d;
+      return route.fulfill({ json: { devis: visible, lignes: base.devis_lignes.filter((l) => l.devis_id === d.id).sort((a, b) => a.ordre - b.ordre), agence: base.parametres_agence[0] } });
+    }
     if (url.pathname.includes("/rpc/")) return route.fulfill({ json: null });
     const m = url.pathname.match(/\/rest\/v1\/(\w+)/); if (!m) return route.fulfill({ json: {} });
     const t = m[1]; base[t] ??= []; const params = [...url.searchParams.entries()]; const select = url.searchParams.get("select");
@@ -91,7 +113,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     if (req.method() === "POST") {
       const corps = [].concat(JSON.parse(req.postData()));
       const ins = corps.map((b) => ({ id: t + Math.random().toString(36).slice(2), statut: t === "affectations" ? "confirme" : t === "remarques_contrat" ? "nouvelle" : b.statut ?? "brouillon", created_at: new Date().toISOString(), ...b }));
-      if (t === "devis") ins.forEach((d) => { d.numero = "DEV-2026-0099"; d.date_validite = "2026-11-12"; d.total_ttc = 0; });
+      if (t === "devis") ins.forEach((d) => { d.numero = "DEV-2026-0099"; d.date_validite = "2099-11-12"; d.total_ttc = 0; d.lien_token = crypto.randomUUID(); d.relances = 0; });
       base[t].push(...ins);
       return route.fulfill({ status: 201, json: unique ? ins[0] : ins });
     }

@@ -25,6 +25,7 @@ const CHAMPS: { key: keyof Parametres; label: string; type?: string }[] = [
   { key: "taux_tva", label: "TVA par défaut (%)", type: "number" },
   { key: "validite_jours", label: "Validité d'un devis (jours)", type: "number" },
   { key: "devise", label: "Devise" },
+  { key: "lien_avis_google", label: "Lien pour laisser un avis Google (envoyé aux clients le lendemain de leur événement)" },
 ];
 
 export default function ParametresAgence({ value, onSaved }: { value: Parametres | null; onSaved: () => void }) {

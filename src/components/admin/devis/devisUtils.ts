@@ -62,6 +62,8 @@ export interface Parametres {
   cgv?: string | null;
   cgv_nawar?: string | null;
   conditions_contrat?: string | null;
+  /** Lien de la fiche Google : envoyé aux clients le lendemain de leur événement pour laisser un avis */
+  lien_avis_google?: string | null;
 }
 
 export interface DevisForm {
@@ -92,7 +94,41 @@ export interface DevisForm {
   conditions: string;
   notes_internes: string;
   lignes: Ligne[];
+  /** Lien secret de consultation / signature en ligne par le client (/mon-devis/…) */
+  lien_token?: string | null;
+  date_envoi?: string | null;
+  relances?: number;
+  /** Signature du client (« Bon pour accord » en ligne) */
+  signe_le?: string | null;
+  signature_nom?: string | null;
+  signature_image?: string | null;
 }
+
+/** Ligne de la base → formulaire de devis (admin et page client). */
+export function devisDepuisBase(d: any, lignes: any[]): DevisForm {
+  return {
+    id: d.id, numero: d.numero, type: d.type, marque: d.marque ?? "heavent",
+    demande_entreprise_id: d.demande_entreprise_id ?? null, demande_mariage_id: d.demande_mariage_id ?? null,
+    client_nom: d.client_nom ?? "", client_societe: d.client_societe ?? "", client_email: d.client_email ?? "",
+    client_telephone: d.client_telephone ?? "", client_adresse: d.client_adresse ?? "", client_ice: d.client_ice ?? "",
+    titre: d.titre ?? "", date_evenement: d.date_evenement ?? "", date_fin_evenement: d.date_fin_evenement ?? "",
+    lieu: d.lieu ?? "", nb_personnes: d.nb_personnes ? String(d.nb_personnes) : "",
+    remise_globale_pct: Number(d.remise_globale_pct) || 0, taux_tva: Number(d.taux_tva) || 0, acompte_pct: Number(d.acompte_pct) || 0,
+    statut: d.statut, date_emission: d.date_emission ?? today(), date_validite: d.date_validite ?? "",
+    conditions: d.conditions ?? "", notes_internes: d.notes_internes ?? "",
+    lignes: (lignes ?? []).map((l) => ({
+      designation: l.designation, description: l.description ?? "", quantite: Number(l.quantite),
+      duree: Number(l.duree), unite: l.unite as Ligne["unite"], prix_unitaire: Number(l.prix_unitaire), remise_pct: Number(l.remise_pct) || 0,
+    })),
+    lien_token: d.lien_token ?? null, date_envoi: d.date_envoi ?? null, relances: d.relances ?? 0,
+    signe_le: d.signe_le ?? null, signature_nom: d.signature_nom ?? null, signature_image: d.signature_image ?? null,
+  };
+}
+
+export const lienClientDevis = (token?: string | null) => (token ? `https://heaventagency.com/mon-devis/${token}` : "");
+
+export const dateHeureFr = (iso?: string | null) =>
+  iso ? new Date(iso).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
 
 export const r2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -325,9 +361,13 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
       ${adresse ? `<div>${esc(adresse)}</div>` : ""}
       <div>${[p?.telephone, p?.email].filter(Boolean).map(esc).join(" · ")}</div>
     </div>
-    <div class="client">
+    <div class="client"${d.signe_le ? ' style="border-style:solid;border-color:#C8B560"' : ""}>
       <div class="etiquette">Bon pour accord</div>
-      <div>Date, cachet et signature du client,<br>précédés de la mention « Bon pour accord ».</div>
+      ${d.signe_le && d.signature_image && /^data:image\/png;base64,/.test(d.signature_image)
+        ? `<img src="${d.signature_image}" alt="Signature du client" style="height:54px;display:block;margin:4px 0 2px">
+           <div style="font-weight:600;color:#141414">${esc(d.signature_nom)}</div>
+           <div style="font-size:9.5px;color:#777">« Bon pour accord » — signé électroniquement le ${esc(dateHeureFr(d.signe_le))}</div>`
+        : `<div>Date, cachet et signature du client,<br>précédés de la mention « Bon pour accord ».</div>`}
     </div>
   </div>
 </div>
@@ -338,7 +378,7 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
   <div class="corps">
     <div class="intro">Les présentes conditions font partie intégrante du devis. Leur acceptation résulte de la signature du devis avec la mention « Bon pour accord ».</div>
     <div class="cols">${articlesHtml(d.marque === "nawar" ? (p?.cgv_nawar?.trim() ? p.cgv_nawar : CGV_NAWAR_DEFAUT) : (p?.cgv?.trim() ? p.cgv : CGV_DEFAUT), esc)}</div>
-    <div class="accord">Paraphe du client : ……………………</div>
+    <div class="accord">${d.signe_le ? `Conditions acceptées en ligne par ${esc(d.signature_nom)} le ${esc(dateHeureFr(d.signe_le))}, avec la signature du devis.` : "Paraphe du client : ……………………"}</div>
   </div>
   <div class="pied"><b>${esc((p?.raison_sociale ?? "Heavent People Agency").toUpperCase())}</b>${adresse ? `${sep}${esc(adresse)}` : ""}<br>${[p?.rc && `RC ${esc(p.rc)}`, p?.ice && `ICE ${esc(p.ice)}`, p?.if_fiscal && `IF ${esc(p.if_fiscal)}`, p?.patente && `Patente ${esc(p.patente)}`].filter(Boolean).join(sep)}</div>
 </div></div>`;

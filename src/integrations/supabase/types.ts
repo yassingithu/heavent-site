@@ -232,6 +232,7 @@ export type Database = {
       }
       devis_mariage: {
         Row: {
+          configuration: Json | null
           created_at: string | null
           date_envoi_devis: string | null
           date_mariage: string | null
@@ -250,6 +251,7 @@ export type Database = {
           type_evenement: string | null
         }
         Insert: {
+          configuration?: Json | null
           created_at?: string | null
           date_envoi_devis?: string | null
           date_mariage?: string | null
@@ -268,6 +270,7 @@ export type Database = {
           type_evenement?: string | null
         }
         Update: {
+          configuration?: Json | null
           created_at?: string | null
           date_envoi_devis?: string | null
           date_mariage?: string | null
@@ -443,6 +446,14 @@ export type Database = {
       }
       devis: {
         Row: {
+          lien_token: string
+          signe_le: string | null
+          signature_nom: string | null
+          signature_image: string | null
+          signature_preuve: Json | null
+          relances: number
+          derniere_relance_le: string | null
+          avis_demande_le: string | null
           acompte_pct: number
           client_adresse: string | null
           client_email: string | null
@@ -478,6 +489,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          lien_token?: string
+          signe_le?: string | null
+          signature_nom?: string | null
+          signature_image?: string | null
+          signature_preuve?: Json | null
+          relances?: number
+          derniere_relance_le?: string | null
+          avis_demande_le?: string | null
           acompte_pct?: number
           client_adresse?: string | null
           client_email?: string | null
@@ -513,6 +532,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          lien_token?: string
+          signe_le?: string | null
+          signature_nom?: string | null
+          signature_image?: string | null
+          signature_preuve?: Json | null
+          relances?: number
+          derniere_relance_le?: string | null
+          avis_demande_le?: string | null
           acompte_pct?: number
           client_adresse?: string | null
           client_email?: string | null
@@ -604,6 +631,7 @@ export type Database = {
       }
       parametres_agence: {
         Row: {
+          lien_avis_google: string | null
           cgv: string | null
           cgv_nawar: string | null
           conditions_contrat: string | null
@@ -626,6 +654,7 @@ export type Database = {
           ville: string | null
         }
         Insert: {
+          lien_avis_google?: string | null
           cgv?: string | null
           cgv_nawar?: string | null
           conditions_contrat?: string | null
@@ -648,6 +677,7 @@ export type Database = {
           ville?: string | null
         }
         Update: {
+          lien_avis_google?: string | null
           cgv?: string | null
           cgv_nawar?: string | null
           conditions_contrat?: string | null

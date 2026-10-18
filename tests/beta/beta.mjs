@@ -285,6 +285,65 @@ await scenario("Admin : devis Nawar bar à parfums (logo Nawar, 80 MAD par parfu
   await ctx.close();
 });
 
+// 3 nonies. Devis envoyé au client → il le signe en ligne sur son téléphone → acompte + RIB ; l'admin le voit signé
+await scenario("Devis envoyé au client → signature en ligne sur smartphone → acompte et RIB", async (notes) => {
+  const base = nouvelleBase();
+  base.parametres_agence[0].rib = "011 810 0000012345678901 23";
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  page.on("dialog", (d) => d.accept());
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("button", { name: /Devis Nawar/ }).click(); await page.waitForTimeout(800);
+  await page.getByText("Nom du contact").locator("..").locator("input").fill("Salma Bennani");
+  await page.getByTestId("envoyer-client").click(); await page.waitForTimeout(800);
+  verifier(/E-mail du client manquant/.test(await toasts(page)), "l'envoi sans e-mail n'est pas refusé");
+  await page.locator('input[type="email"]').first().fill("salma@example.com");
+  await page.getByTestId("envoyer-client").click(); await page.waitForTimeout(1500);
+  const appel = base.appelsFonctions.find((a) => a.nom === "envoyer-devis");
+  verifier(appel?.corps?.devisId === base.devis[0]?.id, "la fonction d'envoi n'a pas reçu le bon devis");
+  verifier(base.devis[0].statut === "envoye", "le devis n'est pas passé en « Envoyé »");
+  verifier(await page.getByRole("button", { name: /Copier le lien client/ }).count(), "pas de bouton pour copier le lien client");
+  notes.push("devis enregistré puis envoyé (e-mail refusé tant qu'il manque l'adresse du client)");
+
+  // Le client ouvre son lien sur smartphone, sans compte
+  const token = base.devis[0].lien_token;
+  const client = await contexte(navigateur, base, "salma@example.com", { mobile: true });
+  await client.page.goto(`${BASE}/mon-devis/${token}`); await client.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await client.page.reload(); await client.page.waitForTimeout(1500);
+  verifier(await client.page.getByText("Votre devis DEV-2026-0099").count(), "la page client n'affiche pas le devis");
+  verifier(!(await client.page.getByText(/notes internes/i).count()), "des notes internes sont visibles");
+  const largeur = await client.page.evaluate(() => document.documentElement.scrollWidth);
+  verifier(largeur <= 392, `la page déborde sur smartphone (${largeur} px)`);
+  await client.page.screenshot({ path: `${CAPTURES}/8-devis-client.png`, fullPage: true });
+  await client.page.getByTestId("signer-devis").tap(); await client.page.waitForTimeout(300);
+  verifier(await client.page.getByText("Dessinez votre signature dans le cadre.").count(), "signer sans signature n'est pas refusé");
+  const zone = client.page.getByTestId("zone-signature"); await zone.scrollIntoViewIfNeeded();
+  const b = await zone.boundingBox(); const cdp = await client.ctx.newCDPSession(client.page);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: b.x + 30, y: b.y + b.height / 2 }] });
+  for (let i = 1; i <= 30; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: b.x + 30 + i * 8, y: b.y + b.height / 2 + Math.sin(i / 2) * 25 }] });
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await client.page.getByText("J'ai lu le devis et les conditions").tap(); await client.page.waitForTimeout(200);
+  if (!(await client.page.getByTestId("case-accord").isChecked())) await client.page.getByTestId("case-accord").check();
+  verifier(await client.page.getByTestId("case-accord").isChecked(), "la case d'accord ne se coche pas");
+  await client.page.getByTestId("signer-devis").tap(); await client.page.waitForTimeout(1500);
+  verifier(base.devis[0].signe_le && base.devis[0].signature_nom === "Salma Bennani", "la signature n'est pas enregistrée : " + ((await client.page.locator("[role=alert]").allInnerTexts()).join(" ") || JSON.stringify(base.appelsFonctions.filter((a) => a.nom === "signer-devis").map((a) => ({ ...a.corps, image: String(a.corps.image).length })))));
+  verifier(await client.page.getByTestId("confirmation-signature").isVisible(), "pas de confirmation après la signature");
+  const acompte = await client.page.getByTestId("acompte").innerText();
+  verifier(acompte.includes("011 810 0000012345678901 23") && acompte.includes("DEV-2026-0099"), "le RIB ou la référence n'apparaissent pas");
+  await client.page.screenshot({ path: `${CAPTURES}/9-devis-signe.png`, fullPage: true });
+  const [dl] = await Promise.all([client.page.waitForEvent("download", { timeout: 40000 }), client.page.getByRole("button", { name: "Télécharger le PDF" }).tap()]);
+  await dl.saveAs(`${CAPTURES}/devis-signe.pdf`);
+  verifier(!client.erreurs.length, "erreurs JavaScript côté client : " + client.erreurs.join(" ; "));
+  await client.ctx.close();
+  notes.push("le client signe au doigt, voit son acompte et le RIB, et télécharge son devis signé en PDF");
+
+  // Retour côté admin : devis signé dans la liste, envoi bloqué
+  await page.reload(); await page.waitForTimeout(2500);
+  await page.getByRole("tab", { name: /Devis/ }).first().click().catch(() => {}); await page.waitForTimeout(800);
+  verifier(await page.getByText("✍️ Signé en ligne").count(), "l'admin ne voit pas que le devis est signé");
+  notes.push("l'admin voit « ✍️ Signé en ligne » dans la liste");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
 // 3 sexies. Paie : une fiche dont toutes les missions ont été supprimées disparaît au recalcul
 await scenario("Paie : « Calculer le mois » retire les fiches sans mission (jamais les fiches payées)", async (notes) => {
   const base = nouvelleBase();

@@ -8,8 +8,8 @@ export interface ZoneSignatureRef { image: () => string; effacer: () => void }
  * Cadre où l'on signe au doigt ou à la souris (trait noir, net sur écran rétina).
  * Le cadre est préparé au premier contact : dans une fenêtre qui s'ouvre, il n'a pas encore sa taille.
  */
-const ZoneSignature = forwardRef<ZoneSignatureRef, { onTraits: (n: number) => void; testId?: string; hauteur?: string }>(
-  ({ onTraits, testId = "zone-signature", hauteur = "h-40" }, ref) => {
+const ZoneSignature = forwardRef<ZoneSignatureRef, { onTraits: (n: number) => void; testId?: string; hauteur?: string; consigne?: string }>(
+  ({ onTraits, testId = "zone-signature", hauteur = "h-40", consigne = "Signe avec ton doigt ou la souris" }, ref) => {
     const toile = useRef<HTMLCanvasElement>(null);
     const etat = useRef({ actif: false, n: 0, pret: false });
 
@@ -40,7 +40,7 @@ const ZoneSignature = forwardRef<ZoneSignatureRef, { onTraits: (n: number) => vo
     return (
       <div>
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs text-muted-foreground flex items-center gap-1"><PenLine className="h-3 w-3" /> Signe avec ton doigt ou la souris</span>
+          <span className="text-xs text-muted-foreground flex items-center gap-1"><PenLine className="h-3 w-3" /> {consigne}</span>
           <Button type="button" variant="ghost" size="sm" onClick={effacer}><Eraser className="h-4 w-4 mr-1" /> Effacer</Button>
         </div>
         <canvas ref={toile} data-testid={testId} onPointerDown={debut} onPointerMove={bouge} onPointerUp={fin} onPointerLeave={fin} onPointerCancel={fin}

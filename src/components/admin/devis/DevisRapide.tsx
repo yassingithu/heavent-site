@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import logoDevis from "@/assets/logo-devis-noir.png";
-import logoNawar from "@/assets/logo-nawar.png";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,11 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowDown, ArrowUp, Copy, Download, FileText, Plus, Save, Search, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Download, FileText, Link2, Plus, Save, Search, Send, Trash2, X } from "lucide-react";
 import {
   DevisForm, Ligne, Parametres, Prestation, STATUTS, UNITES,
-  calculerTotaux, dateFr, devisMarkup, nomFichierDevis, ligneVide, money, nouveauDevis, today, totalLigne,
+  calculerTotaux, dateFr, dateHeureFr, devisDepuisBase, lienClientDevis, ligneVide, money, nouveauDevis, today, totalLigne,
 } from "./devisUtils";
+import { telechargerDevisPdf } from "./devisPdf";
 import CataloguePrestations from "./CataloguePrestations";
 import ParametresAgence from "./ParametresAgence";
 import EquipeEvenement from "@/components/admin/equipe/EquipeEvenement";
@@ -37,7 +36,7 @@ interface DemandeMariage {
 interface DevisRow {
   id: string; numero: string | null; type: string; client_nom: string; client_societe: string | null;
   titre: string | null; date_evenement: string | null; total_ttc: number; statut: string; date_emission: string;
-  devise: string;
+  devise: string; signe_le?: string | null; relances?: number | null;
 }
 
 interface Props {
@@ -46,7 +45,6 @@ interface Props {
   onDemandesChange?: () => void;
 }
 
-const LOGO = logoDevis;
 const toNum = (v: string) => (v === "" ? 0 : Number(v.replace(",", ".")));
 
 export default function DevisRapide({ demandesEntreprise, demandesMariage, onDemandesChange }: Props) {
@@ -62,7 +60,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
 
   const charger = async () => {
     const [d, c, p] = await Promise.all([
-      supabase.from("devis").select("id, numero, type, marque, client_nom, client_societe, titre, date_evenement, total_ttc, statut, date_emission, devise").order("created_at", { ascending: false }),
+      supabase.from("devis").select("id, numero, type, marque, client_nom, client_societe, titre, date_evenement, total_ttc, statut, date_emission, devise, signe_le, relances").order("created_at", { ascending: false }),
       supabase.from("catalogue_prestations").select("*").order("categorie").order("ordre").order("designation"),
       supabase.from("parametres_agence").select("*").eq("id", 1).maybeSingle(),
     ]);
@@ -211,27 +209,11 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       supabase.from("devis_lignes").select("*").eq("devis_id", id).order("ordre"),
     ]);
     if (error || !d) { toast({ title: "Erreur", description: "Devis introuvable", variant: "destructive" }); return null; }
-    const f: DevisForm = {
-      id: dupliquer ? undefined : d.id,
-      numero: dupliquer ? null : d.numero,
-      type: d.type as DevisForm["type"],
-      marque: ((d as any).marque ?? "heavent") as DevisForm["marque"],
-      demande_entreprise_id: dupliquer ? null : d.demande_entreprise_id,
-      demande_mariage_id: dupliquer ? null : d.demande_mariage_id,
-      client_nom: d.client_nom, client_societe: d.client_societe ?? "", client_email: d.client_email ?? "",
-      client_telephone: d.client_telephone ?? "", client_adresse: d.client_adresse ?? "", client_ice: d.client_ice ?? "",
-      titre: d.titre ?? "", date_evenement: d.date_evenement ?? "", date_fin_evenement: d.date_fin_evenement ?? "",
-      lieu: d.lieu ?? "", nb_personnes: d.nb_personnes ? String(d.nb_personnes) : "",
-      remise_globale_pct: Number(d.remise_globale_pct), taux_tva: Number(d.taux_tva), acompte_pct: Number(d.acompte_pct),
-      statut: dupliquer ? "brouillon" : d.statut,
-      date_emission: dupliquer ? today() : d.date_emission,
-      date_validite: dupliquer ? "" : d.date_validite ?? "",
-      conditions: d.conditions ?? "", notes_internes: d.notes_internes ?? "",
-      lignes: (lignes ?? []).map((l) => ({
-        designation: l.designation, description: l.description ?? "", quantite: Number(l.quantite),
-        duree: Number(l.duree), unite: l.unite as Ligne["unite"], prix_unitaire: Number(l.prix_unitaire), remise_pct: Number(l.remise_pct),
-      })),
-    };
+    const base = devisDepuisBase(d, lignes ?? []);
+    const f: DevisForm = dupliquer
+      ? { ...base, id: undefined, numero: null, demande_entreprise_id: null, demande_mariage_id: null, statut: "brouillon",
+          date_emission: today(), date_validite: "", lien_token: null, date_envoi: null, relances: 0, signe_le: null, signature_nom: null, signature_image: null }
+      : base;
     if (f.lignes.length === 0) f.lignes = [ligneVide()];
     return f;
   };
@@ -294,6 +276,13 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     const lignes = form.lignes.filter((l) => l.designation.trim());
     if (lignes.length === 0) { toast({ title: "Ajoute au moins une ligne", variant: "destructive" }); return null; }
 
+    if (form.signe_le && form.id) {
+      const { data: avant } = await supabase.from("devis").select("total_ttc").eq("id", form.id).single();
+      const t = calculerTotaux(lignes, form.remise_globale_pct, form.taux_tva);
+      if (avant && Math.abs(Number(avant.total_ttc) - t.ttc) > 0.009 &&
+        !confirm("Ce devis a été signé par le client. Le modifier annule sa signature : il faudra le lui renvoyer pour qu'il signe la nouvelle version. Continuer ?")) return null;
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -311,6 +300,17 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
         date_validite: form.date_validite || null, conditions: form.conditions || null, notes_internes: form.notes_internes || null,
         ...(statut === "envoye" ? { date_envoi: new Date().toISOString() } : {}),
       };
+
+      // Signature invalidée si le montant signé a changé
+      let signatureAnnulee = false;
+      if (form.signe_le && form.id) {
+        const { data: avant } = await supabase.from("devis").select("total_ttc").eq("id", form.id).single();
+        const t = calculerTotaux(lignes, form.remise_globale_pct, form.taux_tva);
+        if (avant && Math.abs(Number(avant.total_ttc) - t.ttc) > 0.009) {
+          Object.assign(payload, { signe_le: null, signature_nom: null, signature_image: null, signature_preuve: null, statut: "envoye" });
+          signatureAnnulee = true;
+        }
+      }
 
       let id = form.id;
       if (id) {
@@ -340,11 +340,14 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
         onDemandesChange?.();
       }
 
-      const { data: saved } = await supabase.from("devis").select("numero, date_validite, statut").eq("id", id!).single();
+      const { data: saved } = await supabase.from("devis").select("numero, date_validite, statut, lien_token, signe_le, signature_nom, signature_image, date_envoi").eq("id", id!).single();
       const next: DevisForm = {
         ...form, id, lignes, numero: saved?.numero ?? form.numero,
         date_validite: saved?.date_validite ?? form.date_validite, statut: saved?.statut ?? form.statut,
+        lien_token: saved?.lien_token ?? form.lien_token, date_envoi: saved?.date_envoi ?? form.date_envoi,
+        signe_le: saved?.signe_le ?? null, signature_nom: saved?.signature_nom ?? null, signature_image: saved?.signature_image ?? null,
       };
+      if (signatureAnnulee) toast({ title: "Signature du client annulée", description: "Le montant a changé : renvoie le devis au client pour qu'il signe la nouvelle version." });
       setForm(next);
       toast({ title: "Devis enregistré", description: next.numero ?? "" });
       devisModifie();
@@ -363,42 +366,41 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   /** Génère le PDF du devis et le télécharge directement (sans fenêtre d'impression). */
   const genererPdf = async (d: DevisForm) => {
     setPdfEnCours(true);
-    const conteneur = document.createElement("div");
     try {
-      // Logo intégré au document pour qu'il apparaisse à coup sûr dans le PDF
-      const logo = d.marque === "nawar" ? logoNawar : LOGO;
-      let logoSrc = logo;
-      try {
-        const blob = await fetch(logo).then((r) => r.blob());
-        logoSrc = await new Promise<string>((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result as string); fr.readAsDataURL(blob); });
-      } catch { /* on garde l'URL */ }
-
-      const { css, html } = devisMarkup(d, params, logoSrc);
-      conteneur.style.cssText = "position:fixed;left:-10000px;top:0;z-index:-1;";
-      conteneur.innerHTML = `<style>${css}</style>${html}`;
-      document.body.appendChild(conteneur);
-      await document.fonts?.ready;
-
-      const html2pdf = (await import("html2pdf.js")).default;
-      await html2pdf()
-        .set({
-          margin: 0,
-          filename: nomFichierDevis(d),
-          image: { type: "jpeg", quality: 0.95 },
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-          jsPDF: { unit: "px", format: [794, 1123], orientation: "portrait", hotfixes: ["px_scaling"] },
-          pagebreak: { mode: ["css"], before: ".suite", avoid: ["tr", ".art", ".signature", ".bas"] },
-        })
-        .from(conteneur.querySelector(".devis-pages") as HTMLElement)
-        .save();
-      toast({ title: "PDF téléchargé", description: nomFichierDevis(d) });
+      const nom = await telechargerDevisPdf(d, params);
+      toast({ title: "PDF téléchargé", description: nom });
     } catch (e: any) {
       console.error(e);
       toast({ title: "Erreur", description: "Le PDF n'a pas pu être généré", variant: "destructive" });
     } finally {
-      conteneur.remove();
       setPdfEnCours(false);
     }
+  };
+
+  // ---------- envoi au client avec lien de signature ----------
+  const [envoiEnCours, setEnvoiEnCours] = useState(false);
+  const envoyerAuClient = async () => {
+    if (!form) return;
+    if (!form.client_email.trim()) { toast({ title: "E-mail du client manquant", description: "Ajoute l'e-mail du client pour lui envoyer le devis.", variant: "destructive" }); return; }
+    if (form.signe_le) { toast({ title: "Devis déjà signé", description: `Signé par ${form.signature_nom} le ${dateHeureFr(form.signe_le)}.` }); return; }
+    const saved = await enregistrer();
+    if (!saved?.id) return;
+    if (!confirm(`Envoyer le devis ${saved.numero ?? ""} à ${saved.client_email} ? Il recevra un lien pour le consulter et le signer en ligne.`)) return;
+    setEnvoiEnCours(true);
+    const { data, error } = await supabase.functions.invoke("envoyer-devis", { body: { devisId: saved.id } });
+    let message = data?.error as string | undefined;
+    if (error && !message) { try { message = (await (error as any).context?.json())?.error; } catch { /* */ } }
+    setEnvoiEnCours(false);
+    if (error || data?.error) { toast({ title: "Devis non envoyé", description: message ?? "Réessaie dans un instant.", variant: "destructive" }); return; }
+    setForm({ ...saved, statut: saved.statut === "brouillon" ? "envoye" : saved.statut, date_envoi: new Date().toISOString(), relances: 0 });
+    toast({ title: "Devis envoyé ✉️", description: "Le client a reçu son lien de signature. Relances automatiques à J+5 et J+10 s'il ne répond pas." });
+    devisModifie(); charger();
+  };
+  const copierLien = async () => {
+    const lien = lienClientDevis(form?.lien_token);
+    if (!lien) return;
+    try { await navigator.clipboard.writeText(lien); toast({ title: "Lien copié", description: "Tu peux le coller dans WhatsApp ou un e-mail." }); }
+    catch { prompt("Lien du devis pour le client :", lien); }
   };
 
   const telechargerPdf = async () => {
@@ -517,7 +519,10 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                       <TableCell className="font-mono text-xs">{d.numero}{(d as any).marque === "nawar" && <span className="ml-1 font-sans rounded bg-[#f5ecd2] text-[#8a6d1f] px-1.5 py-0.5 text-[10px]">Nawar</span>}<div className="text-muted-foreground">{dateFr(d.date_emission)}</div></TableCell>
                       <TableCell>{d.client_societe || d.client_nom}{d.client_societe && <div className="text-xs text-muted-foreground">{d.client_nom}</div>}</TableCell>
                       <TableCell>{d.titre || "—"}<div className="text-xs text-muted-foreground">{dateFr(d.date_evenement)}</div></TableCell>
-                      <TableCell className="text-right font-medium whitespace-nowrap">{money(d.total_ttc, d.devise)}</TableCell>
+                      <TableCell className="text-right font-medium whitespace-nowrap">{money(d.total_ttc, d.devise)}
+                        {d.signe_le ? <div className="text-[11px] font-normal text-green-700">✍️ Signé en ligne</div>
+                          : d.statut === "envoye" && d.relances ? <div className="text-[11px] font-normal text-muted-foreground">{d.relances} relance{d.relances > 1 ? "s" : ""} auto</div> : null}
+                      </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <Select value={d.statut} onValueChange={(v) => changerStatut(d.id, v)}>
                           <SelectTrigger className="h-8 w-[120px] border-0 p-0 shadow-none">
@@ -698,7 +703,11 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
               <div className="grid gap-2">
                 <Button onClick={() => enregistrer()} disabled={saving}><Save className="h-4 w-4 mr-1" /> Enregistrer</Button>
                 <Button variant="outline" onClick={telechargerPdf} disabled={saving || pdfEnCours}><Download className="h-4 w-4 mr-1" /> {pdfEnCours ? "Création du PDF…" : "Télécharger le PDF"}</Button>
-                <Button variant="outline" onClick={() => enregistrer("envoye")} disabled={saving}>Marquer comme envoyé</Button>
+                <Button variant="outline" onClick={envoyerAuClient} disabled={saving || envoiEnCours || !!form.signe_le} data-testid="envoyer-client">
+                  <Send className="h-4 w-4 mr-1" /> {envoiEnCours ? "Envoi…" : form.date_envoi ? "Renvoyer au client pour signature" : "Envoyer au client pour signature"}
+                </Button>
+                {form.lien_token && <Button variant="ghost" size="sm" onClick={copierLien}><Link2 className="h-4 w-4 mr-1" /> Copier le lien client</Button>}
+                <Button variant="ghost" size="sm" onClick={() => enregistrer("envoye")} disabled={saving}>Marquer comme envoyé (sans e-mail)</Button>
                 <Button variant="ghost" onClick={() => { setForm(null); setOnglet("liste"); }}>Fermer</Button>
               </div>
             </div>
