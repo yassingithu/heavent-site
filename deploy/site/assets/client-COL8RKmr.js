@@ -1,1 +1,0 @@
-import{c as t}from"./supabase-LzGBjbxf.js";const s="https://mapiwnsjsluiwmnulhqk.supabase.co",a="sb_publishable_FuR1ZTbO1AX8nVdtVz9KYQ_0pJQs7dz",o=`${s}/functions/v1`,n=t(s,a,{auth:{storage:localStorage,persistSession:!0,autoRefreshToken:!0}});export{o as F,s as S,n as s};
