@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Pencil, Trash2 } from "lucide-react";
+import { Ban, Download, Pencil, Trash2 } from "lucide-react";
 import { ouvrirDevis } from "@/components/admin/devis/DevisParStatut";
 import { dateFr, mad } from "@/lib/pdf";
 import { BADGE_SIGNATURE, dateHeureFr, etatSignature } from "@/lib/signature";
@@ -23,11 +23,16 @@ export default function ContratsEvenements() {
 
   // Supprime la personne de l'équipe de cet événement (sinon le contrat serait recréé) puis le contrat
   const supprimer = async (c: any) => {
-    if (!window.confirm(`Retirer ${c.staff?.prenom ?? ""} ${c.staff?.nom ?? ""} de l'événement « ${c.devis?.titre ?? ""} » et supprimer son contrat ?`)) return;
+    const nom = `${c.staff?.prenom ?? ""} ${c.staff?.nom ?? ""}`.trim();
+    if (!window.confirm(c.signe_le
+      ? `Retirer ${nom} de l'événement « ${c.devis?.titre ?? ""} » ?\n\nSon contrat est signé : il ne sera pas supprimé mais annulé (il reste archivé).`
+      : `Retirer ${nom} de l'événement « ${c.devis?.titre ?? ""} » et supprimer son contrat ?`)) return;
     const a = await supabase.from("affectations").delete().eq("devis_id", c.devis_id).eq("staff_id", c.staff_id);
-    const r = a.error ? a : await supabase.from("contrats").delete().eq("id", c.id);
+    const r = a.error ? a : c.signe_le
+      ? await supabase.from("contrats").update({ statut: "annule" }).eq("id", c.id)
+      : await supabase.from("contrats").delete().eq("id", c.id);
     if (r.error) { toast({ title: "Erreur", description: r.error.message, variant: "destructive" }); return; }
-    toast({ title: "Contrat supprimé", description: "La personne est retirée de l'équipe. Pense à recalculer la paie du mois si elle était déjà calculée." });
+    toast({ title: c.signe_le ? "Contrat annulé" : "Contrat supprimé", description: "La personne est retirée de l'équipe. Pense à recalculer la paie du mois si elle était déjà calculée." });
     charger();
   };
 
@@ -52,7 +57,7 @@ export default function ContratsEvenements() {
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
               <div>
                 <div className="font-medium">{liste[0].devis?.titre || "Événement"} <span className="text-xs text-muted-foreground font-mono">{liste[0].devis?.numero}</span></div>
-                <div className="text-xs text-muted-foreground">{liste.length} contrat(s) · <span className="text-emerald-800 font-medium">{liste.filter((c) => c.signe_le).length}/{liste.length} signé(s)</span></div>
+                <div className="text-xs text-muted-foreground">{liste.length} contrat(s) · <span className="text-emerald-800 font-medium">{liste.filter((c) => c.signe_le && c.statut !== "annule").length}/{liste.filter((c) => c.statut !== "annule").length} signé(s)</span></div>
               </div>
               <Button size="sm" disabled={enCours} onClick={() => telecharger(liste.map((c) => c.id))}><Download className="h-4 w-4 mr-1" /> Tous (PDF)</Button>
             </div>
@@ -64,7 +69,9 @@ export default function ContratsEvenements() {
                   <div className="flex gap-1 shrink-0">
                     <Button size="icon" variant="ghost" title="Modifier les dates, horaires et heures (dans le devis)" onClick={() => ouvrirDevis(c.devis_id)}><Pencil className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" title="Contrat PDF" disabled={enCours} onClick={() => telecharger([c.id])}><Download className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" title="Supprimer" className="text-red-600 hover:text-red-700" onClick={() => supprimer(c)}><Trash2 className="h-4 w-4" /></Button>
+                    {c.statut !== "annule" && (c.signe_le
+                      ? <Button size="icon" variant="ghost" title="Retirer de l'équipe et annuler le contrat (signé : il est conservé)" className="text-red-600 hover:text-red-700" onClick={() => supprimer(c)}><Ban className="h-4 w-4" /></Button>
+                      : <Button size="icon" variant="ghost" title="Retirer de l'équipe et supprimer le contrat" className="text-red-600 hover:text-red-700" onClick={() => supprimer(c)}><Trash2 className="h-4 w-4" /></Button>)}
                   </div>
                 </div>
               ))}

@@ -10,9 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowDown, ArrowUp, Copy, Download, FileText, Link2, Plus, Save, Search, Send, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowDown, ArrowUp, Copy, Download, FileText, Link2, Plus, Save, Search, Send, Trash2, X } from "lucide-react";
 import {
-  DevisForm, Ligne, Parametres, Prestation, STATUTS, UNITES,
+  DevisForm, Ligne, Parametres, Prestation, STATUTS, UNITES, devisSupprimable, statutsPermis,
   calculerTotaux, dateFr, dateHeureFr, devisDepuisBase, lienClientDevis, ligneVide, money, nouveauDevis, today, totalLigne,
 } from "./devisUtils";
 import { telechargerDevisPdf } from "./devisPdf";
@@ -39,6 +39,7 @@ interface DevisRow {
   id: string; numero: string | null; type: string; client_nom: string; client_societe: string | null;
   titre: string | null; date_evenement: string | null; total_ttc: number; statut: string; date_emission: string;
   devise: string; signe_le?: string | null; relances?: number | null; rdv_demande_le?: string | null;
+  archive?: boolean; nbFactures?: number; contratsSignes?: number; equipe?: number;
 }
 
 interface Props {
@@ -62,7 +63,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
 
   const charger = async () => {
     const [d, c, p] = await Promise.all([
-      supabase.from("devis").select("id, numero, type, marque, client_nom, client_societe, titre, date_evenement, total_ttc, statut, date_emission, devise, signe_le, relances, rdv_demande_le").order("created_at", { ascending: false }),
+      supabase.from("devis").select("id, numero, type, marque, client_nom, client_societe, titre, date_evenement, total_ttc, statut, date_emission, devise, signe_le, relances, rdv_demande_le, archive, factures(id), contrats(signe_le), affectations(staff_id, statut)").order("created_at", { ascending: false }),
       supabase.from("catalogue_prestations").select("*").order("categorie").order("ordre").order("designation"),
       supabase.from("parametres_agence").select("*").eq("id", 1).maybeSingle(),
     ]);
@@ -70,7 +71,10 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       toast({ title: "Erreur", description: "Impossible de charger les devis", variant: "destructive" });
       return;
     }
-    setDevisList((d.data ?? []) as DevisRow[]);
+    setDevisList(((d.data ?? []) as any[]).map(({ factures, contrats, affectations, ...x }) => ({
+      ...x, nbFactures: (factures ?? []).length, contratsSignes: (contrats ?? []).filter((c: any) => c.signe_le).length,
+      equipe: new Set((affectations ?? []).filter((a: any) => a.statut !== "annule").map((a: any) => a.staff_id)).size,
+    })) as DevisRow[]);
     setCatalogue((c.data ?? []) as Prestation[]);
     setParams(p.data as Parametres | null);
   };
@@ -430,6 +434,15 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   };
 
   const changerStatut = async (id: string, statut: string) => {
+    const d = devisList.find((x) => x.id === id);
+    if (d && (statut === "annule" || statut === "refuse") && d.statut !== "annule" && d.statut !== "refuse") {
+      const consequences = [
+        d.equipe ? `• ${d.equipe} personne${d.equipe > 1 ? "s" : ""} de l'équipe ser${d.equipe > 1 ? "ont libérées" : "a libérée"} (plus de mission, de pointage ni de paie pour cet événement)` : "",
+        d.equipe || d.contratsSignes ? `• leurs contrats passeront « annulé » (les contrats signés restent archivés)` : "",
+        d.nbFactures ? `• les factures existantes restent valables : annule-les ou encaisse-les dans le devis si besoin` : "",
+      ].filter(Boolean);
+      if (consequences.length && !confirm(`Passer le devis ${d.numero ?? ""} en « ${STATUTS[statut].label} » ?\n\n${consequences.join("\n")}`)) return;
+    }
     const { error } = await supabase.from("devis").update({ statut, ...(statut === "envoye" ? { date_envoi: new Date().toISOString() } : {}) }).eq("id", id);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
     devisModifie();
@@ -437,13 +450,19 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
 
   const supprimer = async (id: string, numero: string | null) => {
     if (!confirm(`Supprimer définitivement le devis ${numero ?? ""} ?`)) return;
+    // Ses contrats non signés partent avec lui (sinon ils resteraient orphelins dans « Contrats »)
+    await supabase.from("contrats").delete().eq("devis_id", id).is("signe_le", null);
     const { error } = await supabase.from("devis").delete().eq("id", id);
-    if (error) {
-      const factures = error.code === "23503" || /factures/.test(error.message);
-      toast({ title: factures ? "Ce devis a des factures" : "Erreur", description: factures ? "Un devis facturé ne peut pas être supprimé : passe-le en « Annulé »." : error.message, variant: "destructive" });
-      return;
-    }
+    if (error) { toast({ title: "Suppression impossible", description: error.message, variant: "destructive" }); charger(); return; }
     if (form?.id === id) setForm(null);
+    charger();
+  };
+
+  /** Archiver : retire un devis de la liste sans rien effacer (devis signés, facturés, annulés…). */
+  const archiver = async (id: string, archive: boolean) => {
+    const { error } = await (supabase as any).from("devis").update({ archive }).eq("id", id);
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+    toast({ title: archive ? "Devis archivé" : "Devis ressorti des archives", description: archive ? "Il reste consultable dans le filtre « Archivés »." : undefined });
     charger();
   };
 
@@ -451,7 +470,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   const filtres = devisList.filter((d) => {
     const q = recherche.trim().toLowerCase();
     const okQ = !q || [d.numero, d.client_nom, d.client_societe, d.titre].some((v) => v?.toLowerCase().includes(q));
-    return okQ && (filtreStatut === "tous" || d.statut === filtreStatut);
+    if (filtreStatut === "archives") return okQ && !!d.archive;
+    return okQ && !d.archive && (filtreStatut === "tous" || d.statut === filtreStatut);
   });
   const demandesEnAttente = [
     ...demandesEntreprise.filter((d) => !d.statut || d.statut === "en_attente").map((d) => ({ kind: "entreprise" as const, d })),
@@ -506,7 +526,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
 
         <Card>
           <CardHeader className="space-y-3">
-            <CardTitle className="text-base">Devis ({devisList.length})</CardTitle>
+            <CardTitle className="text-base">Devis ({devisList.filter((d) => !d.archive).length})</CardTitle>
             <div className="flex flex-wrap gap-2">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="h-4 w-4 absolute left-2 top-3 text-muted-foreground" />
@@ -517,6 +537,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 <SelectContent>
                   <SelectItem value="tous">Tous les statuts</SelectItem>
                   {Object.entries(STATUTS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                  <SelectItem value="archives">🗄️ Archivés ({devisList.filter((d) => d.archive).length})</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -524,7 +545,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
           <CardContent className="overflow-x-auto">
             {filtres.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">
-                Aucun devis pour l'instant. Clique sur « Nouveau devis » pour commencer.
+                {filtreStatut === "archives" ? "Aucun devis archivé." : devisList.length ? "Aucun devis ne correspond à ta recherche." : "Aucun devis pour l'instant. Clique sur « Nouveau devis » pour commencer."}
               </p>
             ) : (
               <Table>
@@ -550,13 +571,18 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                           <SelectTrigger className="h-8 w-[120px] border-0 p-0 shadow-none">
                             <Badge className={STATUTS[d.statut]?.className}>{STATUTS[d.statut]?.label ?? d.statut}</Badge>
                           </SelectTrigger>
-                          <SelectContent>{Object.entries(STATUTS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
+                          <SelectContent>{statutsPermis(d).map((k) => <SelectItem key={k} value={k}>{STATUTS[k].label}</SelectItem>)}</SelectContent>
                         </Select>
+                        {d.archive && <div className="text-[11px] text-muted-foreground mt-0.5">🗄️ archivé</div>}
                       </TableCell>
                       <TableCell className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <Button size="icon" variant="ghost" title="Télécharger le PDF" disabled={pdfEnCours} onClick={() => telechargerPdfDepuisListe(d.id)}><Download className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" title="Dupliquer" onClick={() => ouvrir(d.id, true)}><Copy className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" title="Supprimer" onClick={() => supprimer(d.id, d.numero)}><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                        {devisSupprimable(d)
+                          ? <Button size="icon" variant="ghost" title="Supprimer" onClick={() => supprimer(d.id, d.numero)} data-testid="supprimer-devis"><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                          : <Button size="icon" variant="ghost" data-testid="archiver-devis"
+                              title={d.archive ? "Ressortir des archives" : `Archiver (${d.signe_le ? "devis signé" : d.nbFactures ? "devis facturé" : "contrats signés"} : il ne peut pas être supprimé, mais tu peux le retirer de la liste)`}
+                              onClick={() => archiver(d.id, !d.archive)}>{d.archive ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}</Button>}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -615,6 +641,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
               </Card>
 
               <EquipeEvenement
+                statutDevis={devisList.find((x) => x.id === form.id)?.statut}
                 devisId={form.id}
                 titre={form.titre}
                 lieu={form.lieu}
@@ -719,9 +746,14 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   </div>
                   <div>
                     <Label className="text-xs">Statut</Label>
-                    <Select value={form.statut} onValueChange={(v) => set("statut", v)}>
+                    <Select value={form.statut} onValueChange={(v) => {
+                      const ligne = devisList.find((x) => x.id === form.id);
+                      if ((v === "annule" || v === "refuse") && ligne?.equipe && !["annule", "refuse"].includes(ligne.statut)
+                        && !confirm(`En enregistrant ce devis « ${STATUTS[v].label} », l'équipe prévue (${ligne.equipe} personne${ligne.equipe > 1 ? "s" : ""}) sera libérée : plus de mission, de pointage ni de paie pour cet événement. Continuer ?`)) return;
+                      set("statut", v);
+                    }}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{Object.entries(STATUTS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
+                      <SelectContent>{statutsPermis({ statut: form.statut, signe_le: form.signe_le, nbFactures: devisList.find((x) => x.id === form.id)?.nbFactures }).map((k) => <SelectItem key={k} value={k}>{STATUTS[k].label}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                 </CardContent>

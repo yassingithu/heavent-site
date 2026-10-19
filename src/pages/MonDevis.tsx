@@ -70,6 +70,7 @@ export default function MonDevis() {
   const t = calculerTotaux(devis.lignes, devis.remise_globale_pct, devis.taux_tva, devis.acompte_pct);
   const expire = !devis.signe_le && !!devis.date_validite && devis.date_validite < aujourdhuiMaroc();
   const refuse = devis.statut === "refuse";
+  const annule = devis.statut === "annule";
   const cgv = devis.marque === "nawar" ? (agence?.cgv_nawar?.trim() || CGV_NAWAR_DEFAUT) : (agence?.cgv?.trim() || CGV_DEFAUT);
   const lignes = devis.lignes.filter((l) => l.designation.trim());
 
@@ -82,7 +83,9 @@ export default function MonDevis() {
           <h1 className="font-serif text-3xl sm:text-4xl">Votre devis {devis.numero}</h1>
           <p className="text-[#5E554A]">Pour {devis.client_societe || devis.client_nom}{devis.titre ? ` · ${devis.titre}` : ""}</p>
           <div className="flex justify-center pt-1">
-            {devis.signe_le ? (
+            {annule ? (
+              <span className="rounded-full bg-[#F3F1EC] text-[#5E554A] border border-[#E3DDD0] px-3 py-1 text-sm" data-testid="statut-annule">Devis annulé</span>
+            ) : devis.signe_le ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EEF6EA] text-[#2F5A2A] border border-[#CFE3C5] px-3 py-1 text-sm" data-testid="statut-signe">
                 <CheckCircle2 className="h-4 w-4" /> Accepté et signé le {dateHeureFr(devis.signe_le)}
               </span>
@@ -168,7 +171,12 @@ export default function MonDevis() {
         </details>
 
         {/* Signature / confirmation */}
-        {devis.signe_le ? (
+        {annule ? (
+          <section className="rounded-3xl border border-[#EADFC8] bg-white p-6 text-center space-y-3" data-testid="devis-annule">
+            <p className="text-[#4A4238]">Ce devis a été annulé.{factures.length ? " Vos factures restent disponibles ci-dessous." : ""} Pour toute question ou un nouveau projet, écrivez-nous.</p>
+            <Contact />
+          </section>
+        ) : devis.signe_le ? (
           <Confirmation devis={devis} acompte={t.acompte} devise={devise} rib={agence?.rib ?? null} />
         ) : expire || refuse ? (
           <section className="rounded-3xl border border-[#EADFC8] bg-white p-6 text-center space-y-3">

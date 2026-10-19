@@ -21,6 +21,19 @@ export const STATUTS: Record<string, { label: string; className: string }> = {
   annule: { label: "Annulé", className: "bg-yellow-100 text-yellow-800" },
 };
 
+/**
+ * Statuts possibles selon l'état du devis : un devis signé ou facturé ne peut plus redevenir brouillon,
+ * envoyé ou refusé — il est soit accepté, soit annulé.
+ */
+export function statutsPermis(d: { statut: string; signe_le?: string | null; nbFactures?: number }) {
+  const verrouille = !!d.signe_le || (d.nbFactures ?? 0) > 0;
+  return Object.keys(STATUTS).filter((k) => !verrouille || k === "accepte" || k === "annule" || k === d.statut);
+}
+
+/** Un devis ne se supprime que s'il n'a aucune valeur légale : ni signé, ni facturé, ni contrat signé. */
+export const devisSupprimable = (d: { signe_le?: string | null; nbFactures?: number; contratsSignes?: number }) =>
+  !d.signe_le && !(d.nbFactures ?? 0) && !(d.contratsSignes ?? 0);
+
 export interface Ligne {
   id?: string;
   designation: string;

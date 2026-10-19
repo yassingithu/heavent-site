@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Pencil, Plus, Trash2 } from "lucide-react";
+import { Ban, Download, Pencil, Plus, Trash2 } from "lucide-react";
 import { dateFr, mad } from "@/lib/pdf";
 import { BADGE_SIGNATURE, dateHeureFr, etatSignature } from "@/lib/signature";
 import { telechargerContrats } from "./contratPdf";
@@ -23,11 +23,20 @@ export default function ContratsManuels() {
       .then(({ data }) => setContrats(data ?? []));
   useEffect(() => { charger(); }, []);
 
+  // Un contrat signé ne se supprime pas (preuve) : il s'annule. Un contrat non signé peut être supprimé.
   const supprimer = async (c: any) => {
-    if (!window.confirm(`Supprimer le contrat de ${c.staff?.prenom ?? ""} ${c.staff?.nom ?? ""} (${c.evenement || c.titre}) ? Il disparaîtra aussi de son espace staff.`)) return;
-    const { error } = await supabase.from("contrats").delete().eq("id", c.id);
-    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Contrat supprimé", description: "Pense à recalculer les fiches de paie du mois concerné (onglet Paie)." });
+    const nom = `${c.staff?.prenom ?? ""} ${c.staff?.nom ?? ""}`.trim();
+    if (c.signe_le) {
+      if (!window.confirm(`Annuler le contrat signé de ${nom} (${c.evenement || c.titre}) ?\n\nUn contrat signé ne peut pas être supprimé : il restera archivé avec la mention « annulé ».`)) return;
+      const { error } = await supabase.from("contrats").update({ statut: "annule" }).eq("id", c.id);
+      if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "Contrat annulé", description: "Pense à recalculer les fiches de paie du mois concerné (onglet Paie)." });
+    } else {
+      if (!window.confirm(`Supprimer le contrat de ${nom} (${c.evenement || c.titre}) ? Il disparaîtra aussi de son espace staff.`)) return;
+      const { error } = await supabase.from("contrats").delete().eq("id", c.id);
+      if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "Contrat supprimé", description: "Pense à recalculer les fiches de paie du mois concerné (onglet Paie)." });
+    }
     charger();
   };
 
@@ -68,9 +77,11 @@ export default function ContratsManuels() {
                     {c.signe_le && <div className="text-xs text-emerald-800">Signé le {dateHeureFr(c.signe_le)}{c.signature_nom ? ` par ${c.signature_nom}` : ""} · contresigné par l'employeur</div>}
                   </div>
                   <div className="flex gap-1">
-                    <Button size="sm" variant="outline" onClick={() => setEdition(c.id)}><Pencil className="h-4 w-4 mr-1" /> Modifier</Button>
+                    {c.statut !== "annule" && <Button size="sm" variant="outline" onClick={() => setEdition(c.id)}><Pencil className="h-4 w-4 mr-1" /> Modifier</Button>}
                     <Button size="icon" variant="ghost" title="Contrat PDF" disabled={enCours} onClick={() => telecharger(c.id)}><Download className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" title="Supprimer" className="text-red-600 hover:text-red-700" onClick={() => supprimer(c)}><Trash2 className="h-4 w-4" /></Button>
+                    {c.statut !== "annule" && (c.signe_le
+                      ? <Button size="icon" variant="ghost" title="Annuler le contrat (signé : il est conservé)" className="text-red-600 hover:text-red-700" onClick={() => supprimer(c)}><Ban className="h-4 w-4" /></Button>
+                      : <Button size="icon" variant="ghost" title="Supprimer" className="text-red-600 hover:text-red-700" onClick={() => supprimer(c)}><Trash2 className="h-4 w-4" /></Button>)}
                   </div>
                 </div>
               );

@@ -471,11 +471,10 @@ await scenario("Factures : acompte payé, solde avec acompte déduit, PDF, envoi
   verifier(encaisser.includes("7 056,00"), "le reste à encaisser est faux : " + encaisser);
   await page.screenshot({ path: `${CAPTURES}/14-factures.png`, fullPage: true });
   await page.getByRole("tab", { name: "Mes devis" }).click(); await page.waitForTimeout(500);
-  await page.getByTitle("Supprimer").first().click(); await page.waitForTimeout(1000);
-  verifier(base.devis.length === 1 && /a des factures/.test(await toasts(page)), "un devis facturé a pu être supprimé");
+  verifier(!(await page.getByTestId("supprimer-devis").count()) && await page.getByTestId("archiver-devis").count(), "un devis facturé propose encore « Supprimer » au lieu d'« Archiver »");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
-  notes.push("PDF téléchargé, facture envoyée, « reste à encaisser » juste, devis facturé impossible à supprimer");
+  notes.push("PDF téléchargé, facture envoyée, « reste à encaisser » juste, devis facturé : « Archiver » au lieu de « Supprimer »");
 
   const c = await contexte(navigateur, base, "karim@atlas.ma", { mobile: true });
   await c.page.goto(`${BASE}/mon-devis/22222222-3333-4444-5555-666666666666#factures`); await c.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await c.page.reload(); await c.page.waitForTimeout(1800);
@@ -773,6 +772,10 @@ await scenario("Statistiques : visites, provenance, clics WhatsApp et demandes c
   await connecter(page, BASE, ADMIN, "/admin");
   await page.getByRole("tab", { name: /Statistiques$/ }).click();
   await page.getByTestId("stat-visites").waitFor({ timeout: 8000 }).catch(() => {});
+  if (!(await page.getByTestId("stat-visites").count())) { // relance (premier chargement de l'admin parfois lent)
+    await page.getByRole("tab", { name: /Bilan$/ }).click(); await page.getByRole("tab", { name: /Statistiques$/ }).click();
+    await page.getByTestId("stat-visites").waitFor({ timeout: 10000 }).catch(() => {});
+  }
   const bloc = await page.getByTestId("stats-site").innerText();
   verifier(/Visites\s*1/i.test(bloc) && /Instagram/.test(bloc) && /WhatsApp/.test(bloc) && /Hôtesses à Casablanca/.test(bloc), "le Bilan n'affiche pas les statistiques : " + bloc.slice(0, 300));
   const nAvant = base.evenements_site.length;
@@ -784,6 +787,65 @@ await scenario("Statistiques : visites, provenance, clics WhatsApp et demandes c
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
   notes.push("visite venue d'Instagram sur smartphone : 2 pages + clic WhatsApp comptés, aucun cookie, page devis privée ignorée ; Bilan admin : visites, provenance, pages, clics ; visites de l'admin non comptées");
+});
+
+// 3 undevicies. Cohérence des boutons : rien de légal ne se supprime, l'annulation libère l'équipe
+await scenario("Cohérence : devis signé/facturé archivable (pas supprimable), annulation qui libère l'équipe, contrat signé annulé, crew avec paie non supprimable", async (notes) => {
+  const base = nouvelleBase();
+  const [s1, s2] = base.staff;
+  const dans10 = new Date(Date.now() + 10 * 864e5).toISOString().slice(0, 10);
+  const L = (x) => ({ type: "entreprise", marque: "heavent", remise_globale_pct: 0, taux_tva: 20, acompte_pct: 50, date_emission: "2026-10-01", date_validite: "2099-12-31", relances: 0, devise: "MAD", ...x });
+  base.devis = [
+    L({ id: "dvA", numero: "DEV-2026-0012", client_nom: "nadir nadir", client_societe: "BARAKA motor", titre: "Prestation : Autre", statut: "annule", total_ttc: 10800, signe_le: "2026-10-19T09:00:00Z", lien_token: "aaaaaaaa-1111-2222-3333-444444444444", date_evenement: "2026-10-19" }),
+    L({ id: "dvB", numero: "DEV-2026-0013", client_nom: "Brouillon Test", titre: "Brouillon", statut: "brouillon", total_ttc: 1000, lien_token: crypto.randomUUID() }),
+    L({ id: "dvC", numero: "DEV-2026-0014", client_nom: "Salon Atlas", titre: "Salon Atlas", statut: "accepte", total_ttc: 9000, signe_le: "2026-10-10T09:00:00Z", lien_token: crypto.randomUUID(), date_evenement: dans10 }),
+  ];
+  base.factures = [{ id: "fA", devis_id: "dvA", numero: "FAC-2026-0001", type: "acompte", statut: "payee", net_a_payer: 5400, total_ttc: 5400, devise: "MAD", date_emission: "2026-10-19", client_nom: "BARAKA motor" }];
+  base.affectations = [s1, s2].map((s, i) => ({ id: "afC" + i, devis_id: "dvC", staff_id: s.id, date_jour: dans10, heure_debut: "09:00:00", heure_fin: "17:00:00", heures: 8, poste: "Hôtesse", taux_horaire: 60, statut: "confirme" }));
+  base.contrats = [
+    { id: "ctC0", devis_id: "dvC", staff_id: s1.id, titre: "Hôtesse", statut: "actif", signe_le: "2026-10-11T10:00:00Z", date_debut: dans10, date_fin: dans10, dates: [{ date: dans10, heures: 8 }], total_heures: 8, salaire_brut: 480 },
+    { id: "ctC1", devis_id: "dvC", staff_id: s2.id, titre: "Hôtesse", statut: "actif", signe_le: null, date_debut: dans10, date_fin: dans10, dates: [{ date: dans10, heures: 8 }], total_heures: 8, salaire_brut: 480 },
+  ];
+  base.fiches_paie = [{ id: "fp1", staff_id: s1.id, annee: 2026, mois: 9, statut: "payee", salaire_brut: 480, salaire_net: 450, heures_travaillees: 8, generee_auto: true }];
+
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  const dialogues = []; page.on("dialog", (d) => { dialogues.push(d.message()); d.accept(); });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(1000);
+  const ligne = (t) => page.locator("tr", { hasText: t });
+  verifier(!(await ligne("BARAKA motor").getByTestId("supprimer-devis").count()) && await ligne("BARAKA motor").getByTestId("archiver-devis").count(), "le devis signé et facturé propose encore « Supprimer »");
+  verifier(await ligne("Brouillon Test").getByTestId("supprimer-devis").count(), "le brouillon ne peut pas être supprimé");
+  // Statuts proposés pour un devis signé : seulement Accepté / Annulé
+  await ligne("Salon Atlas").getByRole("combobox").click(); await page.waitForTimeout(200);
+  const options = (await page.getByRole("option").allInnerTexts()).map((x) => x.trim());
+  verifier(options.join() === "Accepté,Annulé", "statuts proposés pour un devis signé : " + options.join());
+  // Annulation : l'équipe est libérée, le contrat non signé disparaît, le contrat signé est annulé
+  await page.getByRole("option", { name: "Annulé" }).click(); await page.waitForTimeout(800);
+  verifier(dialogues.some((m) => /2 personnes de l'équipe seront libérées/.test(m)), "pas d'avertissement avant d'annuler un devis avec une équipe : " + dialogues.join(" | "));
+  verifier(base.affectations.every((a) => a.statut === "annule") && base.contrats.every((c) => c.statut === "annule"), "l'annulation n'a pas libéré l'équipe");
+  await ligne("Salon Atlas").click(); await page.waitForTimeout(1500);
+  verifier(await page.getByTestId("equipe-liberee").isVisible(), "le devis annulé propose encore de constituer une équipe");
+  // Archiver le devis BARAKA
+  await page.getByRole("tab", { name: "Mes devis" }).click(); await page.waitForTimeout(500);
+  await ligne("BARAKA motor").getByTestId("archiver-devis").click(); await page.waitForTimeout(800);
+  verifier(base.devis.find((d) => d.id === "dvA").archive === true && !(await ligne("BARAKA motor").count()), "le devis archivé reste dans la liste");
+  // Supprimer le brouillon
+  await ligne("Brouillon Test").getByTestId("supprimer-devis").click(); await page.waitForTimeout(800);
+  verifier(!base.devis.some((d) => d.id === "dvB"), "le brouillon n'est pas supprimé");
+  // Crew avec fiche de paie : bouton supprimer désactivé
+  await page.getByRole("tab", { name: /Personnel$/ }).click(); await page.waitForTimeout(1000);
+  const btn = page.locator("tr", { hasText: s1.nom }).locator("button[title*='Contrats signés']");
+  verifier(await btn.count() && await btn.first().isDisabled(), "on peut encore supprimer un crew qui a des fiches de paie");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+
+  // Page client d'un devis annulé : consultable, mention « annulé », factures disponibles, pas de signature
+  const c = await contexte(navigateur, base, null);
+  await c.page.goto(`${BASE}/mon-devis/aaaaaaaa-1111-2222-3333-444444444444`); await c.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await c.page.reload(); await c.page.waitForTimeout(1500);
+  verifier(await c.page.getByTestId("statut-annule").isVisible() && await c.page.getByTestId("devis-annule").isVisible() && await c.page.getByTestId("mes-factures").isVisible(), "la page client d'un devis annulé n'affiche pas l'annulation et les factures");
+  verifier(!(await c.page.getByTestId("bloc-signature").count()), "un devis annulé peut encore être signé");
+  await c.ctx.close();
+  notes.push("devis signé+facturé : « Archiver » au lieu de « Supprimer » ; signé : statuts Accepté/Annulé seulement ; annulation avec avertissement → équipe libérée, contrat signé annulé ; crew avec paie non supprimable ; page client « annulé » avec ses factures");
 });
 
 // 3 sexdecies. Confiance + pages villes / services

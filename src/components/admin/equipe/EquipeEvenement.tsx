@@ -23,6 +23,7 @@ interface Affectation {
   depart_le?: string | null; depart_verifie?: boolean | null; heures_pointees?: number | null; heures_validees?: number | null; pointage_a_verifier?: boolean;
 }
 interface Props {
+  statutDevis?: string;
   devisId?: string;
   titre: string;
   lieu: string;
@@ -57,7 +58,7 @@ export function datesEvenement(debut: string, fin: string) {
   return res;
 }
 
-export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateFin, clientEmail, clientNom }: Props) {
+export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateFin, clientEmail, clientNom, statutDevis }: Props) {
   const { toast } = useToast();
   const dates = useMemo(() => datesEvenement(dateDebut, dateFin), [dateDebut, dateFin]);
   const [jour, setJour] = useState<string>("");
@@ -80,7 +81,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
     const [s, d, a, o] = await Promise.all([
       supabase.from("staff").select("id, nom, prenom, ville, taux_horaire, genre").eq("banni", false).order("nom"),
       supabase.from("disponibilites").select("*").in("date_jour", dates),
-      supabase.from("affectations").select("*").eq("devis_id", devisId).order("date_jour"),
+      supabase.from("affectations").select("*").eq("devis_id", devisId).neq("statut", "annule").order("date_jour"),
       supabase.from("affectations").select("staff_id, date_jour, devis(numero)").in("date_jour", dates).neq("devis_id", devisId).neq("statut", "annule"),
     ]);
     setStaff((s.data ?? []) as StaffMini[]);
@@ -200,12 +201,14 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
     if (!devisId) return null;
     const [{ data: lignes }, { data: exist }, { data: dv }] = await Promise.all([
       supabase.from("affectations").select("*").eq("devis_id", devisId).eq("staff_id", staffId).neq("statut", "annule").order("date_jour"),
-      supabase.from("contrats").select("id").eq("devis_id", devisId).eq("staff_id", staffId).maybeSingle(),
+      supabase.from("contrats").select("id, signe_le").eq("devis_id", devisId).eq("staff_id", staffId).maybeSingle(),
       supabase.from("devis").select("numero, titre").eq("id", devisId).maybeSingle(),
     ]);
     const actives = (lignes ?? []) as Affectation[];
     if (!actives.length) {
-      if (exist) await supabase.from("contrats").delete().eq("id", exist.id);
+      // Plus aucune date : un contrat signé est conservé mais annulé (preuve), un contrat non signé disparaît
+      if (exist?.signe_le) await supabase.from("contrats").update({ statut: "annule" }).eq("id", exist.id);
+      else if (exist) await supabase.from("contrats").delete().eq("id", exist.id);
       return null;
     }
     const total = actives.reduce((t, l) => t + Number(l.heures), 0);
@@ -267,6 +270,10 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
   if (!devisId) {
     return <Card><CardHeader><CardTitle className="text-base">Équipe de l'événement</CardTitle></CardHeader>
       <CardContent className="text-sm text-muted-foreground">Enregistre d'abord le devis pour voir qui est disponible et constituer l'équipe.</CardContent></Card>;
+  }
+  if (statutDevis === "annule" || statutDevis === "refuse") {
+    return <Card data-testid="equipe-liberee"><CardHeader><CardTitle className="text-base">Équipe de l'événement</CardTitle></CardHeader>
+      <CardContent className="text-sm text-muted-foreground">Devis {statutDevis === "annule" ? "annulé" : "refusé"} : l'équipe a été libérée (plus de mission, de pointage ni de paie pour cet événement). Repasse le devis en « Accepté » si l'événement a finalement lieu, puis reconstitue l'équipe.</CardContent></Card>;
   }
   if (!dates.length) {
     return <Card><CardHeader><CardTitle className="text-base">Équipe de l'événement</CardTitle></CardHeader>

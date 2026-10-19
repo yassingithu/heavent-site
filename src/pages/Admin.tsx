@@ -744,7 +744,15 @@ const Admin = () => {
     }
   };
 
+  /** Une personne avec des contrats signés ou des fiches de paie se bannit, elle ne se supprime pas (documents à conserver). */
+  const documentsLegaux = (staffId: string) =>
+    contrats.some((c: any) => c.staff_id === staffId && c.signe_le) || fichesPaie.some((f: any) => f.staff_id === staffId);
+
   const deleteStaff = async (staffId: string, staffName: string) => {
+    if (documentsLegaux(staffId)) {
+      toast({ title: "Suppression impossible", description: `${staffName} a des contrats signés ou des fiches de paie, qui doivent être conservés. Pour l'écarter, ouvre sa fiche et utilise « Bannir ce crew ».`, variant: "destructive" });
+      return;
+    }
     if (!confirm(`Êtes-vous sûr de vouloir supprimer ${staffName} ? Cette action est irréversible.`)) {
       return;
     }
@@ -766,8 +774,8 @@ const Admin = () => {
     } catch (error) {
       console.error('Erreur suppression staff:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le staff",
+        title: "Suppression impossible",
+        description: (error as any)?.message || "Impossible de supprimer le staff",
         variant: "destructive",
       });
     }
@@ -1458,6 +1466,8 @@ const Admin = () => {
                             <Button
                               variant="destructive"
                               size="sm"
+                              disabled={documentsLegaux(person.id)}
+                              title={documentsLegaux(person.id) ? "Contrats signés ou fiches de paie à conserver : bannis cette personne depuis sa fiche au lieu de la supprimer" : "Supprimer"}
                               onClick={() => deleteStaff(person.id, `${person.prenom} ${person.nom}`)}
                             >
                               <Trash2 className="h-4 w-4" />

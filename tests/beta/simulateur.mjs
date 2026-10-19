@@ -251,7 +251,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     }
     if (url.pathname.includes("/rpc/devis_public")) {
       const { p_token } = JSON.parse(req.postData() || "{}");
-      const d = base.devis.find((x) => x.lien_token === p_token && x.statut !== "annule");
+      const d = base.devis.find((x) => x.lien_token === p_token);
       if (!d) return route.fulfill({ json: null });
       const { notes_internes, ...visible } = d;
       return route.fulfill({ json: { devis: visible, lignes: base.devis_lignes.filter((l) => l.devis_id === d.id).sort((a, b) => a.ordre - b.ordre), agence: base.parametres_agence[0],
@@ -352,6 +352,8 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
         if (select?.includes("contrats(")) { const c = base.contrats.find((s) => s.id === x.contrat_id); y.contrats = c ? { ...c, devis: admin ? base.devis.find((d) => d.id === c.devis_id) ?? null : null } : null; }
         if (select?.includes("devis(")) y.devis = admin ? base.devis.find((s) => s.id === x.devis_id) ?? null : null;
         if (select?.includes("affectations(") && t === "devis") y.affectations = base.affectations.filter((af) => af.devis_id === x.id);
+        if (t === "devis" && select?.includes("factures(")) y.factures = (base.factures ?? []).filter((f) => f.devis_id === x.id);
+        if (t === "devis" && select?.includes("contrats(")) y.contrats = base.contrats.filter((c) => c.devis_id === x.id);
         return y;
       });
       return route.fulfill({ json: unique ? r[0] ?? null : r });
@@ -371,8 +373,24 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       }
       return route.fulfill({ status: 200, json: r });
     }
-    if (req.method() === "DELETE" && t === "devis" && (base.factures ?? []).some((f) => correspond({ id: f.devis_id }, params)))
-      return route.fulfill({ status: 409, json: { code: "23503", message: "update or delete on table \"devis\" violates foreign key constraint on table \"factures\"" } });
+    if (req.method() === "DELETE" && t === "devis") {
+      const cibles = base.devis.filter((x) => correspond(x, params));
+      if (cibles.some((d) => d.signe_le)) return route.fulfill({ status: 400, json: { code: "P0001", message: "Un devis signé ne peut pas être supprimé : archive-le (ou passe-le en « Annulé »)." } });
+      if (cibles.some((d) => (base.factures ?? []).some((f) => f.devis_id === d.id))) return route.fulfill({ status: 400, json: { code: "P0001", message: "Un devis facturé ne peut pas être supprimé : archive-le pour le retirer de la liste." } });
+    }
+    if (req.method() === "DELETE" && t === "contrats" && base.contrats.some((c) => correspond(c, params) && c.signe_le))
+      return route.fulfill({ status: 400, json: { code: "P0001", message: "Un contrat signé ne peut pas être supprimé : annule-le." } });
+    if (req.method() === "DELETE" && t === "staff" && base.staff.some((x) => correspond(x, params) && (base.contrats.some((c) => c.staff_id === x.id && c.signe_le) || base.fiches_paie.some((f) => f.staff_id === x.id))))
+      return route.fulfill({ status: 400, json: { code: "P0001", message: "Cette personne a des contrats signés ou des fiches de paie : ces documents doivent être conservés. Bannis-la plutôt que de la supprimer." } });
+    if (req.method() === "PATCH" && t === "devis") {
+      const b = JSON.parse(req.postData());
+      for (const d of base.devis.filter((x) => correspond(x, params))) {
+        if (["annule", "refuse"].includes(b.statut) && !["annule", "refuse"].includes(d.statut)) {
+          base.affectations.filter((a) => a.devis_id === d.id).forEach((a) => { a.statut = "annule"; });
+          base.contrats.filter((c) => c.devis_id === d.id).forEach((c) => { c.statut = "annule"; });
+        }
+      }
+    }
     if (req.method() === "PATCH") { const b = JSON.parse(req.postData()); const r = base[t].filter((x) => correspond(x, params)); r.forEach((x) => Object.assign(x, b)); return route.fulfill({ status: 200, json: unique ? r[0] : r }); }
     if (req.method() === "DELETE") { base[t] = base[t].filter((x) => !correspond(x, params)); return route.fulfill({ status: 204, body: "" }); }
     return route.fulfill({ json: [] });
