@@ -11,11 +11,16 @@ import { CRENEAUX, Dispo, libelleDispo } from "@/components/admin/staff/Planning
 import { telechargerContrats } from "./contratPdf";
 import { BADGE_SIGNATURE, dateHeureFr, etatSignature } from "@/lib/signature";
 import { telechargerFichesProfil } from "@/components/admin/staff/FichesProfilStaff";
+import FicheMission from "./FicheMission";
+import EtatPointage from "./EtatPointage";
 
 interface StaffMini { id: string; nom: string; prenom: string; ville: string | null; taux_horaire: number | null; genre?: string | null }
 interface Affectation {
   id: string; staff_id: string; date_jour: string; heures: number; poste: string; taux_horaire: number;
   heure_debut: string | null; heure_fin: string | null; statut: string; contrat_id: string | null;
+  presence_confirmee_le?: string | null; empechement_le?: string | null; empechement_motif?: string | null;
+  arrivee_le?: string | null; arrivee_verifiee?: boolean | null; arrivee_position?: any; arrivee_photo?: string | null;
+  depart_le?: string | null; depart_verifie?: boolean | null; heures_pointees?: number | null; heures_validees?: number | null; pointage_a_verifier?: boolean;
 }
 interface Props {
   devisId?: string;
@@ -329,6 +334,9 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
                     <div className="flex items-center gap-1 text-xs"><Input key={`h${lignes[0].heures}`} className="h-8" type="number" min={0} step="0.5" defaultValue={lignes[0].heures} onBlur={(e) => Number(e.target.value) !== Number(lignes[0].heures) && majPersonne(staff_id, { heures: Number(e.target.value) })} /> h / jour</div>
                     <div className="flex items-center gap-1 text-xs"><Input className="h-8" type="number" min={0} step="1" defaultValue={lignes[0].taux_horaire} onBlur={(e) => Number(e.target.value) !== Number(lignes[0].taux_horaire) && majPersonne(staff_id, { taux_horaire: Number(e.target.value) })} /> MAD/h</div>
                   </div>
+                  <div className="space-y-1">
+                    {lignes.map((l) => <EtatPointage key={l.id} a={l} plusieursJours={lignes.length > 1} onChange={charger} />)}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     Payé au staff : {Math.round(lignes.reduce((t, l) => t + Number(l.heures) * Number(l.taux_horaire), 0))} MAD brut ({lignes.reduce((t, l) => t + Number(l.heures), 0)} h)
                   </div>
@@ -336,6 +344,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
               ))}
             </div>
           )}
+          {equipe.length > 0 && <div className="mt-4"><FicheMission devisId={devisId} lieu={lieu} /></div>}
           <p className="text-xs text-muted-foreground mt-2">
             Le contrat se crée automatiquement dès qu'une personne est ajoutée (un contrat par personne et par événement, avec toutes ses dates) et se met à jour à chaque changement. Les heures et le taux horaire (payé au staff) servent aussi à la fiche de paie du mois.
           </p>

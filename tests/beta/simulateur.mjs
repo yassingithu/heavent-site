@@ -10,7 +10,7 @@ export function nouvelleBase() {
     devis_mariage: F.dem.map((d) => ({ ...d })), admins: [{ email: "admin@heavent.test" }],
     agenda_parametres: [{ id: 1, duree_minutes: 45, pause_minutes: 15, delai_heures: 24, horizon_jours: 30, types: ["agence", "telephone", "visio"], adresse: null, lien_visio: null, actif: true }],
     agenda_horaires: [1, 2, 3, 4, 5, 6].flatMap((jour) => [{ id: "h" + jour + "a", jour, debut: "10:00:00", fin: "13:00:00" }, { id: "h" + jour + "b", jour, debut: "15:00:00", fin: "19:00:00" }]),
-    agenda_indisponibilites: [], rendez_vous: [],
+    agenda_indisponibilites: [], rendez_vous: [], fiches_mission: [],
     appelsFonctions: [],
   };
 }
@@ -154,6 +154,30 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
         if (d.acompte_pct > 0) { try { facture = creerFacture(base, d.id, "acompte", "signature en ligne"); facture.envoyee_le = new Date().toISOString(); } catch { /* devis à 0 */ } }
         return route.fulfill({ json: { success: true, facture: facture?.numero ?? null } });
       }
+      if (nom === "pointer") {
+        const a = base.affectations.find((x) => x.id === corps.id);
+        if (!a || a.staff_id !== moi()?.id) return route.fulfill({ status: 403, json: { error: "Cette mission n'est pas la tienne." } });
+        const t = new Date().toISOString();
+        if (corps.action === "confirmer") { Object.assign(a, { presence_confirmee_le: t, empechement_le: null }); return route.fulfill({ json: { success: true } }); }
+        if (corps.action === "empechement") { Object.assign(a, { empechement_le: t, empechement_motif: corps.motif || null, presence_confirmee_le: null }); return route.fulfill({ json: { success: true } }); }
+        const f = base.fiches_mission.find((x) => x.devis_id === a.devis_id);
+        const p = corps.position;
+        let distance = null, verifie = p ? null : false;
+        if (p && f?.latitude != null) {
+          const r = Math.PI / 180, dLat = (f.latitude - p.lat) * r, dLng = (f.longitude - p.lng) * r;
+          const x = Math.sin(dLat / 2) ** 2 + Math.cos(p.lat * r) * Math.cos(f.latitude * r) * Math.sin(dLng / 2) ** 2;
+          distance = Math.round(2 * 6371000 * Math.asin(Math.sqrt(x))); verifie = distance <= (f.rayon_m ?? 300) + Math.min(p.precision ?? 0, 500);
+        }
+        if (corps.action === "arrivee") {
+          Object.assign(a, { arrivee_le: t, arrivee_position: p ? { ...p, distance } : null, arrivee_verifiee: verifie, arrivee_photo: corps.photo ? `${a.devis_id}/${a.id}-arrivee.jpg` : null, pointage_a_verifier: verifie === false });
+          base.photosPointage = (base.photosPointage ?? 0) + (corps.photo ? 1 : 0);
+          return route.fulfill({ json: { success: true, heure: t, verifie, distance, retard: 0 } });
+        }
+        if (!a.arrivee_le) return route.fulfill({ status: 409, json: { error: "Pointe d'abord ton arrivée." } });
+        const h = Math.round(Math.max(0, (Date.now() - Date.parse(a.arrivee_le)) / 3600e3) * 4) / 4;
+        Object.assign(a, { depart_le: t, depart_verifie: verifie, heures_pointees: h, heures_validees: verifie === false ? null : Math.min(h, a.heures), pointage_a_verifier: verifie === false || h > a.heures + 0.25 });
+        return route.fulfill({ json: { success: true, heure: t, heures: h, verifie, distance, aVerifier: a.pointage_a_verifier } });
+      }
       if (nom === "prendre-rdv") {
         if (corps.action === "annuler") {
           if (!admin) return route.fulfill({ status: 403, json: { error: "Accès refusé" } });
@@ -181,6 +205,14 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     }
     if (url.pathname.includes("/rpc/is_admin")) return route.fulfill({ json: admin });
     if (url.pathname.includes("/rpc/generer_fiches_paie")) return route.fulfill({ json: genererFiches(base) });
+    if (url.pathname.includes("/rpc/mes_missions")) {
+      const m = moi();
+      return route.fulfill({ json: base.affectations.filter((a) => m && a.staff_id === m.id && a.statut !== "annule").map((a) => {
+        const d = base.devis.find((x) => x.id === a.devis_id) ?? {};
+        const f = base.fiches_mission.find((x) => x.devis_id === a.devis_id) ?? null;
+        return { ...a, evenement: d.titre || "Événement", lieu: d.lieu ?? null, numero: d.numero ?? null, fiche: f };
+      }) });
+    }
     if (url.pathname.includes("/rpc/agenda_creneaux")) return route.fulfill({ json: creneauxLibres(base) });
     if (url.pathname.includes("/rpc/agenda_public")) {
       const p = base.agenda_parametres[0];
@@ -213,6 +245,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     if (req.method() === "GET") {
       let lignes = base[t];
       if (!admin) {
+        if (t === "fiches_mission") lignes = [];
         if (["contrats", "fiches_paie", "affectations", "disponibilites", "remarques_contrat"].includes(t)) lignes = lignes.filter((r) => r.staff_id === moi()?.id);
         if (t === "staff") lignes = lignes.filter((r) => r.email === email);
         if (["devis", "devis_lignes", "devis_mariage", "devis_entreprise", "admins", "factures", "rendez_vous", "agenda_parametres", "agenda_horaires", "agenda_indisponibilites"].includes(t)) lignes = [];

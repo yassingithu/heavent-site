@@ -551,6 +551,67 @@ await scenario("Agenda : réservation d'un créneau (devis + Contact), dispos et
   notes.push("admin : rendez-vous visible, plage du dimanche ajoutée, jour bloqué (minuit heure du Maroc, GMT), lien calendrier, annulation avec message au client");
 });
 
+// 3 quaterdecies. Pointage : le crew confirme, consulte sa fiche mission, pointe arrivée (position + selfie) et départ
+await scenario("Pointage : confirmation, fiche mission, arrivée sur le lieu avec selfie, départ, suivi admin", async (notes) => {
+  const base = nouvelleBase();
+  const crew = base.staff[0];
+  const maintenant = new Date();
+  const debut = `${String(maintenant.getUTCHours()).padStart(2, "0")}:00:00`;
+  const fin = `${String((maintenant.getUTCHours() + 4) % 24).padStart(2, "0")}:00:00`;
+  base.devis = [{ id: "dv5", numero: "DEV-2026-0150", type: "entreprise", marque: "heavent", client_nom: "Atlas", titre: "Salon de l'Auto", lieu: "Office des Changes, Casablanca", statut: "accepte", total_ttc: 5000, date_evenement: maintenant.toISOString().slice(0, 10), lien_token: crypto.randomUUID() }];
+  base.fiches_mission = [{ devis_id: "dv5", tenue: "Tailleur noir, chignon", point_rdv: "Hall 2, entrée du personnel", heure_rdv: "08:30:00", latitude: 33.5731, longitude: -7.5898, rayon_m: 300, contact_nom: "Imane", contact_telephone: "0610939655", consignes: "Accueil des visiteurs" }];
+  base.affectations = [{ id: "af1", devis_id: "dv5", staff_id: crew.id, date_jour: maintenant.toISOString().slice(0, 10), heure_debut: debut, heure_fin: fin, heures: 4, poste: "Hôtesse d'accueil", taux_horaire: 60, statut: "confirme" }];
+
+  const c = await contexte(navigateur, base, crew.email, { mobile: true });
+  await c.ctx.grantPermissions(["geolocation"], { origin: BASE });
+  await c.ctx.setGeolocation({ latitude: 33.5735, longitude: -7.5893, accuracy: 25 });
+  await connecter(c.page, BASE, crew.email, "/staff-dashboard");
+  verifier(await c.page.getByTestId("mes-missions").isVisible(), "pas de section « Mes prochaines missions »");
+  const fiche = await c.page.getByTestId("fiche-mission").innerText();
+  verifier(/Tailleur noir/.test(fiche) && /Hall 2/.test(fiche) && /Imane/.test(fiche), "la fiche mission n'est pas affichée : " + fiche);
+  await c.page.getByTestId("confirmer-presence").tap(); await c.page.waitForTimeout(800);
+  verifier(base.affectations[0].presence_confirmee_le, "la confirmation de présence n'est pas enregistrée");
+  await c.page.getByTestId("pointer-arrivee").tap(); await c.page.waitForTimeout(500);
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAHElEQVR4nGP8z8Dwn4EIwESMolGFowpHFQ4uhQBGhgIeb6zKqQAAAABJRU5ErkJggg==", "base64");
+  await c.page.getByTestId("selfie").setInputFiles({ name: "selfie.png", mimeType: "image/png", buffer: png }); await c.page.waitForTimeout(600);
+  await c.page.getByTestId("valider-pointage").tap(); await c.page.waitForTimeout(1500);
+  const a = base.affectations[0];
+  verifier(a.arrivee_le && a.arrivee_verifiee === true && a.arrivee_position?.distance < 100 && a.arrivee_photo, "arrivée mal pointée : " + JSON.stringify({ v: a.arrivee_verifiee, p: a.arrivee_position, ph: a.arrivee_photo }));
+  verifier(/Arrivée pointée/.test(await toasts(c.page)), "pas de confirmation du pointage d'arrivée");
+  await c.page.screenshot({ path: `${CAPTURES}/18-pointage-crew.png`, fullPage: true });
+  await c.page.getByTestId("pointer-depart").tap(); await c.page.waitForTimeout(400);
+  await c.page.getByTestId("valider-pointage").tap(); await c.page.waitForTimeout(1500);
+  verifier(a.depart_le && a.heures_pointees != null, "le départ n'est pas pointé");
+  verifier(!c.erreurs.length, "erreurs JavaScript côté crew : " + c.erreurs.join(" ; "));
+  await c.ctx.close();
+  notes.push("le crew confirme, voit tenue / rendez-vous / contact, pointe son arrivée sur le lieu (≈ 50 m, selfie) puis son départ");
+
+  // Un 2e crew pointe loin du lieu : à vérifier par l'admin
+  const crew2 = base.staff[1];
+  base.affectations.push({ id: "af2", devis_id: "dv5", staff_id: crew2.id, date_jour: maintenant.toISOString().slice(0, 10), heure_debut: debut, heure_fin: fin, heures: 4, poste: "Hôtesse d'accueil", taux_horaire: 60, statut: "confirme" });
+  const c2 = await contexte(navigateur, base, crew2.email, { mobile: true });
+  await c2.ctx.grantPermissions(["geolocation"], { origin: BASE });
+  await c2.ctx.setGeolocation({ latitude: 34.0209, longitude: -6.8416, accuracy: 20 }); // Rabat
+  await connecter(c2.page, BASE, crew2.email, "/staff-dashboard");
+  await c2.page.getByTestId("pointer-arrivee").tap(); await c2.page.waitForTimeout(400);
+  await c2.page.getByTestId("valider-pointage").tap(); await c2.page.waitForTimeout(1500);
+  verifier(base.affectations[1].arrivee_verifiee === false && base.affectations[1].pointage_a_verifier, "un pointage hors du lieu n'est pas signalé");
+  verifier(/hors du lieu/.test(await toasts(c2.page)), "le crew n'est pas informé que son pointage sera vérifié");
+  await c2.ctx.close();
+
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Bilan/ }).first().click().catch(() => {}); await page.waitForTimeout(1200);
+  const suivi = await page.getByTestId("missions-du-jour").innerText();
+  verifier(/Arrivée/.test(suivi) && /hors lieu/.test(suivi) && /1 pointage à vérifier/.test(suivi), "le suivi du jour est incomplet : " + suivi);
+  await page.screenshot({ path: `${CAPTURES}/19-suivi-pointage.png`, fullPage: true });
+  await page.getByTestId("pointage-a-verifier").getByRole("button", { name: /Garder 4 h prévues/ }).click(); await page.waitForTimeout(1000);
+  verifier(base.affectations[1].heures_validees === 4 && !base.affectations[1].pointage_a_verifier, "la validation des heures par l'admin ne fonctionne pas");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+  notes.push("admin : « Équipes sur le terrain » dans le Bilan, pointage hors lieu signalé puis validé (4 h)");
+});
+
 // 3 sexies. Paie : une fiche dont toutes les missions ont été supprimées disparaît au recalcul
 await scenario("Paie : « Calculer le mois » retire les fiches sans mission (jamais les fiches payées)", async (notes) => {
   const base = nouvelleBase();

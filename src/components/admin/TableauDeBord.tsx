@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CATALOGUE, TypeElement } from "@/components/jeu-evenement/config";
+import MissionsDuJour from "@/components/admin/equipe/MissionsDuJour";
 
 interface Demande { id: string; created_at?: string | null; statut?: string | null; configuration?: any }
 interface DevisLigne {
@@ -104,6 +105,7 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onO
   const maxTop = Math.max(1, ...s.top.map((t) => t.n));
   return (
     <div className="space-y-4" data-testid="tableau-de-bord">
+      <MissionsDuJour />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Tuile testId="tuile-demandes" titre="Demandes ce mois-ci" valeur={String(s.demandesMois)} detail={`${s.demandesPrec} le mois dernier`} />
         <Tuile titre="Devis en attente de réponse" valeur={String(s.enAttente.length)} detail={s.enAttente.length ? `${mad(s.montantAttente)} TTC en jeu` : "Aucun"} />

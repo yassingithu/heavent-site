@@ -19,6 +19,7 @@ import SignatureContrat from "@/components/contrat/SignatureContrat";
 import RemarquesContrat from "@/components/contrat/RemarquesContrat";
 import { BADGE_SIGNATURE, dateHeureFr, etatSignature, finSignature, limiteSignature } from "@/lib/signature";
 import { telechargerFichesPaie } from "@/components/admin/paie/FichesPaieMensuelles";
+import MesMissions from "@/components/staff/MesMissions";
 
 interface Contrat {
   id: string;
@@ -492,6 +493,8 @@ const StaffDashboard = () => {
             <span className="sm:inline">{t('dashboard.logout')}</span>
           </Button>
         </div>
+
+        <MesMissions />
 
         <Tabs defaultValue="contrats" className="space-y-3 sm:space-y-4">
           <TabsList className="grid w-full grid-cols-3 h-auto p-1">
