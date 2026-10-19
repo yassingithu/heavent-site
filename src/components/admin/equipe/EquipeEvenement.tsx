@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, FileSignature, Plus, UserPlus, X } from "lucide-react";
+import { Download, FileSignature, Plus, RotateCcw, Star, UserPlus, X } from "lucide-react";
 import { CRENEAUX, Dispo, libelleDispo } from "@/components/admin/staff/PlanningDispos";
 import { telechargerContrats } from "./contratPdf";
 import { BADGE_SIGNATURE, dateHeureFr, etatSignature } from "@/lib/signature";
@@ -28,7 +28,14 @@ interface Props {
   lieu: string;
   dateDebut: string;
   dateFin: string;
+  clientEmail?: string;
+  clientNom?: string;
 }
+
+/** Note moyenne de chaque crew (avis des clients). */
+export type Notes = Record<string, { moyenne: number; nb: number }>;
+export const badgeNote = (n?: { moyenne: number; nb: number }) =>
+  n ? <span title={`${n.nb} avis client${n.nb > 1 ? "s" : ""}`} className="inline-flex items-center gap-0.5 text-[11px] font-medium text-[#8C6D22]"><Star className="h-3 w-3 fill-[#C8B560] text-[#C8B560]" />{n.moyenne.toFixed(1)}<span className="text-muted-foreground">({n.nb})</span></span> : null;
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const jourFr = (s: string) => new Date(s + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
@@ -50,7 +57,7 @@ export function datesEvenement(debut: string, fin: string) {
   return res;
 }
 
-export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateFin }: Props) {
+export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateFin, clientEmail, clientNom }: Props) {
   const { toast } = useToast();
   const dates = useMemo(() => datesEvenement(dateDebut, dateFin), [dateDebut, dateFin]);
   const [jour, setJour] = useState<string>("");
@@ -62,6 +69,9 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
   const [enCours, setEnCours] = useState(false);
   const [signatures, setSignatures] = useState<Record<string, any>>({});
   const [horaireEquipe, setHoraireEquipe] = useState<{ debut: string | null; fin: string | null }>({ debut: null, fin: null });
+  const [notes, setNotes] = useState<Notes>({});
+  const [avis, setAvis] = useState<{ avis_note: number | null; avis_commentaire: string | null; reprendre_equipe: boolean } | null>(null);
+  const [precedents, setPrecedents] = useState<{ id: string; numero: string; titre: string | null; date_evenement: string | null; staff: string[] }[]>([]);
 
   useEffect(() => { if (!dates.includes(jour)) setJour(dates[0] ?? ""); }, [dates, jour]);
 
@@ -79,7 +89,20 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
     setDispos((d.data ?? []) as Dispo[]);
     setAffects((a.data ?? []) as Affectation[]);
     setOccupes(((o.data ?? []) as any[]).map((x) => ({ staff_id: x.staff_id, date_jour: x.date_jour, numero: x.devis?.numero ?? null })));
-  }, [devisId, dates]);
+    // Notes des clients, avis sur cet événement, équipes des événements précédents du même client
+    (supabase as any).from("evaluations_crew").select("staff_id, note").then(({ data }: any) => {
+      const m: Record<string, number[]> = {};
+      (data ?? []).forEach((v: any) => (m[v.staff_id] ??= []).push(v.note));
+      setNotes(Object.fromEntries(Object.entries(m).map(([k, l]) => [k, { moyenne: l.reduce((a, b) => a + b, 0) / l.length, nb: l.length }])));
+    });
+    (supabase as any).from("devis").select("avis_note, avis_commentaire, reprendre_equipe").eq("id", devisId).maybeSingle().then(({ data }: any) => setAvis(data));
+    const q = (v: string) => `"${v.trim().replace(/"/g, "")}"`;
+    const critere = clientEmail?.trim() ? `client_email.ilike.${q(clientEmail)}` : clientNom?.trim() ? `client_societe.ilike.${q(clientNom)},client_nom.ilike.${q(clientNom)}` : null;
+    if (critere) {
+      (supabase as any).from("devis").select("id, numero, titre, date_evenement, affectations(staff_id, statut)").or(critere).neq("id", devisId).order("date_evenement", { ascending: false }).limit(10)
+        .then(({ data }: any) => setPrecedents((data ?? []).map((d: any) => ({ ...d, staff: [...new Set<string>((d.affectations ?? []).filter((a: any) => a.statut !== "annule").map((a: any) => a.staff_id))] })).filter((d: any) => d.staff.length)));
+    } else setPrecedents([]);
+  }, [devisId, dates, clientEmail, clientNom]);
 
   useEffect(() => { charger(); }, [charger]);
 
@@ -88,8 +111,20 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
   const disponiblesJour = useMemo(() => {
     const m = new Map<string, Dispo[]>();
     dispos.filter((d) => d.date_jour === jour && d.disponible).forEach((d) => m.set(d.staff_id, [...(m.get(d.staff_id) ?? []), d]));
-    return [...m.entries()].filter(([id]) => !affectesJour.has(id) && staff.some((s) => s.id === id)).map(([id, ds]) => ({ id, ds }));
-  }, [dispos, jour, affects, staff]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Les crews les mieux notés par les clients en premier
+    return [...m.entries()].filter(([id]) => !affectesJour.has(id) && staff.some((s) => s.id === id)).map(([id, ds]) => ({ id, ds }))
+      .sort((a, b) => (notes[b.id]?.moyenne ?? 0) - (notes[a.id]?.moyenne ?? 0));
+  }, [dispos, jour, affects, staff, notes]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** Reprend toute l'équipe d'un événement précédent du même client, sur toutes les dates de celui-ci. */
+  const reprendreEquipe = async (id: string) => {
+    const p = precedents.find((x) => x.id === id);
+    if (!p) return;
+    const actifs = p.staff.filter((sid) => staff.some((s) => s.id === sid));
+    if (!confirm(`Reprendre l'équipe de ${p.numero} (${actifs.length} personne${actifs.length > 1 ? "s" : ""}) sur ${dates.length > 1 ? "toutes les dates" : "la date"} de cet événement ?`)) return;
+    for (const sid of actifs) await affecter(sid, dates);
+    toast({ title: "Équipe reprise", description: `${actifs.length} personne${actifs.length > 1 ? "s" : ""} ajoutée${actifs.length > 1 ? "s" : ""}, contrats créés.` });
+  };
 
   const equipe = useMemo(() => {
     const m = new Map<string, Affectation[]>();
@@ -244,6 +279,22 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
     <Card>
       <CardHeader className="space-y-3">
         <CardTitle className="text-base">Équipe de l'événement</CardTitle>
+        {avis?.avis_note && (
+          <div className="rounded-md border border-[#ece6d3] bg-[#FAF7EE] p-2 text-sm" data-testid="avis-client-admin">
+            <span className="text-[#A8933F]">{"★".repeat(avis.avis_note)}{"☆".repeat(5 - avis.avis_note)}</span> <b>Avis du client : {avis.avis_note}/5</b>
+            {avis.avis_commentaire && <div className="text-xs whitespace-pre-line mt-1">« {avis.avis_commentaire} »</div>}
+            {avis.reprendre_equipe && <div className="text-xs mt-1 font-medium text-[#7A5F1E]">🔁 Le client souhaite retravailler avec la même équipe.</div>}
+          </div>
+        )}
+        {precedents.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <RotateCcw className="h-4 w-4 text-[#A8933F]" /> Reprendre l'équipe d'un événement précédent de ce client :
+            <Select onValueChange={reprendreEquipe}>
+              <SelectTrigger className="h-8 w-auto min-w-[220px]" data-testid="reprendre-equipe-admin"><SelectValue placeholder="Choisir…" /></SelectTrigger>
+              <SelectContent>{precedents.map((p) => <SelectItem key={p.id} value={p.id}>{p.numero}{p.titre ? ` — ${p.titre}` : ""} ({p.staff.length} pers.)</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="flex flex-wrap gap-1">
           {dates.map((d) => {
             const n = affects.filter((a) => a.date_jour === d).length;
@@ -267,7 +318,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
                 return (
                   <div key={id} className="flex items-center justify-between gap-2 border rounded-md p-2">
                     <div className="min-w-0">
-                      <div className="font-medium truncate">{nomStaff(id)}</div>
+                      <div className="font-medium truncate">{nomStaff(id)} {badgeNote(notes[id])}</div>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {ds.map((d) => <span key={d.id} className={`text-xs px-1.5 rounded ${d.creneau ? CRENEAUX[d.creneau]?.classe : "bg-emerald-100 text-emerald-900"}`}>{libelleDispo(d)}</span>)}
                         {occ.map((o, i) => <span key={i} className="text-xs px-1.5 rounded bg-red-100 text-red-800">Déjà sur {o.numero ?? "un autre événement"}</span>)}
@@ -316,7 +367,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
               {equipe.map(({ staff_id, lignes }) => (
                 <div key={staff_id} className="border rounded-md p-3 space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="font-medium">{nomStaff(staff_id)} {signatures[staff_id] && (() => { const c = signatures[staff_id]; const b = BADGE_SIGNATURE[etatSignature(c)]; return <span title={c.signe_le ? `Signé le ${dateHeureFr(c.signe_le)}` : undefined} className={`ml-1 text-[11px] font-medium rounded-full px-2 py-0.5 ${b.classe}`}>{b.texte}</span>; })()}</div>
+                    <div className="font-medium">{nomStaff(staff_id)} {badgeNote(notes[staff_id])} {signatures[staff_id] && (() => { const c = signatures[staff_id]; const b = BADGE_SIGNATURE[etatSignature(c)]; return <span title={c.signe_le ? `Signé le ${dateHeureFr(c.signe_le)}` : undefined} className={`ml-1 text-[11px] font-medium rounded-full px-2 py-0.5 ${b.classe}`}>{b.texte}</span>; })()}</div>
                     <Button size="sm" variant="ghost" disabled={enCours} onClick={() => telechargerUn(staff_id)}><FileSignature className="h-4 w-4 mr-1" /> Contrat</Button>
                   </div>
                   <div className="flex flex-wrap gap-1">

@@ -614,6 +614,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 lieu={form.lieu}
                 dateDebut={form.date_evenement}
                 dateFin={form.date_fin_evenement}
+                clientEmail={form.client_email}
+                clientNom={form.client_societe || form.client_nom}
               />
 
               <Card>

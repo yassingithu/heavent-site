@@ -6,7 +6,8 @@ import { emailClient, infosPratiques, langueDe, t as tr } from "../_shared/agend
 /**
  * Passage quotidien (9 h, heure du Maroc), lancé par la base :
  *  1. relance des devis envoyés sans réponse : à J+5 puis J+10 (tant qu'ils sont valables) ;
- *  2. demande d'avis Google le lendemain d'un événement dont le devis est accepté (si le lien est renseigné) ;
+ *  2. le lendemain d'un événement (devis accepté) : demande d'avis au client — il note le service et chaque crew
+ *     sur sa page de devis, puis on lui propose de laisser un avis Google ;
  *  3. facture de solde créée 2 jours après l'événement (devis accepté pas encore entièrement facturé),
  *     l'agence reçoit un récapitulatif pour vérifier et envoyer ;
  *  4. rappel aux clients qui ont rendez-vous le lendemain (dans leur langue).
@@ -33,12 +34,13 @@ function emailRelance(d: any, n: number) {
     <p style="font-size:12px;color:#777">Ce devis est établi d'après les informations transmises. Son montant peut évoluer en fonction des services et des prestataires retenus lors d'un premier rendez-vous.</p>
     <p>Bien à vous,<br>Imane CHAIGARI — CEO, Heavent People Agency</p></div>`;
 }
-function emailAvis(d: any, lien: string) {
+function emailAvis(d: any) {
+  const lien = `https://heaventagency.com/mon-devis/${d.lien_token}#avis`;
   return `<div style="font-family:Arial,sans-serif;max-width:620px;color:#2a2420">
     <p>Bonjour ${e(d.client_nom)},</p>
     <p>Merci de nous avoir fait confiance pour ${d.titre ? `« ${e(d.titre)} »` : "votre événement"} ! Nous espérons que tout s'est passé comme vous l'imaginiez.</p>
-    <p>Votre avis compte énormément pour notre petite équipe : il aide d'autres familles et entreprises à nous découvrir. Cela ne prend qu'une minute.</p>
-    <p style="margin:22px 0"><a href="${e(lien)}" style="background:#C8B560;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;display:inline-block">⭐ Laisser un avis sur Google</a></p>
+    <p>Comment s'est passée votre expérience ? Votre avis compte énormément pour notre petite équipe : vous pouvez noter l'événement et chaque personne qui vous a accompagné(e). Cela ne prend qu'une minute.</p>
+    <p style="margin:22px 0"><a href="${lien}" style="background:#C8B560;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;display:inline-block">⭐ Donner mon avis</a></p>
     <p>Avec toute notre gratitude,<br>Imane CHAIGARI et l'équipe Heavent People Agency</p></div>`;
 }
 
@@ -68,17 +70,15 @@ serve(async (req) => {
     rapport.relances.push(`${d.numero} → ${d.client_email} (relance ${n})`);
   }
 
-  // 2. Avis Google, le lendemain de l'événement (fenêtre de 14 jours, une seule fois par devis)
-  const { data: ag } = await db.from("parametres_agence").select("lien_avis_google").eq("id", 1).maybeSingle();
-  const lien = ag?.lien_avis_google?.trim();
-  if (lien) {
+  // 2. Demande d'avis, le lendemain de l'événement (fenêtre de 14 jours, une seule fois par devis)
+  {
     const debut = new Date(maintenant - 14 * JOUR).toISOString().slice(0, 10);
-    const { data: acceptes } = await db.from("devis").select("*").eq("statut", "accepte").is("avis_demande_le", null).not("client_email", "is", null);
+    const { data: acceptes } = await db.from("devis").select("*").eq("statut", "accepte").is("avis_demande_le", null).is("avis_le", null).not("client_email", "is", null);
     for (const d of acceptes ?? []) {
       const fin = d.date_fin_evenement ?? d.date_evenement;
       if (!fin || fin >= aujourdhui || fin < debut) continue;
       if (!essai) {
-        const r = await resend.emails.send({ from: FROM, to: [d.client_email], reply_to: ADMIN_EMAIL, subject: "Merci ! Votre avis compte pour nous ⭐", html: emailAvis(d, lien) });
+        const r = await resend.emails.send({ from: FROM, to: [d.client_email], reply_to: ADMIN_EMAIL, subject: "Comment s'est passé votre événement ? ⭐", html: emailAvis(d) });
         if ((r as any)?.error) continue;
         await db.from("devis").update({ avis_demande_le: new Date().toISOString() }).eq("id", d.id);
         await pause(600);

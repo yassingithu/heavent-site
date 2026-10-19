@@ -612,6 +612,55 @@ await scenario("Pointage : confirmation, fiche mission, arrivée sur le lieu ave
   notes.push("admin : « Équipes sur le terrain » dans le Bilan, pointage hors lieu signalé puis validé (4 h)");
 });
 
+// 3 quindecies. Avis : le client note l'événement et chaque crew, l'admin voit les notes et reprend l'équipe
+await scenario("Avis client : notes du service et des crews, avis Google, notes dans l'admin, reprendre la même équipe", async (notes) => {
+  const base = nouvelleBase();
+  base.parametres_agence[0].lien_avis_google = "https://g.page/r/heavent-test/review";
+  const hier = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+  const [s1, s2] = base.staff;
+  base.devis = [
+    { id: "dv6", numero: "DEV-2026-0160", type: "mariage", marque: "heavent", client_nom: "Yasmine Berrada", client_email: "yasmine@example.com", titre: "Mariage Yasmine", statut: "accepte", total_ttc: 20000, remise_globale_pct: 0, taux_tva: 20, acompte_pct: 50, date_emission: "2026-09-01", date_validite: "2099-12-31", date_evenement: hier, lien_token: "66666666-7777-8888-9999-000000000000", signe_le: "2026-09-02T10:00:00Z", relances: 0 },
+    { id: "dv7", numero: "DEV-2026-0170", type: "mariage", marque: "heavent", client_nom: "Yasmine Berrada", client_email: "yasmine@example.com", titre: "Henné Yasmine", statut: "brouillon", total_ttc: 0, remise_globale_pct: 0, taux_tva: 20, acompte_pct: 50, date_emission: "2026-10-19", date_validite: "2099-12-31", date_evenement: "2026-12-12", lien_token: crypto.randomUUID(), relances: 0 },
+  ];
+  base.devis_lignes = [{ id: "l1", devis_id: "dv6", ordre: 0, designation: "Hôtesses", description: null, quantite: 2, duree: 6, unite: "heure", prix_unitaire: 150, remise_pct: 0 }];
+  base.affectations = [s1, s2].map((s, i) => ({ id: "afv" + i, devis_id: "dv6", staff_id: s.id, date_jour: hier, heure_debut: "18:00:00", heure_fin: "23:00:00", heures: 5, poste: "Hôtesse d'accueil", taux_horaire: 60, statut: "confirme" }));
+
+  const c = await contexte(navigateur, base, "yasmine@example.com", { mobile: true });
+  await c.page.goto(`${BASE}/mon-devis/66666666-7777-8888-9999-000000000000#avis`); await c.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await c.page.reload(); await c.page.waitForTimeout(1800);
+  const bloc = c.page.getByTestId("avis-evenement");
+  verifier(await bloc.isVisible() && await bloc.getByTestId("membre-equipe").count() === 2, "le client ne voit pas son équipe à noter");
+  await bloc.getByTestId("envoyer-avis").tap(); await c.page.waitForTimeout(300);
+  verifier(/note pour l'événement/.test(await bloc.innerText()), "un avis sans note n'est pas refusé");
+  await bloc.getByRole("radiogroup", { name: "Note globale" }).getByTestId("etoile-5").tap();
+  await bloc.getByTestId("membre-equipe").nth(0).getByTestId("etoile-5").tap();
+  await bloc.getByTestId("membre-equipe").nth(1).getByTestId("etoile-4").tap();
+  await c.page.locator("#avis-commentaire").fill("Équipe souriante et très professionnelle");
+  await bloc.getByTestId("reprendre-equipe").check();
+  await bloc.getByTestId("envoyer-avis").tap(); await c.page.waitForTimeout(1200);
+  verifier(await c.page.getByTestId("avis-merci").isVisible() && await c.page.getByTestId("avis-google").getAttribute("href") === "https://g.page/r/heavent-test/review", "pas de remerciement ni de lien vers Google après une bonne note");
+  verifier(base.devis[0].avis_note === 5 && base.devis[0].reprendre_equipe && base.evaluations_crew.length === 2, "l'avis n'est pas enregistré");
+  await c.page.screenshot({ path: `${CAPTURES}/20-avis-client.png`, fullPage: true });
+  verifier(!c.erreurs.length, "erreurs JavaScript côté client : " + c.erreurs.join(" ; "));
+  await c.ctx.close();
+  notes.push("la cliente note l'événement (5/5) et ses 2 hôtesses (5 et 4), demande la même équipe, puis on lui propose Google");
+
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  page.on("dialog", (d) => d.accept());
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(800);
+  await page.getByText("Henné Yasmine").first().click(); await page.waitForTimeout(1800);
+  await page.getByTestId("reprendre-equipe-admin").click(); await page.getByRole("option", { name: /DEV-2026-0160/ }).click(); await page.waitForTimeout(2500);
+  const nouvelles = base.affectations.filter((a) => a.devis_id === "dv7").map((a) => a.staff_id).sort();
+  verifier(nouvelles.length === 2 && nouvelles.join() === [s1.id, s2.id].sort().join(), "l'équipe précédente n'est pas reprise : " + JSON.stringify(nouvelles));
+  verifier(await page.getByText("5.0").count() && await page.getByText("4.0").count(), "les notes des crews ne s'affichent pas dans l'équipe");
+  await page.getByRole("tab", { name: "Mes devis" }).click(); await page.waitForTimeout(500);
+  await page.getByText("Mariage Yasmine").first().click(); await page.waitForTimeout(1500);
+  verifier(/5\/5/.test(await page.getByTestId("avis-client-admin").innerText()) && /même équipe/.test(await page.getByTestId("avis-client-admin").innerText()), "l'avis du client n'apparaît pas dans le devis");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+  notes.push("admin : avis 5/5 visible dans le devis, notes ★ des crews, équipe reprise en 1 clic sur le nouveau devis du même client");
+});
+
 // 3 sexies. Paie : une fiche dont toutes les missions ont été supprimées disparaît au recalcul
 await scenario("Paie : « Calculer le mois » retire les fiches sans mission (jamais les fiches payées)", async (notes) => {
   const base = nouvelleBase();

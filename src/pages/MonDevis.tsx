@@ -11,7 +11,8 @@ import {
 import { telechargerDevisPdf, telechargerFacturePdf } from "@/components/admin/devis/devisPdf";
 import { Facture, TYPES_FACTURE } from "@/components/admin/devis/factureUtils";
 import ChoisirRendezVous from "@/components/rendez-vous/ChoisirRendezVous";
-import { CalendarClock, CheckCircle2, Download, FileText, Loader2, MessageCircle, Receipt } from "lucide-react";
+import { CalendarClock, CheckCircle2, Download, FileText, Loader2, MessageCircle, Receipt, Star } from "lucide-react";
+import { photoUrl } from "@/lib/pdf";
 
 type Etat = "chargement" | "introuvable" | "pret";
 
@@ -28,6 +29,8 @@ export default function MonDevis() {
   const [agence, setAgence] = useState<Parametres | null>(null);
   const [pdf, setPdf] = useState(false);
   const [factures, setFactures] = useState<Facture[]>([]);
+  const [equipe, setEquipe] = useState<MembreEquipe[]>([]);
+  const [avis, setAvis] = useState<{ note: number | null; google: string | null }>({ note: null, google: null });
 
   const charger = async () => {
     if (!/^[0-9a-f-]{36}$/i.test(token)) { setEtat("introuvable"); return; }
@@ -36,6 +39,8 @@ export default function MonDevis() {
     setDevis(devisDepuisBase(data.devis, data.lignes ?? []));
     setAgence(data.agence ?? null);
     setFactures((data.factures ?? []) as Facture[]);
+    setEquipe((data.equipe ?? []) as MembreEquipe[]);
+    setAvis({ note: data.devis.avis_note ?? null, google: data.avis_google ?? null });
     setEtat("pret");
   };
   useEffect(() => { charger(); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -172,6 +177,10 @@ export default function MonDevis() {
           </>
         )}
 
+        {(equipe.length > 0 || avis.google) && devis.statut === "accepte" && (
+          <AvisEvenement token={token} equipe={equipe} dejaNote={avis.note} lienGoogle={avis.google} onEnvoye={charger} />
+        )}
+
         {factures.length > 0 && <MesFactures factures={factures} agence={agence} />}
 
         <div className="text-center text-sm text-[#6B6155] pb-6">
@@ -179,6 +188,104 @@ export default function MonDevis() {
         </div>
       </div>
     </Cadre>
+  );
+}
+
+interface MembreEquipe { id: string; prenom: string; initiale: string; photo: string | null; poste: string; note: number | null }
+
+function Etoiles({ valeur, onChange, taille = 28, libelle }: { valeur: number; onChange: (n: number) => void; taille?: number; libelle: string }) {
+  return (
+    <div className="flex gap-1" role="radiogroup" aria-label={libelle}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button key={n} type="button" role="radio" aria-checked={valeur === n} aria-label={`${n} étoile${n > 1 ? "s" : ""}`} onClick={() => onChange(n)} className="p-0.5" data-testid={`etoile-${n}`}>
+          <Star style={{ width: taille, height: taille }} className={n <= valeur ? "fill-[#C8B560] text-[#C8B560]" : "text-[#DCCBA6]"} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Après l'événement : le client note le service et chaque membre de l'équipe, puis peut laisser un avis Google. */
+function AvisEvenement({ token, equipe, dejaNote, lienGoogle, onEnvoye }: { token: string; equipe: MembreEquipe[]; dejaNote: number | null; lienGoogle: string | null; onEnvoye: () => void }) {
+  const [note, setNote] = useState(dejaNote ?? 0);
+  const [commentaire, setCommentaire] = useState("");
+  const [notes, setNotes] = useState<Record<string, number>>(Object.fromEntries(equipe.filter((m) => m.note).map((m) => [m.id, m.note!])));
+  const [reprendre, setReprendre] = useState(false);
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const [merci, setMerci] = useState<{ google: string | null } | null>(dejaNote ? { google: dejaNote >= 4 ? lienGoogle : null } : null);
+  useEffect(() => {
+    if (window.location.hash === "#avis") setTimeout(() => document.getElementById("avis")?.scrollIntoView({ behavior: "smooth" }), 300);
+  }, []);
+  const envoyer = async () => {
+    setErreur("");
+    if (!note) return setErreur("Choisissez une note pour l'événement.");
+    setEnvoi(true);
+    const { data, error } = await supabase.functions.invoke("evaluer-equipe", {
+      body: { token, note, commentaire, reprendre, crews: Object.entries(notes).map(([id, n]) => ({ id, note: n })) },
+    });
+    let msg = data?.error as string | undefined;
+    if (error && !msg) { try { msg = (await (error as any).context?.json())?.error; } catch { /* */ } }
+    setEnvoi(false);
+    if (error || data?.error) return setErreur(msg ?? "Votre avis n'a pas pu être envoyé. Réessayez.");
+    setMerci({ google: data.avis_google ?? null });
+  };
+  return (
+    <section id="avis" className="rounded-3xl border border-[#EADFC8] bg-white p-5 sm:p-7 space-y-5 scroll-mt-6" data-testid="avis-evenement">
+      {merci ? (
+        <div className="text-center space-y-3" data-testid="avis-merci">
+          <h2 className="font-serif text-2xl">Merci pour votre avis !</h2>
+          <p className="text-sm text-[#5E554A]">Il nous aide énormément, et il est transmis à toute l'équipe.</p>
+          {merci.google && (
+            <>
+              <p className="text-sm text-[#5E554A]">Accepteriez-vous de le partager aussi sur Google ? Cela aide d'autres familles et entreprises à nous découvrir.</p>
+              <a href={merci.google} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-[#C8B560] text-white px-6 min-h-11 font-medium" data-testid="avis-google">
+                <Star className="h-4 w-4 fill-white" /> Laisser un avis sur Google
+              </a>
+            </>
+          )}
+        </div>
+      ) : (
+        <>
+          <div>
+            <h2 className="font-serif text-2xl">Comment s'est passé votre événement ?</h2>
+            <p className="text-sm text-[#5E554A]">Votre avis compte pour nous, et pour l'équipe qui vous a accompagné(e).</p>
+          </div>
+          <div className="space-y-1"><div className="text-sm font-medium">Votre note globale</div><Etoiles valeur={note} onChange={setNote} libelle="Note globale" /></div>
+          {equipe.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Votre équipe <span className="font-normal text-[#6B6155]">(facultatif)</span></div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {equipe.map((m) => (
+                  <div key={m.id} className="flex items-center gap-3 rounded-2xl border border-[#F1ECDD] p-3" data-testid="membre-equipe">
+                    {m.photo ? <img src={photoUrl(m.photo)!} alt="" className="h-14 w-14 rounded-full object-cover" /> : <div className="h-14 w-14 rounded-full bg-[#FAF7EE] flex items-center justify-center font-serif text-xl text-[#8C6D22]">{m.prenom.charAt(0)}</div>}
+                    <div className="min-w-0">
+                      <div className="font-medium">{m.prenom} {m.initiale}.</div>
+                      <div className="text-xs text-[#6B6155] mb-1">{m.poste}</div>
+                      <Etoiles taille={20} valeur={notes[m.id] ?? 0} onChange={(n) => setNotes((x) => ({ ...x, [m.id]: n }))} libelle={`Note de ${m.prenom}`} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div>
+            <label htmlFor="avis-commentaire" className="text-sm font-medium">Un mot <span className="font-normal text-[#6B6155]">(facultatif)</span></label>
+            <textarea id="avis-commentaire" rows={3} value={commentaire} onChange={(e) => setCommentaire(e.target.value)} className="mt-1 w-full rounded-xl border border-[#DCCBA6] bg-white px-3 py-2" />
+          </div>
+          {equipe.length > 0 && (
+            <label className="flex items-start gap-2 text-sm cursor-pointer">
+              <input type="checkbox" checked={reprendre} onChange={(e) => setReprendre(e.target.checked)} className="mt-1 h-4 w-4 accent-[#C8B560]" data-testid="reprendre-equipe" />
+              Je souhaite retravailler avec la même équipe pour mon prochain événement.
+            </label>
+          )}
+          {erreur && <p className="text-sm text-[#8A2E26]" role="alert">{erreur}</p>}
+          <button onClick={envoyer} disabled={envoi} className="inline-flex items-center gap-2 rounded-full bg-[#141414] text-white px-6 min-h-11 font-medium disabled:opacity-60" data-testid="envoyer-avis">
+            {envoi && <Loader2 className="h-4 w-4 animate-spin" />} Envoyer mon avis
+          </button>
+        </>
+      )}
+    </section>
   );
 }
 
