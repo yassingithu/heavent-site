@@ -9,6 +9,7 @@ import { CalendarDays, Heart, Inbox, PartyPopper, Sparkles, Trophy, X } from "lu
  */
 export interface InfosAccueil {
   prenom: string | null;
+  espace?: "admin" | "nawar";
   mot: string | null;
   surprise: { titre: string; texte: string; signature: string } | null;
   signatures_vues_jusqu_au: string | null;
@@ -83,7 +84,7 @@ export function SurpriseBienvenue({ surprise, prenom, onFermer }: { surprise: No
           <p className="text-right text-4xl sm:text-5xl text-[#8C6D22] mt-6 surprise-ligne" style={{ fontFamily: "'Great Vibes', cursive", animationDelay: `${0.6 + paragraphes.length * 1.1}s` }}>{surprise.signature}</p>
           <div className="text-center mt-8 surprise-ligne" style={{ animationDelay: `${1.2 + paragraphes.length * 1.1}s` }}>
             <button onClick={fermer} className="inline-flex items-center gap-2 rounded-full bg-[#141414] text-white px-7 min-h-12 font-medium hover:bg-[#2a2a2a]" data-testid="fermer-surprise">
-              <Heart className="h-4 w-4 fill-[#E4D49A] text-[#E4D49A]" /> Merci, mon cœur
+              <Heart className="h-4 w-4 fill-[#E4D49A] text-[#E4D49A]" /> {surprise.signature === "Papa" ? "Merci papa" : "Merci, mon cœur"}
             </button>
           </div>
         </article>
@@ -140,7 +141,7 @@ export function CarteAccueil({ infos, nouvellesDemandes }: { infos: InfosAccueil
             <figure className="rounded-2xl bg-white/[0.07] border border-white/10 p-5" data-testid="mot-du-jour">
               <Heart className="h-4 w-4 text-[#E4D49A] fill-[#E4D49A] mb-2" />
               <blockquote className="font-serif text-lg sm:text-xl leading-snug text-[#FAF7EE]">{infos.mot}</blockquote>
-              <figcaption className="text-right text-2xl text-[#E4D49A] mt-2" style={{ fontFamily: "'Great Vibes', cursive" }}>Yassin</figcaption>
+              <figcaption className="text-right text-2xl text-[#E4D49A] mt-2" style={{ fontFamily: "'Great Vibes', cursive" }}>{infos.espace === "nawar" ? "Papa" : "Yassin"}</figcaption>
             </figure>
           )}
         </div>
@@ -237,6 +238,33 @@ export function Celebrations({ infos, onVu }: { infos: InfosAccueil; onVu: () =>
           )}
           <button onClick={vu} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#141414] text-white px-4 min-h-9 text-sm">Bravo à moi 💛</button>
         </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- Espace de Nawar : le mot de papa ---------------- */
+export function CarteMotPapa({ infos }: { infos: InfosAccueil }) {
+  useEffect(chargerPolice, []);
+  const h = new Date().getHours();
+  const salut = h < 5 ? "Douce nuit" : h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : "Bonsoir";
+  const dateLongue = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  return (
+    <section className="relative overflow-hidden rounded-3xl bg-[#141414] text-white p-7 sm:p-10" data-testid="carte-mot-papa">
+      <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_0%_0%,#C8B560_0,transparent_45%),radial-gradient(circle_at_100%_100%,#A8933F_0,transparent_40%)]" />
+      <div className="relative space-y-5 max-w-2xl">
+        <div>
+          <p className="text-xs uppercase tracking-[0.25em] text-[#E4D49A] first-letter:uppercase">{dateLongue}</p>
+          <h2 className="font-serif text-3xl sm:text-5xl mt-1">{salut} {infos.prenom} 💛</h2>
+        </div>
+        {infos.mot && (
+          <figure className="rounded-2xl bg-white/[0.07] border border-white/10 p-6" data-testid="mot-du-jour">
+            <Heart className="h-5 w-5 text-[#E4D49A] fill-[#E4D49A] mb-3" />
+            <blockquote className="font-serif text-xl sm:text-2xl leading-snug text-[#FAF7EE]">{infos.mot}</blockquote>
+            <figcaption className="text-right text-3xl text-[#E4D49A] mt-3" style={{ fontFamily: "'Great Vibes', cursive" }}>Papa</figcaption>
+          </figure>
+        )}
+        <p className="text-sm text-white/60">Reviens demain : un nouveau mot t'attendra. 🌙</p>
       </div>
     </section>
   );

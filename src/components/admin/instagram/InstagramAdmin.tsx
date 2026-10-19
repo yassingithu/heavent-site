@@ -9,7 +9,7 @@ import { composerVisuel, enJpeg } from "./visuel";
 interface Post {
   id: string; date_prevue: string | null; theme: string; accroche: string | null; titre: string; legende: string; recherche: string;
   style: "sombre" | "clair"; photo_url: string | null; photo_page: string | null; photo_auteur: string | null; visuel_url: string | null;
-  statut: "brouillon" | "pret" | "publie" | "erreur"; publie_le: string | null;
+  statut: "brouillon" | "pret" | "publie" | "erreur"; publie_le: string | null; erreur?: string | null;
 }
 interface Photo { id: number; apercu: string; grande: string; page: string; auteur: string; largeur: number; hauteur: number }
 
@@ -43,10 +43,12 @@ async function enregistrerVisuel(post: Post, photoUrl: string) {
   return url;
 }
 
-export default function InstagramAdmin() {
+export default function InstagramAdmin({ famille = false }: { famille?: boolean }) {
   const { toast } = useToast();
   const [posts, setPosts] = useState<Post[] | null>(null);
-  const [reglages, setReglages] = useState<{ pixabay: boolean; instagram: boolean } | null>(null);
+  const [reglages, setReglages] = useState<{ pixabay: boolean; instagram: boolean; instagram_nom?: string | null } | null>(null);
+  const [jeton, setJeton] = useState("");
+  const [connexion, setConnexion] = useState(false);
   const [cle, setCle] = useState("");
   const [ouvert, setOuvert] = useState<Post | null>(null);
   const [auto, setAuto] = useState<{ fait: number; total: number } | null>(null);
@@ -67,6 +69,16 @@ export default function InstagramAdmin() {
     try { await fonction({ action: "chercher", recherche: "wedding cake" }); }
     catch (e: any) { return toast({ title: "Clé enregistrée, mais Pixabay la refuse", description: e.message, variant: "destructive" }); }
     setCle(""); toast({ title: "Clé Pixabay enregistrée ✓", description: "Elle reste cachée : personne ne peut la relire depuis le site." }); charger();
+  };
+
+  const connecterInstagram = async () => {
+    setConnexion(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("instagram-publier", { body: { action: "connecter", jeton } });
+      if (error) { let m = error.message; try { m = (await (error as any).context?.json())?.error ?? m; } catch { /* rien */ } throw new Error(m); }
+      setJeton(""); toast({ title: `Instagram connecté ✓`, description: `Compte @${data.nom} : les posts prêts partiront tout seuls à leur date.` }); charger();
+    } catch (e: any) { toast({ title: "Connexion impossible", description: e.message, variant: "destructive" }); }
+    setConnexion(false);
   };
 
   const preparerTout = async () => {
@@ -95,8 +107,8 @@ export default function InstagramAdmin() {
 
   return (
     <div className="space-y-5" data-testid="instagram-admin">
-      {/* Réglages */}
-      <div className="grid md:grid-cols-2 gap-3">
+      {/* Réglages (réservés à l'administration) */}
+      {!famille && <div className="grid md:grid-cols-2 gap-3">
         <section className="rounded-2xl border border-[#EADFC8] bg-white p-4">
           <h3 className="font-medium flex items-center gap-2"><KeyRound className="h-4 w-4 text-[#A8933F]" /> Photos gratuites (Pixabay)</h3>
           {reglages.pixabay ? (
@@ -111,11 +123,20 @@ export default function InstagramAdmin() {
         </section>
         <section className="rounded-2xl border border-[#EADFC8] bg-white p-4">
           <h3 className="font-medium flex items-center gap-2"><Instagram className="h-4 w-4 text-[#A8933F]" /> Publication automatique</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            {reglages.instagram ? "Instagram est connecté : les posts prêts partent tout seuls à leur date." : "Pas encore connectée : télécharge le visuel et copie la légende pour publier à la main en attendant."}
-          </p>
+          {reglages.instagram ? (
+            <p className="text-sm text-emerald-700 mt-1 flex items-center gap-1.5" data-testid="instagram-connecte"><Check className="h-4 w-4" /> @{reglages.instagram_nom} connecté : les posts « Prêts » partent tout seuls à leur date.</p>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground mt-1">En attendant, télécharge le visuel et copie la légende pour publier à la main.</p>
+              <div className="mt-2 flex gap-2">
+                <input type="password" autoComplete="off" value={jeton} onChange={(e) => setJeton(e.target.value)} placeholder="Colle le jeton Instagram ici"
+                  className="flex-1 min-w-0 rounded-md border px-3 h-10 text-sm" data-testid="jeton-instagram" />
+                <button onClick={connecterInstagram} disabled={jeton.trim().length < 20 || connexion} className="rounded-md bg-[#141414] text-white px-4 h-10 text-sm disabled:opacity-50">{connexion ? "…" : "Connecter"}</button>
+              </div>
+            </>
+          )}
         </section>
-      </div>
+      </div>}
 
       {/* Actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -145,12 +166,12 @@ export default function InstagramAdmin() {
         ))}
       </div>
 
-      {ouvert && <EditeurPost post={ouvert} pixabay={reglages.pixabay} onFermer={() => { setOuvert(null); charger(); }} />}
+      {ouvert && <EditeurPost post={ouvert} pixabay={reglages.pixabay} instagram={!famille && reglages.instagram} onFermer={() => { setOuvert(null); charger(); }} />}
     </div>
   );
 }
 
-function EditeurPost({ post: initial, pixabay, onFermer }: { post: Post; pixabay: boolean; onFermer: () => void }) {
+function EditeurPost({ post: initial, pixabay, instagram, onFermer }: { post: Post; pixabay: boolean; instagram: boolean; onFermer: () => void }) {
   const { toast } = useToast();
   const [p, setP] = useState(initial);
   const [photos, setPhotos] = useState<Photo[] | null>(null);
@@ -197,12 +218,20 @@ function EditeurPost({ post: initial, pixabay, onFermer }: { post: Post; pixabay
     await (supabase as any).from("posts_instagram").update({ statut: "publie", publie_le: new Date().toISOString() }).eq("id", p.id);
     toast({ title: "Marqué comme publié 🎉" }); onFermer();
   };
+  const publierMaintenant = async () => {
+    setOccupe("publier");
+    const { error } = await supabase.functions.invoke("instagram-publier", { body: { action: "publier", post_id: p.id } });
+    setOccupe(null);
+    if (error) { let m = error.message; try { m = (await (error as any).context?.json())?.error ?? m; } catch { /* rien */ } return toast({ title: "Publication impossible", description: m, variant: "destructive" }); }
+    toast({ title: "Publié sur Instagram 🎉" }); onFermer();
+  };
   const dateLocale = p.date_prevue ? new Date(new Date(p.date_prevue).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "";
 
   return (
     <Dialog open onOpenChange={(o) => !o && onFermer()}>
       <DialogContent className="max-w-5xl max-h-[94vh] overflow-y-auto" data-testid="editeur-post">
         <DialogTitle className="font-serif text-2xl">Post Instagram · {THEMES[p.theme] ?? p.theme}</DialogTitle>
+        {p.statut === "erreur" && p.erreur && <p className="text-sm rounded-md bg-red-50 text-red-700 px-3 py-2">La publication a échoué : {p.erreur}</p>}
         <div className="grid md:grid-cols-[minmax(0,380px)_1fr] gap-6">
           <div className="space-y-2">
             <div className="aspect-[4/5] rounded-xl overflow-hidden bg-[#F4EFE3] relative">
@@ -264,7 +293,12 @@ function EditeurPost({ post: initial, pixabay, onFermer }: { post: Post; pixabay
               <button onClick={enregistrer} disabled={!!occupe} className="inline-flex items-center gap-1.5 rounded-full bg-[#141414] text-white px-5 h-10 text-sm disabled:opacity-60" data-testid="enregistrer-post">
                 {occupe === "enregistrer" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Enregistrer
               </button>
-              {p.statut !== "publie" && p.visuel_url && <button onClick={marquerPublie} className="rounded-full border px-4 h-10 text-sm">Je l'ai publié</button>}
+              {instagram && p.statut !== "publie" && p.visuel_url && (
+                <button onClick={publierMaintenant} disabled={!!occupe} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] text-white px-5 h-10 text-sm disabled:opacity-60" data-testid="publier-maintenant">
+                  {occupe === "publier" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Instagram className="h-4 w-4" />} Publier maintenant
+                </button>
+              )}
+              {!instagram && p.statut !== "publie" && p.visuel_url && <button onClick={marquerPublie} className="rounded-full border px-4 h-10 text-sm">Je l'ai publié</button>}
               <button onClick={onFermer} className="rounded-full px-4 h-10 text-sm text-muted-foreground">Fermer</button>
             </div>
           </div>

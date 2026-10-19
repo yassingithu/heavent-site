@@ -4,7 +4,8 @@ import Seo from "@/components/Seo";
 import RemarquesCrews from "@/components/admin/equipe/RemarquesCrews";
 import SuiviSignatures from "@/components/admin/equipe/SuiviSignatures";
 import { useState, useEffect } from "react";
-import { estAdmin } from "@/lib/admin";
+import { estAdmin, estEspaceNawar } from "@/lib/admin";
+import EspaceNawar from "@/components/admin/accueil/EspaceNawar";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -173,6 +174,7 @@ const Admin = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [espaceNawar, setEspaceNawar] = useState(false);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [contrats, setContrats] = useState<Contrat[]>([]);
   const [fichesPaie, setFichesPaie] = useState<FichePaie[]>([]);
@@ -269,7 +271,8 @@ const Admin = () => {
         return;
       }
       // Accès réservé aux emails de la table « admins »
-      estAdmin().then((ok) => {
+      estAdmin().then(async (ok) => {
+        if (!ok && (await estEspaceNawar())) { nePlusCompterCetAppareil(); setEspaceNawar(true); return; }
         setIsAdmin(ok);
         if (ok) nePlusCompterCetAppareil(); // les visites de l'équipe ne faussent pas les statistiques
         if (!ok) { navigate("/admin-auth"); return; }
@@ -973,6 +976,8 @@ const Admin = () => {
 
   const nouvellesEntreprise = devisEntreprise.filter((d: any) => d.statut === "en_attente").length;
   const nouvellesMariage = devisMariage.filter((d: any) => d.statut === "en_attente").length;
+
+  if (espaceNawar) return <EspaceNawar onDeconnexion={() => navigate("/admin-auth")} />;
 
   if (authLoading) {
     return (

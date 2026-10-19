@@ -1036,6 +1036,42 @@ await scenario("Instagram : clé Pixabay cachée, visuels montés automatiquemen
   const p1 = base.posts_instagram[0];
   verifier(p1.titre === "Le plan de table sans stress" && /p1-102\.jpg/.test(p1.photo_url) && p1.statut === "pret" && p1.visuel_url, "modification non enregistrée : " + JSON.stringify(p1));
   notes.push("post modifié : texte changé, 2e photo choisie, aperçu en direct, visuel ré-enregistré");
+  // Connexion Instagram puis publication immédiate
+  await page.getByTestId("editeur-post").getByRole("button", { name: "Fermer" }).last().click(); await page.waitForTimeout(800);
+  await page.getByTestId("jeton-instagram").fill("IGJETON-TEST-1234567890");
+  await page.getByRole("button", { name: "Connecter" }).click(); await page.waitForTimeout(1200);
+  verifier(/@heavent\.agency/.test(await page.getByTestId("instagram-connecte").innerText()), "Instagram non connecté");
+  await page.getByTestId("carte-post").nth(1).click(); await page.waitForTimeout(800);
+  await page.getByTestId("publier-maintenant").click(); await page.waitForTimeout(1200);
+  verifier(base.posts_instagram[1].statut === "publie", "le post n'est pas publié");
+  notes.push("Instagram connecté (@heavent.agency), « Publier maintenant » → post publié");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
+// Espace de Nawar : ses mots de papa, sa lettre, et rien des données de l'agence
+await scenario("Espace de Nawar : lettre de papa, mot du jour signé Papa, Instagram et statistiques, aucune donnée client", async (notes) => {
+  const NAWAR = "nawar@heaventagency.com";
+  const base = nouvelleBase();
+  base.admin_profils = [{ email: NAWAR, prenom: "Nawar", recoit_mots: true, espace: "nawar", surprise_vue_le: null, signatures_vues_jusqu_au: new Date().toISOString(), records_vus: [] }];
+  base.mot_nawar = "Je t'aime plus que les frites. Et tu sais à quel point j'aime les frites. 🍟";
+  base.surprise_nawar = { titre: "Pour toi, mon bébé d'amour", texte: "Ma Nawar,\n\nC'est ton espace à toi.", signature: "Papa" };
+  base.posts_instagram = [{ id: "p1", date_prevue: "2026-10-21T18:30:00Z", theme: "mariage", accroche: "Conseil", titre: "Titre", legende: "L", recherche: "cake", style: "sombre", photo_url: null, visuel_url: null, statut: "brouillon" }];
+  const { page, ctx, erreurs } = await contexte(navigateur, base, NAWAR, { mobile: true });
+  await connecter(page, BASE, NAWAR, "/admin");
+  verifier(await page.getByTestId("espace-nawar").count(), "l'espace de Nawar ne s'affiche pas (redirection ?) : " + page.url());
+  await page.getByTestId("ouvrir-surprise").click(); await page.waitForTimeout(600);
+  verifier(/mon bébé d'amour/.test(await page.getByTestId("surprise-bienvenue").innerText()), "la lettre de papa n'apparaît pas");
+  await page.getByRole("button", { name: /Merci papa/ }).click({ timeout: 15000 }); await page.waitForTimeout(4500);
+  verifier(base.admin_profils[0].surprise_vue_le, "la lettre n'est pas marquée comme lue");
+  const carte = await page.getByTestId("carte-mot-papa").innerText();
+  verifier(/Nawar/.test(carte) && /frites/.test(carte) && /Papa/.test(carte), "mot du jour manquant : " + carte);
+  verifier(!(await page.getByRole("tab", { name: /Devis|Personnel|Paie|Contrats/ }).count()), "Nawar ne doit pas voir les onglets de l'agence");
+  await page.getByRole("tab", { name: /Instagram/ }).click(); await page.waitForTimeout(800);
+  verifier(await page.getByTestId("carte-post").count() === 1 && !(await page.getByTestId("cle-pixabay").count()) && !(await page.getByTestId("jeton-instagram").count()), "onglet Instagram incorrect pour Nawar");
+  await page.getByRole("tab", { name: /Le site/ }).click(); await page.waitForTimeout(1200);
+  verifier(await page.getByTestId("stat-visites").count(), "statistiques non visibles");
+  notes.push("lettre « Pour toi, mon bébé d'amour » → « Merci papa » ; mot du jour signé Papa ; onglets Mot de papa, Instagram (sans clés), Le site ; aucun onglet client/crew/paie");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
 });

@@ -19,8 +19,8 @@ Deno.serve(async (req) => {
   const jour = new Date().toISOString().slice(0, 10);
   const hier = new Date(Date.now() - 864e5).toISOString();
   const [{ data: profils }, { data: mot }, { data: rdv }, { data: evts }, { data: dm }, { data: de }, { data: equipes }, { data: signes }] = await Promise.all([
-    db.from("admin_profils").select("email, prenom").eq("recoit_mots", true),
-    db.rpc("_mot_du_jour", { p_jour: jour }),
+    db.from("admin_profils").select("email, prenom").eq("recoit_mots", true).eq("espace", "admin"),
+    db.rpc("_mot_du_jour", { p_jour: jour, p_pour: "imane" }),
     db.from("rendez_vous").select("debut, client_nom, type").eq("statut", "confirme").gte("debut", `${jour}T00:00:00Z`).lte("debut", `${jour}T23:59:59Z`).order("debut"),
     db.from("devis").select("id, titre, client_nom, client_societe, lieu").eq("statut", "accepte").eq("date_evenement", jour),
     db.from("devis_mariage").select("nom, prenom, type_evenement, nb_invites").gte("created_at", hier),

@@ -13,7 +13,12 @@ const json = (data: unknown, status = 200) => new Response(JSON.stringify(data),
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const appelant = await getCaller(req);
-  if (!appelant?.isAdmin) return deny();
+  if (!appelant) return deny();
+  if (!appelant.isAdmin) {
+    // Nawar a son propre espace : elle peut aussi choisir les photos des posts
+    const { data: profil } = await db.from("admin_profils").select("espace").eq("email", appelant.email).maybeSingle();
+    if (profil?.espace !== "nawar") return deny();
+  }
   const { action, recherche, page, post_id, photo } = await req.json().catch(() => ({}));
   const { data: secret } = await db.from("secrets_internes").select("valeur").eq("nom", "pixabay").maybeSingle();
   if (!secret?.valeur) return json({ error: "Clé Pixabay manquante" }, 400);

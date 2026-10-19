@@ -1,0 +1,99 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
+import { corsHeaders, deny, getCaller } from "../_shared/auth.ts";
+
+/**
+ * Publication Instagram (API officielle « Instagram avec connexion Instagram »).
+ * - Tâche planifiée (clé interne) : publie les posts prêts dont l'heure est passée, et renouvelle le jeton chaque semaine.
+ * - Administration : « connecter » (enregistre le jeton après vérification), « publier » (un post tout de suite).
+ */
+const API = "https://graph.instagram.com/v21.0";
+const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  { auth: { autoRefreshToken: false, persistSession: false } });
+const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", ...corsHeaders } });
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function secrets() {
+  const { data } = await db.from("secrets_internes").select("nom, valeur").in("nom", ["rappel_signatures", "instagram_jeton", "instagram_compte", "instagram_jeton_le"]);
+  return Object.fromEntries((data ?? []).map((x: any) => [x.nom, x.valeur])) as Record<string, string>;
+}
+const enregistrer = (nom: string, valeur: string) => db.from("secrets_internes").upsert({ nom, valeur }, { onConflict: "nom" });
+
+async function appel(url: string, init?: RequestInit) {
+  const r = await fetch(url, init);
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || d.error) throw new Error(d.error?.message ?? `Instagram ${r.status}`);
+  return d;
+}
+
+async function publier(post: any, jeton: string, compte: string) {
+  const corps = new URLSearchParams({ image_url: post.visuel_url, caption: post.legende ?? "", access_token: jeton });
+  const conteneur = await appel(`${API}/${compte}/media`, { method: "POST", body: corps });
+  // On attend que l'image soit prête chez Instagram (quelques secondes au plus)
+  for (let i = 0; i < 10; i++) {
+    const s = await appel(`${API}/${conteneur.id}?fields=status_code&access_token=${encodeURIComponent(jeton)}`);
+    if (s.status_code === "FINISHED") break;
+    if (s.status_code === "ERROR") throw new Error("Instagram a refusé l'image");
+    await pause(2000);
+  }
+  const media = await appel(`${API}/${compte}/media_publish`, { method: "POST", body: new URLSearchParams({ creation_id: conteneur.id, access_token: jeton }) });
+  await db.from("posts_instagram").update({ statut: "publie", publie_le: new Date().toISOString(), ig_media_id: media.id, erreur: null }).eq("id", post.id);
+  return media.id as string;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const s = await secrets();
+
+  // Tâche planifiée
+  if (req.headers.get("x-cle-rappel")) {
+    if (req.headers.get("x-cle-rappel") !== s.rappel_signatures) return new Response("Accès refusé", { status: 403 });
+    if (!s.instagram_jeton || !s.instagram_compte) return json({ publies: 0, raison: "Instagram non connecté" });
+    let jeton = s.instagram_jeton;
+    // Renouvellement du jeton (valable 60 jours) une fois par semaine
+    if (!s.instagram_jeton_le || Date.now() - new Date(s.instagram_jeton_le).getTime() > 7 * 864e5) {
+      try {
+        const r = await appel(`https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(jeton)}`);
+        if (r.access_token) { jeton = r.access_token; await enregistrer("instagram_jeton", jeton); await enregistrer("instagram_jeton_le", new Date().toISOString()); }
+      } catch { /* on réessaiera au prochain passage */ }
+    }
+    const { data: posts } = await db.from("posts_instagram").select("*").eq("statut", "pret").not("visuel_url", "is", null)
+      .lte("date_prevue", new Date().toISOString()).order("date_prevue").limit(2);
+    const resultats: unknown[] = [];
+    for (const p of posts ?? []) {
+      try { resultats.push({ id: p.id, media: await publier(p, jeton, s.instagram_compte) }); }
+      catch (e) { await db.from("posts_instagram").update({ statut: "erreur", erreur: String((e as Error).message) }).eq("id", p.id); resultats.push({ id: p.id, erreur: String(e) }); }
+    }
+    return json({ publies: resultats });
+  }
+
+  // Administration
+  const appelant = await getCaller(req);
+  if (!appelant?.isAdmin) return deny();
+  const { action, jeton, post_id } = await req.json().catch(() => ({}));
+
+  if (action === "connecter") {
+    const t = String(jeton ?? "").trim();
+    if (t.length < 20) return json({ error: "Jeton invalide" }, 400);
+    try {
+      const moi = await appel(`${API}/me?fields=user_id,username&access_token=${encodeURIComponent(t)}`);
+      await enregistrer("instagram_jeton", t);
+      await enregistrer("instagram_compte", String(moi.user_id ?? moi.id));
+      await enregistrer("instagram_nom", String(moi.username ?? ""));
+      await enregistrer("instagram_jeton_le", new Date().toISOString());
+      return json({ nom: moi.username });
+    } catch (e) { return json({ error: `Instagram refuse ce jeton : ${(e as Error).message}` }, 400); }
+  }
+
+  if (action === "publier") {
+    if (!s.instagram_jeton || !s.instagram_compte) return json({ error: "Instagram n'est pas connecté" }, 400);
+    const { data: p } = await db.from("posts_instagram").select("*").eq("id", post_id).maybeSingle();
+    if (!p?.visuel_url) return json({ error: "Le visuel n'est pas prêt" }, 400);
+    if (p.statut === "publie") return json({ error: "Ce post est déjà publié" }, 409);
+    try { return json({ media: await publier(p, s.instagram_jeton, s.instagram_compte) }); }
+    catch (e) {
+      await db.from("posts_instagram").update({ statut: "erreur", erreur: String((e as Error).message) }).eq("id", p.id);
+      return json({ error: (e as Error).message }, 502);
+    }
+  }
+  return json({ error: "Action inconnue" }, 400);
+});

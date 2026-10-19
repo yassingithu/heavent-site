@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { Shield } from "lucide-react";
-import { estAdmin } from "@/lib/admin";
+import { estAdmin, estEspaceNawar } from "@/lib/admin";
 
 
 const AdminAuth = () => {
@@ -44,7 +44,7 @@ const AdminAuth = () => {
   // Redirect if already authenticated and is admin
   useEffect(() => {
     if (user && session) {
-      estAdmin().then((ok) => ok && navigate("/admin"));
+      estAdmin().then(async (ok) => (ok || (await estEspaceNawar())) && navigate("/admin"));
     }
   }, [user, session, navigate]);
 
@@ -75,7 +75,7 @@ const AdminAuth = () => {
         return;
       }
 
-      if (data.user && (await estAdmin())) {
+      if (data.user && ((await estAdmin()) || (await estEspaceNawar()))) {
         toast({
           title: "Connexion réussie",
           description: "Redirection vers l'administration...",

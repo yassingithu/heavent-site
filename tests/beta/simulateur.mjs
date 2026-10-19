@@ -130,8 +130,13 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     if (url.pathname.includes("/functions/v1/")) {
       const nom = url.pathname.split("/").pop(); const corps = req.postData() ? JSON.parse(req.postData()) : {};
       base.appelsFonctions.push({ nom, corps });
-      if (nom === "instagram-photos") {
+      if (nom === "instagram-publier") {
         if (!admin) return route.fulfill({ status: 403, json: { error: "Accès refusé" } });
+        if (corps.action === "connecter") { if (corps.jeton !== "IGJETON-TEST-1234567890") return route.fulfill({ status: 400, json: { error: "Instagram refuse ce jeton" } }); base.instagram = "heavent.agency"; return route.fulfill({ json: { nom: "heavent.agency" } }); }
+        if (corps.action === "publier") { const p = base.posts_instagram.find((x) => x.id === corps.post_id); Object.assign(p, { statut: "publie", publie_le: new Date().toISOString(), ig_media_id: "ig123" }); return route.fulfill({ json: { media: "ig123" } }); }
+      }
+      if (nom === "instagram-photos") {
+        if (!admin && !(base.admin_profils ?? []).some((x) => x.email === email && x.espace === "nawar")) return route.fulfill({ status: 403, json: { error: "Accès refusé" } });
         if (!base.cle_pixabay) return route.fulfill({ status: 400, json: { error: "Clé Pixabay manquante" } });
         if (corps.action === "chercher") return route.fulfill({ json: { total: 3, photos: [1, 2, 3].map((i) => ({ id: 100 + i, apercu: `https://pixabay.com/get/apercu-${i}.jpg`, grande: `https://pixabay.com/get/grande-${i}.jpg`, page: `https://pixabay.com/photos/${i}`, auteur: "Photographe" + i, largeur: 800, hauteur: 1000 })) } });
         if (corps.action === "choisir") {
@@ -231,6 +236,8 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       return route.fulfill({ json: { success: true, cree: !corps.action } });
     }
     if (url.pathname.includes("/rpc/is_admin")) return route.fulfill({ json: admin });
+    const nawar = (base.admin_profils ?? []).some((x) => x.email === email && x.espace === "nawar");
+    if (url.pathname.includes("/rpc/est_espace_nawar")) return route.fulfill({ json: nawar });
     if (url.pathname.includes("/rpc/generer_fiches_paie")) return route.fulfill({ json: genererFiches(base) });
     if (url.pathname.includes("/rpc/vitrine_public")) {
       const v = base.vitrine[0];
@@ -278,14 +285,15 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
         })() } });
     }
     // Instagram : clé Pixabay (jamais relisible)
-    if (url.pathname.includes("/rpc/instagram_reglages")) return route.fulfill({ json: { pixabay: !!base.cle_pixabay, instagram: false } });
+    if (url.pathname.includes("/rpc/instagram_reglages")) return route.fulfill({ json: { pixabay: !!base.cle_pixabay, instagram: !!base.instagram, instagram_nom: base.instagram ?? null } });
     if (url.pathname.includes("/rpc/instagram_enregistrer_cle")) { base.cle_pixabay = JSON.parse(req.postData() || "{}").p_valeur; return route.fulfill({ status: 204, body: "" }); }
     // Accueil personnalisé de l'administration
     if (url.pathname.includes("/rpc/mon_accueil")) {
       const p = (base.admin_profils ?? []).find((x) => x.email === email);
       if (!p) return route.fulfill({ json: { prenom: null } });
-      return route.fulfill({ json: { prenom: p.prenom, mot: p.recoit_mots ? base.mot_du_jour ?? null : null,
-        surprise: p.recoit_mots && !p.surprise_vue_le ? base.surprise ?? null : null, signatures_vues_jusqu_au: p.signatures_vues_jusqu_au, records_vus: p.records_vus ?? [] } });
+      const n = p.espace === "nawar";
+      return route.fulfill({ json: { prenom: p.prenom, espace: p.espace ?? "admin", mot: p.recoit_mots ? (n ? base.mot_nawar : base.mot_du_jour) ?? null : null,
+        surprise: p.recoit_mots && !p.surprise_vue_le ? (n ? base.surprise_nawar : base.surprise) ?? null : null, signatures_vues_jusqu_au: p.signatures_vues_jusqu_au, records_vus: p.records_vus ?? [] } });
     }
     if (url.pathname.includes("/rpc/accueil_marquer")) {
       const { p_quoi } = JSON.parse(req.postData() || "{}");
@@ -302,7 +310,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       return route.fulfill({ status: 204, body: "" });
     }
     if (url.pathname.includes("/rpc/statistiques_site")) {
-      if (!admin) return route.fulfill({ status: 400, json: { message: "Accès refusé" } });
+      if (!admin && !nawar) return route.fulfill({ status: 400, json: { message: "Accès refusé" } });
       const ev = base.evenements_site ?? [];
       const compte = (liste, cle, distinct) => { const m = new Map(); for (const e of liste) { const k = e[cle]; if (!m.has(k)) m.set(k, new Set()); m.get(k).add(distinct ? e.session : Math.random()); } return [...m].map(([k, s]) => ({ cle: k, valeur: s.size })).sort((a, b) => b.valeur - a.valeur); };
       const sessions = new Set(ev.map((e) => e.session)).size;
