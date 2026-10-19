@@ -62,6 +62,9 @@ const PrivacyPolicy = () => {
                 <p>
                   <strong>{x("Mesure d'audience.")}</strong> {x("Pour savoir quelles pages sont consultées, nous comptons les visites de façon anonyme, sans cookie : page vue, site d'où vient la visite (par exemple Google ou Instagram), type d'appareil et clics sur nos moyens de contact. Aucune donnée permettant de vous identifier n'est enregistrée, et ces statistiques sont supprimées au bout de 13 mois.")}
                 </p>
+                <p id="suppression-des-donnees">
+                  <strong>{x("Instagram et suppression de vos données.")}</strong> {x("Si vous commentez « GUIDE » sous une de nos publications Instagram, nous recevons votre nom d'utilisateur et votre commentaire, uniquement pour vous envoyer le guide en message privé. Pour faire supprimer toutes vos données (Instagram, guides, newsletter, demandes de devis), écrivez à i.chaigari@heaventagency.com en indiquant votre e-mail ou votre nom d'utilisateur Instagram : la suppression est faite sous 30 jours.")}
+                </p>
                 <p>
                   <strong>{x("Guides gratuits et newsletter.")}</strong> {x("Quand vous téléchargez un guide, nous enregistrons votre e-mail, votre prénom et le type d'événement qui vous intéresse, pour vous envoyer ce guide. Vous ne recevez notre newsletter que si vous avez coché la case prévue, et chaque e-mail contient un lien pour vous désinscrire en un clic. Ces données ne sont jamais revendues.")}
                 </p>

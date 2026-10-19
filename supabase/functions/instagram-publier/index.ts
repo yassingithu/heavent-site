@@ -25,6 +25,12 @@ async function appel(url: string, init?: RequestInit) {
   return d;
 }
 
+/** Abonne le compte aux notifications « commentaires » et « messages » (pour « Commentez GUIDE ») */
+async function abonner(jeton: string) {
+  await appel(`${API}/me/subscribed_apps?subscribed_fields=comments,messages&access_token=${encodeURIComponent(jeton)}`, { method: "POST" });
+  await enregistrer("instagram_abonne_le", new Date().toISOString());
+}
+
 async function publier(post: any, jeton: string, compte: string) {
   const corps = new URLSearchParams({ image_url: post.visuel_url, caption: post.legende ?? "", access_token: jeton });
   const conteneur = await appel(`${API}/${compte}/media`, { method: "POST", body: corps });
@@ -80,8 +86,16 @@ Deno.serve(async (req) => {
       await enregistrer("instagram_compte", String(moi.user_id ?? moi.id));
       await enregistrer("instagram_nom", String(moi.username ?? ""));
       await enregistrer("instagram_jeton_le", new Date().toISOString());
-      return json({ nom: moi.username });
+      let abonnement: string | null = null;
+      try { await abonner(t); } catch (e) { abonnement = (e as Error).message; }
+      return json({ nom: moi.username, abonnement });
     } catch (e) { return json({ error: `Instagram refuse ce jeton : ${(e as Error).message}` }, 400); }
+  }
+
+  if (action === "abonner") {
+    if (!s.instagram_jeton) return json({ error: "Instagram n'est pas connecté" }, 400);
+    try { await abonner(s.instagram_jeton); return json({ ok: true }); }
+    catch (e) { return json({ error: (e as Error).message }, 502); }
   }
 
   if (action === "publier") {

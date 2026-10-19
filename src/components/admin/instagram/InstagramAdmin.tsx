@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Check, Copy, Download, ExternalLink, ImagePlus, Instagram, KeyRound, Loader2, Search, Sparkles, Wand2 } from "lucide-react";
 import { composerVisuel, enJpeg } from "./visuel";
 import { guidePourTheme } from "@/data/guides";
+import CommentezGuide from "./CommentezGuide";
 
 /** Onglet Instagram : posts conseils préparés (photo Pixabay + texte Heavent), à télécharger ou publier. */
 interface Post {
@@ -47,7 +48,7 @@ async function enregistrerVisuel(post: Post, photoUrl: string) {
 export default function InstagramAdmin({ famille = false }: { famille?: boolean }) {
   const { toast } = useToast();
   const [posts, setPosts] = useState<Post[] | null>(null);
-  const [reglages, setReglages] = useState<{ pixabay: boolean; instagram: boolean; instagram_nom?: string | null } | null>(null);
+  const [reglages, setReglages] = useState<{ pixabay: boolean; instagram: boolean; instagram_nom?: string | null; secret_app?: boolean; webhook_jeton?: string | null; abonne_le?: string | null } | null>(null);
   const [jeton, setJeton] = useState("");
   const [connexion, setConnexion] = useState(false);
   const [cle, setCle] = useState("");
@@ -138,6 +139,7 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
           )}
         </section>
       </div>}
+      {!famille && <CommentezGuide reglages={reglages} onChange={charger} />}
 
       {/* Actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
