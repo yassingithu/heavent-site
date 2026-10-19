@@ -59,6 +59,12 @@ const PrivacyPolicy = () => {
                   pour protéger vos données contre tout accès, modification, divulgation ou 
                   destruction non autorisés.
                 </p>
+                <p>
+                  <strong>Mesure d'audience.</strong> Pour savoir quelles pages sont consultées, nous comptons les visites de façon
+                  anonyme, sans cookie : page vue, site d'où vient la visite (par exemple Google ou Instagram), type d'appareil et
+                  clics sur nos moyens de contact. Aucune donnée permettant de vous identifier n'est enregistrée, et ces statistiques
+                  sont supprimées au bout de 13 mois.
+                </p>
               </CardContent>
             </Card>
 

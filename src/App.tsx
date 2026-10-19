@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from "react";
+import SuiviVisites from "./components/SuiviVisites";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -52,6 +53,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <RetourEnHaut />
+          <SuiviVisites />
           <Layout>
             <Suspense fallback={<div className="min-h-[60vh]" />}>
             <Routes>

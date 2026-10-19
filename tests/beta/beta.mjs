@@ -748,6 +748,43 @@ await scenario("Espace mariés : check-list, budget, programme, invités qui ré
   notes.push("mariés : check-list pré-remplie, budget 40 000 / 100 000, programme, 3 invités avec lien WhatsApp personnel ; invité : réponse « oui, 3 personnes » + allergie, un autre « non » ; plan de table sans les absents ; agence : résumé, programme et remarques dans le devis");
 });
 
+// 3 duodevicies. Statistiques de fréquentation
+await scenario("Statistiques : visites, provenance, clics WhatsApp et demandes comptés sans cookie, visibles dans le Bilan", async (notes) => {
+  const base = nouvelleBase();
+  const v = await contexte(navigateur, base, null, { mobile: true });
+  await v.page.addInitScript(() => { window.__suiviTest = true; sessionStorage.setItem("heavent-splash-vu", "1"); });
+  await v.page.goto(`${BASE}/?utm_source=instagram`); await v.page.waitForTimeout(1500);
+  await v.page.goto(`${BASE}/hotesses-casablanca`); await v.page.waitForTimeout(2200);
+  const wa = v.page.locator('a[href*="wa.me"]').first();
+  await wa.evaluate((a) => { a.removeAttribute("target"); a.setAttribute("href", "#whatsapp-test-wa.me"); });
+  await wa.click(); await v.page.waitForTimeout(800);
+  const cookies = await v.ctx.cookies();
+  const ev = base.evenements_site ?? [];
+  verifier(ev.filter((e) => e.type === "vue").length >= 2 && ev.every((e) => e.source === "instagram" && e.appareil === "mobile"), "les visites ne sont pas comptées avec la bonne provenance : " + JSON.stringify(ev.slice(0, 3)));
+  verifier(ev.some((e) => e.type === "clic" && e.nom === "whatsapp" && e.chemin === "/hotesses-casablanca"), "le clic WhatsApp n'est pas compté");
+  verifier(!cookies.some((c) => /heavent|hv-/.test(c.name)), "un cookie de suivi a été posé");
+  const avant = ev.length;
+  await v.page.goto(`${BASE}/mon-devis/00000000-0000-0000-0000-000000000000`); await v.page.waitForTimeout(1200);
+  verifier((base.evenements_site ?? []).length === avant, "une page privée (devis client) a été comptée");
+  await v.ctx.close();
+
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await page.addInitScript(() => { window.__suiviTest = true; });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Bilan/ }).click(); await page.waitForTimeout(1500);
+  const bloc = await page.getByTestId("stats-site").innerText();
+  verifier(/Visites\s*1/i.test(bloc) && /Instagram/.test(bloc) && /WhatsApp/.test(bloc) && /Hôtesses à Casablanca/.test(bloc), "le Bilan n'affiche pas les statistiques : " + bloc.slice(0, 300));
+  const nAvant = base.evenements_site.length;
+  await page.goto(`${BASE}/`); await page.waitForTimeout(1500);
+  verifier(base.evenements_site.length === nAvant, "les visites de l'administratrice sont comptées");
+  await page.goto(`${BASE}/admin`); await page.waitForTimeout(2000);
+  await page.getByRole("tab", { name: /Bilan/ }).click(); await page.waitForTimeout(1200);
+  await page.getByTestId("stats-site").screenshot({ path: `${CAPTURES}/24-statistiques.png` });
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+  notes.push("visite venue d'Instagram sur smartphone : 2 pages + clic WhatsApp comptés, aucun cookie, page devis privée ignorée ; Bilan admin : visites, provenance, pages, clics ; visites de l'admin non comptées");
+});
+
 // 3 sexdecies. Confiance + pages villes / services
 await scenario("Site : éléments de confiance réglés dans l'admin, témoignage publié, pages villes et services", async (notes) => {
   const base = nouvelleBase();

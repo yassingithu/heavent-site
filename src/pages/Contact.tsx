@@ -1,3 +1,4 @@
+import { suivre } from "@/lib/suivi";
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
 import { useEffect, useState } from "react";
@@ -100,6 +101,7 @@ const Contact = () => {
       if (!response.ok) {
         throw new Error('Erreur lors de l\'envoi');
       }
+      suivre("demande", "contact");
 
       toast({
         title: t('contact.form.success'),

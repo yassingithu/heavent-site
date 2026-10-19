@@ -1,3 +1,4 @@
+import { suivre } from "@/lib/suivi";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Building2, CalendarCheck2, Loader2, Phone, Video } from "lucide-react";
@@ -121,6 +122,7 @@ export default function ChoisirRendezVous({ langue = "fr", source, devisToken, n
     }
     const r = { debut: data.debut, fin: data.fin, type: data.type } as RdvReserve;
     setReserve(r); onReserve?.(r);
+    suivre("demande", "rendez-vous");
   };
 
   const dir = langue === "ar" ? "rtl" : "ltr";

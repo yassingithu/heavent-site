@@ -265,6 +265,27 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
           };
         })() } });
     }
+    // Statistiques de fréquentation
+    if (url.pathname.includes("/rpc/suivi_enregistrer")) {
+      base.evenements_site ??= [];
+      for (const e of JSON.parse(req.postData() || "{}").p_evenements ?? []) base.evenements_site.push({ ...e, cree_le: new Date().toISOString() });
+      return route.fulfill({ status: 204, body: "" });
+    }
+    if (url.pathname.includes("/rpc/statistiques_site")) {
+      if (!admin) return route.fulfill({ status: 400, json: { message: "Accès refusé" } });
+      const ev = base.evenements_site ?? [];
+      const compte = (liste, cle, distinct) => { const m = new Map(); for (const e of liste) { const k = e[cle]; if (!m.has(k)) m.set(k, new Set()); m.get(k).add(distinct ? e.session : Math.random()); } return [...m].map(([k, s]) => ({ cle: k, valeur: s.size })).sort((a, b) => b.valeur - a.valeur); };
+      const sessions = new Set(ev.map((e) => e.session)).size;
+      const jours = Array.from({ length: 30 }, (_, i) => new Date(Date.now() - (29 - i) * 864e5).toISOString().slice(0, 10));
+      return route.fulfill({ json: {
+        visites: sessions, pages_vues: ev.filter((e) => e.type === "vue").length, demandes: ev.filter((e) => e.type === "demande").length,
+        clics_contact: ev.filter((e) => e.type === "clic" && ["whatsapp", "telephone", "email"].includes(e.nom)).length,
+        avant: { visites: 1, pages_vues: 2, demandes: 0, clics_contact: 0 },
+        par_jour: jours.map((j) => ({ jour: j, visites: new Set(ev.filter((e) => e.cree_le.slice(0, 10) === j).map((e) => e.session)).size })),
+        pages: compte(ev.filter((e) => e.type === "vue"), "chemin"), sources: compte(ev, "source", true), clics: compte(ev.filter((e) => e.type === "clic"), "nom"),
+        demandes_detail: compte(ev.filter((e) => e.type === "demande"), "nom"), appareils: compte(ev, "appareil", true),
+      } });
+    }
     // Espace mariés et réponses des invités
     const rpcMariage = url.pathname.match(/\/rpc\/(espace_maries_public|espace_maries_enregistrer|invite_enregistrer|invite_supprimer|rsvp_public|rsvp_repondre)$/);
     if (rpcMariage) {

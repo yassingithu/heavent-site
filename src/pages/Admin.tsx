@@ -1,3 +1,4 @@
+import { nePlusCompterCetAppareil } from "@/lib/suivi";
 import Seo from "@/components/Seo";
 import RemarquesCrews from "@/components/admin/equipe/RemarquesCrews";
 import SuiviSignatures from "@/components/admin/equipe/SuiviSignatures";
@@ -239,6 +240,7 @@ const Admin = () => {
       // Accès réservé aux emails de la table « admins »
       estAdmin().then((ok) => {
         setIsAdmin(ok);
+        if (ok) nePlusCompterCetAppareil(); // les visites de l'équipe ne faussent pas les statistiques
         if (!ok) { navigate("/admin-auth"); return; }
         fetchData();
       });

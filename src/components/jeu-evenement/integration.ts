@@ -1,3 +1,4 @@
+import { suivre } from "@/lib/suivi";
 /**
  * ─────────────────────────────────────────────────────────────────────────────
  *  POINT D'INTÉGRATION — demande de devis
@@ -63,7 +64,7 @@ export async function envoyerDemandeDevis(d: DemandeDevis): Promise<{ envoye: bo
     });
     const r = await fetch(`${FUNCTIONS_URL}/send-email`, { method: "POST", headers: { "Content-Type": "application/json" }, body: corps });
     const j = await r.json().catch(() => ({}));
-    if (r.ok && j?.success) return { envoye: true };
+    if (r.ok && j?.success) { suivre("demande", "jeu"); return { envoye: true }; }
     return { envoye: false, message: j?.error ?? tr("Le serveur n'a pas pu enregistrer la demande.") };
   } catch {
     return { envoye: false, message: tr("Connexion impossible pour le moment.") };

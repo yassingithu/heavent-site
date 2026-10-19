@@ -1,3 +1,4 @@
+import { suivre } from "@/lib/suivi";
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
 import { useState } from "react";
@@ -77,6 +78,7 @@ const BusinessQuote = () => {
       if (!response.ok) {
         throw new Error('Erreur lors de l\'envoi');
       }
+      suivre("demande", "devis-entreprise");
 
       toast({
         title: "Demande envoyée !",
