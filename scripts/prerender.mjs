@@ -16,6 +16,8 @@ const PUBLIQUES = [
   { chemin: "/cree-ton-evenement", priorite: "0.8", frequence: "monthly" },
   { chemin: "/politique-confidentialite", priorite: "0.3", frequence: "yearly" },
   { chemin: "/mentions-legales", priorite: "0.2", frequence: "yearly" },
+  // Pages villes et services (src/lib/pagesLocales.ts)
+  ...[...readFileSync("src/lib/pagesLocales.ts", "utf8").matchAll(/chemin: "(\/[a-z0-9-]+)"/g)].map((m) => ({ chemin: m[1], priorite: "0.8", frequence: "monthly" })),
 ];
 // Espaces privés et anciennes adresses : l'application seule, jamais indexée
 const PRIVEES = ["admin", "admin-auth", "auth", "auth/callback", "staff-dashboard", "rgpd"];

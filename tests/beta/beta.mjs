@@ -373,14 +373,14 @@ await scenario("Admin : bilan de l'activité, puis réalisations en photos publi
   await page.screenshot({ path: `${CAPTURES}/10-bilan.png`, fullPage: true });
   notes.push("bilan : demandes du mois, chiffre signé, événements à venir, devis sans réponse, choix du jeu");
 
-  await page.getByRole("tab", { name: /Photos/ }).click(); await page.waitForTimeout(600);
-  await page.getByRole("button", { name: "Ajouter" }).click();
+  await page.getByRole("tab", { name: /Site$/ }).click(); await page.waitForTimeout(600);
+  await page.getByRole("button", { name: "Ajouter", exact: true }).click();
   await page.getByPlaceholder("Ex. Mariage de Salma & Karim").fill("Mariage de Salma & Karim");
   await page.getByPlaceholder(/Palais des Congrès/).fill("Rabat");
   await page.getByTestId("photos-realisation").setInputFiles([new URL("../../public/lovable-uploads/df0014d7-d697-4525-a5ee-71cf8fa774ab.png", import.meta.url).pathname, new URL("../../public/lovable-uploads/8d6b5162-f9c8-419e-a6f0-2f2949d8d05f.png", import.meta.url).pathname]);
   await page.waitForTimeout(2500);
-  await page.getByRole("switch").click();
-  await page.getByRole("button", { name: "Enregistrer" }).click(); await page.waitForTimeout(1000);
+  await page.getByTestId("form-realisation").getByRole("switch").click();
+  await page.getByTestId("form-realisation").getByRole("button", { name: "Enregistrer" }).click(); await page.waitForTimeout(1000);
   const r = base.realisations?.[0];
   verifier(r?.publie && r.photos.length === 2 && r.photos.every((u) => u.includes("/assets/realisations/")), "la réalisation et ses 2 photos ne sont pas enregistrées : " + JSON.stringify(r));
   notes.push("réalisation créée avec 2 photos (réduites et envoyées dans le stockage) et publiée");
@@ -659,6 +659,46 @@ await scenario("Avis client : notes du service et des crews, avis Google, notes 
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
   notes.push("admin : avis 5/5 visible dans le devis, notes ★ des crews, équipe reprise en 1 clic sur le nouveau devis du même client");
+});
+
+// 3 sexdecies. Confiance + pages villes / services
+await scenario("Site : éléments de confiance réglés dans l'admin, témoignage publié, pages villes et services", async (notes) => {
+  const base = nouvelleBase();
+  base.devis = [{ id: "dv8", numero: "DEV-2026-0180", type: "mariage", client_nom: "Salma Idrissi", titre: "Mariage à Rabat", statut: "accepte", total_ttc: 1000, avis_note: 5,
+    avis_commentaire: "Une équipe adorable et très professionnelle", avis_publiable: true, lien_token: crypto.randomUUID(), date_emission: "2026-09-01" }];
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Site$/ }).click(); await page.waitForTimeout(1200);
+  await page.getByTestId("vitrine-annees").fill("10");
+  await page.getByTestId("vitrine-google-note").fill("4,9");
+  await page.getByTestId("engagement-remplacement").click();
+  await page.getByTestId("enregistrer-vitrine").click(); await page.waitForTimeout(1000);
+  verifier(base.vitrine[0].annees_experience === 10 && base.vitrine[0].google_note === 4.9 && base.vitrine[0].engagement_remplacement && !base.vitrine[0].engagement_cnss, "les éléments de confiance ne sont pas enregistrés : " + JSON.stringify(base.vitrine[0]));
+  await page.getByTestId("publier-avis").click(); await page.waitForTimeout(1000);
+  verifier(base.temoignages.length === 1 && base.temoignages[0].auteur === "Salma I." && base.temoignages[0].publie, "l'avis du client n'est pas publié en témoignage : " + JSON.stringify(base.temoignages));
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+  notes.push("admin → Site : 10 ans, 4,9 sur Google, « remplacement garanti » coché ; l'avis 5★ de Salma publié en un clic (« Salma I. »)");
+
+  const c = await contexte(navigateur, base, "visiteur@example.com", { mobile: true });
+  await c.page.goto(`${BASE}/`); await c.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await c.page.reload(); await c.page.waitForTimeout(1500);
+  await c.page.getByRole("link", { name: /Hôtesses à Casablanca/ }).first().click(); await c.page.waitForTimeout(1500);
+  verifier(c.page.url().endsWith("/hotesses-casablanca") && /Hôtesses et stewards à Casablanca/.test(await c.page.locator("h1").innerText()), "la page Casablanca ne s'ouvre pas depuis l'accueil");
+  verifier(/4,9\/5/.test(await c.page.getByTestId("note-google").first().innerText()), "la note Google n'apparaît pas");
+  const eng = await c.page.getByTestId("engagements").innerText();
+  verifier(/Remplacement garanti/.test(eng) && !/CNSS/.test(eng), "les engagements affichés ne correspondent pas aux cases cochées");
+  verifier(/Salma I\./.test(await c.page.getByTestId("temoignages").innerText()), "le témoignage n'apparaît pas");
+  const faq = await c.page.getByTestId("faq").innerText();
+  verifier(/plusieurs jours de salon/.test(faq) && /acompte/.test(faq), "la FAQ (page + agence) est incomplète");
+  verifier(await c.page.locator('script[type="application/ld+json"]').count() >= 3, "les données structurées (service, FAQ, fil d'Ariane) manquent");
+  const largeur = await c.page.evaluate(() => document.documentElement.scrollWidth);
+  verifier(largeur <= 392, `la page déborde sur smartphone (${largeur} px)`);
+  await c.page.screenshot({ path: `${CAPTURES}/21-page-casablanca.png`, fullPage: true });
+  await c.page.goto(`${BASE}/organisation-mariage`); await c.page.waitForTimeout(1500);
+  verifier(/Organisation de votre mariage/.test(await c.page.locator("h1").innerText()) && await c.page.getByTestId("pied-villes-services").count(), "la page service ou les liens du pied de page manquent");
+  verifier(!c.erreurs.length, "erreurs JavaScript : " + c.erreurs.join(" ; "));
+  await c.ctx.close();
+  notes.push("accueil → « Hôtesses à Casablanca » : note Google, engagement coché, témoignage, FAQ, données Google ; page « Organisation de mariage » et liens du pied de page");
 });
 
 // 3 sexies. Paie : une fiche dont toutes les missions ont été supprimées disparaît au recalcul

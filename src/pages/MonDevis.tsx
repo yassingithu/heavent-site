@@ -211,6 +211,7 @@ function AvisEvenement({ token, equipe, dejaNote, lienGoogle, onEnvoye }: { toke
   const [commentaire, setCommentaire] = useState("");
   const [notes, setNotes] = useState<Record<string, number>>(Object.fromEntries(equipe.filter((m) => m.note).map((m) => [m.id, m.note!])));
   const [reprendre, setReprendre] = useState(false);
+  const [publiable, setPubliable] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
   const [merci, setMerci] = useState<{ google: string | null } | null>(dejaNote ? { google: dejaNote >= 4 ? lienGoogle : null } : null);
@@ -222,7 +223,7 @@ function AvisEvenement({ token, equipe, dejaNote, lienGoogle, onEnvoye }: { toke
     if (!note) return setErreur("Choisissez une note pour l'événement.");
     setEnvoi(true);
     const { data, error } = await supabase.functions.invoke("evaluer-equipe", {
-      body: { token, note, commentaire, reprendre, crews: Object.entries(notes).map(([id, n]) => ({ id, note: n })) },
+      body: { token, note, commentaire, reprendre, publiable, crews: Object.entries(notes).map(([id, n]) => ({ id, note: n })) },
     });
     let msg = data?.error as string | undefined;
     if (error && !msg) { try { msg = (await (error as any).context?.json())?.error; } catch { /* */ } }
@@ -277,6 +278,12 @@ function AvisEvenement({ token, equipe, dejaNote, lienGoogle, onEnvoye }: { toke
             <label className="flex items-start gap-2 text-sm cursor-pointer">
               <input type="checkbox" checked={reprendre} onChange={(e) => setReprendre(e.target.checked)} className="mt-1 h-4 w-4 accent-[#C8B560]" data-testid="reprendre-equipe" />
               Je souhaite retravailler avec la même équipe pour mon prochain événement.
+            </label>
+          )}
+          {commentaire.trim().length > 0 && (
+            <label className="flex items-start gap-2 text-sm cursor-pointer">
+              <input type="checkbox" checked={publiable} onChange={(e) => setPubliable(e.target.checked)} className="mt-1 h-4 w-4 accent-[#C8B560]" data-testid="avis-publiable-client" />
+              J'accepte que mon avis soit publié sur le site de l'agence (avec mon prénom et l'initiale de mon nom).
             </label>
           )}
           {erreur && <p className="text-sm text-[#8A2E26]" role="alert">{erreur}</p>}

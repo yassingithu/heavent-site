@@ -11,6 +11,10 @@ export function nouvelleBase() {
     agenda_parametres: [{ id: 1, duree_minutes: 45, pause_minutes: 15, delai_heures: 24, horizon_jours: 30, types: ["agence", "telephone", "visio"], adresse: null, lien_visio: null, actif: true }],
     agenda_horaires: [1, 2, 3, 4, 5, 6].flatMap((jour) => [{ id: "h" + jour + "a", jour, debut: "10:00:00", fin: "13:00:00" }, { id: "h" + jour + "b", jour, debut: "15:00:00", fin: "19:00:00" }]),
     agenda_indisponibilites: [], rendez_vous: [], fiches_mission: [], evaluations_crew: [],
+    vitrine: [{ id: 1, annees_experience: null, nb_evenements: null, nb_crews: null, google_note: null, google_nb_avis: null, google_lien: null,
+      engagement_cnss: false, engagement_assurance: false, engagement_remplacement: false, engagement_reponse_24h: false,
+      faq: [{ q: "Faut-il verser un acompte ?", r: "Oui : l'acompte indiqué sur le devis est payable à la commande." }] }],
+    references_clients: [], temoignages: [],
     appelsFonctions: [],
   };
 }
@@ -158,7 +162,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
         const d = base.devis.find((x) => x.lien_token === corps.token);
         if (!d || d.statut !== "accepte") return route.fulfill({ status: 404, json: { error: "Ce devis n'est pas disponible." } });
         if (!(corps.note >= 1 && corps.note <= 5)) return route.fulfill({ status: 400, json: { error: "Choisissez une note de 1 à 5 étoiles." } });
-        Object.assign(d, { avis_note: corps.note, avis_commentaire: corps.commentaire || null, avis_le: new Date().toISOString(), reprendre_equipe: !!corps.reprendre });
+        Object.assign(d, { avis_note: corps.note, avis_commentaire: corps.commentaire || null, avis_le: new Date().toISOString(), reprendre_equipe: !!corps.reprendre, avis_publiable: !!corps.publiable && !!corps.commentaire });
         for (const c of corps.crews ?? []) {
           base.evaluations_crew = base.evaluations_crew.filter((v) => !(v.devis_id === d.id && v.staff_id === c.id));
           base.evaluations_crew.push({ id: "ev" + Math.random().toString(36).slice(2), devis_id: d.id, staff_id: c.id, note: c.note });
@@ -216,6 +220,15 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     }
     if (url.pathname.includes("/rpc/is_admin")) return route.fulfill({ json: admin });
     if (url.pathname.includes("/rpc/generer_fiches_paie")) return route.fulfill({ json: genererFiches(base) });
+    if (url.pathname.includes("/rpc/vitrine_public")) {
+      const v = base.vitrine[0];
+      return route.fulfill({ json: {
+        chiffres: { annees: v.annees_experience, evenements: v.nb_evenements, crews: v.nb_crews },
+        google: v.google_note ? { note: v.google_note, nb: v.google_nb_avis, lien: v.google_lien } : null,
+        engagements: { cnss: v.engagement_cnss, assurance: v.engagement_assurance, remplacement: v.engagement_remplacement, reponse24h: v.engagement_reponse_24h },
+        faq: v.faq, references: base.references_clients.filter((r) => r.publie !== false), temoignages: base.temoignages.filter((t) => t.publie),
+      } });
+    }
     if (url.pathname.includes("/rpc/mes_missions")) {
       const m = moi();
       return route.fulfill({ json: base.affectations.filter((a) => m && a.staff_id === m.id && a.statut !== "annule").map((a) => {
@@ -227,7 +240,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     if (url.pathname.includes("/rpc/agenda_creneaux")) return route.fulfill({ json: creneauxLibres(base) });
     if (url.pathname.includes("/rpc/agenda_public")) {
       const p = base.agenda_parametres[0];
-      return route.fulfill({ json: { duree_minutes: p.duree_minutes, types: p.types, actif: p.actif, adresse: p.adresse || "Rue Dakar, Rabat" } });
+      return route.fulfill({ json: { duree_minutes: p.duree_minutes, types: p.types, actif: p.actif, adresse: p.afficher_adresse ? p.adresse || "Rue Dakar, Rabat" : null } });
     }
     if (url.pathname.includes("/rpc/agenda_cle_calendrier")) return route.fulfill({ json: admin ? "c".repeat(64) : null });
     if (url.pathname.includes("/rpc/facture_creer")) {
@@ -264,7 +277,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     if (req.method() === "GET") {
       let lignes = base[t];
       if (!admin) {
-        if (t === "fiches_mission") lignes = [];
+        if (["fiches_mission", "vitrine", "references_clients", "temoignages"].includes(t)) lignes = [];
         if (["contrats", "fiches_paie", "affectations", "disponibilites", "remarques_contrat"].includes(t)) lignes = lignes.filter((r) => r.staff_id === moi()?.id);
         if (t === "staff") lignes = lignes.filter((r) => r.email === email);
         if (["devis", "devis_lignes", "devis_mariage", "devis_entreprise", "admins", "factures", "rendez_vous", "agenda_parametres", "agenda_horaires", "agenda_indisponibilites"].includes(t)) lignes = [];

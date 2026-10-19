@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { SERVICES, VILLES } from "@/lib/pagesLocales";
 import { Instagram, Phone, Mail, MapPin, Key } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 
@@ -91,6 +92,23 @@ const Footer = () => {
                 <MapPin size={16} />
                 <span>Rabat, Maroc</span>
               </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Nos villes et nos services (pages locales) */}
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 text-sm" data-testid="pied-villes-services">
+          <div>
+            <h3 className="font-semibold mb-3">Nos villes</h3>
+            <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
+              {VILLES.map((v) => <li key={v.chemin}><Link to={v.chemin} className="text-muted-foreground hover:text-primary transition-colors">Hôtesses à {v.nomCourt}</Link></li>)}
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-3">Nos services</h3>
+            <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
+              {SERVICES.map((v) => <li key={v.chemin}><Link to={v.chemin} className="text-muted-foreground hover:text-primary transition-colors">{v.nomCourt}</Link></li>)}
+              <li><Link to="/realisations" className="text-muted-foreground hover:text-primary transition-colors">Réalisations</Link></li>
             </ul>
           </div>
         </div>

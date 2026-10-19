@@ -12,12 +12,12 @@ import { Ban, CalendarPlus, Check, Copy, Mail, MessageCircle, Phone, Plus, Save,
 /** Onglet « Agenda » : rendez-vous pris par les clients, disponibilités de la semaine, jours bloqués, abonnement calendrier. */
 const TZ = "UTC"; // heure du Maroc : GMT depuis le 20 septembre 2026 (fin du GMT+1)
 const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-const TYPES: Record<string, string> = { agence: "À l'agence", telephone: "Téléphone", visio: "Visio" };
+const TYPES: Record<string, string> = { agence: "En personne", telephone: "Téléphone", visio: "Visio" };
 const SOURCES: Record<string, string> = { devis: "depuis son devis", contact: "page Contact", jeu: "jeu", site: "site" };
 const PROJET = "mapiwnsjsluiwmnulhqk.supabase.co";
 
 interface Plage { id?: string; jour: number; debut: string; fin: string }
-interface Reglages { duree_minutes: number; pause_minutes: number; delai_heures: number; horizon_jours: number; types: string[]; adresse: string | null; lien_visio: string | null; actif: boolean }
+interface Reglages { duree_minutes: number; pause_minutes: number; delai_heures: number; horizon_jours: number; types: string[]; adresse: string | null; afficher_adresse: boolean; lien_visio: string | null; actif: boolean }
 interface Rdv {
   id: string; debut: string; fin: string; type: string; statut: string; client_nom: string; client_email: string | null; client_telephone: string | null;
   message: string | null; source: string; devis_id: string | null; langue: string; devis?: { numero: string; titre: string | null } | null;
@@ -247,7 +247,12 @@ export default function AgendaAdmin({ onOuvrirDevis }: { onOuvrirDevis?: (id: st
                     ))}
                   </div>
                 </div>
-                <div><Label className="text-xs">Adresse des rendez-vous à l'agence (vide = adresse de l'agence)</Label><Input value={reglages.adresse ?? ""} onChange={(e) => setReglages({ ...reglages, adresse: e.target.value })} /></div>
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-2"><Switch checked={reglages.afficher_adresse} onCheckedChange={(c) => setReglages({ ...reglages, afficher_adresse: c })} data-testid="afficher-adresse" /> Montrer une adresse au client pour les rendez-vous en personne</label>
+                  {reglages.afficher_adresse
+                    ? <Input value={reglages.adresse ?? ""} placeholder="Adresse des rendez-vous (vide = adresse de l'agence)" onChange={(e) => setReglages({ ...reglages, adresse: e.target.value })} />
+                    : <p className="text-xs text-muted-foreground">Aucune adresse n'est donnée : le client lit « Le lieu du rendez-vous vous sera confirmé par l'agence ».</p>}
+                </div>
                 <div><Label className="text-xs">Lien visio (Google Meet, Zoom…) envoyé au client — facultatif</Label><Input value={reglages.lien_visio ?? ""} placeholder="https://meet.google.com/…" onChange={(e) => setReglages({ ...reglages, lien_visio: e.target.value })} /></div>
                 <Button variant="outline" onClick={enregistrerReglages} className="w-full" data-testid="enregistrer-reglages"><Save className="h-4 w-4 mr-1" /> Enregistrer les réglages</Button>
               </CardContent>

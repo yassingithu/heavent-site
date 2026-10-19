@@ -25,6 +25,8 @@ const MentionsLegales = lazy(() => import("./pages/MentionsLegales"));
 const CreeTonEvenement = lazy(() => import("./pages/CreeTonEvenement"));
 const MonDevis = lazy(() => import("./pages/MonDevis"));
 const Realisations = lazy(() => import("./pages/Realisations"));
+const PageLocale = lazy(() => import("./pages/PageLocale"));
+import { PAGES_LOCALES } from "./lib/pagesLocales";
 import RetourEnHaut from "./components/RetourEnHaut";
 
 const queryClient = new QueryClient();
@@ -62,6 +64,7 @@ const App = () => {
               <Route path="/cree-ton-evenement" element={<CreeTonEvenement />} />
               <Route path="/mon-devis/:token" element={<MonDevis />} />
               <Route path="/realisations" element={<Realisations />} />
+              {PAGES_LOCALES.map((p) => <Route key={p.chemin} path={p.chemin} element={<PageLocale page={p} />} />)}
               <Route path="/rgpd" element={<Navigate to="/politique-confidentialite" replace />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin-auth" element={<AdminAuth />} />

@@ -130,3 +130,12 @@ create policy "agenda_indispos_admin" on public.agenda_indisponibilites for all 
 create policy "rendez_vous_admin" on public.rendez_vous for all to authenticated using (public.is_admin()) with check (public.is_admin());
 revoke all on public.agenda_parametres, public.agenda_horaires, public.agenda_indisponibilites, public.rendez_vous from anon;
 revoke truncate on public.agenda_parametres, public.agenda_horaires, public.agenda_indisponibilites, public.rendez_vous from authenticated;
+
+-- Pour l'instant les rendez-vous ne se font pas au bureau : l'adresse n'est montrée au client que si l'agence le choisit
+alter table public.agenda_parametres add column if not exists afficher_adresse boolean not null default false;
+create or replace function public.agenda_public()
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object('duree_minutes', duree_minutes, 'types', types, 'actif', actif,
+    'adresse', case when afficher_adresse then coalesce(nullif(adresse, ''), (select concat_ws(', ', nullif(a.adresse, ''), nullif(a.ville, '')) from public.parametres_agence a where a.id = 1)) end)
+  from public.agenda_parametres where id = 1;
+$$;

@@ -11,9 +11,9 @@ serve(async (req) => {
   const cle = new URL(req.url).searchParams.get("cle") ?? "";
   const { data: s } = await db.from("secrets_internes").select("valeur").eq("nom", "agenda_ics").maybeSingle();
   if (!s?.valeur || cle.length < 32 || cle !== s.valeur) return new Response("Accès refusé", { status: 403 });
-  const { data: p } = await db.from("agenda_parametres").select("adresse").eq("id", 1).maybeSingle();
+  const { data: p } = await db.from("agenda_parametres").select("adresse, afficher_adresse").eq("id", 1).maybeSingle();
   const { data: ag } = await db.from("parametres_agence").select("adresse, ville").eq("id", 1).maybeSingle();
-  const adresse = p?.adresse?.trim() || [ag?.adresse, ag?.ville].filter(Boolean).join(", ");
+  const adresse = p?.afficher_adresse ? (p?.adresse?.trim() || [ag?.adresse, ag?.ville].filter(Boolean).join(", ")) : "En personne (lieu à confirmer)";
   const depuis = new Date(Date.now() - 60 * 864e5).toISOString();
   const { data: rdv } = await db.from("rendez_vous").select("*, devis(numero, titre)").gte("debut", depuis).neq("statut", "annule").order("debut");
   const { data: indispos } = await db.from("agenda_indisponibilites").select("*").gte("fin", depuis);

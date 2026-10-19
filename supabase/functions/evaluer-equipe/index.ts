@@ -18,7 +18,7 @@ const note = (v: unknown) => { const n = Math.round(Number(v)); return n >= 1 &&
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { token, note: noteGlobale, commentaire, crews, reprendre } = await req.json();
+    const { token, note: noteGlobale, commentaire, crews, reprendre, publiable } = await req.json();
     if (!/^[0-9a-f-]{36}$/i.test(String(token ?? ""))) return json({ error: "Lien invalide." }, 400);
     const ng = note(noteGlobale);
     if (!ng) return json({ error: "Choisissez une note de 1 à 5 étoiles." }, 400);
@@ -37,7 +37,7 @@ serve(async (req) => {
       const tc = await versFrancais(String(c?.commentaire ?? "").slice(0, 500));
       notesCrew.push({ staff_id: c.id, note: n, commentaire: avecOriginal(tc) || null, t: tc });
     }
-    await db.from("devis").update({ avis_note: ng, avis_commentaire: avecOriginal(tg) || null, avis_le: new Date().toISOString(), reprendre_equipe: !!reprendre }).eq("id", d.id);
+    await db.from("devis").update({ avis_note: ng, avis_commentaire: avecOriginal(tg) || null, avis_le: new Date().toISOString(), reprendre_equipe: !!reprendre, avis_publiable: !!publiable && !!tg.texte }).eq("id", d.id);
     if (notesCrew.length) {
       await db.from("evaluations_crew").upsert(notesCrew.map(({ t: _t, ...x }) => ({ ...x, devis_id: d.id })), { onConflict: "devis_id,staff_id" });
     }
@@ -52,6 +52,7 @@ serve(async (req) => {
           <p style="font-size:20px;color:#A8933F">${etoiles(ng)} <span style="color:#333;font-size:14px">${ng}/5</span></p>
           ${tg.texte ? `<p style="white-space:pre-line">${htmlTraduit(tg, e)}</p>` : ""}
           ${notesCrew.length ? `<p><b>L'équipe :</b></p><ul>${notesCrew.map((c) => { const s: any = membres.get(c.staff_id); return `<li>${e(s?.prenom)} ${e(s?.nom)} — <span style="color:#A8933F">${etoiles(c.note)}</span>${c.t.texte ? ` : ${htmlTraduit(c.t, e)}` : ""}</li>`; }).join("")}</ul>` : ""}
+          ${publiable && tg.texte ? `<p>✅ Le client accepte que son avis soit publié sur le site : un clic dans l'admin (onglet Site → Témoignages) pour l'afficher.</p>` : ""}
           ${reprendre ? `<p>🔁 <b>Le client souhaite retravailler avec la même équipe</b> pour son prochain événement.</p>` : ""}
           ${ng <= 3 ? `<p style="color:#b42318">Note basse : un petit appel au client peut aider.</p>` : ""}
         </div>`,

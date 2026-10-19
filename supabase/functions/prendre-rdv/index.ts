@@ -25,7 +25,8 @@ serve(async (req) => {
     const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", { auth: { persistSession: false } });
     const { data: p } = await db.from("agenda_parametres").select("*").eq("id", 1).maybeSingle();
     const { data: ag } = await db.from("parametres_agence").select("adresse, ville").eq("id", 1).maybeSingle();
-    const adresse = p?.adresse?.trim() || [ag?.adresse, ag?.ville].filter(Boolean).join(", ") || null;
+    // L'adresse n'est communiquée au client que si l'agence l'a choisi (réglages de l'agenda)
+    const adresse = p?.afficher_adresse ? (p?.adresse?.trim() || [ag?.adresse, ag?.ville].filter(Boolean).join(", ") || null) : null;
     const cle = Deno.env.get("RESEND_API_KEY");
     const resend = cle ? new Resend(cle) : null;
 
@@ -104,13 +105,13 @@ serve(async (req) => {
           ${devis ? `<p>Devis <b>${e(devis.numero)}</b>${devis.titre ? ` « ${e(devis.titre)} »` : ""}${devis.signe_le ? "" : " — non signé : les relances automatiques sont arrêtées."}</p>` : ""}
           ${tm.texte ? `<p><b>Message :</b><br><span style="white-space:pre-line">${htmlTraduit(tm, e)}</span></p>` : ""}
           <p style="color:#888;font-size:12px">Retrouve tous tes rendez-vous dans l'administration, onglet Agenda.</p></div>`,
-        attachments: [{ filename: "rendez-vous.ics", content: base64(calendrierIcs([{ uid: r.id, debut: r.debut, fin: r.fin, titre: `RDV ${nom} (${TYPES[type].fr})`, lieu: type === "agence" ? adresse : type === "telephone" ? tel : "Visio", description }], "Heavent")) }],
+        attachments: [{ filename: "rendez-vous.ics", content: base64(calendrierIcs([{ uid: r.id, debut: r.debut, fin: r.fin, titre: `RDV ${nom} (${TYPES[type].fr})`, lieu: type === "agence" ? adresse ?? "En personne (lieu à confirmer)" : type === "telephone" ? tel : "Visio", description }], "Heavent")) }],
       }).catch(() => {});
       await resend.emails.send({
         from: FROM, to: [email], reply_to: ADMIN_EMAIL, subject: t("sujetConfirmation", l),
         html: emailClient(r, l, t("confirme", l), infosPratiques(r, l, adresse, p.lien_visio), true),
         attachments: [{ filename: "rendez-vous-heavent.ics", content: base64(calendrierIcs([{ uid: r.id, debut: r.debut, fin: r.fin, titre: t("titreEvenement", l),
-          lieu: type === "agence" ? adresse : TYPES[type][l], description: "Heavent People Agency · +212 6 10 93 96 55" }], "Heavent")) }],
+          lieu: type === "agence" ? adresse ?? TYPES[type][l] : TYPES[type][l], description: "Heavent People Agency · +212 6 10 93 96 55" }], "Heavent")) }],
       }).catch(() => {});
     }
     return json({ success: true, debut: r.debut, fin: r.fin, type });

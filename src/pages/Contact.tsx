@@ -1,6 +1,6 @@
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
@@ -34,6 +34,9 @@ type FormData = z.infer<typeof formSchema>;
 
 const Contact = () => {
   const { t, i18n } = useTranslation();
+  useEffect(() => {
+    if (window.location.hash === "#rendez-vous") setTimeout(() => document.getElementById("rendez-vous")?.scrollIntoView({ behavior: "smooth" }), 400);
+  }, []);
   const langueRdv = (["en", "ar"].includes(i18n.language?.slice(0, 2)) ? i18n.language.slice(0, 2) : "fr") as "fr" | "en" | "ar";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);

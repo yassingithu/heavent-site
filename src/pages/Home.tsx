@@ -14,6 +14,8 @@ import {
   Sparkles
 } from "lucide-react";
 import heroImage from "@/assets/hero-staff.webp";
+import SectionConfiance from "@/components/vitrine/Confiance";
+import { SERVICES } from "@/lib/pagesLocales";
 import heroImageMobile from "@/assets/hero-staff-mobile.webp";
 
 const Home = () => {
@@ -245,14 +247,19 @@ const Home = () => {
               ["Agadir", "Séminaires, événements hôteliers et animations commerciales."],
               ["Fès", "Congrès et événements culturels ; nos équipes se déplacent aussi partout au Maroc, sur devis."],
             ].map(([ville, texte]) => (
-              <div key={ville} className="rounded-lg border bg-card p-5">
-                <h3 className="font-semibold text-lg mb-1">Hôtesses à {ville}</h3>
+              <Link key={ville} to={`/hotesses-${ville.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()}`} className="group rounded-lg border bg-card p-5 hover:border-[#C8B560] hover:shadow-sm transition">
+                <h3 className="font-semibold text-lg mb-1 group-hover:text-[#8C6D22]">Hôtesses à {ville} <ArrowRight className="inline h-4 w-4 opacity-0 group-hover:opacity-100 transition" /></h3>
                 <p className="text-sm text-muted-foreground">{texte}</p>
-              </div>
+              </Link>
             ))}
+          </div>
+          <div className="flex flex-wrap justify-center gap-2 mt-8">
+            {SERVICES.map((s) => <Link key={s.chemin} to={s.chemin} className="rounded-full border px-4 py-2 text-sm hover:border-[#C8B560] hover:text-[#8C6D22]">{s.nomCourt}</Link>)}
           </div>
         </div>
       </section>
+
+      <SectionConfiance />
 
       <section className="py-24 bg-foreground text-background">
         <div className="container mx-auto px-4 text-center">

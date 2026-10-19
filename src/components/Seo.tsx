@@ -93,11 +93,13 @@ export const DONNEES_AGENCE = {
   knowsLanguage: ["fr", "ar", "en"],
 };
 
-export default function Seo({ page, noindex = false }: { page?: PageSeo; noindex?: boolean }) {
-  if (noindex || !page) {
+export interface SeoPerso { chemin: string; titre: string; description: string; motsCles?: string; jsonLd?: object[] }
+
+export default function Seo({ page, noindex = false, perso }: { page?: PageSeo; noindex?: boolean; perso?: SeoPerso }) {
+  if (noindex || (!page && !perso)) {
     return <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>;
   }
-  const p = PAGES_SEO[page];
+  const p = perso ?? PAGES_SEO[page!];
   const url = `${SITE}${p.chemin === "/" ? "" : p.chemin}`;
   return (
     <Helmet>
@@ -118,6 +120,7 @@ export default function Seo({ page, noindex = false }: { page?: PageSeo; noindex
       <meta name="twitter:description" content={p.description} />
       <meta name="twitter:image" content={IMAGE} />
       {page === "accueil" && <script type="application/ld+json">{JSON.stringify(DONNEES_AGENCE)}</script>}
+      {perso?.jsonLd?.map((j, i) => <script key={i} type="application/ld+json">{JSON.stringify(j)}</script>)}
     </Helmet>
   );
 }

@@ -117,9 +117,9 @@ serve(async (req) => {
   const { data: rdvDemain } = await db.from("rendez_vous").select("*").eq("statut", "confirme").is("rappel_envoye_le", null).not("client_email", "is", null)
     .gte("debut", new Date(maintenant + 6 * 3600_000).toISOString()).lte("debut", new Date(maintenant + 48 * 3600_000).toISOString());
   if (rdvDemain?.length) {
-    const { data: pa } = await db.from("agenda_parametres").select("adresse, lien_visio").eq("id", 1).maybeSingle();
+    const { data: pa } = await db.from("agenda_parametres").select("adresse, lien_visio, afficher_adresse").eq("id", 1).maybeSingle();
     const { data: agc } = await db.from("parametres_agence").select("adresse, ville").eq("id", 1).maybeSingle();
-    const adresse = pa?.adresse?.trim() || [agc?.adresse, agc?.ville].filter(Boolean).join(", ") || null;
+    const adresse = pa?.afficher_adresse ? (pa?.adresse?.trim() || [agc?.adresse, agc?.ville].filter(Boolean).join(", ") || null) : null;
     for (const r of rdvDemain) {
       const jourRdv = new Date(r.debut).toISOString().slice(0, 10);
       if (jourRdv !== demain) continue;

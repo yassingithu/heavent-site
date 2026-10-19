@@ -10,7 +10,7 @@ export const heure = (iso: string, l: Langue = "fr") =>
   new Date(iso).toLocaleTimeString(LOCALES[l], { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
 
 export const TYPES: Record<string, Record<Langue, string>> = {
-  agence: { fr: "à l'agence", en: "at our office", ar: "في الوكالة" },
+  agence: { fr: "en personne", en: "in person", ar: "حضورياً" },
   telephone: { fr: "par téléphone", en: "by phone", ar: "عبر الهاتف" },
   visio: { fr: "en visio", en: "by video call", ar: "عبر مكالمة فيديو" },
 };
@@ -21,6 +21,7 @@ export const T = {
   bonjour: { fr: "Bonjour", en: "Hello", ar: "مرحباً" },
   confirme: { fr: "Votre rendez-vous est confirmé :", en: "Your appointment is confirmed:", ar: "تم تأكيد موعدك:" },
   adresse: { fr: "Adresse", en: "Address", ar: "العنوان" },
+  lieuConfirme: { fr: "Le lieu du rendez-vous vous sera confirmé par l'agence.", en: "The meeting place will be confirmed by the agency.", ar: "ستؤكد لكم الوكالة مكان الموعد." },
   appel: { fr: "Nous vous appellerons au", en: "We will call you on", ar: "سنتصل بك على الرقم" },
   visio: { fr: "Le lien de la visio vous sera envoyé avant le rendez-vous.", en: "The video call link will be sent to you before the appointment.", ar: "سنرسل لك رابط مكالمة الفيديو قبل الموعد." },
   lienVisio: { fr: "Lien de la visio", en: "Video call link", ar: "رابط مكالمة الفيديو" },
@@ -40,7 +41,7 @@ const esc = (v: unknown) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "
 
 /** Détails pratiques (adresse, appel, visio) selon le type. */
 export function infosPratiques(r: any, l: Langue, adresse: string | null, lienVisio: string | null) {
-  if (r.type === "agence" && adresse) return `${t("adresse", l)} : ${esc(adresse)}`;
+  if (r.type === "agence") return adresse ? `${t("adresse", l)} : ${esc(adresse)}` : t("lieuConfirme", l);
   if (r.type === "telephone") return `${t("appel", l)} <span dir="ltr">${esc(r.client_telephone ?? "")}</span>`;
   if (r.type === "visio") return lienVisio ? `${t("lienVisio", l)} : <a href="${esc(lienVisio)}">${esc(lienVisio)}</a>` : t("visio", l);
   return "";

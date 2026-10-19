@@ -15,7 +15,8 @@ const LOCALES: Record<LangueRdv, string> = { fr: "fr-FR", en: "en-GB", ar: "ar-M
 
 const TXT = {
   type: { fr: "Comment souhaitez-vous nous rencontrer ?", en: "How would you like to meet?", ar: "كيف تفضل لقاءنا؟" },
-  agence: { fr: "À l'agence", en: "At our office", ar: "في الوكالة" },
+  agence: { fr: "En personne", en: "In person", ar: "حضورياً" },
+  lieuConfirme: { fr: "Le lieu du rendez-vous vous sera confirmé par l'agence.", en: "The meeting place will be confirmed by the agency.", ar: "ستؤكد لكم الوكالة مكان الموعد." },
   telephone: { fr: "Par téléphone", en: "By phone", ar: "عبر الهاتف" },
   visio: { fr: "En visio", en: "Video call", ar: "مكالمة فيديو" },
   jour: { fr: "Choisissez un jour", en: "Choose a day", ar: "اختر يوماً" },
@@ -131,7 +132,7 @@ export default function ChoisirRendezVous({ langue = "fr", source, devisToken, n
         <div>
           <div className="font-serif text-xl">{t("confirme")}</div>
           <div className="font-medium mt-1 capitalize">{fmtComplet(reserve.debut)} · {t(reserve.type)}</div>
-          {reserve.type === "agence" && reglages?.adresse && <div className="text-sm text-[#5E554A]">{reglages.adresse}</div>}
+          {reserve.type === "agence" && <div className="text-sm text-[#5E554A]">{reglages?.adresse || t("lieuConfirme")}</div>}
           <div className="text-sm text-[#5E554A] mt-1">{t("confirmeDetail")}</div>
         </div>
       </div>
@@ -156,7 +157,7 @@ export default function ChoisirRendezVous({ langue = "fr", source, devisToken, n
               );
             })}
           </div>
-          {type === "agence" && reglages.adresse && <p className="text-xs text-[#6B6155] mt-1.5">{reglages.adresse}</p>}
+          {type === "agence" && <p className="text-xs text-[#6B6155] mt-1.5">{reglages.adresse || t("lieuConfirme")}</p>}
         </div>
       )}
 
