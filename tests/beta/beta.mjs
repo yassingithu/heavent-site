@@ -412,7 +412,9 @@ await scenario("Devis : le client préfère un rendez-vous plutôt que signer", 
   const c = await contexte(navigateur, base, "nora@example.com", { mobile: true });
   await c.page.goto(`${BASE}/mon-devis/11111111-2222-3333-4444-555555555555`); await c.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await c.page.reload(); await c.page.waitForTimeout(1500);
   verifier(/premier rendez-vous/.test(await c.page.getByTestId("mention-montant").innerText()), "la mention « montant évolutif » n'apparaît pas");
-  await c.page.getByTestId("ouvrir-rdv").tap();
+  await c.page.getByTestId("ouvrir-rdv").tap(); await c.page.waitForTimeout(800);
+  verifier(await c.page.getByTestId("choisir-rdv").isVisible(), "l'agenda des créneaux ne s'affiche pas");
+  await c.page.getByTestId("rdv-texte-libre").tap();
   await c.page.locator("#rdv-dispo").fill("Samedi matin");
   await c.page.locator("#rdv-message").fill("Nous aimerions voir les options de décoration");
   await c.page.getByTestId("envoyer-rdv").tap(); await c.page.waitForTimeout(1200);
@@ -485,6 +487,68 @@ await scenario("Factures : acompte payé, solde avec acompte déduit, PDF, envoi
   verifier(!c.erreurs.length, "erreurs JavaScript côté client : " + c.erreurs.join(" ; "));
   await c.ctx.close();
   notes.push("le client voit et télécharge ses 2 factures depuis son lien");
+});
+
+// 3 terdecies. Agenda : le client réserve un créneau, l'admin règle ses dispos, bloque un jour, annule
+await scenario("Agenda : réservation d'un créneau (devis + Contact), dispos et jours bloqués dans l'admin", async (notes) => {
+  const base = nouvelleBase();
+  base.devis = [{ id: "dv3", numero: "DEV-2026-0140", type: "mariage", marque: "heavent", client_nom: "Leila Idrissi", client_email: "leila@example.com", client_telephone: "0612345678", titre: "Mariage Leila",
+    statut: "envoye", total_ttc: 30000, remise_globale_pct: 0, taux_tva: 20, acompte_pct: 50, date_emission: "2026-10-18", date_validite: "2099-12-31", date_envoi: new Date().toISOString(), lien_token: "33333333-4444-5555-6666-777777777777", relances: 0 }];
+  base.devis_lignes = [{ id: "l1", devis_id: "dv3", ordre: 0, designation: "Décoration", description: null, quantite: 1, duree: 1, unite: "forfait", prix_unitaire: 25000, remise_pct: 0 }];
+  const c = await contexte(navigateur, base, "leila@example.com", { mobile: true });
+  await c.page.goto(`${BASE}/mon-devis/33333333-4444-5555-6666-777777777777`); await c.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await c.page.reload(); await c.page.waitForTimeout(1500);
+  await c.page.getByTestId("ouvrir-rdv").tap(); await c.page.waitForTimeout(800);
+  await c.page.getByTestId("rdv-type-telephone").tap();
+  await c.page.getByTestId("rdv-jour").nth(1).tap();
+  const nbHeures = await c.page.getByTestId("rdv-heure").count();
+  verifier(nbHeures >= 4, `trop peu de créneaux proposés (${nbHeures})`);
+  await c.page.getByTestId("rdv-heure").nth(2).tap();
+  verifier(await c.page.getByTestId("rdv-nom").inputValue() === "Leila Idrissi", "le nom du devis n'est pas prérempli");
+  await c.page.getByTestId("rdv-tel").fill("");
+  await c.page.getByTestId("rdv-confirmer").tap(); await c.page.waitForTimeout(500);
+  verifier(/numéro de téléphone/.test(await c.page.locator("[role=alert]").first().innerText()), "un rendez-vous par téléphone sans numéro n'est pas refusé");
+  await c.page.getByTestId("rdv-tel").fill("0612345678");
+  await c.page.getByTestId("rdv-confirmer").tap(); await c.page.waitForTimeout(1200);
+  verifier(await c.page.getByTestId("rdv-confirme").isVisible(), "pas de confirmation du rendez-vous");
+  const r = base.rendez_vous[0];
+  verifier(r?.type === "telephone" && r.devis_id === "dv3" && base.devis[0].rdv_demande_le && base.devis[0].relances === 2, "le rendez-vous n'est pas relié au devis");
+  const largeur = await c.page.evaluate(() => document.documentElement.scrollWidth);
+  verifier(largeur <= 392, `la page déborde sur smartphone (${largeur} px)`);
+  await c.page.screenshot({ path: `${CAPTURES}/16-rdv-client.png`, fullPage: true });
+  verifier(!c.erreurs.length, "erreurs JavaScript côté client : " + c.erreurs.join(" ; "));
+  await c.ctx.close();
+  notes.push("depuis son devis, la cliente choisit téléphone, un jour, une heure : rendez-vous confirmé, relié au devis, relances arrêtées");
+
+  // Page Contact : le créneau pris n'est plus proposé
+  const v = await contexte(navigateur, base, "visiteur@example.com");
+  await v.page.goto(`${BASE}/contact`); await v.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await v.page.reload(); await v.page.waitForTimeout(1500);
+  verifier(await v.page.getByTestId("choisir-rdv").isVisible(), "pas d'agenda sur la page Contact");
+  await v.page.getByTestId("rdv-jour").nth(1).click();
+  verifier(await v.page.getByTestId("rdv-heure").count() === nbHeures - 1, "le créneau déjà réservé est encore proposé");
+  await v.ctx.close();
+  notes.push("page Contact : agenda affiché, le créneau déjà pris a disparu");
+
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  page.on("dialog", (d) => d.accept("Imprévu, désolée"));
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByTestId("onglet-agenda").click(); await page.waitForTimeout(1200);
+  verifier(await page.getByTestId("rdv-ligne").count() === 1 && /Leila Idrissi/.test(await page.getByTestId("liste-rdv").innerText()), "le rendez-vous n'apparaît pas dans l'agenda admin");
+  const avant = base.agenda_horaires.length;
+  await page.getByTestId("ajouter-plage-7").click();
+  await page.getByTestId("enregistrer-dispos").click(); await page.waitForTimeout(1200);
+  verifier(base.agenda_horaires.length === avant + 1 && base.agenda_horaires.some((h) => h.jour === 7), "la plage du dimanche n'est pas enregistrée");
+  const demain = new Date(Date.now() + 3600e3 + 3 * 864e5).toISOString().slice(0, 10);
+  await page.getByTestId("bloquer-du").fill(demain);
+  await page.getByTestId("bloquer").click(); await page.waitForTimeout(1000);
+  verifier(base.agenda_indisponibilites.length === 1 && base.agenda_indisponibilites[0].debut.endsWith("T23:00:00.000Z"), "le jour bloqué est mal enregistré : " + JSON.stringify(base.agenda_indisponibilites[0]));
+  await page.getByTestId("lien-calendrier").click(); await page.waitForTimeout(600);
+  verifier(await page.getByText("s'abonner en un clic").count(), "pas de lien d'abonnement au calendrier");
+  await page.screenshot({ path: `${CAPTURES}/17-agenda-admin.png`, fullPage: true });
+  await page.getByTestId("rdv-annuler").click(); await page.waitForTimeout(1200);
+  verifier(base.rendez_vous[0].statut === "annule" && base.appelsFonctions.some((a) => a.nom === "prendre-rdv" && a.corps.action === "annuler" && a.corps.motif === "Imprévu, désolée"), "l'annulation n'est pas faite");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+  notes.push("admin : rendez-vous visible, plage du dimanche ajoutée, jour bloqué (minuit heure du Maroc), lien calendrier, annulation avec message au client");
 });
 
 // 3 sexies. Paie : une fiche dont toutes les missions ont été supprimées disparaît au recalcul

@@ -89,7 +89,8 @@ export function documentRecap(c: Creation, o: OptionsRecap, imageScene?: string 
 }
 
 export async function telechargerRecapPdf(c: Creation, o: OptionsRecap, imageScene?: string | null) {
-  await telechargerPdf([documentRecap(c, o, imageScene)], CSS_RECAP, nomFichier(tr("Mon-evenement"), nomType(c), new Date().toISOString().slice(0, 10)));
+  const nom = nomFichier(tr("Mon-evenement"), nomType(c), new Date().toISOString().slice(0, 10));
+  return { blob: await telechargerPdf([documentRecap(c, o, imageScene)], CSS_RECAP, nom), nom };
 }
 
 // ── Demande de devis (texte joint) ──────────────────────────────────────────

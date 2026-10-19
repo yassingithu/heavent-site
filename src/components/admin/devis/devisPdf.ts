@@ -2,6 +2,7 @@ import logoDevis from "@/assets/logo-devis-noir.png";
 import logoNawar from "@/assets/logo-nawar.png";
 import { DevisForm, Parametres, devisMarkup, nomFichierDevis } from "./devisUtils";
 import { Facture, factureMarkup, nomFichierFacture } from "./factureUtils";
+import { enregistrerFichier } from "@/lib/pdf";
 
 /** Image → data URL, pour que le logo apparaisse à coup sûr dans le PDF. */
 async function enDataUrl(url: string) {
@@ -22,7 +23,7 @@ async function telechargerDocument(css: string, html: string, nom: string) {
     document.body.appendChild(conteneur);
     await document.fonts?.ready;
     const html2pdf = (await import("html2pdf.js")).default;
-    await html2pdf()
+    const blob = await html2pdf()
       .set({
         margin: 0,
         filename: nom,
@@ -32,7 +33,8 @@ async function telechargerDocument(css: string, html: string, nom: string) {
         pagebreak: { mode: ["css"], before: ".suite", avoid: ["tr", ".art", ".signature", ".bas", ".lettres"] },
       })
       .from(conteneur.querySelector(".devis-pages") as HTMLElement)
-      .save();
+      .outputPdf("blob");
+    enregistrerFichier(new Blob([blob], { type: "application/pdf" }), nom);
     return nom;
   } finally {
     conteneur.remove();

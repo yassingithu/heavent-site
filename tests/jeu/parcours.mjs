@@ -110,12 +110,14 @@ const mission = (p, id) => p.locator(`[data-mission="${id}"]`).first().getAttrib
   const [pdf] = await Promise.all([p.waitForEvent("download", { timeout: 60000 }), p.getByRole("button", { name: "Télécharger (PDF)" }).click()]);
   await pdf.saveAs(`${CAPT}/recap.pdf`);
   assert.ok(readFileSync(`${CAPT}/recap.pdf`).subarray(0, 4).toString() === "%PDF", "vrai PDF");
+  await p.waitForTimeout(800);
+  assert.ok(p.url().includes("/cree-ton-evenement") && await p.getByTestId("apercu-recap").isVisible(), "le PDF ne doit pas remplacer la page du jeu");
   await p.getByRole("radio", { name: /Image \(PNG\)/ }).check();
   const [png] = await Promise.all([p.waitForEvent("download"), p.getByRole("button", { name: "Télécharger (PNG)" }).click()]);
   await png.saveAs(`${CAPT}/scene.png`);
   assert.equal(readFileSync(`${CAPT}/scene.png`).subarray(1, 4).toString(), "PNG");
   await p.keyboard.press("Escape");
-  ok("récapitulatif + téléchargements avec aperçu : PDF et PNG valides");
+  ok("récapitulatif + téléchargements avec aperçu : PDF et PNG valides, sans quitter le jeu");
 
   // Partage : WhatsApp + lien qui rouvre la même création
   await p.getByRole("button", { name: "Partager ma création" }).click(); await p.waitForTimeout(300);

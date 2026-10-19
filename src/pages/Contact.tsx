@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
+import ChoisirRendezVous from "@/components/rendez-vous/ChoisirRendezVous";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +33,8 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const Contact = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const langueRdv = (["en", "ar"].includes(i18n.language?.slice(0, 2)) ? i18n.language.slice(0, 2) : "fr") as "fr" | "en" | "ar";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { toast } = useToast();
@@ -157,6 +159,17 @@ const Contact = () => {
             <p className="text-xl text-muted-foreground mb-8">
               {t('contact.subtitle')}
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Prise de rendez-vous en ligne */}
+      <section className="pt-16" id="rendez-vous">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto rounded-3xl border border-[#EADFC8] bg-white p-5 sm:p-8 shadow-[0_20px_60px_-40px_rgba(140,109,34,0.5)]" dir={langueRdv === "ar" ? "rtl" : "ltr"}>
+            <h2 className="text-3xl font-serif font-bold mb-2">{{ fr: "Prendre rendez-vous", en: "Book an appointment", ar: "احجز موعداً" }[langueRdv]}</h2>
+            <p className="text-muted-foreground mb-6">{{ fr: "Choisissez directement un créneau pour parler de votre événement avec nous.", en: "Pick a time slot directly to talk about your event with us.", ar: "اختر موعداً مباشرة للتحدث معنا عن مناسبتك." }[langueRdv]}</p>
+            <ChoisirRendezVous langue={langueRdv} source="contact" />
           </div>
         </div>
       </section>

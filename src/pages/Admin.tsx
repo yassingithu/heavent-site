@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TableauDeBord from "@/components/admin/TableauDeBord";
 import RealisationsAdmin from "@/components/admin/RealisationsAdmin";
+import AgendaAdmin from "@/components/admin/agenda/AgendaAdmin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -995,9 +996,10 @@ const Admin = () => {
 
       {/* Onglets : 2 lignes de 5 sur smartphone, 1 ligne sur ordinateur */}
       <Tabs value={ongletAdmin} onValueChange={setOngletAdmin} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 h-auto gap-1 p-1">
+        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 lg:grid-cols-[repeat(13,minmax(0,1fr))] h-auto gap-1 p-1">
           <TabsTrigger value="tableau" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>📊</span><span>Bilan</span></TabsTrigger>
           <TabsTrigger value="devis-rapide" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><FileText className="h-4 w-4" /><span>Devis</span></TabsTrigger>
+          <TabsTrigger value="agenda" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal" data-testid="onglet-agenda"><span>🗓️</span><span>Agenda</span></TabsTrigger>
           <TabsTrigger value="staff" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>👥</span><span>Personnel</span></TabsTrigger>
           <TabsTrigger value="disponibilites" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>📅</span><span>Dispo</span></TabsTrigger>
           <TabsTrigger value="envoyer-devis" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><Send className="h-4 w-4" /><span>Envoyer</span></TabsTrigger>
@@ -1012,6 +1014,10 @@ const Admin = () => {
 
         <TabsContent value="tableau" className="space-y-4">
           <TableauDeBord demandesMariage={devisMariage as any} demandesEntreprise={devisEntreprise as any} onOuvrirDevis={() => setOngletAdmin("devis-rapide")} />
+        </TabsContent>
+
+        <TabsContent value="agenda" className="space-y-4">
+          <AgendaAdmin onOuvrirDevis={(id) => { (window as any).__heaventDevisAOuvrir = id; setOngletAdmin("devis-rapide"); window.dispatchEvent(new CustomEvent("heavent:ouvrir-devis", { detail: id })); }} />
         </TabsContent>
 
         <TabsContent value="realisations" className="space-y-4">

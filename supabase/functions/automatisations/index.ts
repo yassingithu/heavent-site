@@ -1,13 +1,15 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 import { Resend } from "npm:resend@2.0.0";
+import { emailClient, infosPratiques, langueDe, t as tr } from "../_shared/agenda.ts";
 
 /**
  * Passage quotidien (9 h, heure du Maroc), lancé par la base :
  *  1. relance des devis envoyés sans réponse : à J+5 puis J+10 (tant qu'ils sont valables) ;
  *  2. demande d'avis Google le lendemain d'un événement dont le devis est accepté (si le lien est renseigné) ;
  *  3. facture de solde créée 2 jours après l'événement (devis accepté pas encore entièrement facturé),
- *     l'agence reçoit un récapitulatif pour vérifier et envoyer.
+ *     l'agence reçoit un récapitulatif pour vérifier et envoyer ;
+ *  4. rappel aux clients qui ont rendez-vous le lendemain (dans leur langue).
  * ?essai=1 : ne rien envoyer, juste lister.
  */
 const ADMIN_EMAIL = "i.chaigari@heaventagency.com";
@@ -48,7 +50,7 @@ serve(async (req) => {
   const resend = new Resend(Deno.env.get("RESEND_API_KEY") ?? "");
   const maintenant = Date.now();
   const aujourdhui = new Date(maintenant + 3600_000).toISOString().slice(0, 10);
-  const rapport: { relances: string[]; avis: string[]; factures: string[] } = { relances: [], avis: [], factures: [] };
+  const rapport: { relances: string[]; avis: string[]; factures: string[]; rappels: string[] } = { relances: [], avis: [], factures: [], rappels: [] };
 
   // 1. Relances
   const { data: envoyes } = await db.from("devis").select("*").eq("statut", "envoye").is("signe_le", null).not("client_email", "is", null).not("date_envoi", "is", null).is("rdv_demande_le", null).lt("relances", 2);
@@ -109,6 +111,28 @@ serve(async (req) => {
         <p>Vérifie-les puis envoie-les au client en un clic : <a href="https://heaventagency.com/admin">administration</a> → Devis → Factures (bouton ✉️).</p>
         <p style="color:#888;font-size:12px">Heures en plus à ajouter ? Annule la facture, modifie le devis, puis clique sur « Facturer le solde ».</p></div>`,
     }).catch(() => {});
+  }
+  // 4. Rappel des rendez-vous du lendemain
+  const demain = new Date(maintenant + 3600_000 + JOUR).toISOString().slice(0, 10);
+  const { data: rdvDemain } = await db.from("rendez_vous").select("*").eq("statut", "confirme").is("rappel_envoye_le", null).not("client_email", "is", null)
+    .gte("debut", new Date(maintenant + 6 * 3600_000).toISOString()).lte("debut", new Date(maintenant + 48 * 3600_000).toISOString());
+  if (rdvDemain?.length) {
+    const { data: pa } = await db.from("agenda_parametres").select("adresse, lien_visio").eq("id", 1).maybeSingle();
+    const { data: agc } = await db.from("parametres_agence").select("adresse, ville").eq("id", 1).maybeSingle();
+    const adresse = pa?.adresse?.trim() || [agc?.adresse, agc?.ville].filter(Boolean).join(", ") || null;
+    for (const r of rdvDemain) {
+      const jourRdv = new Date(new Date(r.debut).getTime() + 3600_000).toISOString().slice(0, 10);
+      if (jourRdv !== demain) continue;
+      if (!essai) {
+        const l = langueDe(r.langue);
+        const res = await resend.emails.send({ from: FROM, to: [r.client_email], reply_to: ADMIN_EMAIL, subject: tr("sujetRappel", l),
+          html: emailClient(r, l, tr("rappel", l), infosPratiques(r, l, adresse, pa?.lien_visio ?? null), false) });
+        if ((res as any)?.error) continue;
+        await db.from("rendez_vous").update({ rappel_envoye_le: new Date().toISOString() }).eq("id", r.id);
+        await pause(600);
+      }
+      rapport.rappels.push(`${r.client_nom} → ${r.client_email}`);
+    }
   }
   return new Response(JSON.stringify({ essai, ...rapport }), { headers: { "Content-Type": "application/json" } });
 });

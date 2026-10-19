@@ -153,6 +153,7 @@ export const TRADUCTIONS: Record<string, { en: string; ar: string }> = {
   "Fermer le panneau": { en: "Close panel", ar: "إغلاق اللوحة" },
   "Fiançailles": { en: "Engagement", ar: "خطوبة" },
   "Fichier téléchargé ✓ — retrouvez-le dans vos téléchargements.": { en: "File downloaded ✓ — find it in your downloads.", ar: "تم تحميل الملف ✓ — ستجدونه في مجلد التنزيلات." },
+  "Enregistrer ou partager le fichier": { en: "Save or share the file", ar: "حفظ الملف أو مشاركته" },
   "Fixe": { en: "Fixed", ar: "ثابت" },
   "Fond décoré, appareil et tirages instantanés.": { en: "Decorated backdrop, camera and instant prints.", ar: "خلفية مزيّنة، كاميرا وطباعة فورية للصور." },
   "Format": { en: "Format", ar: "الصيغة" },

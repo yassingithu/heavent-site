@@ -8,6 +8,9 @@ export function nouvelleBase() {
     affectations: [], contrats: [], fiches_paie: [], devis: [], devis_lignes: [],
     catalogue_prestations: F.catalogue, parametres_agence: F.param.map((p) => ({ ...p })), devis_entreprise: [],
     devis_mariage: F.dem.map((d) => ({ ...d })), admins: [{ email: "admin@heavent.test" }],
+    agenda_parametres: [{ id: 1, duree_minutes: 45, pause_minutes: 15, delai_heures: 24, horizon_jours: 30, types: ["agence", "telephone", "visio"], adresse: null, lien_visio: null, actif: true }],
+    agenda_horaires: [1, 2, 3, 4, 5, 6].flatMap((jour) => [{ id: "h" + jour + "a", jour, debut: "10:00:00", fin: "13:00:00" }, { id: "h" + jour + "b", jour, debut: "15:00:00", fin: "19:00:00" }]),
+    agenda_indisponibilites: [], rendez_vous: [],
     appelsFonctions: [],
   };
 }
@@ -64,6 +67,27 @@ export function creerFacture(base, devisId, type = "auto", par = null) {
   }
   base.factures.push(f);
   return f;
+}
+
+/** Créneaux libres (même logique que la fonction SQL agenda_creneaux, heure du Maroc = UTC+1). */
+export function creneauxLibres(base) {
+  const p = base.agenda_parametres[0]; if (!p.actif) return [];
+  const res = []; const maintenant = Date.now();
+  for (let k = 0; k <= p.horizon_jours; k++) {
+    const jour = new Date(maintenant + 3600e3 + k * 864e5).toISOString().slice(0, 10);
+    const isodow = ((new Date(jour + "T12:00:00Z").getUTCDay() + 6) % 7) + 1;
+    for (const h of base.agenda_horaires.filter((x) => x.jour === isodow)) {
+      const d0 = Date.parse(`${jour}T${h.debut.slice(0, 5)}:00+01:00`), f0 = Date.parse(`${jour}T${h.fin.slice(0, 5)}:00+01:00`);
+      for (let d = d0; d + p.duree_minutes * 6e4 <= f0; d += (p.duree_minutes + p.pause_minutes) * 6e4) {
+        const f = d + p.duree_minutes * 6e4;
+        if (d < maintenant + p.delai_heures * 3600e3) continue;
+        const occupe = base.rendez_vous.some((r) => r.statut === "confirme" && Date.parse(r.debut) < f && Date.parse(r.fin) > d)
+          || base.agenda_indisponibilites.some((i) => Date.parse(i.debut) < f && Date.parse(i.fin) > d);
+        if (!occupe) res.push({ debut: new Date(d).toISOString(), fin: new Date(f).toISOString() });
+      }
+    }
+  }
+  return res;
 }
 
 export function genererFiches(base) {
@@ -130,6 +154,22 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
         if (d.acompte_pct > 0) { try { facture = creerFacture(base, d.id, "acompte", "signature en ligne"); facture.envoyee_le = new Date().toISOString(); } catch { /* devis à 0 */ } }
         return route.fulfill({ json: { success: true, facture: facture?.numero ?? null } });
       }
+      if (nom === "prendre-rdv") {
+        if (corps.action === "annuler") {
+          if (!admin) return route.fulfill({ status: 403, json: { error: "Accès refusé" } });
+          const r = base.rendez_vous.find((x) => x.id === corps.id); if (r) r.statut = "annule";
+          return route.fulfill({ json: { success: true } });
+        }
+        const c = creneauxLibres(base).find((x) => Date.parse(x.debut) === Date.parse(corps.debut));
+        if (!c) return route.fulfill({ status: 409, json: { error: "pris" } });
+        if (corps.type === "telephone" && String(corps.telephone ?? "").replace(/\D/g, "").length < 8) return route.fulfill({ status: 400, json: { error: "telephone" } });
+        const d = corps.devisToken ? base.devis.find((x) => x.lien_token === corps.devisToken) : null;
+        const r = { id: "rdv" + Math.random().toString(36).slice(2), ...c, type: corps.type, statut: "confirme", client_nom: corps.nom, client_email: corps.email,
+          client_telephone: corps.telephone || null, message: corps.message || null, langue: corps.langue ?? "fr", source: d ? "devis" : corps.source, devis_id: d?.id ?? null };
+        base.rendez_vous.push(r);
+        if (d) Object.assign(d, { rdv_demande_le: new Date().toISOString(), relances: 2, rdv_message: `Rendez-vous réservé : ${c.debut}` });
+        return route.fulfill({ json: { success: true, debut: r.debut, fin: r.fin, type: r.type } });
+      }
       if (nom === "envoyer-facture") {
         const f = (base.factures ?? []).find((x) => x.id === corps.factureId);
         if (!f?.client_email) return route.fulfill({ status: 400, json: { error: "Ajoutez l'e-mail du client dans le devis." } });
@@ -141,6 +181,12 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     }
     if (url.pathname.includes("/rpc/is_admin")) return route.fulfill({ json: admin });
     if (url.pathname.includes("/rpc/generer_fiches_paie")) return route.fulfill({ json: genererFiches(base) });
+    if (url.pathname.includes("/rpc/agenda_creneaux")) return route.fulfill({ json: creneauxLibres(base) });
+    if (url.pathname.includes("/rpc/agenda_public")) {
+      const p = base.agenda_parametres[0];
+      return route.fulfill({ json: { duree_minutes: p.duree_minutes, types: p.types, actif: p.actif, adresse: p.adresse || "Rue Dakar, Rabat" } });
+    }
+    if (url.pathname.includes("/rpc/agenda_cle_calendrier")) return route.fulfill({ json: admin ? "c".repeat(64) : null });
     if (url.pathname.includes("/rpc/facture_creer")) {
       if (!admin) return route.fulfill({ status: 403, json: { message: "Accès refusé" } });
       const { p_devis_id, p_type } = JSON.parse(req.postData() || "{}");
@@ -169,7 +215,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       if (!admin) {
         if (["contrats", "fiches_paie", "affectations", "disponibilites", "remarques_contrat"].includes(t)) lignes = lignes.filter((r) => r.staff_id === moi()?.id);
         if (t === "staff") lignes = lignes.filter((r) => r.email === email);
-        if (["devis", "devis_lignes", "devis_mariage", "devis_entreprise", "admins", "factures"].includes(t)) lignes = [];
+        if (["devis", "devis_lignes", "devis_mariage", "devis_entreprise", "admins", "factures", "rendez_vous", "agenda_parametres", "agenda_horaires", "agenda_indisponibilites"].includes(t)) lignes = [];
       }
       const r = lignes.filter((x) => correspond(x, params)).map((x) => {
         const y = { ...x };

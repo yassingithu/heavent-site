@@ -10,6 +10,7 @@ import {
 } from "@/components/admin/devis/devisUtils";
 import { telechargerDevisPdf, telechargerFacturePdf } from "@/components/admin/devis/devisPdf";
 import { Facture, TYPES_FACTURE } from "@/components/admin/devis/factureUtils";
+import ChoisirRendezVous from "@/components/rendez-vous/ChoisirRendezVous";
 import { CalendarClock, CheckCircle2, Download, FileText, Loader2, MessageCircle, Receipt } from "lucide-react";
 
 type Etat = "chargement" | "introuvable" | "pret";
@@ -161,11 +162,13 @@ export default function MonDevis() {
             {devis.rdv_demande_le && (
               <div className="rounded-2xl border border-[#F0D9A8] bg-[#FFF7E6] p-4 text-sm text-[#5C4512] flex gap-3" data-testid="rdv-envoye" role="status">
                 <CalendarClock className="h-5 w-5 shrink-0" />
-                <div>Votre demande de rendez-vous a bien été envoyée le {dateHeureFr(devis.rdv_demande_le)}. Nous vous contactons pour en fixer la date. Vous pouvez aussi signer ce devis dès maintenant si vous le souhaitez.</div>
+                <div>{devis.rdv_message?.startsWith("Rendez-vous réservé")
+                  ? <>{devis.rdv_message.split("\n")[0]}. Une confirmation vous a été envoyée par e-mail. Vous pouvez aussi signer ce devis dès maintenant si vous le souhaitez.</>
+                  : <>Votre demande de rendez-vous a bien été envoyée le {dateHeureFr(devis.rdv_demande_le)}. Nous vous contactons pour en fixer la date. Vous pouvez aussi signer ce devis dès maintenant si vous le souhaitez.</>}</div>
               </div>
             )}
             <Signature token={token} devis={devis} onSigne={charger} />
-            {!devis.rdv_demande_le && <RendezVous token={token} onEnvoye={charger} />}
+            {!devis.rdv_demande_le && <RendezVous token={token} devis={devis} onEnvoye={charger} />}
           </>
         )}
 
@@ -263,8 +266,9 @@ function Signature({ token, devis, onSigne }: { token: string; devis: DevisForm;
 }
 
 /** Pas prêt à signer : le client garde son devis (PDF) ou demande d'abord un rendez-vous. */
-function RendezVous({ token, onEnvoye }: { token: string; onEnvoye: () => void }) {
+function RendezVous({ token, devis, onEnvoye }: { token: string; devis: DevisForm; onEnvoye: () => void }) {
   const [ouvert, setOuvert] = useState(false);
+  const [texteLibre, setTexteLibre] = useState(false);
   const [dispo, setDispo] = useState("");
   const [message, setMessage] = useState("");
   const [envoi, setEnvoi] = useState(false);
@@ -287,6 +291,13 @@ function RendezVous({ token, onEnvoye }: { token: string; onEnvoye: () => void }
           className="inline-flex items-center gap-2 rounded-full border border-[#DCCBA6] px-5 min-h-11 text-sm font-medium hover:bg-[#FAF7EE]">
           <CalendarClock className="h-4 w-4" /> Je préfère d'abord un rendez-vous
         </button>
+      ) : !texteLibre ? (
+        <div className="space-y-3">
+          <ChoisirRendezVous source="devis" devisToken={token} nom={devis.client_nom} email={devis.client_email} telephone={devis.client_telephone} />
+          <button onClick={() => setTexteLibre(true)} data-testid="rdv-texte-libre" className="text-sm text-[#8C6D22] underline underline-offset-4">
+            Aucun créneau ne vous convient ? Indiquez-nous vos disponibilités
+          </button>
+        </div>
       ) : (
         <div className="space-y-3">
           <div>

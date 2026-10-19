@@ -92,7 +92,7 @@ export const enteteDoc = (logoSrc: string, mot: string, sous: string) =>
 /**
  * Transforme une ou plusieurs pages HTML (chacune un <div class="doc-heavent">) en un seul PDF téléchargé.
  */
-export async function telechargerPdf(pages: string[], css: string, nomFichier: string) {
+export async function telechargerPdf(pages: string[], css: string, nomFichier: string): Promise<Blob> {
   const conteneur = document.createElement("div");
   conteneur.style.cssText = "position:fixed;left:-10000px;top:0;z-index:-1;";
   conteneur.innerHTML = `<style>${cssBase()}${css}</style><div class="lot">${pages.map((p, i) => (i ? p.replace('class="doc-heavent"', 'class="doc-heavent suite"') : p)).join("")}</div>`;
@@ -100,7 +100,7 @@ export async function telechargerPdf(pages: string[], css: string, nomFichier: s
   try {
     await document.fonts?.ready;
     const html2pdf = (await import("html2pdf.js")).default;
-    await html2pdf()
+    const blob = await html2pdf()
       .set({
         margin: 0,
         filename: nomFichier,
@@ -110,10 +110,35 @@ export async function telechargerPdf(pages: string[], css: string, nomFichier: s
         pagebreak: { mode: ["css"], before: ".suite", avoid: ["tr", ".insecable", ".article", ".signatures", ".art", ".signature", ".remun", ".bas"] },
       })
       .from(conteneur.querySelector(".lot") as HTMLElement)
-      .save();
+      .outputPdf("blob");
+    const fichier = new Blob([blob], { type: "application/pdf" });
+    enregistrerFichier(fichier, nomFichier);
+    return fichier;
   } finally {
     conteneur.remove();
   }
+}
+
+/**
+ * Téléchargement d'un fichier sans quitter la page (le téléchargement intégré de html2pdf ouvrait le PDF
+ * à la place du site sur iPhone, sans pouvoir revenir en arrière).
+ */
+export function enregistrerFichier(blob: Blob, nom: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = nom; a.rel = "noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+/** Partage natif du fichier (Enregistrer dans Fichiers, WhatsApp, e-mail…) quand le téléphone le permet. */
+export function peutPartagerFichier(blob: Blob | null, nom: string) {
+  if (!blob || typeof navigator === "undefined" || !navigator.canShare) return false;
+  try { return navigator.canShare({ files: [new File([blob], nom, { type: blob.type })] }); } catch { return false; }
+}
+export async function partagerFichier(blob: Blob, nom: string, titre?: string) {
+  try { await navigator.share({ files: [new File([blob], nom, { type: blob.type })], title: titre ?? nom }); return true; }
+  catch (e: any) { return e?.name === "AbortError"; }
 }
 
 export const nomFichier = (...parts: (string | null | undefined)[]) =>

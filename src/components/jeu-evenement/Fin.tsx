@@ -1,7 +1,7 @@
 // Récapitulatif final, téléchargement et demande de devis (démonstration).
 import { RefObject, useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { cssBase } from "@/lib/pdf";
+import { cssBase, partagerFichier, peutPartagerFichier } from "@/lib/pdf";
 import { TYPES_EVENEMENT, format, mentionEstimation, nomTypeEv } from "./config";
 import { tr } from "./langue";
 import { Creation, calculerBudget, evaluerMissions, placesPrevues } from "./logique";
@@ -77,6 +77,7 @@ export function FenetreTelechargement({ ouvert, onFermer, creation, svg }: { ouv
   const [formatFichier, setFormat] = useState<"pdf" | "png">("pdf");
   const [image, setImage] = useState<string | null>(null);
   const [etat, setEtat] = useState<"" | "en_cours" | "ok" | "erreur">("");
+  const [fichier, setFichier] = useState<{ blob: Blob; nom: string } | null>(null);
   useEffect(() => {
     if (!ouvert) return;
     setEtat("");
@@ -84,13 +85,14 @@ export function FenetreTelechargement({ ouvert, onFermer, creation, svg }: { ouv
   }, [ouvert, svg]);
 
   const telecharger = async () => {
-    setEtat("en_cours");
+    setEtat("en_cours"); setFichier(null);
     try {
-      if (formatFichier === "pdf") await telechargerRecapPdf(creation, o, o.scene ? image ?? (svg.current ? await sceneEnPng(svg.current) : null) : null);
+      if (formatFichier === "pdf") setFichier(await telechargerRecapPdf(creation, o, o.scene ? image ?? (svg.current ? await sceneEnPng(svg.current) : null) : null));
       else {
         if (!svg.current) throw new Error("scène absente");
         const png = await sceneEnPng(svg.current, 2.5);
-        telechargerFichier(tr("ma-scene-evenement.png"), await (await fetch(png)).blob());
+        const blob = await (await fetch(png)).blob(); const nom = tr("ma-scene-evenement.png");
+        telechargerFichier(nom, blob); setFichier({ blob, nom });
       }
       setEtat("ok");
     } catch { setEtat("erreur"); }
@@ -119,6 +121,12 @@ export function FenetreTelechargement({ ouvert, onFermer, creation, svg }: { ouv
             <Bouton onClick={telecharger} disabled={etat === "en_cours"} className="w-full">{etat === "en_cours" ? tr("Préparation…") : tr("Télécharger ({format})", { format: formatFichier.toUpperCase() })}</Bouton>
             <p aria-live="polite" className="text-xs">
               {etat === "ok" && <span className="text-[#2F6B3D]">{tr("Fichier téléchargé ✓ — retrouvez-le dans vos téléchargements.")}</span>}
+              {etat === "ok" && fichier && peutPartagerFichier(fichier.blob, fichier.nom) && (
+                <button type="button" onClick={() => partagerFichier(fichier.blob, fichier.nom)} data-testid="partager-fichier"
+                  className="mt-2 block w-full rounded-full border border-[#DCCBA6] bg-white min-h-11 text-sm font-medium hover:bg-[#FAF7EE]">
+                  {tr("Enregistrer ou partager le fichier")}
+                </button>
+              )}
               {etat === "erreur" && <span className="text-[#9B2C2C]">{tr("Le fichier n'a pas pu être créé. Réessayez.")}</span>}
             </p>
           </div>
