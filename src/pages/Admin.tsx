@@ -1,3 +1,4 @@
+import { dansApplication } from "@/components/layout/Layout";
 import { nePlusCompterCetAppareil } from "@/lib/suivi";
 import Seo from "@/components/Seo";
 import RemarquesCrews from "@/components/admin/equipe/RemarquesCrews";
@@ -8,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TableauDeBord from "@/components/admin/TableauDeBord";
+import StatsSite from "@/components/admin/StatsSite";
 import RealisationsAdmin from "@/components/admin/RealisationsAdmin";
 import AgendaAdmin from "@/components/admin/agenda/AgendaAdmin";
 import VitrineAdmin from "@/components/admin/VitrineAdmin";
@@ -21,7 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox } from "lucide-react";
+import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -136,6 +138,30 @@ interface Disponibilite {
     prenom: string;
   };
 }
+
+/** Menu de l'administration, regroupé par thème */
+const MENU_ADMIN: { titre: string; items: (readonly [string, string, typeof Users])[] }[] = [
+  { titre: "Pilotage", items: [["tableau", "Bilan", BarChart3], ["statistiques", "Statistiques", TrendingUp], ["agenda", "Agenda", CalendarDays]] },
+  { titre: "Clients", items: [["entreprise", "Entreprise", Building2], ["mariage", "Événement", PartyPopper], ["devis-rapide", "Devis", FileText], ["devis-envoyes", "Envoyés", Inbox], ["envoyer-devis", "Envoyer", Send]] },
+  { titre: "Équipe", items: [["staff", "Personnel", Users], ["disponibilites", "Dispo", CalendarCheck], ["contrats", "Contrats", FileSignature], ["fiches", "Paie", Wallet]] },
+  { titre: "Réglages", items: [["realisations", "Site", Globe], ["securite", "Sécurité", Shield]] },
+];
+const TITRES_ADMIN: Record<string, [string, string]> = {
+  tableau: ["Bilan", "L'essentiel de l'activité en un coup d'œil"],
+  statistiques: ["Statistiques du site", "Visites, provenance des visiteurs, clics et demandes"],
+  agenda: ["Agenda", "Rendez-vous clients et créneaux proposés"],
+  entreprise: ["Demandes entreprise", "Demandes reçues via le formulaire entreprise"],
+  mariage: ["Demandes événement", "Demandes de mariage, d'événement et du jeu"],
+  "devis-rapide": ["Devis", "Créer, envoyer et suivre les devis et factures"],
+  "devis-envoyes": ["Devis envoyés", "Réponses des demandes traitées"],
+  "envoyer-devis": ["Envoyer un devis", "Répondre rapidement à une demande"],
+  staff: ["Personnel", "Profils des hôtesses et hôtes"],
+  disponibilites: ["Disponibilités", "Qui est disponible, et quand"],
+  contrats: ["Contrats", "Contrats des crews et signatures"],
+  fiches: ["Paie", "Fiches de paie mensuelles"],
+  realisations: ["Site", "Éléments de confiance, FAQ et réalisations publiées"],
+  securite: ["Sécurité", "Mots de passe et accès du personnel"],
+};
 
 const Admin = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -922,6 +948,15 @@ const Admin = () => {
     return person ? `${person.prenom} ${person.nom}` : "Staff inconnu";
   };
 
+  // Sur smartphone, l'onglet choisi reste visible dans la barre de menu
+  useEffect(() => {
+    const el = document.querySelector<HTMLElement>('.admin-onglets [role="tab"][data-state="active"]');
+    if (el && window.innerWidth < 1024) el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [ongletAdmin]);
+
+  const nouvellesEntreprise = devisEntreprise.filter((d: any) => d.statut === "en_attente").length;
+  const nouvellesMariage = devisMariage.filter((d: any) => d.statut === "en_attente").length;
+
   if (authLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -936,78 +971,72 @@ const Admin = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Chargement des données...</div>
+      <div className="min-h-screen bg-[#FAF7EE] flex items-center justify-center text-sm text-[#8C6D22]">
+        <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full border-2 border-[#C8B560] border-t-transparent animate-spin" /> Chargement…</span>
       </div>
     );
   }
 
   return (
-    <div className="admin-theme min-h-screen bg-[#FAF7EE]">
-    <div className="container mx-auto px-3 py-4 sm:p-6">
+    <Tabs value={ongletAdmin} onValueChange={(v) => { setOngletAdmin(v); window.scrollTo({ top: 0 }); }} orientation="vertical" className="admin-theme min-h-screen bg-[#FAF7EE] lg:flex">
       <Seo noindex />
-      {/* En-tête */}
-      <header className="relative overflow-hidden rounded-3xl bg-[#141414] text-white px-5 sm:px-8 py-6 sm:py-7 mb-4 sm:mb-6">
-        <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_10%_0%,#C8B560_0,transparent_40%),radial-gradient(circle_at_95%_100%,#A8933F_0,transparent_35%)]" />
-        <div className="relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
-          <div className="space-y-1">
-            <p className="uppercase tracking-[0.3em] text-[10px] sm:text-[11px] text-[#E4D49A]">Heavent People Agency</p>
-            <h1 className="font-serif text-3xl sm:text-4xl">Administration</h1>
-            <p className="text-sm text-white/70 first-letter:uppercase">{new Date().toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
+      {/* Menu : colonne fixe sur ordinateur, barre défilante en haut sur smartphone */}
+      <aside className="sticky top-0 z-40 bg-[#141414] text-white lg:h-screen lg:w-60 lg:shrink-0 lg:flex lg:flex-col">
+        {/* Application Mac : zone pour déplacer la fenêtre (et les boutons rouge / orange / vert) */}
+        {dansApplication && <div className="h-8 shrink-0" style={{ WebkitAppRegion: "drag" } as React.CSSProperties} aria-hidden />}
+        <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 lg:px-5 lg:pt-6 lg:pb-5">
+          <div className="min-w-0">
+            <p className="uppercase tracking-[0.28em] text-[9px] lg:text-[10px] text-[#E4D49A]">Heavent</p>
+            <p className="font-serif text-lg lg:text-2xl leading-tight">Administration</p>
           </div>
-          <div className="flex flex-col sm:items-end gap-3 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 text-xs text-white/70 min-w-0"><Shield className="h-3.5 w-3.5 shrink-0 text-[#E4D49A]" /><span className="truncate max-w-[220px]">{user?.email}</span></span>
-              <a href="/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 min-h-9 text-xs hover:bg-white/10"><Globe className="h-3.5 w-3.5" /> Voir le site</a>
-              <button onClick={handleSignOut} className="inline-flex items-center gap-1.5 rounded-full bg-white text-[#141414] px-3 min-h-9 text-xs font-medium hover:bg-[#F3EBD3]"><LogOut className="h-3.5 w-3.5" /> Déconnexion</button>
-            </div>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-              {([
-                ["Crews", staff.length, Users, "staff"],
-                ["Contrats", contrats.length, FileText, "contrats"],
-                ["Fiches de paie", fichesPaie.length, Euro, "fiches"],
-                ["Demandes entreprise", devisEntreprise.length, Building, "entreprise"],
-                ["Demandes événement", devisMariage.length, Heart, "mariage"],
-              ] as const).map(([libelle, n, Icone, cible]) => (
-                <button key={libelle} onClick={() => setOngletAdmin(cible)} className="text-left rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 px-3 py-2 transition">
-                  <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-white/60 leading-tight"><Icone className="h-3 w-3 text-[#E4D49A] shrink-0" /><span className="truncate">{libelle}</span></div>
-                  <div className="font-serif text-xl sm:text-2xl leading-tight">{n}</div>
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-1 lg:hidden">
+            <a href="/" target="_blank" rel="noreferrer" className="h-9 w-9 rounded-full flex items-center justify-center text-white/70 hover:bg-white/10" aria-label="Voir le site"><Globe className="h-4 w-4" /></a>
+            <button onClick={handleSignOut} className="h-9 w-9 rounded-full flex items-center justify-center text-white/70 hover:bg-white/10" aria-label="Déconnexion"><LogOut className="h-4 w-4" /></button>
           </div>
         </div>
-      </header>
-
-      <Tabs value={ongletAdmin} onValueChange={setOngletAdmin} className="w-full">
-        {/* Navigation : une ligne qui défile sur smartphone, collée en haut pendant le défilement */}
-        <div className="sticky top-0 z-30 -mx-3 sm:mx-0 px-3 sm:px-0 py-2 bg-[#FAF7EE]/90 backdrop-blur supports-[backdrop-filter]:bg-[#FAF7EE]/75">
-        <TabsList className="admin-onglets flex w-full justify-start overflow-x-auto h-auto gap-1 p-1.5 rounded-2xl bg-white border border-[#EADFC8] shadow-[0_10px_30px_-24px_rgba(140,109,34,0.6)] text-[#5E554A]">
-          {([
-            ["tableau", "Bilan", BarChart3],
-            ["devis-rapide", "Devis", FileText],
-            ["agenda", "Agenda", CalendarDays],
-            ["staff", "Personnel", Users],
-            ["disponibilites", "Dispo", CalendarCheck],
-            ["envoyer-devis", "Envoyer", Send],
-            ["contrats", "Contrats", FileSignature],
-            ["fiches", "Paie", Wallet],
-            ["entreprise", "Entreprise", Building2],
-            ["mariage", "Événement", PartyPopper],
-            ["devis-envoyes", "Envoyés", Inbox],
-            ["realisations", "Site", Globe],
-            ["securite", "Sécurité", Shield],
-          ] as const).map(([valeur, libelle, Icone], i) => (
-            <TabsTrigger key={valeur} value={valeur} data-testid={valeur === "agenda" ? "onglet-agenda" : undefined}
-              className={`shrink-0 lg:flex-1 gap-1.5 rounded-xl px-3 py-2 text-[13px] sm:text-sm data-[state=active]:bg-[#141414] data-[state=active]:text-white data-[state=active]:shadow-none hover:bg-[#FAF7EE] data-[state=active]:hover:bg-[#141414] ${i === 6 || i === 8 || i === 11 ? "lg:ml-2 relative before:hidden lg:before:block before:absolute before:-left-1.5 before:top-2 before:bottom-2 before:w-px before:bg-[#EADFC8]" : ""}`}>
-              <Icone className="h-4 w-4 shrink-0" /><span>{libelle}</span>
-            </TabsTrigger>
+        <TabsList className="admin-onglets h-auto w-full bg-transparent p-0 rounded-none text-white/70 flex justify-start gap-1 overflow-x-auto px-3 pb-3 lg:flex-1 lg:flex-col lg:items-stretch lg:overflow-y-auto lg:overflow-x-hidden lg:px-3 lg:pb-4 lg:gap-0.5">
+          {MENU_ADMIN.map((groupe) => (
+            <div key={groupe.titre} className="contents lg:block lg:mb-3">
+              <div className="hidden lg:block px-3 pt-2 pb-1 text-[10px] uppercase tracking-[0.2em] text-white/35">{groupe.titre}</div>
+              {groupe.items.map(([valeur, libelle, Icone]) => {
+                const badge = valeur === "entreprise" ? nouvellesEntreprise : valeur === "mariage" ? nouvellesMariage : 0;
+                return (
+                  <TabsTrigger key={valeur} value={valeur} data-testid={valeur === "agenda" ? "onglet-agenda" : undefined}
+                    className="relative shrink-0 lg:w-full justify-start gap-2.5 rounded-xl px-3 py-2 text-[13px] lg:text-sm font-medium text-white/70 hover:text-white hover:bg-white/[0.06] data-[state=active]:bg-white data-[state=active]:text-[#141414] data-[state=active]:shadow-none transition-colors">
+                    <Icone className="h-4 w-4 shrink-0" /><span>{libelle}</span>
+                    {badge > 0 && <span className="lg:ml-auto min-w-5 h-5 px-1.5 rounded-full bg-[#C8B560] text-[#141414] text-[11px] font-semibold inline-flex items-center justify-center" aria-hidden title={`${badge} nouvelle(s) demande(s)`}>{badge}</span>}
+                  </TabsTrigger>
+                );
+              })}
+            </div>
           ))}
         </TabsList>
+        <div className="hidden lg:block border-t border-white/10 p-4 space-y-2">
+          <div className="flex items-center gap-2 text-xs text-white/50 min-w-0"><Shield className="h-3.5 w-3.5 shrink-0 text-[#E4D49A]" /><span className="truncate">{user?.email}</span></div>
+          <div className="flex gap-2">
+            <a href="/" target="_blank" rel="noreferrer" className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-white/15 min-h-9 text-xs hover:bg-white/10"><Globe className="h-3.5 w-3.5" /> Le site</a>
+            <button onClick={handleSignOut} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-white/10 min-h-9 text-xs hover:bg-white/20"><LogOut className="h-3.5 w-3.5" /> Déconnexion</button>
+          </div>
         </div>
+      </aside>
+
+      <main className="flex-1 min-w-0">
+      {dansApplication && <div className="hidden lg:block h-8 sticky top-0 z-30" style={{ WebkitAppRegion: "drag" } as React.CSSProperties} aria-hidden />}
+      <div className="mx-auto max-w-[1400px] px-3 py-5 sm:px-6 lg:px-10 lg:py-8">
+        <header className="mb-5 lg:mb-7 flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h1 className="font-serif text-2xl sm:text-3xl text-[#141414]" data-testid="titre-section">{TITRES_ADMIN[ongletAdmin]?.[0] ?? "Administration"}</h1>
+            <p className="text-sm text-[#6B6155]">{TITRES_ADMIN[ongletAdmin]?.[1]}</p>
+          </div>
+          <p className="text-xs text-[#8C6D22] first-letter:uppercase">{new Date().toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" })}</p>
+        </header>
 
         <TabsContent value="tableau" className="space-y-4">
           <TableauDeBord demandesMariage={devisMariage as any} demandesEntreprise={devisEntreprise as any} onOuvrirDevis={() => setOngletAdmin("devis-rapide")} />
+        </TabsContent>
+
+        <TabsContent value="statistiques" className="space-y-4">
+          <StatsSite />
         </TabsContent>
 
         <TabsContent value="agenda" className="space-y-4">
@@ -2012,9 +2041,9 @@ const Admin = () => {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
-    </div>
-    </div>
+      </div>
+      </main>
+    </Tabs>
   );
 };
 

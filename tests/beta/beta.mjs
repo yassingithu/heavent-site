@@ -771,14 +771,14 @@ await scenario("Statistiques : visites, provenance, clics WhatsApp et demandes c
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await page.addInitScript(() => { window.__suiviTest = true; });
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Bilan/ }).click(); await page.waitForTimeout(1500);
+  await page.getByRole("tab", { name: /Statistiques$/ }).click(); await page.waitForTimeout(1500);
   const bloc = await page.getByTestId("stats-site").innerText();
   verifier(/Visites\s*1/i.test(bloc) && /Instagram/.test(bloc) && /WhatsApp/.test(bloc) && /Hôtesses à Casablanca/.test(bloc), "le Bilan n'affiche pas les statistiques : " + bloc.slice(0, 300));
   const nAvant = base.evenements_site.length;
   await page.goto(`${BASE}/`); await page.waitForTimeout(1500);
   verifier(base.evenements_site.length === nAvant, "les visites de l'administratrice sont comptées");
   await page.goto(`${BASE}/admin`); await page.waitForTimeout(2000);
-  await page.getByRole("tab", { name: /Bilan/ }).click(); await page.waitForTimeout(1200);
+  await page.getByRole("tab", { name: /Statistiques$/ }).click(); await page.waitForTimeout(1200);
   await page.getByTestId("stats-site").screenshot({ path: `${CAPTURES}/24-statistiques.png` });
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();

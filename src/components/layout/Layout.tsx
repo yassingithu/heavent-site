@@ -31,6 +31,8 @@ const Layout = ({ children }: LayoutProps) => {
   }, [pathname, navigate]);
 
   if (dansApplication) {
+    // L'administration gère elle-même sa barre de titre (menu latéral)
+    if (pathname === "/admin") return <main className="min-h-screen">{children}</main>;
     return (
       <div className="min-h-screen flex flex-col bg-background">
         {/* Barre de titre de l'app : permet de déplacer la fenêtre */}

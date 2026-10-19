@@ -1,4 +1,3 @@
-import StatsSite from "./StatsSite";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -113,8 +112,6 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onO
         <Tuile testId="tuile-ca" titre="Signé ce mois-ci" valeur={mad(s.caMois)} detail={`${s.acceptesMois} devis accepté${s.acceptesMois > 1 ? "s" : ""}`} />
         <Tuile titre="Taux de signature (6 mois)" valeur={s.taux === null ? "—" : `${s.taux} %`} detail={`${s.acceptes6} accepté${s.acceptes6 > 1 ? "s" : ""} sur ${s.envoyes6} envoyé${s.envoyes6 > 1 ? "s" : ""}`} />
       </div>
-
-      <StatsSite />
 
       <div className="grid lg:grid-cols-2 gap-4">
         <Card><CardContent className="p-4"><Barres testId="graph-demandes" titre="Demandes reçues par mois" donnees={s.courbeDemandes} format={(n) => `${n} demande${n > 1 ? "s" : ""}`} /></CardContent></Card>
