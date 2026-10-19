@@ -91,7 +91,7 @@ const handler = async (req: Request): Promise<Response> => {
         const mad = (n: unknown) => `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(n) || 0)} MAD`;
         const lignes = (Array.isArray(data.lignes) ? data.lignes : []).slice(0, 40);
         const tableau = `<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px">${lignes.map((l: any) =>
-          `<tr><td style="padding:6px;border-bottom:1px solid #eee">${e(l.libelle)}<br><span style="color:#888;font-size:12px">${e(l.detail)}</span></td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap">${e(mad(l.total))}</td></tr>`).join("")}
+          `<tr><td style="padding:6px;border-bottom:1px solid #eee">${e(l.libelle)}<br><span style="color:#888;font-size:12px">${e(l.detail)}</span></td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap">${l.surDevis ? '<span style="color:#8C6D22">Sur devis</span>' : e(mad(l.total))}</td></tr>`).join("")}
           <tr><td style="padding:6px;font-weight:bold">Estimation illustrative</td><td style="padding:6px;text-align:right;font-weight:bold">${e(mad(data.estimation))}</td></tr></table>`;
         const options = list(Array.isArray(data.options) ? data.options.slice(0, 40) : data.options);
         const dateTxt = dateOrNull(data.date) ? new Date(String(data.date) + "T12:00:00").toLocaleDateString("fr-FR") : "Pas encore fixée";
@@ -112,6 +112,10 @@ const handler = async (req: Request): Promise<Response> => {
           elements: nombres(brut.elements), centres: Number.isInteger(brut.centres) && brut.centres >= 0 && brut.centres <= 500 ? brut.centres : 0,
           libelles: Object.fromEntries(Object.entries(brut.libelles && typeof brut.libelles === "object" ? brut.libelles : {})
             .filter(([k]) => /^[a-z_]{2,20}$/.test(k)).slice(0, 30).map(([k, v]) => [k, String(v).slice(0, 60)])),
+          // Idées sur mesure nommées par le visiteur (sans prix : à chiffrer dans le devis)
+          sur_mesure: (Array.isArray(brut.sur_mesure) ? brut.sur_mesure : []).slice(0, 30)
+            .map((x: any) => ({ nom: String(x?.nom ?? "").replace(/\s+/g, " ").trim().slice(0, 60), quantite: Number.isInteger(x?.quantite) ? Math.min(100, Math.max(1, x.quantite)) : 1 }))
+            .filter((x: { nom: string }) => x.nom),
         } : null;
         const { error } = await supabase.from("devis_mariage").insert({
           configuration,

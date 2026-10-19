@@ -42,8 +42,9 @@ export function Recapitulatif({ creation, cols, rows, onModifier, onTelecharger,
           <div className="rounded-2xl border border-[#EADFC8] bg-white p-4">
             <div className="flex items-baseline justify-between"><h3 className="font-serif">{tr("Estimation")}</h3><span className="font-semibold" data-testid="recap-total">{format(b.total)}</span></div>
             <ul className="mt-2 text-sm divide-y divide-[#F1E9D6]">
-              {b.lignes.map((l) => <li key={l.libelle} className="flex justify-between gap-3 py-1"><span>{l.quantite > 1 ? `${l.quantite} × ` : ""}{l.libelle}<span className="block text-[11px] text-[#6B6155]">{l.detail}</span></span><span className="whitespace-nowrap">{format(l.total)}</span></li>)}
+              {b.lignes.map((l) => <li key={l.libelle} className="flex justify-between gap-3 py-1"><span>{l.quantite > 1 ? `${l.quantite} × ` : ""}{l.libelle}<span className="block text-[11px] text-[#6B6155]">{l.detail}</span></span><span className="whitespace-nowrap">{l.surDevis ? <span className="text-[#8C6D22] text-xs">{tr("sur devis")}</span> : format(l.total)}</span></li>)}
             </ul>
+            {b.lignes.some((l) => l.surDevis) && <p className="text-[11px] text-[#8C6D22] mt-1">{tr("Vos idées sur mesure seront chiffrées dans votre devis.")}</p>}
             <p className={`text-xs mt-2 ${b.depassement ? "text-[#8A2E26]" : "text-[#4F6B3A]"}`}>{b.depassement ? tr("Dépasse votre budget de {montant}.", { montant: format(b.depassement) }) : tr("Reste {montant} sur votre budget.", { montant: format(b.reste) })}</p>
             <p className="text-[11px] text-[#6B6155] italic mt-1">{mentionEstimation()}</p>
           </div>

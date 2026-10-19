@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import { definirLangue, estRtl, tr } from "./langue";
 import {
   Creation, Reglages, Sauvegarde, grilleDe, calculerBudget, effacerSauvegarde, emprise, evaluerMissions, lireSauvegarde, nouvelId, nouvelleCreation,
-  placeLibre, proposerDisposition, reglagesParDefaut, sauvegarder, tailleGrille, trouverPlace,
+  nomElement, placeLibre, proposerDisposition, reglagesParDefaut, sauvegarder, tailleGrille, trouverPlace,
 } from "./logique";
 import Scene, { ModeScene } from "./Scene";
 import { Accueil, Personnalisation } from "./Ecrans";
@@ -143,7 +143,7 @@ export default function JeuEvenement() {
   const supprimer = () => {
     const e = creation.elements.find((x) => x.uid === selection); if (!e) return;
     modifier((c) => ({ ...c, elements: c.elements.filter((x) => x.uid !== e.uid) }));
-    setSelection(null); setMode(null); dire(tr("{nom} retiré(e). Vous pouvez annuler.", { nom: libelle(e.type, creation.reglages.type).nom }));
+    setSelection(null); setMode(null); dire(tr("{nom} retiré(e). Vous pouvez annuler.", { nom: nomElement(e, creation.reglages.type) }));
   };
   const couleur = (col: string, tous = false) => {
     const e = creation.elements.find((x) => x.uid === selection); if (!e) return;
@@ -244,7 +244,7 @@ export default function JeuEvenement() {
                 {sel && !mode && (
                   <div className="lg:hidden border-t border-[#EFE5CF] bg-[#FFFDF8] px-3 py-2.5" data-testid="barre-mobile">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="text-sm font-medium truncate">{libelle(sel.type, creation.reglages.type).nom}</div>
+                      <div className="text-sm font-medium truncate">{nomElement(sel, creation.reglages.type)}</div>
                       <button className="text-xs text-[#6B6155] underline shrink-0" onClick={() => setSelection(null)}>{tr("Terminé")}</button>
                     </div>
                     <p className="text-[11px] text-[#6B6155] mb-2">{tr("Faites-la glisser avec le doigt, ou utilisez les flèches.")}</p>
@@ -267,7 +267,8 @@ export default function JeuEvenement() {
                 <PanneauSelection creation={creation} element={sel} enDeplacement={mode?.type === "deplacer"}
                   onCouleur={(c) => couleur(c)} onCouleurTous={(c) => couleur(c, true)} onDeplacer={() => { const actif = mode?.type !== "deplacer"; setMode(actif ? { type: "deplacer", uid: sel.uid } : null); if (actif) requestAnimationFrame(montrerScene); }}
                   onPas={pas} onTourner={tourner} onDupliquer={dupliquer} onSupprimer={supprimer} onFermer={() => { setSelection(null); setMode(null); }}
-                  onCentresCouleur={(c) => modifier((x) => ({ ...x, centres: { ...x.centres, couleur: c } }))} />
+                  onCentresCouleur={(c) => modifier((x) => ({ ...x, centres: { ...x.centres, couleur: c } }))}
+                  onNom={(nom) => modifier((x) => ({ ...x, elements: x.elements.map((e) => (e.uid === sel.uid ? { ...e, nom: nom || undefined } : e)) }))} />
               )}
               <div className="grid sm:grid-cols-2 gap-3 lg:hidden">
                 <JaugeBudget creation={creation} onAjuster={() => aller("reglages")} />

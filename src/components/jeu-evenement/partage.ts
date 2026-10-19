@@ -1,21 +1,22 @@
 // Partage d'une création par lien : la création (sans aucune coordonnée) est encodée dans l'adresse,
 // après le « # » — elle n'est donc jamais envoyée au serveur.
 import { AMBIANCES, CATALOGUE, LIEUX, LIMITES_INVITES, TYPES_EVENEMENT, TypeElement } from "./config";
-import { Creation, Element, nouvelId, nouvelleCreation, tailleGrille, placeLibre } from "./logique";
+import { Creation, Element, NOM_MAX, nouvelId, nouvelleCreation, tailleGrille, placeLibre } from "./logique";
 
 const TYPES_EL = CATALOGUE.map((d) => d.id);
 const hex = (c?: string) => (c && /^#[0-9a-f]{6}$/i.test(c) ? c.slice(1) : 0);
 const deHex = (h: unknown) => (typeof h === "string" && /^[0-9a-f]{6}$/i.test(h) ? `#${h}` : undefined);
 
-const b64 = (s: string) => btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-const deB64 = (s: string) => atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4));
+// Base64 « URL » d'un texte UTF-8 (les noms des idées sur mesure peuvent contenir des accents ou de l'arabe)
+const b64 = (s: string) => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const deB64 = (s: string) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), (ch) => ch.charCodeAt(0)));
 
 export function encoderCreation(c: Creation): string {
   const r = c.reglages;
   const donnees = {
     v: 1,
     r: [TYPES_EVENEMENT.findIndex((t) => t.id === r.type), r.invites, r.budget, LIEUX.findIndex((l) => l.id === r.lieu), AMBIANCES.findIndex((a) => a.id === r.ambiance)],
-    e: c.elements.map((e) => [TYPES_EL.indexOf(e.type), e.x, e.y, e.tourne ? 1 : 0, hex(e.couleur)]),
+    e: c.elements.map((e) => { const x: (number | string)[] = [TYPES_EL.indexOf(e.type), e.x, e.y, e.tourne ? 1 : 0, hex(e.couleur)]; if (e.nom?.trim()) x.push(e.nom.trim().slice(0, NOM_MAX)); return x; }),
     c: [c.centres.actif ? 1 : 0, hex(c.centres.couleur)],
   };
   return b64(JSON.stringify(donnees));
@@ -39,6 +40,7 @@ export function decoderCreation(code: string): Creation | null {
       const type = TYPES_EL[Number(x[0])] as TypeElement | undefined;
       if (!type) continue;
       const el: Element = { uid: nouvelId(), type, x: Math.round(Number(x[1])), y: Math.round(Number(x[2])), tourne: x[3] === 1, couleur: deHex(x[4]) };
+      if (typeof x[5] === "string" && x[5].trim()) el.nom = x[5].trim().slice(0, NOM_MAX);
       if (el.x >= 0 && el.y >= 0 && placeLibre(c.elements, el, cols, rows)) c.elements.push(el);
     }
     c.centres = { actif: d.c?.[0] === 1, couleur: deHex(d.c?.[1]) };

@@ -1,17 +1,17 @@
 // Catalogue, panneau de l'élément sélectionné, budget et missions.
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CATALOGUE, CATEGORIES, CENTRES_DE_TABLE, CleCouleur, NUANCIER, TypeElement, defElement, format, libelle, mentionEstimation, placesDe,
 } from "./config";
 import { tr } from "./langue";
-import { Creation, Element, EtatMission, calculerBudget, couleurDe, emprise, palette } from "./logique";
+import { Creation, Element, EtatMission, NOM_MAX, calculerBudget, couleurDe, emprise, nomElement, palette } from "./logique";
 import { DessinElement, TH, TW } from "./dessins";
 import { TYPE_GLISSE } from "./Scene";
 import { Bouton } from "./ui";
 
 /** Petite vignette SVG d'un élément, dessinée comme dans la scène. */
 /** Hauteur visible de chaque élément au-dessus du sol (pour cadrer les vignettes). */
-const HAUTEUR: Partial<Record<TypeElement, number>> = { arche: 135, guirlandes: 100, photobooth: 72, fleurs: 70, honneur: 66, gateau: 66, dj: 56, bar: 52, lounge: 32, piste: 8, nawar: 80, hotesse: 54, serveur: 54, maitre_hotel: 54, fauteuils: 58, table_haute: 40, amaria: 112, mur_fleurs: 94, candelabre: 82, allee: 22, the: 32 };
+const HAUTEUR: Partial<Record<TypeElement, number>> = { arche: 135, guirlandes: 100, photobooth: 72, fleurs: 70, honneur: 66, gateau: 66, dj: 56, bar: 52, lounge: 32, piste: 8, nawar: 80, hotesse: 54, serveur: 54, maitre_hotel: 54, fauteuils: 58, table_haute: 40, amaria: 112, mur_fleurs: 94, candelabre: 82, allee: 22, the: 32, objet_libre: 62, espace_libre: 40 };
 /** « 1 500 MAD + 50 MAD / invité », « 450 MAD / invité » ou « 12 000 MAD ». */
 export const prixTexte = (prix: number, parInvite?: number, long = false) => {
   const pi = parInvite ? `${format(parInvite)} ${long ? tr("par invité") : tr("/ invité")}` : "";
@@ -59,7 +59,7 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
                 onDragEnd={() => { (window as any).__heaventGlisse = undefined; }}
                 onClick={() => onChoisir(d.id)}
                 aria-pressed={actif}
-                aria-label={tr("{nom} : {prix}{places}. Ajouter à la scène", { nom: l.nom, prix: prixTexte(d.prix, d.prixParInvite, true), places: places ? tr(", {n} places", { n: places }) : "" })}
+                aria-label={tr("{nom} : {prix}{places}. Ajouter à la scène", { nom: l.nom, prix: d.surDevis ? tr("Prix sur devis") : prixTexte(d.prix, d.prixParInvite, true), places: places ? tr(", {n} places", { n: places }) : "" })}
                 className={`w-full flex items-center gap-3 rounded-2xl border p-2.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A74E] ${actif ? "border-[#C9A74E] bg-[#FBF3DF]" : "border-[#EADFC8] bg-white hover:border-[#D8C391] hover:shadow-sm"}`}
               >
                 <Miniature type={d.id} creation={creation} />
@@ -70,7 +70,7 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
                   </div>
                   <div className="text-xs text-[#6B6155] line-clamp-2">{l.description}</div>
                   <div className="text-xs mt-0.5 text-[#8C6D22] font-medium">
-                    {prixTexte(d.prix, d.prixParInvite)}{places ? ` · ${tr("{n} places", { n: places })}` : ""}
+                    {d.surDevis ? tr("Prix sur devis") : prixTexte(d.prix, d.prixParInvite)}{places ? ` · ${tr("{n} places", { n: places })}` : ""}
                   </div>
                 </div>
               </button>
@@ -98,8 +98,8 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
 // ── Élément sélectionné ─────────────────────────────────────────────────────
 const LIBELLE_COULEUR: Record<CleCouleur, string> = { nappe: "Couleur des nappes", fleurs: "Couleur des fleurs", deco: "Couleur de la décoration" };
 
-export function PanneauSelection({ creation, element, enDeplacement, onCouleur, onCouleurTous, onDeplacer, onPas, onTourner, onDupliquer, onSupprimer, onFermer, onCentresCouleur }: {
-  creation: Creation; element: Element; enDeplacement: boolean;
+export function PanneauSelection({ creation, element, enDeplacement, onCouleur, onCouleurTous, onDeplacer, onPas, onTourner, onDupliquer, onSupprimer, onFermer, onCentresCouleur, onNom }: {
+  creation: Creation; element: Element; enDeplacement: boolean; onNom: (nom: string) => void;
   onCouleur: (c: string) => void; onCouleurTous: (c: string) => void; onDeplacer: () => void; onPas: (dx: number, dy: number) => void;
   onTourner: () => void; onDupliquer: () => void; onSupprimer: () => void; onFermer: () => void; onCentresCouleur: (c: string) => void;
 }) {
@@ -109,17 +109,20 @@ export function PanneauSelection({ creation, element, enDeplacement, onCouleur, 
   const couleur = couleurDe(element, creation.reglages.ambiance);
   const memes = creation.elements.filter((e) => e.type === element.type).length;
   const estTable = element.type === "table_ronde" || element.type === "table_rect";
+  const nom = nomElement(element, creation.reglages.type);
   return (
-    <section aria-label={tr("Élément sélectionné : {nom}", { nom: l.nom })} className="rounded-2xl border border-[#E3D3AE] bg-white p-4 space-y-3 shadow-sm">
+    <section aria-label={tr("Élément sélectionné : {nom}", { nom })} className="rounded-2xl border border-[#E3D3AE] bg-white p-4 space-y-3 shadow-sm">
       <div className="flex items-start gap-3">
         <Miniature type={element.type} creation={creation} taille={52} />
         <div className="flex-1 min-w-0">
-          <h3 className="font-serif text-lg leading-tight">{l.nom}</h3>
-          <p className="text-xs text-[#6B6155]">{l.description}</p>
-          <p className="text-xs text-[#8C6D22] font-medium mt-1">{prixTexte(d.prix, d.prixParInvite, true)}{d.prixParInvite ? ` ${tr("(compté une fois)")}` : ""}{places ? ` · ${tr("{n} places", { n: places })}` : ""}</p>
+          <h3 className="font-serif text-lg leading-tight break-words">{nom}</h3>
+          <p className="text-xs text-[#6B6155]">{d.surDevis ? tr("Donnez-lui le nom de votre choix : nous le chiffrons dans votre devis.") : l.description}</p>
+          <p className="text-xs text-[#8C6D22] font-medium mt-1">{d.surDevis ? tr("Prix sur devis") : `${prixTexte(d.prix, d.prixParInvite, true)}${d.prixParInvite ? ` ${tr("(compté une fois)")}` : ""}`}{places ? ` · ${tr("{n} places", { n: places })}` : ""}</p>
         </div>
         <button onClick={onFermer} className="rounded-full h-9 w-9 hover:bg-[#F1E8D8] text-[#6B6155]" aria-label={tr("Fermer le panneau")}>✕</button>
       </div>
+
+      {d.surDevis && <ChampNom key={element.uid} valeur={element.nom ?? ""} onNom={onNom} />}
 
       {d.couleur && (
         <div>
@@ -131,7 +134,7 @@ export function PanneauSelection({ creation, element, enDeplacement, onCouleur, 
                 style={{ background: n.valeur }} />
             ))}
           </div>
-          {memes > 1 && couleur && <button className="mt-2 text-xs underline text-[#5A4B2E]" onClick={() => onCouleurTous(couleur)}>{tr("Appliquer cette couleur aux {n} « {nom} »", { n: memes, nom: l.nom })}</button>}
+          {memes > 1 && couleur && <button className="mt-2 text-xs underline text-[#5A4B2E]" onClick={() => onCouleurTous(couleur)}>{tr("Appliquer cette couleur aux {n} « {nom} »", { n: memes, nom: d.surDevis ? l.nom : nom })}</button>}
         </div>
       )}
       {estTable && creation.centres.actif && (
@@ -165,6 +168,26 @@ export function PanneauSelection({ creation, element, enDeplacement, onCouleur, 
       </div>
       <p className="text-[11px] text-[#6B6155]">{tr("Astuce : faites glisser l'élément directement sur la scène (souris ou doigt). Au clavier : flèches pour déplacer, Suppr pour retirer, Échap pour désélectionner.")}</p>
     </section>
+  );
+}
+
+/** Nom d'un élément sur mesure : enregistré pendant la saisie (après une courte pause) et en quittant le champ. */
+function ChampNom({ valeur, onNom }: { valeur: string; onNom: (nom: string) => void }) {
+  const [texte, setTexte] = useState(valeur);
+  const minuteur = useRef<number>();
+  const champ = useRef<HTMLInputElement>(null);
+  const valider = (t = texte) => { window.clearTimeout(minuteur.current); if (t.trim() !== valeur.trim()) onNom(t.trim().slice(0, NOM_MAX)); };
+  // Nouvel objet sans nom : le champ est prêt à être rempli
+  useEffect(() => { if (!valeur) champ.current?.focus({ preventScroll: true }); return () => window.clearTimeout(minuteur.current); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <label className="block">
+      <span className="text-xs font-medium">{tr("Nom de votre idée")}</span>
+      <input ref={champ} value={texte} maxLength={NOM_MAX} data-testid="nom-sur-mesure"
+        onChange={(e) => { const t = e.target.value; setTexte(t); window.clearTimeout(minuteur.current); minuteur.current = window.setTimeout(() => valider(t), 700); }}
+        onBlur={() => valider()} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); valider(); (e.target as HTMLInputElement).blur(); } }}
+        placeholder={tr("Ex. calèche, feu d'artifice, coin enfants…")}
+        className="mt-1 w-full rounded-xl border border-[#E3D6BA] bg-[#FFFDF8] px-3 min-h-11 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A74E]" />
+    </label>
   );
 }
 

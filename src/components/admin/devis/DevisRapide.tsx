@@ -33,7 +33,7 @@ interface DemandeMariage {
   date_mariage?: string | null; lieu?: string | null; nb_invites?: number | null; services?: string | null;
   remarques?: string | null; statut?: string | null; created_at?: string | null;
   /** Demande venue du jeu « Crée ton événement » : nombre d'éléments par type */
-  configuration?: { invites?: number | null; elements?: Record<string, number>; centres?: number; libelles?: Record<string, string> } | null;
+  configuration?: { invites?: number | null; elements?: Record<string, number>; centres?: number; libelles?: Record<string, string>; sur_mesure?: { nom: string; quantite: number }[] } | null;
 }
 interface DevisRow {
   id: string; numero: string | null; type: string; client_nom: string; client_societe: string | null;
@@ -178,6 +178,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     const res: Ligne[] = [];
     const sansPrix: string[] = [];
     for (const [type, n] of Object.entries(quantites)) {
+      if (type === "objet_libre" || type === "espace_libre") continue; // idées sur mesure : lignes à part, ci-dessous
       const lignesCat = catalogue.filter((c) => c.actif && (c as any).jeu_element === type).sort((a, b) => a.ordre - b.ordre);
       if (!lignesCat.length) { sansPrix.push(conf.libelles?.[type] ?? type); continue; }
       for (const c of lignesCat) {
@@ -189,6 +190,10 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       }
     }
     if (sansPrix.length) res.push({ ...ligneVide(), designation: sansPrix.join(", "), description: "Élément(s) du jeu sans prix au catalogue : à chiffrer", quantite: 1, unite: "forfait" });
+    // Idées sur mesure nommées par le client dans le jeu : une ligne chacune, prix à renseigner
+    for (const x of conf.sur_mesure ?? []) {
+      res.push({ ...ligneVide(), designation: x.nom, description: "Idée sur mesure du client (jeu) : prix à renseigner", quantite: x.quantite || 1, duree: 1, unite: "forfait", prix_unitaire: 0 });
+    }
     return res.length ? res : null;
   };
 

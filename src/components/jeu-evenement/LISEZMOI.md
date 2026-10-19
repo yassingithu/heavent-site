@@ -32,3 +32,9 @@ Les prix affichés dans le jeu viennent du catalogue de l'admin (Devis → Catal
 chaque ligne marquée « Prix utilisé par le jeu » (colonne `jeu_element`) est lue par la fonction publique `tarifs_jeu()`,
 qui ne renvoie QUE ces lignes (jamais les tarifs du staff). Unité « personne » = coût par invité (compté une fois),
 toute autre unité = coût fixe par élément. Sans connexion, le jeu garde les prix par défaut de `config.ts`.
+
+## Idées sur mesure (onglet « Vos idées »)
+« Objet sur mesure » (1 case) et « Espace sur mesure » (2 × 2 cases) : le visiteur leur donne le nom qu'il veut
+(enregistré dans l'élément, `Element.nom`, et dans le lien de partage). Pas de prix dans le jeu : « Prix sur devis ».
+La demande transmet `configuration.sur_mesure` ([{ nom, quantite }]) ; « Faire le devis » dans l'admin crée une ligne par idée,
+à 0 MAD, avec la mention « prix à renseigner ».

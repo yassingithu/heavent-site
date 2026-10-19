@@ -1,7 +1,7 @@
 // Récapitulatif : document téléchargeable (PDF), image de la scène (PNG) et texte de la demande de devis.
 import { CENTRES_DE_TABLE, format, libelle, mentionEstimation, nomAmbianceEv, nomLieuEv, nomTypeEv } from "./config";
 import { estRtl, localeDates, tr } from "./langue";
-import { Creation, calculerBudget, evaluerMissions, placesPrevues } from "./logique";
+import { Creation, calculerBudget, evaluerMissions, nomElement, placesPrevues } from "./logique";
 import { esc, logo, nomFichier, telechargerPdf } from "@/lib/pdf";
 
 export interface OptionsRecap { scene: boolean; estimation: boolean; missions: boolean }
@@ -13,7 +13,7 @@ export const nomLieu = (c: Creation) => nomLieuEv(c.reglages.lieu);
 /** Liste lisible des options choisies : « 12 × Table ronde », « Centres de table »… */
 export function optionsChoisies(c: Creation) {
   const n = new Map<string, number>();
-  c.elements.forEach((e) => { const k = libelle(e.type, c.reglages.type).nom; n.set(k, (n.get(k) ?? 0) + 1); });
+  c.elements.forEach((e) => { const k = nomElement(e, c.reglages.type); n.set(k, (n.get(k) ?? 0) + 1); });
   const res = [...n].map(([nom, q]) => (q > 1 ? `${q} × ${nom}` : nom));
   if (c.centres.actif) res.push(tr(CENTRES_DE_TABLE.nom));
   return res;
@@ -79,9 +79,11 @@ export function documentRecap(c: Creation, o: OptionsRecap, imageScene?: string 
     <h2>${esc(tr("Options choisies"))}</h2><div style="font-size:11px">${esc(optionsChoisies(c).join(" · ") || tr("Aucun élément pour l'instant."))}</div>
     ${o.estimation ? `<h2>${esc(tr("Estimation : {montant}", { montant: format(b.total) }))}</h2>
       <table><thead><tr><th>${esc(tr("Élément"))}</th><th>${esc(tr("Calcul"))}</th><th class="n">${esc(tr("Fixe"))}</th><th class="n">${esc(tr("Par invité"))}</th><th class="n">${esc(tr("Total"))}</th></tr></thead><tbody>
-      ${b.lignes.map((l) => `<tr><td>${esc(l.libelle)}</td><td>${esc(l.detail)}</td><td class="n">${esc(format(l.fixe))}</td><td class="n">${l.parInvite ? esc(format(l.parInvite)) : "—"}</td><td class="n">${esc(format(l.total))}</td></tr>`).join("")}
+      ${b.lignes.map((l) => l.surDevis
+        ? `<tr><td>${esc(l.quantite > 1 ? `${l.quantite} × ${l.libelle}` : l.libelle)}</td><td colspan="3">${esc(l.detail)}</td><td class="n">—</td></tr>`
+        : `<tr><td>${esc(l.libelle)}</td><td>${esc(l.detail)}</td><td class="n">${esc(format(l.fixe))}</td><td class="n">${l.parInvite ? esc(format(l.parInvite)) : "—"}</td><td class="n">${esc(format(l.total))}</td></tr>`).join("")}
       <tr class="total"><td colspan="4">${esc(tr("Estimation totale"))}${b.depassement ? ` — ${esc(tr("dépasse le budget de {montant}", { montant: format(b.depassement) }))}` : ` — ${esc(tr("reste {montant} sur le budget", { montant: format(b.reste) }))}`}</td><td class="n">${esc(format(b.total))}</td></tr>
-      </tbody></table><div class="mention">${esc(mentionEstimation())}</div>` : ""}
+      </tbody></table><div class="mention">${esc(mentionEstimation())}${b.lignes.some((l) => l.surDevis) ? ` ${esc(tr("Vos idées sur mesure seront chiffrées dans votre devis."))}` : ""}</div>` : ""}
     ${o.missions ? `<h2>${esc(tr("Missions"))}</h2>${m.map((x) => `<div class="mission ${x.ok ? "ok" : "ko"}">${x.ok ? "✓" : "○"} ${esc(x.titre)} — ${esc(x.aide)}</div>`).join("")}` : ""}
   </div>
   <div class="pied">${esc(tr("Heavent People Agency · organisation et décoration de mariages et d'événements · heaventagency.com"))}</div>
@@ -112,7 +114,7 @@ export function texteDemande(c: Creation, k: Coordonnees) {
     `${tr("Options")} : ${optionsChoisies(c).join(", ") || tr("aucune")}`,
     "",
     titres[1],
-    ...b.lignes.map((l) => `- ${l.libelle} : ${l.detail} = ${format(l.total)}`),
+    ...b.lignes.map((l) => (l.surDevis ? `- ${l.quantite > 1 ? `${l.quantite} × ` : ""}${l.libelle} : ${l.detail}` : `- ${l.libelle} : ${l.detail} = ${format(l.total)}`)),
     `${tr("Total")} : ${format(b.total)}`,
     mentionEstimation(),
     "",

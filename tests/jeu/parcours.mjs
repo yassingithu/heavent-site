@@ -86,6 +86,15 @@ const mission = (p, id) => p.locator(`[data-mission="${id}"]`).first().getAttrib
   ok(`disposition proposée (${total} MAD ≤ 50 000) puis dépassement affiché sans blocage`);
   for (let i = 0; i < 6; i++) await p.getByRole("button", { name: "Annuler la dernière action" }).click();
 
+  // Idée sur mesure : nommée par le visiteur, sans prix (chiffrée dans le devis)
+  const avantIdee = await estimation(p);
+  await p.getByRole("tab", { name: "Vos idées" }).click();
+  await p.getByRole("button", { name: /^Objet sur mesure :/ }).click(); await p.getByRole("button", { name: "Placer automatiquement" }).click(); await p.waitForTimeout(300);
+  await p.getByTestId("nom-sur-mesure").fill("Calèche dorée"); await p.getByTestId("nom-sur-mesure").press("Enter"); await p.waitForTimeout(300);
+  assert.equal(await estimation(p), avantIdee, "une idée sur mesure n'ajoute rien à l'estimation");
+  assert.ok(await p.locator('[data-element="objet_libre"] text', { hasText: "Calèche dorée" }).count(), "le nom s'affiche sur la scène");
+  ok("idée sur mesure « Calèche dorée » ajoutée et nommée, prix sur devis (estimation inchangée)");
+
   // Réinitialisation avec confirmation, puis annulation
   const avantReset = await nb(p);
   await p.getByRole("button", { name: "Réinitialiser" }).click();
@@ -104,6 +113,8 @@ const mission = (p, id) => p.locator(`[data-mission="${id}"]`).first().getAttrib
   // Récapitulatif + téléchargements
   await p.getByRole("button", { name: "Découvrir mon événement" }).click(); await p.waitForTimeout(600);
   await p.screenshot({ path: `${CAPT}/2-recap.png`, fullPage: true });
+  const recapTexte = await p.locator("body").innerText();
+  assert.ok(/Calèche dorée/.test(recapTexte) && /sur devis/.test(recapTexte), "l'idée sur mesure figure au récapitulatif, « sur devis »");
   await p.getByRole("button", { name: "Télécharger mon récapitulatif" }).click(); await p.waitForTimeout(1200);
   assert.ok(await p.getByTestId("apercu-recap").isVisible(), "aperçu");
   await p.screenshot({ path: `${CAPT}/3-telechargement.png` });
@@ -160,6 +171,8 @@ const mission = (p, id) => p.locator(`[data-mission="${id}"]`).first().getAttrib
   assert.equal(corpsEnvoye.type, "jeu");
   assert.equal(corpsEnvoye.data.prenom, "Salma"); assert.equal(corpsEnvoye.data.invites, 100);
   assert.ok(corpsEnvoye.data.lignes.length > 0 && corpsEnvoye.data.estimation > 0 && corpsEnvoye.data.texte.includes("CONFIGURATION"));
+  assert.deepEqual(corpsEnvoye.data.configuration.sur_mesure, [{ nom: "Calèche dorée", quantite: 1 }], "l'idée sur mesure est transmise pour le devis");
+  assert.ok(corpsEnvoye.data.lignes.some((l) => l.libelle === "Calèche dorée" && l.surDevis), "ligne « sur devis » dans l'e-mail");
   await p.screenshot({ path: `${CAPT}/4-devis.png` });
   const stock = await p.evaluate(() => JSON.stringify(localStorage));
   assert.doesNotMatch(stock, /salma|example\.com/i, "aucune coordonnée en stockage local");

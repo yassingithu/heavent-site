@@ -188,6 +188,19 @@ function local(e: Element) {
   };
 }
 
+/** Étiquette flottante (nom d'un élément sur mesure), au-dessus de l'élément */
+function Etiquette({ x, y, z, texte }: { x: number; y: number; z: number; texte: string }) {
+  const [sx, sy] = pt(x, y, z);
+  const t = texte.length > 22 ? texte.slice(0, 21) + "…" : texte;
+  const l = Math.max(30, t.length * 5.6 + 14);
+  return (
+    <g style={{ pointerEvents: "none" }}>
+      <rect x={sx - l / 2} y={sy - 15} width={l} height={17} rx={8.5} fill="#FFFDF8" stroke="#C9A74E" strokeWidth={0.8} opacity={0.95} />
+      <text x={sx} y={sy - 3.5} textAnchor="middle" fontSize={10} fontFamily="system-ui, sans-serif" fill="#5A4B2E">{t}</text>
+    </g>
+  );
+}
+
 export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
   const { palette } = ctx;
   const coul = ctx.couleur ?? palette.nappe;
@@ -576,6 +589,34 @@ export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
           {verres.map(([x, y], i) => { const [gx, gy] = pt(x, y, 15); return <rect key={i} x={gx - 1.5} y={gy - 5} width={3} height={5} rx={0.6} fill={["#C0392B", "#2E86AB", "#C9A74E", "#1F6B57"][i]} opacity={0.85} />; })}
           {[[px, py], [p2x, p2y]].map(([x, y], i) => <g key={i}><Cylindre cx={x} cy={y} r={0.15} z={13} ht={2} c="#F4EFE6" />{[[-3, 0], [3, 0], [0, -2]].map(([dx, dy], k) => { const [qx, qy] = pt(x, y, 16); return <circle key={k} cx={qx + dx} cy={qy + dy} r={1.8} fill={k === 2 ? "#E8C07A" : "#D9A441"} />; })}</g>)}
           {poufs.map(([x, y], i) => <Cylindre key={i} cx={x} cy={y} r={0.16} ht={9} c={cuir[i]} />)}
+        </g>
+      );
+    }
+    case "objet_libre": {
+      // Socle et grand paquet noué : une idée à imaginer, chiffrée sur devis
+      const c = ctx.couleur ?? palette.deco;
+      return (
+        <g>
+          <Boite x={e.x + 0.12} y={e.y + 0.12} w={0.76} h={0.76} ht={8} c={teinte(c, -0.55)} />
+          <Boite x={e.x + 0.22} y={e.y + 0.22} w={0.56} h={0.56} z={8} ht={30} c={teinte(c, -0.2)} />
+          <Boite x={e.x + 0.45} y={e.y + 0.22} w={0.1} h={0.56} z={8} ht={30.6} c={palette.accent === "#2B2B2B" ? "#C9A74E" : palette.fleurs} contour={false} />
+          <Boite x={e.x + 0.22} y={e.y + 0.45} w={0.56} h={0.1} z={8} ht={30.6} c={palette.accent === "#2B2B2B" ? "#C9A74E" : palette.fleurs} contour={false} />
+          <Rond x={cx} y={cy} z={44} r={4.5} c={palette.accent === "#2B2B2B" ? "#C9A74E" : palette.fleurs} />
+          {e.nom?.trim() ? <Etiquette x={cx} y={cy} z={56} texte={e.nom.trim()} /> : <text x={pt(cx, cy, 52)[0]} y={pt(cx, cy, 52)[1]} textAnchor="middle" fontSize={15} fill="#A8862F" style={{ pointerEvents: "none" }}>?</text>}
+        </g>
+      );
+    }
+    case "espace_libre": {
+      // Estrade basse délimitée : une zone aménagée selon l'idée du visiteur
+      const c = ctx.couleur ?? palette.deco;
+      const bord = teinte(c, 0.1);
+      return (
+        <g>
+          <Boite x={e.x + 0.08} y={e.y + 0.08} w={w - 0.16} h={h - 0.16} ht={5} c={teinte(c, -0.7)} />
+          <polygon points={pts([pt(e.x + 0.22, e.y + 0.22, 5), pt(e.x + w - 0.22, e.y + 0.22, 5), pt(e.x + w - 0.22, e.y + h - 0.22, 5), pt(e.x + 0.22, e.y + h - 0.22, 5)])}
+            fill="none" stroke={bord} strokeWidth={1.4} strokeDasharray="5 4" />
+          {[[0.2, 0.2], [w - 0.2, 0.2], [0.2, h - 0.2], [w - 0.2, h - 0.2]].map(([u, v], i) => <Cylindre key={i} cx={e.x + u} cy={e.y + v} r={0.07} z={5} ht={20} c={bord} />)}
+          {e.nom?.trim() ? <Etiquette x={cx} y={cy} z={30} texte={e.nom.trim()} /> : <text x={pt(cx, cy, 14)[0]} y={pt(cx, cy, 14)[1]} textAnchor="middle" fontSize={18} fill="#A8862F" style={{ pointerEvents: "none" }}>?</text>}
         </g>
       );
     }

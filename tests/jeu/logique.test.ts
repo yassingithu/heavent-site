@@ -116,4 +116,19 @@ for (const m of MODELES) {
   definirLangue("fr"); assert.equal(tr("Annuler"), "Annuler");
   console.log(`  traductions : ${cles.length} phrases en anglais et en arabe, variables conservées`);
 }
+// Idées sur mesure : nommées par le visiteur, sans prix (chiffrées dans le devis), regroupées par nom, gardées dans le lien de partage
+{
+  const s = nouvelleCreation({ ...reglagesParDefaut(), invites: 80, budget: 50000 });
+  s.elements.push(el("table_ronde", 0, 0), { ...el("objet_libre", 4, 0), nom: "Calèche dorée" }, { ...el("objet_libre", 6, 0), nom: "Calèche dorée" },
+    { ...el("espace_libre", 0, 4), nom: "ركن الأطفال" }, el("objet_libre", 8, 0));
+  const bs = calculerBudget(s);
+  assert.equal(bs.total, 450, "les idées sur mesure n'ajoutent rien à l'estimation");
+  const caleche = bs.lignes.find((l) => l.libelle === "Calèche dorée")!;
+  assert.ok(caleche.surDevis && caleche.quantite === 2 && caleche.total === 0 && caleche.detail === "Prix sur devis");
+  assert.ok(bs.lignes.some((l) => l.libelle === "Objet sur mesure" && l.surDevis), "objet sans nom : nom du catalogue");
+  assert.equal(bs.lignes[bs.lignes.length - 1].surDevis, true, "les idées sur mesure en fin de liste");
+  const relu = decoderCreation(encoderCreation(s))!;
+  assert.deepEqual(relu.elements.map((e) => e.nom ?? null), [null, "Calèche dorée", "Calèche dorée", "ركن الأطفال", null], "noms conservés dans le lien (accents et arabe)");
+  console.log(`  sur mesure : ${bs.lignes.filter((l) => l.surDevis).length} idées nommées, prix sur devis, gardées dans le lien de partage`);
+}
 console.log("✅ logique du jeu : tous les tests passent");

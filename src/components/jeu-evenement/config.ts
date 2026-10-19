@@ -60,9 +60,10 @@ export type TypeElement =
   | "table_ronde" | "table_rect" | "honneur" | "arche" | "fleurs" | "guirlandes" | "piste"
   | "dj" | "buffet" | "bar" | "photobooth" | "lounge" | "gateau"
   | "nawar" | "hotesse" | "serveur" | "maitre_hotel"
-  | "fauteuils" | "table_haute" | "amaria" | "mur_fleurs" | "candelabre" | "allee" | "the";
+  | "fauteuils" | "table_haute" | "amaria" | "mur_fleurs" | "candelabre" | "allee" | "the"
+  | "objet_libre" | "espace_libre";
 
-export type Categorie = "places" | "decoration" | "lumiere" | "animation" | "gourmand" | "detente" | "personnel";
+export type Categorie = "places" | "decoration" | "lumiere" | "animation" | "gourmand" | "detente" | "personnel" | "sur_mesure";
 export const CATEGORIES: { id: Categorie; nom: string }[] = [
   { id: "places", nom: "Tables et places" },
   { id: "decoration", nom: "Décoration" },
@@ -71,6 +72,7 @@ export const CATEGORIES: { id: Categorie; nom: string }[] = [
   { id: "gourmand", nom: "Buffet et boissons" },
   { id: "detente", nom: "Espaces conviviaux" },
   { id: "personnel", nom: "Personnel" },
+  { id: "sur_mesure", nom: "Vos idées" },
 ];
 
 /** Quelle couleur de l'élément le visiteur peut personnaliser. */
@@ -98,6 +100,8 @@ export interface DefElement {
   role?: "decoration" | "eclairage" | "convivial";
   /** Proposé seulement pour ces types d'événement (tous par défaut) */
   types?: TypeEvenement[];
+  /** Élément « sur mesure » : le visiteur lui donne un nom, l'agence le chiffre dans le devis (pas de prix dans le jeu) */
+  surDevis?: boolean;
 }
 
 export const CATALOGUE: DefElement[] = [
@@ -126,6 +130,8 @@ export const CATALOGUE: DefElement[] = [
   { id: "candelabre", categorie: "lumiere", nom: "Candélabre", description: "Grand chandelier à bougies pour une lumière douce et élégante.", w: 1, h: 1, prix: 800, couleur: "deco", role: "eclairage" },
   { id: "allee", categorie: "decoration", nom: "Allée d'entrée", description: "Tapis, bougies et fleurs pour accueillir vos invités ou l'entrée des mariés.", w: 1, h: 3, prix: 1800, couleur: "fleurs", role: "decoration" },
   { id: "the", categorie: "gourmand", nom: "Service à thé marocain", description: "Table à thé, théières et pâtisseries marocaines, servis par notre équipe.", w: 2, h: 1, prix: 1500, prixParInvite: 15, couleur: "nappe", role: "convivial" },
+  { id: "objet_libre", categorie: "sur_mesure", nom: "Objet sur mesure", description: "Une idée qui n'est pas dans le catalogue ? Ajoutez-la et donnez-lui le nom que vous voulez : nous la chiffrons dans votre devis.", w: 1, h: 1, prix: 0, couleur: "deco", surDevis: true },
+  { id: "espace_libre", categorie: "sur_mesure", nom: "Espace sur mesure", description: "Une zone à aménager selon votre idée (coin enfants, calèche, scène de spectacle…). Nommez-la : nous la chiffrons dans votre devis.", w: 2, h: 2, prix: 0, couleur: "deco", surDevis: true },
 ];
 
 /** Option « centres de table » : posée sur toutes les tables, facturée par table. */

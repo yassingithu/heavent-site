@@ -7,7 +7,7 @@ import {
 
 // ── État ────────────────────────────────────────────────────────────────────
 export interface Reglages { type: TypeEvenement; invites: number; budget: number; lieu: Lieu; ambiance: Ambiance }
-export interface Element { uid: string; type: TypeElement; x: number; y: number; tourne?: boolean; couleur?: string }
+export interface Element { uid: string; type: TypeElement; x: number; y: number; tourne?: boolean; couleur?: string; /** Nom choisi par le visiteur (éléments sur mesure) */ nom?: string }
 export interface Centres { actif: boolean; couleur?: string }
 export interface Creation { reglages: Reglages; elements: Element[]; centres: Centres }
 
@@ -71,12 +71,22 @@ export function trouverPlace(elements: Element[], type: TypeElement, cols: numbe
 }
 
 // ── Budget ──────────────────────────────────────────────────────────────────
-export interface LigneBudget { libelle: string; quantite: number; fixe: number; parInvite: number; total: number; detail: string }
+export interface LigneBudget { libelle: string; quantite: number; fixe: number; parInvite: number; total: number; detail: string; /** Chiffré par l'agence dans le devis */ surDevis?: boolean }
+
+/** Longueur maximale du nom d'un élément sur mesure */
+export const NOM_MAX = 40;
+/** Nom affiché d'un élément : le nom donné par le visiteur pour un élément sur mesure, sinon celui du catalogue */
+export const nomElement = (e: Pick<Element, "type" | "nom">, type: TypeEvenement) =>
+  (defElement(e.type).surDevis && e.nom?.trim()) ? e.nom.trim().slice(0, NOM_MAX) : libelle(e.type, type).nom;
 
 export function calculerBudget(c: Creation) {
   const { type, invites } = c.reglages;
   const parType = new Map<TypeElement, number>();
-  c.elements.forEach((e) => parType.set(e.type, (parType.get(e.type) ?? 0) + 1));
+  const surMesure = new Map<string, number>();
+  c.elements.forEach((e) => {
+    if (defElement(e.type).surDevis) { const k = nomElement(e, type); surMesure.set(k, (surMesure.get(k) ?? 0) + 1); }
+    else parType.set(e.type, (parType.get(e.type) ?? 0) + 1);
+  });
   const lignes: LigneBudget[] = [];
   for (const [id, n] of parType) {
     const d = defElement(id);
@@ -97,6 +107,8 @@ export function calculerBudget(c: Creation) {
     lignes.push({ libelle: tr(CENTRES_DE_TABLE.nom), quantite: nbTables, fixe: t, parInvite: 0, total: t, detail: `${nbTables} × ${CENTRES_DE_TABLE.prixParTable}` });
   }
   lignes.sort((a, b) => b.total - a.total);
+  // Éléments sur mesure : sans prix dans le jeu, chiffrés par l'agence (toujours en fin de liste)
+  for (const [nom, n] of surMesure) lignes.push({ libelle: nom, quantite: n, fixe: 0, parInvite: 0, total: 0, detail: tr("Prix sur devis"), surDevis: true });
   const total = lignes.reduce((s, l) => s + l.total, 0);
   const totalFixe = lignes.reduce((s, l) => s + l.fixe, 0);
   const totalParInvite = lignes.reduce((s, l) => s + l.parInvite, 0);

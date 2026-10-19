@@ -368,4 +368,16 @@ export const TRADUCTIONS: Record<string, { en: string; ar: string }> = {
   "Événement": { en: "Event", ar: "المناسبة" },
   "Événement professionnel": { en: "Corporate event", ar: "مناسبة مهنية" },
   "× {n} sur la scène": { en: "× {n} on the scene", ar: "× {n} في المشهد" },
+  // Idées sur mesure
+  "Vos idées": { en: "Your ideas", ar: "أفكاركم" },
+  "Objet sur mesure": { en: "Custom item", ar: "عنصر حسب الطلب" },
+  "Une idée qui n'est pas dans le catalogue ? Ajoutez-la et donnez-lui le nom que vous voulez : nous la chiffrons dans votre devis.": { en: "An idea that isn't in the catalogue? Add it and give it any name you like: we'll price it in your quote.", ar: "فكرة غير موجودة في الكتالوج؟ أضيفوها وسمّوها كما تشاؤون: سنحدد سعرها في عرض السعر." },
+  "Espace sur mesure": { en: "Custom area", ar: "مساحة حسب الطلب" },
+  "Une zone à aménager selon votre idée (coin enfants, calèche, scène de spectacle…). Nommez-la : nous la chiffrons dans votre devis.": { en: "An area to set up your way (kids' corner, horse carriage, show stage…). Name it: we'll price it in your quote.", ar: "مساحة تُجهَّز حسب فكرتكم (ركن الأطفال، عربة الخيل، منصة العروض…). سمّوها: سنحدد سعرها في عرض السعر." },
+  "Prix sur devis": { en: "Price on quote", ar: "السعر في عرض السعر" },
+  "sur devis": { en: "on quote", ar: "حسب العرض" },
+  "Donnez-lui le nom de votre choix : nous le chiffrons dans votre devis.": { en: "Give it any name you like: we'll price it in your quote.", ar: "سمّوه كما تشاؤون: سنحدد سعره في عرض السعر." },
+  "Nom de votre idée": { en: "Name of your idea", ar: "اسم فكرتكم" },
+  "Ex. calèche, feu d'artifice, coin enfants…": { en: "E.g. horse carriage, fireworks, kids' corner…", ar: "مثلًا: عربة خيل، ألعاب نارية، ركن الأطفال…" },
+  "Vos idées sur mesure seront chiffrées dans votre devis.": { en: "Your custom ideas will be priced in your quote.", ar: "سيتم تحديد سعر أفكاركم الخاصة في عرض السعر." },
 };

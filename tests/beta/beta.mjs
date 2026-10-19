@@ -852,7 +852,8 @@ await scenario("Admin : demande du jeu → devis ligne par ligne aux prix du cat
   const base = nouvelleBase();
   base.devis_mariage = [{ id: "jeu1", nom: "Salma", prenom: "", email: "salma@example.com", type_evenement: "Mariage", date_mariage: "2026-12-12", lieu: "Rabat", nb_invites: 100,
     services: "DJ / Animation musicale, Décoration, Traiteur", remarques: "Demande créée avec le jeu", statut: "en_attente", created_at: "2026-10-18T12:00:00Z",
-    configuration: { version: 1, type: "mariage", invites: 100, elements: { table_ronde: 10, dj: 1, buffet: 1, arche: 1 }, centres: 10, libelles: { honneur: "Table d'honneur" } } }];
+    configuration: { version: 1, type: "mariage", invites: 100, elements: { table_ronde: 10, dj: 1, buffet: 1, arche: 1, objet_libre: 2 }, centres: 10, libelles: { honneur: "Table d'honneur", objet_libre: "Objet sur mesure" },
+      sur_mesure: [{ nom: "Calèche dorée", quantite: 1 }, { nom: "Feu d'artifice", quantite: 1 }] } }];
   base.catalogue_prestations = [...base.catalogue_prestations,
     { id: "j1", categorie: "decoration", designation: "Table ronde 10 places", description: "Chaises et nappe comprises", unite: "unite", prix_unitaire: 450, actif: true, ordre: 40, jeu_element: "table_ronde" },
     { id: "j2", categorie: "mariage", designation: "DJ / animation musicale", description: null, unite: "forfait", prix_unitaire: 12000, actif: true, ordre: 22, jeu_element: "dj" },
@@ -864,12 +865,13 @@ await scenario("Admin : demande du jeu → devis ligne par ligne aux prix du cat
   verifier(await page.getByText(/Créé avec le jeu/).count(), "la demande du jeu n'est pas signalée");
   await page.getByRole("button", { name: /Faire le devis/ }).first().click(); await page.waitForTimeout(1000);
   const valeurs = await page.getByPlaceholder(/Désignation/).evaluateAll((els) => els.map((e) => e.value));
-  for (const d of ["Table ronde 10 places", "DJ / animation musicale", "Traiteur mariage (menu complet)", "Arche décorative", "Centre de table"]) verifier(valeurs.includes(d), `ligne manquante : ${d}`);
+  for (const d of ["Table ronde 10 places", "DJ / animation musicale", "Traiteur mariage (menu complet)", "Arche décorative", "Centre de table", "Calèche dorée", "Feu d'artifice"]) verifier(valeurs.includes(d), `ligne manquante : ${d}`);
+  verifier(!valeurs.some((v) => /Objet sur mesure/.test(v)), "l'objet sur mesure apparaît aussi comme « sans prix au catalogue »");
   const texte = (await page.locator("body").innerText()).replace(/\s/g, "");
   // 10×450 + 12000 + 100×450 + 4500 + 10×180 = 67 800 HT
   verifier(texte.includes("67800,00"), "total HT attendu 67 800 MAD (prix du catalogue × quantités)");
   await page.screenshot({ path: `${CAPTURES}/7-devis-depuis-jeu.png`, fullPage: true });
-  notes.push("5 lignes créées automatiquement, total HT 67 800 MAD conforme au catalogue");
+  notes.push("5 lignes au prix du catalogue (total HT 67 800 MAD) + 2 idées sur mesure du client (« Calèche dorée », « Feu d'artifice ») à 0, prix à renseigner");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
 });

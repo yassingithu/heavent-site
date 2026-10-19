@@ -47,7 +47,7 @@ export async function envoyerDemandeDevis(d: DemandeDevis): Promise<{ envoye: bo
           typeEvenement: nomType(c), ambiance: nomAmbiance(c), lieu: nomLieu(c),
           invites: c.reglages.invites, places: placesPrevues(c), budget: c.reglages.budget, estimation: b.total,
           options: optionsChoisies(c), services: services(c),
-          lignes: b.lignes.map((l) => ({ libelle: l.libelle, detail: l.detail, total: l.total })),
+          lignes: b.lignes.map((l) => ({ libelle: l.surDevis && l.quantite > 1 ? `${l.quantite} × ${l.libelle}` : l.libelle, detail: l.detail, total: l.total, surDevis: !!l.surDevis })),
           centres: c.centres.actif ? CENTRES_DE_TABLE.nom : null,
           honneur: libelle("honneur", c.reglages.type).nom,
           texte: texteDemande(c, k),
@@ -58,6 +58,8 @@ export async function envoyerDemandeDevis(d: DemandeDevis): Promise<{ envoye: bo
             elements: c.elements.reduce<Record<string, number>>((acc, e) => { acc[e.type] = (acc[e.type] ?? 0) + 1; return acc; }, {}),
             centres: c.centres.actif ? c.elements.filter((e) => e.type === "table_ronde" || e.type === "table_rect").length : 0,
             libelles: Object.fromEntries([...new Set(c.elements.map((e) => e.type))].map((t) => [t, libelle(t, c.reglages.type).nom])),
+            // Idées sur mesure nommées par le visiteur : l'agence fixe leur prix dans le devis
+            sur_mesure: b.lignes.filter((l) => l.surDevis).map((l) => ({ nom: l.libelle, quantite: l.quantite })),
           },
         },
       });

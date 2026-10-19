@@ -1,8 +1,8 @@
 // Scène isométrique : affichage, placement (glisser-déposer ou toucher), déplacement et sélection.
 import { tr } from "./langue";
 import { forwardRef, useEffect, useMemo, useRef, useState, KeyboardEvent, PointerEvent as RPointerEvent, DragEvent } from "react";
-import { TypeElement, libelle } from "./config";
-import { Creation, Element, couleurDe, emprise, palette, placeLibre } from "./logique";
+import { TypeElement } from "./config";
+import { Creation, Element, couleurDe, emprise, nomElement, palette, placeLibre } from "./logique";
 import { DecorArriere, DessinElement, Sol, TH, TW, contourEmprise, pt } from "./dessins";
 
 export type ModeScene = { type: "placer"; element: TypeElement } | { type: "deplacer"; uid: string } | null;
@@ -161,7 +161,7 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
         {sel && <polygon points={contourEmprise(sel.x, sel.y, emprise(sel).w, emprise(sel).h)} fill="#C9A74E" fillOpacity={0.22} stroke="#A8862F" strokeWidth={2} strokeDasharray="6 4" />}
         {mode && !survol && <text x={pt(cols / 2, rows / 2)[0]} y={pt(cols / 2, rows / 2)[1]} textAnchor="middle" fontSize={14} fill="#8A7A58" opacity={0.7} style={{ pointerEvents: "none" }}>{tr("Touchez une zone libre")}</text>}
         {ordre.map((e) => {
-          const { nom } = libelle(e.type, reglages.type);
+          const nom = nomElement(e, reglages.type);
           const enDeplacement = (survol?.ignorer === e.uid) || (mode?.type === "deplacer" && mode.uid === e.uid);
           return (
             <g key={e.uid} data-element={e.type} data-uid={e.uid} data-x={e.x} data-y={e.y} role={lectureSeule ? undefined : "button"} tabIndex={lectureSeule ? undefined : 0}
