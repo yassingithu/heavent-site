@@ -50,3 +50,5 @@ begin
 end $$;
 revoke all on function public.notification_essai() from public, anon;
 grant execute on function public.notification_essai() to authenticated;
+
+-- (appliqué ensuite) Le 1er mot tombe le jour où Imane ouvre sa surprise : départ = min(surprise_vue_le) au lieu du 19/10/2026
