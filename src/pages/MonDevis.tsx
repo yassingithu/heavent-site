@@ -15,7 +15,7 @@ import { CalendarClock, CheckCircle2, Download, FileText, Loader2, MessageCircle
 
 type Etat = "chargement" | "introuvable" | "pret";
 
-const aujourdhuiMaroc = () => new Date(Date.now() + 3600_000).toISOString().slice(0, 10);
+const aujourdhuiMaroc = () => new Date().toISOString().slice(0, 10);
 
 /**
  * Page reçue par le client (lien secret envoyé par e-mail) : il consulte son devis,

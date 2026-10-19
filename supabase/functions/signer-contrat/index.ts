@@ -17,12 +17,12 @@ const FROM = "Heavent People Agency <noreply@heaventagency.com>";
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...corsHeaders } });
 
-/** Début de la mission (heure du Maroc, UTC+1) */
+/** Début de la mission (heure du Maroc = GMT depuis le 20/09/2026) */
 export function debutMission(dates: any[], dateDebut: string): Date {
   const premiere = [...(dates ?? [])].sort((a, b) => String(a.date).localeCompare(String(b.date)))[0];
   const jour = premiere?.date ?? dateDebut;
   const heure = (premiere?.heure_debut ?? "00:00").slice(0, 5);
-  return new Date(`${jour}T${heure}:00+01:00`);
+  return new Date(`${jour}T${heure}:00Z`);
 }
 
 /** Dernier moment pour signer : fin du mois de la dernière date (23:59 heure du Maroc) */
@@ -31,7 +31,7 @@ export function finSignature(dates: any[], dateFin: string): Date {
   const jour = ds[ds.length - 1]?.date ?? dateFin;
   const [a, m] = String(jour).split("-").map(Number);
   const suivant = m === 12 ? `${a + 1}-01` : `${a}-${String(m + 1).padStart(2, "0")}`;
-  return new Date(new Date(`${suivant}-01T00:00:00+01:00`).getTime() - 60 * 1000);
+  return new Date(new Date(`${suivant}-01T00:00:00Z`).getTime() - 60 * 1000);
 }
 
 async function empreinte(texte: string) {
@@ -89,7 +89,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (cle) {
       await new Resend(cle).emails.send({
         from: FROM, to: [ADMIN_EMAIL], subject: `Contrat signé — ${c.staff?.prenom} ${c.staff?.nom}`,
-        html: `<p><b>${c.staff?.prenom} ${c.staff?.nom}</b> a signé son contrat « ${c.evenement ?? c.titre} » le ${new Date(signeLe).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" })}${Date.now() > limite.getTime() ? " (en retard : après le délai de 24 h avant la mission)" : ""}, avec les conditions de la mission.</p><p>Le contrat a été contresigné automatiquement par l'employeur (Imane CHAIGARI, CEO).</p>`,
+        html: `<p><b>${c.staff?.prenom} ${c.staff?.nom}</b> a signé son contrat « ${c.evenement ?? c.titre} » le ${new Date(signeLe).toLocaleString("fr-FR", { timeZone: "UTC" })}${Date.now() > limite.getTime() ? " (en retard : après le délai de 24 h avant la mission)" : ""}, avec les conditions de la mission.</p><p>Le contrat a été contresigné automatiquement par l'employeur (Imane CHAIGARI, CEO).</p>`,
       }).catch(() => {});
     }
     return json({ success: true, signe_le: signeLe });

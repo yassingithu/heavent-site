@@ -13,7 +13,7 @@ create table if not exists public.factures (
   devis_numero text,
   type text not null check (type in ('acompte', 'solde', 'totale')),
   marque text not null default 'heavent',
-  date_emission date not null default ((now() at time zone 'Africa/Casablanca')::date),
+  date_emission date not null default ((now() at time zone 'UTC')::date),
   -- client et événement, figés au moment de l'émission
   client_nom text not null, client_societe text, client_email text, client_telephone text, client_adresse text, client_ice text,
   titre text, date_evenement date, date_fin_evenement date, lieu text,
@@ -62,7 +62,7 @@ begin
     raise exception 'Une facture annulée ne peut pas être rétablie : créez-en une nouvelle.';
   end if;
   if new.statut = 'annulee' and old.statut <> 'annulee' then new.annulee_le := now(); end if;
-  if new.statut = 'payee' and new.payee_le is null then new.payee_le := (now() at time zone 'Africa/Casablanca')::date; end if;
+  if new.statut = 'payee' and new.payee_le is null then new.payee_le := (now() at time zone 'UTC')::date; end if;
   if new.statut = 'a_payer' then new.payee_le := null; new.mode_paiement := null; end if;
   return new;
 end;
@@ -89,7 +89,7 @@ declare
   v_ht numeric(12,2); v_remise numeric(12,2) := 0; v_tva numeric(12,2); v_ttc numeric(12,2);
   v_deductions jsonb := '[]'::jsonb;
   v_ded numeric(12,2) := 0;
-  v_jour date := (now() at time zone 'Africa/Casablanca')::date;
+  v_jour date := (now() at time zone 'UTC')::date;
 begin
   if not (public.is_admin() or coalesce(auth.role(), '') = 'service_role') then
     raise exception 'Accès refusé';

@@ -74,10 +74,10 @@ export function creneauxLibres(base) {
   const p = base.agenda_parametres[0]; if (!p.actif) return [];
   const res = []; const maintenant = Date.now();
   for (let k = 0; k <= p.horizon_jours; k++) {
-    const jour = new Date(maintenant + 3600e3 + k * 864e5).toISOString().slice(0, 10);
+    const jour = new Date(maintenant + k * 864e5).toISOString().slice(0, 10);
     const isodow = ((new Date(jour + "T12:00:00Z").getUTCDay() + 6) % 7) + 1;
     for (const h of base.agenda_horaires.filter((x) => x.jour === isodow)) {
-      const d0 = Date.parse(`${jour}T${h.debut.slice(0, 5)}:00+01:00`), f0 = Date.parse(`${jour}T${h.fin.slice(0, 5)}:00+01:00`);
+      const d0 = Date.parse(`${jour}T${h.debut.slice(0, 5)}:00Z`), f0 = Date.parse(`${jour}T${h.fin.slice(0, 5)}:00Z`);
       for (let d = d0; d + p.duree_minutes * 6e4 <= f0; d += (p.duree_minutes + p.pause_minutes) * 6e4) {
         const f = d + p.duree_minutes * 6e4;
         if (d < maintenant + p.delai_heures * 3600e3) continue;

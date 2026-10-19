@@ -134,7 +134,7 @@ function pageContrat(c: any, s: any, ev: Evenement, agence: InfosAgence | null, 
     <div class="agence">
       <div class="etiquette">Pour l'employeur</div>
       ${signatureEmployeurHtml(54, c.employeur_signe_le
-        ? `Signé électroniquement à Rabat le ${esc(new Date(c.employeur_signe_le).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" }))}`
+        ? `Signé électroniquement à Rabat le ${esc(new Date(c.employeur_signe_le).toLocaleString("fr-FR", { timeZone: "UTC" }))}`
         : `Fait à Rabat, le ${aujourdhui}`)}
     </div>
     <div class="client"${c.signe_le ? ' style="border:1px solid #cfe8d5;background:#f6fbf7"' : ""}>
@@ -142,7 +142,7 @@ function pageContrat(c: any, s: any, ev: Evenement, agence: InfosAgence | null, 
       <div>${esc(s.prenom ?? "")} ${esc(s.nom ?? "")}</div>
       ${c.signe_le
         ? `<img src="${esc(c.signature_image ?? "")}" alt="Signature" style="height:58px;margin:4px 0 2px;display:block">
-           <div style="font-size:9.5px;color:#2f6b3d">Lu et approuvé — signé électroniquement par ${esc(c.signature_nom ?? "")}<br>le ${esc(new Date(c.signe_le).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" }))}${c.signature_preuve?.empreinte_contenu ? ` · réf. ${esc(String(c.signature_preuve.empreinte_contenu).slice(0, 12))}` : ""}</div>`
+           <div style="font-size:9.5px;color:#2f6b3d">Lu et approuvé — signé électroniquement par ${esc(c.signature_nom ?? "")}<br>le ${esc(new Date(c.signe_le).toLocaleString("fr-FR", { timeZone: "UTC" }))}${c.signature_preuve?.empreinte_contenu ? ` · réf. ${esc(String(c.signature_preuve.empreinte_contenu).slice(0, 12))}` : ""}</div>`
         : `<div style="margin-top:6px">Signature précédée de la mention<br>« Lu et approuvé ».</div>`}
     </div>
   </div>
@@ -164,7 +164,7 @@ function pageConditions(c: any, s: any, ev: Evenement, agence: any) {
         ? `<div><div style="font-size:10px;color:#777">Lu et approuvé par le / la salarié(e)</div>
             <img src="${esc(c.signature_image ?? "")}" alt="" style="height:40px;display:block;margin:4px 0 2px">
             <div style="font-weight:600;color:#141414">${esc(c.signature_nom ?? "")}</div>
-            <div style="font-size:9.5px;color:#2f6b3d">Conditions acceptées électroniquement le ${esc(new Date(c.conditions_acceptees_le ?? c.signe_le).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" }))}</div></div>`
+            <div style="font-size:9.5px;color:#2f6b3d">Conditions acceptées électroniquement le ${esc(new Date(c.conditions_acceptees_le ?? c.signe_le).toLocaleString("fr-FR", { timeZone: "UTC" }))}</div></div>`
         : `<div>Paraphe du / de la salarié(e) : ……………………</div>`}
     </div>
   </div>

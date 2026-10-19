@@ -10,7 +10,7 @@ export type LangueRdv = "fr" | "en" | "ar";
 type TypeRdv = "agence" | "telephone" | "visio";
 interface Creneau { debut: string; fin: string }
 
-const TZ = "Africa/Casablanca";
+const TZ = "UTC"; // heure du Maroc : GMT depuis le 20 septembre 2026 (fin du GMT+1)
 const LOCALES: Record<LangueRdv, string> = { fr: "fr-FR", en: "en-GB", ar: "ar-MA" };
 
 const TXT = {

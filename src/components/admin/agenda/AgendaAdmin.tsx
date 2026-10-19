@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Ban, CalendarPlus, Check, Copy, Mail, MessageCircle, Phone, Plus, Save, Trash2, X } from "lucide-react";
 
 /** Onglet « Agenda » : rendez-vous pris par les clients, disponibilités de la semaine, jours bloqués, abonnement calendrier. */
-const TZ = "Africa/Casablanca";
+const TZ = "UTC"; // heure du Maroc : GMT depuis le 20 septembre 2026 (fin du GMT+1)
 const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 const TYPES: Record<string, string> = { agence: "À l'agence", telephone: "Téléphone", visio: "Visio" };
 const SOURCES: Record<string, string> = { devis: "depuis son devis", contact: "page Contact", jeu: "jeu", site: "site" };

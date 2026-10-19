@@ -14,15 +14,15 @@ const DEUX_JOURS = 47 * 3600 * 1000; // un peu moins de 48 h pour ne pas sauter 
 const trier = (ds: any[]) => [...(ds ?? [])].sort((a, b) => String(a.date).localeCompare(String(b.date)));
 function debutMission(c: any) {
   const p = trier(c.dates)[0];
-  return new Date(`${p?.date ?? c.date_debut}T${(p?.heure_debut ?? "00:00").slice(0, 5)}:00+01:00`);
+  return new Date(`${p?.date ?? c.date_debut}T${(p?.heure_debut ?? "00:00").slice(0, 5)}:00Z`);
 }
 function finSignature(c: any) {
   const ds = trier(c.dates);
   const [a, m] = String(ds[ds.length - 1]?.date ?? c.date_fin ?? c.date_debut).split("-").map(Number);
   const suivant = m === 12 ? `${a + 1}-01` : `${a}-${String(m + 1).padStart(2, "0")}`;
-  return new Date(new Date(`${suivant}-01T00:00:00+01:00`).getTime() - 60 * 1000);
+  return new Date(new Date(`${suivant}-01T00:00:00Z`).getTime() - 60 * 1000);
 }
-const fr = (d: Date) => d.toLocaleString("fr-FR", { timeZone: "Africa/Casablanca", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+const fr = (d: Date) => d.toLocaleString("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 const jourFr = (d: string) => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

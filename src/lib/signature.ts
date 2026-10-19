@@ -13,12 +13,12 @@ interface ContratSignable {
 const lesDates = (c: ContratSignable) =>
   ((Array.isArray(c.dates) ? c.dates : []) as { date: string; heure_debut?: string | null }[]).slice().sort((a, b) => a.date.localeCompare(b.date));
 
-/** Début de la mission (heure du Maroc, UTC+1). */
+/** Début de la mission (heure du Maroc = GMT depuis le 20/09/2026). */
 export function debutMission(c: ContratSignable): Date {
   const premiere = lesDates(c)[0];
   const jour = premiere?.date ?? c.date_debut;
   const heure = (premiere?.heure_debut ?? "00:00").slice(0, 5);
-  return new Date(`${jour}T${heure}:00+01:00`);
+  return new Date(`${jour}T${heure}:00Z`);
 }
 
 /** Délai conseillé : 24 h avant la mission. */
@@ -30,7 +30,7 @@ export function finSignature(c: ContratSignable): Date {
   const jour = ds[ds.length - 1]?.date ?? c.date_fin ?? c.date_debut;
   const [a, m] = jour.split("-").map(Number);
   const suivant = m === 12 ? `${a + 1}-01` : `${a}-${String(m + 1).padStart(2, "0")}`;
-  return new Date(new Date(`${suivant}-01T00:00:00+01:00`).getTime() - 60 * 1000); // dernier jour 23:59
+  return new Date(new Date(`${suivant}-01T00:00:00Z`).getTime() - 60 * 1000); // dernier jour 23:59
 }
 
 export function etatSignature(c: ContratSignable, maintenant = new Date()): EtatSignature {
@@ -43,7 +43,7 @@ export function etatSignature(c: ContratSignable, maintenant = new Date()): Etat
 export const peutSigner = (c: ContratSignable) => ["a_signer", "en_retard"].includes(etatSignature(c));
 
 export const dateHeureFr = (d: Date | string) =>
-  new Date(d).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca", weekday: "short", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+  new Date(d).toLocaleString("fr-FR", { timeZone: "UTC", weekday: "short", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 
 /** Petit badge texte + couleurs pour les listes. */
 export const BADGE_SIGNATURE: Record<EtatSignature, { texte: string; classe: string }> = {

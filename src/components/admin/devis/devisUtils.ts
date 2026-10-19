@@ -135,7 +135,7 @@ export function devisDepuisBase(d: any, lignes: any[]): DevisForm {
 export const lienClientDevis = (token?: string | null) => (token ? `https://heaventagency.com/mon-devis/${token}` : "");
 
 export const dateHeureFr = (iso?: string | null) =>
-  iso ? new Date(iso).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+  iso ? new Date(iso).toLocaleString("fr-FR", { timeZone: "UTC", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
 
 export const r2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 

@@ -5,9 +5,9 @@ export const langueDe = (l: unknown): Langue => (l === "en" || l === "ar" ? l : 
 
 const LOCALES: Record<Langue, string> = { fr: "fr-FR", en: "en-GB", ar: "ar-MA" };
 export const quand = (iso: string, l: Langue = "fr") =>
-  new Date(iso).toLocaleString(LOCALES[l], { timeZone: "Africa/Casablanca", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+  new Date(iso).toLocaleString(LOCALES[l], { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 export const heure = (iso: string, l: Langue = "fr") =>
-  new Date(iso).toLocaleTimeString(LOCALES[l], { timeZone: "Africa/Casablanca", hour: "2-digit", minute: "2-digit" });
+  new Date(iso).toLocaleTimeString(LOCALES[l], { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
 
 export const TYPES: Record<string, Record<Langue, string>> = {
   agence: { fr: "à l'agence", en: "at our office", ar: "في الوكالة" },
@@ -81,7 +81,7 @@ export interface EvenementIcs { uid: string; debut: string; fin: string; titre: 
 export function calendrierIcs(evenements: EvenementIcs[], nom = "Heavent — rendez-vous", methode = "PUBLISH") {
   const maintenant = icsDate(new Date().toISOString());
   const lignes = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Heavent People Agency//Agenda//FR", "CALSCALE:GREGORIAN", `METHOD:${methode}`,
-    `X-WR-CALNAME:${icsTexte(nom)}`, "X-WR-TIMEZONE:Africa/Casablanca", "REFRESH-INTERVAL;VALUE=DURATION:PT1H", "X-PUBLISHED-TTL:PT1H"];
+    `X-WR-CALNAME:${icsTexte(nom)}`, "X-WR-TIMEZONE:UTC", "REFRESH-INTERVAL;VALUE=DURATION:PT1H", "X-PUBLISHED-TTL:PT1H"];
   for (const e of evenements) {
     lignes.push("BEGIN:VEVENT", `UID:${e.uid}@heaventagency.com`, `DTSTAMP:${maintenant}`, `DTSTART:${icsDate(e.debut)}`, `DTEND:${icsDate(e.fin)}`,
       `SUMMARY:${icsTexte(e.titre)}`);

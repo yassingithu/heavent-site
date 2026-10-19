@@ -537,10 +537,10 @@ await scenario("Agenda : réservation d'un créneau (devis + Contact), dispos et
   await page.getByTestId("ajouter-plage-7").click();
   await page.getByTestId("enregistrer-dispos").click(); await page.waitForTimeout(1200);
   verifier(base.agenda_horaires.length === avant + 1 && base.agenda_horaires.some((h) => h.jour === 7), "la plage du dimanche n'est pas enregistrée");
-  const demain = new Date(Date.now() + 3600e3 + 3 * 864e5).toISOString().slice(0, 10);
+  const demain = new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
   await page.getByTestId("bloquer-du").fill(demain);
   await page.getByTestId("bloquer").click(); await page.waitForTimeout(1000);
-  verifier(base.agenda_indisponibilites.length === 1 && base.agenda_indisponibilites[0].debut.endsWith("T23:00:00.000Z"), "le jour bloqué est mal enregistré : " + JSON.stringify(base.agenda_indisponibilites[0]));
+  verifier(base.agenda_indisponibilites.length === 1 && base.agenda_indisponibilites[0].debut.endsWith("T00:00:00.000Z"), "le jour bloqué est mal enregistré : " + JSON.stringify(base.agenda_indisponibilites[0]));
   await page.getByTestId("lien-calendrier").click(); await page.waitForTimeout(600);
   verifier(await page.getByText("s'abonner en un clic").count(), "pas de lien d'abonnement au calendrier");
   await page.screenshot({ path: `${CAPTURES}/17-agenda-admin.png`, fullPage: true });
@@ -548,7 +548,7 @@ await scenario("Agenda : réservation d'un créneau (devis + Contact), dispos et
   verifier(base.rendez_vous[0].statut === "annule" && base.appelsFonctions.some((a) => a.nom === "prendre-rdv" && a.corps.action === "annuler" && a.corps.motif === "Imprévu, désolée"), "l'annulation n'est pas faite");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
-  notes.push("admin : rendez-vous visible, plage du dimanche ajoutée, jour bloqué (minuit heure du Maroc), lien calendrier, annulation avec message au client");
+  notes.push("admin : rendez-vous visible, plage du dimanche ajoutée, jour bloqué (minuit heure du Maroc, GMT), lien calendrier, annulation avec message au client");
 });
 
 // 3 sexies. Paie : une fiche dont toutes les missions ont été supprimées disparaît au recalcul

@@ -1,5 +1,5 @@
 -- Agenda de rendez-vous : l'agence règle ses disponibilités dans l'admin, le client choisit un créneau libre
--- (depuis son devis ou la page Contact). Heure du Maroc (Africa/Casablanca, y compris le passage à GMT pendant le ramadan).
+-- (depuis son devis ou la page Contact). Heure du Maroc = GMT (UTC) depuis le 20 septembre 2026 (fin du GMT+1).
 
 create table if not exists public.agenda_parametres (
   id int primary key default 1 check (id = 1),
@@ -69,7 +69,7 @@ create or replace function public.agenda_creneaux()
 returns table (debut timestamptz, fin timestamptz)
 language sql stable security definer set search_path = public as $$
   with p as (select * from public.agenda_parametres where id = 1 and actif),
-  aujourdhui as (select (now() at time zone 'Africa/Casablanca')::date as j),
+  aujourdhui as (select (now() at time zone 'UTC')::date as j),
   jours as (
     select g::date as jour from p, aujourdhui a, generate_series(a.j, a.j + p.horizon_jours, interval '1 day') g
   ),
@@ -78,7 +78,7 @@ language sql stable security definer set search_path = public as $$
     from jours j join public.agenda_horaires h on h.jour = extract(isodow from j.jour)
   ),
   creneaux as (
-    select ((pl.plage_debut + make_interval(mins => n * (p.duree_minutes + p.pause_minutes))) at time zone 'Africa/Casablanca') as debut,
+    select ((pl.plage_debut + make_interval(mins => n * (p.duree_minutes + p.pause_minutes))) at time zone 'UTC') as debut,
            p.duree_minutes
     from plages pl, p, generate_series(0, 96) n
     where pl.plage_debut + make_interval(mins => n * (p.duree_minutes + p.pause_minutes) + p.duree_minutes) <= pl.plage_fin

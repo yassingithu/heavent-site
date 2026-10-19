@@ -71,7 +71,7 @@ serve(async (req) => {
     if (!d || d.statut === "annule") return json({ error: "Ce devis n'est plus disponible. Contactez-nous." }, 404);
     if (d.signe_le) return json({ error: "Ce devis a déjà été signé." }, 409);
     if (d.statut === "refuse") return json({ error: "Ce devis a été refusé. Contactez-nous pour une nouvelle proposition." }, 409);
-    const aujourdhui = new Date(Date.now() + 3600_000).toISOString().slice(0, 10); // heure du Maroc
+    const aujourdhui = new Date().toISOString().slice(0, 10); // heure du Maroc
     if (d.date_validite && d.date_validite < aujourdhui) return json({ error: "Ce devis a expiré. Contactez-nous pour le renouveler." }, 410);
 
     const { data: lignes } = await db.from("devis_lignes").select("designation, quantite, duree, unite, prix_unitaire, remise_pct").eq("devis_id", d.id).order("ordre");
@@ -100,7 +100,7 @@ serve(async (req) => {
         from: FROM, to: [ADMIN_EMAIL], reply_to: d.client_email || undefined,
         subject: `✅ Devis ${d.numero} accepté et signé — ${d.client_nom}`,
         html: `<p><b>${e(d.client_nom)}</b>${d.client_societe ? ` (${e(d.client_societe)})` : ""} a signé en ligne le devis <b>${e(d.numero)}</b> « ${e(d.titre ?? "")} »
-          le ${new Date(signeLe).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" })}.</p>
+          le ${new Date(signeLe).toLocaleString("fr-FR", { timeZone: "UTC" })}.</p>
           <p>Total TTC : <b>${mad(d.total_ttc)}</b>${acompte ? ` · acompte attendu : <b>${mad(acompte)}</b>` : ""}</p>
           ${facture ? `<p>🧾 La facture d'acompte <b>${e(facture.numero)}</b> a été créée et envoyée au client. Pense à la marquer « payée » à réception du virement (onglet Devis → Factures).</p>` : ""}
           <p>Le devis est passé en « Accepté » dans l'administration ; la signature figure sur le PDF.</p>`,

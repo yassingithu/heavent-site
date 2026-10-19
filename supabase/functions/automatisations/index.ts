@@ -49,7 +49,7 @@ serve(async (req) => {
   const essai = new URL(req.url).searchParams.get("essai") === "1";
   const resend = new Resend(Deno.env.get("RESEND_API_KEY") ?? "");
   const maintenant = Date.now();
-  const aujourdhui = new Date(maintenant + 3600_000).toISOString().slice(0, 10);
+  const aujourdhui = new Date(maintenant).toISOString().slice(0, 10);
   const rapport: { relances: string[]; avis: string[]; factures: string[]; rappels: string[] } = { relances: [], avis: [], factures: [], rappels: [] };
 
   // 1. Relances
@@ -87,8 +87,8 @@ serve(async (req) => {
     }
   }
   // 3. Factures de solde, 2 jours après la fin de l'événement (fenêtre de 30 jours)
-  const ilYa2Jours = new Date(maintenant + 3600_000 - 2 * JOUR).toISOString().slice(0, 10);
-  const debutFenetre = new Date(maintenant + 3600_000 - 30 * JOUR).toISOString().slice(0, 10);
+  const ilYa2Jours = new Date(maintenant - 2 * JOUR).toISOString().slice(0, 10);
+  const debutFenetre = new Date(maintenant - 30 * JOUR).toISOString().slice(0, 10);
   const { data: aFacturer } = await db.from("devis").select("id, numero, client_nom, titre, date_evenement, date_fin_evenement, total_ttc, factures(type, statut)").eq("statut", "accepte").gt("total_ttc", 0);
   const creees: any[] = [];
   for (const d of aFacturer ?? []) {
@@ -113,7 +113,7 @@ serve(async (req) => {
     }).catch(() => {});
   }
   // 4. Rappel des rendez-vous du lendemain
-  const demain = new Date(maintenant + 3600_000 + JOUR).toISOString().slice(0, 10);
+  const demain = new Date(maintenant + JOUR).toISOString().slice(0, 10);
   const { data: rdvDemain } = await db.from("rendez_vous").select("*").eq("statut", "confirme").is("rappel_envoye_le", null).not("client_email", "is", null)
     .gte("debut", new Date(maintenant + 6 * 3600_000).toISOString()).lte("debut", new Date(maintenant + 48 * 3600_000).toISOString());
   if (rdvDemain?.length) {
@@ -121,7 +121,7 @@ serve(async (req) => {
     const { data: agc } = await db.from("parametres_agence").select("adresse, ville").eq("id", 1).maybeSingle();
     const adresse = pa?.adresse?.trim() || [agc?.adresse, agc?.ville].filter(Boolean).join(", ") || null;
     for (const r of rdvDemain) {
-      const jourRdv = new Date(new Date(r.debut).getTime() + 3600_000).toISOString().slice(0, 10);
+      const jourRdv = new Date(r.debut).toISOString().slice(0, 10);
       if (jourRdv !== demain) continue;
       if (!essai) {
         const l = langueDe(r.langue);
