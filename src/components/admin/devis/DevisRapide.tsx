@@ -18,6 +18,7 @@ import {
 import { telechargerDevisPdf } from "./devisPdf";
 import CataloguePrestations from "./CataloguePrestations";
 import ParametresAgence from "./ParametresAgence";
+import EspaceMariesAdmin from "./EspaceMariesAdmin";
 import EquipeEvenement from "@/components/admin/equipe/EquipeEvenement";
 import { devisModifie } from "./DevisParStatut";
 import { FacturesDevis, ListeFactures } from "./Factures";
@@ -617,6 +618,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 clientEmail={form.client_email}
                 clientNom={form.client_societe || form.client_nom}
               />
+
+              {form.type === "mariage" && <EspaceMariesAdmin devisId={form.id} token={form.lien_token} statut={form.statut} />}
 
               <Card>
                 <CardHeader className="space-y-3">

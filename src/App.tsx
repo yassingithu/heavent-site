@@ -16,6 +16,8 @@ const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Admin = lazy(() => import("./pages/Admin"));
+const EspaceMaries = lazy(() => import("./pages/EspaceMaries"));
+const Rsvp = lazy(() => import("./pages/Rsvp"));
 const AdminAuth = lazy(() => import("./pages/AdminAuth"));
 const Auth = lazy(() => import("./pages/Auth"));
 const StaffDashboard = lazy(() => import("./pages/StaffDashboard"));
@@ -34,7 +36,7 @@ const queryClient = new QueryClient();
 const App = () => {
   // L'écran d'accueil animé ne s'affiche qu'une fois par visite (pas à chaque changement de page ni rechargement)
   const [showSplash, setShowSplash] = useState(() => {
-    try { return !(window as unknown as { __pagePregeneree?: boolean }).__pagePregeneree && !navigator.userAgent.includes("HeaventAdminApp") && !sessionStorage.getItem("heavent-splash-vu") && !window.location.pathname.startsWith("/admin") && !window.location.pathname.startsWith("/staff"); } catch { return false; }
+    try { return !(window as unknown as { __pagePregeneree?: boolean }).__pagePregeneree && !navigator.userAgent.includes("HeaventAdminApp") && !sessionStorage.getItem("heavent-splash-vu") && !window.location.pathname.startsWith("/admin") && !window.location.pathname.startsWith("/staff") && !window.location.pathname.startsWith("/rsvp/"); } catch { return false; }
   });
   const finSplash = () => { try { sessionStorage.setItem("heavent-splash-vu", "1"); } catch { /* navigation privée */ } setShowSplash(false); };
 
@@ -63,6 +65,8 @@ const App = () => {
               <Route path="/mentions-legales" element={<MentionsLegales />} />
               <Route path="/cree-ton-evenement" element={<CreeTonEvenement />} />
               <Route path="/mon-devis/:token" element={<MonDevis />} />
+              <Route path="/mon-mariage/:token" element={<EspaceMaries />} />
+              <Route path="/rsvp/:jeton" element={<Rsvp />} />
               <Route path="/realisations" element={<Realisations />} />
               {PAGES_LOCALES.map((p) => <Route key={p.chemin} path={p.chemin} element={<PageLocale page={p} />} />)}
               <Route path="/rgpd" element={<Navigate to="/politique-confidentialite" replace />} />

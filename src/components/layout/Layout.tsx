@@ -45,6 +45,10 @@ const Layout = ({ children }: LayoutProps) => {
     );
   }
 
+  // Page de réponse d'un invité : une carte d'invitation, sans menu du site
+  // L'administration a son propre en-tête (pas de menu ni de pied de page du site)
+  if (pathname.startsWith("/rsvp/") || pathname === "/admin" || pathname === "/admin/") return <main>{children}</main>;
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />

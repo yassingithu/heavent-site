@@ -365,7 +365,7 @@ await scenario("Admin : bilan de l'activité, puis réalisations en photos publi
   await connecter(page, BASE, ADMIN, "/admin");
   await page.getByRole("tab", { name: /Bilan/ }).click(); await page.waitForTimeout(1200);
   const bilan = await page.getByTestId("tableau-de-bord").innerText();
-  verifier(/Demandes ce mois-ci\s*2/.test(bilan), "les 2 demandes du mois ne sont pas comptées");
+  verifier(/Demandes ce mois-ci\s*2/i.test(bilan), "les 2 demandes du mois ne sont pas comptées");
   verifier(bilan.replace(/\s/g, "").includes("60000MAD"), "le chiffre signé du mois (60 000 MAD) n'apparaît pas");
   verifier(bilan.includes("Mariage Salma & Karim"), "l'événement confirmé à venir n'est pas listé");
   verifier(bilan.includes("Société Atlas"), "le devis sans réponse depuis 7 jours n'est pas listé");
@@ -659,6 +659,93 @@ await scenario("Avis client : notes du service et des crews, avis Google, notes 
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
   notes.push("admin : avis 5/5 visible dans le devis, notes ★ des crews, équipe reprise en 1 clic sur le nouveau devis du même client");
+});
+
+// 3 septendecies. Espace mariés
+await scenario("Espace mariés : check-list, budget, programme, invités qui répondent en ligne, plan de table, vue agence", async (notes) => {
+  const base = nouvelleBase();
+  const dans60 = new Date(Date.now() + 60 * 864e5).toISOString().slice(0, 10);
+  const TOKEN = "77777777-8888-9999-aaaa-bbbbbbbbbbbb";
+  base.devis = [
+    { id: "dvm", numero: "DEV-2026-0180", type: "mariage", marque: "heavent", client_nom: "Salma Idrissi", client_email: "salma@example.com", titre: "Mariage Salma", statut: "accepte", total_ttc: 30000, remise_globale_pct: 0, taux_tva: 20, acompte_pct: 50, date_emission: "2026-10-01", date_validite: "2099-12-31", date_evenement: dans60, lieu: "Palais Rabat", lien_token: TOKEN, signe_le: "2026-10-02T10:00:00Z", relances: 0 },
+  ];
+  base.devis_lignes = [{ id: "lm", devis_id: "dvm", ordre: 0, designation: "Hôtesses", description: null, quantite: 4, duree: 6, unite: "heure", prix_unitaire: 150, remise_pct: 0 }];
+
+  const c = await contexte(navigateur, base, "salma@example.com", { mobile: true });
+  c.page.on("dialog", (d) => d.accept());
+  await c.page.goto(`${BASE}/mon-devis/${TOKEN}`); await c.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await c.page.reload(); await c.page.waitForTimeout(1500);
+  await c.page.getByTestId("lien-espace-maries").tap(); await c.page.waitForTimeout(1800);
+  verifier(await c.page.getByTestId("espace-maries").isVisible(), "l'espace mariés ne s'ouvre pas depuis le devis");
+  verifier(/\b(59|60)\b/.test(await c.page.getByTestId("compte-a-rebours").innerText()), "le compte à rebours est faux");
+  await c.page.getByTestId("noms-maries").fill("Salma & Youssef");
+  // Check-list : modèle pré-rempli, cocher une tâche, en ajouter une
+  const taches = c.page.getByTestId("checklist").getByRole("button", { name: "Marquer comme fait" });
+  verifier(await taches.count() >= 15, "la check-list n'est pas pré-remplie");
+  await taches.first().tap();
+  await c.page.getByTestId("nouvelle-tache-1m").fill("Choisir les dragées"); await c.page.getByTestId("nouvelle-tache-1m").press("Enter");
+  // Budget
+  await c.page.getByTestId("onglet-budget").tap();
+  await c.page.getByTestId("budget-total").fill("100000");
+  const montants = c.page.getByTestId("budget").locator("tbody tr").first().locator("input[inputmode=decimal]");
+  await montants.nth(0).fill("40000"); await montants.nth(2).fill("10000");
+  verifier(/40\s000/.test(await c.page.getByTestId("budget-engage").innerText()), "le budget engagé n'est pas calculé");
+  // Programme
+  await c.page.getByTestId("onglet-programme").tap();
+  verifier(await c.page.getByTestId("programme").locator("li").count() >= 6, "le programme du jour J n'est pas pré-rempli");
+  // Invités
+  await c.page.getByTestId("onglet-invites").tap();
+  for (const [nom, nb] of [["Famille Benali", "4"], ["Karim Alaoui", "2"], ["Nadia Tazi", "1"]]) {
+    await c.page.getByTestId("invite-nom").fill(nom); await c.page.getByTestId("invite-nb").fill(nb); await c.page.getByTestId("ajouter-invite").tap(); await c.page.waitForTimeout(400);
+  }
+  verifier(base.invites_mariage.length === 3, "les invités ne sont pas enregistrés");
+  const wa = await c.page.getByRole("link", { name: /Envoyer l'invitation à Famille Benali/ }).getAttribute("href");
+  verifier(decodeURIComponent(wa).includes(`/rsvp/${base.invites_mariage[0].jeton}`) && decodeURIComponent(wa).includes("Salma & Youssef"), "le message WhatsApp ne contient pas le lien personnel");
+  await c.page.waitForTimeout(1200);
+  const e = base.espace_maries[0];
+  verifier(e.noms === "Salma & Youssef" && e.budget_total === 100000 && e.checklist.some((t) => t.titre === "Choisir les dragées") && e.checklist.filter((t) => t.fait).length === 1, "l'espace n'est pas enregistré automatiquement : " + JSON.stringify({ noms: e.noms, total: e.budget_total }));
+  await c.ctx.close();
+
+  // L'invité répond depuis son lien
+  const g = await contexte(navigateur, base, null, { mobile: true });
+  await g.page.goto(`${BASE}/rsvp/${base.invites_mariage[0].jeton}`); await g.page.waitForTimeout(1500);
+  verifier(/Salma & Youssef/.test(await g.page.getByTestId("rsvp-noms").innerText()), "la page invité n'affiche pas les mariés");
+  verifier(!(await g.page.locator("header").count()), "la page invité affiche le menu du site");
+  await g.page.getByTestId("rsvp-oui").tap();
+  await g.page.getByRole("button", { name: "-" }).tap();
+  await g.page.locator("textarea").fill("Un enfant allergique aux fruits à coque");
+  await g.page.getByTestId("rsvp-envoyer").tap(); await g.page.waitForTimeout(800);
+  verifier(await g.page.getByTestId("rsvp-merci").isVisible(), "pas de confirmation pour l'invité");
+  verifier(base.invites_mariage[0].reponse === "oui" && base.invites_mariage[0].nb_confirmes === 3, "la réponse de l'invité n'est pas enregistrée");
+  await g.page.screenshot({ path: `${CAPTURES}/22-rsvp-invite.png`, fullPage: true });
+  await g.page.goto(`${BASE}/rsvp/${base.invites_mariage[1].jeton}`); await g.page.waitForTimeout(1200);
+  await g.page.getByTestId("rsvp-non").tap(); await g.page.getByTestId("rsvp-envoyer").tap(); await g.page.waitForTimeout(600);
+  verifier(!g.erreurs.length, "erreurs JavaScript (invité) : " + g.erreurs.join(" ; "));
+  await g.ctx.close();
+
+  // Plan de table
+  const c2 = await contexte(navigateur, base, "salma@example.com");
+  await c2.page.goto(`${BASE}/mon-mariage/${TOKEN}`); await c2.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await c2.page.reload(); await c2.page.waitForTimeout(1500);
+  verifier(/3 \/ 4/.test(await c2.page.getByText("Invités confirmés").locator("..").innerText()), "le résumé des invités confirmés est faux");
+  await c2.page.getByTestId("onglet-tables").click();
+  await c2.page.getByTestId("table-nom").fill("Table d'honneur"); await c2.page.getByTestId("ajouter-table").click(); await c2.page.waitForTimeout(900);
+  const options = await c2.page.getByTestId("placer-invite").locator("option").allInnerTexts();
+  verifier(!options.some((o) => o.includes("Karim")), "un invité absent est proposé au plan de table");
+  await c2.page.getByTestId("placer-invite").selectOption({ label: "Famille Benali (3)" }); await c2.page.waitForTimeout(800);
+  verifier(/3\/10/.test(await c2.page.getByTestId("table-carte").innerText()) && base.invites_mariage[0].table_id === base.espace_maries[0].tables[0].id, "l'invité n'est pas placé à la table");
+  await c2.page.screenshot({ path: `${CAPTURES}/23-plan-de-table.png`, fullPage: true });
+  verifier(!c2.erreurs.length, "erreurs JavaScript (mariés) : " + c2.erreurs.join(" ; "));
+  await c2.ctx.close();
+
+  // Vue agence
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(800);
+  await page.getByText("Mariage Salma").first().click(); await page.waitForTimeout(1800);
+  const vue = await page.getByTestId("espace-maries-admin").innerText();
+  verifier(/3\s*personnes confirmées/.test(vue) && /Entrée des mariés/.test(vue) && /allergique/.test(vue), "l'agence ne voit pas l'espace mariés : " + vue.slice(0, 200));
+  verifier(!erreurs.length, "erreurs JavaScript (admin) : " + erreurs.join(" ; "));
+  await ctx.close();
+  notes.push("mariés : check-list pré-remplie, budget 40 000 / 100 000, programme, 3 invités avec lien WhatsApp personnel ; invité : réponse « oui, 3 personnes » + allergie, un autre « non » ; plan de table sans les absents ; agence : résumé, programme et remarques dans le devis");
 });
 
 // 3 sexdecies. Confiance + pages villes / services

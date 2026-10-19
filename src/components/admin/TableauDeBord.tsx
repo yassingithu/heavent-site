@@ -50,8 +50,8 @@ function Tuile({ titre, valeur, detail, testId }: { titre: string; valeur: strin
   return (
     <Card data-testid={testId}>
       <CardContent className="p-4">
-        <div className="text-xs font-medium text-muted-foreground">{titre}</div>
-        <div className="text-2xl font-semibold mt-1">{valeur}</div>
+        <div className="text-[11px] uppercase tracking-[0.14em] font-semibold text-[#8C6D22]">{titre}</div>
+        <div className="font-serif text-3xl mt-1 text-[#141414]">{valeur}</div>
         {detail && <div className="text-xs text-muted-foreground mt-0.5">{detail}</div>}
       </CardContent>
     </Card>
@@ -120,7 +120,7 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onO
 
       <div className="grid lg:grid-cols-3 gap-4">
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">Prochains événements confirmés</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="font-serif text-lg font-normal">Prochains événements confirmés</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
             {s.aVenir.length === 0 && <p className="text-muted-foreground">Aucun événement confirmé à venir.</p>}
             {s.aVenir.slice(0, 6).map((d) => (
@@ -132,7 +132,7 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onO
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">Devis sans réponse depuis 5 jours ou plus</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="font-serif text-lg font-normal">Devis sans réponse depuis 5 jours ou plus</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
             {s.sansReponse.length === 0 && <p className="text-muted-foreground">Tous les clients ont répondu ou ont été relancés récemment.</p>}
             {s.sansReponse.slice(0, 6).map((d) => (
@@ -145,7 +145,7 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onO
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">Choix des visiteurs dans le jeu</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="font-serif text-lg font-normal">Choix des visiteurs dans le jeu</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm" data-testid="choix-jeu">
             <p className="text-xs text-muted-foreground">{s.jeu} demande{s.jeu > 1 ? "s" : ""} envoyée{s.jeu > 1 ? "s" : ""} depuis « Crée ton événement ».</p>
             {s.top.map((t) => (

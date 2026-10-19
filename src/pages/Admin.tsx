@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X } from "lucide-react";
+import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -941,77 +941,68 @@ const Admin = () => {
   }
 
   return (
+    <div className="admin-theme min-h-screen bg-[#FAF7EE]">
     <div className="container mx-auto px-3 py-4 sm:p-6">
       <Seo noindex />
-      {/* En-tête avec déconnexion */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 sm:mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-1">Administration</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Gestion complète du personnel et des demandes</p>
-        </div>
-        <div className="flex items-center justify-between sm:justify-end gap-3 min-w-0">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
-            <Shield className="h-4 w-4 shrink-0" />
-            <span className="truncate">{user?.email}</span>
+      {/* En-tête */}
+      <header className="relative overflow-hidden rounded-3xl bg-[#141414] text-white px-5 sm:px-8 py-6 sm:py-7 mb-4 sm:mb-6">
+        <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_10%_0%,#C8B560_0,transparent_40%),radial-gradient(circle_at_95%_100%,#A8933F_0,transparent_35%)]" />
+        <div className="relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+          <div className="space-y-1">
+            <p className="uppercase tracking-[0.3em] text-[10px] sm:text-[11px] text-[#E4D49A]">Heavent People Agency</p>
+            <h1 className="font-serif text-3xl sm:text-4xl">Administration</h1>
+            <p className="text-sm text-white/70 first-letter:uppercase">{new Date().toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={handleSignOut} className="shrink-0">
-            <LogOut className="h-4 w-4 mr-2" />
-            Déconnexion
-          </Button>
+          <div className="flex flex-col sm:items-end gap-3 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 text-xs text-white/70 min-w-0"><Shield className="h-3.5 w-3.5 shrink-0 text-[#E4D49A]" /><span className="truncate max-w-[220px]">{user?.email}</span></span>
+              <a href="/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 min-h-9 text-xs hover:bg-white/10"><Globe className="h-3.5 w-3.5" /> Voir le site</a>
+              <button onClick={handleSignOut} className="inline-flex items-center gap-1.5 rounded-full bg-white text-[#141414] px-3 min-h-9 text-xs font-medium hover:bg-[#F3EBD3]"><LogOut className="h-3.5 w-3.5" /> Déconnexion</button>
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+              {([
+                ["Crews", staff.length, Users, "staff"],
+                ["Contrats", contrats.length, FileText, "contrats"],
+                ["Fiches de paie", fichesPaie.length, Euro, "fiches"],
+                ["Demandes entreprise", devisEntreprise.length, Building, "entreprise"],
+                ["Demandes événement", devisMariage.length, Heart, "mariage"],
+              ] as const).map(([libelle, n, Icone, cible]) => (
+                <button key={libelle} onClick={() => setOngletAdmin(cible)} className="text-left rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 px-3 py-2 transition">
+                  <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-white/60 leading-tight"><Icone className="h-3 w-3 text-[#E4D49A] shrink-0" /><span className="truncate">{libelle}</span></div>
+                  <div className="font-serif text-xl sm:text-2xl leading-tight">{n}</div>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Chiffres clés */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 mb-5 sm:mb-8">
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between text-xs sm:text-sm font-medium text-muted-foreground"><span>Staff</span><Users className="h-4 w-4" /></div>
-            <div className="text-xl sm:text-2xl font-bold mt-1">{staff.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between text-xs sm:text-sm font-medium text-muted-foreground"><span>Contrats</span><FileText className="h-4 w-4" /></div>
-            <div className="text-xl sm:text-2xl font-bold mt-1">{contrats.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between text-xs sm:text-sm font-medium text-muted-foreground"><span>Fiches paie</span><Euro className="h-4 w-4" /></div>
-            <div className="text-xl sm:text-2xl font-bold mt-1">{fichesPaie.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between text-xs sm:text-sm font-medium text-muted-foreground"><span>Devis entreprise</span><Building className="h-4 w-4" /></div>
-            <div className="text-xl sm:text-2xl font-bold mt-1">{devisEntreprise.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between text-xs sm:text-sm font-medium text-muted-foreground"><span>Devis événement</span><Heart className="h-4 w-4" /></div>
-            <div className="text-xl sm:text-2xl font-bold mt-1">{devisMariage.length}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Onglets : 2 lignes de 5 sur smartphone, 1 ligne sur ordinateur */}
       <Tabs value={ongletAdmin} onValueChange={setOngletAdmin} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 lg:grid-cols-[repeat(13,minmax(0,1fr))] h-auto gap-1 p-1">
-          <TabsTrigger value="tableau" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>📊</span><span>Bilan</span></TabsTrigger>
-          <TabsTrigger value="devis-rapide" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><FileText className="h-4 w-4" /><span>Devis</span></TabsTrigger>
-          <TabsTrigger value="agenda" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal" data-testid="onglet-agenda"><span>🗓️</span><span>Agenda</span></TabsTrigger>
-          <TabsTrigger value="staff" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>👥</span><span>Personnel</span></TabsTrigger>
-          <TabsTrigger value="disponibilites" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>📅</span><span>Dispo</span></TabsTrigger>
-          <TabsTrigger value="envoyer-devis" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><Send className="h-4 w-4" /><span>Envoyer</span></TabsTrigger>
-          <TabsTrigger value="contrats" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>📋</span><span>Contrats</span></TabsTrigger>
-          <TabsTrigger value="fiches" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>💰</span><span>Paie</span></TabsTrigger>
-          <TabsTrigger value="entreprise" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>🏢</span><span>Entreprise</span></TabsTrigger>
-          <TabsTrigger value="mariage" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>💒</span><span>Événement</span></TabsTrigger>
-          <TabsTrigger value="devis-envoyes" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>📤</span><span>Envoyés</span></TabsTrigger>
-          <TabsTrigger value="realisations" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><span>🌐</span><span>Site</span></TabsTrigger>
-          <TabsTrigger value="securite" className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-1 py-1.5 text-[11px] sm:text-sm leading-tight whitespace-normal"><Shield className="h-4 w-4" /><span>Sécurité</span></TabsTrigger>
+        {/* Navigation : une ligne qui défile sur smartphone, collée en haut pendant le défilement */}
+        <div className="sticky top-0 z-30 -mx-3 sm:mx-0 px-3 sm:px-0 py-2 bg-[#FAF7EE]/90 backdrop-blur supports-[backdrop-filter]:bg-[#FAF7EE]/75">
+        <TabsList className="admin-onglets flex w-full justify-start overflow-x-auto h-auto gap-1 p-1.5 rounded-2xl bg-white border border-[#EADFC8] shadow-[0_10px_30px_-24px_rgba(140,109,34,0.6)] text-[#5E554A]">
+          {([
+            ["tableau", "Bilan", BarChart3],
+            ["devis-rapide", "Devis", FileText],
+            ["agenda", "Agenda", CalendarDays],
+            ["staff", "Personnel", Users],
+            ["disponibilites", "Dispo", CalendarCheck],
+            ["envoyer-devis", "Envoyer", Send],
+            ["contrats", "Contrats", FileSignature],
+            ["fiches", "Paie", Wallet],
+            ["entreprise", "Entreprise", Building2],
+            ["mariage", "Événement", PartyPopper],
+            ["devis-envoyes", "Envoyés", Inbox],
+            ["realisations", "Site", Globe],
+            ["securite", "Sécurité", Shield],
+          ] as const).map(([valeur, libelle, Icone], i) => (
+            <TabsTrigger key={valeur} value={valeur} data-testid={valeur === "agenda" ? "onglet-agenda" : undefined}
+              className={`shrink-0 lg:flex-1 gap-1.5 rounded-xl px-3 py-2 text-[13px] sm:text-sm data-[state=active]:bg-[#141414] data-[state=active]:text-white data-[state=active]:shadow-none hover:bg-[#FAF7EE] data-[state=active]:hover:bg-[#141414] ${i === 6 || i === 8 || i === 11 ? "lg:ml-2 relative before:hidden lg:before:block before:absolute before:-left-1.5 before:top-2 before:bottom-2 before:w-px before:bg-[#EADFC8]" : ""}`}>
+              <Icone className="h-4 w-4 shrink-0" /><span>{libelle}</span>
+            </TabsTrigger>
+          ))}
         </TabsList>
+        </div>
 
         <TabsContent value="tableau" className="space-y-4">
           <TableauDeBord demandesMariage={devisMariage as any} demandesEntreprise={devisEntreprise as any} onOuvrirDevis={() => setOngletAdmin("devis-rapide")} />
@@ -2020,6 +2011,7 @@ const Admin = () => {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
     </div>
   );
 };

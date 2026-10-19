@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
 import ZoneSignature, { ZoneSignatureRef } from "@/components/contrat/ZoneSignature";
@@ -11,7 +11,7 @@ import {
 import { telechargerDevisPdf, telechargerFacturePdf } from "@/components/admin/devis/devisPdf";
 import { Facture, TYPES_FACTURE } from "@/components/admin/devis/factureUtils";
 import ChoisirRendezVous from "@/components/rendez-vous/ChoisirRendezVous";
-import { CalendarClock, CheckCircle2, Download, FileText, Loader2, MessageCircle, Receipt, Star } from "lucide-react";
+import { ArrowRight, CalendarClock, CheckCircle2, Download, FileText, Heart, Loader2, MessageCircle, Receipt, Star } from "lucide-react";
 import { photoUrl } from "@/lib/pdf";
 
 type Etat = "chargement" | "introuvable" | "pret";
@@ -97,6 +97,19 @@ export default function MonDevis() {
             )}
           </div>
         </div>
+
+        {/* Espace mariés (mariage signé) */}
+        {devis.type === "mariage" && devis.statut === "accepte" && (
+          <Link to={`/mon-mariage/${token}`} data-testid="lien-espace-maries"
+            className="group flex items-center gap-4 rounded-3xl bg-[#141414] text-white px-5 sm:px-7 py-5 hover:bg-[#1f1f1f] transition">
+            <span className="h-12 w-12 shrink-0 rounded-full bg-[#C8B560]/20 flex items-center justify-center"><Heart className="h-6 w-6 text-[#E4D49A] fill-[#E4D49A]" /></span>
+            <span className="flex-1">
+              <span className="block font-serif text-xl">Votre espace mariés</span>
+              <span className="block text-sm text-white/70">Check-list, budget, programme du jour J, réponses des invités et plan de table.</span>
+            </span>
+            <ArrowRight className="h-5 w-5 text-[#E4D49A] group-hover:translate-x-1 transition" />
+          </Link>
+        )}
 
         {/* Événement */}
         {(devis.date_evenement || devis.lieu || devis.nb_personnes) && (

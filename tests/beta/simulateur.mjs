@@ -265,6 +265,49 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
           };
         })() } });
     }
+    // Espace mariés et réponses des invités
+    const rpcMariage = url.pathname.match(/\/rpc\/(espace_maries_public|espace_maries_enregistrer|invite_enregistrer|invite_supprimer|rsvp_public|rsvp_repondre)$/);
+    if (rpcMariage) {
+      const corps = JSON.parse(req.postData() || "{}");
+      base.espace_maries ??= []; base.invites_mariage ??= [];
+      const d = corps.p_token ? base.devis.find((x) => x.lien_token === corps.p_token && x.type === "mariage" && x.statut === "accepte") : null;
+      const sans = ({ devis_id, ...x }) => x;
+      switch (rpcMariage[1]) {
+        case "espace_maries_public": {
+          if (!d) return route.fulfill({ json: null });
+          if (!base.espace_maries.some((e) => e.devis_id === d.id)) base.espace_maries.push({ devis_id: d.id, noms: d.client_nom, checklist: [], budget: [], programme: [], tables: [], budget_total: null, message_invites: null, date_limite_reponse: null });
+          return route.fulfill({ json: { devis: { client_nom: d.client_nom, date_evenement: d.date_evenement, lieu: d.lieu, nb_personnes: d.nb_personnes, devise: "MAD" },
+            espace: sans(base.espace_maries.find((e) => e.devis_id === d.id)), invites: base.invites_mariage.filter((i) => i.devis_id === d.id).map(sans) } });
+        }
+        case "espace_maries_enregistrer": {
+          if (!d) return route.fulfill({ status: 400, json: { message: "Espace introuvable" } });
+          Object.assign(base.espace_maries.find((e) => e.devis_id === d.id), corps.p_donnees);
+          return route.fulfill({ status: 204, body: "" });
+        }
+        case "invite_enregistrer": {
+          if (!d) return route.fulfill({ status: 400, json: { message: "Espace introuvable" } });
+          const p = corps.p_invite;
+          let i = p.id && base.invites_mariage.find((x) => x.id === p.id && x.devis_id === d.id);
+          if (i) Object.assign(i, p, { table_id: p.table_id || null });
+          else { i = { id: crypto.randomUUID(), jeton: crypto.randomUUID(), devis_id: d.id, reponse: "attente", nb_confirmes: null, remarque: null, table_id: null, repondu_le: null, cote: "commun", nb_prevus: 1, ...p }; base.invites_mariage.push(i); }
+          return route.fulfill({ json: sans(i) });
+        }
+        case "invite_supprimer":
+          base.invites_mariage = base.invites_mariage.filter((x) => !(x.id === corps.p_id && d && x.devis_id === d.id));
+          return route.fulfill({ status: 204, body: "" });
+        case "rsvp_public": {
+          const i = base.invites_mariage.find((x) => x.jeton === corps.p_jeton); if (!i) return route.fulfill({ json: null });
+          const dv = base.devis.find((x) => x.id === i.devis_id); const e = base.espace_maries.find((x) => x.devis_id === i.devis_id) ?? {};
+          return route.fulfill({ json: { nom: i.nom, nb_prevus: i.nb_prevus, reponse: i.reponse, nb_confirmes: i.nb_confirmes, remarque: i.remarque, noms: e.noms || dv.client_nom,
+            date_evenement: dv.date_evenement, lieu: dv.lieu, message: e.message_invites ?? null, date_limite: e.date_limite_reponse ?? null } });
+        }
+        case "rsvp_repondre": {
+          const i = base.invites_mariage.find((x) => x.jeton === corps.p_jeton); if (!i) return route.fulfill({ status: 400, json: { message: "Invitation introuvable" } });
+          Object.assign(i, { reponse: corps.p_reponse, nb_confirmes: corps.p_reponse === "oui" ? Math.max(1, Math.min(corps.p_nb ?? i.nb_prevus, i.nb_prevus)) : 0, remarque: corps.p_remarque || null, repondu_le: new Date().toISOString() });
+          return route.fulfill({ status: 204, body: "" });
+        }
+      }
+    }
     if (url.pathname.includes("/rpc/")) return route.fulfill({ json: null });
     const m = url.pathname.match(/\/rest\/v1\/(\w+)/); if (!m) return route.fulfill({ json: {} });
     const t = m[1]; base[t] ??= []; const params = [...url.searchParams.entries()]; const select = url.searchParams.get("select");
