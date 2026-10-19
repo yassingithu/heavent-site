@@ -8,8 +8,9 @@ import { CGV_DEFAUT, CGV_NAWAR_DEFAUT } from "@/lib/conditions";
 import {
   DevisForm, MENTION_MONTANT_EVOLUTIF, Parametres, calculerTotaux, dateFr, dateHeureFr, devisDepuisBase, money, totalLigne, uniteCourt,
 } from "@/components/admin/devis/devisUtils";
-import { telechargerDevisPdf } from "@/components/admin/devis/devisPdf";
-import { CalendarClock, CheckCircle2, Download, FileText, Loader2, MessageCircle } from "lucide-react";
+import { telechargerDevisPdf, telechargerFacturePdf } from "@/components/admin/devis/devisPdf";
+import { Facture, TYPES_FACTURE } from "@/components/admin/devis/factureUtils";
+import { CalendarClock, CheckCircle2, Download, FileText, Loader2, MessageCircle, Receipt } from "lucide-react";
 
 type Etat = "chargement" | "introuvable" | "pret";
 
@@ -25,6 +26,7 @@ export default function MonDevis() {
   const [devis, setDevis] = useState<DevisForm | null>(null);
   const [agence, setAgence] = useState<Parametres | null>(null);
   const [pdf, setPdf] = useState(false);
+  const [factures, setFactures] = useState<Facture[]>([]);
 
   const charger = async () => {
     if (!/^[0-9a-f-]{36}$/i.test(token)) { setEtat("introuvable"); return; }
@@ -32,6 +34,7 @@ export default function MonDevis() {
     if (error || !data?.devis) { setEtat("introuvable"); return; }
     setDevis(devisDepuisBase(data.devis, data.lignes ?? []));
     setAgence(data.agence ?? null);
+    setFactures((data.factures ?? []) as Facture[]);
     setEtat("pret");
   };
   useEffect(() => { charger(); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -166,11 +169,47 @@ export default function MonDevis() {
           </>
         )}
 
+        {factures.length > 0 && <MesFactures factures={factures} agence={agence} />}
+
         <div className="text-center text-sm text-[#6B6155] pb-6">
           Une question sur ce devis ? <Contact compact />
         </div>
       </div>
     </Cadre>
+  );
+}
+
+/** Factures du devis (acompte, solde), téléchargeables en PDF. */
+function MesFactures({ factures, agence }: { factures: Facture[]; agence: Parametres | null }) {
+  const [enCours, setEnCours] = useState<string | null>(null);
+  useEffect(() => {
+    if (window.location.hash === "#factures") setTimeout(() => document.getElementById("factures")?.scrollIntoView({ behavior: "smooth" }), 300);
+  }, []);
+  const telecharger = async (f: Facture) => {
+    setEnCours(f.id);
+    try { await telechargerFacturePdf(f, agence); } finally { setEnCours(null); }
+  };
+  return (
+    <section id="factures" className="rounded-3xl border border-[#EADFC8] bg-white overflow-hidden scroll-mt-6" data-testid="mes-factures">
+      <h2 className="font-serif text-xl px-5 sm:px-7 pt-5 pb-3 flex items-center gap-2"><Receipt className="h-5 w-5 text-[#8C6D22]" /> Vos factures</h2>
+      <ul className="divide-y divide-[#F1ECDD]">
+        {factures.map((f) => (
+          <li key={f.id} className="px-5 sm:px-7 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="font-medium">{TYPES_FACTURE[f.type]} <span className="font-mono text-sm">{f.numero}</span></div>
+              <div className="text-xs text-[#6B6155]">
+                Émise le {dateFr(f.date_emission)} · {money(Number(f.net_a_payer), f.devise)}
+                {" · "}{f.statut === "payee" ? <span className="text-[#2F5A2A] font-medium">réglée{f.payee_le ? ` le ${dateFr(f.payee_le)}` : ""} ✓</span> : <span className="text-[#8A5A12] font-medium">à régler</span>}
+              </div>
+            </div>
+            <button onClick={() => telecharger(f)} disabled={enCours === f.id} data-testid="telecharger-facture"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#DCCBA6] px-4 min-h-10 text-sm hover:bg-[#FAF7EE] disabled:opacity-60">
+              {enCours === f.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} PDF
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

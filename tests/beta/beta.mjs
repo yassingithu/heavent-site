@@ -3,7 +3,7 @@
 //   BETA_LIVE=1 node tests/beta/beta.mjs http://127.0.0.1:4173 → + contrôles en lecture seule sur heaventagency.com
 // Écrit rapport-beta.md et des captures dans beta-captures/ ; code de sortie 1 si un parcours échoue.
 import { mkdirSync, writeFileSync } from "node:fs";
-import { nouvelleBase, contexte, connecter } from "./simulateur.mjs";
+import { nouvelleBase, contexte, connecter, creerFacture } from "./simulateur.mjs";
 
 let chromium;
 try { ({ chromium } = await import("playwright")); } catch { ({ chromium } = await import("/opt/npm-tools/node_modules/playwright/index.mjs")); }
@@ -328,6 +328,8 @@ await scenario("Devis envoyé au client → signature en ligne sur smartphone �
   verifier(await client.page.getByTestId("confirmation-signature").isVisible(), "pas de confirmation après la signature");
   const acompte = await client.page.getByTestId("acompte").innerText();
   verifier(acompte.includes("011 810 0000012345678901 23") && acompte.includes("DEV-2026-0099"), "le RIB ou la référence n'apparaissent pas");
+  verifier(base.factures?.length === 1 && base.factures[0].type === "acompte", "la facture d'acompte n'est pas créée à la signature");
+  verifier(await client.page.getByTestId("mes-factures").isVisible(), "le client ne voit pas sa facture d'acompte");
   await client.page.screenshot({ path: `${CAPTURES}/9-devis-signe.png`, fullPage: true });
   const [dl] = await Promise.all([client.page.waitForEvent("download", { timeout: 40000 }), client.page.getByRole("button", { name: "Télécharger le PDF" }).tap()]);
   await dl.saveAs(`${CAPTURES}/devis-signe.pdf`);
@@ -422,6 +424,67 @@ await scenario("Devis : le client préfère un rendez-vous plutôt que signer", 
   verifier(!c.erreurs.length, "erreurs JavaScript : " + c.erreurs.join(" ; "));
   await c.ctx.close();
   notes.push("mention affichée ; rendez-vous demandé sans signer, relances arrêtées, signature toujours possible");
+});
+
+// 3 duodecies. Factures : acompte payé → solde (acompte déduit) → PDF → envoi → page client
+await scenario("Factures : acompte payé, solde avec acompte déduit, PDF, envoi et page client", async (notes) => {
+  const base = nouvelleBase();
+  base.parametres_agence[0].rib = "011 810 0000012345678901 23";
+  base.devis = [{ id: "dv2", numero: "DEV-2026-0130", type: "entreprise", marque: "heavent", client_nom: "Karim Tazi", client_societe: "Atlas Events SARL", client_ice: "001234567000089",
+    client_email: "karim@atlas.ma", titre: "Salon Atlas 2026", statut: "accepte", total_ttc: 10080, remise_globale_pct: 0, taux_tva: 20, acompte_pct: 30, date_emission: "2026-10-01",
+    date_validite: "2099-12-31", date_evenement: "2026-10-10", lieu: "Casablanca", lien_token: "22222222-3333-4444-5555-666666666666", signe_le: "2026-10-02T10:00:00Z", signature_nom: "Karim Tazi", relances: 0 }];
+  base.devis_lignes = [
+    { id: "l1", devis_id: "dv2", ordre: 0, designation: "Hôtesses d'accueil", description: "Tenue fournie", quantite: 4, duree: 8, unite: "heure", prix_unitaire: 150, remise_pct: 0 },
+    { id: "l2", devis_id: "dv2", ordre: 1, designation: "Coordination", description: null, quantite: 1, duree: 1, unite: "forfait", prix_unitaire: 3600, remise_pct: 0 }];
+  const acompte = creerFacture(base, "dv2", "acompte", "signature en ligne"); // créée à la signature
+  verifier(acompte.total_ttc === 3024 && acompte.total_ht === 2520, `acompte mal calculé (${acompte.total_ht} HT / ${acompte.total_ttc} TTC)`);
+
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  page.on("dialog", (d) => d.accept());
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(800);
+  await page.getByText("Atlas Events SARL").first().click(); await page.waitForTimeout(1500);
+  const bloc = page.getByTestId("bloc-factures");
+  verifier(await bloc.getByTestId("facture-ligne").count() === 1, "la facture d'acompte n'apparaît pas dans le devis");
+  await bloc.getByTestId("facture-payee").click(); await page.waitForTimeout(500);
+  await page.getByTestId("confirmer-paiement").click(); await page.waitForTimeout(1000);
+  verifier(base.factures[0].statut === "payee" && base.factures[0].mode_paiement === "Virement", "le paiement de l'acompte n'est pas enregistré");
+  notes.push("acompte FAC-2026-0001 (3 024 MAD) marqué payé par virement");
+
+  await bloc.getByTestId("creer-facture-solde").click(); await page.waitForTimeout(2000);
+  const solde = base.factures[1];
+  verifier(solde?.type === "solde" && solde.total_ttc === 10080 && solde.deduction_ttc === 3024 && solde.net_a_payer === 7056, "facture de solde incorrecte : " + JSON.stringify(solde && { t: solde.type, ttc: solde.total_ttc, d: solde.deduction_ttc, n: solde.net_a_payer }) + " " + await toasts(page));
+  verifier(!(await bloc.getByTestId("creer-facture-solde").count()), "on peut encore facturer un devis déjà entièrement facturé");
+  notes.push("solde FAC-2026-0002 : 10 080 TTC − acompte 3 024 = 7 056 MAD à payer");
+
+  const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 40000 }), bloc.getByTestId("facture-pdf").nth(1).click()]);
+  verifier(/^Facture-FAC-2026-0002-Atlas-Events-SARL\.pdf$/.test(dl.suggestedFilename()), "nom du PDF inattendu : " + dl.suggestedFilename());
+  await dl.saveAs(`${CAPTURES}/facture-solde.pdf`);
+  await bloc.getByTestId("facture-envoyer").nth(1).click(); await page.waitForTimeout(1000);
+  verifier(base.factures[1].envoyee_le && base.appelsFonctions.some((a) => a.nom === "envoyer-facture" && a.corps.factureId === solde.id), "la facture n'est pas envoyée au client");
+  await page.screenshot({ path: `${CAPTURES}/13-devis-factures.png`, fullPage: true });
+
+  await page.getByTestId("onglet-factures").click(); await page.waitForTimeout(1000);
+  const encaisser = (await page.getByTestId("factures-a-encaisser").innerText()).replace(/\s+/g, " ");
+  verifier(encaisser.includes("7 056,00"), "le reste à encaisser est faux : " + encaisser);
+  await page.screenshot({ path: `${CAPTURES}/14-factures.png`, fullPage: true });
+  await page.getByRole("tab", { name: "Mes devis" }).click(); await page.waitForTimeout(500);
+  await page.getByTitle("Supprimer").first().click(); await page.waitForTimeout(1000);
+  verifier(base.devis.length === 1 && /a des factures/.test(await toasts(page)), "un devis facturé a pu être supprimé");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+  notes.push("PDF téléchargé, facture envoyée, « reste à encaisser » juste, devis facturé impossible à supprimer");
+
+  const c = await contexte(navigateur, base, "karim@atlas.ma", { mobile: true });
+  await c.page.goto(`${BASE}/mon-devis/22222222-3333-4444-5555-666666666666#factures`); await c.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await c.page.reload(); await c.page.waitForTimeout(1800);
+  const liste = await c.page.getByTestId("mes-factures").innerText();
+  verifier(liste.includes("FAC-2026-0001") && liste.includes("FAC-2026-0002") && /réglée/.test(liste), "la page client ne liste pas les factures : " + liste);
+  const [dl2] = await Promise.all([c.page.waitForEvent("download", { timeout: 40000 }), c.page.getByTestId("telecharger-facture").first().tap()]);
+  await dl2.saveAs(`${CAPTURES}/facture-acompte.pdf`);
+  await c.page.screenshot({ path: `${CAPTURES}/15-client-factures.png`, fullPage: true });
+  verifier(!c.erreurs.length, "erreurs JavaScript côté client : " + c.erreurs.join(" ; "));
+  await c.ctx.close();
+  notes.push("le client voit et télécharge ses 2 factures depuis son lien");
 });
 
 // 3 sexies. Paie : une fiche dont toutes les missions ont été supprimées disparaît au recalcul

@@ -28,6 +28,44 @@ function correspond(ligne, params) {
   return true;
 }
 
+const r2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+/** Même règles que la fonction SQL facture_creer (acompte, solde avec acomptes déduits, ou facture unique). */
+export function creerFacture(base, devisId, type = "auto", par = null) {
+  base.factures ??= []; base.compteurFactures ??= 0;
+  const d = base.devis.find((x) => x.id === devisId);
+  if (!d) throw new Error("Devis introuvable.");
+  if (d.statut !== "accepte") throw new Error("Le devis doit être accepté avant d'être facturé.");
+  const lignes = base.devis_lignes.filter((l) => l.devis_id === d.id).sort((a, b) => a.ordre - b.ordre)
+    .map((l) => ({ ...l, total_ht: r2(l.quantite * l.duree * l.prix_unitaire * (1 - (l.remise_pct || 0) / 100)) }));
+  const ht = r2(lignes.reduce((t, l) => t + l.total_ht, 0)), remise = r2(ht * (d.remise_globale_pct || 0) / 100);
+  const tva = r2((ht - remise) * (d.taux_tva ?? 20) / 100), ttc = r2(ht - remise + tva);
+  if (ttc <= 0) throw new Error("Le devis est à 0 : rien à facturer.");
+  const actives = base.factures.filter((f) => f.devis_id === d.id && f.statut !== "annulee");
+  const finale = actives.find((f) => f.type !== "acompte");
+  if (finale) throw new Error(`Ce devis est déjà entièrement facturé (facture ${finale.numero}).`);
+  const acomptes = actives.filter((f) => f.type === "acompte");
+  if (type === "auto") type = d.acompte_pct > 0 && !acomptes.length ? "acompte" : "solde";
+  if (type === "acompte" && acomptes.length) throw new Error("La facture d'acompte de ce devis existe déjà.");
+  if (type !== "acompte") type = acomptes.length ? "solde" : "totale";
+  const commun = { id: "fac" + Math.random().toString(36).slice(2), numero: `FAC-2026-${String(++base.compteurFactures).padStart(4, "0")}`, devis_id: d.id, devis_numero: d.numero,
+    type, marque: d.marque ?? "heavent", date_emission: new Date().toISOString().slice(0, 10), client_nom: d.client_nom, client_societe: d.client_societe ?? null,
+    client_email: d.client_email ?? null, client_telephone: d.client_telephone ?? null, client_adresse: d.client_adresse ?? null, client_ice: d.client_ice ?? null,
+    titre: d.titre ?? null, date_evenement: d.date_evenement ?? null, date_fin_evenement: d.date_fin_evenement ?? null, lieu: d.lieu ?? null, taux_tva: d.taux_tva ?? 20,
+    devise: "MAD", statut: "a_payer", payee_le: null, mode_paiement: null, envoyee_le: null, creee_par: par };
+  let f;
+  if (type === "acompte") {
+    const a = r2(ttc * d.acompte_pct / 100), aht = r2(a / (1 + (d.taux_tva ?? 20) / 100));
+    f = { ...commun, lignes: [{ designation: `Acompte de ${d.acompte_pct} % sur le devis N° ${d.numero}`, description: d.titre, quantite: 1, duree: 1, unite: "forfait", prix_unitaire: aht, remise_pct: 0, total_ht: aht }],
+      remise_globale_pct: 0, total_ht: aht, total_remise: 0, total_tva: r2(a - aht), total_ttc: a, acompte_pct: d.acompte_pct, deductions: [], deduction_ttc: 0, net_a_payer: a };
+  } else {
+    const ded = r2(acomptes.reduce((t, a) => t + a.total_ttc, 0));
+    f = { ...commun, lignes, remise_globale_pct: d.remise_globale_pct || 0, total_ht: ht, total_remise: remise, total_tva: tva, total_ttc: ttc, acompte_pct: null,
+      deductions: acomptes.map((a) => ({ numero: a.numero, date: a.date_emission, ht: a.total_ht, tva: a.total_tva, ttc: a.total_ttc, payee: a.statut === "payee" })), deduction_ttc: ded, net_a_payer: r2(ttc - ded) };
+  }
+  base.factures.push(f);
+  return f;
+}
+
 export function genererFiches(base) {
   const groupes = {};
   base.affectations.filter((a) => a.statut !== "annule").forEach((a) => (groupes[a.staff_id] ??= []).push(a));
@@ -88,6 +126,14 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
         if (!corps.accepte || String(corps.nom ?? "").trim().length < 3 || String(corps.image ?? "").length < 1500)
           return route.fulfill({ status: 400, json: { error: "Signature incomplète." } });
         Object.assign(d, { signe_le: new Date().toISOString(), signature_nom: corps.nom, signature_image: corps.image, statut: "accepte" });
+        let facture = null;
+        if (d.acompte_pct > 0) { try { facture = creerFacture(base, d.id, "acompte", "signature en ligne"); facture.envoyee_le = new Date().toISOString(); } catch { /* devis à 0 */ } }
+        return route.fulfill({ json: { success: true, facture: facture?.numero ?? null } });
+      }
+      if (nom === "envoyer-facture") {
+        const f = (base.factures ?? []).find((x) => x.id === corps.factureId);
+        if (!f?.client_email) return route.fulfill({ status: 400, json: { error: "Ajoutez l'e-mail du client dans le devis." } });
+        f.envoyee_le = new Date().toISOString();
         return route.fulfill({ json: { success: true } });
       }
       if (nom === "admin-change-password" && corps.action === "ban") base.staff.filter((s) => s.email === corps.userEmail).forEach((s) => { s.banni = true; });
@@ -95,12 +141,19 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     }
     if (url.pathname.includes("/rpc/is_admin")) return route.fulfill({ json: admin });
     if (url.pathname.includes("/rpc/generer_fiches_paie")) return route.fulfill({ json: genererFiches(base) });
+    if (url.pathname.includes("/rpc/facture_creer")) {
+      if (!admin) return route.fulfill({ status: 403, json: { message: "Accès refusé" } });
+      const { p_devis_id, p_type } = JSON.parse(req.postData() || "{}");
+      try { return route.fulfill({ json: creerFacture(base, p_devis_id, p_type) }); }
+      catch (e) { return route.fulfill({ status: 400, json: { message: e.message, code: "P0001" } }); }
+    }
     if (url.pathname.includes("/rpc/devis_public")) {
       const { p_token } = JSON.parse(req.postData() || "{}");
       const d = base.devis.find((x) => x.lien_token === p_token && x.statut !== "annule");
       if (!d) return route.fulfill({ json: null });
       const { notes_internes, ...visible } = d;
-      return route.fulfill({ json: { devis: visible, lignes: base.devis_lignes.filter((l) => l.devis_id === d.id).sort((a, b) => a.ordre - b.ordre), agence: base.parametres_agence[0] } });
+      return route.fulfill({ json: { devis: visible, lignes: base.devis_lignes.filter((l) => l.devis_id === d.id).sort((a, b) => a.ordre - b.ordre), agence: base.parametres_agence[0],
+        factures: (base.factures ?? []).filter((f) => f.devis_id === d.id && f.statut !== "annulee").map(({ notes, creee_par, ...f }) => f) } });
     }
     if (url.pathname.includes("/rpc/")) return route.fulfill({ json: null });
     const m = url.pathname.match(/\/rest\/v1\/(\w+)/); if (!m) return route.fulfill({ json: {} });
@@ -116,7 +169,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       if (!admin) {
         if (["contrats", "fiches_paie", "affectations", "disponibilites", "remarques_contrat"].includes(t)) lignes = lignes.filter((r) => r.staff_id === moi()?.id);
         if (t === "staff") lignes = lignes.filter((r) => r.email === email);
-        if (["devis", "devis_lignes", "devis_mariage", "devis_entreprise", "admins"].includes(t)) lignes = [];
+        if (["devis", "devis_lignes", "devis_mariage", "devis_entreprise", "admins", "factures"].includes(t)) lignes = [];
       }
       const r = lignes.filter((x) => correspond(x, params)).map((x) => {
         const y = { ...x };
@@ -134,6 +187,16 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       base[t].push(...ins);
       return route.fulfill({ status: 201, json: unique ? ins[0] : ins });
     }
+    if (req.method() === "PATCH" && t === "factures") {
+      const b = JSON.parse(req.postData()); const r = base[t].filter((x) => correspond(x, params));
+      for (const x of r) {
+        if (x.statut === "annulee" && b.statut && b.statut !== "annulee") return route.fulfill({ status: 400, json: { message: "Une facture annulée ne peut pas être rétablie." } });
+        Object.assign(x, b); if (b.statut === "a_payer") Object.assign(x, { payee_le: null, mode_paiement: null });
+      }
+      return route.fulfill({ status: 200, json: r });
+    }
+    if (req.method() === "DELETE" && t === "devis" && (base.factures ?? []).some((f) => correspond({ id: f.devis_id }, params)))
+      return route.fulfill({ status: 409, json: { code: "23503", message: "update or delete on table \"devis\" violates foreign key constraint on table \"factures\"" } });
     if (req.method() === "PATCH") { const b = JSON.parse(req.postData()); const r = base[t].filter((x) => correspond(x, params)); r.forEach((x) => Object.assign(x, b)); return route.fulfill({ status: 200, json: unique ? r[0] : r }); }
     if (req.method() === "DELETE") { base[t] = base[t].filter((x) => !correspond(x, params)); return route.fulfill({ status: 204, body: "" }); }
     return route.fulfill({ json: [] });

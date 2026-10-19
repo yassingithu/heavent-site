@@ -6,7 +6,8 @@ import { avecOriginal, htmlTraduit, versFrancais } from "../_shared/traduire.ts"
 
 /**
  * Depuis le lien reçu par e-mail, le client peut :
- *  - signer le devis en ligne (« Bon pour accord ») : le devis passe en « Accepté », e-mails avec RIB et acompte ;
+ *  - signer le devis en ligne (« Bon pour accord ») : le devis passe en « Accepté », la facture d'acompte est créée,
+ *    e-mails avec RIB et acompte ;
  *  - ou, s'il ne souhaite pas signer tout de suite, demander d'abord un rendez-vous (action « rdv ») :
  *    l'agence est prévenue (message traduit en français si besoin) et les relances automatiques s'arrêtent.
  */
@@ -86,6 +87,12 @@ serve(async (req) => {
 
     const { data: ag } = await db.from("parametres_agence").select("rib, raison_sociale").eq("id", 1).maybeSingle();
     const acompte = Math.round(Number(d.total_ttc) * Number(d.acompte_pct || 0)) / 100;
+    // Facture d'acompte créée automatiquement (numéro définitif FAC-…), téléchargeable depuis la page du client
+    let facture: { id: string; numero: string } | null = null;
+    if (acompte > 0) {
+      const { data: fa, error: errFa } = await db.rpc("facture_creer", { p_devis_id: d.id, p_type: "acompte", p_par: "signature en ligne" });
+      if (errFa) console.error("facture d'acompte :", errFa.message); else facture = fa as any;
+    }
     const cle = Deno.env.get("RESEND_API_KEY");
     if (cle) {
       const resend = new Resend(cle);
@@ -95,6 +102,7 @@ serve(async (req) => {
         html: `<p><b>${e(d.client_nom)}</b>${d.client_societe ? ` (${e(d.client_societe)})` : ""} a signé en ligne le devis <b>${e(d.numero)}</b> « ${e(d.titre ?? "")} »
           le ${new Date(signeLe).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" })}.</p>
           <p>Total TTC : <b>${mad(d.total_ttc)}</b>${acompte ? ` · acompte attendu : <b>${mad(acompte)}</b>` : ""}</p>
+          ${facture ? `<p>🧾 La facture d'acompte <b>${e(facture.numero)}</b> a été créée et envoyée au client. Pense à la marquer « payée » à réception du virement (onglet Devis → Factures).</p>` : ""}
           <p>Le devis est passé en « Accepté » dans l'administration ; la signature figure sur le PDF.</p>`,
       }).catch(() => {});
       if (d.client_email) await resend.emails.send({
@@ -104,12 +112,13 @@ serve(async (req) => {
           <p>Merci ! Votre accord sur le devis <b>${e(d.numero)}</b>${d.titre ? ` « ${e(d.titre)} »` : ""} est bien enregistré.</p>
           ${acompte ? `<div style="background:#FAF7EE;border:1px solid #ece6d3;border-radius:8px;padding:12px 16px">
             <b>Acompte à régler : ${mad(acompte)}</b> (${e(d.acompte_pct)} % du total TTC de ${mad(d.total_ttc)})<br>
-            ${ag?.rib ? `Par virement — RIB : <b>${e(ag.rib)}</b><br>` : ""}Référence à indiquer : <b>${e(d.numero)}</b></div>` : ""}
+            ${ag?.rib ? `Par virement — RIB : <b>${e(ag.rib)}</b><br>` : ""}Référence à indiquer : <b>${e(facture?.numero ?? d.numero)}</b></div>` : ""}
+          ${facture ? `<p>Votre facture d'acompte <b>${e(facture.numero)}</b> est téléchargeable sur votre page : <a href="https://heaventagency.com/mon-devis/${e(d.lien_token)}#factures">télécharger ma facture</a>.</p>` : ""}
           <p>Votre devis signé reste consultable à tout moment : <a href="https://heaventagency.com/mon-devis/${e(d.lien_token)}">voir mon devis</a>.</p>
           <p>À très vite,<br>Imane CHAIGARI — CEO, Heavent People Agency<br>+212 6 10 93 96 55 · ${ADMIN_EMAIL}</p></div>`,
-      }).catch(() => {});
+      }).then(() => facture && db.from("factures").update({ envoyee_le: new Date().toISOString() }).eq("id", facture.id)).catch(() => {});
     }
-    return json({ success: true, signe_le: signeLe, acompte, rib: ag?.rib ?? null, numero: d.numero });
+    return json({ success: true, signe_le: signeLe, acompte, rib: ag?.rib ?? null, numero: d.numero, facture: facture?.numero ?? null });
   } catch (err: any) {
     return json({ error: "Erreur interne : " + err.message }, 500);
   }

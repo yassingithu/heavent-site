@@ -20,6 +20,7 @@ import CataloguePrestations from "./CataloguePrestations";
 import ParametresAgence from "./ParametresAgence";
 import EquipeEvenement from "@/components/admin/equipe/EquipeEvenement";
 import { devisModifie } from "./DevisParStatut";
+import { FacturesDevis, ListeFactures } from "./Factures";
 
 interface DemandeEntreprise {
   id: string; nom: string; prenom: string; email: string; telephone?: string | null; entreprise: string;
@@ -278,7 +279,14 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     const lignes = form.lignes.filter((l) => l.designation.trim());
     if (lignes.length === 0) { toast({ title: "Ajoute au moins une ligne", variant: "destructive" }); return null; }
 
-    if (form.signe_le && form.id) {
+    // Devis déjà facturé (acompte) : on peut encore l'ajuster (heures en plus…), la signature reste valable
+    // et la facture de solde tiendra compte du nouveau montant.
+    let dejaFacture = false;
+    if (form.id) {
+      const { count } = await (supabase as any).from("factures").select("id", { count: "exact", head: true }).eq("devis_id", form.id).neq("statut", "annulee");
+      dejaFacture = (count ?? 0) > 0;
+    }
+    if (form.signe_le && form.id && !dejaFacture) {
       const { data: avant } = await supabase.from("devis").select("total_ttc").eq("id", form.id).single();
       const t = calculerTotaux(lignes, form.remise_globale_pct, form.taux_tva);
       if (avant && Math.abs(Number(avant.total_ttc) - t.ttc) > 0.009 &&
@@ -305,7 +313,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
 
       // Signature invalidée si le montant signé a changé
       let signatureAnnulee = false;
-      if (form.signe_le && form.id) {
+      if (form.signe_le && form.id && !dejaFacture) {
         const { data: avant } = await supabase.from("devis").select("total_ttc").eq("id", form.id).single();
         const t = calculerTotaux(lignes, form.remise_globale_pct, form.taux_tva);
         if (avant && Math.abs(Number(avant.total_ttc) - t.ttc) > 0.009) {
@@ -424,7 +432,11 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   const supprimer = async (id: string, numero: string | null) => {
     if (!confirm(`Supprimer définitivement le devis ${numero ?? ""} ?`)) return;
     const { error } = await supabase.from("devis").delete().eq("id", id);
-    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+    if (error) {
+      const factures = error.code === "23503" || /factures/.test(error.message);
+      toast({ title: factures ? "Ce devis a des factures" : "Erreur", description: factures ? "Un devis facturé ne peut pas être supprimé : passe-le en « Annulé »." : error.message, variant: "destructive" });
+      return;
+    }
     if (form?.id === id) setForm(null);
     charger();
   };
@@ -450,6 +462,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
         <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="liste">Mes devis</TabsTrigger>
           <TabsTrigger value="editeur" disabled={!form}>{form?.numero ?? (form ? "Nouveau devis" : "Éditeur")}</TabsTrigger>
+          <TabsTrigger value="factures" data-testid="onglet-factures">Factures</TabsTrigger>
           <TabsTrigger value="catalogue">Catalogue de prix</TabsTrigger>
           <TabsTrigger value="parametres">Infos agence</TabsTrigger>
         </TabsList>
@@ -719,11 +732,15 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 <Button variant="ghost" size="sm" onClick={() => enregistrer("envoye")} disabled={saving}>Marquer comme envoyé (sans e-mail)</Button>
                 <Button variant="ghost" onClick={() => { setForm(null); setOnglet("liste"); }}>Fermer</Button>
               </div>
+              <FacturesDevis devis={form} params={params} avantCreation={() => enregistrer()} />
             </div>
           </div>
         )}
       </TabsContent>
 
+      <TabsContent value="factures">
+        <ListeFactures params={params} onOuvrirDevis={(id) => ouvrir(id)} />
+      </TabsContent>
       <TabsContent value="catalogue">
         <CataloguePrestations items={catalogue} devise={devise} onChange={charger} />
       </TabsContent>

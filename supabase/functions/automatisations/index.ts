@@ -5,7 +5,9 @@ import { Resend } from "npm:resend@2.0.0";
 /**
  * Passage quotidien (9 h, heure du Maroc), lancé par la base :
  *  1. relance des devis envoyés sans réponse : à J+5 puis J+10 (tant qu'ils sont valables) ;
- *  2. demande d'avis Google le lendemain d'un événement dont le devis est accepté (si le lien est renseigné).
+ *  2. demande d'avis Google le lendemain d'un événement dont le devis est accepté (si le lien est renseigné) ;
+ *  3. facture de solde créée 2 jours après l'événement (devis accepté pas encore entièrement facturé),
+ *     l'agence reçoit un récapitulatif pour vérifier et envoyer.
  * ?essai=1 : ne rien envoyer, juste lister.
  */
 const ADMIN_EMAIL = "i.chaigari@heaventagency.com";
@@ -46,7 +48,7 @@ serve(async (req) => {
   const resend = new Resend(Deno.env.get("RESEND_API_KEY") ?? "");
   const maintenant = Date.now();
   const aujourdhui = new Date(maintenant + 3600_000).toISOString().slice(0, 10);
-  const rapport: { relances: string[]; avis: string[] } = { relances: [], avis: [] };
+  const rapport: { relances: string[]; avis: string[]; factures: string[] } = { relances: [], avis: [], factures: [] };
 
   // 1. Relances
   const { data: envoyes } = await db.from("devis").select("*").eq("statut", "envoye").is("signe_le", null).not("client_email", "is", null).not("date_envoi", "is", null).is("rdv_demande_le", null).lt("relances", 2);
@@ -81,6 +83,32 @@ serve(async (req) => {
       }
       rapport.avis.push(`${d.numero} → ${d.client_email}`);
     }
+  }
+  // 3. Factures de solde, 2 jours après la fin de l'événement (fenêtre de 30 jours)
+  const ilYa2Jours = new Date(maintenant + 3600_000 - 2 * JOUR).toISOString().slice(0, 10);
+  const debutFenetre = new Date(maintenant + 3600_000 - 30 * JOUR).toISOString().slice(0, 10);
+  const { data: aFacturer } = await db.from("devis").select("id, numero, client_nom, titre, date_evenement, date_fin_evenement, total_ttc, factures(type, statut)").eq("statut", "accepte").gt("total_ttc", 0);
+  const creees: any[] = [];
+  for (const d of aFacturer ?? []) {
+    const fin = d.date_fin_evenement ?? d.date_evenement;
+    if (!fin || fin > ilYa2Jours || fin < debutFenetre) continue;
+    if ((d.factures ?? []).some((f: any) => f.type !== "acompte" && f.statut !== "annulee")) continue;
+    if (!essai) {
+      const { data: f, error } = await db.rpc("facture_creer", { p_devis_id: d.id, p_type: "solde", p_par: "automatique" });
+      if (error) { console.error(d.numero, error.message); continue; }
+      creees.push(f);
+    }
+    rapport.factures.push(`${d.numero} (${d.client_nom})`);
+  }
+  if (creees.length) {
+    await resend.emails.send({
+      from: FROM, to: [ADMIN_EMAIL], subject: `🧾 ${creees.length} facture${creees.length > 1 ? "s" : ""} de solde à envoyer`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:620px;color:#2a2420">
+        <p>Bonjour Imane,</p><p>Ces événements sont terminés : la facture de solde a été créée automatiquement.</p>
+        <ul>${creees.map((f) => `<li><b>${e(f.numero)}</b> — ${e(f.client_societe || f.client_nom)}${f.titre ? ` · ${e(f.titre)}` : ""} : <b>${mad(f.net_a_payer)}</b> à payer</li>`).join("")}</ul>
+        <p>Vérifie-les puis envoie-les au client en un clic : <a href="https://heaventagency.com/admin">administration</a> → Devis → Factures (bouton ✉️).</p>
+        <p style="color:#888;font-size:12px">Heures en plus à ajouter ? Annule la facture, modifie le devis, puis clique sur « Facturer le solde ».</p></div>`,
+    }).catch(() => {});
   }
   return new Response(JSON.stringify({ essai, ...rapport }), { headers: { "Content-Type": "application/json" } });
 });
