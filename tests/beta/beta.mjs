@@ -18,6 +18,7 @@ const resultats = [];
 
 function verifier(condition, message) { if (!condition) throw new Error(message); }
 async function scenario(nom, fn) {
+  if (process.env.SEUL && !nom.includes(process.env.SEUL)) return;
   const debut = Date.now(); const notes = [];
   try { await fn(notes); resultats.push({ nom, ok: true, notes, duree: Date.now() - debut }); console.log(`✅ ${nom}`); }
   catch (e) { resultats.push({ nom, ok: false, notes, erreur: e.message.split("\n")[0], duree: Date.now() - debut }); console.log(`❌ ${nom} — ${e.message.split("\n")[0]}`); }
@@ -259,6 +260,7 @@ await scenario("Admin : devis Nawar bar à parfums (logo Nawar, 80 MAD par parfu
   base.catalogue_prestations = [...base.catalogue_prestations];
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(800);
   await page.getByRole("button", { name: /Devis Nawar/ }).click(); await page.waitForTimeout(800);
   const desig = page.getByPlaceholder(/Désignation/);
   verifier((await desig.first().inputValue()) === "Parfums — bar à parfums Nawar", "la ligne parfums n'est pas en tête");
@@ -292,6 +294,7 @@ await scenario("Devis envoyé au client → signature en ligne sur smartphone �
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   page.on("dialog", (d) => d.accept());
   await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(800);
   await page.getByRole("button", { name: /Devis Nawar/ }).click(); await page.waitForTimeout(800);
   await page.getByText("Nom du contact").locator("..").locator("input").fill("Salma Bennani");
   await page.getByTestId("envoyer-client").click(); await page.waitForTimeout(800);
@@ -925,6 +928,7 @@ await scenario("Admin : demande du jeu → devis ligne par ligne aux prix du cat
     { id: "j5", categorie: "decoration", designation: "Centre de table", description: null, unite: "unite", prix_unitaire: 180, actif: true, ordre: 45, jeu_element: "centres" }];
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(800);
   verifier(await page.getByText(/Créé avec le jeu/).count(), "la demande du jeu n'est pas signalée");
   await page.getByRole("button", { name: /Faire le devis/ }).first().click(); await page.waitForTimeout(1000);
   const valeurs = await page.getByPlaceholder(/Désignation/).evaluateAll((els) => els.map((e) => e.value));
@@ -940,6 +944,62 @@ await scenario("Admin : demande du jeu → devis ligne par ligne aux prix du cat
 });
 
 // 3 octies. Bouton WhatsApp : sur les pages publiques, jamais dans l'admin
+// Cadeau : accueil personnel d'Imane (surprise une seule fois, mot du jour, célébration, bilan du mois, réponses WhatsApp)
+await scenario("Cadeau : surprise de bienvenue, mot du jour de Yassin, célébration d'une signature, bilan du mois, réponses WhatsApp", async (notes) => {
+  const IMANE = "i.chaigari@heaventagency.com";
+  const base = nouvelleBase();
+  base.admins.push({ email: IMANE });
+  const hier = new Date(Date.now() - 864e5).toISOString();
+  base.admin_profils = [{ email: IMANE, prenom: "Imane", recoit_mots: true, surprise_vue_le: null, signatures_vues_jusqu_au: hier, records_vus: [] },
+    { email: ADMIN, prenom: "Yassin", recoit_mots: false, surprise_vue_le: null, signatures_vues_jusqu_au: hier, records_vus: [] }];
+  base.mot_du_jour = "Rien n'est impossible pour une femme qui a réussi à me rendre patient. 😄";
+  base.surprise = { titre: "Pour toi, Imane", texte: "Premier paragraphe.\n\nDeuxième paragraphe.", signature: "Yassin" };
+  base.devis.push({ id: "sg1", numero: "DEV-77", client_nom: "Salma Bennani", client_societe: null, titre: "Mariage Salma & Karim", statut: "accepte", total_ttc: 48000,
+    date_emission: new Date().toISOString().slice(0, 10), signe_le: new Date().toISOString(), date_evenement: "2026-12-12", relances: 0, archive: false });
+  const { page, ctx, erreurs } = await contexte(navigateur, base, IMANE, { mobile: true });
+  await connecter(page, BASE, IMANE, "/admin");
+  const surprise = page.getByTestId("surprise-bienvenue");
+  verifier(await surprise.count(), "la surprise de bienvenue ne s'affiche pas");
+  await page.getByTestId("ouvrir-surprise").click(); await page.waitForTimeout(800);
+  verifier(/Pour toi, Imane/.test(await surprise.innerText()) && /Deuxième paragraphe/.test(await surprise.innerText()), "la lettre n'apparaît pas");
+  await page.getByTestId("fermer-surprise").click({ timeout: 15000 }); await page.waitForTimeout(4500);
+  verifier(!(await surprise.count()) && base.admin_profils[0].surprise_vue_le, "la surprise ne se ferme pas ou n'est pas marquée comme vue");
+  const carte = await page.getByTestId("carte-accueil").innerText();
+  verifier(/Imane/.test(carte) && /me rendre patient/.test(carte) && /Yassin/.test(carte), "accueil au prénom ou mot du jour manquant : " + carte.slice(0, 200));
+  const celeb = page.getByTestId("celebration");
+  verifier(/Salma Bennani a signé/.test(await celeb.innerText()), "la signature n'est pas célébrée");
+  await celeb.getByRole("button", { name: /Bravo à moi/ }).click(); await page.waitForTimeout(600);
+  verifier(!(await celeb.count()) && base.admin_profils[0].signatures_vues_jusqu_au > hier, "la célébration ne se ferme pas");
+  await page.getByTestId("ouvrir-bilan-mois").click(); await page.waitForTimeout(1500);
+  const bilan = await page.getByTestId("bilan-mois").innerText();
+  verifier(/Ton mois en chiffres/.test(bilan) && /48\s000 MAD/.test(bilan.replace(/\u202f|\u00a0/g, " ")), "bilan du mois incomplet : " + bilan.slice(0, 300));
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400);
+  notes.push("1re connexion d'Imane : enveloppe → lettre signée Yassin → merci ; accueil « Imane » + mot du jour ; « Salma Bennani a signé ! » avec confettis ; bilan du mois 48 000 MAD");
+  // Rechargement : plus de surprise ni de célébration déjà vue
+  await page.reload(); await page.waitForTimeout(2500);
+  verifier(!(await page.getByTestId("surprise-bienvenue").count()) && !(await page.getByTestId("celebration").count()), "la surprise ou la célébration revient après rechargement");
+  // Réponses WhatsApp prêtes sur une demande
+  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(1000);
+  await page.getByTestId("reponses-whatsapp").first().click(); await page.waitForTimeout(400);
+  verifier(await page.getByTestId("modeles-whatsapp").count(), "les réponses WhatsApp ne s'ouvrent pas");
+  await page.getByText("Bien reçu").click(); await page.waitForTimeout(300);
+  const texte = await page.getByTestId("texte-whatsapp").inputValue();
+  verifier(/^Bonjour .+,/.test(texte) && /Imane — Heavent People Agency/.test(texte), "message WhatsApp mal rempli : " + texte);
+  await page.evaluate(() => { window.open = (u) => { window.__ouvert = u; return null; }; });
+  await page.getByTestId("ouvrir-whatsapp").click(); await page.waitForTimeout(300);
+  const lienWa = await page.evaluate(() => window.__ouvert);
+  verifier(/^https:\/\/wa\.me\/212\d+\?text=Bonjour/.test(lienWa || ""), "WhatsApp ne s'ouvre pas sur le bon numéro : " + lienWa);
+  notes.push("rechargement : rien ne réapparaît ; « Répondre sur WhatsApp » → « Bien reçu » signé Imane, ouvert sur wa.me/212…");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+  // Yassin : accueil au prénom, sans mot du jour ni surprise
+  const y = await contexte(navigateur, base, ADMIN);
+  await connecter(y.page, BASE, ADMIN, "/admin");
+  verifier(!(await y.page.getByTestId("surprise-bienvenue").count()) && !(await y.page.getByTestId("mot-du-jour").count()) && /Yassin/.test(await y.page.getByTestId("carte-accueil").innerText()), "Yassin ne doit voir ni la surprise ni les mots");
+  notes.push("Yassin : simple accueil à son prénom, ni surprise ni mot du jour");
+  await y.ctx.close();
+});
+
 await scenario("Bouton WhatsApp (pages publiques uniquement, message adapté)", async (notes) => {
   const base = nouvelleBase();
   const { page, ctx } = await contexte(navigateur, base, ADMIN, { mobile: true });

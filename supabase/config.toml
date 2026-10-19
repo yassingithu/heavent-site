@@ -20,3 +20,8 @@ verify_jwt = false
 
 [functions.admin-change-password]
 verify_jwt = false
+[functions.notifier-admin]
+verify_jwt = false
+
+[functions.resume-matin]
+verify_jwt = false

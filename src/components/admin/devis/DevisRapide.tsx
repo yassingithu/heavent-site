@@ -22,6 +22,9 @@ import EspaceMariesAdmin from "./EspaceMariesAdmin";
 import EquipeEvenement from "@/components/admin/equipe/EquipeEvenement";
 import { devisModifie } from "./DevisParStatut";
 import { FacturesDevis, ListeFactures } from "./Factures";
+import ReponsesWhatsApp from "@/components/admin/ReponsesWhatsApp";
+
+const nomEvenement = (type?: string | null) => { const t = (type || "").trim().toLowerCase(); return !t ? "votre événement" : t.startsWith("mariage") ? "votre mariage" : `votre ${t}`; };
 
 interface DemandeEntreprise {
   id: string; nom: string; prenom: string; email: string; telephone?: string | null; entreprise: string;
@@ -515,9 +518,14 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                     </span>
                     {kind === "mariage" && (d as DemandeMariage).configuration?.elements && <span className="ml-2 rounded-full bg-[#F4E9CF] text-[#7A5F1E] px-2 py-0.5 text-[11px]">✨ Créé avec le jeu · devis prérempli</span>}
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => kind === "entreprise" ? depuisDemandeEntreprise(d as DemandeEntreprise) : depuisDemandeMariage(d as DemandeMariage)}>
-                    <FileText className="h-4 w-4 mr-1" /> Faire le devis
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <ReponsesWhatsApp compact contexte={{ telephone: d.telephone, prenom: kind === "entreprise" ? d.prenom : d.prenom || d.nom,
+                      evenement: kind === "entreprise" ? "votre événement" : nomEvenement((d as DemandeMariage).type_evenement),
+                      date: dateFr(kind === "entreprise" ? (d as DemandeEntreprise).date_evenement : (d as DemandeMariage).date_mariage) }} />
+                    <Button size="sm" variant="outline" onClick={() => kind === "entreprise" ? depuisDemandeEntreprise(d as DemandeEntreprise) : depuisDemandeMariage(d as DemandeMariage)}>
+                      <FileText className="h-4 w-4 mr-1" /> Faire le devis
+                    </Button>
+                  </div>
                 </div>
               ))}
             </CardContent>
@@ -771,6 +779,9 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   <Send className="h-4 w-4 mr-1" /> {envoiEnCours ? "Envoi…" : form.date_envoi ? "Renvoyer au client pour signature" : "Envoyer au client pour signature"}
                 </Button>
                 {form.lien_token && <Button variant="ghost" size="sm" onClick={copierLien}><Link2 className="h-4 w-4 mr-1" /> Copier le lien client</Button>}
+                <ReponsesWhatsApp contexte={{ telephone: form.client_telephone, prenom: (form.client_nom || "").trim().split(/\s+/)[0],
+                  evenement: form.type === "mariage" ? "votre mariage" : form.titre ? `« ${form.titre} »` : "votre événement",
+                  date: dateFr(form.date_evenement), lienDevis: lienClientDevis(form.lien_token) || null }} />
                 <Button variant="ghost" size="sm" onClick={() => enregistrer("envoye")} disabled={saving}>Marquer comme envoyé (sans e-mail)</Button>
                 <Button variant="ghost" onClick={() => { setForm(null); setOnglet("liste"); }}>Fermer</Button>
               </div>

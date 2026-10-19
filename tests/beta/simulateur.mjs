@@ -265,6 +265,21 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
           };
         })() } });
     }
+    // Accueil personnalisé de l'administration
+    if (url.pathname.includes("/rpc/mon_accueil")) {
+      const p = (base.admin_profils ?? []).find((x) => x.email === email);
+      if (!p) return route.fulfill({ json: { prenom: null } });
+      return route.fulfill({ json: { prenom: p.prenom, mot: p.recoit_mots ? base.mot_du_jour ?? null : null,
+        surprise: p.recoit_mots && !p.surprise_vue_le ? base.surprise ?? null : null, signatures_vues_jusqu_au: p.signatures_vues_jusqu_au, records_vus: p.records_vus ?? [] } });
+    }
+    if (url.pathname.includes("/rpc/accueil_marquer")) {
+      const { p_quoi } = JSON.parse(req.postData() || "{}");
+      const p = (base.admin_profils ?? []).find((x) => x.email === email);
+      if (p && p_quoi === "surprise") p.surprise_vue_le = new Date().toISOString();
+      if (p && p_quoi === "signatures") p.signatures_vues_jusqu_au = new Date().toISOString();
+      if (p && p_quoi?.startsWith("record:")) (p.records_vus ??= []).push(p_quoi.slice(7));
+      return route.fulfill({ status: 204, body: "" });
+    }
     // Statistiques de fréquentation
     if (url.pathname.includes("/rpc/suivi_enregistrer")) {
       base.evenements_site ??= [];

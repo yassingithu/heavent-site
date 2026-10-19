@@ -10,6 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TableauDeBord from "@/components/admin/TableauDeBord";
 import StatsSite from "@/components/admin/StatsSite";
+import { CarteAccueil, Celebrations, SurpriseBienvenue, useAccueil } from "@/components/admin/accueil/Accueil";
+import BilanMois from "@/components/admin/accueil/BilanMois";
+import { CarteAppTelephone, useAppAdmin } from "@/components/admin/accueil/AppTelephone";
 import RealisationsAdmin from "@/components/admin/RealisationsAdmin";
 import AgendaAdmin from "@/components/admin/agenda/AgendaAdmin";
 import VitrineAdmin from "@/components/admin/VitrineAdmin";
@@ -228,7 +231,7 @@ const Admin = () => {
   });
 
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [ongletAdmin, setOngletAdmin] = useState("devis-rapide");
+  const [ongletAdmin, setOngletAdmin] = useState("tableau");
 
   useEffect(() => {
     const versDevis = () => setOngletAdmin("devis-rapide");
@@ -962,6 +965,10 @@ const Admin = () => {
     if (el && window.innerWidth < 1024) el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
   }, [ongletAdmin]);
 
+  const { infos: accueil, recharger: rechargerAccueil } = useAccueil();
+  useAppAdmin();
+  const [surpriseFermee, setSurpriseFermee] = useState(false);
+
   const nouvellesEntreprise = devisEntreprise.filter((d: any) => d.statut === "en_attente").length;
   const nouvellesMariage = devisMariage.filter((d: any) => d.statut === "en_attente").length;
 
@@ -1028,6 +1035,9 @@ const Admin = () => {
         </div>
       </aside>
 
+      {accueil?.surprise && accueil.prenom && !surpriseFermee && (
+        <SurpriseBienvenue surprise={accueil.surprise} prenom={accueil.prenom} onFermer={() => { setSurpriseFermee(true); rechargerAccueil(); }} />
+      )}
       <main className="flex-1 min-w-0">
       {dansApplication && <div className="hidden lg:block h-8 sticky top-0 z-30" style={{ WebkitAppRegion: "drag" } as React.CSSProperties} aria-hidden />}
       <div className="mx-auto max-w-[1400px] px-3 py-5 sm:px-6 lg:px-10 lg:py-8">
@@ -1040,6 +1050,10 @@ const Admin = () => {
         </header>
 
         <TabsContent value="tableau" className="space-y-4">
+          {accueil?.prenom && <CarteAccueil infos={accueil} nouvellesDemandes={nouvellesEntreprise + nouvellesMariage} />}
+          {accueil?.prenom && <Celebrations infos={accueil} onVu={rechargerAccueil} />}
+          <BilanMois />
+          <CarteAppTelephone email={user?.email} />
           <TableauDeBord demandesMariage={devisMariage as any} demandesEntreprise={devisEntreprise as any} onOuvrirDevis={() => setOngletAdmin("devis-rapide")} />
         </TabsContent>
 
