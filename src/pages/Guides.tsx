@@ -5,7 +5,8 @@ import Seo, { SITE } from "@/components/Seo";
 import { useTexte } from "@/i18n/textes";
 import { suivre } from "@/lib/suivi";
 import { GUIDES, guideParSlug, type Guide as TGuide } from "@/data/guides";
-import { ArrowRight, BookOpen, Check, Gift, Heart, Lock, MessageCircle, PartyPopper, Printer, Sparkles, Building2, Baby, Gem, CalendarDays } from "lucide-react";
+import { ArrowRight, BookOpen, Check, Clock, Download, Gift, Loader2, Lock, MessageCircle, PartyPopper, Sparkles, Building2, Baby, Gem, CalendarDays } from "lucide-react";
+import { telechargerGuidePdf } from "@/lib/guidePdf";
 
 const ICONES = { mariage: Gem, naissance: Baby, fete: PartyPopper, entreprise: Building2 } as const;
 const OUVERTS_PAR_DEFAUT = 3;
@@ -15,6 +16,23 @@ const CLE = "heavent-guides";
 const debloques = (): string[] => { try { return JSON.parse(localStorage.getItem(CLE) || "[]"); } catch { return []; } };
 const debloquer = (slug: string) => { try { localStorage.setItem(CLE, JSON.stringify([...new Set([...debloques(), slug])])); } catch { /* navigation privée */ } };
 
+/* ------------------------------ Éléments communs ------------------------------ */
+const THEMES_LIB: Record<string, string> = { mariage: "Mariage", naissance: "Baby shower & naissance", fete: "Fêtes de famille", entreprise: "Événements d'entreprise" };
+const minutesLecture = (g: TGuide) => Math.max(3, Math.round([g.intro, ...g.conseils.map((c) => `${c.titre} ${c.texte} ${c.astuce ?? ""}`), g.conclusion].join(" ").split(/\s+/).length / 200));
+
+function Halo() {
+  return <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(200,181,96,0.28),transparent_45%),radial-gradient(circle_at_95%_100%,rgba(168,147,63,0.22),transparent_42%)]" />;
+}
+function Ornement({ clair = false }: { clair?: boolean }) {
+  return (
+    <div aria-hidden className="flex items-center justify-center gap-3">
+      <span className={`h-px w-14 ${clair ? "bg-[#C8B560]/60" : "bg-[#DCCBA6]"}`} />
+      <span className="h-2 w-2 rotate-45 bg-[#C8B560]" />
+      <span className={`h-px w-14 ${clair ? "bg-[#C8B560]/60" : "bg-[#DCCBA6]"}`} />
+    </div>
+  );
+}
+
 /* ------------------------------ Liste des guides ------------------------------ */
 export function ListeGuides() {
   const x = useTexte();
@@ -22,14 +40,16 @@ export function ListeGuides() {
     <div className="min-h-screen bg-[#FBF8F1]">
       <Seo perso={{ chemin: "/guides", titre: "Guides gratuits : mariage, baby shower, fêtes et événements d'entreprise | Heavent",
         description: "Nos guides gratuits pour organiser votre mariage, baby shower, fiançailles, soirée henné ou événement d'entreprise au Maroc. Offerts par Heavent People Agency." }} />
-      <section className="bg-[#141414] text-white">
-        <div className="container mx-auto px-4 py-14 sm:py-20 max-w-5xl text-center">
-          <Gift className="h-10 w-10 mx-auto text-[#E4D49A] mb-4" />
-          <h1 className="font-serif text-4xl sm:text-5xl">{x("Nos guides gratuits")}</h1>
-          <p className="text-white/70 mt-3 max-w-2xl mx-auto">{x("Des conseils concrets, issus de nos années d'expérience, pour préparer votre événement sereinement.")}</p>
+      <section className="relative overflow-hidden bg-[#141414] text-white">
+        <Halo />
+        <div className="relative container mx-auto px-4 py-16 sm:py-24 max-w-4xl text-center">
+          <p className="text-[11px] sm:text-xs uppercase tracking-[0.35em] text-[#E4D49A]">Heavent · {x("Guides gratuits")}</p>
+          <h1 className="font-serif text-4xl sm:text-6xl mt-5 leading-[1.1]">{x("Nos guides gratuits")}</h1>
+          <div className="mt-6"><Ornement clair /></div>
+          <p className="text-white/70 mt-6 max-w-2xl mx-auto text-lg leading-relaxed">{x("Des conseils concrets, issus de nos années d'expérience, pour préparer votre événement sereinement.")}</p>
         </div>
       </section>
-      <div className="container mx-auto px-4 py-10 max-w-5xl grid sm:grid-cols-2 gap-4">
+      <div className="container mx-auto px-4 py-12 sm:py-16 max-w-5xl grid sm:grid-cols-2 gap-5">
         {GUIDES.map((g) => <CarteGuide key={g.slug} g={g} />)}
       </div>
     </div>
@@ -40,11 +60,17 @@ function CarteGuide({ g }: { g: TGuide }) {
   const x = useTexte();
   const Icone = ICONES[g.theme];
   return (
-    <Link to={`/guides/${g.slug}`} className="group rounded-3xl bg-white border border-[#EADFC8] p-6 hover:shadow-lg transition flex flex-col" data-testid="carte-guide">
-      <Icone className="h-7 w-7 text-[#A8933F]" />
-      <h2 className="font-serif text-2xl mt-3 leading-snug">{g.titre}</h2>
-      <p className="text-sm text-muted-foreground mt-2 flex-1">{g.intro.split(". ")[0]}.</p>
-      <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-[#8C6D22]">{x("Lire le guide gratuit")} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition" /></span>
+    <Link to={`/guides/${g.slug}`} className="group relative overflow-hidden rounded-[28px] bg-white border border-[#EADFC8] p-7 sm:p-8 hover:shadow-[0_24px_60px_-30px_rgba(140,109,34,0.45)] hover:-translate-y-0.5 transition-all flex flex-col" data-testid="carte-guide">
+      <div className="flex items-center justify-between">
+        <span className="h-12 w-12 rounded-full bg-[#141414] flex items-center justify-center"><Icone className="h-5 w-5 text-[#E4D49A]" /></span>
+        <span className="text-[10px] uppercase tracking-[0.25em] text-[#8C6D22]">{x(THEMES_LIB[g.theme])}</span>
+      </div>
+      <h2 className="font-serif text-2xl sm:text-[1.7rem] mt-6 leading-snug text-[#141414]">{g.titre}</h2>
+      <p className="text-[15px] text-[#5E554A] mt-3 leading-relaxed flex-1">{g.intro.split(". ")[0]}.</p>
+      <div className="mt-6 pt-5 border-t border-[#F1ECDD] flex items-center justify-between text-sm">
+        <span className="text-[#8A8070]">{g.conseils.length} {x("conseils")} · {minutesLecture(g)} {x("min de lecture")}</span>
+        <span className="inline-flex items-center gap-1.5 font-medium text-[#8C6D22]">{x("Lire")} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition" /></span>
+      </div>
     </Link>
   );
 }
@@ -56,6 +82,7 @@ export function PageGuide() {
   const [params] = useSearchParams();
   const g = guideParSlug(slug);
   const [ouvert, setOuvert] = useState(false);
+  const [pdf, setPdf] = useState(false);
   useEffect(() => {
     if (!g) return;
     if (params.get("offert") === "1") debloquer(g.slug);
@@ -65,62 +92,129 @@ export function PageGuide() {
   if (!g) return <ListeGuides />;
   const Icone = ICONES[g.theme];
   const visibles = ouvert ? g.conseils : g.conseils.slice(0, OUVERTS_PAR_DEFAUT);
+  const telecharger = async () => {
+    setPdf(true);
+    try { await telechargerGuidePdf(g); suivre("clic", `guide-pdf:${g.slug}`); } finally { setPdf(false); }
+  };
+  const aller = (i: number) => document.getElementById(`conseil-${i + 1}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
     <div className="min-h-screen bg-[#FBF8F1]" data-testid="page-guide">
       <Seo perso={{ chemin: `/guides/${g.slug}`, titre: `${g.titre} | Guide gratuit Heavent`, description: g.description,
         jsonLd: [{ "@context": "https://schema.org", "@type": "Article", headline: g.titre, description: g.description, inLanguage: "fr",
           author: { "@type": "Organization", name: "Heavent People Agency", url: SITE }, publisher: { "@id": `${SITE}/#agence` } }] }} />
-      <section className="bg-[#141414] text-white print:bg-white print:text-black">
-        <div className="container mx-auto px-4 py-14 sm:py-20 max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#C8B560]/50 px-4 py-1.5 text-xs uppercase tracking-[0.2em] text-[#E4D49A]">
-            <Gift className="h-3.5 w-3.5" /> {x("Guide gratuit")}
+
+      {/* En-tête */}
+      <section className="relative overflow-hidden bg-[#141414] text-white">
+        <Halo />
+        <div aria-hidden className="hidden sm:block absolute inset-5 border border-[#C8B560]/25 rounded-[28px] pointer-events-none" />
+        <div className="relative container mx-auto px-5 pt-10 pb-16 sm:pt-14 sm:pb-24 max-w-4xl text-center">
+          <Link to="/guides" className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-[#E4D49A] transition"><BookOpen className="h-3.5 w-3.5" /> {x("Guides gratuits")}</Link>
+          <div className="mt-8 flex items-center justify-center gap-3 text-[11px] sm:text-xs uppercase tracking-[0.3em] text-[#E4D49A]">
+            <span className="h-px w-8 bg-[#C8B560]/60" /> {x("Guide gratuit")} · {x(THEMES_LIB[g.theme])} <span className="h-px w-8 bg-[#C8B560]/60" />
           </div>
-          <Icone className="h-9 w-9 mx-auto text-[#E4D49A] mt-6" />
-          <h1 className="font-serif text-4xl sm:text-5xl mt-3 leading-tight">{g.titre}</h1>
-          <p className="text-white/70 mt-4 print:text-black/70">{g.accroche}</p>
+          <h1 className="font-serif text-[2.4rem] sm:text-6xl mt-6 leading-[1.08]">{g.titre}</h1>
+          <p className="text-white/70 mt-6 text-lg max-w-2xl mx-auto leading-relaxed">{g.accroche}</p>
+          <div className="mt-8 flex flex-wrap justify-center gap-2 text-xs text-white/75">
+            {[[Icone, `${g.conseils.length} ${x("conseils")}`], [Clock, `${minutesLecture(g)} ${x("min de lecture")}`], [Gift, x("Offert par Heavent")]].map(([I, t], k) => {
+              const Ic = I as typeof Gift;
+              return <span key={k} className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-1.5"><Ic className="h-3.5 w-3.5 text-[#E4D49A]" /> {t as string}</span>;
+            })}
+          </div>
         </div>
       </section>
 
-      <article className="container mx-auto px-4 py-10 max-w-3xl">
-        <p className="font-serif text-xl leading-relaxed text-[#3d362d]">{g.intro}</p>
-        <ol className="mt-10 space-y-5">
-          {visibles.map((c, i) => (
-            <li key={i} className="rounded-3xl bg-white border border-[#EADFC8] p-6 sm:p-7 break-inside-avoid" data-testid="conseil">
-              <div className="flex gap-4">
-                <span className="font-serif text-4xl leading-none text-[#C8B560] w-12 shrink-0">{String(i + 1).padStart(2, "0")}</span>
-                <div>
-                  <h2 className="font-serif text-2xl leading-snug">{c.titre}</h2>
-                  <p className="mt-2 leading-relaxed text-[#4a4239]">{c.texte}</p>
-                  {c.astuce && <p className="mt-3 rounded-xl bg-[#FBF6E9] px-4 py-3 text-sm text-[#5E554A]"><Sparkles className="inline h-4 w-4 text-[#A8933F] -mt-0.5 mr-1" /><b>{x("L'astuce Heavent :")}</b> {c.astuce}</p>}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ol>
+      <div className="container mx-auto px-5 py-12 sm:py-16 max-w-6xl lg:grid lg:grid-cols-[230px_1fr] lg:gap-14">
+        {/* Sommaire */}
+        <aside className="hidden lg:block">
+          <nav className="sticky top-28">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-[#8C6D22] mb-4">{x("Sommaire")}</p>
+            <ol className="space-y-1 border-l border-[#EADFC8]">
+              {g.conseils.map((c, i) => {
+                const verrou = !ouvert && i >= OUVERTS_PAR_DEFAUT;
+                return (
+                  <li key={i}>
+                    <button onClick={() => (verrou ? document.getElementById("debloquer")?.scrollIntoView({ behavior: "smooth", block: "center" }) : aller(i))}
+                      className="w-full text-left -ml-px pl-4 pr-2 py-1.5 border-l border-transparent hover:border-[#C8B560] text-[13px] leading-snug text-[#5E554A] hover:text-[#141414] transition flex gap-2">
+                      <span className="font-serif text-[#C8B560] w-5 shrink-0">{i + 1}.</span>
+                      <span className={verrou ? "text-[#B5AA95]" : ""}>{c.titre}</span>
+                      {verrou && <Lock className="h-3 w-3 shrink-0 mt-0.5 text-[#B5AA95]" />}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+        </aside>
 
-        {!ouvert ? (
-          <FormulaireGuide g={g} onDebloque={() => { debloquer(g.slug); setOuvert(true); }} />
-        ) : (
-          <div className="mt-10 space-y-6">
-            <p className="font-serif text-xl leading-relaxed text-center text-[#3d362d]"><Heart className="inline h-5 w-5 text-[#C8B560] fill-[#C8B560] -mt-1 mr-2" />{g.conclusion}</p>
-            <div className="flex flex-wrap justify-center gap-3 print:hidden">
-              <Link to={g.cta.lien} onClick={() => suivre("clic", `guide-cta:${g.slug}`)} className="inline-flex items-center gap-2 rounded-full bg-[#141414] text-white px-6 min-h-12 font-medium">{x(g.cta.texte)} <ArrowRight className="h-4 w-4" /></Link>
-              <Link to="/contact#rendez-vous" className="inline-flex items-center gap-2 rounded-full border border-[#DCCBA6] bg-white px-6 min-h-12"><CalendarDays className="h-4 w-4" /> {x("Prendre rendez-vous")}</Link>
-              <button onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-full border border-[#DCCBA6] bg-white px-6 min-h-12" data-testid="imprimer-guide"><Printer className="h-4 w-4" /> {x("Enregistrer en PDF")}</button>
+        <article className="max-w-3xl">
+          <p className="font-serif text-xl sm:text-[1.4rem] leading-[1.7] text-[#3d362d] first-letter:float-left first-letter:font-serif first-letter:text-7xl first-letter:leading-[0.85] first-letter:pr-3 first-letter:pt-1 first-letter:text-[#A8933F]">{g.intro}</p>
+          <div className="my-12"><Ornement /></div>
+
+          <ol className="space-y-12 sm:space-y-14">
+            {visibles.map((c, i) => (
+              <li key={i} id={`conseil-${i + 1}`} className="scroll-mt-28 break-inside-avoid" data-testid="conseil">
+                <div className="flex gap-5 sm:gap-8">
+                  <span aria-hidden className="font-serif text-5xl sm:text-7xl leading-none text-transparent [-webkit-text-stroke:1.2px_#C8B560] shrink-0 w-14 sm:w-20">{String(i + 1).padStart(2, "0")}</span>
+                  <div className="min-w-0 pt-1">
+                    <h2 className="font-serif text-2xl sm:text-[1.9rem] leading-snug text-[#141414]">{c.titre}</h2>
+                    <p className="mt-3 text-[16.5px] leading-[1.8] text-[#4a4239]">{c.texte}</p>
+                    {c.astuce && (
+                      <div className="mt-5 rounded-r-2xl border-l-2 border-[#C8B560] bg-white px-5 py-4 shadow-[0_10px_30px_-24px_rgba(140,109,34,0.6)]">
+                        <p className="text-[10px] uppercase tracking-[0.25em] text-[#8C6D22] flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> {x("L'astuce Heavent")}</p>
+                        <p className="mt-1.5 text-[15px] leading-relaxed text-[#5E554A]">{c.astuce}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          {!ouvert ? (
+            <div id="debloquer"><FormulaireGuide g={g} onDebloque={() => { debloquer(g.slug); setOuvert(true); }} /></div>
+          ) : (
+            <div className="mt-16 space-y-8">
+              <figure className="relative rounded-[28px] bg-white border border-[#EADFC8] px-7 sm:px-12 py-10 text-center">
+                <span aria-hidden className="absolute -top-6 left-1/2 -translate-x-1/2 h-12 w-12 rounded-full bg-[#141414] flex items-center justify-center font-serif text-3xl text-[#E4D49A] leading-none pt-3">“</span>
+                <blockquote className="font-serif text-xl sm:text-2xl leading-relaxed text-[#3d362d]">{g.conclusion}</blockquote>
+                <figcaption className="mt-5 text-[11px] uppercase tracking-[0.3em] text-[#8C6D22]">{x("L'équipe Heavent")}</figcaption>
+              </figure>
+              <section className="relative overflow-hidden rounded-[28px] bg-[#141414] text-white px-7 sm:px-12 py-10 text-center print:hidden">
+                <Halo />
+                <div className="relative">
+                  <h2 className="font-serif text-3xl sm:text-4xl">{x("Parlons de votre événement")}</h2>
+                  <p className="text-white/65 mt-3">{x("Un devis sur mesure ou un rendez-vous : on vous répond rapidement.")}</p>
+                  <div className="mt-7 flex flex-wrap justify-center gap-3">
+                    <Link to={g.cta.lien} onClick={() => suivre("clic", `guide-cta:${g.slug}`)} className="inline-flex items-center gap-2 rounded-full bg-[#C8B560] text-[#141414] px-6 min-h-12 font-semibold hover:bg-[#d6c477] transition">{x(g.cta.texte)} <ArrowRight className="h-4 w-4" /></Link>
+                    <Link to="/contact#rendez-vous" className="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 min-h-12 hover:bg-white/10 transition"><CalendarDays className="h-4 w-4" /> {x("Prendre rendez-vous")}</Link>
+                    <button onClick={telecharger} disabled={pdf} className="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 min-h-12 hover:bg-white/10 transition disabled:opacity-60" data-testid="telecharger-guide">
+                      {pdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} {pdf ? x("Préparation du PDF…") : x("Télécharger le guide en PDF")}
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
+
+          <div className="mt-20 print:hidden">
+            <div className="mb-6"><Ornement /></div>
+            <h3 className="text-center text-[11px] uppercase tracking-[0.3em] text-[#8C6D22] mb-6">{x("Nos autres guides gratuits")}</h3>
+            <div className="grid sm:grid-cols-3 gap-4">
+              {GUIDES.filter((a) => a.slug !== g.slug).map((a) => {
+                const I = ICONES[a.theme];
+                return (
+                  <Link key={a.slug} to={`/guides/${a.slug}`} className="group rounded-2xl bg-white border border-[#EADFC8] p-5 hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col">
+                    <I className="h-5 w-5 text-[#A8933F]" />
+                    <span className="mt-3 font-serif text-lg leading-snug text-[#141414] flex-1">{a.titre}</span>
+                    <span className="mt-3 text-xs text-[#8C6D22] inline-flex items-center gap-1">{x("Lire le guide gratuit")} <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition" /></span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
-        )}
-
-        <div className="mt-14 print:hidden">
-          <h3 className="text-xs uppercase tracking-[0.2em] text-[#8C6D22] font-semibold mb-3 flex items-center gap-1.5"><BookOpen className="h-4 w-4" /> {x("Nos autres guides gratuits")}</h3>
-          <div className="grid sm:grid-cols-3 gap-3">
-            {GUIDES.filter((a) => a.slug !== g.slug).map((a) => (
-              <Link key={a.slug} to={`/guides/${a.slug}`} className="rounded-2xl bg-white border border-[#EADFC8] p-4 text-sm hover:shadow-md transition">{a.titre}</Link>
-            ))}
-          </div>
-        </div>
-      </article>
+        </article>
+      </div>
     </div>
   );
 }
