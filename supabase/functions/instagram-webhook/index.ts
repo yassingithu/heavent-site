@@ -6,7 +6,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
  * - POST : nouveau commentaire contenant « GUIDE » → message privé avec le lien du bon guide + petite réponse publique.
  *          Message privé contenant « GUIDE » → réponse avec les liens des guides.
  */
-const API = "https://graph.instagram.com/v21.0";
+const API_IG = "https://graph.instagram.com/v21.0";
+const API_FB = "https://graph.facebook.com/v21.0";
 const SITE = "https://heaventagency.com";
 const GUIDES: Record<string, { slug: string; titre: string }> = {
   mariage: { slug: "10-conseils-mariage-reussi", titre: "10 conseils pour un mariage réussi" },
@@ -22,7 +23,7 @@ const normaliser = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toU
 const demandeGuide = (t?: string) => !!t && /\bGUIDES?\b/.test(normaliser(t));
 
 async function secrets() {
-  const { data } = await db.from("secrets_internes").select("nom, valeur").in("nom", ["instagram_jeton", "instagram_compte", "instagram_secret_app", "instagram_webhook_jeton"]);
+  const { data } = await db.from("secrets_internes").select("nom, valeur").in("nom", ["instagram_jeton", "instagram_compte", "instagram_secret_app", "instagram_webhook_jeton", "instagram_mode", "instagram_page_id"]);
   return Object.fromEntries((data ?? []).map((x: any) => [x.nom, x.valeur])) as Record<string, string>;
 }
 
@@ -36,12 +37,14 @@ async function signatureValide(corps: string, signature: string | null, secret?:
 }
 
 async function appel(url: string, corps: unknown, jeton: string) {
-  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${jeton}` }, body: JSON.stringify(corps) });
+  const r = await fetch(`${url}${url.includes("?") ? "&" : "?"}access_token=${encodeURIComponent(jeton)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });
   const d = await r.json().catch(() => ({}));
   if (!r.ok || d.error) throw new Error(d.error?.message ?? `Instagram ${r.status}`);
   return d;
 }
 
+const base = (s: Record<string, string>) => (s.instagram_mode === "facebook" ? API_FB : API_IG);
+const expediteur = (s: Record<string, string>) => (s.instagram_mode === "facebook" ? s.instagram_page_id : s.instagram_compte);
 const lien = (slug: string) => `${SITE}/guides/${slug}?utm_source=instagram&utm_medium=dm`;
 
 async function traiterCommentaire(v: any, s: Record<string, string>) {
@@ -64,9 +67,9 @@ async function traiterCommentaire(v: any, s: Record<string, string>) {
     ? `Bonjour${prenom} 👋 Merci pour votre commentaire !\n\nVoici votre guide gratuit « ${g.titre} » 🎁\n${lien(g.slug)}\n\nBonne lecture, et n'hésitez pas à nous écrire ici si vous avez une question sur votre événement.\nL'équipe Heavent`
     : `Bonjour${prenom} 👋 Merci pour votre commentaire !\n\nVoici nos guides gratuits 🎁 (mariage, baby shower, fêtes et événements d'entreprise) :\n${SITE}/liens\n\nBonne lecture !\nL'équipe Heavent`;
   try {
-    await appel(`${API}/${s.instagram_compte}/messages`, { recipient: { comment_id: id }, message: { text: texte } }, s.instagram_jeton);
+    await appel(`${base(s)}/${expediteur(s)}/messages`, { recipient: { comment_id: id }, message: { text: texte } }, s.instagram_jeton);
     await db.from("instagram_commentaires").update({ statut: "envoye", post_id: post?.id ?? null, guide_slug: g?.slug ?? "liens" }).eq("commentaire_id", id);
-    try { await appel(`${API}/${id}/replies`, { message: REPONSES[Math.floor(Math.random() * REPONSES.length)] }, s.instagram_jeton); } catch { /* la réponse publique est un bonus */ }
+    try { await appel(`${base(s)}/${id}/replies`, { message: REPONSES[Math.floor(Math.random() * REPONSES.length)] }, s.instagram_jeton); } catch { /* la réponse publique est un bonus */ }
   } catch (e) {
     await db.from("instagram_commentaires").update({ statut: "erreur", erreur: String((e as Error).message).slice(0, 300), post_id: post?.id ?? null }).eq("commentaire_id", id);
   }
@@ -79,7 +82,7 @@ async function traiterMessage(m: any, s: Record<string, string>) {
   if (deja) return;
   const texte = `Avec plaisir ! 🎁 Voici nos guides gratuits :\n\n💍 Mariage : ${lien(GUIDES.mariage.slug)}\n🎈 Baby shower : ${lien(GUIDES.naissance.slug)}\n✨ Fiançailles, henné : ${lien(GUIDES.fete.slug)}\n🤝 Entreprise : ${lien(GUIDES.entreprise.slug)}\n\nL'équipe Heavent`;
   try {
-    await appel(`${API}/${s.instagram_compte}/messages`, { recipient: { id: m.sender.id }, message: { text: texte } }, s.instagram_jeton);
+    await appel(`${base(s)}/${expediteur(s)}/messages`, { recipient: { id: m.sender.id }, message: { text: texte } }, s.instagram_jeton);
     await db.from("instagram_commentaires").update({ statut: "envoye" }).eq("commentaire_id", id);
   } catch (e) {
     await db.from("instagram_commentaires").update({ statut: "erreur", erreur: String((e as Error).message).slice(0, 300) }).eq("commentaire_id", id);

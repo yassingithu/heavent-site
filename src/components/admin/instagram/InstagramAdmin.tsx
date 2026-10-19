@@ -50,6 +50,9 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [reglages, setReglages] = useState<{ pixabay: boolean; instagram: boolean; instagram_nom?: string | null; secret_app?: boolean; webhook_jeton?: string | null; abonne_le?: string | null } | null>(null);
   const [jeton, setJeton] = useState("");
+  const [appId, setAppId] = useState("");
+  const [secretApp, setSecretApp] = useState("");
+  const methodeFacebook = jeton.trim().startsWith("EA");
   const [connexion, setConnexion] = useState(false);
   const [cle, setCle] = useState("");
   const [ouvert, setOuvert] = useState<Post | null>(null);
@@ -76,9 +79,9 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
   const connecterInstagram = async () => {
     setConnexion(true);
     try {
-      const { data, error } = await supabase.functions.invoke("instagram-publier", { body: { action: "connecter", jeton } });
+      const { data, error } = await supabase.functions.invoke("instagram-publier", { body: { action: "connecter", jeton, app_id: appId, secret: secretApp } });
       if (error) { let m = error.message; try { m = (await (error as any).context?.json())?.error ?? m; } catch { /* rien */ } throw new Error(m); }
-      setJeton(""); toast({ title: `Instagram connecté ✓`, description: `Compte @${data.nom} : les posts prêts partiront tout seuls à leur date.` }); charger();
+      setJeton(""); setSecretApp(""); toast({ title: `Instagram connecté ✓`, description: `Compte @${data.nom} : les posts prêts partiront tout seuls à leur date.` }); charger();
     } catch (e: any) { toast({ title: "Connexion impossible", description: e.message, variant: "destructive" }); }
     setConnexion(false);
   };
@@ -133,8 +136,15 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
               <div className="mt-2 flex gap-2">
                 <input type="password" autoComplete="off" value={jeton} onChange={(e) => setJeton(e.target.value)} placeholder="Colle le jeton Instagram ici"
                   className="flex-1 min-w-0 rounded-md border px-3 h-10 text-sm" data-testid="jeton-instagram" />
-                <button onClick={connecterInstagram} disabled={jeton.trim().length < 20 || connexion} className="rounded-md bg-[#141414] text-white px-4 h-10 text-sm disabled:opacity-50">{connexion ? "…" : "Connecter"}</button>
+                <button onClick={connecterInstagram} disabled={jeton.trim().length < 20 || connexion || (methodeFacebook && (!appId.trim() || (!reglages.secret_app && !secretApp.trim())))} className="rounded-md bg-[#141414] text-white px-4 h-10 text-sm disabled:opacity-50">{connexion ? "…" : "Connecter"}</button>
               </div>
+              {methodeFacebook && (
+                <div className="mt-2 grid sm:grid-cols-2 gap-2" data-testid="methode-facebook">
+                  <input value={appId} onChange={(e) => setAppId(e.target.value)} placeholder="App ID (App settings → Basic)" className="rounded-md border px-3 h-10 text-sm" data-testid="app-id" />
+                  {!reglages.secret_app && <input type="password" autoComplete="off" value={secretApp} onChange={(e) => setSecretApp(e.target.value)} placeholder="App secret (App settings → Basic)" className="rounded-md border px-3 h-10 text-sm" data-testid="app-secret" />}
+                  <p className="sm:col-span-2 text-xs text-muted-foreground">Jeton Facebook détecté : on passe par la Page Facebook reliée au compte Instagram.</p>
+                </div>
+              )}
             </>
           )}
         </section>
