@@ -30,7 +30,7 @@ async function appel(url: string, init?: RequestInit) {
 
 /** Abonne le compte aux notifications « commentaires » et « messages » (pour « Commentez GUIDE ») */
 async function abonner(jeton: string, pageId?: string) {
-  if (pageId) await appel(`${API_FB}/${pageId}/subscribed_apps?subscribed_fields=feed,messages&access_token=${encodeURIComponent(jeton)}`, { method: "POST" });
+  if (pageId) await appel(`${API_FB}/${pageId}/subscribed_apps?subscribed_fields=feed&access_token=${encodeURIComponent(jeton)}`, { method: "POST" });
   else await appel(`${API_IG}/me/subscribed_apps?subscribed_fields=comments,messages&access_token=${encodeURIComponent(jeton)}`, { method: "POST" });
   await enregistrer("instagram_abonne_le", new Date().toISOString());
 }
