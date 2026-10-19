@@ -16,10 +16,12 @@ import {
 import heroImage from "@/assets/hero-staff.webp";
 import SectionConfiance from "@/components/vitrine/Confiance";
 import { SERVICES } from "@/lib/pagesLocales";
+import { useTexte } from "@/i18n/textes";
 import heroImageMobile from "@/assets/hero-staff-mobile.webp";
 
 const Home = () => {
   const { t } = useTranslation();
+  const x = useTexte();
 
   const services = [
     {
@@ -79,7 +81,7 @@ const Home = () => {
         <div className="container mx-auto px-4 text-center text-white">
           <div className="max-w-4xl mx-auto animate-fade-in">
             <p className="uppercase tracking-[0.2em] text-xs md:text-sm text-primary/90 mb-4">
-              Agence d'hôtesses & d'événementiel · Rabat · Casablanca · Marrakech
+              {x("Agence d'hôtesses & d'événementiel · Rabat · Casablanca · Marrakech")}
             </p>
             <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6">
               {t('home.heroTitle')}
@@ -135,7 +137,7 @@ const Home = () => {
                   <p className="text-muted-foreground mb-6">{service.description}</p>
                   <Button asChild variant="outline" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                     <Link to={service.link}>
-                      En savoir plus
+                      {x("En savoir plus")}
                       <ArrowRight className="ml-2" size={16} />
                     </Link>
                   </Button>
@@ -149,14 +151,14 @@ const Home = () => {
             <Card className="inline-block p-8 gold-gradient text-primary-foreground">
               <div className="flex items-center justify-center mb-4">
                 <Sparkles className="mr-2" size={24} />
-                <span className="text-xl font-semibold">Prêt à organiser votre événement ?</span>
+                <span className="text-xl font-semibold">{x("Prêt à organiser votre événement ?")}</span>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button asChild variant="secondary" size="lg">
-                  <Link to="/devis-entreprise">Devis Entreprise</Link>
+                  <Link to="/devis-entreprise">{x("Devis Entreprise")}</Link>
                 </Button>
                 <Button asChild variant="secondary" size="lg">
-                  <Link to="/devis-mariage">Devis Événement</Link>
+                  <Link to="/devis-mariage">{x("Devis Événement")}</Link>
                 </Button>
               </div>
             </Card>
@@ -189,7 +191,7 @@ const Home = () => {
               </div>
               <Button asChild size="lg" className="gold-shadow">
                 <Link to="/a-propos">
-                  Découvrir notre histoire
+                  {x("Découvrir notre histoire")}
                   <ArrowRight className="ml-2" size={20} />
                 </Link>
               </Button>
@@ -200,28 +202,28 @@ const Home = () => {
                 <CardContent className="p-6 text-center">
                   <Award className="text-primary mx-auto mb-4" size={48} />
                   <h3 className="text-2xl font-bold mb-2">10+</h3>
-                  <p className="text-muted-foreground">Années d'expérience</p>
+                  <p className="text-muted-foreground">{x("Années d'expérience")}</p>
                 </CardContent>
               </Card>
               <Card className="hover-lift">
                 <CardContent className="p-6 text-center">
                   <Users className="text-primary mx-auto mb-4" size={48} />
                   <h3 className="text-2xl font-bold mb-2">500+</h3>
-                  <p className="text-muted-foreground">Événements réussis</p>
+                  <p className="text-muted-foreground">{x("Événements réussis")}</p>
                 </CardContent>
               </Card>
               <Card className="hover-lift">
                 <CardContent className="p-6 text-center">
                   <Star className="text-primary mx-auto mb-4" size={48} />
                   <h3 className="text-2xl font-bold mb-2">98%</h3>
-                  <p className="text-muted-foreground">Clients satisfaits</p>
+                  <p className="text-muted-foreground">{x("Clients satisfaits")}</p>
                 </CardContent>
               </Card>
               <Card className="hover-lift">
                 <CardContent className="p-6 text-center">
                   <Building2 className="text-primary mx-auto mb-4" size={48} />
                   <h3 className="text-2xl font-bold mb-2">100+</h3>
-                  <p className="text-muted-foreground">Entreprises partenaires</p>
+                  <p className="text-muted-foreground">{x("Entreprises partenaires")}</p>
                 </CardContent>
               </Card>
             </div>
@@ -233,10 +235,9 @@ const Home = () => {
       {/* Partout au Maroc (contenu local utile aux clients… et à Google) */}
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4 max-w-5xl">
-          <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4 text-center">Hôtesses d'accueil et staff événementiel partout au Maroc</h2>
+          <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4 text-center">{x("Hôtesses d'accueil et staff événementiel partout au Maroc")}</h2>
           <p className="text-lg text-muted-foreground text-center max-w-3xl mx-auto mb-10">
-            Salons, congrès, lancements de produit, soirées d'entreprise ou mariages : nous sélectionnons des hôtes et hôtesses
-            bilingues (français, arabe, anglais), formés à l'accueil haut de gamme, et nous gérons pour vous contrats, tenues et coordination sur place.
+            {x("Salons, congrès, lancements de produit, soirées d'entreprise ou mariages : nous sélectionnons des hôtes et hôtesses bilingues (français, arabe, anglais), formés à l'accueil haut de gamme, et nous gérons pour vous contrats, tenues et coordination sur place.")}
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
@@ -248,13 +249,13 @@ const Home = () => {
               ["Fès", "Congrès et événements culturels ; nos équipes se déplacent aussi partout au Maroc, sur devis."],
             ].map(([ville, texte]) => (
               <Link key={ville} to={`/hotesses-${ville.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()}`} className="group rounded-lg border bg-card p-5 hover:border-[#C8B560] hover:shadow-sm transition">
-                <h3 className="font-semibold text-lg mb-1 group-hover:text-[#8C6D22]">Hôtesses à {ville} <ArrowRight className="inline h-4 w-4 opacity-0 group-hover:opacity-100 transition" /></h3>
-                <p className="text-sm text-muted-foreground">{texte}</p>
+                <h3 className="font-semibold text-lg mb-1 group-hover:text-[#8C6D22]">{x("Hôtesses à {ville}", { ville: x(ville) })} <ArrowRight className="inline h-4 w-4 opacity-0 group-hover:opacity-100 transition" /></h3>
+                <p className="text-sm text-muted-foreground">{x(texte)}</p>
               </Link>
             ))}
           </div>
           <div className="flex flex-wrap justify-center gap-2 mt-8">
-            {SERVICES.map((s) => <Link key={s.chemin} to={s.chemin} className="rounded-full border px-4 py-2 text-sm hover:border-[#C8B560] hover:text-[#8C6D22]">{s.nomCourt}</Link>)}
+            {SERVICES.map((s) => <Link key={s.chemin} to={s.chemin} className="rounded-full border px-4 py-2 text-sm hover:border-[#C8B560] hover:text-[#8C6D22]">{x(s.nomCourt)}</Link>)}
           </div>
         </div>
       </section>

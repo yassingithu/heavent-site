@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Building2, Calendar, Users, CheckCircle } from "lucide-react";
+import { useTexte } from "@/i18n/textes";
 
 const formSchema = z.object({
   companyName: z.string().min(2, "Le nom de la société est requis"),
@@ -34,6 +35,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const BusinessQuote = () => {
+  const x = useTexte();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { toast } = useToast();
@@ -81,15 +83,15 @@ const BusinessQuote = () => {
       suivre("demande", "devis-entreprise");
 
       toast({
-        title: "Demande envoyée !",
-        description: "Votre demande de devis a été envoyée avec succès. Nous vous contacterons sous 24h.",
+        title: x("Demande envoyée !"),
+        description: x("Votre demande de devis a été envoyée avec succès. Nous vous contacterons sous 24h."),
       });
       
       setIsSubmitted(true);
     } catch (error) {
       toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de l'envoi. Veuillez réessayer.",
+        title: x("Erreur"),
+        description: x("Une erreur est survenue lors de l'envoi. Veuillez réessayer."),
         variant: "destructive",
       });
     } finally {
@@ -103,12 +105,12 @@ const BusinessQuote = () => {
         <Card className="max-w-md mx-4 text-center">
           <CardContent className="p-8">
             <CheckCircle className="text-green-500 mx-auto mb-4" size={64} />
-            <h2 className="text-2xl font-bold mb-4">Demande envoyée !</h2>
+            <h2 className="text-2xl font-bold mb-4">{x("Demande envoyée !")}</h2>
             <p className="text-muted-foreground mb-6">
-              Votre demande de devis a été envoyée avec succès. Notre équipe commerciale va l'examiner et vous contacter sous 24h pour discuter de votre projet.
+              {x("Votre demande de devis a été envoyée avec succès. Notre équipe commerciale va l'examiner et vous contacter sous 24h pour discuter de votre projet.")}
             </p>
             <Button onClick={() => window.location.href = "/"}>
-              Retour à l'accueil
+              {x("Retour à l'accueil")}
             </Button>
           </CardContent>
         </Card>
@@ -124,10 +126,10 @@ const BusinessQuote = () => {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-serif font-bold mb-4">
-              Demande de Devis <span className="text-primary">Entreprise</span>
+              {x("Demande de devis")} <span className="text-primary">{x("Entreprise")}</span>
             </h1>
             <p className="text-xl text-muted-foreground">
-              Obtenez un devis personnalisé pour votre événement d'entreprise
+              {x("Obtenez un devis personnalisé pour votre événement d'entreprise")}
             </p>
           </div>
 
@@ -135,38 +137,38 @@ const BusinessQuote = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Building2 className="mr-2" size={24} />
-                Informations sur votre événement
+                {x("Informations sur votre événement")}
               </CardTitle>
               <CardDescription>
-                Renseignez les détails de votre projet pour recevoir un devis personnalisé
+                {x("Renseignez les détails de votre projet pour recevoir un devis personnalisé")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Informations société */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Informations société</h3>
+                  <h3 className="text-lg font-semibold">{x("Informations société")}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="companyName">Nom de la société *</Label>
+                      <Label htmlFor="companyName">{x("Nom de la société *")}</Label>
                       <Input
                         id="companyName"
                         {...register("companyName")}
                         className={errors.companyName ? "border-destructive" : ""}
                       />
                       {errors.companyName && (
-                        <p className="text-sm text-destructive mt-1">{errors.companyName.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.companyName.message ?? ""))}</p>
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="sector">Secteur d'activité *</Label>
+                      <Label htmlFor="sector">{x("Secteur d'activité *")}</Label>
                       <Input
                         id="sector"
                         {...register("sector")}
                         className={errors.sector ? "border-destructive" : ""}
                       />
                       {errors.sector && (
-                        <p className="text-sm text-destructive mt-1">{errors.sector.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.sector.message ?? ""))}</p>
                       )}
                     </div>
                   </div>
@@ -176,28 +178,28 @@ const BusinessQuote = () => {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold flex items-center">
                     <Calendar className="mr-2" size={20} />
-                    Détails de l'événement
+                    {x("Détails de l'événement")}
                   </h3>
                   <div>
-                    <Label htmlFor="eventType">Type d'événement *</Label>
+                    <Label htmlFor="eventType">{x("Type d'événement *")}</Label>
                     <Select onValueChange={(value) => setValue("eventType", value)}>
                       <SelectTrigger className={errors.eventType ? "border-destructive" : ""}>
-                        <SelectValue placeholder="Sélectionner le type d'événement" />
+                        <SelectValue placeholder={x("Sélectionner le type d'événement")} />
                       </SelectTrigger>
                       <SelectContent>
                         {eventTypes.map((type) => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                          <SelectItem key={type} value={type}>{x(type)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     {errors.eventType && (
-                      <p className="text-sm text-destructive mt-1">{errors.eventType.message}</p>
+                      <p className="text-sm text-destructive mt-1">{x(String(errors.eventType.message ?? ""))}</p>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="eventDate">Date de l'événement *</Label>
+                      <Label htmlFor="eventDate">{x("Date de l'événement *")}</Label>
                       <Input
                         id="eventDate"
                         type="date"
@@ -205,31 +207,31 @@ const BusinessQuote = () => {
                         className={errors.eventDate ? "border-destructive" : ""}
                       />
                       {errors.eventDate && (
-                        <p className="text-sm text-destructive mt-1">{errors.eventDate.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.eventDate.message ?? ""))}</p>
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="eventLocation">Lieu de l'événement *</Label>
+                      <Label htmlFor="eventLocation">{x("Lieu de l'événement *")}</Label>
                       <Select onValueChange={(value) => setValue("eventLocation", value)}>
                         <SelectTrigger className={errors.eventLocation ? "border-destructive" : ""}>
-                          <SelectValue placeholder="Sélectionner la ville" />
+                          <SelectValue placeholder={x("Sélectionner la ville")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="rabat">Rabat</SelectItem>
-                          <SelectItem value="casablanca">Casablanca</SelectItem>
-                          <SelectItem value="marrakech">Marrakech</SelectItem>
-                          <SelectItem value="fes">Fès</SelectItem>
-                          <SelectItem value="tanger">Tanger</SelectItem>
-                          <SelectItem value="agadir">Agadir</SelectItem>
-                          <SelectItem value="meknes">Meknès</SelectItem>
-                          <SelectItem value="oujda">Oujda</SelectItem>
-                          <SelectItem value="kenitra">Kénitra</SelectItem>
-                          <SelectItem value="tetouan">Tétouan</SelectItem>
-                          <SelectItem value="autre">Autre ville</SelectItem>
+                          <SelectItem value="rabat">{x("Rabat")}</SelectItem>
+                          <SelectItem value="casablanca">{x("Casablanca")}</SelectItem>
+                          <SelectItem value="marrakech">{x("Marrakech")}</SelectItem>
+                          <SelectItem value="fes">{x("Fès")}</SelectItem>
+                          <SelectItem value="tanger">{x("Tanger")}</SelectItem>
+                          <SelectItem value="agadir">{x("Agadir")}</SelectItem>
+                          <SelectItem value="meknes">{x("Meknès")}</SelectItem>
+                          <SelectItem value="oujda">{x("Oujda")}</SelectItem>
+                          <SelectItem value="kenitra">{x("Kénitra")}</SelectItem>
+                          <SelectItem value="tetouan">{x("Tétouan")}</SelectItem>
+                          <SelectItem value="autre">{x("Autre ville")}</SelectItem>
                         </SelectContent>
                       </Select>
                       {errors.eventLocation && (
-                        <p className="text-sm text-destructive mt-1">{errors.eventLocation.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.eventLocation.message ?? ""))}</p>
                       )}
                     </div>
                   </div>
@@ -239,11 +241,11 @@ const BusinessQuote = () => {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold flex items-center">
                     <Users className="mr-2" size={20} />
-                    Personnel requis
+                    {x("Personnel requis")}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="staffCount">Nombre d'hôtes/hôtesses *</Label>
+                      <Label htmlFor="staffCount">{x("Nombre d'hôtes/hôtesses *")}</Label>
                       <Input
                         id="staffCount"
                         type="number"
@@ -253,31 +255,31 @@ const BusinessQuote = () => {
                         className={errors.staffCount ? "border-destructive" : ""}
                       />
                       {errors.staffCount && (
-                        <p className="text-sm text-destructive mt-1">{errors.staffCount.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.staffCount.message ?? ""))}</p>
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="budget">Budget estimé (optionnel)</Label>
+                      <Label htmlFor="budget">{x("Budget estimé (optionnel)")}</Label>
                       <Select onValueChange={(value) => setValue("budget", value)}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner une fourchette" />
+                          <SelectValue placeholder={x("Sélectionner une fourchette")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="< 10000 MAD">Moins de 10 000 MAD</SelectItem>
-                          <SelectItem value="10000-25000 MAD">10 000 MAD - 25 000 MAD</SelectItem>
-                          <SelectItem value="25000-50000 MAD">25 000 MAD - 50 000 MAD</SelectItem>
-                          <SelectItem value="50000-100000 MAD">50 000 MAD - 100 000 MAD</SelectItem>
-                          <SelectItem value="> 100000 MAD">Plus de 100 000 MAD</SelectItem>
+                          <SelectItem value="< 10000 MAD">{x("Moins de 10 000 MAD")}</SelectItem>
+                          <SelectItem value="10000-25000 MAD">{x("10 000 MAD - 25 000 MAD")}</SelectItem>
+                          <SelectItem value="25000-50000 MAD">{x("25 000 MAD - 50 000 MAD")}</SelectItem>
+                          <SelectItem value="50000-100000 MAD">{x("50 000 MAD - 100 000 MAD")}</SelectItem>
+                          <SelectItem value="> 100000 MAD">{x("Plus de 100 000 MAD")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="requirements">Critères et exigences spécifiques</Label>
+                    <Label htmlFor="requirements">{x("Critères et exigences spécifiques")}</Label>
                     <Textarea
                       id="requirements"
-                      placeholder="Ex: profil recherché, compétences linguistiques, dress code, missions spécifiques..."
+                      placeholder={x("Ex: profil recherché, compétences linguistiques, dress code, missions spécifiques...")}
                       rows={4}
                       {...register("requirements")}
                     />
@@ -286,22 +288,22 @@ const BusinessQuote = () => {
 
                 {/* Contact */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Contact</h3>
+                  <h3 className="text-lg font-semibold">{x("Contact")}</h3>
                   <div>
-                    <Label htmlFor="contactName">Nom du responsable *</Label>
+                    <Label htmlFor="contactName">{x("Nom du responsable *")}</Label>
                     <Input
                       id="contactName"
                       {...register("contactName")}
                       className={errors.contactName ? "border-destructive" : ""}
                     />
                     {errors.contactName && (
-                      <p className="text-sm text-destructive mt-1">{errors.contactName.message}</p>
+                      <p className="text-sm text-destructive mt-1">{x(String(errors.contactName.message ?? ""))}</p>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="contactEmail">Email *</Label>
+                      <Label htmlFor="contactEmail">{x("Email *")}</Label>
                       <Input
                         id="contactEmail"
                         type="email"
@@ -309,11 +311,11 @@ const BusinessQuote = () => {
                         className={errors.contactEmail ? "border-destructive" : ""}
                       />
                       {errors.contactEmail && (
-                        <p className="text-sm text-destructive mt-1">{errors.contactEmail.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.contactEmail.message ?? ""))}</p>
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="contactPhone">Téléphone *</Label>
+                      <Label htmlFor="contactPhone">{x("Téléphone *")}</Label>
                       <Input
                         id="contactPhone"
                         type="tel"
@@ -321,16 +323,16 @@ const BusinessQuote = () => {
                         className={errors.contactPhone ? "border-destructive" : ""}
                       />
                       {errors.contactPhone && (
-                        <p className="text-sm text-destructive mt-1">{errors.contactPhone.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.contactPhone.message ?? ""))}</p>
                       )}
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="comments">Commentaires ou informations complémentaires</Label>
+                    <Label htmlFor="comments">{x("Commentaires ou informations complémentaires")}</Label>
                     <Textarea
                       id="comments"
-                      placeholder="Décrivez votre événement, vos attentes particulières, contraintes spécifiques..."
+                      placeholder={x("Décrivez votre événement, vos attentes particulières, contraintes spécifiques...")}
                       rows={4}
                       {...register("comments")}
                     />
@@ -346,15 +348,15 @@ const BusinessQuote = () => {
                     className={errors.rgpdConsent ? "border-destructive" : ""}
                   />
                   <Label htmlFor="rgpdConsent" className="text-sm leading-5">
-                    J'accepte que mes données personnelles soient traitées conformément à la 
+                    {x("J'accepte que mes données personnelles soient traitées conformément à la")} 
                     <a href="/politique-confidentialite" className="text-primary hover:underline ml-1">
-                      politique de confidentialité
+                      {x("politique de confidentialité")}
                     </a> 
-                    et au RGPD. Ces données seront utilisées uniquement pour traiter ma demande de devis.
+                    {x("et au RGPD. Ces données seront utilisées uniquement pour traiter ma demande de devis.")}
                   </Label>
                 </div>
                 {errors.rgpdConsent && (
-                  <p className="text-sm text-destructive">{errors.rgpdConsent.message}</p>
+                  <p className="text-sm text-destructive">{x(String(errors.rgpdConsent.message ?? ""))}</p>
                 )}
 
                 <Button 
@@ -363,7 +365,7 @@ const BusinessQuote = () => {
                   className="w-full gold-shadow"
                   size="lg"
                 >
-                  {isSubmitting ? "Envoi en cours..." : "Envoyer ma demande de devis"}
+                  {isSubmitting ? x("Envoi en cours...") : x("Envoyer ma demande de devis")}
                 </Button>
               </form>
             </CardContent>

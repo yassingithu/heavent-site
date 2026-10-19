@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTexte } from "@/i18n/textes";
 import { BadgeCheck, ChevronDown, Clock, HeartHandshake, Quote, ShieldCheck, Star, UserCheck } from "lucide-react";
 
 /**
@@ -36,22 +37,24 @@ export const ENGAGEMENTS = [
 ] as const;
 
 export function NoteGoogle({ v, clair = false }: { v: Vitrine | null; clair?: boolean }) {
+  const x = useTexte();
   if (!v?.google) return null;
   const contenu = (
     <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm ${clair ? "bg-white/10 text-white" : "bg-white border border-[#EADFC8] text-[#141414]"}`} data-testid="note-google">
       <span className="flex">{[1, 2, 3, 4, 5].map((i) => <Star key={i} className={`h-4 w-4 ${i <= Math.round(v.google!.note) ? "fill-[#C8B560] text-[#C8B560]" : "text-[#DCCBA6]"}`} />)}</span>
-      <b>{String(v.google.note).replace(".", ",")}/5</b> sur Google{v.google.nb ? <span className="opacity-70">({nf(v.google.nb)} avis)</span> : null}
+      <b>{x.langue === "fr" ? String(v.google.note).replace(".", ",") : String(v.google.note)}/5</b> {x("sur Google")}{v.google.nb ? <span className="opacity-70">({x("{n} avis", { n: nf(v.google.nb) })})</span> : null}
     </span>
   );
   return v.google.lien ? <a href={v.google.lien} target="_blank" rel="noreferrer">{contenu}</a> : contenu;
 }
 
 export function Chiffres({ v }: { v: Vitrine | null }) {
+  const x = useTexte();
   const c = v?.chiffres;
   const liste = [
-    c?.annees && [`${nf(c.annees)} ans`, "d'expérience"],
-    c?.evenements && [`${nf(c.evenements)}+`, "événements réalisés"],
-    c?.crews && [`${nf(c.crews)}+`, "hôtesses et hôtes"],
+    c?.annees && [x("{n} ans", { n: nf(c.annees) }), x("d'expérience")],
+    c?.evenements && [`${nf(c.evenements)}+`, x("événements réalisés")],
+    c?.crews && [`${nf(c.crews)}+`, x("hôtesses et hôtes")],
   ].filter(Boolean) as [string, string][];
   if (!liste.length) return null;
   return (
@@ -67,6 +70,7 @@ export function Chiffres({ v }: { v: Vitrine | null }) {
 }
 
 export function Engagements({ v }: { v: Vitrine | null }) {
+  const x = useTexte();
   const actifs = ENGAGEMENTS.filter((e) => v?.engagements?.[e.cle]);
   if (!actifs.length) return null;
   return (
@@ -74,8 +78,8 @@ export function Engagements({ v }: { v: Vitrine | null }) {
       {actifs.map(({ cle, icone: Icone, titre, texte }) => (
         <div key={cle} className="rounded-2xl border border-[#EADFC8] bg-white p-5">
           <Icone className="h-6 w-6 text-[#A8933F] mb-2" />
-          <div className="font-semibold mb-1">{titre}</div>
-          <p className="text-sm text-muted-foreground">{texte}</p>
+          <div className="font-semibold mb-1">{x(titre)}</div>
+          <p className="text-sm text-muted-foreground">{x(texte)}</p>
         </div>
       ))}
     </div>
@@ -83,11 +87,12 @@ export function Engagements({ v }: { v: Vitrine | null }) {
 }
 
 export function Logos({ v }: { v: Vitrine | null }) {
+  const x = useTexte();
   const refs = (v?.references ?? []).filter((r) => r.logo);
   if (!refs.length) return null;
   return (
     <div data-testid="logos-clients">
-      <p className="text-center text-xs uppercase tracking-[0.2em] text-muted-foreground mb-4">Ils nous ont fait confiance</p>
+      <p className="text-center text-xs uppercase tracking-[0.2em] text-muted-foreground mb-4">{x("Ils nous ont fait confiance")}</p>
       <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
         {refs.map((r) => {
           const img = <img src={supabase.storage.from("assets").getPublicUrl(r.logo!).data.publicUrl} alt={r.nom} title={r.nom} loading="lazy" className="h-10 sm:h-12 w-auto object-contain grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition" />;
@@ -116,17 +121,18 @@ export function Temoignages({ v }: { v: Vitrine | null }) {
 }
 
 export function Faq({ v, extra = [] }: { v: Vitrine | null; extra?: { q: string; r: string }[] }) {
+  const x = useTexte();
   const [ouverte, setOuverte] = useState<number | null>(null);
-  const liste = [...extra, ...(v?.faq ?? [])].filter((x) => x.q?.trim() && x.r?.trim());
+  const liste = [...extra, ...(v?.faq ?? [])].filter((f) => f.q?.trim() && f.r?.trim());
   if (!liste.length) return null;
   return (
     <div className="divide-y rounded-2xl border border-[#EADFC8] bg-white" data-testid="faq">
-      {liste.map((x, i) => (
+      {liste.map((f, i) => (
         <div key={i}>
           <button className="w-full flex items-center justify-between gap-3 text-left px-5 py-4 font-medium" onClick={() => setOuverte(ouverte === i ? null : i)} aria-expanded={ouverte === i}>
-            {x.q} <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${ouverte === i ? "rotate-180" : ""}`} />
+            {x(f.q)} <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${ouverte === i ? "rotate-180" : ""}`} />
           </button>
-          {ouverte === i && <p className="px-5 pb-4 text-sm text-muted-foreground whitespace-pre-line">{x.r}</p>}
+          {ouverte === i && <p className="px-5 pb-4 text-sm text-muted-foreground whitespace-pre-line">{x(f.r)}</p>}
         </div>
       ))}
     </div>
@@ -135,6 +141,7 @@ export function Faq({ v, extra = [] }: { v: Vitrine | null; extra?: { q: string;
 
 /** Section complète, à placer sur l'accueil et les pages villes / services. */
 export default function SectionConfiance({ faqExtra = [], titreFaq = "Questions fréquentes" }: { faqExtra?: { q: string; r: string }[]; titreFaq?: string }) {
+  const x = useTexte();
   const v = useVitrine();
   const aDuContenu = !!(v && (v.google || v.chiffres?.annees || v.chiffres?.evenements || v.chiffres?.crews || Object.values(v.engagements ?? {}).some(Boolean) || v.references.some((r) => r.logo) || v.temoignages.length));
   return (
@@ -143,7 +150,7 @@ export default function SectionConfiance({ faqExtra = [], titreFaq = "Questions 
         <section className="py-20 bg-[#FAF7EE]" data-testid="section-confiance">
           <div className="container mx-auto px-4 space-y-12">
             <div className="text-center space-y-4">
-              <h2 className="text-3xl md:text-4xl font-serif font-bold flex items-center justify-center gap-2"><HeartHandshake className="h-8 w-8 text-[#A8933F]" /> Pourquoi nous faire confiance</h2>
+              <h2 className="text-3xl md:text-4xl font-serif font-bold flex items-center justify-center gap-2"><HeartHandshake className="h-8 w-8 text-[#A8933F]" /> {x("Pourquoi nous faire confiance")}</h2>
               <NoteGoogle v={v} />
             </div>
             <Chiffres v={v} />
@@ -156,7 +163,7 @@ export default function SectionConfiance({ faqExtra = [], titreFaq = "Questions 
       {(faqExtra.length > 0 || (v?.faq?.length ?? 0) > 0) && (
         <section className="py-16 bg-background">
           <div className="container mx-auto px-4 max-w-3xl">
-            <h2 className="text-3xl font-serif font-bold mb-6 text-center">{titreFaq}</h2>
+            <h2 className="text-3xl font-serif font-bold mb-6 text-center">{x(titreFaq)}</h2>
             <Faq v={v} extra={faqExtra} />
           </div>
         </section>

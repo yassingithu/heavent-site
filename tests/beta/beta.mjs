@@ -771,7 +771,8 @@ await scenario("Statistiques : visites, provenance, clics WhatsApp et demandes c
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await page.addInitScript(() => { window.__suiviTest = true; });
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Statistiques$/ }).click(); await page.waitForTimeout(1500);
+  await page.getByRole("tab", { name: /Statistiques$/ }).click();
+  await page.getByTestId("stat-visites").waitFor({ timeout: 8000 }).catch(() => {});
   const bloc = await page.getByTestId("stats-site").innerText();
   verifier(/Visites\s*1/i.test(bloc) && /Instagram/.test(bloc) && /WhatsApp/.test(bloc) && /Hôtesses à Casablanca/.test(bloc), "le Bilan n'affiche pas les statistiques : " + bloc.slice(0, 300));
   const nAvant = base.evenements_site.length;

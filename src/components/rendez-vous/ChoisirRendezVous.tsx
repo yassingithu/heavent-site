@@ -24,6 +24,7 @@ const TXT = {
   heure: { fr: "Choisissez une heure", en: "Choose a time", ar: "اختر ساعة" },
   heureMaroc: { fr: "heure du Maroc", en: "Morocco time", ar: "بتوقيت المغرب" },
   duree: { fr: "Durée", en: "Duration", ar: "المدة" },
+  min: { fr: "min", en: "min", ar: "دقيقة" },
   nom: { fr: "Nom et prénom", en: "Full name", ar: "الاسم الكامل" },
   email: { fr: "E-mail", en: "Email", ar: "البريد الإلكتروني" },
   tel: { fr: "Téléphone", en: "Phone", ar: "الهاتف" },
@@ -182,7 +183,7 @@ export default function ChoisirRendezVous({ langue = "fr", source, devisToken, n
 
       {jour && (
         <div>
-          <div className="text-sm font-medium mb-2">{t("heure")} <span className="font-normal text-[#6B6155]">({t("heureMaroc")} · {t("duree")} {reglages.duree_minutes} min)</span></div>
+          <div className="text-sm font-medium mb-2">{t("heure")} <span className="font-normal text-[#6B6155]">({t("heureMaroc")} · {t("duree")} {reglages.duree_minutes} {t("min")})</span></div>
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
             {(parJour.get(jour) ?? []).map((c) => (
               <button key={c.debut} type="button" onClick={() => setChoix(c.debut)} aria-pressed={choix === c.debut} data-testid="rdv-heure"

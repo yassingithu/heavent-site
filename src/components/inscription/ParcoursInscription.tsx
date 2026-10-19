@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
+import { useTexte } from "@/i18n/textes";
 
 /** Les 5 étapes de l'inscription, présentées comme un parcours à débloquer. */
 export const ETAPES = [
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function ParcoursInscription({ etape, remplis, total }: Props) {
+  const x = useTexte();
   const pourcentage = Math.min(100, Math.round((remplis / Math.max(total, 1)) * 100));
   const minutesRestantes = ETAPES.slice(etape - 1).reduce((t, e) => t + e.minutes, 0);
   const [anime, setAnime] = useState(false);
@@ -32,18 +34,18 @@ export function ParcoursInscription({ etape, remplis, total }: Props) {
   return (
     <div className="mb-8 select-none">
       {/* Les badges d'étapes */}
-      <ol className="flex items-start justify-between gap-1 mb-5" aria-label="Progression de l'inscription">
-        {ETAPES.map((x, i) => {
+      <ol className="flex items-start justify-between gap-1 mb-5" aria-label={x("Progression de l'inscription")}>
+        {ETAPES.map((et, i) => {
           const n = i + 1;
           const fait = n < etape, actuel = n === etape;
           return (
-            <li key={x.court} className="flex-1 flex flex-col items-center relative">
+            <li key={et.court} className="flex-1 flex flex-col items-center relative">
               {i > 0 && <span className={`absolute top-5 right-1/2 w-full h-0.5 -z-0 ${n <= etape ? "bg-primary" : "bg-muted"}`} aria-hidden />}
               <span className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 text-lg transition-all duration-500
                 ${fait ? "bg-primary border-primary text-primary-foreground" : actuel ? "bg-background border-primary shadow-[0_0_0_6px_rgba(200,181,96,0.18)] scale-110" : "bg-muted border-muted text-muted-foreground grayscale"}`}>
-                {fait ? <Check className="h-5 w-5" /> : x.emoji}
+                {fait ? <Check className="h-5 w-5" /> : et.emoji}
               </span>
-              <span className={`mt-1.5 text-[11px] sm:text-xs font-medium ${actuel ? "text-foreground" : "text-muted-foreground"}`}>{x.court}</span>
+              <span className={`mt-1.5 text-[11px] sm:text-xs font-medium ${actuel ? "text-foreground" : "text-muted-foreground"}`}>{x(et.court)}</span>
             </li>
           );
         })}
@@ -53,12 +55,12 @@ export function ParcoursInscription({ etape, remplis, total }: Props) {
       <div className={`rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 transition-all duration-500 ${anime ? "ring-2 ring-primary/60 scale-[1.01]" : ""}`}>
         <div className="flex items-center justify-between gap-3 mb-2">
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-wide text-primary font-semibold">{anime ? "Étape débloquée !" : `Étape ${etape} sur 5`} · {e.bravo}</div>
-            <div className="font-serif text-lg sm:text-xl font-bold truncate">{e.emoji} {e.titre}</div>
+            <div className="text-xs uppercase tracking-wide text-primary font-semibold">{anime ? x("Étape débloquée !") : x("Étape {n} sur 5", { n: etape })} · {x(e.bravo)}</div>
+            <div className="font-serif text-lg sm:text-xl font-bold truncate">{e.emoji} {x(e.titre)}</div>
           </div>
           <div className="text-right shrink-0">
             <div className="text-2xl font-bold text-primary leading-none">{pourcentage}%</div>
-            <div className="text-[11px] text-muted-foreground">≈ {minutesRestantes} min restante{minutesRestantes > 1 ? "s" : ""}</div>
+            <div className="text-[11px] text-muted-foreground">≈ {minutesRestantes > 1 ? x("{n} min restantes", { n: minutesRestantes }) : x("{n} min restante", { n: minutesRestantes })}</div>
           </div>
         </div>
         <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">

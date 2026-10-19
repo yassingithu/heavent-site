@@ -9,8 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
+import { useTexte } from "@/i18n/textes";
 
 const Auth = () => {
+  const x = useTexte();
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -233,19 +235,19 @@ const Auth = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 p-4 sm:p-6 lg:p-8">
         <Card className="w-full max-w-sm sm:max-w-md shadow-xl border-0 bg-white/95 backdrop-blur-sm">
           <CardHeader className="text-center pb-4 sm:pb-6">
-            <CardTitle className="text-xl sm:text-2xl font-bold">Nouveau mot de passe</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl font-bold">{x("Nouveau mot de passe")}</CardTitle>
             <CardDescription className="text-sm sm:text-base">
-              Entrez votre nouveau mot de passe
+              {x("Entrez votre nouveau mot de passe")}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
             <form onSubmit={handleUpdatePassword} className="space-y-3 sm:space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="new-password">Nouveau mot de passe</Label>
+                <Label htmlFor="new-password">{x("Nouveau mot de passe")}</Label>
                 <Input
                   id="new-password"
                   type="password"
-                  placeholder="Entrez votre nouveau mot de passe"
+                  placeholder={x("Entrez votre nouveau mot de passe")}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required

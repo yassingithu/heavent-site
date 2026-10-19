@@ -2,10 +2,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { SERVICES, VILLES } from "@/lib/pagesLocales";
 import { Instagram, Phone, Mail, MapPin, Key } from "lucide-react";
 import { useTranslation } from 'react-i18next';
+import { useTexte } from "@/i18n/textes";
 
 const Footer = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const x = useTexte();
   
   return (
     <footer className="bg-foreground text-background">
@@ -24,8 +26,7 @@ const Footer = () => {
               />
             </Link>
             <p className="text-muted-foreground max-w-md mb-4">
-              Spécialisée dans l'événementiel, le staffing d'hôtes et hôtesses, et les prestations d'événements. 
-              Service professionnel et haut de gamme pour tous vos événements.
+              {x("Spécialisée dans l'événementiel, le staffing d'hôtes et hôtesses, et les prestations d'événements. Service professionnel et haut de gamme pour tous vos événements.")}
             </p>
             <div className="flex space-x-4">
               <a 
@@ -90,7 +91,7 @@ const Footer = () => {
               </li>
               <li className="flex items-center space-x-2">
                 <MapPin size={16} />
-                <span>Rabat, Maroc</span>
+                <span>{x("Rabat, Maroc")}</span>
               </li>
             </ul>
           </div>
@@ -99,16 +100,16 @@ const Footer = () => {
         {/* Nos villes et nos services (pages locales) */}
         <div className="mt-10 grid gap-6 sm:grid-cols-2 text-sm" data-testid="pied-villes-services">
           <div>
-            <h3 className="font-semibold mb-3">Nos villes</h3>
+            <h3 className="font-semibold mb-3">{x("Nos villes")}</h3>
             <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
-              {VILLES.map((v) => <li key={v.chemin}><Link to={v.chemin} className="text-muted-foreground hover:text-primary transition-colors">Hôtesses à {v.nomCourt}</Link></li>)}
+              {VILLES.map((v) => <li key={v.chemin}><Link to={v.chemin} className="text-muted-foreground hover:text-primary transition-colors">{x("Hôtesses à {ville}", { ville: x(v.nomCourt) })}</Link></li>)}
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold mb-3">Nos services</h3>
+            <h3 className="font-semibold mb-3">{x("Nos services")}</h3>
             <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
-              {SERVICES.map((v) => <li key={v.chemin}><Link to={v.chemin} className="text-muted-foreground hover:text-primary transition-colors">{v.nomCourt}</Link></li>)}
-              <li><Link to="/realisations" className="text-muted-foreground hover:text-primary transition-colors">Réalisations</Link></li>
+              {SERVICES.map((v) => <li key={v.chemin}><Link to={v.chemin} className="text-muted-foreground hover:text-primary transition-colors">{x(v.nomCourt)}</Link></li>)}
+              <li><Link to="/realisations" className="text-muted-foreground hover:text-primary transition-colors">{x("Réalisations")}</Link></li>
             </ul>
           </div>
         </div>
@@ -116,23 +117,23 @@ const Footer = () => {
         <hr className="my-8 border-muted" />
 
         <div className="flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
-          <p>&copy; 2024 Heavent People Agency. Tous droits réservés.</p>
+          <p>&copy; {new Date().getFullYear()} Heavent People Agency. {x("Tous droits réservés.")}</p>
           <div className="flex space-x-4 mt-4 md:mt-0">
             <Link to="/mentions-legales" className="hover:text-primary transition-colors">
-              Mentions légales
+              {x("Mentions légales")}
             </Link>
             <Link to="/politique-confidentialite" className="hover:text-primary transition-colors">
-              Politique de confidentialité
+              {x("Politique de confidentialité")}
             </Link>
             <button 
               onClick={() => navigate("/admin-auth")}
               className="hover:text-primary transition-colors opacity-60 hover:opacity-100"
-              title="Accès Admin"
+              title={x("Accès Admin")}
             >
               <Key size={16} />
             </button>
             <Link to="/rgpd" className="hover:text-primary transition-colors">
-              RGPD
+              {x("RGPD")}
             </Link>
           </div>
         </div>

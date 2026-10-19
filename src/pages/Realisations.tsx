@@ -5,11 +5,13 @@ import Seo from "@/components/Seo";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { TYPES_REALISATION } from "@/components/admin/RealisationsAdmin";
+import { useTexte } from "@/i18n/textes";
 
 interface Realisation { id: string; titre: string; type_evenement: string; lieu: string | null; date_evenement: string | null; description: string | null; photos: string[] }
 
 /** Galerie publique des événements réalisés par l'agence (vraies photos, ajoutées depuis l'admin). */
 export default function Realisations() {
+  const x = useTexte();
   const [liste, setListe] = useState<Realisation[] | null>(null);
   const [filtre, setFiltre] = useState("tous");
   const [ouverte, setOuverte] = useState<{ r: Realisation; i: number } | null>(null);
@@ -29,22 +31,22 @@ export default function Realisations() {
       {liste && liste.length ? <Seo page="realisations" /> : <Seo noindex />}
       <div className="container mx-auto px-4 py-12 sm:py-16 max-w-7xl space-y-8">
         <header className="text-center space-y-3 max-w-2xl mx-auto">
-          <p className="uppercase tracking-[0.25em] text-xs text-[#8C6D22]">Nos réalisations</p>
-          <h1 className="font-serif text-4xl sm:text-5xl">Des événements qui nous ressemblent</h1>
-          <p className="text-[#5E554A]">Mariages, fêtes, soirées d'entreprise et salons : quelques moments que nous avons eu la joie d'organiser et d'accompagner.</p>
+          <p className="uppercase tracking-[0.25em] text-xs text-[#8C6D22]">{x("Nos réalisations")}</p>
+          <h1 className="font-serif text-4xl sm:text-5xl">{x("Des événements qui nous ressemblent")}</h1>
+          <p className="text-[#5E554A]">{x("Mariages, fêtes, soirées d'entreprise et salons : quelques moments que nous avons eu la joie d'organiser et d'accompagner.")}</p>
         </header>
 
         {liste === null ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">{Array.from({ length: 6 }, (_, i) => <div key={i} className="aspect-[4/3] rounded-3xl bg-[#EFE7D6] animate-pulse" />)}</div>
         ) : liste.length === 0 ? (
           <div className="text-center py-10 space-y-4" data-testid="realisations-vide">
-            <p className="text-[#5E554A]">Nos premières réalisations en images arrivent très bientôt.</p>
-            <Link to="/cree-ton-evenement" className="inline-flex rounded-full bg-[#141414] text-white px-6 min-h-11 items-center font-medium">Imaginer mon événement</Link>
+            <p className="text-[#5E554A]">{x("Nos premières réalisations en images arrivent très bientôt.")}</p>
+            <Link to="/cree-ton-evenement" className="inline-flex rounded-full bg-[#141414] text-white px-6 min-h-11 items-center font-medium">{x("Imaginer mon événement")}</Link>
           </div>
         ) : (
           <>
             {types.length > 1 && (
-              <div className="flex flex-wrap justify-center gap-2" role="tablist" aria-label="Filtrer par type d'événement">
+              <div className="flex flex-wrap justify-center gap-2" role="tablist" aria-label={x("Filtrer par type d'événement")}>
                 {[{ id: "tous", nom: "Tout" }, ...types].map((t) => (
                   <button key={t.id} role="tab" aria-selected={filtre === t.id} onClick={() => setFiltre(t.id)}
                     className={`rounded-full px-4 min-h-10 text-sm border transition-colors ${filtre === t.id ? "bg-[#2A2420] text-white border-[#2A2420]" : "bg-white border-[#E3D6BA] hover:bg-[#F6EEDC]"}`}>{t.nom}</button>
@@ -64,7 +66,7 @@ export default function Realisations() {
               ))}
             </div>
             <div className="text-center pt-4">
-              <Link to="/cree-ton-evenement" className="inline-flex rounded-full bg-[#141414] text-white px-6 min-h-12 items-center font-medium">Créer mon événement</Link>
+              <Link to="/cree-ton-evenement" className="inline-flex rounded-full bg-[#141414] text-white px-6 min-h-12 items-center font-medium">{x("Créer mon événement")}</Link>
             </div>
           </>
         )}
@@ -78,8 +80,8 @@ export default function Realisations() {
               <div className="relative bg-black">
                 <img src={ouverte.r.photos[ouverte.i]} alt={`${ouverte.r.titre} — photo ${ouverte.i + 1}`} className="w-full max-h-[75vh] object-contain" />
                 {ouverte.r.photos.length > 1 && <>
-                  <button onClick={() => changer(-1)} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2" aria-label="Photo précédente"><ChevronLeft className="h-5 w-5" /></button>
-                  <button onClick={() => changer(1)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2" aria-label="Photo suivante"><ChevronRight className="h-5 w-5" /></button>
+                  <button onClick={() => changer(-1)} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2" aria-label={x("Photo précédente")}><ChevronLeft className="h-5 w-5" /></button>
+                  <button onClick={() => changer(1)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/85 p-2" aria-label={x("Photo suivante")}><ChevronRight className="h-5 w-5" /></button>
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-white/90 bg-black/50 rounded-full px-2 py-0.5">{ouverte.i + 1} / {ouverte.r.photos.length}</div>
                 </>}
               </div>

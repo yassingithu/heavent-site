@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, Calendar, Users, CheckCircle, Sparkles } from "lucide-react";
+import { useTexte } from "@/i18n/textes";
 
 const formSchema = z.object({
   brideName: z.string().min(2, "Le prénom est requis"),
@@ -36,6 +37,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const WeddingQuote = () => {
+  const x = useTexte();
   const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -58,15 +60,15 @@ const WeddingQuote = () => {
   const watchedServices = watch("services") || [];
 
   const availableServices = [
-    { id: "dj", label: "DJ / Animation musicale", description: "Ambiance musicale pour votre soirée" },
-    { id: "decoration", label: "Décoration", description: "Décoration florale et mise en scène" },
-    { id: "photo", label: "Photographe", description: "Capturer vos plus beaux moments" },
-    { id: "video", label: "Vidéaste", description: "Film de votre mariage" },
-    { id: "catering", label: "Traiteur", description: "Service de restauration" },
-    { id: "transport", label: "Transport", description: "Voiture de mariage, navettes invités" },
-    { id: "ceremony", label: "Officiant de cérémonie", description: "Cérémonie laïque personnalisée" },
-    { id: "hostess", label: "Hôtes/Hôtesses d'accueil", description: "Accueil et accompagnement des invités" },
-    { id: "planning", label: "Wedding planner", description: "Coordination complète de votre mariage" }
+    { id: "dj", label: "DJ / Animation musicale", description: x("Ambiance musicale pour votre soirée") },
+    { id: "decoration", label: "Décoration", description: x("Décoration florale et mise en scène") },
+    { id: "photo", label: "Photographe", description: x("Capturer vos plus beaux moments") },
+    { id: "video", label: "Vidéaste", description: x("Film de votre mariage") },
+    { id: "catering", label: "Traiteur", description: x("Service de restauration") },
+    { id: "transport", label: "Transport", description: x("Voiture de mariage, navettes invités") },
+    { id: "ceremony", label: "Officiant de cérémonie", description: x("Cérémonie laïque personnalisée") },
+    { id: "hostess", label: "Hôtes/Hôtesses d'accueil", description: x("Accueil et accompagnement des invités") },
+    { id: "planning", label: "Wedding planner", description: x("Coordination complète de votre mariage") }
   ];
 
   const budgetRanges = [
@@ -108,15 +110,15 @@ const WeddingQuote = () => {
       suivre("demande", "devis-mariage");
 
       toast({
-        title: "Demande envoyée !",
-        description: "Votre demande de devis a été envoyée avec succès. Nous vous contacterons sous 24h pour organiser un rendez-vous.",
+        title: x("Demande envoyée !"),
+        description: x("Votre demande de devis a été envoyée avec succès. Nous vous contacterons sous 24h pour organiser un rendez-vous."),
       });
       
       setIsSubmitted(true);
     } catch (error) {
       toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de l'envoi. Veuillez réessayer.",
+        title: x("Erreur"),
+        description: x("Une erreur est survenue lors de l'envoi. Veuillez réessayer."),
         variant: "destructive",
       });
     } finally {
@@ -135,12 +137,12 @@ const WeddingQuote = () => {
                 <Heart className="absolute -top-2 -right-2 text-pink-500" size={24} />
               </div>
             </div>
-            <h2 className="text-2xl font-bold mb-4">Demande envoyée !</h2>
+            <h2 className="text-2xl font-bold mb-4">{x("Demande envoyée !")}</h2>
             <p className="text-muted-foreground mb-6">
-              Votre demande de devis événement a été envoyée avec succès. Notre équipe spécialisée va l'examiner et vous contacter sous 24h pour organiser un rendez-vous et discuter de votre projet en détail.
+              {x("Votre demande de devis événement a été envoyée avec succès. Notre équipe spécialisée va l'examiner et vous contacter sous 24h pour organiser un rendez-vous et discuter de votre projet en détail.")}
             </p>
             <Button onClick={() => window.location.href = "/"}>
-              Retour à l'accueil
+              {x("Retour à l'accueil")}
             </Button>
           </CardContent>
         </Card>
@@ -156,11 +158,11 @@ const WeddingQuote = () => {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-serif font-bold mb-4">
-              Demande de Devis <span className="text-primary">Événement</span>
+              {x("Demande de devis")} <span className="text-primary">{x("Événement")}</span>
             </h1>
             <p className="text-xl text-muted-foreground flex items-center justify-center">
               <Heart className="mr-2 text-pink-500" size={24} />
-              Créons ensemble l'événement de vos rêves
+              {x("Créons ensemble l'événement de vos rêves")}
             </p>
           </div>
 
@@ -180,57 +182,57 @@ const WeddingQuote = () => {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold flex items-center">
                     <Heart className="mr-2 text-pink-500" size={20} />
-                    Vos informations
+                    {x("Vos informations")}
                   </h3>
                   
                   <div>
-                    <Label htmlFor="eventType">Type d'événement *</Label>
+                    <Label htmlFor="eventType">{x("Type d'événement *")}</Label>
                     <Select onValueChange={(value) => setValue("eventType", value)}>
                       <SelectTrigger className={errors.eventType ? "border-destructive" : ""}>
-                        <SelectValue placeholder="Sélectionner le type d'événement" />
+                        <SelectValue placeholder={x("Sélectionner le type d'événement")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="mariage">Mariage</SelectItem>
-                        <SelectItem value="anniversaire">Anniversaire</SelectItem>
-                        <SelectItem value="fiancailles">Fiançailles</SelectItem>
-                        <SelectItem value="bapteme">Baptême</SelectItem>
-                        <SelectItem value="communion">Communion</SelectItem>
-                        <SelectItem value="evg">Enterrement de vie de garçon</SelectItem>
-                        <SelectItem value="evf">Enterrement de vie de jeune fille</SelectItem>
-                        <SelectItem value="retraite">Départ à la retraite</SelectItem>
-                        <SelectItem value="graduation">Remise de diplômes</SelectItem>
-                        <SelectItem value="baby-shower">Baby shower</SelectItem>
-                        <SelectItem value="autre">Autre événement</SelectItem>
+                        <SelectItem value="mariage">{x("Mariage")}</SelectItem>
+                        <SelectItem value="anniversaire">{x("Anniversaire")}</SelectItem>
+                        <SelectItem value="fiancailles">{x("Fiançailles")}</SelectItem>
+                        <SelectItem value="bapteme">{x("Baptême")}</SelectItem>
+                        <SelectItem value="communion">{x("Communion")}</SelectItem>
+                        <SelectItem value="evg">{x("Enterrement de vie de garçon")}</SelectItem>
+                        <SelectItem value="evf">{x("Enterrement de vie de jeune fille")}</SelectItem>
+                        <SelectItem value="retraite">{x("Départ à la retraite")}</SelectItem>
+                        <SelectItem value="graduation">{x("Remise de diplômes")}</SelectItem>
+                        <SelectItem value="baby-shower">{x("Baby shower")}</SelectItem>
+                        <SelectItem value="autre">{x("Autre événement")}</SelectItem>
                       </SelectContent>
                     </Select>
                     {errors.eventType && (
-                      <p className="text-sm text-destructive mt-1">{errors.eventType.message}</p>
+                      <p className="text-sm text-destructive mt-1">{x(String(errors.eventType.message ?? ""))}</p>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="brideName">Prénom principal *</Label>
+                      <Label htmlFor="brideName">{x("Prénom principal *")}</Label>
                       <Input
                         id="brideName"
                         {...register("brideName")}
                         className={errors.brideName ? "border-destructive" : ""}
-                        placeholder="Votre prénom"
+                        placeholder={x("Votre prénom")}
                       />
                       {errors.brideName && (
-                        <p className="text-sm text-destructive mt-1">{errors.brideName.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.brideName.message ?? ""))}</p>
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="groomName">Prénom du partenaire</Label>
+                      <Label htmlFor="groomName">{x("Prénom du partenaire")}</Label>
                       <Input
                         id="groomName"
                         {...register("groomName")}
                         className={errors.groomName ? "border-destructive" : ""}
-                        placeholder="Prénom du partenaire (optionnel)"
+                        placeholder={x("Prénom du partenaire (optionnel)")}
                       />
                       {errors.groomName && (
-                        <p className="text-sm text-destructive mt-1">{errors.groomName.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.groomName.message ?? ""))}</p>
                       )}
                     </div>
                   </div>
@@ -240,11 +242,11 @@ const WeddingQuote = () => {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold flex items-center">
                     <Calendar className="mr-2" size={20} />
-                    Détails de votre événement
+                    {x("Détails de votre événement")}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="eventDate">Date de l'événement *</Label>
+                      <Label htmlFor="eventDate">{x("Date de l'événement *")}</Label>
                       <Input
                         id="eventDate"
                         type="date"
@@ -252,11 +254,11 @@ const WeddingQuote = () => {
                         className={errors.eventDate ? "border-destructive" : ""}
                       />
                       {errors.eventDate && (
-                        <p className="text-sm text-destructive mt-1">{errors.eventDate.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.eventDate.message ?? ""))}</p>
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="guestCount">Nombre d'invités *</Label>
+                      <Label htmlFor="guestCount">{x("Nombre d'invités *")}</Label>
                       <Input
                         id="guestCount"
                         type="number"
@@ -266,50 +268,50 @@ const WeddingQuote = () => {
                         className={errors.guestCount ? "border-destructive" : ""}
                       />
                       {errors.guestCount && (
-                        <p className="text-sm text-destructive mt-1">{errors.guestCount.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.guestCount.message ?? ""))}</p>
                       )}
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="eventLocation">Lieu principal (ville/région) *</Label>
+                    <Label htmlFor="eventLocation">{x("Lieu principal (ville/région) *")}</Label>
                     <Select onValueChange={(value) => setValue("eventLocation", value)}>
                       <SelectTrigger className={errors.eventLocation ? "border-destructive" : ""}>
-                        <SelectValue placeholder="Sélectionner la ville principale" />
+                        <SelectValue placeholder={x("Sélectionner la ville principale")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="rabat">Rabat</SelectItem>
-                        <SelectItem value="casablanca">Casablanca</SelectItem>
-                        <SelectItem value="marrakech">Marrakech</SelectItem>
-                        <SelectItem value="fes">Fès</SelectItem>
-                        <SelectItem value="tanger">Tanger</SelectItem>
-                        <SelectItem value="agadir">Agadir</SelectItem>
-                        <SelectItem value="meknes">Meknès</SelectItem>
-                        <SelectItem value="oujda">Oujda</SelectItem>
-                        <SelectItem value="kenitra">Kénitra</SelectItem>
-                        <SelectItem value="tetouan">Tétouan</SelectItem>
-                        <SelectItem value="autre">Autre ville</SelectItem>
+                        <SelectItem value="rabat">{x("Rabat")}</SelectItem>
+                        <SelectItem value="casablanca">{x("Casablanca")}</SelectItem>
+                        <SelectItem value="marrakech">{x("Marrakech")}</SelectItem>
+                        <SelectItem value="fes">{x("Fès")}</SelectItem>
+                        <SelectItem value="tanger">{x("Tanger")}</SelectItem>
+                        <SelectItem value="agadir">{x("Agadir")}</SelectItem>
+                        <SelectItem value="meknes">{x("Meknès")}</SelectItem>
+                        <SelectItem value="oujda">{x("Oujda")}</SelectItem>
+                        <SelectItem value="kenitra">{x("Kénitra")}</SelectItem>
+                        <SelectItem value="tetouan">{x("Tétouan")}</SelectItem>
+                        <SelectItem value="autre">{x("Autre ville")}</SelectItem>
                       </SelectContent>
                     </Select>
                     {errors.eventLocation && (
-                      <p className="text-sm text-destructive mt-1">{errors.eventLocation.message}</p>
+                      <p className="text-sm text-destructive mt-1">{x(String(errors.eventLocation.message ?? ""))}</p>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="ceremonyLocation">Lieu de cérémonie (optionnel)</Label>
+                      <Label htmlFor="ceremonyLocation">{x("Lieu de cérémonie (optionnel)")}</Label>
                       <Input
                         id="ceremonyLocation"
-                        placeholder="Église, mairie, lieu extérieur..."
+                        placeholder={x("Église, mairie, lieu extérieur...")}
                         {...register("ceremonyLocation")}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="receptionLocation">Lieu de réception (optionnel)</Label>
+                      <Label htmlFor="receptionLocation">{x("Lieu de réception (optionnel)")}</Label>
                       <Input
                         id="receptionLocation"
-                        placeholder="Salle, château, restaurant..."
+                        placeholder={x("Salle, château, restaurant...")}
                         {...register("receptionLocation")}
                       />
                     </div>
@@ -318,21 +320,21 @@ const WeddingQuote = () => {
 
                 {/* Budget */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Budget estimé</h3>
+                  <h3 className="text-lg font-semibold">{x("Budget estimé")}</h3>
                   <div>
-                    <Label htmlFor="budget">Budget total pour les prestations *</Label>
+                    <Label htmlFor="budget">{x("Budget total pour les prestations *")}</Label>
                     <select
                       id="budget"
                       {...register("budget")}
                       className={`w-full p-3 border rounded-md ${errors.budget ? "border-destructive" : "border-input"}`}
                     >
-                      <option value="">Sélectionner une fourchette</option>
+                      <option value="">{x("Sélectionner une fourchette")}</option>
                       {budgetRanges.map((range) => (
-                        <option key={range} value={range}>{range}</option>
+                        <option key={range} value={range}>{x(range)}</option>
                       ))}
                     </select>
                     {errors.budget && (
-                      <p className="text-sm text-destructive mt-1">{errors.budget.message}</p>
+                      <p className="text-sm text-destructive mt-1">{x(String(errors.budget.message ?? ""))}</p>
                     )}
                   </div>
                 </div>
@@ -341,10 +343,10 @@ const WeddingQuote = () => {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold flex items-center">
                     <Users className="mr-2" size={20} />
-                    Prestations souhaitées *
+                    {x("Prestations souhaitées *")}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Sélectionnez toutes les prestations qui vous intéressent
+                    {x("Sélectionnez toutes les prestations qui vous intéressent")}
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {availableServices.map((service) => (
@@ -359,26 +361,26 @@ const WeddingQuote = () => {
                         />
                         <div className="flex-1">
                           <Label htmlFor={service.id} className="font-medium cursor-pointer">
-                            {service.label}
+                            {x(service.label)}
                           </Label>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {service.description}
+                            {x(service.description)}
                           </p>
                         </div>
                       </div>
                     ))}
                   </div>
                   {errors.services && (
-                    <p className="text-sm text-destructive">{errors.services.message}</p>
+                    <p className="text-sm text-destructive">{x(String(errors.services.message ?? ""))}</p>
                   )}
                 </div>
 
                 {/* Contact */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Contact</h3>
+                  <h3 className="text-lg font-semibold">{x("Contact")}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="contactEmail">Email *</Label>
+                      <Label htmlFor="contactEmail">{x("Email *")}</Label>
                       <Input
                         id="contactEmail"
                         type="email"
@@ -386,11 +388,11 @@ const WeddingQuote = () => {
                         className={errors.contactEmail ? "border-destructive" : ""}
                       />
                       {errors.contactEmail && (
-                        <p className="text-sm text-destructive mt-1">{errors.contactEmail.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.contactEmail.message ?? ""))}</p>
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="contactPhone">Téléphone *</Label>
+                      <Label htmlFor="contactPhone">{x("Téléphone *")}</Label>
                       <Input
                         id="contactPhone"
                         type="tel"
@@ -398,16 +400,16 @@ const WeddingQuote = () => {
                         className={errors.contactPhone ? "border-destructive" : ""}
                       />
                       {errors.contactPhone && (
-                        <p className="text-sm text-destructive mt-1">{errors.contactPhone.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.contactPhone.message ?? ""))}</p>
                       )}
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="specialRequests">Demandes spéciales ou informations complémentaires</Label>
+                    <Label htmlFor="specialRequests">{x("Demandes spéciales ou informations complémentaires")}</Label>
                     <Textarea
                       id="specialRequests"
-                      placeholder="Décrivez vos souhaits particuliers, le style d'événement envisagé, contraintes spécifiques, inspirations..."
+                      placeholder={x("Décrivez vos souhaits particuliers, le style d'événement envisagé, contraintes spécifiques, inspirations...")}
                       rows={4}
                       {...register("specialRequests")}
                     />
@@ -423,15 +425,15 @@ const WeddingQuote = () => {
                     className={errors.rgpdConsent ? "border-destructive" : ""}
                   />
                   <Label htmlFor="rgpdConsent" className="text-sm leading-5">
-                    J'accepte que mes données personnelles soient traitées conformément à la 
+                    {x("J'accepte que mes données personnelles soient traitées conformément à la")} 
                     <a href="/politique-confidentialite" className="text-primary hover:underline ml-1">
-                      politique de confidentialité
+                      {x("politique de confidentialité")}
                     </a> 
-                    et au RGPD. Ces données seront utilisées uniquement pour traiter ma demande de devis événement.
+                    {x("et au RGPD. Ces données seront utilisées uniquement pour traiter ma demande de devis événement.")}
                   </Label>
                 </div>
                 {errors.rgpdConsent && (
-                  <p className="text-sm text-destructive">{errors.rgpdConsent.message}</p>
+                  <p className="text-sm text-destructive">{x(String(errors.rgpdConsent.message ?? ""))}</p>
                 )}
 
                 <Button 
@@ -440,7 +442,7 @@ const WeddingQuote = () => {
                   className="w-full gold-shadow"
                   size="lg"
                 >
-                  {isSubmitting ? "Envoi en cours..." : "Envoyer ma demande de devis"}
+                  {isSubmitting ? x("Envoi en cours...") : x("Envoyer ma demande de devis")}
                 </Button>
               </form>
             </CardContent>

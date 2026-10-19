@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useTexte } from "@/i18n/textes";
 import { 
   Phone, 
   Mail, 
@@ -34,6 +35,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const Contact = () => {
+  const x = useTexte();
   const { t, i18n } = useTranslation();
   useEffect(() => {
     if (window.location.hash === "#rendez-vous") setTimeout(() => document.getElementById("rendez-vous")?.scrollIntoView({ behavior: "smooth" }), 400);
@@ -116,9 +118,9 @@ const Contact = () => {
       let errorMessage = t('contact.form.errorDescription');
       
       if (error.message?.includes('Network')) {
-        errorMessage = "Problème de connexion. Vérifiez votre connexion internet.";
+        errorMessage = x("Problème de connexion. Vérifiez votre connexion internet.");
       } else if (error.message?.includes('500')) {
-        errorMessage = "Erreur serveur temporaire. Veuillez réessayer dans quelques instants.";
+        errorMessage = x("Erreur serveur temporaire. Veuillez réessayer dans quelques instants.");
       }
       
       toast({
@@ -137,12 +139,12 @@ const Contact = () => {
         <Card className="max-w-md mx-4 text-center">
           <CardContent className="p-8">
             <CheckCircle className="text-green-500 mx-auto mb-4" size={64} />
-            <h2 className="text-2xl font-bold mb-4">Message envoyé !</h2>
+            <h2 className="text-2xl font-bold mb-4">{x("Message envoyé !")}</h2>
             <p className="text-muted-foreground mb-6">
-              Votre message a été envoyé avec succès. Notre équipe va l'examiner et vous répondra sous 24h.
+              {x("Votre message a été envoyé avec succès. Notre équipe va l'examiner et vous répondra sous 24h.")}
             </p>
             <Button onClick={() => setIsSubmitted(false)}>
-              Envoyer un nouveau message
+              {x("Envoyer un nouveau message")}
             </Button>
           </CardContent>
         </Card>
@@ -186,7 +188,7 @@ const Contact = () => {
             {/* Contact Information */}
             <div className="lg:col-span-1">
               <h2 className="text-3xl font-serif font-bold mb-8">
-                Nos <span className="text-primary">Coordonnées</span>
+                {x("Nos")} <span className="text-primary">{x("Coordonnées")}</span>
               </h2>
               
               <div className="space-y-6">
@@ -232,10 +234,10 @@ const Contact = () => {
                         rel="noopener noreferrer"
                         className="text-green-600 hover:text-green-700 transition-colors font-medium"
                       >
-                        Chattez avec nous
+                        {x("Chattez avec nous")}
                       </a>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Réponse rapide garantie
+                        {x("Réponse rapide garantie")}
                       </p>
                     </div>
                   </div>
@@ -250,19 +252,19 @@ const Contact = () => {
                       <Clock className="text-primary" size={24} />
                     </div>
                     <div>
-                      <h3 className="font-semibold mb-3">Horaires d'ouverture</h3>
+                      <h3 className="font-semibold mb-3">{x("Horaires d'ouverture")}</h3>
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between">
-                          <span>Lun - Ven</span>
+                          <span>{x("Lun - Ven")}</span>
                           <span>9h00 - 18h00</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Samedi</span>
+                          <span>{x("Samedi")}</span>
                           <span>10h00 - 16h00</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Dimanche</span>
-                          <span>Fermé</span>
+                          <span>{x("Dimanche")}</span>
+                          <span>{x("Fermé")}</span>
                         </div>
                       </div>
                     </div>
@@ -277,28 +279,28 @@ const Contact = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Send className="mr-2" size={24} />
-                    Envoyez-nous un message
+                    {x("Envoyez-nous un message")}
                   </CardTitle>
                   <CardDescription>
-                    Remplissez ce formulaire et nous vous répondrons dans les plus brefs délais
+                    {x("Remplissez ce formulaire et nous vous répondrons dans les plus brefs délais")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="name">Nom complet *</Label>
+                        <Label htmlFor="name">{x("Nom complet *")}</Label>
                         <Input
                           id="name"
                           {...register("name")}
                           className={errors.name ? "border-destructive" : ""}
                         />
                         {errors.name && (
-                          <p className="text-sm text-destructive mt-1">{errors.name.message}</p>
+                          <p className="text-sm text-destructive mt-1">{x(String(errors.name.message ?? ""))}</p>
                         )}
                       </div>
                       <div>
-                        <Label htmlFor="email">Email *</Label>
+                        <Label htmlFor="email">{x("Email *")}</Label>
                         <Input
                           id="email"
                           type="email"
@@ -306,35 +308,35 @@ const Contact = () => {
                           className={errors.email ? "border-destructive" : ""}
                         />
                         {errors.email && (
-                          <p className="text-sm text-destructive mt-1">{errors.email.message}</p>
+                          <p className="text-sm text-destructive mt-1">{x(String(errors.email.message ?? ""))}</p>
                         )}
                       </div>
                     </div>
 
                     <div>
-                      <Label htmlFor="subject">Sujet *</Label>
+                      <Label htmlFor="subject">{x("Sujet *")}</Label>
                       <Input
                         id="subject"
-                        placeholder="Ex: Demande d'information, devis événement..."
+                        placeholder={x("Ex: Demande d'information, devis événement...")}
                         {...register("subject")}
                         className={errors.subject ? "border-destructive" : ""}
                       />
                       {errors.subject && (
-                        <p className="text-sm text-destructive mt-1">{errors.subject.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.subject.message ?? ""))}</p>
                       )}
                     </div>
 
                     <div>
-                      <Label htmlFor="message">Message *</Label>
+                      <Label htmlFor="message">{x("Message *")}</Label>
                       <Textarea
                         id="message"
-                        placeholder="Décrivez votre demande en détail..."
+                        placeholder={x("Décrivez votre demande en détail...")}
                         rows={6}
                         {...register("message")}
                         className={errors.message ? "border-destructive" : ""}
                       />
                       {errors.message && (
-                        <p className="text-sm text-destructive mt-1">{errors.message.message}</p>
+                        <p className="text-sm text-destructive mt-1">{x(String(errors.message.message ?? ""))}</p>
                       )}
                     </div>
 
@@ -344,7 +346,7 @@ const Contact = () => {
                       className="w-full gold-shadow"
                       size="lg"
                     >
-                      {isSubmitting ? "Envoi en cours..." : "Envoyer le message"}
+                      {isSubmitting ? x("Envoi en cours...") : x("Envoyer le message")}
                       <Send className="ml-2" size={20} />
                     </Button>
                   </form>
@@ -359,10 +361,10 @@ const Contact = () => {
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-serif font-bold mb-8">
-            Vous préférez un devis <span className="text-primary">immédiat</span> ?
+            {x("Vous préférez un devis")} <span className="text-primary">{x("immédiat")}</span>{x(" ?")}
           </h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Accédez directement à nos formulaires de devis spécialisés pour une réponse plus rapide
+            {x("Accédez directement à nos formulaires de devis spécialisés pour une réponse plus rapide")}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
             <Card className="hover-lift cursor-pointer">
@@ -371,12 +373,12 @@ const Contact = () => {
                   <div className="p-4 bg-primary/10 rounded-full inline-flex mb-4">
                     <Phone className="text-primary" size={32} />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Événement d'Entreprise</h3>
+                  <h3 className="text-xl font-semibold mb-2">{x("Événement d'Entreprise")}</h3>
                   <p className="text-muted-foreground mb-4">
-                    Devis personnalisé pour votre événement corporate
+                    {x("Devis personnalisé pour votre événement corporate")}
                   </p>
                   <Button asChild className="w-full">
-                    <a href="/devis-entreprise">Demander un devis</a>
+                    <a href="/devis-entreprise">{x("Demander un devis")}</a>
                   </Button>
                 </div>
               </CardContent>
@@ -388,12 +390,12 @@ const Contact = () => {
                   <div className="p-4 bg-pink-100 rounded-full inline-flex mb-4">
                     <MessageSquare className="text-pink-600" size={32} />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Mariage</h3>
+                  <h3 className="text-xl font-semibold mb-2">{x("Mariage")}</h3>
                   <p className="text-muted-foreground mb-4">
-                    Créons ensemble le mariage de vos rêves
+                    {x("Créons ensemble le mariage de vos rêves")}
                   </p>
                   <Button asChild variant="outline" className="w-full">
-                    <a href="/devis-mariage">Demander un devis</a>
+                    <a href="/devis-mariage">{x("Demander un devis")}</a>
                   </Button>
                 </div>
               </CardContent>
