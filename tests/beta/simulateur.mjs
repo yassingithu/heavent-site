@@ -123,13 +123,25 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       base.fichiers ??= {};
       const m = url.pathname.match(/\/storage\/v1\/object\/(?:public\/)?(.+)$/);
       if (m && req.method() === "POST") { base.fichiers[m[1]] = req.postDataBuffer(); return route.fulfill({ json: { Key: m[1] } }); }
-      if (m && req.method() === "GET" && base.fichiers[m[1]]) return route.fulfill({ status: 200, body: base.fichiers[m[1]], contentType: "image/jpeg" });
+      if (m && req.method() === "GET" && base.fichiers[m[1]]) return route.fulfill({ status: 200, body: base.fichiers[m[1]], contentType: "image/jpeg", headers: { "access-control-allow-origin": "*" } });
       if (req.method() === "DELETE") return route.fulfill({ json: [] });
       return route.fulfill({ status: 404, body: "" });
     }
     if (url.pathname.includes("/functions/v1/")) {
       const nom = url.pathname.split("/").pop(); const corps = req.postData() ? JSON.parse(req.postData()) : {};
       base.appelsFonctions.push({ nom, corps });
+      if (nom === "instagram-photos") {
+        if (!admin) return route.fulfill({ status: 403, json: { error: "Accès refusé" } });
+        if (!base.cle_pixabay) return route.fulfill({ status: 400, json: { error: "Clé Pixabay manquante" } });
+        if (corps.action === "chercher") return route.fulfill({ json: { total: 3, photos: [1, 2, 3].map((i) => ({ id: 100 + i, apercu: `https://pixabay.com/get/apercu-${i}.jpg`, grande: `https://pixabay.com/get/grande-${i}.jpg`, page: `https://pixabay.com/photos/${i}`, auteur: "Photographe" + i, largeur: 800, hauteur: 1000 })) } });
+        if (corps.action === "choisir") {
+          const chemin = `assets/instagram/photos/${corps.post_id}-${corps.photo.id}.jpg`;
+          base.fichiers ??= {}; base.fichiers[chemin] = base.photoTest;
+          const photo_url = `https://mapiwnsjsluiwmnulhqk.supabase.co/storage/v1/object/public/${chemin}`;
+          Object.assign(base.posts_instagram.find((x) => x.id === corps.post_id) ?? {}, { photo_url, photo_auteur: corps.photo.auteur, photo_page: corps.photo.page, statut: "brouillon", visuel_url: null });
+          return route.fulfill({ json: { photo_url } });
+        }
+      }
       if (nom === "signer-contrat") {
         const c = base.contrats.find((x) => x.id === corps.contratId);
         const t = new Date().toISOString();
@@ -265,6 +277,9 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
           };
         })() } });
     }
+    // Instagram : clé Pixabay (jamais relisible)
+    if (url.pathname.includes("/rpc/instagram_reglages")) return route.fulfill({ json: { pixabay: !!base.cle_pixabay, instagram: false } });
+    if (url.pathname.includes("/rpc/instagram_enregistrer_cle")) { base.cle_pixabay = JSON.parse(req.postData() || "{}").p_valeur; return route.fulfill({ status: 204, body: "" }); }
     // Accueil personnalisé de l'administration
     if (url.pathname.includes("/rpc/mon_accueil")) {
       const p = (base.admin_profils ?? []).find((x) => x.email === email);

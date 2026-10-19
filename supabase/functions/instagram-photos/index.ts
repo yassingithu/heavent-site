@@ -1,0 +1,45 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
+import { corsHeaders, deny, getCaller } from "../_shared/auth.ts";
+
+/**
+ * Photos des posts Instagram (bibliothèque gratuite Pixabay), réservé à l'administration.
+ * - « chercher » : liste de photos pour des mots-clés
+ * - « choisir » : copie la photo choisie dans notre stockage (Pixabay interdit le lien direct permanent)
+ */
+const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  { auth: { autoRefreshToken: false, persistSession: false } });
+const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", ...corsHeaders } });
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const appelant = await getCaller(req);
+  if (!appelant?.isAdmin) return deny();
+  const { action, recherche, page, post_id, photo } = await req.json().catch(() => ({}));
+  const { data: secret } = await db.from("secrets_internes").select("valeur").eq("nom", "pixabay").maybeSingle();
+  if (!secret?.valeur) return json({ error: "Clé Pixabay manquante" }, 400);
+
+  if (action === "chercher") {
+    const q = String(recherche ?? "").trim().slice(0, 100);
+    if (!q) return json({ photos: [] });
+    const url = `https://pixabay.com/api/?key=${encodeURIComponent(secret.valeur)}&q=${encodeURIComponent(q)}&image_type=photo&safesearch=true&per_page=30&page=${Math.max(1, Number(page) || 1)}&order=popular`;
+    const r = await fetch(url);
+    if (!r.ok) return json({ error: r.status === 400 || r.status === 401 ? "Clé Pixabay refusée" : `Pixabay indisponible (${r.status})` }, 502);
+    const d = await r.json();
+    return json({ total: d.totalHits ?? 0, photos: (d.hits ?? []).map((h: any) => ({
+      id: h.id, apercu: h.webformatURL, grande: h.largeImageURL, page: h.pageURL, auteur: h.user, largeur: h.imageWidth, hauteur: h.imageHeight, tags: h.tags,
+    })) });
+  }
+
+  if (action === "choisir") {
+    if (!post_id || !photo?.grande || !/^https:\/\/pixabay\.com\//.test(String(photo.grande))) return json({ error: "Photo invalide" }, 400);
+    const r = await fetch(photo.grande);
+    if (!r.ok) return json({ error: "Téléchargement impossible" }, 502);
+    const chemin = `instagram/photos/${post_id}-${photo.id}.jpg`;
+    const { error } = await db.storage.from("assets").upload(chemin, await r.arrayBuffer(), { contentType: "image/jpeg", upsert: true });
+    if (error) return json({ error: error.message }, 500);
+    const { data: pub } = db.storage.from("assets").getPublicUrl(chemin);
+    await db.from("posts_instagram").update({ photo_url: pub.publicUrl, photo_page: photo.page ?? null, photo_auteur: photo.auteur ?? null, statut: "brouillon", visuel_url: null }).eq("id", post_id);
+    return json({ photo_url: pub.publicUrl });
+  }
+  return json({ error: "Action inconnue" }, 400);
+});

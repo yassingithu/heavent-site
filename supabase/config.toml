@@ -25,3 +25,6 @@ verify_jwt = false
 
 [functions.resume-matin]
 verify_jwt = false
+
+[functions.instagram-photos]
+verify_jwt = false

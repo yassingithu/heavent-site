@@ -2,7 +2,7 @@
 //   node tests/beta/beta.mjs http://127.0.0.1:4173            → parcours complets sur la version construite (fausse base)
 //   BETA_LIVE=1 node tests/beta/beta.mjs http://127.0.0.1:4173 → + contrôles en lecture seule sur heaventagency.com
 // Écrit rapport-beta.md et des captures dans beta-captures/ ; code de sortie 1 si un parcours échoue.
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { nouvelleBase, contexte, connecter, creerFacture } from "./simulateur.mjs";
 
 let chromium;
@@ -998,6 +998,46 @@ await scenario("Cadeau : surprise de bienvenue, mot du jour de Yassin, célébra
   verifier(!(await y.page.getByTestId("surprise-bienvenue").count()) && !(await y.page.getByTestId("mot-du-jour").count()) && /Yassin/.test(await y.page.getByTestId("carte-accueil").innerText()), "Yassin ne doit voir ni la surprise ni les mots");
   notes.push("Yassin : simple accueil à son prénom, ni surprise ni mot du jour");
   await y.ctx.close();
+});
+
+// Instagram : clé Pixabay, visuels préparés automatiquement, changement de photo et de texte
+await scenario("Instagram : clé Pixabay cachée, visuels montés automatiquement (photo + texte + logo), changer de photo", async (notes) => {
+  const base = nouvelleBase();
+  base.photoTest = readFileSync(new URL("./photo-test.jpg", import.meta.url));
+  base.posts_instagram = [
+    { id: "p1", date_prevue: "2026-10-21T18:30:00Z", theme: "mariage", accroche: "Conseil mariage", titre: "Les 5 détails que vos invités retiendront (et ce n'est pas le menu)", legende: "Légende 1 #mariage", recherche: "wedding cake", style: "sombre", photo_url: null, visuel_url: null, statut: "brouillon" },
+    { id: "p2", date_prevue: "2026-10-23T18:30:00Z", theme: "naissance", accroche: "Baby shower", titre: "Une baby shower inoubliable, sans aucun stress", legende: "Légende 2", recherche: "baby shower balloons", style: "clair", photo_url: null, visuel_url: null, statut: "brouillon" },
+  ];
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await ctx.route("https://pixabay.com/**", (r) => r.fulfill({ status: 200, body: base.photoTest, contentType: "image/jpeg", headers: { "access-control-allow-origin": "*" } }));
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Instagram$/ }).click(); await page.waitForTimeout(1000);
+  verifier(await page.getByTestId("carte-post").count() === 2, "les posts ne s'affichent pas");
+  await page.getByTestId("cle-pixabay").fill("cle-de-test-123");
+  await page.getByRole("button", { name: "Enregistrer" }).click(); await page.waitForTimeout(1200);
+  verifier(base.cle_pixabay === "cle-de-test-123" && await page.getByTestId("pixabay-ok").count(), "la clé n'est pas enregistrée");
+  verifier(!(await page.getByTestId("cle-pixabay").count()), "la clé ne doit plus être affichée");
+  await page.getByTestId("preparer-visuels").click();
+  await page.waitForFunction(() => !document.querySelector('[data-testid="preparer-visuels"]'), null, { timeout: 20000 }).catch(() => {});
+  await page.waitForTimeout(800);
+  verifier(base.posts_instagram.every((p) => p.statut === "pret" && p.visuel_url && p.photo_url), "visuels non préparés : " + JSON.stringify(base.posts_instagram.map((p) => [p.statut, !!p.visuel_url])));
+  const visuel = base.fichiers["assets/instagram/visuels/p1.jpg"];
+  verifier(visuel && visuel.length > 20000, "le visuel monté n'a pas été enregistré");
+  if (process.env.SORTIE) { writeFileSync(process.env.SORTIE + "/visuel-sombre.jpg", visuel); writeFileSync(process.env.SORTIE + "/visuel-clair.jpg", base.fichiers["assets/instagram/visuels/p2.jpg"]); }
+  notes.push("clé Pixabay enregistrée puis masquée ; « Préparer les 2 visuels » : photo choisie + montage 1080×1350 enregistré pour chaque post");
+  // Modifier un post : nouvelle photo + nouveau texte
+  await page.getByTestId("carte-post").first().click(); await page.waitForTimeout(800);
+  await page.getByTestId("titre-post").fill("Le plan de table sans stress");
+  await page.getByTestId("chercher-photo").click(); await page.waitForTimeout(800);
+  verifier(await page.getByTestId("resultats-photos").locator("button").count() === 3, "pas de résultats de recherche");
+  await page.getByTestId("resultats-photos").locator("button").nth(1).click(); await page.waitForTimeout(1200);
+  verifier(await page.getByTestId("apercu-visuel").count(), "pas d'aperçu du visuel");
+  await page.getByTestId("enregistrer-post").click(); await page.waitForTimeout(1500);
+  const p1 = base.posts_instagram[0];
+  verifier(p1.titre === "Le plan de table sans stress" && /p1-102\.jpg/.test(p1.photo_url) && p1.statut === "pret" && p1.visuel_url, "modification non enregistrée : " + JSON.stringify(p1));
+  notes.push("post modifié : texte changé, 2e photo choisie, aperçu en direct, visuel ré-enregistré");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
 });
 
 await scenario("Bouton WhatsApp (pages publiques uniquement, message adapté)", async (notes) => {

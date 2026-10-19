@@ -26,7 +26,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox } from "lucide-react";
+import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox, Instagram } from "lucide-react";
+import InstagramAdmin from "@/components/admin/instagram/InstagramAdmin";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -147,7 +148,7 @@ const MENU_ADMIN: { titre: string; items: (readonly [string, string, typeof User
   { titre: "Pilotage", items: [["tableau", "Bilan", BarChart3], ["statistiques", "Statistiques", TrendingUp], ["agenda", "Agenda", CalendarDays]] },
   { titre: "Clients", items: [["entreprise", "Entreprise", Building2], ["mariage", "Événement", PartyPopper], ["devis-rapide", "Devis", FileText], ["devis-envoyes", "Envoyés", Inbox], ["envoyer-devis", "Envoyer", Send]] },
   { titre: "Équipe", items: [["staff", "Personnel", Users], ["disponibilites", "Dispo", CalendarCheck], ["contrats", "Contrats", FileSignature], ["fiches", "Paie", Wallet]] },
-  { titre: "Réglages", items: [["realisations", "Site", Globe], ["securite", "Sécurité", Shield]] },
+  { titre: "Réglages", items: [["realisations", "Site", Globe], ["instagram", "Instagram", Instagram], ["securite", "Sécurité", Shield]] },
 ];
 const TITRES_ADMIN: Record<string, [string, string]> = {
   tableau: ["Bilan", "L'essentiel de l'activité en un coup d'œil"],
@@ -163,6 +164,7 @@ const TITRES_ADMIN: Record<string, [string, string]> = {
   contrats: ["Contrats", "Contrats des crews et signatures"],
   fiches: ["Paie", "Fiches de paie mensuelles"],
   realisations: ["Site", "Éléments de confiance, FAQ et réalisations publiées"],
+  instagram: ["Instagram", "Posts conseils préparés, photos et légendes prêtes à publier"],
   securite: ["Sécurité", "Mots de passe et accès du personnel"],
 };
 
@@ -1063,6 +1065,10 @@ const Admin = () => {
 
         <TabsContent value="agenda" className="space-y-4">
           <AgendaAdmin onOuvrirDevis={(id) => { (window as any).__heaventDevisAOuvrir = id; setOngletAdmin("devis-rapide"); window.dispatchEvent(new CustomEvent("heavent:ouvrir-devis", { detail: id })); }} />
+        </TabsContent>
+
+        <TabsContent value="instagram" className="space-y-4">
+          <InstagramAdmin />
         </TabsContent>
 
         <TabsContent value="realisations" className="space-y-4">
