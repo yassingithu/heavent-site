@@ -1076,6 +1076,63 @@ await scenario("Espace de Nawar : lettre de papa, mot du jour signé Papa, Insta
   await ctx.close();
 });
 
+// Guides gratuits + newsletter : du post Instagram à l'envoi
+await scenario("Guides gratuits et newsletter : guide débloqué contre l'e-mail, page « liens », newsletter créée depuis un post, test, envoi, désinscription", async (notes) => {
+  const base = nouvelleBase();
+  base.posts_instagram = [{ id: "p1", date_prevue: "2026-10-21T18:30:00Z", theme: "mariage", accroche: "Conseil", titre: "Les 5 détails que vos invités retiendront",
+    legende: "Vos invités oublieront…\n\nÉcrivez-nous « MARIAGE » en message 🤍\n\n🎁 Guide gratuit « 10 conseils pour un mariage réussi » : lien en bio\n\n#mariagemaroc", recherche: "cake", style: "sombre",
+    photo_url: null, visuel_url: "https://exemple.test/v.jpg?v=1", statut: "pret" }];
+  // Visiteuse sur smartphone
+  const v = await contexte(navigateur, base, "anon@x", { mobile: true });
+  await v.page.goto(BASE + "/guides/10-conseils-mariage-reussi"); await v.page.waitForTimeout(1500);
+  verifier(await v.page.getByTestId("conseil").count() === 3 && await v.page.getByTestId("formulaire-guide").count(), "le guide devrait montrer 3 conseils et le formulaire");
+  await v.page.getByTestId("guide-prenom").fill("Salma");
+  await v.page.getByTestId("guide-email").fill("salma@example.com");
+  await v.page.getByTestId("guide-newsletter").check();
+  await v.page.getByTestId("guide-envoyer").click(); await v.page.waitForTimeout(1200);
+  verifier(await v.page.getByTestId("conseil").count() === 10, "le guide complet ne s'ouvre pas");
+  const ab = base.abonnes_newsletter?.[0];
+  verifier(ab && ab.consentement && ab.themes.includes("mariage") && ab.prenom === "Salma", "abonnée mal enregistrée : " + JSON.stringify(ab));
+  verifier(base.appelsFonctions.some((a) => a.nom === "newsletter" && a.corps.action === "guide" && a.corps.slug === "10-conseils-mariage-reussi"), "le guide n'est pas envoyé par e-mail");
+  await v.page.reload(); await v.page.waitForTimeout(1200);
+  verifier(await v.page.getByTestId("conseil").count() === 10, "le guide devrait rester ouvert sur cet appareil");
+  const stockage = await v.page.evaluate(() => JSON.stringify(localStorage));
+  verifier(!/salma/i.test(stockage), "aucune donnée personnelle ne doit être gardée dans le navigateur");
+  await v.page.goto(BASE + "/liens"); await v.page.waitForTimeout(1000);
+  verifier(await v.page.getByTestId("lien-guide").count() === 4, "la page « liens » doit proposer les 4 guides");
+  await v.page.goto(BASE + "/guides/guide-evenement-entreprise?offert=1"); await v.page.waitForTimeout(1000);
+  verifier(await v.page.getByTestId("conseil").count() === 10, "le lien « offert » de l'e-mail doit ouvrir le guide");
+  notes.push("visiteuse : 3 conseils visibles, prénom + e-mail + case newsletter → 10 conseils, guide envoyé par e-mail, reste ouvert après rechargement, rien de personnel dans le navigateur ; page « liens » avec les 4 guides");
+  verifier(!v.erreurs.length, "erreurs JavaScript : " + v.erreurs.join(" ; "));
+  await v.ctx.close();
+  // Admin : newsletter depuis le post, test, envoi
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Instagram$/ }).click(); await page.waitForTimeout(800);
+  await page.getByTestId("carte-post").first().click(); await page.waitForTimeout(600);
+  await page.getByTestId("creer-newsletter").click(); await page.waitForTimeout(800);
+  const nl = base.newsletters?.[0];
+  verifier(nl && nl.guide_slug === "10-conseils-mariage-reussi" && nl.themes[0] === "mariage" && !/#mariagemaroc|lien en bio/.test(nl.contenu) && nl.image_url === "https://exemple.test/v.jpg", "newsletter mal préparée : " + JSON.stringify(nl));
+  await page.getByTestId("editeur-post").getByRole("button", { name: "Fermer" }).last().click(); await page.waitForTimeout(500);
+  await page.getByRole("tab", { name: /Newsletter$/ }).click(); await page.waitForTimeout(1000);
+  verifier((await page.getByTestId("nb-abonnes").innerText()).trim() === "1" && await page.getByTestId("ligne-abonne").count() === 1, "abonnés mal comptés");
+  await page.getByTestId("ligne-newsletter").first().click(); await page.waitForTimeout(600);
+  verifier(/1 abonné/.test(await page.getByTestId("nb-destinataires").innerText()), "nombre de destinataires faux");
+  await page.getByTestId("nl-tester").click(); await page.waitForTimeout(800);
+  verifier(base.appelsFonctions.some((a) => a.nom === "newsletter" && a.corps.action === "tester"), "le test n'est pas envoyé");
+  await page.getByTestId("nl-envoyer").click(); await page.getByTestId("nl-confirmer").click(); await page.waitForTimeout(1200);
+  verifier(nl.statut === "envoyee" && nl.nb_destinataires === 1, "la newsletter n'est pas envoyée");
+  notes.push("admin : « Créer la newsletter » depuis le post (sans hashtags, image du post, guide mariage), 1 abonnée, test puis envoi confirmé");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+  // Désinscription
+  const d = await contexte(navigateur, base, "anon@x");
+  await d.page.goto(BASE + "/desinscription/" + ab.jeton); await d.page.waitForTimeout(1200);
+  verifier(/désinscrit/.test(await d.page.getByTestId("desinscription").innerText()) && !ab.consentement && ab.desinscrit_le, "désinscription non prise en compte");
+  notes.push("lien de désinscription : confirmé, plus aucun envoi");
+  await d.ctx.close();
+});
+
 await scenario("Bouton WhatsApp (pages publiques uniquement, message adapté)", async (notes) => {
   const base = nouvelleBase();
   const { page, ctx } = await contexte(navigateur, base, ADMIN, { mobile: true });

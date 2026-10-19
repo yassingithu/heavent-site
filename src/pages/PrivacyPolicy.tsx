@@ -62,6 +62,9 @@ const PrivacyPolicy = () => {
                 <p>
                   <strong>{x("Mesure d'audience.")}</strong> {x("Pour savoir quelles pages sont consultées, nous comptons les visites de façon anonyme, sans cookie : page vue, site d'où vient la visite (par exemple Google ou Instagram), type d'appareil et clics sur nos moyens de contact. Aucune donnée permettant de vous identifier n'est enregistrée, et ces statistiques sont supprimées au bout de 13 mois.")}
                 </p>
+                <p>
+                  <strong>{x("Guides gratuits et newsletter.")}</strong> {x("Quand vous téléchargez un guide, nous enregistrons votre e-mail, votre prénom et le type d'événement qui vous intéresse, pour vous envoyer ce guide. Vous ne recevez notre newsletter que si vous avez coché la case prévue, et chaque e-mail contient un lien pour vous désinscrire en un clic. Ces données ne sont jamais revendues.")}
+                </p>
               </CardContent>
             </Card>
 

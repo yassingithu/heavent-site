@@ -26,6 +26,10 @@ const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const MentionsLegales = lazy(() => import("./pages/MentionsLegales"));
 const CreeTonEvenement = lazy(() => import("./pages/CreeTonEvenement"));
+const ListeGuides = lazy(() => import("./pages/Guides").then((m) => ({ default: m.ListeGuides })));
+const PageGuide = lazy(() => import("./pages/Guides").then((m) => ({ default: m.PageGuide })));
+const Liens = lazy(() => import("./pages/Guides").then((m) => ({ default: m.Liens })));
+const Desinscription = lazy(() => import("./pages/Guides").then((m) => ({ default: m.Desinscription })));
 const MonDevis = lazy(() => import("./pages/MonDevis"));
 const Realisations = lazy(() => import("./pages/Realisations"));
 const PageLocale = lazy(() => import("./pages/PageLocale"));
@@ -70,6 +74,10 @@ const App = () => {
               <Route path="/mon-mariage/:token" element={<EspaceMaries />} />
               <Route path="/rsvp/:jeton" element={<Rsvp />} />
               <Route path="/realisations" element={<Realisations />} />
+              <Route path="/guides" element={<ListeGuides />} />
+              <Route path="/guides/:slug" element={<PageGuide />} />
+              <Route path="/liens" element={<Liens />} />
+              <Route path="/desinscription/:jeton" element={<Desinscription />} />
               {PAGES_LOCALES.map((p) => <Route key={p.chemin} path={p.chemin} element={<PageLocale page={p} />} />)}
               <Route path="/rgpd" element={<Navigate to="/politique-confidentialite" replace />} />
               <Route path="/admin" element={<Admin />} />

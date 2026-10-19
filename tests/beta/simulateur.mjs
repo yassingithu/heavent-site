@@ -130,6 +130,17 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     if (url.pathname.includes("/functions/v1/")) {
       const nom = url.pathname.split("/").pop(); const corps = req.postData() ? JSON.parse(req.postData()) : {};
       base.appelsFonctions.push({ nom, corps });
+      if (nom === "newsletter") {
+        if (corps.action === "guide") return route.fulfill({ json: { ok: true } });
+        if (!admin) return route.fulfill({ status: 403, json: { error: "Accès refusé" } });
+        const n = (base.newsletters ?? []).find((x) => x.id === corps.newsletter_id);
+        if (corps.action === "tester") return route.fulfill({ json: { ok: true, a: email } });
+        if (corps.action === "envoyer") {
+          const dest = (base.abonnes_newsletter ?? []).filter((a) => a.consentement && !a.desinscrit_le && (!n.themes?.length || a.themes.some((t) => n.themes.includes(t))));
+          Object.assign(n, { statut: "envoyee", envoyee_le: new Date().toISOString(), nb_destinataires: dest.length });
+          return route.fulfill({ json: { envoyes: dest.length, total: dest.length, erreurs: [] } });
+        }
+      }
       if (nom === "instagram-publier") {
         if (!admin) return route.fulfill({ status: 403, json: { error: "Accès refusé" } });
         if (corps.action === "connecter") { if (corps.jeton !== "IGJETON-TEST-1234567890") return route.fulfill({ status: 400, json: { error: "Instagram refuse ce jeton" } }); base.instagram = "heavent.agency"; return route.fulfill({ json: { nom: "heavent.agency" } }); }
@@ -283,6 +294,21 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
             avis_google: passe ? base.parametres_agence[0].lien_avis_google ?? null : null,
           };
         })() } });
+    }
+    // Newsletter : inscription (page d'un guide) et désinscription
+    if (url.pathname.includes("/rpc/newsletter_inscrire")) {
+      const c = JSON.parse(req.postData() || "{}"); base.abonnes_newsletter ??= [];
+      if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(c.p_email || "")) return route.fulfill({ status: 400, json: { message: "E-mail invalide" } });
+      let a = base.abonnes_newsletter.find((x) => x.email === c.p_email.toLowerCase());
+      if (!a) { a = { id: "ab" + Math.random().toString(36).slice(2), email: c.p_email.toLowerCase(), prenom: c.p_prenom || null, themes: [], source: c.p_source, consentement: false, desinscrit_le: null, jeton: "11111111-2222-4333-8444-" + Math.random().toString(16).slice(2, 14).padEnd(12, "0"), cree_le: new Date().toISOString() }; base.abonnes_newsletter.push(a); }
+      if (c.p_theme && !a.themes.includes(c.p_theme)) a.themes.push(c.p_theme);
+      if (c.p_newsletter) { a.consentement = true; a.desinscrit_le = null; }
+      return route.fulfill({ json: { ok: true } });
+    }
+    if (url.pathname.includes("/rpc/newsletter_desinscrire")) {
+      const a = (base.abonnes_newsletter ?? []).find((x) => x.jeton === JSON.parse(req.postData() || "{}").p_jeton);
+      if (a) Object.assign(a, { consentement: false, desinscrit_le: new Date().toISOString() });
+      return route.fulfill({ json: { ok: !!a, prenom: a?.prenom ?? null } });
     }
     // Instagram : clé Pixabay (jamais relisible)
     if (url.pathname.includes("/rpc/instagram_reglages")) return route.fulfill({ json: { pixabay: !!base.cle_pixabay, instagram: !!base.instagram, instagram_nom: base.instagram ?? null } });

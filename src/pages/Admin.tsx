@@ -27,7 +27,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox, Instagram } from "lucide-react";
+import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox, Instagram, Mail } from "lucide-react";
+import NewsletterAdmin from "@/components/admin/newsletter/NewsletterAdmin";
 import InstagramAdmin from "@/components/admin/instagram/InstagramAdmin";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -149,7 +150,8 @@ const MENU_ADMIN: { titre: string; items: (readonly [string, string, typeof User
   { titre: "Pilotage", items: [["tableau", "Bilan", BarChart3], ["statistiques", "Statistiques", TrendingUp], ["agenda", "Agenda", CalendarDays]] },
   { titre: "Clients", items: [["entreprise", "Entreprise", Building2], ["mariage", "Événement", PartyPopper], ["devis-rapide", "Devis", FileText], ["devis-envoyes", "Envoyés", Inbox], ["envoyer-devis", "Envoyer", Send]] },
   { titre: "Équipe", items: [["staff", "Personnel", Users], ["disponibilites", "Dispo", CalendarCheck], ["contrats", "Contrats", FileSignature], ["fiches", "Paie", Wallet]] },
-  { titre: "Réglages", items: [["realisations", "Site", Globe], ["instagram", "Instagram", Instagram], ["securite", "Sécurité", Shield]] },
+  { titre: "Communication", items: [["instagram", "Instagram", Instagram], ["newsletter", "Newsletter", Mail]] },
+  { titre: "Réglages", items: [["realisations", "Site", Globe], ["securite", "Sécurité", Shield]] },
 ];
 const TITRES_ADMIN: Record<string, [string, string]> = {
   tableau: ["Bilan", "L'essentiel de l'activité en un coup d'œil"],
@@ -166,6 +168,7 @@ const TITRES_ADMIN: Record<string, [string, string]> = {
   fiches: ["Paie", "Fiches de paie mensuelles"],
   realisations: ["Site", "Éléments de confiance, FAQ et réalisations publiées"],
   instagram: ["Instagram", "Posts conseils préparés, photos et légendes prêtes à publier"],
+  newsletter: ["Newsletter", "Abonnés venus des guides gratuits, newsletters à préparer et envoyer"],
   securite: ["Sécurité", "Mots de passe et accès du personnel"],
 };
 
@@ -1074,6 +1077,10 @@ const Admin = () => {
 
         <TabsContent value="instagram" className="space-y-4">
           <InstagramAdmin />
+        </TabsContent>
+
+        <TabsContent value="newsletter" className="space-y-4">
+          <NewsletterAdmin />
         </TabsContent>
 
         <TabsContent value="realisations" className="space-y-4">

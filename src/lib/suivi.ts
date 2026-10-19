@@ -5,7 +5,7 @@ import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/integrations/supabase/
  * clics importants et demandes envoyées. Seuls un identifiant de session aléatoire (effacé à la fermeture
  * de l'onglet) et la provenance sont gardés dans sessionStorage. Les pages privées ne sont jamais comptées.
  */
-const PRIVEES = ["/admin", "/auth", "/staff", "/mon-devis", "/mon-mariage", "/rsvp", "/admin-auth"];
+const PRIVEES = ["/admin", "/auth", "/staff", "/mon-devis", "/mon-mariage", "/rsvp", "/admin-auth", "/desinscription"];
 export const pagePrivee = (chemin: string) => PRIVEES.some((p) => chemin === p || chemin.startsWith(p + "/") || chemin.startsWith(p + "-"));
 
 const lire = (cle: string) => { try { return sessionStorage.getItem(cle); } catch { return null; } };

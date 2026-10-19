@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Check, Copy, Download, ExternalLink, ImagePlus, Instagram, KeyRound, Loader2, Search, Sparkles, Wand2 } from "lucide-react";
 import { composerVisuel, enJpeg } from "./visuel";
+import { guidePourTheme } from "@/data/guides";
 
 /** Onglet Instagram : posts conseils préparés (photo Pixabay + texte Heavent), à télécharger ou publier. */
 interface Post {
@@ -166,12 +167,12 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
         ))}
       </div>
 
-      {ouvert && <EditeurPost post={ouvert} pixabay={reglages.pixabay} instagram={!famille && reglages.instagram} onFermer={() => { setOuvert(null); charger(); }} />}
+      {ouvert && <EditeurPost post={ouvert} pixabay={reglages.pixabay} instagram={!famille && reglages.instagram} famille={famille} onFermer={() => { setOuvert(null); charger(); }} />}
     </div>
   );
 }
 
-function EditeurPost({ post: initial, pixabay, instagram, onFermer }: { post: Post; pixabay: boolean; instagram: boolean; onFermer: () => void }) {
+function EditeurPost({ post: initial, pixabay, instagram, famille, onFermer }: { post: Post; pixabay: boolean; instagram: boolean; famille: boolean; onFermer: () => void }) {
   const { toast } = useToast();
   const [p, setP] = useState(initial);
   const [photos, setPhotos] = useState<Photo[] | null>(null);
@@ -225,6 +226,17 @@ function EditeurPost({ post: initial, pixabay, instagram, onFermer }: { post: Po
     if (error) { let m = error.message; try { m = (await (error as any).context?.json())?.error ?? m; } catch { /* rien */ } return toast({ title: "Publication impossible", description: m, variant: "destructive" }); }
     toast({ title: "Publié sur Instagram 🎉" }); onFermer();
   };
+  const guide = guidePourTheme(p.theme);
+  const creerNewsletter = async () => {
+    setOccupe("newsletter");
+    const contenu = p.legende.split(/\n\s*\n/).filter((b) => !b.trim().startsWith("#") && !b.includes("lien en bio")).join("\n\n").trim();
+    const { error } = await (supabase as any).from("newsletters").insert({
+      sujet: p.titre, contenu, themes: [p.theme], image_url: p.visuel_url?.split("?")[0] ?? null, guide_slug: guide.slug, post_id: p.id,
+    });
+    setOccupe(null);
+    if (error) return toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    toast({ title: "Newsletter créée ✉️", description: "Retrouve-la dans l'onglet Newsletter pour la relire, la tester et l'envoyer." });
+  };
   const dateLocale = p.date_prevue ? new Date(new Date(p.date_prevue).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "";
 
   return (
@@ -262,6 +274,7 @@ function EditeurPost({ post: initial, pixabay, instagram, onFermer }: { post: Po
                 </button>
               ))}
             </div>
+            <p className="text-xs rounded-md bg-[#FBF6E9] px-3 py-2 text-[#5E554A]">🎁 Guide lié : <a href={`/guides/${guide.slug}`} target="_blank" rel="noreferrer" className="underline">{guide.titre}</a> · lien en bio : heaventagency.com/liens</p>
             <label className="text-sm space-y-1 block"><span className="text-muted-foreground">Légende du post</span>
               <textarea value={p.legende} onChange={(e) => set("legende", e.target.value)} rows={9} className="w-full rounded-md border p-3 text-sm leading-relaxed" /></label>
 
@@ -298,7 +311,8 @@ function EditeurPost({ post: initial, pixabay, instagram, onFermer }: { post: Po
                   {occupe === "publier" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Instagram className="h-4 w-4" />} Publier maintenant
                 </button>
               )}
-              {!instagram && p.statut !== "publie" && p.visuel_url && <button onClick={marquerPublie} className="rounded-full border px-4 h-10 text-sm">Je l'ai publié</button>}
+              {!famille && <button onClick={creerNewsletter} disabled={!!occupe} className="rounded-full border px-4 h-10 text-sm" data-testid="creer-newsletter">✉️ Créer la newsletter</button>}
+              {!instagram && !famille && p.statut !== "publie" && p.visuel_url && <button onClick={marquerPublie} className="rounded-full border px-4 h-10 text-sm">Je l'ai publié</button>}
               <button onClick={onFermer} className="rounded-full px-4 h-10 text-sm text-muted-foreground">Fermer</button>
             </div>
           </div>

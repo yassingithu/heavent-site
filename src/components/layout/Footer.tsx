@@ -110,6 +110,7 @@ const Footer = () => {
             <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
               {SERVICES.map((v) => <li key={v.chemin}><Link to={v.chemin} className="text-muted-foreground hover:text-primary transition-colors">{x(v.nomCourt)}</Link></li>)}
               <li><Link to="/realisations" className="text-muted-foreground hover:text-primary transition-colors">{x("Réalisations")}</Link></li>
+              <li><Link to="/guides" className="text-muted-foreground hover:text-primary transition-colors">{x("Guides gratuits")}</Link></li>
             </ul>
           </div>
         </div>
