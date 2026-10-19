@@ -53,6 +53,7 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
   const [appId, setAppId] = useState("");
   const [secretApp, setSecretApp] = useState("");
   const methodeFacebook = jeton.trim().startsWith("EA");
+  const [changerJeton, setChangerJeton] = useState(false);
   const [connexion, setConnexion] = useState(false);
   const [cle, setCle] = useState("");
   const [ouvert, setOuvert] = useState<Post | null>(null);
@@ -81,7 +82,7 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
     try {
       const { data, error } = await supabase.functions.invoke("instagram-publier", { body: { action: "connecter", jeton, app_id: appId, secret: secretApp } });
       if (error) { let m = error.message; try { m = (await (error as any).context?.json())?.error ?? m; } catch { /* rien */ } throw new Error(m); }
-      setJeton(""); setSecretApp(""); toast({ title: `Instagram connecté ✓`, description: `Compte @${data.nom} : les posts prêts partiront tout seuls à leur date.` }); charger();
+      setJeton(""); setSecretApp(""); setChangerJeton(false); toast({ title: `Instagram connecté ✓`, description: `Compte @${data.nom} : les posts prêts partiront tout seuls à leur date.` }); charger();
     } catch (e: any) { toast({ title: "Connexion impossible", description: e.message, variant: "destructive" }); }
     setConnexion(false);
   };
@@ -128,8 +129,11 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
         </section>
         <section className="rounded-2xl border border-[#EADFC8] bg-white p-4">
           <h3 className="font-medium flex items-center gap-2"><Instagram className="h-4 w-4 text-[#A8933F]" /> Publication automatique</h3>
-          {reglages.instagram ? (
-            <p className="text-sm text-emerald-700 mt-1 flex items-center gap-1.5" data-testid="instagram-connecte"><Check className="h-4 w-4" /> @{reglages.instagram_nom} connecté : les posts « Prêts » partent tout seuls à leur date.</p>
+          {reglages.instagram && !changerJeton ? (
+            <>
+              <p className="text-sm text-emerald-700 mt-1 flex items-center gap-1.5" data-testid="instagram-connecte"><Check className="h-4 w-4" /> @{reglages.instagram_nom} connecté : les posts « Prêts » partent tout seuls à leur date.</p>
+              <button onClick={() => setChangerJeton(true)} className="mt-1 text-xs underline underline-offset-2 text-muted-foreground hover:text-foreground" data-testid="changer-jeton">Mettre à jour le jeton</button>
+            </>
           ) : (
             <>
               <p className="text-sm text-muted-foreground mt-1">En attendant, télécharge le visuel et copie la légende pour publier à la main.</p>
