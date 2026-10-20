@@ -685,4 +685,5 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "min de lecture": { en: "min read", ar: "دقائق قراءة" },
   "Baby shower & naissance": { en: "Baby shower & birth", ar: "حفل استقبال المولود والولادة" },
   "Fêtes de famille": { en: "Family celebrations", ar: "الحفلات العائلية" },
+  "Vous êtes une agence ? Heavent Studio": { en: "Are you an agency? Heavent Studio", ar: "هل أنتم وكالة؟ Heavent Studio" },
 };

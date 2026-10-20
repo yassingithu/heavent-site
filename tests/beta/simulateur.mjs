@@ -344,7 +344,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       return route.fulfill({ json: {
         visites: sessions, pages_vues: ev.filter((e) => e.type === "vue").length, demandes: ev.filter((e) => e.type === "demande").length,
         clics_contact: ev.filter((e) => e.type === "clic" && ["whatsapp", "telephone", "email"].includes(e.nom)).length,
-        avant: { visites: 1, pages_vues: 2, demandes: 0, clics_contact: 0 },
+        avant: base.stats_avant ?? { visites: 1, pages_vues: 2, demandes: 0, clics_contact: 0 },
         par_jour: jours.map((j) => ({ jour: j, visites: new Set(ev.filter((e) => e.cree_le.slice(0, 10) === j).map((e) => e.session)).size })),
         pages: compte(ev.filter((e) => e.type === "vue"), "chemin"), sources: compte(ev, "source", true), clics: compte(ev.filter((e) => e.type === "clic"), "nom"),
         demandes_detail: compte(ev.filter((e) => e.type === "demande"), "nom"), appareils: compte(ev, "appareil", true),

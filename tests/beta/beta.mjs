@@ -1166,6 +1166,32 @@ await scenario("Affichage smartphone (pages publiques et admin)", async (notes) 
   await ctx.close();
 });
 
+// Heavent Studio : page professionnelle séparée du site grand public, demande de démo
+await scenario("Heavent Studio : page des agences, formules et demande de démo", async (notes) => {
+  const base = nouvelleBase();
+  const { page, ctx, erreurs } = await contexte(navigateur, base, "visiteur@demo.test", { mobile: true });
+  await page.goto(BASE + "/"); await page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1"));
+  await page.goto(BASE + "/contact"); await page.waitForTimeout(1200);
+  await page.getByTestId("lien-studio").click(); await page.waitForTimeout(1500);
+  verifier(page.url().endsWith("/studio"), "le lien du pied de page ne mène pas à /studio");
+  verifier(await page.getByTestId("studio-offre").count() === 3, "les 3 formules ne s'affichent pas");
+  verifier(!(await page.locator("header nav a[href='/devis-mariage']").count()), "le menu du site grand public ne doit pas apparaître");
+  const largeur = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  verifier(largeur <= 2, "la page dépasse de l'écran du téléphone");
+  await page.getByTestId("studio-cta-entete").click(); await page.waitForTimeout(800);
+  verifier(await page.getByTestId("studio-envoyer").isDisabled(), "le bouton doit rester grisé tant que le formulaire est vide");
+  await page.getByTestId("studio-nom").fill("Karim Test"); await page.getByTestId("studio-agence").fill("Agence Démo");
+  await page.getByTestId("studio-email").fill("karim@demo.test"); await page.getByTestId("studio-formule").selectOption("Agence complète");
+  await page.getByTestId("studio-envoyer").click(); await page.waitForTimeout(1200);
+  const appel = base.appelsFonctions.find((a) => a.nom === "send-email");
+  verifier(appel?.corps?.type === "contact" && /Heavent Studio/.test(appel.corps.data.subject) && /Agence complète/.test(appel.corps.data.message), "la demande de démo n'est pas transmise : " + JSON.stringify(appel?.corps));
+  verifier(await page.getByTestId("studio-merci").count(), "pas de message de confirmation");
+  await page.screenshot({ path: `${CAPTURES}/studio.png`, fullPage: false });
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  notes.push("lien « Vous êtes une agence ? » → /studio sans le menu du site, 3 formules, demande de démo envoyée avec la formule choisie, confirmation affichée");
+  await ctx.close();
+});
+
 // 5. Site en ligne (lecture seule : aucune donnée envoyée)
 if (process.env.BETA_LIVE) {
   await scenario("Site en ligne : pages, erreurs, formulaires vides refusés", async (notes) => {
