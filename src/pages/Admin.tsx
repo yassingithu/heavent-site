@@ -275,7 +275,7 @@ const Admin = () => {
   useEffect(() => {
     if (!authLoading) {
       if (!user || !session) {
-        navigate("/admin-auth");
+        if (!estDemo()) navigate("/admin-auth");
         return;
       }
       // Accès réservé aux emails de la table « admins »
@@ -283,7 +283,7 @@ const Admin = () => {
         if (!ok && (await estEspaceNawar())) { nePlusCompterCetAppareil(); setEspaceNawar(true); return; }
         setIsAdmin(ok);
         if (ok && !estDemo()) nePlusCompterCetAppareil(); // les visites de l'équipe ne faussent pas les statistiques
-        if (!ok) { navigate("/admin-auth"); return; }
+        if (!ok) { if (!estDemo()) navigate("/admin-auth"); return; }
         fetchData();
       });
     }

@@ -111,9 +111,18 @@ const Footer = () => {
               {SERVICES.map((v) => <li key={v.chemin}><Link to={v.chemin} className="text-muted-foreground hover:text-primary transition-colors">{x(v.nomCourt)}</Link></li>)}
               <li><Link to="/realisations" className="text-muted-foreground hover:text-primary transition-colors">{x("Réalisations")}</Link></li>
               <li><Link to="/guides" className="text-muted-foreground hover:text-primary transition-colors">{x("Guides gratuits")}</Link></li>
-              <li><Link to="/studio" className="text-muted-foreground hover:text-primary transition-colors" data-testid="lien-studio">{x("Vous êtes une agence ? Heavent Studio")}</Link></li>
             </ul>
           </div>
+        </div>
+
+        {/* Offre professionnelle Heavent Studio (pour les autres agences) */}
+        <div className="mt-8 flex justify-center">
+          <Link to="/studio" data-testid="lien-studio"
+            className="group inline-flex items-center gap-2.5 rounded-full bg-[#141414] text-white pl-2 pr-5 h-11 text-sm shadow-sm hover:bg-black transition">
+            <img src="/marque-or.png" alt="" className="h-7 w-7 rounded-full bg-white/5 p-1" />
+            <span>{x("Vous êtes une agence ? Heavent Studio")}</span>
+            <span className="text-[#E4D49A] transition-transform group-hover:translate-x-0.5">→</span>
+          </Link>
         </div>
 
         <hr className="my-8 border-muted" />
