@@ -14,6 +14,9 @@ import StatsSite from "@/components/admin/StatsSite";
 import { CarteAccueil, Celebrations, SurpriseBienvenue, useAccueil } from "@/components/admin/accueil/Accueil";
 import BilanMois from "@/components/admin/accueil/BilanMois";
 import { CarteAppTelephone, useAppAdmin } from "@/components/admin/accueil/AppTelephone";
+import { estDemo } from "@/demo/mode";
+import { baseDemo } from "@/demo/serveurDemo";
+import StudioAdmin from "@/components/admin/studio/StudioAdmin";
 import RealisationsAdmin from "@/components/admin/RealisationsAdmin";
 import AgendaAdmin from "@/components/admin/agenda/AgendaAdmin";
 import VitrineAdmin from "@/components/admin/VitrineAdmin";
@@ -27,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox, Instagram, Mail } from "lucide-react";
+import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox, Instagram, Mail, Sparkles } from "lucide-react";
 import NewsletterAdmin from "@/components/admin/newsletter/NewsletterAdmin";
 import InstagramAdmin from "@/components/admin/instagram/InstagramAdmin";
 import { format } from "date-fns";
@@ -151,6 +154,7 @@ const MENU_ADMIN: { titre: string; items: (readonly [string, string, typeof User
   { titre: "Clients", items: [["entreprise", "Entreprise", Building2], ["mariage", "Événement", PartyPopper], ["devis-rapide", "Devis", FileText], ["devis-envoyes", "Envoyés", Inbox], ["envoyer-devis", "Envoyer", Send]] },
   { titre: "Équipe", items: [["staff", "Personnel", Users], ["disponibilites", "Dispo", CalendarCheck], ["contrats", "Contrats", FileSignature], ["fiches", "Paie", Wallet]] },
   { titre: "Communication", items: [["instagram", "Instagram", Instagram], ["newsletter", "Newsletter", Mail]] },
+  { titre: "Heavent Studio", items: [["studio", "Démos agences", Sparkles]] },
   { titre: "Réglages", items: [["realisations", "Site", Globe], ["securite", "Sécurité", Shield]] },
 ];
 const TITRES_ADMIN: Record<string, [string, string]> = {
@@ -168,6 +172,7 @@ const TITRES_ADMIN: Record<string, [string, string]> = {
   fiches: ["Paie", "Fiches de paie mensuelles"],
   realisations: ["Site", "Éléments de confiance, FAQ et réalisations publiées"],
   instagram: ["Instagram", "Posts conseils préparés, photos et légendes prêtes à publier"],
+  studio: ["Heavent Studio", "Demandes de démo des agences et démos personnalisées à partager"],
   newsletter: ["Newsletter", "Abonnés venus des guides gratuits, newsletters à préparer et envoyer"],
   securite: ["Sécurité", "Mots de passe et accès du personnel"],
 };
@@ -277,7 +282,7 @@ const Admin = () => {
       estAdmin().then(async (ok) => {
         if (!ok && (await estEspaceNawar())) { nePlusCompterCetAppareil(); setEspaceNawar(true); return; }
         setIsAdmin(ok);
-        if (ok) nePlusCompterCetAppareil(); // les visites de l'équipe ne faussent pas les statistiques
+        if (ok && !estDemo()) nePlusCompterCetAppareil(); // les visites de l'équipe ne faussent pas les statistiques
         if (!ok) { navigate("/admin-auth"); return; }
         fetchData();
       });
@@ -618,6 +623,7 @@ const Admin = () => {
 
   const handleSignOut = async () => {
     try {
+      if (estDemo()) { window.location.href = "/studio"; return; }
       await supabase.auth.signOut();
       navigate("/admin-auth");
       toast({
@@ -1011,7 +1017,7 @@ const Admin = () => {
         {dansApplication && <div className="h-8 shrink-0" style={{ WebkitAppRegion: "drag" } as React.CSSProperties} aria-hidden />}
         <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 lg:px-5 lg:pt-6 lg:pb-5">
           <div className="min-w-0">
-            <p className="uppercase tracking-[0.28em] text-[9px] lg:text-[10px] text-[#E4D49A]">Heavent</p>
+            <p className="uppercase tracking-[0.28em] text-[9px] lg:text-[10px] text-[#E4D49A]">{estDemo() ? baseDemo()?._meta.agence ?? "Votre agence" : "Heavent"}</p>
             <p className="font-serif text-lg lg:text-2xl leading-tight">Administration</p>
           </div>
           <div className="flex items-center gap-1 lg:hidden">
@@ -1020,7 +1026,7 @@ const Admin = () => {
           </div>
         </div>
         <TabsList className="admin-onglets h-auto w-full bg-transparent p-0 rounded-none text-white/70 flex justify-start gap-1 overflow-x-auto px-3 pb-3 lg:flex-1 lg:flex-col lg:items-stretch lg:overflow-y-auto lg:overflow-x-hidden lg:px-3 lg:pb-4 lg:gap-0.5">
-          {MENU_ADMIN.map((groupe) => (
+          {MENU_ADMIN.filter((g) => !(estDemo() && g.titre === "Heavent Studio")).map((groupe) => (
             <div key={groupe.titre} className="contents lg:block lg:mb-3">
               <div className="hidden lg:block px-3 pt-2 pb-1 text-[10px] uppercase tracking-[0.2em] text-white/35">{groupe.titre}</div>
               {groupe.items.map(([valeur, libelle, Icone]) => {
@@ -1063,7 +1069,7 @@ const Admin = () => {
           {accueil?.prenom && <CarteAccueil infos={accueil} nouvellesDemandes={nouvellesEntreprise + nouvellesMariage} />}
           {accueil?.prenom && <Celebrations infos={accueil} onVu={rechargerAccueil} />}
           <BilanMois />
-          <CarteAppTelephone email={user?.email} />
+          {!estDemo() && <CarteAppTelephone email={user?.email} />}
           <TableauDeBord demandesMariage={devisMariage as any} demandesEntreprise={devisEntreprise as any} onOuvrirDevis={() => setOngletAdmin("devis-rapide")} />
         </TabsContent>
 
@@ -1081,6 +1087,10 @@ const Admin = () => {
 
         <TabsContent value="newsletter" className="space-y-4">
           <NewsletterAdmin />
+        </TabsContent>
+
+        <TabsContent value="studio" className="space-y-4">
+          <StudioAdmin />
         </TabsContent>
 
         <TabsContent value="realisations" className="space-y-4">

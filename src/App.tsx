@@ -34,6 +34,7 @@ const MonDevis = lazy(() => import("./pages/MonDevis"));
 const Realisations = lazy(() => import("./pages/Realisations"));
 const PageLocale = lazy(() => import("./pages/PageLocale"));
 const Studio = lazy(() => import("./pages/Studio"));
+const StudioDemo = lazy(() => import("./pages/StudioDemo"));
 import { PAGES_LOCALES } from "./lib/pagesLocales";
 import RetourEnHaut from "./components/RetourEnHaut";
 
@@ -79,6 +80,7 @@ const App = () => {
               <Route path="/guides/:slug" element={<PageGuide />} />
               <Route path="/liens" element={<Liens />} />
               <Route path="/studio" element={<Studio />} />
+              <Route path="/studio/demo/:jeton" element={<StudioDemo />} />
               <Route path="/desinscription/:jeton" element={<Desinscription />} />
               {PAGES_LOCALES.map((p) => <Route key={p.chemin} path={p.chemin} element={<PageLocale page={p} />} />)}
               <Route path="/rgpd" element={<Navigate to="/politique-confidentialite" replace />} />

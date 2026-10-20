@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { estDemo } from "@/demo/mode";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -496,7 +497,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
           <TabsTrigger value="parametres">Infos agence</TabsTrigger>
         </TabsList>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={nouveauNawar}><Plus className="h-4 w-4 mr-1" /> Devis Nawar — bar à parfums</Button>
+          {!estDemo() && <Button variant="outline" onClick={nouveauNawar}><Plus className="h-4 w-4 mr-1" /> Devis Nawar — bar à parfums</Button>}
           <Button onClick={nouveau}><Plus className="h-4 w-4 mr-1" /> Nouveau devis</Button>
         </div>
       </div>
@@ -614,7 +615,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                       <SelectTrigger className="w-[190px]" aria-label="Logo du devis"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="heavent">Logo Heavent</SelectItem>
-                        <SelectItem value="nawar">Logo Nawar — bar à parfums</SelectItem>
+                        {!estDemo() && <SelectItem value="nawar">Logo Nawar — bar à parfums</SelectItem>}
                       </SelectContent>
                     </Select>
                     <Select value={form.type} onValueChange={(v) => set("type", v as DevisForm["type"])}>

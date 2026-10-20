@@ -1186,10 +1186,50 @@ await scenario("Heavent Studio : page des agences, formules et demande de démo"
   const appel = base.appelsFonctions.find((a) => a.nom === "send-email");
   verifier(appel?.corps?.type === "contact" && /Heavent Studio/.test(appel.corps.data.subject) && /Agence complète/.test(appel.corps.data.message), "la demande de démo n'est pas transmise : " + JSON.stringify(appel?.corps));
   verifier(await page.getByTestId("studio-merci").count(), "pas de message de confirmation");
+  verifier(base.studio_demandes?.[0]?.agence === "Agence Démo" && base.studio_demandes[0].formule === "Agence complète", "la demande n'est pas enregistrée pour l'administration");
   await page.screenshot({ path: `${CAPTURES}/studio.png`, fullPage: false });
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   notes.push("lien « Vous êtes une agence ? » → /studio sans le menu du site, 3 formules, demande de démo envoyée avec la formule choisie, confirmation affichée");
   await ctx.close();
+});
+
+// Heavent Studio : l'admin génère une démo personnalisée, le prospect l'ouvre et l'utilise sans toucher aux vraies données
+await scenario("Heavent Studio : démo personnalisée générée en un clic, puis utilisée par le prospect", async (notes) => {
+  const base = nouvelleBase();
+  base.studio_demandes = [{ id: "sd1", cree_le: new Date().toISOString(), nom: "Karim Bennani", agence: "Atlas Events", email: "karim@atlas.test", telephone: "+212600000001", ville: "Fès", formule: "Gestion", message: "Agence de 12 personnes.", statut: "nouvelle" }];
+  const a = await contexte(navigateur, base, ADMIN);
+  await connecter(a.page, BASE, ADMIN, "/admin");
+  await a.page.getByRole("tab", { name: /Démos agences$/ }).click(); await a.page.waitForTimeout(1000);
+  verifier(await a.page.getByTestId("studio-demande").count() === 1, "la demande de démo n'apparaît pas");
+  await a.page.getByTestId("generer-demo").click(); await a.page.waitForTimeout(1500);
+  const lien = (await a.page.getByTestId("lien-demo").first().innerText()).trim();
+  verifier(/\/studio\/demo\/[0-9a-f-]{36}$/.test(lien), "lien de démo incorrect : " + lien);
+  verifier(base.studio_demos?.[0]?.agence === "Atlas Events" && base.studio_demos[0].prenom === "Karim" && base.studio_demos[0].ville === "Fès", "démo mal personnalisée");
+  verifier(base.studio_demandes[0].statut === "demo_envoyee", "le statut de la demande n'est pas passé à « Démo envoyée »");
+  notes.push("« Générer la démo » → lien /studio/demo/… au nom d'Atlas Events (Karim, Fès), demande passée en « Démo envoyée »");
+  verifier(!a.erreurs.length, "erreurs JavaScript (admin) : " + a.erreurs.join(" ; "));
+  await a.ctx.close();
+
+  // Le prospect ouvre le lien (sur téléphone) : tout tourne dans son navigateur, rien n'arrive au serveur
+  const p = await contexte(navigateur, base, "prospect@atlas.test", { mobile: true });
+  const avant = base.appelsFonctions.length, devisAvant = base.devis.length;
+  await p.page.goto(BASE + lien.replace("https://heaventagency.com", "")); await p.page.waitForTimeout(3500);
+  verifier(await p.page.getByTestId("bandeau-demo").count(), "le bandeau de démo est absent");
+  verifier((await p.page.locator("body").innerText()).includes("Atlas Events"), "le nom de l'agence n'apparaît pas dans la démo");
+  verifier(base.studio_demos[0].vues === 1, "l'ouverture n'est pas comptée");
+  await p.page.getByRole("tab", { name: /Devis$/ }).first().click(); await p.page.waitForTimeout(1000);
+  verifier(!(await p.page.getByRole("button", { name: /Nawar/ }).count()), "le devis Nawar ne doit pas apparaître dans la démo");
+  await p.page.getByRole("button", { name: /Faire le devis/ }).first().click(); await p.page.waitForTimeout(1200);
+  await p.page.getByRole("button", { name: /^Enregistrer$/ }).click(); await p.page.waitForTimeout(1500);
+  const texte = await p.page.locator("body").innerText();
+  verifier(/DEV-2026-00(4[3-9]|5)/.test(texte), "le devis créé dans la démo n'a pas de numéro");
+  verifier(base.devis.length === devisAvant && base.appelsFonctions.length === avant, "la démo a écrit sur le serveur !");
+  const session = await p.page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("sb-")));
+  verifier(!session.length, "la démo ne doit pas créer de vraie session : " + session.join(","));
+  await p.page.screenshot({ path: `${CAPTURES}/studio-demo.png` });
+  verifier(!p.erreurs.length, "erreurs JavaScript (démo) : " + p.erreurs.join(" ; "));
+  notes.push("le prospect voit « Atlas Events », crée un devis numéroté dans la démo ; aucune écriture serveur, aucune session réelle, ouverture comptée");
+  await p.ctx.close();
 });
 
 // 5. Site en ligne (lecture seule : aucune donnée envoyée)

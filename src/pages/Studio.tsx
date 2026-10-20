@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Seo from "@/components/Seo";
-import { FUNCTIONS_URL } from "@/integrations/supabase/client";
+import { FUNCTIONS_URL, supabase } from "@/integrations/supabase/client";
 import { suivre } from "@/lib/suivi";
 import {
   ArrowRight, BarChart3, CalendarDays, Check, ChevronDown, FileSignature, Globe, Instagram, Loader2, MessageCircle,
@@ -89,6 +89,9 @@ function FormulaireDemo() {
     e.preventDefault();
     if (!valide || f.site) return; // « site » : champ piège invisible pour les robots
     setEtat("envoi");
+    // Enregistrée dans l'administration (onglet Heavent Studio), puis e-mail de notification
+    const { error: errBase } = await (supabase as any).rpc("studio_demander", { p_nom: f.nom, p_agence: f.agence, p_email: f.email, p_telephone: f.telephone, p_ville: f.ville, p_formule: f.formule, p_message: f.message });
+    if (errBase && /Trop de demandes/.test(errBase.message)) { setEtat("erreur"); return; }
     try {
       const r = await fetch(`${FUNCTIONS_URL}/send-email`, {
         method: "POST", headers: { "Content-Type": "application/json" },
