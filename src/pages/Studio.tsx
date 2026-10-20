@@ -23,17 +23,17 @@ const VISUELS = "https://mapiwnsjsluiwmnulhqk.supabase.co/storage/v1/object/publ
 const POSTS = ["6d4fb285-2828-4278-97b6-8c79a45448aa", "ec37691c-ad68-4803-b50b-f0f48a5d01be", "945d232d-9c51-4915-bfea-28211318488d"];
 
 const OFFRES = [
-  { nom: "Vitrine", tag: "Essentiel", prix: "9 500 €", delai: "4 à 6 semaines", suivi: "190 € / mois", plus: null,
+  { nom: "Vitrine", tag: "Essentiel", plus: null,
     points: ["Site sur mesure, 2 langues", "Pages villes et services pour Google", "Formulaires de devis et contact", "Prise de rendez-vous en ligne", "Réalisations et témoignages modifiables", "Statistiques de visite"] },
-  { nom: "Gestion", tag: "Recommandée", prix: "24 000 €", delai: "8 à 10 semaines", suivi: "390 € / mois", plus: "Tout l'Essentiel, plus :",
+  { nom: "Gestion", tag: "Recommandée", plus: "Tout l'Essentiel, plus :",
     points: ["3e langue (dont l'arabe)", "Administration privée + appli téléphone", "Devis, signature en ligne, relances", "Factures conformes, acompte et solde", "Agenda synchronisé, rappels clients", "Espace client, RSVP mariages, avis Google"] },
-  { nom: "Agence complète", tag: "Premium", prix: "45 000 €", delai: "14 à 16 semaines", suivi: "690 € / mois", plus: "Toute la Gestion, plus :",
+  { nom: "Agence complète", tag: "Premium", plus: "Toute la Gestion, plus :",
     points: ["Recrutement et espace des équipes", "Contrats signés en ligne", "Pointage selfie + position", "Fiches de paie mensuelles", "Configurateur « Créez votre événement »", "Instagram automatique, guides, newsletter"] },
 ];
 
 const FAQ = [
   ["Faut-il être à l'aise avec l'informatique ?", "Non. Tout se fait en quelques clics, en français, depuis l'ordinateur ou le téléphone. Nous formons votre équipe à la mise en ligne."],
-  ["Peut-on commencer petit et évoluer ?", "Oui. Chaque formule évolue vers la suivante sans rien refaire : le montant déjà investi est déduit."],
+  ["Peut-on commencer petit et évoluer ?", "Oui. Chaque formule évolue vers la suivante sans rien refaire : tout ce qui est déjà en place est conservé."],
   ["Nos données actuelles peuvent-elles être reprises ?", "Oui : catalogue de prestations, clients, équipes, photos de réalisations. Nous nous en chargeons pendant la mise en place."],
   ["À qui appartiennent l'outil et les données ?", "À vous. Chaque agence a son propre site, sa propre base de données et ses propres accès : rien n'est partagé avec d'autres clients."],
   ["Que se passe-t-il après la mise en ligne ?", "L'accompagnement mensuel couvre l'hébergement, les sauvegardes, les mises à jour de sécurité et le support."],
@@ -283,8 +283,6 @@ export default function Studio() {
               <div key={o.nom} className={`rounded-3xl p-7 flex flex-col ${vedette ? "bg-[#141414] text-white lg:-translate-y-3 shadow-2xl" : "bg-white border border-[#EADFC8]"}`} data-testid="studio-offre">
                 <span className={`text-[11px] uppercase tracking-[0.25em] ${vedette ? "text-[#E4D49A]" : "text-[#8C6D22]"}`}>{o.tag}</span>
                 <h3 className={`font-serif text-3xl mt-2 ${vedette ? "" : "text-[#141414]"}`}>{o.nom}</h3>
-                <div className={`font-serif text-4xl mt-4 ${vedette ? "text-[#E4D49A]" : "text-[#141414]"}`}>{o.prix} <span className="font-sans text-sm opacity-60">HT</span></div>
-                <div className={`text-sm mt-1 ${vedette ? "text-white/60" : "text-[#7a705f]"}`}>{o.delai} · puis {o.suivi}</div>
                 {o.plus && <p className={`text-sm font-medium mt-5 ${vedette ? "text-[#E4D49A]" : "text-[#8C6D22]"}`}>{o.plus}</p>}
                 <ul className={`space-y-2 ${o.plus ? "mt-2" : "mt-5"} flex-1`}>
                   {o.points.map((p) => <li key={p} className={`flex gap-2.5 text-sm ${vedette ? "text-white/85" : "text-[#3d362d]"}`}><Check className="h-4 w-4 text-[#C8B560] shrink-0 mt-0.5" />{p}</li>)}
@@ -294,7 +292,7 @@ export default function Studio() {
             );
           })}
         </div>
-        <p className="text-center text-xs text-[#7a705f] mt-8">Paiement : 40 % à la commande, 30 % à la validation des maquettes, 30 % à la mise en ligne. Modules à la carte sur devis.</p>
+        <p className="text-center text-sm text-[#7a705f] mt-8">Chaque projet est chiffré sur mesure après la démonstration. Modules à la carte possibles.</p>
       </section>
 
       {/* FAQ */}
