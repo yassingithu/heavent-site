@@ -35,7 +35,20 @@ export function useAppAdmin() {
     const ancien = theme?.getAttribute("content");
     theme?.setAttribute("content", "#141414");
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/admin-sw.js", { scope: "/admin" }).catch(() => {});
-    return () => { if (theme && ancien) theme.setAttribute("content", ancien); };
+    // L'appli installée reste ouverte des jours entiers : à chaque retour dessus, on vérifie si le site a été mis à jour
+    // et on recharge tout seul pour ne jamais rester sur une ancienne version.
+    const actuel = () => [...document.scripts].map((s) => s.src).find((s) => /\/assets\/index-[\w-]+\.js/.test(s))?.split("/assets/")[1] ?? null;
+    const verifier = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const html = await fetch("/admin/index.html", { cache: "no-store" }).then((r) => r.text());
+        const enLigne = html.match(/\/assets\/(index-[\w-]+\.js)/)?.[1];
+        const ici = actuel();
+        if (enLigne && ici && enLigne !== ici) window.location.reload();
+      } catch { /* hors ligne : on réessaiera */ }
+    };
+    document.addEventListener("visibilitychange", verifier);
+    return () => { if (theme && ancien) theme.setAttribute("content", ancien); document.removeEventListener("visibilitychange", verifier); };
   }, []);
 }
 

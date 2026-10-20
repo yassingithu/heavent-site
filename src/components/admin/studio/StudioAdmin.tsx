@@ -20,6 +20,7 @@ export default function StudioAdmin() {
   const [charge, setCharge] = useState(true);
   const [occupe, setOccupe] = useState<string | null>(null);
   const [libre, setLibre] = useState({ agence: "", prenom: "", ville: "" });
+  const [apercu, setApercu] = useState<Demo | null>(null);
 
   const charger = async () => {
     setCharge(true);
@@ -51,6 +52,17 @@ export default function StudioAdmin() {
 
   return (
     <div className="space-y-5" data-testid="studio-admin">
+      {apercu && (
+        // Aperçu dans l'administration elle-même (aucune nouvelle fenêtre : fonctionne aussi dans l'appli installée)
+        <div className="fixed inset-0 z-[100] bg-black/70 flex flex-col" data-testid="apercu-demo">
+          <div className="flex items-center gap-2 bg-[#141414] text-white px-3 h-12 shrink-0">
+            <Sparkles className="h-4 w-4 text-[#E4D49A]" />
+            <span className="text-sm flex-1 truncate">Aperçu — ce que voit {apercu.agence}</span>
+            <button onClick={() => setApercu(null)} className="rounded-full bg-white/10 px-4 h-8 text-sm" data-testid="fermer-apercu">Fermer</button>
+          </div>
+          <iframe title="Aperçu de la démo" src={`/studio/demo/${apercu.jeton}?apercu`} className="flex-1 w-full bg-white border-0" />
+        </div>
+      )}
       <section className="rounded-2xl border border-[#EADFC8] bg-white p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-serif text-xl">Demandes de démo</h3>
@@ -79,7 +91,7 @@ export default function StudioAdmin() {
                   {d.telephone && <a href={`https://wa.me/${d.telephone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm"><MessageCircle className="h-4 w-4 text-emerald-600" /> WhatsApp</a>}
                   <a href={`mailto:${d.email}?subject=${encodeURIComponent("Votre démo Heavent Studio")}`} className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm"><Mail className="h-4 w-4" /> E-mail</a>
                 </div>
-                {demosDe(d.id).map((x) => <LigneDemo key={x.jeton} d={x} tel={d.telephone} email={d.email} onCopier={copier} onDesactiver={desactiver} onProlonger={prolonger} />)}
+                {demosDe(d.id).map((x) => <LigneDemo key={x.jeton} d={x} tel={d.telephone} email={d.email} onCopier={copier} onDesactiver={desactiver} onProlonger={prolonger} onVoir={setApercu} />)}
               </div>
             ))}
           </div>
@@ -97,14 +109,14 @@ export default function StudioAdmin() {
             {occupe === "libre" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Générer
           </button>
         </div>
-        {demos.filter((d) => !d.demande_id).map((x) => <LigneDemo key={x.jeton} d={x} onCopier={copier} onDesactiver={desactiver} onProlonger={prolonger} />)}
+        {demos.filter((d) => !d.demande_id).map((x) => <LigneDemo key={x.jeton} d={x} onCopier={copier} onDesactiver={desactiver} onProlonger={prolonger} onVoir={setApercu} />)}
       </section>
     </div>
   );
 }
 
-function LigneDemo({ d, tel, email, onCopier, onDesactiver, onProlonger }: {
-  d: Demo; tel?: string | null; email?: string; onCopier: (t: string, q?: string) => void; onDesactiver: (j: string) => void; onProlonger: (j: string) => void;
+function LigneDemo({ d, tel, email, onCopier, onDesactiver, onProlonger, onVoir }: {
+  d: Demo; tel?: string | null; email?: string; onCopier: (t: string, q?: string) => void; onDesactiver: (j: string) => void; onProlonger: (j: string) => void; onVoir: (d: Demo) => void;
 }) {
   const expiree = !d.active || new Date(d.expire_le) < new Date();
   const lien = lienDemo(d.jeton);
@@ -121,7 +133,7 @@ function LigneDemo({ d, tel, email, onCopier, onDesactiver, onProlonger }: {
         <button onClick={() => onCopier(message(d), "Message copié ✓")} className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs"><Copy className="h-3.5 w-3.5" /> Message</button>
         {tel && <a href={`https://wa.me/${tel.replace(/\D/g, "")}?text=${encodeURIComponent(message(d))}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs"><MessageCircle className="h-3.5 w-3.5 text-emerald-600" /> Envoyer</a>}
         {email && <a href={`mailto:${email}?subject=${encodeURIComponent("Votre démo Heavent Studio")}&body=${encodeURIComponent(message(d))}`} className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs"><Mail className="h-3.5 w-3.5" /> E-mail</a>}
-        <a href={lien.replace("https://heaventagency.com", "") + "?apercu"} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs"><Eye className="h-3.5 w-3.5" /> Voir</a>
+        <button onClick={() => onVoir(d)} className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs" data-testid="voir-demo"><Eye className="h-3.5 w-3.5" /> Voir</button>
         {expiree ? <button onClick={() => onProlonger(d.jeton)} className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs"><Check className="h-3.5 w-3.5" /> Réactiver 30 jours</button>
           : <button onClick={() => onDesactiver(d.jeton)} className="rounded-md px-2 h-7 text-xs text-muted-foreground hover:text-red-700">Désactiver</button>}
       </div>

@@ -1207,6 +1207,13 @@ await scenario("Heavent Studio : démo personnalisée générée en un clic, pui
   verifier(base.studio_demos?.[0]?.agence === "Atlas Events" && base.studio_demos[0].prenom === "Karim" && base.studio_demos[0].ville === "Fès", "démo mal personnalisée");
   verifier(base.studio_demandes[0].statut === "demo_envoyee", "le statut de la demande n'est pas passé à « Démo envoyée »");
   notes.push("« Générer la démo » → lien /studio/demo/… au nom d'Atlas Events (Karim, Fès), demande passée en « Démo envoyée »");
+  await a.page.getByTestId("voir-demo").first().click(); await a.page.waitForTimeout(4000);
+  const cadre = a.page.frameLocator('[data-testid="apercu-demo"] iframe');
+  verifier((await cadre.locator("body").innerText()).includes("Démo personnalisée pour Atlas Events"), "l'aperçu dans l'admin ne montre pas la démo");
+  verifier(a.page.url().endsWith("/admin"), "l'aperçu ne doit pas quitter l'administration");
+  verifier(base.studio_demos[0].vues === 0, "l'aperçu de l'admin ne doit pas compter comme une ouverture");
+  await a.page.getByTestId("fermer-apercu").click();
+  notes.push("« Voir » ouvre l'aperçu dans l'admin même (pas de nouvelle fenêtre, compatible appli installée), sans compter de vue");
   verifier(!a.erreurs.length, "erreurs JavaScript (admin) : " + a.erreurs.join(" ; "));
   await a.ctx.close();
 
