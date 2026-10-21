@@ -108,12 +108,18 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
     const aFaire = (posts ?? []).filter((p) => p.statut !== "publie" && !p.visuel_url);
     setAuto({ fait: 0, total: aFaire.length });
     let erreurs = 0;
+    // Jamais deux fois la même photo : on garde les identifiants Pixabay déjà utilisés (dans le nom du fichier)
+    const utilisees = new Set((posts ?? []).map((x) => x.photo_url?.match(/-(\d+)\.jpg/)?.[1]).filter(Boolean) as string[]);
+    const cache = new Map<string, Photo[]>();
     for (const p of aFaire) {
       try {
         let photo = p.photo_url;
         if (!photo) {
-          const { photos } = await fonction({ action: "chercher", recherche: p.recherche });
-          const choix = (photos as Photo[]).find((x) => x.hauteur >= x.largeur * 0.9) ?? photos[0];
+          if (!cache.has(p.recherche)) cache.set(p.recherche, (await fonction({ action: "chercher", recherche: p.recherche })).photos as Photo[]);
+          const photos = cache.get(p.recherche)!;
+          const libres = photos.filter((x) => !utilisees.has(String(x.id)));
+          const choix = libres.find((x) => x.hauteur >= x.largeur * 0.9) ?? libres[0] ?? photos[0];
+          if (choix) utilisees.add(String(choix.id));
           if (!choix) throw new Error("aucune photo");
           photo = (await fonction({ action: "choisir", post_id: p.id, photo: choix })).photo_url;
         }

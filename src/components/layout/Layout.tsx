@@ -1,3 +1,4 @@
+import { clientEnModeDemo } from "@/integrations/supabase/client";
 import { ReactNode, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from "./Header";
@@ -25,9 +26,14 @@ const Layout = ({ children }: LayoutProps) => {
     }
   }, []);
 
-  // Dans l'app, on reste dans l'administration (ex. après la déconnexion)
+  // Démo Heavent Studio : en quittant la démo, on recharge la page pour retrouver le vrai serveur et la vraie connexion
   useEffect(() => {
-    if (dansApplication && !pathname.startsWith("/admin")) navigate("/admin-auth", { replace: true });
+    if (clientEnModeDemo && !pathname.startsWith("/studio/demo/")) window.location.replace(pathname + window.location.search);
+  }, [pathname]);
+
+  // Dans l'app, on reste dans l'administration (ex. après la déconnexion) ; les démos Heavent Studio s'y affichent aussi
+  useEffect(() => {
+    if (dansApplication && !pathname.startsWith("/admin") && !pathname.startsWith("/studio/demo/")) navigate("/admin-auth", { replace: true });
   }, [pathname, navigate]);
 
   if (dansApplication) {

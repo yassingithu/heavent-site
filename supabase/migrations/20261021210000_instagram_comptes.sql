@@ -19,3 +19,7 @@ begin
 end $$;
 revoke execute on function public.instagram_reglages_compte(text) from public, anon;
 grant execute on function public.instagram_reglages_compte(text) to authenticated;
+
+-- « Commentez GUIDE » : statut « public » quand le message privé est refusé et qu'on répond en public avec le lien
+alter table public.instagram_commentaires drop constraint if exists instagram_commentaires_statut_check;
+alter table public.instagram_commentaires add constraint instagram_commentaires_statut_check check (statut in ('recu', 'envoye', 'ignore', 'erreur', 'public'));

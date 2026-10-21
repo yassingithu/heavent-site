@@ -5,6 +5,7 @@ import Seo from "@/components/Seo";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, changerSessionDemo } from "@/integrations/supabase/client";
 import { baseDemo, definirUtilisateurDemo, demarrerDemo, vraiFetch } from "@/demo/serveurDemo";
 import DemoSite from "@/demo/DemoSite";
+import { dansApplication } from "@/components/layout/Layout";
 import type { ConfigDemo } from "@/demo/donneesDemo";
 
 const Admin = lazy(() => import("./Admin"));
@@ -54,6 +55,10 @@ export default function StudioDemo() {
       <Seo noindex />
       <div className="sticky top-0 z-[60] bg-[#141414] text-white border-b border-white/10" data-testid="bandeau-demo">
         <div className="max-w-6xl mx-auto px-2 sm:px-3 h-12 flex items-center gap-2">
+          {(dansApplication || new URLSearchParams(window.location.search).has("apercu")) && (
+            // Aperçu ouvert depuis l'administration : retour à la vraie administration (rechargement complet)
+            <button onClick={() => { if (!dansApplication && window.opener) window.close(); else window.location.href = "/admin"; }} className="shrink-0 rounded-full border border-white/20 px-3 h-8 text-xs" data-testid="retour-admin">← Mon admin</button>
+          )}
           <Sparkles className="h-4 w-4 text-[#E4D49A] shrink-0 hidden sm:block" />
           <p className="hidden lg:block text-xs text-white/70 truncate max-w-[220px]">Démo personnalisée pour <b className="text-white">{cfg.agence}</b></p>
           <div className="flex-1 flex justify-center gap-1">

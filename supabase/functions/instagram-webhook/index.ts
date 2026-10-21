@@ -4,6 +4,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
  * Webhook Instagram (Meta) : « Commentez GUIDE ».
  * - GET : vérification de l'adresse par Meta (hub.challenge)
  * - POST : nouveau commentaire contenant « GUIDE » → message privé avec le lien du bon guide + petite réponse publique.
+ * - POST avec la clé interne (toutes les 10 min) : relit les commentaires de nos posts récents, pour ne rater personne
+ *   (Meta n'envoie pas toujours le webhook pour tous les comptes) ; si le message privé est refusé, réponse publique avec le lien.
  *          Message privé contenant « GUIDE » → réponse avec les liens des guides.
  */
 const API_IG = "https://graph.instagram.com/v21.0";
@@ -23,7 +25,7 @@ const normaliser = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toU
 const demandeGuide = (t?: string) => !!t && /\bGUIDES?\b/.test(normaliser(t));
 
 async function secrets() {
-  const { data } = await db.from("secrets_internes").select("nom, valeur").in("nom", ["instagram_jeton", "instagram_compte", "instagram_secret_app", "instagram_webhook_jeton", "instagram_mode", "instagram_page_id"]);
+  const { data } = await db.from("secrets_internes").select("nom, valeur").in("nom", ["instagram_jeton", "instagram_compte", "instagram_secret_app", "instagram_webhook_jeton", "instagram_mode", "instagram_page_id", "rappel_signatures"]);
   return Object.fromEntries((data ?? []).map((x: any) => [x.nom, x.valeur])) as Record<string, string>;
 }
 
@@ -71,8 +73,40 @@ async function traiterCommentaire(v: any, s: Record<string, string>) {
     await db.from("instagram_commentaires").update({ statut: "envoye", post_id: post?.id ?? null, guide_slug: g?.slug ?? "liens" }).eq("commentaire_id", id);
     try { await appel(`${base(s)}/${id}/replies`, { message: REPONSES[Math.floor(Math.random() * REPONSES.length)] }, s.instagram_jeton); } catch { /* la réponse publique est un bonus */ }
   } catch (e) {
-    await db.from("instagram_commentaires").update({ statut: "erreur", erreur: String((e as Error).message).slice(0, 300), post_id: post?.id ?? null }).eq("commentaire_id", id);
+    // Message privé refusé (compte privé, restrictions Meta…) : réponse publique avec le lien, pour que la personne ait quand même son guide
+    const pseudo = v.from?.username ? `@${v.from.username} ` : "";
+    const publique = g ? `${pseudo}Merci ! 🎁 Votre guide « ${g.titre} » : ${SITE}/guides/${g.slug} (lien aussi en bio)` : `${pseudo}Merci ! 🎁 Nos guides gratuits : ${SITE}/liens (lien en bio)`;
+    try {
+      await appel(`${base(s)}/${id}/replies`, { message: publique }, s.instagram_jeton);
+      await db.from("instagram_commentaires").update({ statut: "public", erreur: `Message privé refusé : ${String((e as Error).message).slice(0, 250)}`, post_id: post?.id ?? null, guide_slug: g?.slug ?? "liens" }).eq("commentaire_id", id);
+    } catch (e2) {
+      await db.from("instagram_commentaires").update({ statut: "erreur", erreur: `${String((e as Error).message).slice(0, 150)} / ${String((e2 as Error).message).slice(0, 140)}`, post_id: post?.id ?? null }).eq("commentaire_id", id);
+    }
   }
+}
+
+/** Relit les commentaires des posts publiés ces 45 derniers jours (en plus du webhook) */
+async function scruter(s: Record<string, string>) {
+  const { data: posts } = await db.from("posts_instagram").select("ig_media_id").eq("compte", "heavent").not("ig_media_id", "is", null)
+    .gte("publie_le", new Date(Date.now() - 45 * 864e5).toISOString()).limit(80);
+  let vus = 0, traites = 0;
+  const erreurs: string[] = [];
+  for (const p of posts ?? []) {
+    try {
+      const r = await fetch(`${base(s)}/${p.ig_media_id}/comments?fields=id,text,username,timestamp,from&limit=50&access_token=${encodeURIComponent(s.instagram_jeton)}`);
+      const d = await r.json().catch(() => ({}));
+      if (d.error) erreurs.push(String(d.error.message).slice(0, 120));
+      for (const c of d.data ?? []) {
+        vus++;
+        if (!demandeGuide(c.text)) continue;
+        const { data: deja } = await db.from("instagram_commentaires").select("commentaire_id").eq("commentaire_id", String(c.id)).maybeSingle();
+        if (deja) continue;
+        traites++;
+        await traiterCommentaire({ id: c.id, text: c.text, from: { id: c.from?.id ?? null, username: c.username ?? c.from?.username ?? null }, media: { id: p.ig_media_id } }, s);
+      }
+    } catch { /* post supprimé ou inaccessible : on passe */ }
+  }
+  return { posts: posts?.length ?? 0, commentaires: vus, nouveaux_guide: traites, erreurs: erreurs.slice(0, 3) };
 }
 
 async function traiterMessage(m: any, s: Record<string, string>) {
@@ -96,6 +130,12 @@ Deno.serve(async (req) => {
     if (url.searchParams.get("hub.mode") === "subscribe" && s.instagram_webhook_jeton && url.searchParams.get("hub.verify_token") === s.instagram_webhook_jeton)
       return new Response(url.searchParams.get("hub.challenge") ?? "", { status: 200 });
     return new Response("Accès refusé", { status: 403 });
+  }
+  // Tâche planifiée : relecture des commentaires
+  if (req.headers.get("x-cle-rappel")) {
+    if (req.headers.get("x-cle-rappel") !== s.rappel_signatures) return new Response("Accès refusé", { status: 403 });
+    if (!s.instagram_jeton) return Response.json({ raison: "Instagram non connecté" });
+    return Response.json(await scruter(s));
   }
   const brut = await req.text();
   if (!(await signatureValide(brut, req.headers.get("x-hub-signature-256"), s.instagram_secret_app))) return new Response("Signature invalide", { status: 403 });

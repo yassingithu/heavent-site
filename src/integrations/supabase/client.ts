@@ -15,6 +15,8 @@ export const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 // Démo Heavent Studio (/studio/demo/…) : session fictive séparée et faux serveur dans le navigateur.
 // La vraie session de l'administration (localStorage) n'est jamais touchée.
 const DEMO = estDemo();
+/** Vrai si cette page a été chargée comme une démo Heavent Studio (faux serveur dans le navigateur) */
+export const clientEnModeDemo = DEMO;
 const memoireDemo = new Map<string, string>();
 /** Démo : « se connecter » en tant qu'administrateur ou en tant que membre de l'équipe (onglet « L'espace crew ») */
 export function changerSessionDemo(email: string) {

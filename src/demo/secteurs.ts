@@ -14,12 +14,24 @@ export interface ConfigSecteur {
   devis: { client: string; societe?: string; titre: string; lignes: LigneType[] }[];
   postes: string;                    // métier des membres de l'équipe
   site: { accroche: string; titre: string; texte: string; services: [string, string][]; cta: string; formulaire: string; typeDemande: string[] };
+  /** Habillage du site de démo : couleurs propres au métier (pas celles de Heavent), mise en avant, chiffres, avis */
+  theme: { fond: string; accent: string; surAccent: string; clair: string; texteClair: string };
+  /** Photos du métier (assets/studio/demo/<métier>/<n>.jpg) : grande image, cartes mises en avant, services */
+  images: { hero: number; cartes: number[]; services: number[] };
+  vedette: { titre: string; cartes: [string, string, string][] }; // titre, détail, prix/étiquette (image n° = index + 2)
+  chiffres: [string, string][];
+  avis: [string, string][];
 }
 
 export const SECTEURS: Record<Secteur, ConfigSecteur> = {
   evenementiel: {
     nom: "Agence événementielle", libelles: {}, titres: {}, masquer: [],
     catalogue: [], demandes: [], entreprise: { societe: "", contact: "", besoin: "", quantite: 0, remarques: "" }, devis: [], postes: "Hôtesse d'accueil",
+    images: { hero: 0, cartes: [7, 2, 3], services: [3, 1, 4, 5] },
+    theme: { fond: "#3B1F33", accent: "#E8A9B5", surAccent: "#3B1F33", clair: "#FBF3F4", texteClair: "#4A2E40" },
+    vedette: { titre: "Nos dernières réalisations", cartes: [["Mariage au bord de la piscine", "250 invités · décoration florale", "Mariage"], ["Gala d'entreprise", "400 invités · scène et lumières", "Entreprise"], ["Fiançailles traditionnelles", "120 invités · négafa et henné", "Fiançailles"]] },
+    chiffres: [["350+", "événements organisés"], ["120", "professionnels mobilisés"], ["4,9/5", "note de nos clients"]],
+    avis: [["Sofia & Adam", "Une organisation parfaite, nos invités en parlent encore !"], ["Atlas Tech", "Équipe réactive et hôtesses impeccables pendant 3 jours de salon."], ["Leila", "Ils ont tout géré, nous avons juste profité."]],
     site: {
       accroche: "Agence événementielle", titre: "Des événements inoubliables, organisés dans les moindres détails",
       texte: "Mariages, fiançailles, baby showers, séminaires et salons : une équipe passionnée pour faire de chaque moment un souvenir.",
@@ -53,6 +65,11 @@ export const SECTEURS: Record<Secteur, ConfigSecteur> = {
       { client: "Omar Tazi", societe: "Tazi & Fils", titre: "Flotte — 3 citadines", lignes: [{ designation: "Citadine — finition Confort", unite: "unite", quantite: 3, duree: 1, prix: 165000 }, { designation: "Contrat d'entretien 3 ans", unite: "forfait", quantite: 3, duree: 1, prix: 12500 }] },
     ],
     postes: "Conseiller commercial",
+    images: { hero: 7, cartes: [1, 2, 6], services: [0, 4, 3, 5] },
+    theme: { fond: "#0B1A2E", accent: "#3D8BFF", surAccent: "#FFFFFF", clair: "#F2F5F9", texteClair: "#1B2A40" },
+    vedette: { titre: "Les modèles du moment", cartes: [["SUV compact Premium", "Automatique · toit panoramique", "289 000 MAD"], ["Berline hybride", "50 km en électrique · 4,2 L/100", "345 000 MAD"], ["Citadine Confort", "Idéale en ville · garantie 3 ans", "165 000 MAD"]] },
+    chiffres: [["1 200+", "véhicules livrés"], ["48 h", "pour une reprise estimée"], ["24 mois", "de garantie sur l'occasion"]],
+    avis: [["Nadia B.", "Essai réservé en ligne, voiture livrée en 10 jours. Parfait."], ["Omar T.", "Reprise de mon ancien véhicule au juste prix, sans prise de tête."], ["Atlas Logistique", "Flotte de 6 véhicules livrée dans les délais, suivi impeccable."]],
     site: {
       accroche: "Concession automobile", titre: "Votre prochaine voiture vous attend",
       texte: "Véhicules neufs et d'occasion, reprise de votre ancien véhicule, financement sur mesure et atelier agréé : tout au même endroit.",
@@ -85,6 +102,11 @@ export const SECTEURS: Record<Secteur, ConfigSecteur> = {
       { client: "Karim Bennis", societe: "Hôtel Riad Atlas", titre: "Approvisionnement mensuel", lignes: [{ designation: "Savon naturel à l'huile d'argan", unite: "unite", quantite: 200, duree: 1, prix: 38 }, { designation: "Huile d'argan cosmétique 100 ml", unite: "unite", quantite: 50, duree: 1, prix: 150 }] },
     ],
     postes: "Préparateur de commandes",
+    images: { hero: 0, cartes: [4, 1, 7], services: [5, 4, 6, 0] },
+    theme: { fond: "#3E2A21", accent: "#D9825B", surAccent: "#FFFFFF", clair: "#FBF5EE", texteClair: "#4B362B" },
+    vedette: { titre: "Nos best-sellers", cartes: [["Coffret Prestige", "6 produits · emballage premium", "450 MAD"], ["Bougie artisanale", "Cire végétale · 40 h", "120 MAD"], ["Huile d'argan 100 ml", "Bio · pressée à froid", "180 MAD"]] },
+    chiffres: [["15 000+", "colis expédiés"], ["24-48 h", "livraison partout au Maroc"], ["4,8/5", "avis clients"]],
+    avis: [["Salma I.", "Coffrets magnifiques pour mes invités, livrés à temps !"], ["Rachid", "Échange fait en 48 h, service client au top."], ["Riad Atlas", "Nos commandes mensuelles arrivent toujours à l'heure."]],
     site: {
       accroche: "Boutique en ligne", titre: "Des produits naturels, livrés partout au Maroc",
       texte: "Cosmétiques, bougies et coffrets cadeaux fabriqués avec soin. Livraison en 24 à 48 h, paiement à la livraison.",
@@ -115,6 +137,11 @@ export const SECTEURS: Record<Secteur, ConfigSecteur> = {
       { client: "Karim Bennis", societe: "Résidence Les Jardins", titre: "Gestion locative — 12 appartements", lignes: [{ designation: "Gestion locative mensuelle", unite: "forfait", quantite: 12, duree: 1, prix: 800 }] },
     ],
     postes: "Agent immobilier",
+    images: { hero: 0, cartes: [2, 1, 7], services: [3, 0, 6, 4] },
+    theme: { fond: "#16332A", accent: "#C9A46A", surAccent: "#16332A", clair: "#F5F1E8", texteClair: "#24423A" },
+    vedette: { titre: "Biens à la une", cartes: [["Villa avec piscine", "4 chambres · 420 m² · jardin", "4 200 000 MAD"], ["Appartement lumineux", "3 pièces · 110 m² · terrasse", "1 650 000 MAD"], ["Penthouse vue mer", "180 m² · 2 terrasses", "3 900 000 MAD"]] },
+    chiffres: [["600+", "biens vendus ou loués"], ["30 jours", "délai moyen de vente"], ["98 %", "propriétaires satisfaits"]],
+    avis: [["Hicham F.", "Villa vendue en 5 semaines, au prix estimé."], ["Leila C.", "Des visites bien préparées, un vrai accompagnement."], ["Résidence Les Jardins", "Gestion locative sérieuse, loyers toujours à l'heure."]],
     site: {
       accroche: "Agence immobilière", titre: "Trouvez le bien qui vous ressemble",
       texte: "Vente, location, estimation et gestion locative : une équipe locale qui connaît chaque quartier.",
@@ -125,3 +152,5 @@ export const SECTEURS: Record<Secteur, ConfigSecteur> = {
 };
 
 export const secteurDe = (s?: string | null): Secteur => (s && s in SECTEURS ? (s as Secteur) : "evenementiel");
+
+export const imageDemo = (secteur: Secteur, n: number) => `https://mapiwnsjsluiwmnulhqk.supabase.co/storage/v1/object/public/assets/studio/demo/${secteur}/${n}.jpg`;
