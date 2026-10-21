@@ -672,7 +672,17 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   {Object.keys(parCategorie).length > 0 ? (
                     <div className="space-y-2">
                       <p className="text-xs text-muted-foreground">Ajout rapide depuis ton catalogue :</p>
-                      {Object.entries(parCategorie).map(([cat, items]) => (
+                      {Object.entries(parCategorie).map(([cat, items]) => ["prestataires", "lieux"].includes(cat) ? (
+                        // Prestataires et lieux : potentiellement nombreux, donc une liste déroulante avec recherche du navigateur
+                        <div key={cat} className="flex flex-wrap gap-2 items-center">
+                          <span className="text-xs uppercase tracking-wide text-muted-foreground w-24">{cat === "lieux" ? "Lieux" : "Prestataires"}</span>
+                          <select className="flex-1 min-w-[220px] rounded-md border bg-white px-3 h-9 text-sm" value="" data-testid={`ajout-${cat}`}
+                            onChange={(e) => { const p = items.find((x) => x.id === e.target.value); if (p) ajouterDuCatalogue(p); }}>
+                            <option value="">{cat === "lieux" ? "+ Ajouter une salle ou un lieu…" : "+ Ajouter un prestataire partenaire…"}</option>
+                            {items.map((p) => <option key={p.id} value={p.id}>{p.designation} — {money(p.prix_unitaire, devise)}</option>)}
+                          </select>
+                        </div>
+                      ) : (
                         <div key={cat} className="flex flex-wrap gap-2 items-center">
                           <span className="text-xs uppercase tracking-wide text-muted-foreground w-24">{cat}</span>
                           {items.map((p) => (

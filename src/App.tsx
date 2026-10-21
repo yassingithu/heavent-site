@@ -34,6 +34,8 @@ const MonDevis = lazy(() => import("./pages/MonDevis"));
 const Realisations = lazy(() => import("./pages/Realisations"));
 const PageLocale = lazy(() => import("./pages/PageLocale"));
 const Studio = lazy(() => import("./pages/Studio"));
+const Prestataires = lazy(() => import("./pages/Prestataires"));
+const ConfirmerPrestataire = lazy(() => import("./pages/Prestataires").then((m) => ({ default: m.ConfirmerPrestataire })));
 const StudioDemo = lazy(() => import("./pages/StudioDemo"));
 import { PAGES_LOCALES } from "./lib/pagesLocales";
 import RetourEnHaut from "./components/RetourEnHaut";
@@ -80,6 +82,8 @@ const App = () => {
               <Route path="/guides/:slug" element={<PageGuide />} />
               <Route path="/liens" element={<Liens />} />
               <Route path="/studio" element={<Studio />} />
+              <Route path="/prestataires" element={<Prestataires />} />
+              <Route path="/prestataires/confirmer/:jeton" element={<ConfirmerPrestataire />} />
               <Route path="/studio/demo/:jeton" element={<StudioDemo />} />
               <Route path="/desinscription/:jeton" element={<Desinscription />} />
               {PAGES_LOCALES.map((p) => <Route key={p.chemin} path={p.chemin} element={<PageLocale page={p} />} />)}

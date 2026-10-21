@@ -1239,6 +1239,76 @@ await scenario("Heavent Studio : démo personnalisée générée en un clic, pui
   await p.ctx.close();
 });
 
+// Prestataires partenaires : inscription publique → confirmation e-mail → validation admin → lignes de devis
+await scenario("Prestataires : inscription avec logo et photos, confirmation e-mail, validation, ajout aux devis", async (notes) => {
+  const base = nouvelleBase();
+  const photo = new URL("./photo-test.jpg", import.meta.url).pathname;
+  const v = await contexte(navigateur, base, "dj@prestataire.test", { mobile: true });
+  await v.page.goto(BASE + "/"); await v.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1"));
+  await v.page.goto(BASE + "/prestataires"); await v.page.waitForTimeout(1500);
+  verifier(await v.page.getByTestId("presta-envoyer").isDisabled(), "le bouton doit être grisé tant que le formulaire est incomplet");
+  await v.page.getByTestId("presta-societe").fill("DJ Atlas Sound"); await v.page.getByTestId("presta-contact").fill("Mehdi Sound");
+  await v.page.getByTestId("presta-email").fill("dj@prestataire.test");
+  await v.page.getByRole("button", { name: "DJ / animation" }).tap();
+  await v.page.getByTestId("presta-fonction").fill("DJ soirée de mariage"); await v.page.getByTestId("presta-prix").fill("8000");
+  await v.page.getByTestId("presta-logo").setInputFiles(photo); await v.page.getByTestId("presta-photos").setInputFiles([photo, photo]);
+  await v.page.getByTestId("presta-accord").check();
+  await v.page.getByTestId("presta-envoyer").tap(); await v.page.waitForTimeout(2500);
+  const r = base.prestataires?.[0];
+  verifier(r && r.statut === "email_a_confirmer" && r.prestations[0].prix === 8000 && r.categories.includes("DJ / animation"), "inscription mal enregistrée : " + JSON.stringify(r));
+  verifier(r.logo?.startsWith("inscriptions/") && r.photos.length === 2 && Object.keys(base.fichiers ?? {}).filter((k) => k.startsWith("prestataires/")).length === 3, "logo ou photos non envoyés");
+  verifier(base.appelsFonctions.some((a) => a.nom === "prestataires" && a.corps.action === "inscription"), "l'e-mail de confirmation n'est pas demandé");
+  verifier(await v.page.getByTestId("prestataire-merci").count(), "pas de message « plus qu'une étape »");
+  await v.page.goto(BASE + "/prestataires/confirmer/" + r.jeton); await v.page.waitForTimeout(1500);
+  verifier(r.statut === "en_attente" && (await v.page.locator("body").innerText()).includes("c'est confirmé"), "la confirmation par e-mail ne marche pas");
+  notes.push("inscription sur téléphone (métier, tarif 8 000 MAD, logo + 2 photos) → e-mail de confirmation → lien cliqué : dossier « à valider »");
+  verifier(!v.erreurs.length, "erreurs JavaScript (visiteur) : " + v.erreurs.join(" ; "));
+  await v.ctx.close();
+
+  const a = await contexte(navigateur, base, ADMIN);
+  await connecter(a.page, BASE, ADMIN, "/admin");
+  await a.page.getByRole("tab", { name: /Prestataires$/ }).click(); await a.page.waitForTimeout(1000);
+  verifier(await a.page.getByTestId("fiche-prestataire").count() === 1, "le prestataire à valider n'apparaît pas");
+  await a.page.getByTestId("fiche-prestataire").first().locator("button").first().click(); await a.page.waitForTimeout(500);
+  await a.page.getByTestId("prix-vente").first().fill("9500");
+  await a.page.getByTestId("valider-prestataire").click(); await a.page.waitForTimeout(1500);
+  verifier(r.statut === "valide" && r.prestations[0].prix_vente === 9500, "validation non enregistrée : " + JSON.stringify(r.prestations));
+  const ligne = base.catalogue_prestations.find((c) => c.categorie === "prestataires" && c.actif);
+  verifier(ligne && ligne.designation === "DJ soirée de mariage — DJ Atlas Sound" && ligne.prix_unitaire === 9500, "le prestataire n'est pas dans le catalogue des devis");
+  verifier(base.appelsFonctions.some((x) => x.nom === "prestataires" && x.corps.action === "decision" && x.corps.statut === "valide"), "le prestataire n'est pas prévenu par e-mail");
+  await a.page.getByRole("tab", { name: /Devis$/ }).first().click(); await a.page.waitForTimeout(800);
+  await a.page.getByRole("button", { name: /Nouveau devis/ }).first().click(); await a.page.waitForTimeout(800);
+  const options = await a.page.getByTestId("ajout-prestataires").locator("option").allInnerTexts();
+  verifier(options.some((o) => o.includes("DJ Atlas Sound")), "le prestataire n'est pas proposé dans le devis");
+  await a.page.getByTestId("ajout-prestataires").selectOption({ index: 1 }); await a.page.waitForTimeout(500);
+  verifier(await a.page.locator("input[value='DJ soirée de mariage — DJ Atlas Sound']").count(), "la ligne n'a pas été ajoutée au devis");
+  notes.push("l'admin fixe le prix de vente (9 500 MAD), valide : le prestataire est prévenu par e-mail et proposé dans « Nouveau devis »");
+  verifier(!a.erreurs.length, "erreurs JavaScript (admin) : " + a.erreurs.join(" ; "));
+  await a.ctx.close();
+});
+
+// Salles et palais : tarifs et localisation, ajoutés au catalogue des devis
+await scenario("Salles & palais : ajout d'un lieu avec lien Google Maps, tarifs dans les devis", async (notes) => {
+  const base = nouvelleBase();
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await ctx.route(/openstreetmap\.org/, (r) => r.fulfill({ status: 200, body: "<html></html>", contentType: "text/html" }));
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Salles & palais$/ }).click(); await page.waitForTimeout(800);
+  await page.getByTestId("ajouter-lieu").click(); await page.waitForTimeout(1200);
+  await page.getByTestId("lieu-nom").fill("Palais Andalou"); await page.getByTestId("lieu-ville").fill("Rabat");
+  await page.getByTestId("lieu-maps").fill("https://www.google.com/maps/place/Palais/@33.9715,-6.8498,17z");
+  await page.getByTestId("lieu-prix").first().fill("45000");
+  await page.getByTestId("enregistrer-lieu").click(); await page.waitForTimeout(1200);
+  const l = base.lieux?.[0];
+  verifier(l && l.nom === "Palais Andalou" && l.latitude === 33.9715 && l.longitude === -6.8498, "lieu ou position mal enregistrés : " + JSON.stringify(l));
+  verifier(await page.locator("iframe[title='Carte']").count(), "la carte ne s'affiche pas");
+  const c = base.catalogue_prestations.find((x) => x.categorie === "lieux" && x.actif);
+  verifier(c && c.designation === "Location de la salle — Palais Andalou (Rabat)" && c.prix_unitaire === 45000, "le lieu n'est pas dans le catalogue des devis : " + JSON.stringify(c));
+  notes.push("Palais Andalou (Rabat) : position lue dans le lien Google Maps, carte affichée, tarif 45 000 MAD ajouté au catalogue des devis");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
 // 5. Site en ligne (lecture seule : aucune donnée envoyée)
 if (process.env.BETA_LIVE) {
   await scenario("Site en ligne : pages, erreurs, formulaires vides refusés", async (notes) => {

@@ -17,6 +17,7 @@ const PUBLIQUES = [
   { chemin: "/guides", priorite: "0.7", frequence: "monthly" },
   { chemin: "/liens", priorite: "0.4", frequence: "monthly" },
   { chemin: "/studio", priorite: "0.6", frequence: "monthly" },
+  { chemin: "/prestataires", priorite: "0.5", frequence: "monthly" },
   // Guides gratuits (src/data/guides.ts)
   ...[...readFileSync("src/data/guides.ts", "utf8").matchAll(/slug: "([a-z0-9-]+)"/g)].map((m) => ({ chemin: `/guides/${m[1]}`, priorite: "0.7", frequence: "monthly" })),
   { chemin: "/politique-confidentialite", priorite: "0.3", frequence: "yearly" },

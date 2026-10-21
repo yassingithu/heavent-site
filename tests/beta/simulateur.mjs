@@ -393,6 +393,20 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
         }
       }
     }
+    // Prestataires partenaires : inscription publique et confirmation de l'e-mail
+    if (url.pathname.includes("/rpc/prestataire_inscrire")) {
+      const { p } = JSON.parse(req.postData() || "{}"); base.prestataires ??= [];
+      if (!p?.societe || !p?.contact || !/@/.test(p?.email ?? "") || !p.prestations?.length) return route.fulfill({ status: 400, json: { message: "Nom, contact et e-mail sont obligatoires" } });
+      const r = { id: "pr" + Math.random().toString(36).slice(2), cree_le: new Date().toISOString(), societe: p.societe, contact: p.contact, email: p.email.toLowerCase(), telephone: p.telephone || null,
+        ville: p.ville || null, zones: p.zones || null, categories: p.categories ?? [], description: p.description || null, site_web: p.site_web || null, instagram: p.instagram || null,
+        logo: p.logo, photos: p.photos ?? [], prestations: p.prestations, statut: "email_a_confirmer", jeton: crypto.randomUUID(), email_confirme_le: null, valide_le: null, notes: null };
+      base.prestataires.push(r); return route.fulfill({ json: r.id });
+    }
+    if (url.pathname.includes("/rpc/prestataire_confirmer")) {
+      const r = (base.prestataires ?? []).find((x) => x.jeton === JSON.parse(req.postData() || "{}").p_jeton);
+      if (r && r.statut === "email_a_confirmer") Object.assign(r, { statut: "en_attente", email_confirme_le: new Date().toISOString() });
+      return route.fulfill({ json: r ? { societe: r.societe, statut: r.statut } : null });
+    }
     if (url.pathname.includes("/rpc/studio_demo_public")) {
       const { p_jeton, p_compter } = JSON.parse(req.postData() || "{}");
       const d = (base.studio_demos ?? []).find((x) => x.jeton === p_jeton && x.active !== false);
@@ -439,6 +453,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       if (t === "studio_demos") ins.forEach((d) => { d.jeton = crypto.randomUUID(); d.vues = 0; d.active = true; d.cree_le = new Date().toISOString(); d.expire_le = new Date(Date.now() + 30 * 864e5).toISOString(); });
       if (t === "devis") ins.forEach((d) => { d.numero = "DEV-2026-0099"; d.date_validite = "2099-11-12"; d.total_ttc = 0; d.lien_token = crypto.randomUUID(); d.relances = 0; });
       base[t].push(...ins);
+      ins.forEach((x) => synchroCatalogue(base, t, x));
       return route.fulfill({ status: 201, json: unique ? ins[0] : ins });
     }
     if (req.method() === "PATCH" && t === "factures") {
@@ -467,7 +482,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
         }
       }
     }
-    if (req.method() === "PATCH") { const b = JSON.parse(req.postData()); const r = base[t].filter((x) => correspond(x, params)); r.forEach((x) => Object.assign(x, b)); return route.fulfill({ status: 200, json: unique ? r[0] : r }); }
+    if (req.method() === "PATCH") { const b = JSON.parse(req.postData()); const r = base[t].filter((x) => correspond(x, params)); r.forEach((x) => Object.assign(x, b)); r.forEach((x) => synchroCatalogue(base, t, x)); return route.fulfill({ status: 200, json: unique ? r[0] : r }); }
     if (req.method() === "DELETE") { base[t] = base[t].filter((x) => !correspond(x, params)); return route.fulfill({ status: 204, body: "" }); }
     return route.fulfill({ json: [] });
   });
@@ -485,4 +500,15 @@ export async function connecter(page, base, email, chemin) {
   }, email);
   await page.goto(base + chemin);
   await page.waitForTimeout(2500);
+}
+
+/** Même logique que les déclencheurs SQL : prestataire validé / lieu actif → lignes du catalogue des devis. */
+function synchroCatalogue(base, t, x) {
+  if (t !== "prestataires" && t !== "lieux") return;
+  const cle = t === "prestataires" ? "prestataire_id" : "lieu_id";
+  base.catalogue_prestations = base.catalogue_prestations.map((c) => (c[cle] === x.id ? { ...c, actif: false } : c));
+  if (t === "prestataires" && x.statut === "valide")
+    for (const e of x.prestations ?? []) base.catalogue_prestations.push({ id: "c_" + Math.random().toString(36).slice(2), categorie: "prestataires", designation: `${e.fonction} — ${x.societe}`, description: e.description || null, unite: e.unite || "forfait", prix_unitaire: e.prix_vente ?? e.prix ?? 0, actif: true, ordre: 0, prestataire_id: x.id });
+  if (t === "lieux" && x.actif !== false)
+    for (const e of x.tarifs ?? []) base.catalogue_prestations.push({ id: "c_" + Math.random().toString(36).slice(2), categorie: "lieux", designation: `${e.libelle || "Location"} — ${x.nom}${x.ville ? ` (${x.ville})` : ""}`, description: x.adresse ?? null, unite: e.unite || "forfait", prix_unitaire: e.prix ?? 0, actif: true, ordre: 0, lieu_id: x.id });
 }

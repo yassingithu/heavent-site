@@ -16,6 +16,8 @@ const CATEGORIES = [
   { value: "evenementiel", label: "Événementiel" },
   { value: "logistique", label: "Logistique" },
   { value: "decoration", label: "Décoration et mobilier" },
+  { value: "prestataires", label: "Prestataires partenaires" },
+  { value: "lieux", label: "Salles et lieux" },
   { value: "autre", label: "Autre" },
 ];
 

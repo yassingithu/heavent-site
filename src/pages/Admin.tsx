@@ -17,6 +17,8 @@ import { CarteAppTelephone, useAppAdmin } from "@/components/admin/accueil/AppTe
 import { estDemo } from "@/demo/mode";
 import { baseDemo } from "@/demo/serveurDemo";
 import StudioAdmin from "@/components/admin/studio/StudioAdmin";
+import PrestatairesAdmin from "@/components/admin/prestataires/PrestatairesAdmin";
+import LieuxAdmin from "@/components/admin/lieux/LieuxAdmin";
 import RealisationsAdmin from "@/components/admin/RealisationsAdmin";
 import AgendaAdmin from "@/components/admin/agenda/AgendaAdmin";
 import VitrineAdmin from "@/components/admin/VitrineAdmin";
@@ -30,7 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox, Instagram, Mail, Sparkles } from "lucide-react";
+import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox, Instagram, Mail, Sparkles, Handshake, MapPin } from "lucide-react";
 import NewsletterAdmin from "@/components/admin/newsletter/NewsletterAdmin";
 import InstagramAdmin from "@/components/admin/instagram/InstagramAdmin";
 import { format } from "date-fns";
@@ -153,6 +155,8 @@ const MENU_ADMIN: { titre: string; items: (readonly [string, string, typeof User
   { titre: "Pilotage", items: [["tableau", "Bilan", BarChart3], ["statistiques", "Statistiques", TrendingUp], ["agenda", "Agenda", CalendarDays]] },
   { titre: "Clients", items: [["entreprise", "Entreprise", Building2], ["mariage", "Événement", PartyPopper], ["devis-rapide", "Devis", FileText], ["devis-envoyes", "Envoyés", Inbox], ["envoyer-devis", "Envoyer", Send]] },
   { titre: "Équipe", items: [["staff", "Personnel", Users], ["disponibilites", "Dispo", CalendarCheck], ["contrats", "Contrats", FileSignature], ["fiches", "Paie", Wallet]] },
+  { titre: "Prestataires", items: [["prestataires", "Prestataires", Handshake]] },
+  { titre: "Lieux", items: [["lieux", "Salles & palais", MapPin]] },
   { titre: "Communication", items: [["instagram", "Instagram", Instagram], ["newsletter", "Newsletter", Mail]] },
   { titre: "Heavent Studio", items: [["studio", "Démos agences", Sparkles]] },
   { titre: "Réglages", items: [["realisations", "Site", Globe], ["securite", "Sécurité", Shield]] },
@@ -172,6 +176,8 @@ const TITRES_ADMIN: Record<string, [string, string]> = {
   fiches: ["Paie", "Fiches de paie mensuelles"],
   realisations: ["Site", "Éléments de confiance, FAQ et réalisations publiées"],
   instagram: ["Instagram", "Posts conseils préparés, photos et légendes prêtes à publier"],
+  prestataires: ["Prestataires", "Candidatures, validation et tarifs des prestataires partenaires"],
+  lieux: ["Salles & palais", "Lieux partenaires, tarifs et localisation"],
   studio: ["Heavent Studio", "Demandes de démo des agences et démos personnalisées à partager"],
   newsletter: ["Newsletter", "Abonnés venus des guides gratuits, newsletters à préparer et envoyer"],
   securite: ["Sécurité", "Mots de passe et accès du personnel"],
@@ -1043,7 +1049,7 @@ const Admin = () => {
           ))}
         </TabsList>
         <div className="hidden lg:block border-t border-white/10 p-4 space-y-2">
-          <div className="flex items-center gap-2 text-xs text-white/50 min-w-0"><Shield className="h-3.5 w-3.5 shrink-0 text-[#E4D49A]" /><span className="truncate">{user?.email}</span></div>
+          <div className="flex items-center gap-2 text-xs text-white/50 min-w-0"><Shield className="h-3.5 w-3.5 shrink-0 text-[#E4D49A]" /><span className="truncate">{user?.email}</span><span className="ml-auto shrink-0 opacity-50" title="Version du site chargée dans cette fenêtre" data-testid="version-admin">v{(typeof document !== "undefined" && [...document.scripts].map((x) => x.src).find((x) => /\/assets\/index-/.test(x))?.match(/index-([\w-]{4})/)?.[1]) || "dev"}</span></div>
           <div className="flex gap-2">
             <a href="/" target="_blank" rel="noreferrer" className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-white/15 min-h-9 text-xs hover:bg-white/10"><Globe className="h-3.5 w-3.5" /> Le site</a>
             <button onClick={handleSignOut} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-white/10 min-h-9 text-xs hover:bg-white/20"><LogOut className="h-3.5 w-3.5" /> Déconnexion</button>
@@ -1087,6 +1093,14 @@ const Admin = () => {
 
         <TabsContent value="newsletter" className="space-y-4">
           <NewsletterAdmin />
+        </TabsContent>
+
+        <TabsContent value="prestataires" className="space-y-4">
+          <PrestatairesAdmin />
+        </TabsContent>
+
+        <TabsContent value="lieux" className="space-y-4">
+          <LieuxAdmin />
         </TabsContent>
 
         <TabsContent value="studio" className="space-y-4">

@@ -20,7 +20,6 @@ export default function StudioAdmin() {
   const [charge, setCharge] = useState(true);
   const [occupe, setOccupe] = useState<string | null>(null);
   const [libre, setLibre] = useState({ agence: "", prenom: "", ville: "" });
-  const [apercu, setApercu] = useState<Demo | null>(null);
 
   const charger = async () => {
     setCharge(true);
@@ -48,21 +47,13 @@ export default function StudioAdmin() {
   const desactiver = async (j: string) => { await (supabase as any).from("studio_demos").update({ active: false }).eq("jeton", j); charger(); };
   const prolonger = async (j: string) => { await (supabase as any).from("studio_demos").update({ active: true, expire_le: new Date(Date.now() + 30 * 864e5).toISOString() }).eq("jeton", j); charger(); };
 
+  // « Voir » ouvre la démo dans le navigateur (Safari, Chrome…), exactement comme le lien envoyé au prospect.
+  // Dans l'appli installée, c'est la seule façon fiable : l'aperçu intégré la renvoyait vers la connexion.
+  const voir = (d: Demo) => { window.open(`${lienDemo(d.jeton)}?apercu`, "_blank", "noopener"); };
   const demosDe = (id: string) => demos.filter((d) => d.demande_id === id);
 
   return (
     <div className="space-y-5" data-testid="studio-admin">
-      {apercu && (
-        // Aperçu dans l'administration elle-même (aucune nouvelle fenêtre : fonctionne aussi dans l'appli installée)
-        <div className="fixed inset-0 z-[100] bg-black/70 flex flex-col" data-testid="apercu-demo">
-          <div className="flex items-center gap-2 bg-[#141414] text-white px-3 h-12 shrink-0">
-            <Sparkles className="h-4 w-4 text-[#E4D49A]" />
-            <span className="text-sm flex-1 truncate">Aperçu — ce que voit {apercu.agence}</span>
-            <button onClick={() => setApercu(null)} className="rounded-full bg-white/10 px-4 h-8 text-sm" data-testid="fermer-apercu">Fermer</button>
-          </div>
-          <iframe title="Aperçu de la démo" src={`/studio/demo/${apercu.jeton}?apercu`} className="flex-1 w-full bg-white border-0" />
-        </div>
-      )}
       <section className="rounded-2xl border border-[#EADFC8] bg-white p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-serif text-xl">Demandes de démo</h3>
@@ -91,7 +82,7 @@ export default function StudioAdmin() {
                   {d.telephone && <a href={`https://wa.me/${d.telephone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm"><MessageCircle className="h-4 w-4 text-emerald-600" /> WhatsApp</a>}
                   <a href={`mailto:${d.email}?subject=${encodeURIComponent("Votre démo Heavent Studio")}`} className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm"><Mail className="h-4 w-4" /> E-mail</a>
                 </div>
-                {demosDe(d.id).map((x) => <LigneDemo key={x.jeton} d={x} tel={d.telephone} email={d.email} onCopier={copier} onDesactiver={desactiver} onProlonger={prolonger} onVoir={setApercu} />)}
+                {demosDe(d.id).map((x) => <LigneDemo key={x.jeton} d={x} tel={d.telephone} email={d.email} onCopier={copier} onDesactiver={desactiver} onProlonger={prolonger} onVoir={voir} />)}
               </div>
             ))}
           </div>
@@ -109,7 +100,7 @@ export default function StudioAdmin() {
             {occupe === "libre" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Générer
           </button>
         </div>
-        {demos.filter((d) => !d.demande_id).map((x) => <LigneDemo key={x.jeton} d={x} onCopier={copier} onDesactiver={desactiver} onProlonger={prolonger} onVoir={setApercu} />)}
+        {demos.filter((d) => !d.demande_id).map((x) => <LigneDemo key={x.jeton} d={x} onCopier={copier} onDesactiver={desactiver} onProlonger={prolonger} onVoir={voir} />)}
       </section>
     </div>
   );
