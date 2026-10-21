@@ -1200,6 +1200,27 @@ await scenario("Instagram : générer 1 mois de posts (2/jour) pour Heavent et N
   await ctx.close();
 });
 
+// Nawar : page du bar à parfums (lien en bio Instagram), demande de devis
+await scenario("Nawar : page du bar à parfums et demande de devis", async (notes) => {
+  const base = nouvelleBase();
+  const { page, ctx, erreurs } = await contexte(navigateur, base, "visiteur@demo.test", { mobile: true });
+  await page.goto(BASE + "/"); await page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1"));
+  await page.goto(BASE + "/contact"); await page.waitForTimeout(1000);
+  await page.getByTestId("lien-nawar").click(); await page.waitForTimeout(1500);
+  verifier(page.url().endsWith("/nawar"), "le lien du pied de page ne mène pas à /nawar");
+  const largeur = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  verifier(largeur <= 2, "la page Nawar dépasse de l'écran du téléphone");
+  await page.getByTestId("nawar-nom").fill("Salma"); await page.getByTestId("nawar-email").fill("salma@demo.test");
+  await page.getByTestId("nawar-envoyer").click(); await page.waitForTimeout(1200);
+  const appel = base.appelsFonctions.find((a) => a.nom === "send-email");
+  verifier(/Nawar/.test(appel?.corps?.data?.subject ?? ""), "la demande Nawar n'est pas envoyée");
+  verifier(await page.getByTestId("nawar-merci").count(), "pas de confirmation");
+  await page.screenshot({ path: `${CAPTURES}/nawar.png` });
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  notes.push("pied de page → /nawar, page lisible sur téléphone, demande de devis Nawar envoyée et confirmée");
+  await ctx.close();
+});
+
 // Heavent Studio : page professionnelle séparée du site grand public, demande de démo
 await scenario("Heavent Studio : page des agences, formules et demande de démo", async (notes) => {
   const base = nouvelleBase();

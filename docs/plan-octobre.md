@@ -8,7 +8,7 @@ Légende : [x] fait et en ligne · [ ] à faire
 - [x] 3. Prestataire validé → ses rôles et tarifs deviennent des lignes de devis (catalogue)
 - [x] 4. Générer 1 mois de publications Instagram, 2 par jour, en un clic (bouton « Générer 1 mois » dans Instagram, Heavent et Nawar)
 - [x] 5. Ajouter des salles / palais avec tarifs et localisation
-- [ ] 6. Page Nawar bar à parfums + publications Instagram automatiques pour Nawar
+- [x] 6. Page Nawar bar à parfums (/nawar) + publications Instagram automatiques pour Nawar (2e compte dans l'onglet Instagram ; reste à connecter le compte Instagram Nawar)
 
 ## Heavent Studio
 - [x] 1. Corriger « Voir » dans l'appli admin (ouvre maintenant la démo dans le navigateur ; version affichée en bas du menu admin)

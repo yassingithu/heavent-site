@@ -34,6 +34,7 @@ const MonDevis = lazy(() => import("./pages/MonDevis"));
 const Realisations = lazy(() => import("./pages/Realisations"));
 const PageLocale = lazy(() => import("./pages/PageLocale"));
 const Studio = lazy(() => import("./pages/Studio"));
+const Nawar = lazy(() => import("./pages/Nawar"));
 const Prestataires = lazy(() => import("./pages/Prestataires"));
 const ConfirmerPrestataire = lazy(() => import("./pages/Prestataires").then((m) => ({ default: m.ConfirmerPrestataire })));
 const StudioDemo = lazy(() => import("./pages/StudioDemo"));
@@ -82,6 +83,7 @@ const App = () => {
               <Route path="/guides/:slug" element={<PageGuide />} />
               <Route path="/liens" element={<Liens />} />
               <Route path="/studio" element={<Studio />} />
+              <Route path="/nawar" element={<Nawar />} />
               <Route path="/prestataires" element={<Prestataires />} />
               <Route path="/prestataires/confirmer/:jeton" element={<ConfirmerPrestataire />} />
               <Route path="/studio/demo/:jeton" element={<StudioDemo />} />
