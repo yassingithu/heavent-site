@@ -687,4 +687,5 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "Fêtes de famille": { en: "Family celebrations", ar: "الحفلات العائلية" },
   "Vous êtes une agence ? Heavent Studio": { en: "Are you an agency? Heavent Studio", ar: "هل أنتم وكالة؟ Heavent Studio" },
   "Devenir prestataire partenaire": { en: "Become a partner supplier", ar: "كن مزوّدًا شريكًا" },
+  "Devenir prestataire": { en: "Become a partner supplier", ar: "كن مقدّم خدمة شريكاً" },
 };

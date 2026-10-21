@@ -311,6 +311,10 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       return route.fulfill({ json: { ok: !!a, prenom: a?.prenom ?? null } });
     }
     // Instagram : clé Pixabay (jamais relisible)
+    if (url.pathname.includes("/rpc/instagram_reglages_compte")) {
+      const c = JSON.parse(req.postData() || "{}").p_compte;
+      return route.fulfill({ json: { pixabay: !!base.cle_pixabay, instagram: c === "nawar" ? !!base.instagram_nawar : !!base.instagram, instagram_nom: (c === "nawar" ? base.instagram_nawar : base.instagram) ?? null } });
+    }
     if (url.pathname.includes("/rpc/instagram_reglages")) return route.fulfill({ json: { pixabay: !!base.cle_pixabay, instagram: !!base.instagram, instagram_nom: base.instagram ?? null } });
     if (url.pathname.includes("/rpc/instagram_enregistrer_cle")) { base.cle_pixabay = JSON.parse(req.postData() || "{}").p_valeur; return route.fulfill({ status: 204, body: "" }); }
     // Accueil personnalisé de l'administration
@@ -420,7 +424,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     }
     if (url.pathname.includes("/rpc/")) return route.fulfill({ json: null });
     const m = url.pathname.match(/\/rest\/v1\/(\w+)/); if (!m) return route.fulfill({ json: {} });
-    const t = m[1]; base[t] ??= []; const params = [...url.searchParams.entries()]; const select = url.searchParams.get("select");
+    const t = m[1]; base[t] ??= []; if (t === "posts_instagram") base[t].forEach((x) => { x.compte ??= "heavent"; }); const params = [...url.searchParams.entries()]; const select = url.searchParams.get("select");
     const unique = (req.headers()["accept"] || "").includes("vnd.pgrst.object");
     if (req.method() === "HEAD") {
       let lignes = base[t].filter((x) => correspond(x, params));

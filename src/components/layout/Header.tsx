@@ -6,11 +6,13 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/ui/language-selector";
 import { cn } from "@/lib/utils";
+import { useTexte } from "@/i18n/textes";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const { t } = useTranslation();
+  const x = useTexte();
   // « Réalisations » n'apparaît qu'une fois au moins une réalisation publiée (jamais de page vide)
   const [realisations, setRealisations] = useState(false);
   useEffect(() => {
@@ -69,12 +71,15 @@ const Header = () => {
           </div>
 
           {/* CTA Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center gap-2 lg:gap-3">
             <Button asChild variant="outline">
               <Link to="/auth">{t('nav.staffSpace')}</Link>
             </Button>
             <Button asChild variant="default" className="gold-shadow">
               <Link to="/inscription-staff">{t('nav.joinTeam')}</Link>
+            </Button>
+            <Button asChild variant="outline" className="border-primary/40" data-testid="bouton-prestataires">
+              <Link to="/prestataires">{x("Devenir prestataire")}</Link>
             </Button>
           </div>
 
@@ -122,6 +127,11 @@ const Header = () => {
                     </Link>
                   </Button>
                 </div>
+                <Button asChild variant="outline" className="w-full border-primary/40">
+                  <Link to="/prestataires" onClick={() => setIsMenuOpen(false)}>
+                    {x("Devenir prestataire")}
+                  </Link>
+                </Button>
               </div>
             </nav>
           </div>

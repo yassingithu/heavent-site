@@ -3,7 +3,7 @@ import Seo from "@/components/Seo";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
+import { Briefcase, 
   Users, 
   Building2, 
   Heart, 
@@ -107,6 +107,12 @@ const Home = () => {
                 <Link to="/inscription-staff">
                   {t('home.joinUs')}
                   <Users className="ml-2" size={20} />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 bg-white/10 border-white/20 text-white hover:bg-white/20">
+                <Link to="/prestataires">
+                  {x("Devenir prestataire")}
+                  <Briefcase className="ml-2" size={20} />
                 </Link>
               </Button>
             </div>

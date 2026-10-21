@@ -1166,6 +1166,40 @@ await scenario("Affichage smartphone (pages publiques et admin)", async (notes) 
   await ctx.close();
 });
 
+// Instagram : un mois de posts (2 par jour) en un clic, pour Heavent et pour Nawar (bar à parfums)
+await scenario("Instagram : générer 1 mois de posts (2/jour) pour Heavent et Nawar, visuels Nawar", async (notes) => {
+  const base = nouvelleBase();
+  base.photoTest = readFileSync(new URL("./photo-test.jpg", import.meta.url));
+  base.cle_pixabay = "cle";
+  base.posts_instagram = [{ id: "p0", compte: "heavent", date_prevue: "2026-11-13T19:30:00Z", theme: "mariage", accroche: "x", titre: "Réservez votre lieu 12 mois avant la date", legende: "", recherche: "x", style: "sombre", statut: "pret", visuel_url: "x", photo_url: "x" }];
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await ctx.route("https://pixabay.com/**", (r) => r.fulfill({ status: 200, body: base.photoTest, contentType: "image/jpeg", headers: { "access-control-allow-origin": "*" } }));
+  page.on("dialog", (d) => d.accept());
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Instagram$/ }).click(); await page.waitForTimeout(1000);
+  await page.getByTestId("generer-mois").click(); await page.waitForTimeout(2000);
+  const h = base.posts_instagram.filter((p) => p.compte === "heavent" && p.id !== "p0");
+  verifier(h.length === 60, `${h.length} posts Heavent au lieu de 60`);
+  const jours = new Set(h.map((p) => p.date_prevue.slice(0, 10)));
+  verifier(jours.size === 30 && h.every((p) => p.date_prevue > "2026-11-13T23:59"), "pas 2 posts par jour sur 30 jours à partir du 14/11");
+  verifier(!h.some((p) => p.titre === "Réservez votre lieu 12 mois avant la date"), "une idée déjà utilisée a été reprise");
+  verifier(new Set(h.map((p) => p.titre)).size >= 45, "trop de titres en double");
+  verifier(h.filter((p) => p.accroche === "🎁 Guide gratuit").length === 15, "15 posts « guide gratuit » attendus");
+  notes.push(`Heavent : 60 posts du ${h[0].date_prevue.slice(0, 10)} au ${h.at(-1).date_prevue.slice(0, 10)}, 2 par jour, dont 15 « guide gratuit »`);
+  await page.getByTestId("compte-nawar").click(); await page.waitForTimeout(1200);
+  verifier(await page.getByTestId("carte-post").count() === 0, "les posts Heavent ne doivent pas apparaître dans Nawar");
+  await page.getByTestId("generer-mois").click(); await page.waitForTimeout(2000);
+  const nw = base.posts_instagram.filter((p) => p.compte === "nawar");
+  verifier(nw.length === 60 && nw.every((p) => p.theme === "parfum" && /Nawar|parfum/i.test(p.legende)), "60 posts Nawar sur le parfum attendus");
+  await page.getByTestId("preparer-visuels").click();
+  await page.waitForFunction(() => !document.querySelector('[data-testid="preparer-visuels"]'), null, { timeout: 120000 }).catch(() => {});
+  verifier(nw.every((p) => p.statut === "pret" && p.visuel_url), "visuels Nawar non préparés");
+  if (process.env.SORTIE) { const k = Object.keys(base.fichiers).find((x) => x.includes("visuels/" + nw[0].id)); writeFileSync(process.env.SORTIE + "/visuel-nawar.jpg", base.fichiers[k]); }
+  notes.push("Nawar : 60 posts parfum, visuels montés avec la signature Nawar ; les deux comptes restent séparés");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
 // Heavent Studio : page professionnelle séparée du site grand public, demande de démo
 await scenario("Heavent Studio : page des agences, formules et demande de démo", async (notes) => {
   const base = nouvelleBase();

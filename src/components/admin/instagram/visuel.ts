@@ -1,5 +1,11 @@
 /** Montage du visuel Instagram (1080 × 1350) : photo + texte Heavent + logo, dessiné dans le navigateur. */
-export interface ContenuVisuel { accroche: string | null; titre: string; style: "sombre" | "clair" }
+export interface ContenuVisuel { accroche: string | null; titre: string; style: "sombre" | "clair"; compte?: string | null }
+
+/** Signature en bas du visuel, selon le compte Instagram */
+const MARQUES: Record<string, { image: string; nom: string; l: number; h: number }> = {
+  heavent: { image: "/marque-or.png", nom: "HEAVENT PEOPLE AGENCY", l: 30, h: 40 },
+  nawar: { image: "/marque-nawar.png", nom: "NAWAR · BAR À PARFUMS", l: 40, h: 40 },
+};
 
 export const LARGEUR = 1080, HAUTEUR = 1350;
 
@@ -42,7 +48,8 @@ function espacer(ctx: CanvasRenderingContext2D, px: number) {
 
 export async function composerVisuel(canvas: HTMLCanvasElement, photoUrl: string, c: ContenuVisuel) {
   await polices();
-  const [photo, marque] = await Promise.all([charger(photoUrl), charger("/marque-or.png").catch(() => null)]);
+  const sig = MARQUES[c.compte ?? "heavent"] ?? MARQUES.heavent;
+  const [photo, marque] = await Promise.all([charger(photoUrl), charger(sig.image).catch(() => null)]);
   canvas.width = LARGEUR; canvas.height = HAUTEUR;
   const ctx = canvas.getContext("2d")!;
 
@@ -104,10 +111,10 @@ export async function composerVisuel(canvas: HTMLCanvasElement, photoUrl: string
   // Filet doré + signature Heavent
   ctx.fillStyle = "#C8B560"; ctx.fillRect(marge, y, 64, 3);
   y += 30;
-  if (marque) ctx.drawImage(marque, marge, y, 30, 40);
+  if (marque) ctx.drawImage(marque, marge, y, sig.l, sig.h);
   ctx.font = '500 20px "Inter", Arial, sans-serif'; espacer(ctx, 5);
   ctx.fillStyle = clair ? "rgba(20,20,20,0.75)" : "rgba(255,255,255,0.85)";
-  ctx.fillText("HEAVENT PEOPLE AGENCY", marge + (marque ? 46 : 0), y + 28);
+  ctx.fillText(sig.nom, marge + (marque ? sig.l + 16 : 0), y + 28);
   espacer(ctx, 0);
 }
 

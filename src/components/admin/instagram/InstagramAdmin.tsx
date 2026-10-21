@@ -6,16 +6,18 @@ import { Check, Copy, Download, ExternalLink, ImagePlus, Instagram, KeyRound, Lo
 import { composerVisuel, enJpeg } from "./visuel";
 import { guidePourTheme } from "@/data/guides";
 import CommentezGuide from "./CommentezGuide";
+import { genererMois, type Compte } from "@/data/instagramIdees";
 
 /** Onglet Instagram : posts conseils préparés (photo Pixabay + texte Heavent), à télécharger ou publier. */
 interface Post {
   id: string; date_prevue: string | null; theme: string; accroche: string | null; titre: string; legende: string; recherche: string;
   style: "sombre" | "clair"; photo_url: string | null; photo_page: string | null; photo_auteur: string | null; visuel_url: string | null;
-  statut: "brouillon" | "pret" | "publie" | "erreur"; publie_le: string | null; erreur?: string | null;
+  statut: "brouillon" | "pret" | "publie" | "erreur"; publie_le: string | null; erreur?: string | null; compte?: Compte;
 }
 interface Photo { id: number; apercu: string; grande: string; page: string; auteur: string; largeur: number; hauteur: number }
 
-const THEMES: Record<string, string> = { mariage: "Mariage", naissance: "Naissance", fete: "Fêtes", entreprise: "Entreprise" };
+const THEMES: Record<string, string> = { mariage: "Mariage", naissance: "Naissance", fete: "Fêtes", entreprise: "Entreprise", parfum: "Parfum" };
+const COMPTES: Record<Compte, string> = { heavent: "Heavent", nawar: "Nawar — bar à parfums" };
 const STATUTS: Record<Post["statut"], [string, string]> = {
   brouillon: ["À préparer", "bg-[#F1ECDD] text-[#7A5F1E]"], pret: ["Prêt", "bg-emerald-50 text-emerald-700"],
   publie: ["Publié", "bg-[#141414] text-white"], erreur: ["Erreur", "bg-red-50 text-red-700"],
@@ -58,15 +60,17 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
   const [cle, setCle] = useState("");
   const [ouvert, setOuvert] = useState<Post | null>(null);
   const [auto, setAuto] = useState<{ fait: number; total: number } | null>(null);
+  const [compte, setCompte] = useState<Compte>("heavent");
+  const [generation, setGeneration] = useState(false);
 
   const charger = useCallback(async () => {
     const [{ data }, r] = await Promise.all([
-      (supabase as any).from("posts_instagram").select("*").order("date_prevue", { ascending: true, nullsFirst: false }),
-      (supabase as any).rpc("instagram_reglages"),
+      (supabase as any).from("posts_instagram").select("*").eq("compte", compte).order("date_prevue", { ascending: true, nullsFirst: false }),
+      (supabase as any).rpc("instagram_reglages_compte", { p_compte: compte }),
     ]);
     setPosts((data ?? []) as Post[]);
     setReglages(r.data ?? { pixabay: false, instagram: false });
-  }, []);
+  }, [compte]);
   useEffect(() => { charger(); }, [charger]);
 
   const enregistrerCle = async () => {
@@ -80,11 +84,24 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
   const connecterInstagram = async () => {
     setConnexion(true);
     try {
-      const { data, error } = await supabase.functions.invoke("instagram-publier", { body: { action: "connecter", jeton, app_id: appId, secret: secretApp } });
+      const { data, error } = await supabase.functions.invoke("instagram-publier", { body: { action: "connecter", jeton, app_id: appId, secret: secretApp, compte } });
       if (error) { let m = error.message; try { m = (await (error as any).context?.json())?.error ?? m; } catch { /* rien */ } throw new Error(m); }
       setJeton(""); setSecretApp(""); setChangerJeton(false); toast({ title: `Instagram connecté ✓`, description: `Compte @${data.nom} : les posts prêts partiront tout seuls à leur date.` }); charger();
     } catch (e: any) { toast({ title: "Connexion impossible", description: e.message, variant: "destructive" }); }
     setConnexion(false);
+  };
+
+  /** Un mois de publications, 2 par jour, d'un coup (textes prêts ; les visuels se préparent ensuite) */
+  const genererUnMois = async () => {
+    if (!confirm(`Créer 60 posts pour ${COMPTES[compte]} (2 par jour pendant 30 jours, après le dernier post prévu) ?`)) return;
+    setGeneration(true);
+    const nouveaux = genererMois(compte, posts ?? []);
+    const { error } = await (supabase as any).from("posts_instagram").insert(nouveaux);
+    setGeneration(false);
+    if (error) return toast({ title: "Génération impossible", description: error.message, variant: "destructive" });
+    const fin = new Date(nouveaux[nouveaux.length - 1].date_prevue).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+    toast({ title: `${nouveaux.length} posts créés ✨`, description: `Jusqu'au ${fin}. Clique sur « Préparer les visuels » pour les photos.` });
+    charger();
   };
 
   const preparerTout = async () => {
@@ -113,6 +130,14 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
 
   return (
     <div className="space-y-5" data-testid="instagram-admin">
+      {/* Choix du compte Instagram */}
+      <div className="inline-flex rounded-full border border-[#EADFC8] bg-white p-1" data-testid="choix-compte">
+        {(Object.keys(COMPTES) as Compte[]).map((c) => (
+          <button key={c} onClick={() => { setCompte(c); setPosts(null); }} className={`rounded-full px-4 h-9 text-sm ${compte === c ? "bg-[#141414] text-white" : "text-[#5E554A]"}`} data-testid={`compte-${c}`}>
+            {c === "nawar" && <img src="/marque-nawar.png" alt="" className="inline h-4 w-4 mr-1.5 -mt-0.5" />}{COMPTES[c]}
+          </button>
+        ))}
+      </div>
       {/* Réglages (réservés à l'administration) */}
       {!famille && <div className="grid md:grid-cols-2 gap-3">
         <section className="rounded-2xl border border-[#EADFC8] bg-white p-4">
@@ -153,17 +178,32 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
           )}
         </section>
       </div>}
-      {!famille && <CommentezGuide reglages={reglages} onChange={charger} />}
+      {!famille && compte === "heavent" && <CommentezGuide reglages={reglages} onChange={charger} />}
+      {!famille && compte === "nawar" && !reglages.instagram && (
+        <p className="text-sm rounded-xl bg-[#FBF6E9] border border-[#EADFC8] px-4 py-3 text-[#5E554A]">
+          Pour publier automatiquement sur le compte Nawar : le compte Instagram Nawar doit être professionnel et relié à une Page Facebook Nawar.
+          Génère ensuite un jeton dans l'explorateur Graph API (même app « Heavent Publication »), en cochant la Page Nawar, puis colle-le ci-dessus.
+          En attendant, les visuels se préparent et se téléchargent normalement.
+        </p>
+      )}
 
       {/* Actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">{posts.length} posts · {posts.filter((p) => p.statut === "pret").length} prêts · {posts.filter((p) => p.statut === "publie").length} publiés</p>
+        <div className="flex flex-wrap gap-2">
+        {!famille && (
+          <button onClick={genererUnMois} disabled={generation || !!auto} data-testid="generer-mois"
+            className="inline-flex items-center gap-2 rounded-full border border-[#141414] px-5 min-h-10 text-sm disabled:opacity-60">
+            {generation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-[#A8933F]" />} Générer 1 mois (2 posts/jour)
+          </button>
+        )}
         {reglages.pixabay && manquants > 0 && (
           <button onClick={preparerTout} disabled={!!auto} data-testid="preparer-visuels"
             className="inline-flex items-center gap-2 rounded-full bg-[#141414] text-white px-5 min-h-10 text-sm disabled:opacity-60">
             {auto ? <><Loader2 className="h-4 w-4 animate-spin" /> {auto.fait}/{auto.total} visuels…</> : <><Wand2 className="h-4 w-4 text-[#E4D49A]" /> Préparer les {manquants} visuels automatiquement</>}
           </button>
         )}
+        </div>
       </div>
 
       {/* Calendrier des posts */}
@@ -228,7 +268,7 @@ function EditeurPost({ post: initial, pixabay, instagram, famille, onFermer }: {
   };
   const telecharger = () => canvas.current?.toBlob((b) => {
     if (!b) return;
-    const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `heavent-instagram-${(p.date_prevue ?? "").slice(0, 10) || p.id.slice(0, 6)}.jpg`; a.click();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `${p.compte ?? "heavent"}-instagram-${(p.date_prevue ?? "").slice(0, 10) || p.id.slice(0, 6)}.jpg`; a.click();
   }, "image/jpeg", 0.92);
   const copier = async () => { await navigator.clipboard.writeText(p.legende).catch(() => {}); toast({ title: "Légende copiée", description: "Colle-la dans Instagram." }); };
   const marquerPublie = async () => {
@@ -290,7 +330,7 @@ function EditeurPost({ post: initial, pixabay, instagram, famille, onFermer }: {
                 </button>
               ))}
             </div>
-            <p className="text-xs rounded-md bg-[#FBF6E9] px-3 py-2 text-[#5E554A]">🎁 Guide lié : <a href={`/guides/${guide.slug}`} target="_blank" rel="noreferrer" className="underline">{guide.titre}</a> · lien en bio : heaventagency.com/liens</p>
+            {(p.compte ?? "heavent") === "heavent" && <p className="text-xs rounded-md bg-[#FBF6E9] px-3 py-2 text-[#5E554A]">🎁 Guide lié : <a href={`/guides/${guide.slug}`} target="_blank" rel="noreferrer" className="underline">{guide.titre}</a> · lien en bio : heaventagency.com/liens</p>}
             <label className="text-sm space-y-1 block"><span className="text-muted-foreground">Légende du post</span>
               <textarea value={p.legende} onChange={(e) => set("legende", e.target.value)} rows={9} className="w-full rounded-md border p-3 text-sm leading-relaxed" /></label>
 
@@ -327,7 +367,7 @@ function EditeurPost({ post: initial, pixabay, instagram, famille, onFermer }: {
                   {occupe === "publier" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Instagram className="h-4 w-4" />} Publier maintenant
                 </button>
               )}
-              {!famille && <button onClick={creerNewsletter} disabled={!!occupe} className="rounded-full border px-4 h-10 text-sm" data-testid="creer-newsletter">✉️ Créer la newsletter</button>}
+              {!famille && (p.compte ?? "heavent") === "heavent" && <button onClick={creerNewsletter} disabled={!!occupe} className="rounded-full border px-4 h-10 text-sm" data-testid="creer-newsletter">✉️ Créer la newsletter</button>}
               {!instagram && !famille && p.statut !== "publie" && p.visuel_url && <button onClick={marquerPublie} className="rounded-full border px-4 h-10 text-sm">Je l'ai publié</button>}
               <button onClick={onFermer} className="rounded-full px-4 h-10 text-sm text-muted-foreground">Fermer</button>
             </div>
