@@ -2,6 +2,8 @@
 // Seuls l'ouverture de la démo (studio_demo_public) et les images publiques passent par le vrai serveur.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { creerBaseDemo, type BaseDemo, type ConfigDemo } from "./donneesDemo";
+import { SECTEURS, secteurDe } from "./secteurs";
+
 
 let base: BaseDemo | null = null;
 const fichiers = new Map<string, Blob>();
@@ -21,6 +23,13 @@ export function demarrerDemo(cfg: ConfigDemo) {
   return base;
 }
 export const baseDemo = () => base;
+
+/** Qui « est connecté » dans la démo : l'administrateur, ou un membre de l'équipe (onglet « L'espace crew ») */
+const EMAIL_ADMIN = "demo@heavent.studio";
+let utilisateur = EMAIL_ADMIN;
+export const definirUtilisateurDemo = (email: string | null) => { utilisateur = email || EMAIL_ADMIN; };
+const estAdminDemo = () => utilisateur === EMAIL_ADMIN;
+const moi = () => base?.staff.find((x: any) => x.email === utilisateur) ?? null;
 
 /* ---------- Requêtes PostgREST simplifiées ---------- */
 function valeurComparee(c: unknown, val: string) { return String(c ?? ""); }
@@ -180,6 +189,8 @@ function devisPublic(token: string) {
     factures: base.factures.filter((f: any) => f.devis_id === d.id && f.statut !== "annulee"), equipe: [], avis_google: null };
 }
 
+const c0 = (c: any) => c.contratId ?? c.contrat_id ?? c.id;
+const c0n = (c: any) => c.nom ?? c.signature_nom ?? "Signé";
 async function lireCorps(init?: RequestInit): Promise<any> {
   const b = init?.body;
   if (b == null) return {};
@@ -195,7 +206,7 @@ async function repondre(url: URL, methode: string, init: RequestInit | undefined
 
   // Connexion fictive
   if (p.includes("/auth/v1/")) {
-    const user = { id: "demo-user", email: "demo@heavent.studio", aud: "authenticated", role: "authenticated", app_metadata: {}, user_metadata: {}, created_at: maintenant };
+    const user = { id: "demo-" + utilisateur, email: utilisateur, aud: "authenticated", role: "authenticated", app_metadata: {}, user_metadata: {}, created_at: maintenant };
     if (p.endsWith("/user")) return json(user);
     if (p.endsWith("/token")) return json({ access_token: "demo", refresh_token: "demo", token_type: "bearer", expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400, user });
     return vide();
@@ -234,6 +245,21 @@ async function repondre(url: URL, methode: string, init: RequestInit | undefined
     }
     if (nom === "envoyer-facture") { const f = base.factures.find((x: any) => x.id === c.factureId); if (f) f.envoyee_le = maintenant; return json({ success: true }); }
     if (nom === "instagram-photos") return json({ photos: [] });
+    if (nom === "signer-contrat") {
+      const k = base.contrats.find((x: any) => x.id === c0(c));
+      if (k) Object.assign(k, { signe_le: maintenant, signature_nom: c0n(c), statut: "signe", employeur_signe_le: maintenant, employeur_signataire: `${base._meta.agence} — la direction` });
+      return json({ success: true });
+    }
+    if (nom === "pointer") {
+      const a = base.affectations.find((x: any) => x.id === c.id);
+      if (!a) return json({ error: "Mission introuvable" }, 404);
+      if (c.action === "confirmer") { Object.assign(a, { presence_confirmee_le: maintenant, empechement_le: null }); return json({ success: true }); }
+      if (c.action === "empechement") { Object.assign(a, { empechement_le: maintenant, presence_confirmee_le: null }); return json({ success: true }); }
+      if (c.action === "arrivee") { Object.assign(a, { arrivee_le: maintenant, arrivee_verifiee: true }); return json({ success: true, heure: maintenant, verifie: true, distance: 12, retard: 0 }); }
+      if (!a.arrivee_le) return json({ error: "Pointe d'abord ton arrivée." }, 409);
+      Object.assign(a, { depart_le: maintenant, depart_verifie: true, heures_pointees: a.heures, heures_validees: a.heures });
+      return json({ success: true, heure: maintenant, heures: a.heures, verifie: true, distance: 8 });
+    }
     if (nom === "instagram-publier") {
       if (c.action === "publier") { const post = base.posts_instagram.find((x: any) => x.id === c.post_id); if (post) Object.assign(post, { statut: "publie", publie_le: maintenant }); return json({ media: "demo" }); }
       return json({ ok: true });
@@ -250,7 +276,15 @@ async function repondre(url: URL, methode: string, init: RequestInit | undefined
   if (rpc) {
     const c = await lireCorps(init);
     switch (rpc) {
-      case "is_admin": return json(true);
+      case "is_admin": return json(estAdminDemo());
+      case "mes_missions": {
+        const m = moi();
+        return json(base.affectations.filter((a: any) => m && a.staff_id === m.id && a.statut !== "annule").map((a: any) => {
+          const d = base!.devis.find((x: any) => x.id === a.devis_id) ?? {};
+          const f = base!.fiches_mission.find((x: any) => x.devis_id === a.devis_id) ?? null;
+          return { ...a, evenement: d.titre || "Mission", lieu: d.lieu ?? null, numero: d.numero ?? null, fiche: f };
+        }));
+      }
       case "est_espace_nawar": return json(false);
       case "mon_accueil": return json({ prenom: base._meta.prenom, espace: "admin", mot: null, surprise: null, signatures_vues_jusqu_au: maintenant, records_vus: [] });
       case "statistiques_site": return json(statistiques(c.p_jours ?? 30));
@@ -336,3 +370,9 @@ export const fetchDemo: typeof fetch = async (entree, init) => {
   try { return await repondre(url, methode, init, entetes.get("accept") ?? ""); }
   catch (e) { console.error("Démo :", e); return json({ message: "Erreur de la démo" }, 500); }
 };
+
+/* ---------- Vocabulaire de l'administration selon le métier du prospect ---------- */
+const sec = () => SECTEURS[secteurDe(base?._meta?.secteur)];
+export const libelleOnglet = (valeur: string, defaut: string) => (base ? sec().libelles[valeur] ?? defaut : defaut);
+export const titreOnglet = (valeur: string, defaut?: [string, string]) => (base ? sec().titres[valeur] ?? defaut : defaut);
+export const ongletMasque = (valeur: string) => !!base && sec().masquer.includes(valeur);

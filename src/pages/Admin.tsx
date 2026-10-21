@@ -15,7 +15,7 @@ import { CarteAccueil, Celebrations, SurpriseBienvenue, useAccueil } from "@/com
 import BilanMois from "@/components/admin/accueil/BilanMois";
 import { CarteAppTelephone, useAppAdmin } from "@/components/admin/accueil/AppTelephone";
 import { estDemo } from "@/demo/mode";
-import { baseDemo } from "@/demo/serveurDemo";
+import { baseDemo, libelleOnglet, ongletMasque, titreOnglet } from "@/demo/serveurDemo";
 import StudioAdmin from "@/components/admin/studio/StudioAdmin";
 import PrestatairesAdmin from "@/components/admin/prestataires/PrestatairesAdmin";
 import LieuxAdmin from "@/components/admin/lieux/LieuxAdmin";
@@ -1023,6 +1023,7 @@ const Admin = () => {
         {dansApplication && <div className="h-8 shrink-0" style={{ WebkitAppRegion: "drag" } as React.CSSProperties} aria-hidden />}
         <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 lg:px-5 lg:pt-6 lg:pb-5">
           <div className="min-w-0">
+            {estDemo() && baseDemo()?._meta.logo && <img src={baseDemo()!._meta.logo} alt="" className="h-8 lg:h-10 w-auto max-w-[140px] object-contain mb-1.5 rounded bg-white/90 p-1" data-testid="logo-demo" />}
             <p className="uppercase tracking-[0.28em] text-[9px] lg:text-[10px] text-[#E4D49A]">{estDemo() ? baseDemo()?._meta.agence ?? "Votre agence" : "Heavent"}</p>
             <p className="font-serif text-lg lg:text-2xl leading-tight">Administration</p>
           </div>
@@ -1032,10 +1033,11 @@ const Admin = () => {
           </div>
         </div>
         <TabsList className="admin-onglets h-auto w-full bg-transparent p-0 rounded-none text-white/70 flex justify-start gap-1 overflow-x-auto px-3 pb-3 lg:flex-1 lg:flex-col lg:items-stretch lg:overflow-y-auto lg:overflow-x-hidden lg:px-3 lg:pb-4 lg:gap-0.5">
-          {MENU_ADMIN.filter((g) => !(estDemo() && g.titre === "Heavent Studio")).map((groupe) => (
+          {MENU_ADMIN.filter((g) => !(estDemo() && (g.titre === "Heavent Studio" || g.items.every(([v]) => ongletMasque(v))))).map((groupe) => (
             <div key={groupe.titre} className="contents lg:block lg:mb-3">
               <div className="hidden lg:block px-3 pt-2 pb-1 text-[10px] uppercase tracking-[0.2em] text-white/35">{groupe.titre}</div>
-              {groupe.items.map(([valeur, libelle, Icone]) => {
+              {groupe.items.filter(([valeur]) => !(estDemo() && ongletMasque(valeur))).map(([valeur, libelleBase, Icone]) => {
+                const libelle = estDemo() ? libelleOnglet(valeur, libelleBase) : libelleBase;
                 const badge = valeur === "entreprise" ? nouvellesEntreprise : valeur === "mariage" ? nouvellesMariage : 0;
                 return (
                   <TabsTrigger key={valeur} value={valeur} data-testid={valeur === "agenda" ? "onglet-agenda" : undefined}
@@ -1065,8 +1067,8 @@ const Admin = () => {
       <div className="mx-auto max-w-[1400px] px-3 py-5 sm:px-6 lg:px-10 lg:py-8">
         <header className="mb-5 lg:mb-7 flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h1 className="font-serif text-2xl sm:text-3xl text-[#141414]" data-testid="titre-section">{TITRES_ADMIN[ongletAdmin]?.[0] ?? "Administration"}</h1>
-            <p className="text-sm text-[#6B6155]">{TITRES_ADMIN[ongletAdmin]?.[1]}</p>
+            <h1 className="font-serif text-2xl sm:text-3xl text-[#141414]" data-testid="titre-section">{(estDemo() ? titreOnglet(ongletAdmin, TITRES_ADMIN[ongletAdmin]) : TITRES_ADMIN[ongletAdmin])?.[0] ?? "Administration"}</h1>
+            <p className="text-sm text-[#6B6155]">{(estDemo() ? titreOnglet(ongletAdmin, TITRES_ADMIN[ongletAdmin]) : TITRES_ADMIN[ongletAdmin])?.[1]}</p>
           </div>
           <p className="text-xs text-[#8C6D22] first-letter:uppercase">{new Date().toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" })}</p>
         </header>

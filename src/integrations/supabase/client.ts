@@ -16,6 +16,11 @@ export const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 // La vraie session de l'administration (localStorage) n'est jamais touchée.
 const DEMO = estDemo();
 const memoireDemo = new Map<string, string>();
+/** Démo : « se connecter » en tant qu'administrateur ou en tant que membre de l'équipe (onglet « L'espace crew ») */
+export function changerSessionDemo(email: string) {
+  const user = { id: "demo-" + email, email, aud: "authenticated", role: "authenticated", app_metadata: {}, user_metadata: {} };
+  memoireDemo.set(CLE_SESSION_DEMO, JSON.stringify({ access_token: "demo", refresh_token: "demo", token_type: "bearer", expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 365 * 86400, user }));
+}
 const stockageDemo = {
   getItem: (k: string) => memoireDemo.get(k) ?? null,
   setItem: (k: string, v: string) => { memoireDemo.set(k, v); },
@@ -24,7 +29,7 @@ const stockageDemo = {
 if (DEMO) {
   const user = { id: "demo-user", email: "demo@heavent.studio", aud: "authenticated", role: "authenticated", app_metadata: {}, user_metadata: {} };
   // Session gardée en mémoire seulement : fonctionne même si le navigateur bloque le stockage (Safari, navigation privée…)
-  memoireDemo.set(CLE_SESSION_DEMO, JSON.stringify({ access_token: "demo", refresh_token: "demo", token_type: "bearer", expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 365 * 86400, user }));
+  changerSessionDemo(user.email);
   const reel = window.fetch.bind(window);
   // Les appels directs (fetch vers les fonctions) passent aussi par la démo
   window.fetch = ((e: RequestInfo | URL, i?: RequestInit) => {

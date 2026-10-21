@@ -1,4 +1,5 @@
 import Seo from "@/components/Seo";
+import { estDemo } from "@/demo/mode";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -84,7 +85,7 @@ const StaffDashboard = () => {
         setSession(session);
         setUser(session?.user ?? null);
         if (!session) {
-          navigate("/auth");
+          if (!estDemo()) navigate("/auth");
         } else if (session?.user?.email) {
           loadData();
         }
@@ -95,7 +96,7 @@ const StaffDashboard = () => {
       setSession(session);
       setUser(session?.user ?? null);
       if (!session) {
-        navigate("/auth");
+        if (!estDemo()) navigate("/auth");
       } else if (session.user?.email) {
         loadData();
       }
@@ -180,6 +181,7 @@ const StaffDashboard = () => {
   };
 
   const handleSignOut = async () => {
+    if (estDemo()) { window.location.href = "/studio"; return; }
     await supabase.auth.signOut();
     navigate("/auth");
   };

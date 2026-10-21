@@ -22,6 +22,8 @@ const WHATSAPP = "https://wa.me/212610939655?text=" + encodeURIComponent("Bonjou
 const VISUELS = "https://mapiwnsjsluiwmnulhqk.supabase.co/storage/v1/object/public/assets/instagram/visuels/";
 const POSTS = ["6d4fb285-2828-4278-97b6-8c79a45448aa", "ec37691c-ad68-4803-b50b-f0f48a5d01be", "945d232d-9c51-4915-bfea-28211318488d"];
 
+const METIERS: Record<string, string> = { evenementiel: "Agence événementielle", automobile: "Concession automobile", ecommerce: "E-commerce / boutique", immobilier: "Agence immobilière" };
+
 const OFFRES = [
   { nom: "Vitrine", tag: "Essentiel", plus: null,
     points: ["Site sur mesure, 2 langues", "Pages villes et services pour Google", "Formulaires de devis et contact", "Prise de rendez-vous en ligne", "Réalisations et témoignages modifiables", "Statistiques de visite"] },
@@ -81,7 +83,8 @@ function Bloc({ icone: Icone, surtitre, titre, texte, points, image, inverse = f
 
 function FormulaireDemo() {
   const [etat, setEtat] = useState<"saisie" | "envoi" | "ok" | "erreur">("saisie");
-  const [f, setF] = useState({ nom: "", agence: "", email: "", telephone: "", ville: "", formule: "Gestion", message: "", site: "" });
+  const [f, setF] = useState({ nom: "", agence: "", email: "", telephone: "", ville: "", formule: "Gestion", secteur: "evenementiel", message: "", site: "" });
+  const [logo, setLogo] = useState<File | null>(null);
   const champ = "w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 h-12 text-white placeholder:text-white/40 focus:outline-none focus:border-[#C8B560]";
   const valide = f.nom.trim() && f.agence.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.trim());
 
@@ -90,7 +93,14 @@ function FormulaireDemo() {
     if (!valide || f.site) return; // « site » : champ piège invisible pour les robots
     setEtat("envoi");
     // Enregistrée dans l'administration (onglet Heavent Studio), puis e-mail de notification
-    const { error: errBase } = await (supabase as any).rpc("studio_demander", { p_nom: f.nom, p_agence: f.agence, p_email: f.email, p_telephone: f.telephone, p_ville: f.ville, p_formule: f.formule, p_message: f.message });
+    // Logo (facultatif) : déposé dans les photos publiques, pour personnaliser la démo
+    let logoUrl: string | null = null;
+    if (logo) {
+      const chemin = `studio/${crypto.randomUUID?.() ?? Date.now()}.${(logo.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z]/g, "") || "png"}`;
+      const { error } = await supabase.storage.from("photos").upload(chemin, logo, { contentType: logo.type || "image/png" });
+      if (!error) logoUrl = supabase.storage.from("photos").getPublicUrl(chemin).data.publicUrl;
+    }
+    const { error: errBase } = await (supabase as any).rpc("studio_demander", { p_nom: f.nom, p_agence: f.agence, p_email: f.email, p_telephone: f.telephone, p_ville: f.ville, p_formule: f.formule, p_message: f.message, p_secteur: f.secteur, p_logo_url: logoUrl });
     if (errBase && /Trop de demandes/.test(errBase.message)) { setEtat("erreur"); return; }
     try {
       const r = await fetch(`${FUNCTIONS_URL}/send-email`, {
@@ -98,7 +108,7 @@ function FormulaireDemo() {
         body: JSON.stringify({ type: "contact", data: {
           name: `${f.nom.trim()} — ${f.agence.trim()}`, email: f.email.trim(),
           subject: `Heavent Studio : demande de démo (${f.formule})`,
-          message: [`Agence : ${f.agence}`, `Contact : ${f.nom}`, `Téléphone : ${f.telephone || "—"}`, `Ville : ${f.ville || "—"}`, `Formule envisagée : ${f.formule}`, "", f.message || "(pas de message)"].join("\n"),
+          message: [`Agence : ${f.agence}`, `Contact : ${f.nom}`, `Téléphone : ${f.telephone || "—"}`, `Ville : ${f.ville || "—"}`, `Formule envisagée : ${f.formule}`, `Métier : ${METIERS[f.secteur] ?? f.secteur}`, `Logo : ${logoUrl ?? "non fourni"}`, "", f.message || "(pas de message)"].join("\n"),
         } }),
       });
       if (!r.ok) throw new Error();
@@ -125,6 +135,13 @@ function FormulaireDemo() {
       <select className={champ} value={f.formule} onChange={(e) => setF({ ...f, formule: e.target.value })} data-testid="studio-formule">
         {["Vitrine", "Gestion", "Agence complète", "Je ne sais pas encore"].map((o) => <option key={o} className="text-black">{o}</option>)}
       </select>
+      <select className={champ} value={f.secteur} onChange={(e) => setF({ ...f, secteur: e.target.value })} data-testid="studio-secteur" aria-label="Votre métier">
+        {Object.entries(METIERS).map(([k, v]) => <option key={k} value={k} className="text-black">{v}</option>)}
+      </select>
+      <label className={`${champ} flex items-center gap-2 cursor-pointer text-white/60`} data-testid="studio-logo">
+        <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => { const x = e.target.files?.[0]; if (x && x.size <= 5 * 1024 * 1024) setLogo(x); }} />
+        {logo ? <span className="text-white truncate">Logo : {logo.name}</span> : <span>Votre logo (facultatif)</span>}
+      </label>
       <textarea className={`${champ} h-28 py-3 sm:col-span-2 resize-none`} placeholder="Parlez-nous de votre agence (activité, taille de l'équipe, outils actuels…)" value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} />
       <input tabIndex={-1} autoComplete="off" aria-hidden className="hidden" value={f.site} onChange={(e) => setF({ ...f, site: e.target.value })} />
       <div className="sm:col-span-2 flex flex-wrap items-center gap-3 mt-1">

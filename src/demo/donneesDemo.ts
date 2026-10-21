@@ -1,6 +1,7 @@
 // Données fictives d'une agence événementielle, personnalisées avec le nom et la ville du prospect.
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export interface ConfigDemo { agence: string; prenom?: string | null; ville?: string | null }
+import { SECTEURS, secteurDe } from "./secteurs";
+export interface ConfigDemo { agence: string; prenom?: string | null; ville?: string | null; secteur?: string | null; logo_url?: string | null }
 export type BaseDemo = Record<string, any[]> & { _meta: any };
 
 const VISUELS = "https://mapiwnsjsluiwmnulhqk.supabase.co/storage/v1/object/public/assets/instagram/visuels/";
@@ -93,10 +94,27 @@ export function creerBaseDemo(cfg: ConfigDemo): BaseDemo {
       client_telephone: "+212600000000", message, langue: "fr", source: "site", created_at: ilYa(10) };
   };
 
-  return {
-    _meta: { agence, prenom: cfg.prenom || null, ville, compteurDevis: 42, compteurFactures: 1 },
+  // Espace crew : une mission à venir, un contrat à signer, une fiche de paie du mois dernier (pour le premier membre de l'équipe)
+  const s1 = staff[0];
+  const moisDernier = new Date(); moisDernier.setMonth(moisDernier.getMonth() - 1);
+  const affectations = [1, 2].map((k) => ({ id: uuid(), devis_id: d1, staff_id: s1.id, date_jour: jour(11 + k), heure_debut: "09:00", heure_fin: "17:00", heures: 8, taux_horaire: s1.taux_horaire,
+    poste: "Hôtesse bilingue", statut: "confirme", presence_confirmee_le: null, arrivee_le: null, depart_le: null, created_at: ilYa(140) }));
+  const contrats = [{ id: uuid(), staff_id: s1.id, devis_id: d1, titre: "Contrat de prestation — Congrès médical", type_contrat: "CDD d'usage", evenement: "Congrès médical — accueil et orientation",
+    devis_numero: "DEV-2026-0041", lieu: ville, date_debut: jour(12), date_fin: jour(13), taux_horaire: s1.taux_horaire, total_heures: 16, salaire_brut: 16 * s1.taux_horaire,
+    dates: [{ date: jour(12), heures: 8, heure_debut: "09:00", heure_fin: "17:00" }, { date: jour(13), heures: 8, heure_debut: "09:00", heure_fin: "17:00" }],
+    statut: "envoye", signe_le: null, created_at: ilYa(140) }];
+  const fiches_paie = [{ id: uuid(), staff_id: s1.id, mois: moisDernier.getMonth() + 1, annee: moisDernier.getFullYear(), heures_travaillees: 24, salaire_brut: 24 * s1.taux_horaire,
+    cnss: r2(24 * s1.taux_horaire * 0.0448), amo: r2(24 * s1.taux_horaire * 0.0226), deductions: r2(24 * s1.taux_horaire * 0.0674), prime: 100,
+    salaire_net: r2(24 * s1.taux_horaire * (1 - 0.0674) + 100), statut: "payee", generee_auto: true, created_at: ilYa(400),
+    details: [{ date: moisDernier.toISOString().slice(0, 10), evenement: "Salon de l'immobilier", numero: "DEV-2026-0031", poste: "Hôtesse d'accueil", heures: 24, taux: s1.taux_horaire, montant: 24 * s1.taux_horaire }] }];
+  const fiches_mission = [{ id: uuid(), devis_id: d1, adresse: `Palais des congrès, ${ville}`, latitude: null, longitude: null, rayon_m: 300,
+    tenue: "Tailleur noir, chaussures fermées, chignon", consignes: "Arrivée 30 min avant l'ouverture pour le briefing. Accueil des participants, remise des badges, orientation vers les salles.",
+    contact_sur_place: "Salma Idrissi — +212 6 00 00 00 00", created_at: ilYa(130) }];
+
+  const base: any = {
+    _meta: { agence, prenom: cfg.prenom || null, ville, compteurDevis: 42, compteurFactures: 1, secteur: secteurDe(cfg.secteur), logo: cfg.logo_url || null, crew: s1.email },
     staff, disponibilites, catalogue_prestations, devis_mariage, devis_entreprise, devis, devis_lignes, parametres_agence, evenements_site,
-    affectations: [], contrats: [], fiches_paie: [], fiches_mission: [], evaluations_crew: [], remarques_contrat: [],
+    affectations, contrats, fiches_paie, fiches_mission, evaluations_crew: [], remarques_contrat: [],
     factures: [], admins: [{ email: "demo@heavent.studio" }],
     agenda_parametres: [{ id: 1, duree_minutes: 45, pause_minutes: 15, delai_heures: 24, horizon_jours: 30, types: ["agence", "telephone", "visio"], adresse: null, lien_visio: null, actif: true }],
     agenda_horaires: [1, 2, 3, 4, 5, 6].flatMap((j) => [{ id: "h" + j + "a", jour: j, debut: "10:00:00", fin: "13:00:00" }, { id: "h" + j + "b", jour: j, debut: "15:00:00", fin: "19:00:00" }]),
@@ -116,5 +134,35 @@ export function creerBaseDemo(cfg: ConfigDemo): BaseDemo {
     abonnes_newsletter: ["amal", "hind", "rachid", "zineb", "samir"].map((p, i) => ({ id: uuid(), email: `${p}@demo.test`, prenom: p[0].toUpperCase() + p.slice(1), themes: [["mariage"], ["naissance"], ["entreprise"], ["mariage", "fete"], ["mariage"]][i],
       source: "guide", consentement: true, desinscrit_le: null, jeton: uuid(), cree_le: ilYa(24 * (i + 1) * 3) })),
     admin_profils: [], abonnements_push: [],
-  } as unknown as BaseDemo;
+  };
+  adapterAuSecteur(base, ville);
+  return base as BaseDemo;
+}
+
+/** Remplace les données événementielles par celles du métier choisi (concession, e-commerce, immobilier…) */
+function adapterAuSecteur(base: any, ville: string) {
+  const sec = SECTEURS[secteurDe(base._meta.secteur)];
+  if (base._meta.secteur === "evenementiel") return;
+  base.catalogue_prestations = sec.catalogue.map(([categorie, designation, unite, prix_unitaire, description]) => cat(categorie, designation, unite, prix_unitaire, description));
+  base.devis_mariage = sec.demandes.map((d, i) => ({ id: uuid(), nom: d.nom, prenom: d.prenom ?? "", email: `${d.nom.toLowerCase()}@demo.test`, telephone: "+212600000000",
+    type_evenement: d.type, date_mariage: jour(d.jours + 3), lieu: ville, nb_invites: d.quantite, services: d.services, remarques: d.remarques, statut: "en_attente", created_at: ilYa(3 + i * 9) }));
+  const e = sec.entreprise;
+  const [prenom, ...nom] = e.contact.split(" ");
+  base.devis_entreprise = [{ id: uuid(), entreprise: e.societe, prenom, nom: nom.join(" "), email: "pro@demo.test", telephone: "+212600000000", date_evenement: jour(20), lieu: ville,
+    nb_personnes: e.quantite, nb_staff: e.quantite, services: e.besoin, remarques: e.remarques, statut: "en_attente", created_at: ilYa(6) }];
+  const [a, b] = base.devis;
+  sec.devis.forEach((d, i) => {
+    const cible = i === 0 ? a : b;
+    Object.assign(cible, { client_nom: d.client, client_societe: d.societe ?? null, titre: d.titre, type: d.societe ? "entreprise" : "mariage", nb_personnes: null });
+    base.devis_lignes = base.devis_lignes.filter((l: any) => l.devis_id !== cible.id);
+    d.lignes.forEach((l, o) => base.devis_lignes.push({ id: uuid(), devis_id: cible.id, ordre: o, designation: l.designation, description: l.description ?? "", unite: l.unite,
+      quantite: l.quantite, duree: l.duree, prix_unitaire: l.prix, remise_pct: 0, total_ht: r2(l.quantite * l.duree * l.prix), created_at: ilYa(100) }));
+  });
+  base.staff.forEach((s: any) => { s.experience = `${sec.postes} — 3 ans d'expérience.`; });
+  base.affectations.forEach((x: any) => { x.poste = sec.postes; });
+  base.contrats.forEach((c: any) => { c.titre = `Contrat — ${a.titre}`; c.evenement = a.titre; });
+  base.fiches_paie.forEach((f: any) => f.details.forEach((d: any) => { d.poste = sec.postes; d.evenement = "Mission du mois"; }));
+  base.fiches_mission.forEach((f: any) => { f.adresse = `${base._meta.agence}, ${ville}`; f.tenue = "Tenue professionnelle"; f.consignes = "Arrivée 15 min avant, point avec le responsable, puis prise de poste."; });
+  base.posts_instagram = sec.masquer.includes("instagram") ? [] : base.posts_instagram;
+  base.evenements_site.forEach((ev: any) => { if (ev.chemin === "/devis-mariage" || ev.chemin === "/cree-ton-evenement") ev.chemin = "/demande"; if (ev.nom === "jeu" || ev.nom === "devis-mariage") ev.nom = "demande"; });
 }

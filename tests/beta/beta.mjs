@@ -1262,13 +1262,13 @@ await scenario("Heavent Studio : démo personnalisée générée en un clic, pui
   verifier(base.studio_demos?.[0]?.agence === "Atlas Events" && base.studio_demos[0].prenom === "Karim" && base.studio_demos[0].ville === "Fès", "démo mal personnalisée");
   verifier(base.studio_demandes[0].statut === "demo_envoyee", "le statut de la demande n'est pas passé à « Démo envoyée »");
   notes.push("« Générer la démo » → lien /studio/demo/… au nom d'Atlas Events (Karim, Fès), demande passée en « Démo envoyée »");
-  await a.page.getByTestId("voir-demo").first().click(); await a.page.waitForTimeout(4000);
-  const cadre = a.page.frameLocator('[data-testid="apercu-demo"] iframe');
-  verifier((await cadre.locator("body").innerText()).includes("Démo personnalisée pour Atlas Events"), "l'aperçu dans l'admin ne montre pas la démo");
-  verifier(a.page.url().endsWith("/admin"), "l'aperçu ne doit pas quitter l'administration");
+  const [apercu] = await Promise.all([a.ctx.waitForEvent("page"), a.page.getByTestId("voir-demo").first().click()]);
+  await apercu.waitForTimeout(4000);
+  verifier(apercu.url().includes("/studio/demo/") && apercu.url().includes("apercu"), "« Voir » doit ouvrir la démo dans le navigateur");
+  verifier((await apercu.locator("body").innerText()).includes("Atlas Events"), "l'aperçu ne montre pas la démo");
   verifier(base.studio_demos[0].vues === 0, "l'aperçu de l'admin ne doit pas compter comme une ouverture");
-  await a.page.getByTestId("fermer-apercu").click();
-  notes.push("« Voir » ouvre l'aperçu dans l'admin même (pas de nouvelle fenêtre, compatible appli installée), sans compter de vue");
+  await apercu.close();
+  notes.push("« Voir » ouvre la démo dans le navigateur, sans compter de vue");
   verifier(!a.erreurs.length, "erreurs JavaScript (admin) : " + a.erreurs.join(" ; "));
   await a.ctx.close();
 
@@ -1277,7 +1277,7 @@ await scenario("Heavent Studio : démo personnalisée générée en un clic, pui
   const avant = base.appelsFonctions.length, devisAvant = base.devis.length;
   await p.page.goto(BASE + lien.replace("https://heaventagency.com", "")); await p.page.waitForTimeout(3500);
   verifier(await p.page.getByTestId("bandeau-demo").count(), "le bandeau de démo est absent");
-  verifier((await p.page.locator("body").innerText()).includes("Atlas Events"), "le nom de l'agence n'apparaît pas dans la démo");
+  verifier(/atlas events/i.test(await p.page.locator("body").innerText()), "le nom de l'agence n'apparaît pas dans la démo");
   verifier(base.studio_demos[0].vues === 1, "l'ouverture n'est pas comptée");
   await p.page.getByRole("tab", { name: /Devis$/ }).first().click(); await p.page.waitForTimeout(1000);
   verifier(!(await p.page.getByRole("button", { name: /Nawar/ }).count()), "le devis Nawar ne doit pas apparaître dans la démo");
@@ -1291,6 +1291,46 @@ await scenario("Heavent Studio : démo personnalisée générée en un clic, pui
   await p.page.screenshot({ path: `${CAPTURES}/studio-demo.png` });
   verifier(!p.erreurs.length, "erreurs JavaScript (démo) : " + p.erreurs.join(" ; "));
   notes.push("le prospect voit « Atlas Events », crée un devis numéroté dans la démo ; aucune écriture serveur, aucune session réelle, ouverture comptée");
+  await p.ctx.close();
+});
+
+// Heavent Studio : démo par métier (concession automobile, avec logo), onglets « Le site · L'administration · L'espace équipe »
+await scenario("Heavent Studio : démo concession automobile avec logo, site vitrine et espace équipe", async (notes) => {
+  const base = nouvelleBase();
+  base.studio_demandes = [{ id: "sd2", cree_le: new Date().toISOString(), nom: "Youssef Alami", agence: "Atlas Motors", email: "y@atlas.test", telephone: null, ville: "Tanger", formule: "Gestion", message: null, statut: "nouvelle", secteur: "automobile", logo_url: null }];
+  const a = await contexte(navigateur, base, ADMIN);
+  await connecter(a.page, BASE, ADMIN, "/admin");
+  await a.page.getByRole("tab", { name: /Démos agences$/ }).click(); await a.page.waitForTimeout(1000);
+  verifier(await a.page.getByTestId("choix-secteur").first().inputValue() === "automobile", "le métier envoyé par le prospect n'est pas présélectionné");
+  await a.page.getByTestId("choix-logo").first().locator("input").setInputFiles(new URL("./photo-test.jpg", import.meta.url).pathname);
+  await a.page.getByTestId("generer-demo").click(); await a.page.waitForTimeout(1500);
+  const demo = base.studio_demos?.[0];
+  verifier(demo?.secteur === "automobile" && /studio\/logos\//.test(demo.logo_url ?? ""), "démo sans métier ou sans logo : " + JSON.stringify(demo));
+  await a.ctx.close();
+
+  const p = await contexte(navigateur, base, "prospect@atlas.test");
+  await p.page.goto(BASE + "/studio/demo/" + demo.jeton); await p.page.waitForTimeout(3500);
+  const texte = await p.page.locator("body").innerText();
+  verifier(/Demandes clients/.test(texte) && /Flottes/.test(texte) && !/Instagram/.test(await p.page.locator("[role=tablist]").first().innerText()), "le menu n'est pas adapté à la concession");
+  verifier(await p.page.getByTestId("logo-demo").count(), "le logo n'apparaît pas dans l'administration de la démo");
+  await p.page.getByRole("tab", { name: /Demandes clients$/ }).click(); await p.page.waitForTimeout(800);
+  verifier(/Essai routier/.test(await p.page.locator("body").innerText()), "les demandes ne sont pas celles d'une concession");
+  // Le site vitrine : une demande envoyée arrive dans l'administration
+  await p.page.getByTestId("vue-site").click(); await p.page.waitForTimeout(1500);
+  verifier(/Votre prochaine voiture vous attend/.test(await p.page.locator("body").innerText()), "le site vitrine n'est pas celui d'une concession");
+  await p.page.getByTestId("demo-site-nom").fill("Client Test"); await p.page.getByTestId("demo-site-envoyer").click(); await p.page.waitForTimeout(800);
+  await p.page.getByTestId("demo-voir-admin").click(); await p.page.waitForTimeout(2500);
+  await p.page.getByRole("tab", { name: /Demandes clients$/ }).click(); await p.page.waitForTimeout(800);
+  verifier(/Client/.test(await p.page.locator("body").innerText()), "la demande du site n'arrive pas dans l'administration");
+  notes.push("métier « Concession automobile » + logo : menu, demandes et site adaptés ; une demande envoyée sur le site arrive dans l'admin");
+  // L'espace équipe : mission, contrat à signer, fiche de paie
+  await p.page.getByTestId("vue-crew").click(); await p.page.waitForTimeout(3000);
+  const crew = await p.page.locator("body").innerText();
+  verifier(/Lina/.test(crew), "l'espace équipe ne s'ouvre pas au nom du membre de l'équipe");
+  verifier(!p.page.url().includes("/auth"), "l'espace équipe renvoie vers la connexion");
+  await p.page.screenshot({ path: `${CAPTURES}/studio-demo-crew.png`, fullPage: false });
+  notes.push("onglet « L'espace équipe » : ouvert comme le verrait un membre de l'équipe (Lina), sans connexion");
+  verifier(!p.erreurs.length, "erreurs JavaScript (démo) : " + p.erreurs.join(" ; "));
   await p.ctx.close();
 });
 
