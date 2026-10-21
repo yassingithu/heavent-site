@@ -771,8 +771,8 @@ await scenario("Statistiques : visites, provenance, clics WhatsApp et demandes c
   await v.ctx.close();
 
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
-  await page.addInitScript(() => { window.__suiviTest = true; });
   await connecter(page, BASE, ADMIN, "/admin");
+  await page.addInitScript(() => { window.__suiviTest = true; }); // après la connexion : la page de connexion ne fausse pas le compte
   await page.getByRole("tab", { name: /Statistiques$/ }).click();
   await page.getByTestId("stat-visites").waitFor({ timeout: 8000 }).catch(() => {});
   if (!(await page.getByTestId("stat-visites").count())) { // relance (premier chargement de l'admin parfois lent)

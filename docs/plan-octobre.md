@@ -12,8 +12,8 @@ Légende : [x] fait et en ligne · [ ] à faire
 
 ## Heavent Studio
 - [x] 1. Corriger « Voir » dans l'appli admin (ouvre maintenant la démo dans le navigateur ; version affichée en bas du menu admin)
-- [ ] 2. Démo : onglets « Le site · L'administration · L'espace crew »
-- [ ] 3. Démos par métier (agence événementielle, concession automobile, e-commerce…)
-- [ ] 4. Logo de l'agence du prospect dans la démo
+- [x] 2. Démo : onglets « Le site · L'administration · L'espace équipe » (une demande envoyée sur le site arrive dans l'admin de la démo ; l'espace équipe s'ouvre au nom d'un membre de l'équipe : missions, contrat à signer, fiche de paie)
+- [x] 3. Démos par métier : agence événementielle, concession automobile, e-commerce, agence immobilière (src/demo/secteurs.ts — ajouter un métier = ajouter une entrée)
+- [x] 4. Logo de l'agence du prospect : envoyé par le prospect sur /studio ou ajouté par l'admin à la génération ; affiché dans le site et l'admin de la démo
 
 Voir aussi docs/heavent-studio-suite.md (architecture de la démo).
