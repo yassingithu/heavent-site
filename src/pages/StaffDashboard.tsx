@@ -620,7 +620,7 @@ const StaffDashboard = () => {
                             {format(new Date(fiche.annee, fiche.mois - 1), "MMMM yyyy", { locale: fr })}
                           </h3>
                           <Badge variant={fiche.statut === "paye" ? "default" : "secondary"}>
-                            {fiche.statut === "paye" ? <><CheckCircle className="h-3 w-3 mr-1" /> Payée</> : fiche.statut === "validee" ? "Validée" : <><Clock className="h-3 w-3 mr-1" /> En préparation</>}
+                            {fiche.statut === "paye" ? <><CheckCircle className="h-3 w-3 mr-1" /> Payée</> : fiche.statut === "valide" || fiche.statut === "validee" ? "Validée" : <><Clock className="h-3 w-3 mr-1" /> En préparation</>}
                           </Badge>
                         </div>
                         <div className="grid grid-cols-2 gap-4 text-sm">

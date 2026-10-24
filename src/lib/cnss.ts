@@ -39,7 +39,7 @@ export function manquesBulletin(agence: { cnss_affiliation_employeur?: string | 
   return m;
 }
 
-/** Statuts qui présentent un bulletin comme définitif : interdits tant qu'il manque un élément. */
+/** Statuts qui présentent un bulletin comme définitif (le PDF reste un aperçu tant qu'il manque un élément). */
 // « payee » apparaît dans d'anciens tests ; l'écran utilise « paye » : les deux sont traités comme définitifs.
 export const STATUTS_FINAUX = ["valide", "paye", "payee"];
 

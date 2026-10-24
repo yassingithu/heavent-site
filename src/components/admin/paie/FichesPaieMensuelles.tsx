@@ -147,8 +147,10 @@ export default function FichesPaieMensuelles() {
   const changerStatut = async (id: string, statut: string) => {
     const f = fiches.find((x) => x.id === id);
     const manques = manquesBulletin(agence, f?.staff);
-    if (STATUTS_FINAUX.includes(statut) && manques.length) {
-      toast({ title: "Bulletin incomplet", description: `Impossible de le marquer « ${STATUTS[statut].label} » : il manque ${manques.join(" et ")}.`, variant: "destructive" });
+    // Seule la VALIDATION est bloquée. Un paiement réellement effectué doit toujours pouvoir être enregistré ;
+    // le PDF d'un bulletin incomplet reste un « aperçu incomplet » même s'il est marqué payé.
+    if (statut === "valide" && manques.length) {
+      toast({ title: "Bulletin incomplet", description: `Impossible de le valider : il manque ${manques.join(" et ")}. Un paiement déjà effectué peut tout de même être marqué « Payée ».`, variant: "destructive" });
       return;
     }
     const { error } = await supabase.from("fiches_paie").update({ statut }).eq("id", id);
@@ -185,7 +187,7 @@ export default function FichesPaieMensuelles() {
         {!String(agence?.cnss_affiliation_employeur ?? "").trim() && (
           <div className="flex gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" data-testid="alerte-cnss-employeur">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-            <span>N° d'affiliation CNSS de l'employeur non renseigné (Réglages → Informations de l'agence). Les PDF sont des aperçus incomplets et aucun bulletin ne peut être validé ni marqué payé.</span>
+            <span>N° d'affiliation CNSS de l'employeur non renseigné (Devis → Infos agence). Les PDF sont des aperçus incomplets et aucun bulletin ne peut être validé. Un paiement déjà effectué peut toujours être enregistré.</span>
           </div>
         )}
         {doublons.map((g) => (
