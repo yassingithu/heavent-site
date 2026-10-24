@@ -77,6 +77,8 @@ export interface Parametres {
   conditions_contrat?: string | null;
   /** Lien de la fiche Google : envoyé aux clients le lendemain de leur événement pour laisser un avis */
   lien_avis_google?: string | null;
+  /** N° d'affiliation CNSS de l'employeur, conservé tel que saisi */
+  cnss_affiliation_employeur?: string | null;
 }
 
 export interface DevisForm {

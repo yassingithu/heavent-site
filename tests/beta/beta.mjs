@@ -65,6 +65,45 @@ await scenario("Devis mariage → équipe de 5 → contrats → paie → espace 
   await c.ctx.close();
 });
 
+// 1 bis. Numéros CNSS : employeur manquant, doublons, validation refusée, numéro conservé tel quel
+await scenario("CNSS : n° employeur manquant, doublons signalés, bulletin non validable, numéro conservé tel quel", async (notes) => {
+  const base = nouvelleBase();
+  const m = new Date().getMonth() + 1, a = new Date().getFullYear();
+  base.staff[0].numero_securite_sociale = "123 456 789"; base.staff[1].numero_securite_sociale = "123.456.789";
+  base.fiches_paie = [{ id: "fc1", staff_id: base.staff[0].id, mois: m, annee: a, statut: "en_attente", heures_travaillees: 8, salaire_brut: 480, cnss: 21.5, amo: 10.85, deductions: 32.35, salaire_net: 447.65, generee_auto: true, details: [] }];
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByRole("tab", { name: /Paie$/ }).click(); await page.waitForTimeout(1000);
+  verifier(await page.getByTestId("alerte-cnss-employeur").isVisible(), "pas d'alerte « n° CNSS employeur manquant »");
+  verifier(await page.getByTestId("alerte-cnss-doublon").isVisible(), "doublon CNSS (123 456 789 / 123.456.789) non signalé");
+  await page.locator('button[role="combobox"]').filter({ hasText: /À valider/ }).first().click();
+  await page.getByRole("option", { name: "Validée" }).click(); await page.waitForTimeout(800);
+  verifier(base.fiches_paie[0].statut === "en_attente", "un bulletin incomplet a pu être validé");
+  verifier(/Bulletin incomplet/.test(await toasts(page)), "aucun message n'explique le refus de validation");
+  const [pdfApercu] = await Promise.all([page.waitForEvent("download", { timeout: 90000 }), page.getByRole("button", { name: /Toutes les fiches/ }).click()]);
+  await pdfApercu.saveAs(`${CAPTURES}/cnss-apercu-incomplet.pdf`);
+  notes.push("alerte employeur + doublon affichés ; validation refusée tant que le n° employeur manque ; PDF « aperçu incomplet » enregistré");
+  await page.screenshot({ path: `${CAPTURES}/cnss-paie.png`, fullPage: true });
+  // Saisie du numéro employeur : enregistré exactement comme tapé
+  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(600);
+  await page.getByRole("tab", { name: /Infos agence/ }).click(); await page.waitForTimeout(600);
+  verifier(await page.getByTestId("cnss-employeur-manquant").isVisible(), "le champ employeur vide n'est pas signalé");
+  await page.getByTestId("cnss-employeur").fill(" 0012-345 ");
+  await page.getByRole("button", { name: /^Enregistrer$/ }).last().click(); await page.waitForTimeout(1000);
+  verifier(base.parametres_agence[0].cnss_affiliation_employeur === " 0012-345 ", `numéro modifié à l'enregistrement : « ${base.parametres_agence[0].cnss_affiliation_employeur} »`);
+  notes.push("n° employeur enregistré tel quel (espaces, zéros, tiret), avec avertissement non bloquant");
+  await page.getByRole("tab", { name: /Paie$/ }).click(); await page.waitForTimeout(1000);
+  verifier(!(await page.getByTestId("alerte-cnss-employeur").count()), "l'alerte employeur reste affichée après saisie");
+  await page.locator('button[role="combobox"]').filter({ hasText: /À valider/ }).first().click();
+  await page.getByRole("option", { name: "Validée" }).click(); await page.waitForTimeout(800);
+  verifier(base.fiches_paie[0].statut === "valide", "bulletin complet non validable");
+  notes.push("une fois complet, le bulletin se valide");
+  // Fiche du crew : doublon visible par l'administration
+  await page.getByRole("tab", { name: /Personnel$/ }).first().click(); await page.waitForTimeout(800);
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
 // 2. Inscription d'un crew sur smartphone (parcours gamifié)
 await scenario("Inscription d'un nouveau crew sur smartphone", async (notes) => {
   const base = nouvelleBase();

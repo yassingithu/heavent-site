@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Save } from "lucide-react";
 import { Parametres } from "./devisUtils";
 import { CGV_DEFAUT, CGV_NAWAR_DEFAUT, CONDITIONS_CONTRAT_DEFAUT } from "@/lib/conditions";
+import { avertissementsNumero } from "@/lib/cnss";
 
 const CHAMPS: { key: keyof Parametres; label: string; type?: string }[] = [
   { key: "raison_sociale", label: "Raison sociale" },
@@ -22,6 +23,7 @@ const CHAMPS: { key: keyof Parametres; label: string; type?: string }[] = [
   { key: "if_fiscal", label: "Identifiant fiscal (IF)" },
   { key: "patente", label: "Patente" },
   { key: "rib", label: "RIB (affiché pour le paiement)" },
+  { key: "cnss_affiliation_employeur", label: "N° d'affiliation CNSS (employeur)" },
   { key: "taux_tva", label: "TVA par défaut (%)", type: "number" },
   { key: "validite_jours", label: "Validité d'un devis (jours)", type: "number" },
   { key: "devise", label: "Devise" },
@@ -56,7 +58,13 @@ export default function ParametresAgence({ value, onSaved }: { value: Parametres
           {CHAMPS.map((c) => (
             <div key={c.key}>
               <Label>{c.label}</Label>
-              <Input type={c.type ?? "text"} value={(p[c.key] as string | number | null) ?? ""} onChange={(e) => setP({ ...p, [c.key]: e.target.value })} />
+              <Input type={c.type ?? "text"} value={(p[c.key] as string | number | null) ?? ""} onChange={(e) => setP({ ...p, [c.key]: e.target.value })}
+                data-testid={c.key === "cnss_affiliation_employeur" ? "cnss-employeur" : undefined} />
+              {c.key === "cnss_affiliation_employeur" && (
+                !String(p.cnss_affiliation_employeur ?? "").trim()
+                  ? <p className="text-xs text-amber-700 mt-1" data-testid="cnss-employeur-manquant">Non renseigné : les bulletins de paie restent des aperçus incomplets et ne peuvent pas être validés.</p>
+                  : avertissementsNumero(p.cnss_affiliation_employeur).map((a) => <p key={a} className="text-xs text-amber-700 mt-1">À vérifier : {a} (le numéro est enregistré tel quel).</p>)
+              )}
             </div>
           ))}
         </div>

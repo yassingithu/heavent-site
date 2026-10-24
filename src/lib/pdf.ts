@@ -75,6 +75,7 @@ export const cssBase = () => {
 export interface InfosAgence {
   raison_sociale?: string | null; adresse?: string | null; ville?: string | null; telephone?: string | null;
   email?: string | null; site_web?: string | null; rc?: string | null; ice?: string | null; if_fiscal?: string | null; patente?: string | null;
+  cnss_affiliation_employeur?: string | null;
 }
 
 export const piedAgence = (p: InfosAgence | null) => {

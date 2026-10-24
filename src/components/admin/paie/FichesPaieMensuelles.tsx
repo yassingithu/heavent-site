@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, RefreshCw } from "lucide-react";
+import { AlertTriangle, Download, RefreshCw } from "lucide-react";
+import { STATUTS_FINAUX, doublonsCnss, etatBulletin, manquesBulletin } from "@/lib/cnss";
 import { MOIS, dateFr, enteteDoc, esc, logo, mad, nomFichier, piedAgence, telechargerPdf, InfosAgence } from "@/lib/pdf";
 
 const STATUTS: Record<string, { label: string; className: string }> = {
@@ -23,22 +24,31 @@ const cssPaie = `
   .doc-heavent .recap { width: 340px; margin-left: auto; margin-top: 14px; border: 1px solid #ece6d3; }
   .doc-heavent .recap div { display: flex; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid #f1ecdd; }
   .doc-heavent .recap .net { background: #C8B560; color: #fff; font-weight: 700; font-size: 14px; border-bottom: none; }
+  .doc-heavent .apercu { border: 2px solid #b45309; color: #92400e; background: #fffbeb; padding: 8px 12px; margin-bottom: 12px; font-size: 11px; }
+  .doc-heavent .apercu b { display: block; font-size: 13px; letter-spacing: .04em; }
 `;
 
 function pagePaie(f: any, agence: InfosAgence | null) {
   const s = f.staff ?? {};
   const lignes: any[] = f.details ?? [];
   const periode = `${MOIS[f.mois - 1]} ${f.annee}`;
+  // Un bulletin n'est présenté comme définitif que s'il est complet ET validé (ou payé) ; sinon c'est un aperçu, et il le dit.
+  const e = etatBulletin(agence, s, f.statut);
+  const bandeau = !e.bandeau ? "" : `<div class="apercu"><b>${esc(e.bandeau)}</b>${e.manques.length
+    ? `Éléments manquants : ${e.manques.map(esc).join(", ")}.`
+    : "Ce document sera définitif une fois le bulletin validé par l'employeur."}</div>`;
   return `<div class="doc-heavent">
-  ${enteteDoc(logo, "BULLETIN DE PAIE", `Période : ${esc(periode)}`)}
+  ${enteteDoc(logo, e.titre, `Période : ${esc(periode)}`)}
   <div class="corps">
+    ${bandeau}
     <div class="ident">
       <div class="bloc"><div class="etiquette">Employeur</div><div class="nom">${esc(agence?.raison_sociale ?? "Heavent People Agency")}</div>
         <div>${esc([agence?.adresse, agence?.ville].filter(Boolean).join(", "))}</div>
-        <div>${[agence?.rc && `RC ${esc(agence.rc)}`, agence?.ice && `ICE ${esc(agence.ice)}`].filter(Boolean).join(" · ")}</div></div>
+        <div>${[agence?.rc && `RC ${esc(agence.rc)}`, agence?.ice && `ICE ${esc(agence.ice)}`].filter(Boolean).join(" · ")}</div>
+        <div>Affiliation CNSS : ${agence?.cnss_affiliation_employeur?.trim() ? esc(agence.cnss_affiliation_employeur) : "<i>non renseignée</i>"}</div></div>
       <div class="cadre"><div class="etiquette">Salarié(e)</div><div class="nom">${esc(s.prenom)} ${esc(s.nom)}</div>
         ${s.numero_identite ? `<div>CIN : ${esc(s.numero_identite)}</div>` : ""}
-        ${s.numero_securite_sociale ? `<div>CNSS : ${esc(s.numero_securite_sociale)}</div>` : ""}
+        <div>CNSS : ${s.numero_securite_sociale?.trim() ? esc(s.numero_securite_sociale) : "<i>non renseigné</i>"}</div>
         ${s.adresse_complete || s.ville ? `<div>${esc([s.adresse_complete, s.ville].filter(Boolean).join(", "))}</div>` : ""}</div>
     </div>
     <h2>Détail des prestations</h2>
@@ -56,7 +66,7 @@ function pagePaie(f: any, agence: InfosAgence | null) {
     </div>
     <div class="insecable" style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-top:18px">
       <p style="color:#888;font-size:10px;margin:0">Bulletin établi à Rabat le ${dateFr(new Date().toISOString().slice(0, 10))}.<br>À conserver sans limitation de durée.</p>
-      <div style="min-width:200px"><div style="font-size:10px;color:#777">Pour l'employeur</div>${signatureEmployeurHtml(48)}</div>
+      <div style="min-width:200px"><div style="font-size:10px;color:#777">Pour l'employeur</div>${e.definitif ? signatureEmployeurHtml(48) : `<div style="font-size:10px;color:#b45309;margin-top:8px">Signature apposée à la validation</div>`}</div>
     </div>
   </div>
   ${piedAgence(agence)}
@@ -84,13 +94,21 @@ export default function FichesPaieMensuelles() {
   const [periode, setPeriode] = useState(`${maintenant.getFullYear()}-${maintenant.getMonth() + 1}`);
   const [fiches, setFiches] = useState<any[]>([]);
   const [enCours, setEnCours] = useState(false);
+  const [agence, setAgence] = useState<{ cnss_affiliation_employeur?: string | null } | null>(null);
+  const [doublons, setDoublons] = useState<any[][]>([]);
   const [annee, mois] = periode.split("-").map(Number);
 
   const periodes = Array.from({ length: 13 }, (_, i) => { const d = new Date(maintenant.getFullYear(), maintenant.getMonth() - 6 + i, 1); return `${d.getFullYear()}-${d.getMonth() + 1}`; });
 
   const charger = useCallback(async () => {
-    const { data } = await supabase.from("fiches_paie").select("*, staff(nom, prenom)").eq("annee", annee).eq("mois", mois);
+    const [{ data }, { data: ag }, { data: equipe }] = await Promise.all([
+      supabase.from("fiches_paie").select("*, staff(nom, prenom, numero_securite_sociale)").eq("annee", annee).eq("mois", mois),
+      supabase.from("parametres_agence").select("*").eq("id", 1).maybeSingle(),
+      supabase.from("staff").select("id, prenom, nom, numero_securite_sociale").not("numero_securite_sociale", "is", null),
+    ]);
     setFiches(((data ?? []) as any[]).sort((a, b) => `${a.staff?.nom}`.localeCompare(`${b.staff?.nom}`)));
+    setAgence((ag as any) ?? null);
+    setDoublons(doublonsCnss((equipe ?? []) as any[]));
   }, [annee, mois]);
   useEffect(() => { charger(); }, [charger]);
 
@@ -127,6 +145,12 @@ export default function FichesPaieMensuelles() {
   };
 
   const changerStatut = async (id: string, statut: string) => {
+    const f = fiches.find((x) => x.id === id);
+    const manques = manquesBulletin(agence, f?.staff);
+    if (STATUTS_FINAUX.includes(statut) && manques.length) {
+      toast({ title: "Bulletin incomplet", description: `Impossible de le marquer « ${STATUTS[statut].label} » : il manque ${manques.join(" et ")}.`, variant: "destructive" });
+      return;
+    }
     const { error } = await supabase.from("fiches_paie").update({ statut }).eq("id", id);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
     charger();
@@ -157,7 +181,19 @@ export default function FichesPaieMensuelles() {
           <Button disabled={enCours || !fiches.length} onClick={() => telecharger(fiches.map((f) => f.id))}><Download className="h-4 w-4 mr-1" /> Toutes les fiches (PDF)</Button>
         </div>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
+      <CardContent className="overflow-x-auto space-y-3">
+        {!String(agence?.cnss_affiliation_employeur ?? "").trim() && (
+          <div className="flex gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" data-testid="alerte-cnss-employeur">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>N° d'affiliation CNSS de l'employeur non renseigné (Réglages → Informations de l'agence). Les PDF sont des aperçus incomplets et aucun bulletin ne peut être validé ni marqué payé.</span>
+          </div>
+        )}
+        {doublons.map((g) => (
+          <div key={g.map((p) => p.id).join()} className="flex gap-2 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900" data-testid="alerte-cnss-doublon">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>Même N° CNSS saisi pour {g.map((p) => `${p.prenom ?? ""} ${p.nom ?? ""}`.trim()).join(", ")} : à vérifier.</span>
+          </div>
+        ))}
         {fiches.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">Aucune fiche pour {MOIS[mois - 1]} {annee}.</p>
         ) : (
@@ -169,7 +205,8 @@ export default function FichesPaieMensuelles() {
             <TableBody>
               {fiches.map((f) => (
                 <TableRow key={f.id}>
-                  <TableCell>{f.staff?.prenom} {f.staff?.nom}{f.generee_auto && <span className="ml-2 text-xs text-muted-foreground">auto</span>}</TableCell>
+                  <TableCell>{f.staff?.prenom} {f.staff?.nom}{f.generee_auto && <span className="ml-2 text-xs text-muted-foreground">auto</span>}
+                    {!String(f.staff?.numero_securite_sociale ?? "").trim() && <span className="ml-2 text-xs text-amber-700" data-testid="cnss-salarie-manquant">N° CNSS manquant</span>}</TableCell>
                   <TableCell className="text-right">{f.heures_travaillees ?? 0}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">{mad(f.salaire_brut)}</TableCell>
                   <TableCell className="text-right whitespace-nowrap font-medium">{mad(f.salaire_net)}</TableCell>

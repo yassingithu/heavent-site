@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Ban, KeyRound, Save, UserCheck } from "lucide-react";
+import { avertissementsNumero, cleComparaison } from "@/lib/cnss";
 
 export const LANGUES = ["Arabe", "Darija", "Amazigh", "Français", "Anglais", "Espagnol", "Allemand", "Italien", "Portugais", "Chinois", "Russe", "Turc"];
 
@@ -42,11 +43,18 @@ export default function EditionStaff({ staffId, onClose, onSaved }: Props) {
   const [mdp, setMdp] = useState({ a: "", b: "" });
   const [enCours, setEnCours] = useState(false);
   const [motif, setMotif] = useState("");
+  const [autres, setAutres] = useState<{ id: string; prenom: string | null; nom: string | null; numero_securite_sociale: string | null }[]>([]);
 
   useEffect(() => {
     setS(null); setMdp({ a: "", b: "" });
     if (staffId) supabase.from("staff").select("*").eq("id", staffId).single().then(({ data }) => setS(data));
+    // Numéros CNSS des autres crews : uniquement pour signaler un doublon à l'administration (jamais bloquant)
+    if (staffId) supabase.from("staff").select("id, prenom, nom, numero_securite_sociale").neq("id", staffId).not("numero_securite_sociale", "is", null)
+      .then(({ data }) => setAutres((data ?? []) as any[]));
   }, [staffId]);
+
+  const cleCnss = cleComparaison(s?.numero_securite_sociale);
+  const memeCnss = cleCnss ? autres.filter((a) => cleComparaison(a.numero_securite_sociale) === cleCnss) : [];
 
   const langues = String(s?.langues ?? "").split(",").map((l) => l.trim()).filter(Boolean);
   const basculerLangue = (l: string, v: boolean) => {
@@ -122,7 +130,12 @@ export default function EditionStaff({ staffId, onClose, onSaved }: Props) {
                       <Label className="text-xs">{c.l}</Label>
                       {c.type === "texte"
                         ? <Textarea rows={2} value={s[c.k] ?? ""} onChange={(e) => setS({ ...s, [c.k]: e.target.value })} />
-                        : <Input type={c.type === "number" ? "number" : c.type === "date" ? "date" : "text"} value={s[c.k] ?? ""} onChange={(e) => setS({ ...s, [c.k]: e.target.value })} />}
+                        : <Input type={c.type === "number" ? "number" : c.type === "date" ? "date" : "text"} value={s[c.k] ?? ""} onChange={(e) => setS({ ...s, [c.k]: e.target.value })}
+                            data-testid={c.k === "numero_securite_sociale" ? "cnss-salarie" : undefined} />}
+                      {c.k === "numero_securite_sociale" && avertissementsNumero(s[c.k]).map((a) => <p key={a} className="text-xs text-amber-700 mt-1">À vérifier : {a} (enregistré tel quel).</p>)}
+                      {c.k === "numero_securite_sociale" && memeCnss.length > 0 && (
+                        <p className="text-xs text-red-700 mt-1" data-testid="cnss-doublon">Même numéro que {memeCnss.map((a) => `${a.prenom ?? ""} ${a.nom ?? ""}`.trim()).join(", ")} : à vérifier.</p>
+                      )}
                     </div>
                   ))}
                   {sec.titre === "Identité" && (
