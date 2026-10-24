@@ -82,7 +82,48 @@ bash -c ". /dev/null; HEAVENT_SAUVEGARDE_RACINE=$R bash $S verifier $last" >/dev
 ( . "$R/config"; RACINE="$R"; source <(sed -n '/^retention()/,/^}/p; /^lire_etat()/p; /^log()/,/^}/p' "$S"); MAC=0; JOURS_QUOTIDIENS=30; MOIS_MENSUELS=12; JOURNAL=/dev/null; retention )
 [ -d "$R/sauvegardes/$last" ] && [ "$(ls "$R/sauvegardes" | wc -l)" = 1 ] && bash "$S" verifier "$last" >/dev/null 2>&1; res $? "conservation : anciennes retirées, la dernière vérifiée gardée et toujours restaurable"
 # 14. État visible
-bash "$S" statut > "$W/statut.out" 2>&1; grep -q "Dernière sauvegarde VÉRIFIÉE" "$W/statut.out"; res $? "état lisible (ETAT.txt / commande statut)"
+bash "$S" statut > "$W/statut.out" 2>&1; grep -q "Mac : dernière sauvegarde VÉRIFIÉE" "$W/statut.out"; res $? "état lisible (ETAT.txt / commande statut)"
 sed 's/^/   /' "$W/statut.out"
+# ===== Deuxième copie : disque externe (faux volumes) =====
+export HS_VOLUMES="$W/Volumes"; mkdir -p "$HS_VOLUMES/DisqueYassin/Photos perso" "$HS_VOLUMES/AutreCle"
+ln -s / "$HS_VOLUMES/Macintosh HD"
+echo "UUID-DISQUE-2TO" > "$HS_VOLUMES/DisqueYassin/.uuid-essai"; echo "UUID-AUTRE" > "$HS_VOLUMES/AutreCle/.uuid-essai"
+echo "souvenir" > "$HS_VOLUMES/DisqueYassin/Photos perso/vacances.jpg"; EMPREINTE_PERSO=$(cd "$HS_VOLUMES/DisqueYassin" && find . -path ./Heavent-Sauvegardes -prune -o -type f -print | sort | xargs md5sum | md5sum)
+bash "$S" disque-choisir 2 > "$W/d1.out" 2>&1; ls "$HS_VOLUMES/DisqueYassin/Heavent-Sauvegardes/.heavent-disque" >/dev/null 2>&1 && grep -q '^DISQUE_UUID=UUID-DISQUE-2TO' "$R/config" && [ ! -e "$HS_VOLUMES/AutreCle/Heavent-Sauvegardes" ] && ! grep -q "Macintosh" "$W/d1.out"; c=$?
+res $c "disque identifié par son identifiant unique, dossier dédié créé"
+DST="$HS_VOLUMES/DisqueYassin/Heavent-Sauvegardes"
+# Passage horaire normal (pas de sauvegarde due) : la dernière sauvegarde vérifiée part sur le disque et y est vérifiée
+bash "$S" lancer > "$W/d2.out" 2>&1
+DER=$(grep '^derniere_id=' "$R/.etat" | cut -d= -f2)
+[ "$(grep '^disque_derniere_id=' "$R/.etat" | cut -d= -f2)" = "$DER" ] && [ -d "$DST/sauvegardes/$DER" ] && grep -q "Copie sur le disque externe VÉRIFIÉE" "$R"/journal/*.log; res $? "disque branché : dernière sauvegarde vérifiée copiée puis vérifiée à partir du disque seul"
+# Tous les fichiers dont la sauvegarde dépend sont sur le disque
+manque=0; while read -r h; do [ -f "$DST/objets/${h:0:2}/$h.age" ] || manque=1; done < "$DST/sauvegardes/$DER/objets.txt"; [ $manque = 0 ] && [ -f "$DST/outils/heavent-sauvegarde" ] && [ -f "$DST/config" ] && ! grep -q DISQUE "$DST/config"; res $? "disque autonome : sauvegarde, fichiers dédupliqués, outils et configuration sans secret"
+# Fichiers personnels du disque intacts, rien en clair
+[ "$(cd "$HS_VOLUMES/DisqueYassin" && find . -path ./Heavent-Sauvegardes -prune -o -type f -print | sort | xargs md5sum | md5sum)" = "$EMPREINTE_PERSO" ] && ! grep -rqa -e "Message fictif" -e "cin-fictive" "$DST"; res $? "fichiers personnels du disque intacts ; aucune donnée en clair sur le disque"
+# Restauration SANS le Mac : sans Trousseau, sans le magasin du Mac, uniquement le disque + la clé de secours
+mv "$R/objets" "$R/objets-cache"
+env -u HS_SECRET_cle_age HEAVENT_CLE_FICHIER="$W/cle.txt" bash "$S" essai-restauration-disque > "$W/d3.out" 2>&1; c=$?; mv "$R/objets-cache" "$R/objets"
+[ $c = 0 ] && grep -q "restaurable sans le Mac" "$W/d3.out"; res $? "perte du Mac simulée : copie du disque déchiffrée avec la clé de secours, restaurée à l'écart, identique"
+! find "$R" "$DST" -name 'tmp-verif' -o -name '.cle-essai' -o -name '*.dump' | grep -q .; res $? "aucune copie déchiffrée ni clé laissée (Mac et disque)"
+# Disque absent : la sauvegarde quotidienne continue sur le Mac ; rattrapage au branchement suivant
+mv "$HS_VOLUMES/DisqueYassin" "$W/disque-debranche"; avant_d=$(grep '^disque_derniere_id=' "$R/.etat" | cut -d= -f2)
+sleep 1; bash "$S" forcer > "$W/d4.out" 2>&1; c=$?; NOUV=$(grep '^derniere_id=' "$R/.etat" | cut -d= -f2)
+[ $c = 0 ] && [ "$NOUV" != "$avant_d" ] && [ "$(grep '^disque_derniere_id=' "$R/.etat" | cut -d= -f2)" = "$avant_d" ]; res $? "disque absent : sauvegarde du Mac normale, copie externe inchangée"
+bash "$S" statut > "$W/d5.out"; grep -q "Mac : dernière sauvegarde VÉRIFIÉE" "$W/d5.out" && grep -q "Disque externe : dernière copie VÉRIFIÉE" "$W/d5.out" && grep -q "non branché" "$W/d5.out"; res $? "état : dates séparées Mac / disque externe, disque signalé non branché"
+mv "$W/disque-debranche" "$HS_VOLUMES/DisqueYassin"
+bash "$S" lancer > "$W/d6.out" 2>&1; [ "$(grep '^disque_derniere_id=' "$R/.etat" | cut -d= -f2)" = "$NOUV" ] && [ -d "$DST/sauvegardes/$NOUV" ]; res $? "rebranchement : rattrapage automatique de la dernière sauvegarde vérifiée"
+# Interruption : restes .part d'une copie avortée + disque devenu non inscriptible → la copie précédente reste intacte et utilisable
+mkdir -p "$DST/sauvegardes/.2099-01-01_000000.part"; echo x > "$DST/objets/zz.part"
+sleep 1; bash "$S" forcer > /dev/null 2>&1; NOUV2=$(grep '^derniere_id=' "$R/.etat" | cut -d= -f2)
+AVANT_INT=$(grep '^disque_derniere_id=' "$R/.etat" | cut -d= -f2)
+chmod a-w "$DST/sauvegardes"; bash "$S" disque > "$W/d7.out" 2>&1; c=$?; chmod u+w "$DST/sauvegardes"
+[ $c != 0 ] && [ "$(grep '^disque_derniere_id=' "$R/.etat" | cut -d= -f2)" = "$AVANT_INT" ] && [ -d "$DST/sauvegardes/$AVANT_INT" ] && env -u HS_SECRET_cle_age HEAVENT_CLE_FICHIER="$W/cle.txt" bash "$S" essai-restauration-disque > /dev/null 2>&1; res $? "copie interrompue : échec signalé, dernière copie utilisable intacte et restaurable"
+bash "$S" disque > "$W/d8.out" 2>&1; [ $? = 0 ] && [ ! -e "$DST/sauvegardes/.2099-01-01_000000.part" ] && [ ! -e "$DST/objets/zz.part" ]; res $? "nouvelle tentative : restes de copie interrompue nettoyés (seulement nos fichiers temporaires), copie vérifiée"
+# Conservation sur le disque : la dernière copie vérifiée jamais supprimée ; objets encore utilisés conservés
+for s in $(ls "$DST/sauvegardes"); do [ "$s" = "$NOUV2" ] || mv "$DST/sauvegardes/$s" "$DST/sauvegardes/2023-0${#s}-01_00000${s: -1}"; done
+( . "$R/config"; RACINE="$R"; source <(sed -n '/^retention()/,/^}/p; /^lire_etat()/p; /^log()/,/^}/p' "$S"); MAC=0; JOURS_QUOTIDIENS=30; MOIS_MENSUELS=12; JOURNAL=/dev/null; retention "$DST" "$NOUV2" )
+[ -d "$DST/sauvegardes/$NOUV2" ] && env -u HS_SECRET_cle_age HEAVENT_CLE_FICHIER="$W/cle.txt" bash "$S" essai-restauration-disque > /dev/null 2>&1 && [ -f "$HS_VOLUMES/DisqueYassin/Photos perso/vacances.jpg" ]; res $? "conservation sur le disque : dernière copie gardée et restaurable, fichiers personnels intacts"
+sed 's/^/   /' "$W/d5.out" | grep -E "Mac :|Disque"
+
 kill $SRV; pg_ctl -D "$W/prod" stop -m fast >/dev/null
 echo; echo "$OK réussi(s), $KO échec(s)"; [ $KO = 0 ]

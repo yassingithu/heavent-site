@@ -17,7 +17,7 @@
 | # | Lot | État | Modèle conseillé |
 |---|-----|------|------------------|
 | 0 | Audit initial | fait (24/10) | — |
-| 1 | Sauvegarde et restauration | outil prêt et testé (15/15 sur fausse production, 25/10) ; à installer par Yassin sur le Mac (outils/sauvegarde/LISEZMOI.md) | Opus pour la conception, Sonnet possible pour les scripts |
+| 1 | Sauvegarde et restauration | outil prêt et testé (27/27 avec disque externe, 25/10) ; installation guidée en cours (étape 1 : age) | Opus pour la conception, Sonnet possible pour les scripts |
 | 2 | Champs CNSS (employeur + salarié) | branche lot-cnss : validation bloquée si incomplet, paiement toujours enregistrable, « Validée » corrigé côté crew ; NON déployé ; ordre : sauvegarde vérifiée → migration → site | Sonnet |
 | 3 | Dates et fuseaux (conversions et planification seulement) | à faire | Sonnet avec relecture |
 | 4 | Navigation et tableau de bord « À traiter » | à faire — exigences détaillées ci-dessous (25/10) | Sonnet, relecture visuelle |
@@ -65,6 +65,13 @@
 - Mac : Homebrew + PostgreSQL 18.3 déjà installés (sans pg_cron/pg_net) ; seul « age » à installer. Copie déposée dans ~/Downloads/elegant-heavent-web-main/sauvegarde-heavent/.
 - Pas encore démontré sur le Mac : première sauvegarde réelle, accès Trousseau depuis la tâche, veille, redémarrage, coupure réseau, notifications (cases à cocher dans LISEZMOI.md).
 - Mot de passe de la base : NE PAS réinitialiser sans accord (règle « aucun secret régénéré »).
+
+## Lot 1 bis — deuxième copie sur disque externe (25/10)
+- Disque 2 To de Yassin, reconnu par l'identifiant unique du volume + fichier repère dans « Heavent-Sauvegardes » ; aucun formatage ni suppression hors de ce dossier.
+- Copie de la dernière sauvegarde vérifiée + objets nécessaires + outils + config sans secret ; contrôle d'empreinte ; publication atomique ; vérification par restauration à partir du disque seul ; conservation qui garde toujours la dernière copie vérifiée.
+- Déclenchée au branchement (StartOnMount), toutes les 15 min, ou à la main (heavent-sauvegarde disque). Rappel hebdomadaire si pas de copie depuis 7 jours. ETAT.txt : dates Mac et disque séparées.
+- Restauration sans Mac : essai-restauration-disque avec la clé de secours (phrase secrète).
+- Essais : 27/27 (fausse production + faux volumes). À démontrer sur le Mac : accès macOS au disque depuis la tâche automatique (autorisation « volumes amovibles »).
 
 ## Lot 2 — registre des paiements (branche lot-cnss, 25/10, testé hors production)
 - Migration additive 20261025100000_paiements_paie.sql : table paiements_paie en ajout seul (montant, date civile, mode, référence, note, correction motivée), auteur et heure imposés par la base, modification et suppression refusées (même super-utilisateur), bulletin payé non supprimable ; lecture admin + crew pour SES bulletins.

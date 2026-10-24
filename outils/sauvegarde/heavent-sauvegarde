@@ -8,6 +8,9 @@
 #   heavent-sauvegarde liste         sauvegardes conservées
 #   heavent-sauvegarde extraire N D  déchiffre la sauvegarde N dans le dossier D (pour une vraie restauration)
 #   heavent-sauvegarde cle-secours   crée une copie de la clé de déchiffrement protégée par une phrase secrète
+#   heavent-sauvegarde disque-choisir                 enregistre le disque externe (aucun formatage, aucune suppression)
+#   heavent-sauvegarde disque                         copie la dernière sauvegarde vérifiée sur le disque et la vérifie
+#   heavent-sauvegarde essai-restauration-disque [C]  restaure la copie du disque avec la clé de secours (perte du Mac)
 #
 # Garanties : aucune écriture en production (lecture seule, transaction en lecture seule) ; la restauration de contrôle
 # se fait dans un Postgres temporaire sans réseau ni extensions d'appel externe ; la dernière sauvegarde vérifiée
@@ -55,6 +58,9 @@ ecrire_etat() { # cle valeur
 
 # Secrets : Trousseau macOS (saisis par Yassin, jamais affichés). Sous Linux : variables d'environnement (tests seulement).
 secret() {
+  # Restauration sans le Mac : clé de secours protégée par phrase secrète (saisie au clavier, jamais affichée)
+  if [ "$1" = cle-age ] && [ -n "${HEAVENT_CLE_SECOURS:-}" ]; then age -d "$HEAVENT_CLE_SECOURS"; return; fi
+  if [ "$1" = cle-age ] && [ -n "${HEAVENT_CLE_FICHIER:-}" ]; then grep AGE-SECRET-KEY "$HEAVENT_CLE_FICHIER"; return; fi
   if [ $MAC = 1 ]; then security find-generic-password -a heavent -s "heavent-sauvegarde-$1" -w 2>/dev/null
   else eval "printf '%s' \"\${HS_SECRET_$(echo "$1" | tr '-' '_')-}\""; fi
 }
@@ -85,10 +91,10 @@ verrou() {
   echo $$ > "$RACINE/.verrou/pid"
   # Restes d'une sauvegarde interrompue brutalement : Postgres de contrôle arrêté, copies déchiffrées effacées
   local d
-  for d in "$RACINE"/en-cours-*/tmp-verif/pg/d "$RACINE"/sauvegardes/*/tmp-verif/pg/d; do
+  for d in "$RACINE"/tmp-verif/pg/d "${HEAVENT_TEMP:-$RACINE}"/tmp-verif/pg/d; do
     [ -d "$d" ] && pg_ctl -D "$d" stop -m immediate >/dev/null 2>&1
   done
-  for d in "$RACINE"/en-cours-* "$RACINE"/sauvegardes/*/tmp-verif; do
+  for d in "$RACINE"/en-cours-* "$RACINE"/tmp-verif "${HEAVENT_TEMP:-$RACINE}"/tmp-verif; do
     [ -e "$d" ] && { rm -rf "$d"; log "Restes d'une opération interrompue effacés : $(basename "$d")."; }
   done
   return 0
@@ -265,15 +271,15 @@ encoder_chemin() { local r="" p; local IFS=/; for p in $1; do r="$r/$(encoder "$
 # Déchiffre la sauvegarde avec la vraie clé (Trousseau), la restaure dans un Postgres temporaire SANS réseau,
 # puis compare toutes les références et vérifie l'intégrité de chaque fichier.
 verifier_dossier() {
-  local d="$1" v="$1/tmp-verif" port err
+  local d="$1" objets="${2:-$RACINE/objets}" v="${HEAVENT_TEMP:-$RACINE}/tmp-verif" port err
   rm -rf "$v"; mkdir -p "$v"; VERIF="$v"
   local cle; cle="$v/cle"; secret cle-age > "$cle"
-  [ -s "$cle" ] || { echo "VERIFICATION: clé de déchiffrement introuvable dans le Trousseau"; return 1; }
+  [ -s "$cle" ] || { echo "VERIFICATION: clé de déchiffrement introuvable (Trousseau ou clé de secours)"; return 1; }
   local f
   for f in base.dump roles.sql cron.csv reference.txt fichiers.tsv; do
     age -d -i "$cle" -o "$v/$f" "$d/$f.age" 2>/dev/null || { rm -f "$cle"; echo "VERIFICATION: déchiffrement impossible ($f)"; return 1; }
   done
-  log "Déchiffrement réussi avec la clé du Trousseau."
+  log "Déchiffrement réussi ($( [ -n "${HEAVENT_CLE_SECOURS:-}" ] && echo "clé de secours" || echo "clé du Trousseau"))."
 
   # Postgres temporaire : uniquement une prise locale (aucune adresse réseau), aucune extension d'appel externe
   PG_TEST_DIR="$v/pg"; mkdir -p "$PG_TEST_DIR"; port=$(( 50000 + $$ % 10000 ))
@@ -312,7 +318,7 @@ verifier_dossier() {
   local b n sha t reste ko=0 ok=0
   while IFS="$(printf '\t')" read -r b n sha t reste; do
     [ "$sha" = "-" ] && continue
-    if [ "$(age -d -i "$cle" "$RACINE/objets/$(echo "$sha" | cut -c1-2)/$sha.age" 2>/dev/null | sha256)" = "$sha" ]; then ok=$((ok + 1)); else ko=$((ko + 1)); log "Fichier illisible ou altéré : $b/$n"; fi
+    if [ "$(age -d -i "$cle" "$objets/$(echo "$sha" | cut -c1-2)/$sha.age" 2>/dev/null | sha256)" = "$sha" ]; then ok=$((ok + 1)); else ko=$((ko + 1)); log "Fichier illisible ou altéré : $b/$n"; fi
   done < "$v/fichiers.tsv"
   rm -f "$cle"
   pg_ctl -D "$PG_TEST_DIR/d" stop -m fast >/dev/null 2>&1; rm -rf "$v"; PG_TEST_DIR=""; VERIF=""
@@ -323,42 +329,147 @@ verifier_dossier() {
 
 # Garde un diagnostic SANS données : seulement les messages d'erreur (tronqués) et les noms d'éléments en écart
 garder_echec() {
-  local d="$1" n f; n="$RACINE/echecs/$(basename "$d")"; mkdir -p "$n"
-  for f in "$d"/tmp-verif/*.err; do [ -f "$f" ] && grep -E '^(pg_restore|psql|ERROR|ERREUR)' "$f" | grep -v -E 'CONTEXT|DETAIL|LINE|COPY' | cut -c1-200 > "$n/$(basename "$f")"; done
-  cp "$d/tmp-verif/differences.txt" "$n/" 2>/dev/null; true
+  local d="$1" n f v="${HEAVENT_TEMP:-$RACINE}/tmp-verif"; n="$RACINE/echecs/$(basename "$d")"; mkdir -p "$n"
+  for f in "$v"/*.err; do [ -f "$f" ] && grep -E '^(pg_restore|psql|ERROR|ERREUR)' "$f" | grep -v -E 'CONTEXT|DETAIL|LINE|COPY' | cut -c1-200 > "$n/$(basename "$f")"; done
+  cp "$v/differences.txt" "$n/" 2>/dev/null; true
 }
 
 # ---------- conservation ----------
 # Conserve : les 30 derniers jours, la plus ancienne de chaque mois sur 12 mois, et TOUJOURS la dernière vérifiée.
 # Un fichier stocké n'est effacé que s'il n'appartient plus à aucune sauvegarde conservée.
-retention() {
-  local derniere s jour mois limite_j limite_m garder supprimees=0
-  derniere=$(lire_etat derniere_id)
+retention() { # [dossier racine] [dernière à garder]
+  local base="${1:-$RACINE}" derniere="${2:-$(lire_etat derniere_id)}" s jour mois limite_j limite_m garder supprimees=0
   if [ $MAC = 1 ]; then limite_j=$(date -v-${JOURS_QUOTIDIENS}d +%Y-%m-%d); limite_m=$(date -v-${MOIS_MENSUELS}m +%Y-%m)
   else limite_j=$(date -d "-$JOURS_QUOTIDIENS days" +%Y-%m-%d); limite_m=$(date -d "-$MOIS_MENSUELS months" +%Y-%m); fi
   local vus=" "
-  for s in $(ls "$RACINE/sauvegardes" | sort); do
+  for s in $(ls "$base/sauvegardes" | grep -v '^\.' | sort); do
     jour=${s%%_*}; mois=${jour%-*}; garder=0
     [ "$s" = "$derniere" ] && garder=1
     [ ! "$jour" \< "$limite_j" ] && garder=1
     if [ ! "$mois" \< "$limite_m" ]; then case "$vus" in *" $mois "*) ;; *) garder=1; vus="$vus$mois ";; esac; fi
-    if [ $garder = 0 ]; then rm -rf "$RACINE/sauvegardes/$s"; supprimees=$((supprimees + 1)); log "Conservation : sauvegarde $s retirée (au-delà de la durée de conservation)."; fi
+    if [ $garder = 0 ]; then rm -rf "$base/sauvegardes/$s"; supprimees=$((supprimees + 1)); log "Conservation ($base) : sauvegarde $s retirée (au-delà de la durée de conservation)."; fi
   done
   # Nettoyage du magasin uniquement à partir des sauvegardes conservées et vérifiées
-  cat "$RACINE"/sauvegardes/*/objets.txt 2>/dev/null | sort -u > "$RACINE/.utilises"
-  if [ -s "$RACINE/.utilises" ] || [ -z "$(ls "$RACINE/sauvegardes")" ]; then
-    find "$RACINE/objets" -name '*.age' -type f | while read -r f; do
-      s=$(basename "$f" .age); grep -qx "$s" "$RACINE/.utilises" || { rm -f "$f"; log "Magasin : copie $s retirée (plus utilisée)."; }
+  # Un objet n'est retiré que s'il n'est utilisé par AUCUNE sauvegarde conservée (et jamais si la liste est illisible)
+  local utilises="$RACINE/.utilises"
+  cat "$base"/sauvegardes/[0-9]*/objets.txt 2>/dev/null | sort -u > "$utilises"
+  if [ -s "$utilises" ]; then
+    find "$base/objets" -name '*.age' -type f | while read -r f; do
+      s=$(basename "$f" .age); grep -qx "$s" "$utilises" || { rm -f "$f"; log "Magasin ($base) : copie $s retirée (plus utilisée)."; }
     done
   fi
+  rm -f "$utilises"
+  [ "$base" = "$RACINE" ] || return 0
   find "$RACINE/echecs" -mindepth 1 -maxdepth 1 -mtime +14 -exec rm -rf {} + 2>/dev/null
-  find "$RACINE" -maxdepth 1 -name 'en-cours-*' -mtime +1 -exec rm -rf {} + 2>/dev/null
-  rm -f "$RACINE/.utilises"
 }
 
 historique_taille() {
   local t; t=$(du -sk "$RACINE" | cut -f1)
   echo "$(maintenant) $t" >> "$RACINE/.historique"
+}
+
+
+# ---------- deuxième copie : disque externe ----------
+# Le disque est reconnu par l'identifiant unique de son volume (pas par son nom) ET par un fichier repère
+# dans le dossier dédié. Rien d'autre sur le disque n'est lu, modifié ou supprimé ; il n'est jamais formaté.
+VOLUMES="${HS_VOLUMES:-/Volumes}"
+DOSSIER_DISQUE="Heavent-Sauvegardes"
+volume_uuid() {
+  if [ $MAC = 1 ] && [ -z "${HS_VOLUMES:-}" ]; then diskutil info "$1" 2>/dev/null | awk -F': *' '/Volume UUID/ { print $2; exit }'
+  else cat "$1/.uuid-essai" 2>/dev/null; fi   # tests automatiques (Linux)
+}
+trouver_disque() { # affiche le dossier dédié si le disque choisi est branché
+  [ -n "${DISQUE_UUID:-}" ] || return 1
+  local v
+  for v in "$VOLUMES"/*; do
+    [ -d "$v" ] && [ ! -L "$v" ] || continue
+    [ "$(volume_uuid "$v")" = "$DISQUE_UUID" ] || continue
+    if [ -f "$v/$DOSSIER_DISQUE/.heavent-disque" ] && grep -qx "$DISQUE_UUID" "$v/$DOSSIER_DISQUE/.heavent-disque"; then echo "$v/$DOSSIER_DISQUE"; return 0; fi
+  done
+  return 1
+}
+empreinte_fichier() { sha256 < "$1"; }
+
+# Copie la dernière sauvegarde VÉRIFIÉE du Mac sur le disque, avec tous les fichiers dont elle dépend,
+# puis la vérifie en la restaurant UNIQUEMENT à partir du disque. Codes : 0 copiée et vérifiée, 5 disque absent,
+# 6 déjà à jour, 7 disque retiré pendant la copie (rien d'abîmé), 1 échec.
+copier_sur_disque() {
+  local dst s src n=0 f sha cible
+  dst=$(trouver_disque) || return 5
+  s=$(lire_etat derniere_id); src="$RACINE/sauvegardes/$s"
+  [ -n "$s" ] && [ -d "$src" ] || { echo "DISQUE: aucune sauvegarde vérifiée à copier"; return 1; }
+  if [ "${1:-}" != forcer ] && [ "$(lire_etat disque_derniere_id)" = "$s" ] && [ -d "$dst/sauvegardes/$s" ]; then return 6; fi
+  log "=== Copie sur le disque externe : sauvegarde $s → $dst"
+  ( : > "$dst/.essai-ecriture" ) 2>/dev/null && rm -f "$dst/.essai-ecriture" \
+    || { echo "DISQUE: écriture impossible sur le disque (lecture seule, ou accès refusé par macOS)"; return 1; }
+  # Restes d'une copie interrompue : uniquement nos fichiers temporaires
+  find "$dst" -name '*.part' -type f -exec rm -f {} + 2>/dev/null; rm -rf "$dst"/sauvegardes/.*.part 2>/dev/null
+  mkdir -p "$dst/objets" "$dst/sauvegardes" "$dst/outils"
+  # Place : la sauvegarde + les fichiers qu'il manque sur le disque, avec une marge de 1 Go
+  local besoin=0 libre
+  while read -r sha; do [ -f "$dst/objets/$(echo "$sha" | cut -c1-2)/$sha.age" ] || besoin=$((besoin + $(taille "$RACINE/objets/$(echo "$sha" | cut -c1-2)/$sha.age") / 1024 + 1)); done < "$src/objets.txt"
+  besoin=$((besoin + $(du -sk "$src" | cut -f1) + 1048576)); libre=$(df -k "$dst" | awk 'NR==2 { print $4 }')
+  [ "$libre" -gt "$besoin" ] || { echo "DISQUE: place insuffisante sur le disque externe"; return 1; }
+  # 1. Fichiers dont dépend la sauvegarde (copie .part, contrôle d'empreinte, puis mise en place)
+  while read -r sha; do
+    [ -n "$sha" ] || continue
+    f="$RACINE/objets/$(echo "$sha" | cut -c1-2)/$sha.age"; cible="$dst/objets/$(echo "$sha" | cut -c1-2)/$sha.age"
+    if [ -f "$cible" ] && [ "$(taille "$cible")" = "$(taille "$f")" ]; then continue; fi
+    mkdir -p "$(dirname "$cible")" 2>/dev/null || { disque_parti "$dst"; return $?; }
+    cp "$f" "$cible.part" 2>/dev/null || { disque_parti "$dst"; return $?; }
+    [ "$(empreinte_fichier "$cible.part")" = "$(empreinte_fichier "$f")" ] || { rm -f "$cible.part"; echo "DISQUE: copie altérée ($sha)"; return 1; }
+    mv "$cible.part" "$cible" || { disque_parti "$dst"; return $?; }
+    n=$((n + 1))
+  done < "$src/objets.txt"
+  # 2. La sauvegarde elle-même, publiée seulement une fois complète et contrôlée
+  local tmp="$dst/sauvegardes/.$s.part"
+  rm -rf "$tmp"; cp -R "$src" "$tmp" 2>/dev/null || { rm -rf "$tmp" 2>/dev/null; disque_parti "$dst"; return $?; }
+  for f in "$src"/*; do
+    [ "$(empreinte_fichier "$tmp/$(basename "$f")")" = "$(empreinte_fichier "$f")" ] || { rm -rf "$tmp"; echo "DISQUE: copie altérée ($(basename "$f"))"; return 1; }
+  done
+  rm -rf "$dst/sauvegardes/$s"; mv "$tmp" "$dst/sauvegardes/$s" || { disque_parti "$dst"; return $?; }
+  # 3. Outils et configuration (sans aucun secret) pour restaurer depuis n'importe quel Mac
+  cp "$OUTILS"/heavent-sauvegarde "$OUTILS"/references.sql "$dst/outils/" 2>/dev/null
+  cp "$OUTILS"/LISEZMOI.md "$dst/" 2>/dev/null
+  grep -v -E '^(DISQUE_)' "$CONFIG" > "$dst/config" 2>/dev/null
+  log "Disque : $n fichier(s) copié(s), sauvegarde $s en place. Vérification à partir du disque seul…"
+  # 4. Vérification complète à partir du DISQUE (sauvegarde + objets du disque), travail temporaire sur le Mac
+  if ! verifier_dossier "$dst/sauvegardes/$s" "$dst/objets"; then
+    [ -d "$dst" ] || { disque_parti "$dst"; return $?; }
+    echo "DISQUE: la copie sur le disque n'a pas passé la vérification"; return 1
+  fi
+  local now; now=$(maintenant)
+  ecrire_etat disque_derniere_verifiee "$now"; ecrire_etat disque_derniere_id "$s"
+  { echo "Copie Heavent vérifiée le $(date_lisible "$now") : sauvegarde $s"; echo "Restauration sans le Mac : voir LISEZMOI.md (clé de secours + phrase secrète)."; } > "$dst/ETAT-DISQUE.txt"
+  retention "$dst" "$s"
+  log "Copie sur le disque externe VÉRIFIÉE ($s)."
+  return 0
+}
+disque_parti() { # le disque a été débranché pendant la copie : rien d'abîmé, reprise au prochain branchement
+  if [ -d "$1" ]; then echo "DISQUE: erreur d'écriture sur le disque externe"; return 1; fi
+  log "Disque externe retiré pendant la copie : la copie précédente reste intacte, reprise au prochain branchement."
+  return 7
+}
+
+# Après chaque passage : copie sur le disque s'il est branché (silencieux s'il est absent)
+passage_disque() {
+  [ -n "${DISQUE_UUID:-}" ] || return 0
+  local r out; out="$RACINE/.sortie-disque"
+  copier_sur_disque > "$out" 2>&1; r=$?
+  case $r in
+    0) notifier "Sauvegarde Heavent" "Copie sur le disque externe vérifiée. Tu peux l'éjecter et le ranger loin du Mac."; ecrire_etat disque_dernier_resultat "OK" ;;
+    5) disque_rappel ;;
+    6|7) : ;;
+    *) local m; m=$(grep -E '^(DISQUE|VERIFICATION): ' "$out" | head -1); log "ÉCHEC disque : ${m:-voir journal}"; ecrire_etat disque_dernier_resultat "${m:-échec}"
+       notifier "⚠️ Sauvegarde Heavent" "${m:-La copie sur le disque externe a échoué.}" ;;
+  esac
+  return 0
+}
+disque_rappel() { # une fois par semaine si la dernière copie externe a plus de 7 jours
+  local d r now; now=$(maintenant); d=$(lire_etat disque_derniere_verifiee); r=$(lire_etat disque_dernier_rappel)
+  if { [ -z "$d" ] || [ $(( now - d )) -ge 604800 ]; } && { [ -z "$r" ] || [ $(( now - r )) -ge 604800 ]; }; then
+    notifier "Sauvegarde Heavent" "Pense à brancher le disque externe pour mettre à jour la deuxième copie."; ecrire_etat disque_dernier_rappel "$now"
+  fi
 }
 
 # ---------- état visible ----------
@@ -376,10 +487,18 @@ ecrire_resume_etat() {
     echo
     if [ -n "$v" ]; then
       age_h=$(( (now - v) / 3600 ))
-      echo "Dernière sauvegarde VÉRIFIÉE : $(date_lisible "$v") (il y a $age_h h) — $(lire_etat derniere_id)"
+      echo "Mac : dernière sauvegarde VÉRIFIÉE le $(date_lisible "$v") (il y a $age_h h) — $(lire_etat derniere_id)"
       [ $age_h -ge $ALERTE_HEURES ] && echo "⚠️  ATTENTION : aucune sauvegarde vérifiée depuis plus de $ALERTE_HEURES h."
     else echo "⚠️  Aucune sauvegarde vérifiée pour l'instant."; fi
     t=$(lire_etat derniere_tentative); [ -n "$t" ] && echo "Dernière tentative : $(date_lisible "$t") — $(lire_etat dernier_resultat)"
+    if [ -n "${DISQUE_UUID:-}" ]; then
+      t=$(lire_etat disque_derniere_verifiee)
+      if [ -n "$t" ]; then echo "Disque externe : dernière copie VÉRIFIÉE le $(date_lisible "$t") (il y a $(( (now - t) / 86400 )) j) — $(lire_etat disque_derniere_id)"
+        [ $(( now - t )) -ge 604800 ] && echo "⚠️  Copie externe de plus de 7 jours : branche le disque."
+      else echo "⚠️  Disque externe : aucune copie vérifiée pour l'instant."; fi
+      [ -n "$(lire_etat disque_dernier_resultat)" ] && [ "$(lire_etat disque_dernier_resultat)" != OK ] && echo "Dernier essai sur le disque : $(lire_etat disque_dernier_resultat)"
+      trouver_disque >/dev/null && echo "Disque externe : branché." || echo "Disque externe : non branché."
+    else echo "Disque externe : non configuré."; fi
     echo "Sauvegardes conservées : $(ls "$RACINE/sauvegardes" 2>/dev/null | wc -l | tr -d ' ')"
     echo "Espace utilisé : $total ($croissance) ; libre sur le disque : $libre"
     echo
@@ -395,7 +514,7 @@ lancer() { # $1 = 1 pour forcer
   verrou; trap nettoyer EXIT; trap 'exit 130' INT TERM
   now=$(maintenant); v=$(lire_etat derniere_verifiee)
   if [ "$forcer" = 0 ] && [ -f "$RACINE/.forcer" ]; then forcer=1; rm -f "$RACINE/.forcer"; log "Demande de sauvegarde immédiate (essai de la tâche automatique)."; fi
-  if [ "$forcer" = 0 ] && [ -n "$v" ] && [ $(( now - v )) -lt $(( SEUIL_HEURES * 3600 )) ]; then ecrire_resume_etat; exit 0; fi
+  if [ "$forcer" = 0 ] && [ -n "$v" ] && [ $(( now - v )) -lt $(( SEUIL_HEURES * 3600 )) ]; then passage_disque; ecrire_resume_etat; exit 0; fi
   local sortie tty=0; sortie="$RACINE/.derniere-sortie"; [ -t 1 ] && tty=1
   if [ $MAC = 1 ]; then caffeinate -i -w $$ & fi   # empêche la mise en veille automatique pendant la copie
   sauvegarder > "$sortie" 2>&1; r=$?
@@ -415,6 +534,7 @@ lancer() { # $1 = 1 pour forcer
       alerte "${message:-La sauvegarde a échoué.}"
     fi
   fi
+  passage_disque
   ecrire_resume_etat
   if [ $tty = 1 ]; then grep -h "" "$JOURNAL" | grep -F "$(date '+%Y-%m-%d')" | tail -25; echo; cat "$RACINE/ETAT.txt"; fi
   exit $r
@@ -442,6 +562,53 @@ case "${1:-}" in
     apres=$(lire_etat derniere_verifiee)
     grep "tâche automatique" "$JOURNAL" | tail -1
     if [ -n "$apres" ] && [ "$apres" != "$avant" ]; then echo "✅ La tâche automatique a lu le Trousseau, sauvegardé et vérifié."; else echo "❌ Échec dans le contexte de la tâche : $(lire_etat dernier_resultat)"; exit 1; fi ;;
+  disque-choisir)
+    # Liste les disques branchés et enregistre celui que Yassin choisit. Ne formate rien, ne supprime rien :
+    # crée seulement le dossier « Heavent-Sauvegardes » et un petit fichier repère.
+    charger_config; i=0; liste=""
+    for v in "$VOLUMES"/*; do
+      [ -d "$v" ] && [ ! -L "$v" ] || continue; case "$(basename "$v")" in Recovery|"Macintosh HD"*|com.apple.*) continue;; esac
+      u=$(volume_uuid "$v"); [ -n "$u" ] || continue; i=$((i + 1)); liste="$liste$i|$v|$u
+"
+      sys=$( [ $MAC = 1 ] && [ -z "${HS_VOLUMES:-}" ] && diskutil info "$v" | awk -F': *' '/File System Personality/ { print $2; exit }' || echo "essai")
+      ecrit=$( ( : > "$v/.heavent-essai" ) 2>/dev/null && rm -f "$v/.heavent-essai" && echo "écriture possible" || echo "LECTURE SEULE ou accès refusé")
+      printf '  %s) %s — %s — %s libres — %s\n' "$i" "$(basename "$v")" "$sys" "$(df -k "$v" | awk 'NR==2 { printf "%.0f Go", $4 / 1048576 }')" "$ecrit"
+    done
+    [ $i -gt 0 ] || { echo "Aucun disque externe branché. Branche-le, attends qu'il apparaisse dans le Finder, puis recommence."; exit 1; }
+    if [ -n "${2:-}" ]; then n="$2"; else printf 'Numéro du disque à utiliser : '; read -r n; fi
+    ligne=$(printf '%s' "$liste" | grep "^$n|") || { echo "Choix invalide."; exit 1; }
+    v=$(echo "$ligne" | cut -d'|' -f2); u=$(echo "$ligne" | cut -d'|' -f3)
+    mkdir -p "$v/$DOSSIER_DISQUE" && echo "$u" > "$v/$DOSSIER_DISQUE/.heavent-disque" || { echo "Écriture impossible sur ce disque (lecture seule ou accès refusé)."; exit 1; }
+    grep -v '^DISQUE_UUID=' "$CONFIG" > "$CONFIG.tmp"; echo "DISQUE_UUID=$u" >> "$CONFIG.tmp"; mv "$CONFIG.tmp" "$CONFIG"; chmod 600 "$CONFIG"
+    echo "✅ Disque « $(basename "$v") » enregistré (identifiant $u). Dossier dédié : $v/$DOSSIER_DISQUE"
+    echo "   Aucun autre fichier du disque n'a été touché." ;;
+  disque)
+    # Copie maintenant la dernière sauvegarde vérifiée sur le disque, puis la vérifie à partir du disque seul
+    charger_config; verrou; trap nettoyer EXIT
+    if [ $MAC = 1 ]; then caffeinate -i -w $$ & fi
+    copier_sur_disque forcer; r=$?
+    case $r in
+      0) echo "✅ Copie sur le disque vérifiée (restaurée à l'écart à partir du disque seul). Tu peux éjecter le disque."; ecrire_etat disque_dernier_resultat OK ;;
+      5) echo "Disque non branché ou non reconnu (lance d'abord : heavent-sauvegarde disque-choisir)." ;;
+      7) echo "Disque retiré pendant la copie : rien d'abîmé, rebranche-le et recommence." ;;
+      *) echo "❌ Copie sur le disque en échec (voir le journal)." ;;
+    esac
+    ecrire_resume_etat; exit $r ;;
+  essai-restauration-disque)
+    # Simule la perte du Mac : restaure la dernière copie du disque avec la CLÉ DE SECOURS (phrase secrète),
+    # sans le Trousseau et sans le magasin du Mac. Travail temporaire effacé à la fin.
+    charger_config; verrou; trap nettoyer EXIT
+    dst=$(trouver_disque) || { echo "Disque non branché ou non reconnu."; exit 5; }
+    cs="${2:-$HOME/Desktop/Heavent-cle-de-secours.age}"
+    [ -f "$cs" ] || [ -n "${HEAVENT_CLE_FICHIER:-}" ] || { echo "Clé de secours introuvable : $cs (donne son chemin en 2e argument)."; exit 1; }
+    s=$(ls "$dst/sauvegardes" | grep -v '^\.' | sort | tail -1); [ -n "$s" ] || { echo "Aucune copie sur le disque."; exit 1; }
+    echo "Restauration d'essai de la copie $s du disque. Tape la phrase secrète de la clé de secours quand elle est demandée."
+    log "=== Essai de restauration depuis le disque seul avec la clé de secours : $s"
+    k="${HEAVENT_TEMP:-$RACINE}/.cle-essai"; trap 'rm -f "$k"; nettoyer' EXIT
+    if [ -n "${HEAVENT_CLE_FICHIER:-}" ]; then grep AGE-SECRET-KEY "$HEAVENT_CLE_FICHIER" > "$k"   # tests automatiques
+    else HEAVENT_CLE_SECOURS="$cs" secret cle-age > "$k" || { rm -f "$k"; echo "Phrase secrète incorrecte ou clé illisible."; exit 1; }; fi
+    if HEAVENT_CLE_SECOURS="" HEAVENT_CLE_FICHIER="$k" verifier_dossier "$dst/sauvegardes/$s" "$dst/objets"; then rm -f "$k"; echo "✅ Copie du disque restaurable sans le Mac : déchiffrée avec la clé de secours, restaurée à l'écart, identique."
+    else rm -f "$k"; echo "❌ Restauration d'essai en échec (voir le journal)."; exit 1; fi ;;
   statut) charger_config; ecrire_resume_etat; cat "$RACINE/ETAT.txt" ;;
   liste) charger_config; for s in $(ls "$RACINE/sauvegardes" | sort); do echo "$s — $(sed -n 2p "$RACINE/sauvegardes/$s/RESUME.txt" 2>/dev/null)"; done ;;
   verifier)
@@ -462,5 +629,5 @@ case "${1:-}" in
     charger_config; out="$HOME/Desktop/Heavent-cle-de-secours.age"
     echo "Choisis une phrase secrète longue (tu la noteras sur papier, séparément du fichier)."
     secret cle-age | age -p -o "$out" && echo "Copie de secours créée : $out — copie-la sur une clé USB ou un support hors du Mac, puis supprime-la du Bureau." ;;
-  *) sed -n '2,15p' "$0"; exit 1 ;;
+  *) sed -n '2,19p' "$0"; exit 1 ;;
 esac

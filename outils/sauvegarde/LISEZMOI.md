@@ -27,6 +27,16 @@ Ensuite, toujours dans le Terminal :
 
 **Copie de secours de la clé** : le fichier `Heavent-cle-de-secours.age` apparaît sur ton Bureau. Copie-le sur une clé USB ou sur un support **hors du Mac**, puis supprime-le du Bureau. Note la phrase secrète **sur papier**, rangée ailleurs que le fichier. Sans la clé, les sauvegardes sont illisibles, même pour toi.
 
+## Deuxième copie : le disque externe de 2 To
+- **Choisir le disque une fois** : branche-le, attends qu'il apparaisse dans le Finder, puis lance `heavent-sauvegarde disque-choisir`. Le script liste les disques branchés (nom, système de fichiers, place libre, écriture possible) et tu tapes le numéro du tien. Il est reconnu ensuite par son **identifiant unique**, pas par son nom. Le seul changement sur le disque est un dossier **`Heavent-Sauvegardes`** : rien n'est formaté et aucun autre fichier n'est lu ni modifié.
+- **Copie automatique** : dès que le disque est branché, au plus tard 15 minutes après, la **dernière sauvegarde vérifiée** du Mac y est copiée avec **tous les fichiers dont elle dépend**, les outils et la configuration (sans aucun secret). La copie est ensuite **restaurée à l'écart à partir du disque seul** avant d'être déclarée réussie.
+- **Disque absent** : rien ne change sur le Mac. La copie est rattrapée au prochain branchement. Si le disque n'a pas été branché depuis 7 jours, une notification te le rappelle une fois par semaine.
+- **Interruption** (disque arraché, Mac éteint) : la copie en cours est abandonnée, la précédente reste intacte et utilisable. Les restes temporaires sont nettoyés au branchement suivant. La dernière copie vérifiée sur le disque n'est jamais supprimée.
+- **Quand le débrancher** : après la notification « Copie sur le disque externe vérifiée. Tu peux l'éjecter », ou quand `ETAT.txt` affiche une date de copie externe récente. Éjecte-le toujours proprement : clic droit sur le disque → *Éjecter*.
+- **Range-le loin du Mac** : dans une autre pièce, ou mieux un autre lieu. Sinon, un vol, un incendie ou un dégât des eaux emporterait les deux copies.
+- **Restaurer sans le Mac** : il faut le disque, le fichier **clé de secours** et la **phrase secrète notée sur papier**. Sur un autre Mac équipé de PostgreSQL et d'age, la commande `essai-restauration-disque` du dossier `outils` du disque refait exactement le contrôle. La vraie restauration se fait avec Claude.
+- **Clé de secours** : le fichier `Heavent-cle-de-secours.age`, protégé par ta phrase secrète, peut aussi être copié dans le dossier `Heavent-Sauvegardes` du disque, à côté des sauvegardes. Ainsi, le disque et la phrase sur papier suffisent pour tout restaurer. Garde le papier **ailleurs** que le disque.
+
 ## Quand la sauvegarde s'exécute
 - macOS lance une vérification **toutes les 15 minutes**, à l'ouverture de session et au réveil du Mac. Elle ne sauvegarde vraiment que si la dernière sauvegarde vérifiée date de plus de 22 h : en pratique, **une fois par jour**, dès que le Mac est allumé et connecté.
 - **Mac éteint ou en veille** : rien ne se passe. La sauvegarde est rattrapée au réveil ou à la prochaine ouverture de session, une seule fois.
@@ -34,7 +44,7 @@ Ensuite, toujours dans le Terminal :
 - **Interruption en pleine copie** (extinction, couvercle fermé) : la copie inachevée est effacée et tout recommence au passage suivant. Pendant une copie, le Mac ne se met pas en veille de lui-même.
 
 ## Voir où on en est
-- Le fichier **`~/Sauvegardes-Heavent/ETAT.txt`** indique la date de la dernière sauvegarde **vérifiée**, la dernière tentative, le nombre de sauvegardes gardées, l'espace utilisé, sa croissance sur 30 jours et l'espace libre.
+- Le fichier **`~/Sauvegardes-Heavent/ETAT.txt`** indique séparément la dernière sauvegarde **vérifiée sur le Mac** et la dernière **copie vérifiée sur le disque externe** (disque branché ou non), la dernière tentative, le nombre de sauvegardes gardées, l'espace utilisé, sa croissance sur 30 jours et l'espace libre.
 - La commande `heavent-sauvegarde statut` affiche les mêmes informations.
 - Une **notification macOS** apparaît en cas d'échec, ou si aucune sauvegarde n'a été vérifiée depuis 36 h. Il y en a au plus une toutes les 6 h. Une autre notification signale le retour à la normale.
 - Le journal détaillé est dans `~/Sauvegardes-Heavent/journal/`. Il ne contient aucun secret ni aucune donnée.
@@ -65,8 +75,12 @@ L'espace estimé est d'environ 110 Mo au départ, puis à peu près 100 Mo de pl
 - [ ] **Redémarrage** : lance `heavent-sauvegarde rendre-due`, puis redémarre le Mac. Attendu : une sauvegarde après l'ouverture de session.
 - [ ] **Notification** : la notification d'échec du test réseau s'est-elle affichée ? Sinon : Réglages Système → Notifications → *Éditeur de script* → autoriser.
 - [ ] `cle-secours` : la copie de la clé est rangée hors du Mac et la phrase secrète est notée sur papier.
+- [ ] `disque-choisir` : le bon disque est enregistré.
+- [ ] `disque` : « Copie sur le disque vérifiée ».
+- [ ] **Copie automatique au branchement** : éjecte le disque, lance `heavent-sauvegarde rendre-due`, attends la sauvegarde suivante (≤ 15 min), puis rebranche le disque. Attendu : la notification de copie vérifiée. Si macOS demande l'accès au disque pour « bash », accepte. Si rien ne se passe et que le journal indique « accès refusé par macOS », préviens Claude : la copie reste possible à la main avec `heavent-sauvegarde disque`.
+- [ ] `essai-restauration-disque` : « restaurable sans le Mac » avec la clé de secours et la phrase secrète.
 
 ## Limites (à connaître)
 - Il ne se passe rien si le Mac reste éteint ou hors ligne. Après 5 jours sans Mac, jusqu'à 5 jours de modifications peuvent être perdus.
-- Tant qu'il n'y a pas de **deuxième copie hors du Mac**, une perte ou une panne du Mac fait perdre les sauvegardes. Une deuxième destination pourra être ajoutée plus tard : disque externe, clé USB…
+- La copie externe n'est à jour qu'au dernier branchement du disque : branche-le au moins une fois par semaine.
 - La restauration ne remet pas en place automatiquement les **secrets des fonctions serveur**, les **réglages de connexion Supabase** ni la **configuration Meta**. Ils sont listés dans `docs/etat-avancement.md` du projet.

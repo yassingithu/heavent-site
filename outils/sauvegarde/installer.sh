@@ -64,7 +64,7 @@ PATH=/opt/homebrew/bin:\$PATH
 C
 chmod 600 "$RACINE/config"
 
-etape "6/7 Tâche automatique (toutes les 15 min, à l'ouverture de session et au réveil)"
+etape "6/7 Tâche automatique (toutes les 15 min, à l'ouverture de session, au réveil et au branchement d'un disque)"
 mkdir -p "$HOME/Library/LaunchAgents"
 cat > "$AGENT" <<P
 <?xml version="1.0" encoding="UTF-8"?>
@@ -74,6 +74,7 @@ cat > "$AGENT" <<P
   <key>ProgramArguments</key><array><string>/bin/bash</string><string>$RACINE/outils/heavent-sauvegarde</string><string>lancer</string></array>
   <key>StartInterval</key><integer>900</integer>
   <key>RunAtLoad</key><true/>
+  <key>StartOnMount</key><true/>
   <key>LowPriorityIO</key><true/>
   <key>EnvironmentVariables</key><dict><key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string></dict>
   <key>StandardOutPath</key><string>$RACINE/journal/tache.log</string>
