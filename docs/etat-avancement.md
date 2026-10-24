@@ -17,10 +17,10 @@
 | # | Lot | État | Modèle conseillé |
 |---|-----|------|------------------|
 | 0 | Audit initial | fait (24/10) | — |
-| 1 | Sauvegarde et restauration | conception « locale sur le Mac » proposée le 25/10, en attente d'accord | Opus pour la conception, Sonnet possible pour les scripts |
-| 2 | Champs CNSS (employeur + salarié) | code et tests faits sur la branche lot-cnss (25/10), NON déployé ; ordre : sauvegarde vérifiée → migration → site | Sonnet |
+| 1 | Sauvegarde et restauration | outil prêt et testé (15/15 sur fausse production, 25/10) ; à installer par Yassin sur le Mac (outils/sauvegarde/LISEZMOI.md) | Opus pour la conception, Sonnet possible pour les scripts |
+| 2 | Champs CNSS (employeur + salarié) | branche lot-cnss : validation bloquée si incomplet, paiement toujours enregistrable, « Validée » corrigé côté crew ; NON déployé ; ordre : sauvegarde vérifiée → migration → site | Sonnet |
 | 3 | Dates et fuseaux (conversions et planification seulement) | à faire | Sonnet avec relecture |
-| 4 | Navigation et tableau de bord « À traiter » | à faire | Sonnet |
+| 4 | Navigation et tableau de bord « À traiter » | à faire — exigences détaillées ci-dessous (25/10) | Sonnet, relecture visuelle |
 | 5 | Remplacements (avec état « en attente de validation ») | à faire | Sonnet |
 | 6 | Dépenses, justificatifs, lecture automatique, export Excel + ZIP | à faire (indépendant de la paie) | Sonnet ; banc d'essai OCR d'abord |
 | 7 | Paie (taux datés, versions, IR) | bloqué : statut des personnes, vérification des règles de l'exercice | Opus |
@@ -60,5 +60,25 @@
 - Ordre de mise en production : 1) première sauvegarde vérifiée ; 2) migration ; 3) site. Jamais le site avant la migration.
 - Remarque hors lot : StaffDashboard affiche « Validée » pour le statut « validee », jamais écrit (l'admin écrit « valide ») ; à corriger dans un lot ultérieur.
 
+## Lot 1 — outil livré (25/10)
+- Code : outils/sauvegarde/ (heavent-sauvegarde, references.sql, installer.sh, LISEZMOI.md) ; essais : sudo bash tests/sauvegarde/essai.sh (15 scénarios, fausse production locale).
+- Mac : Homebrew + PostgreSQL 18.3 déjà installés (sans pg_cron/pg_net) ; seul « age » à installer. Copie déposée dans ~/Downloads/elegant-heavent-web-main/sauvegarde-heavent/.
+- Pas encore démontré sur le Mac : première sauvegarde réelle, accès Trousseau depuis la tâche, veille, redémarrage, coupure réseau, notifications (cases à cocher dans LISEZMOI.md).
+- Mot de passe de la base : NE PAS réinitialiser sans accord (règle « aucun secret régénéré »).
+
+## Lot 2 — paiement et validation (proposition, non appliquée)
+- Aujourd'hui fiches_paie.statut mélange deux notions : « valide » (bulletin émis) et « paye » (argent versé). Marquer « Payée » n'enregistre ni date, ni montant, ni auteur, et laisse croire que le bulletin a été validé.
+- Proposition : garder statut pour le cycle du bulletin (en_attente → valide) et ajouter une table paiements_paie (fiche_id, montant, date_paiement, mode, référence, note, enregistre_par = auth.email(), enregistre_le), insertion par l'admin seulement, aucune modification ni suppression (correction = ligne d'annulation tracée). Statut « paye » existant conservé en lecture pour l'historique.
+- En attendant : seule la validation est bloquée quand il manque un n° CNSS ; « Payée » reste possible ; le PDF reste un aperçu tant que le bulletin est incomplet.
+
+## Lot 4 — exigences de Yassin (25/10), tous supports
+- Ordinateur et appli Mac : navigation latérale à quelques catégories, rubrique active visible, menu réductible (icônes + infobulles), adaptation aux fenêtres étroites.
+- iPhone : barre inférieure Accueil · Événements · Équipe · Plus ; le reste dans « Plus » ; actions fréquentes accessibles.
+- Partout : aucune fonction ni permission perdue ; pas de doublons ni d'intitulés ambigus ; en-têtes et blocs de bienvenue moins hauts ; « À traiter » et prochains événements en avant ; indicateurs compacts et lisibles ; statut des notifications et bouton de test déplacés dans les paramètres ; messages familiaux et personnalisations intacts ; dates contradictoires corrigées après vérification des sources et fuseaux ; aucun élément fixe ne masque le contenu.
+- Identité crème / anthracite / doré ; amélioration esthétique visible, pas seulement un déplacement de boutons.
+- Appli Mac (desktop/main.js) : charge le SITE EN LIGNE (https://heaventagency.com) dans une fenêtre Electron ; une mise en ligne du site s'y voit sans réinstaller le DMG. Seuls la coque (menu, page hors ligne offline.html, règles d'ouverture des liens) demandent une nouvelle compilation ; la vérifier avant diffusion.
+- Prévisualisations à fournir : téléphone, navigateur ordinateur, appli Mac (si possible) ; signaler les supports non testés.
+- Aucune règle métier, donnée ou connexion modifiée par cette refonte.
+
 ## Prochaine action
-Accord de Yassin sur la sauvegarde locale (questions du 25/10), puis écriture des scripts du lot 1.
+Yassin installe la sauvegarde sur le Mac et coche les essais ; Claude relit ETAT.txt et le journal. Puis décision sur la mise en production du lot CNSS et sur la proposition « paiements ».

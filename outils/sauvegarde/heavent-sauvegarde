@@ -1,0 +1,466 @@
+#!/bin/bash
+# Sauvegarde locale chiffrée de Heavent (base Supabase + fichiers stockés), avec vérification par restauration isolée.
+#
+#   heavent-sauvegarde lancer        sauvegarde si la dernière réussie a plus de 22 h (appelé toutes les 15 min par macOS)
+#   heavent-sauvegarde forcer        sauvegarde complète tout de suite
+#   heavent-sauvegarde statut        date de la dernière sauvegarde vérifiée, espace utilisé, alertes
+#   heavent-sauvegarde verifier [N]  redéchiffre et restaure à nouveau la sauvegarde N (par défaut : la dernière)
+#   heavent-sauvegarde liste         sauvegardes conservées
+#   heavent-sauvegarde extraire N D  déchiffre la sauvegarde N dans le dossier D (pour une vraie restauration)
+#   heavent-sauvegarde cle-secours   crée une copie de la clé de déchiffrement protégée par une phrase secrète
+#
+# Garanties : aucune écriture en production (lecture seule, transaction en lecture seule) ; la restauration de contrôle
+# se fait dans un Postgres temporaire sans réseau ni extensions d'appel externe ; la dernière sauvegarde vérifiée
+# n'est jamais supprimée ; aucun secret n'est écrit dans un fichier en clair, une commande ou le journal.
+# Compatible bash 3.2 (macOS). Les mêmes commandes tournent sous Linux pour les tests automatiques.
+
+set -u
+umask 077
+export LC_ALL=C
+
+RACINE="${HEAVENT_SAUVEGARDE_RACINE:-$HOME/Sauvegardes-Heavent}"
+OUTILS="$(cd "$(dirname "$0")" && pwd)"
+CONFIG="$RACINE/config"
+SEUIL_HEURES=22          # une sauvegarde par jour : on relance si la dernière vérifiée a plus de 22 h
+ALERTE_HEURES=36         # au-delà, notification « pas de sauvegarde récente »
+JOURS_QUOTIDIENS=30      # toutes les sauvegardes des 30 derniers jours
+MOIS_MENSUELS=12         # puis une par mois sur 12 mois
+LIBRE_MIN_KO=$((5 * 1024 * 1024))   # 5 Go libres minimum sur le disque
+
+MAC=0; [ "$(uname -s)" = "Darwin" ] && MAC=1
+
+# ---------- utilitaires ----------
+maintenant() { date +%s; }
+date_lisible() { if [ $MAC = 1 ]; then date -r "$1" "+%d/%m/%Y %H:%M"; else date -d "@$1" "+%d/%m/%Y %H:%M"; fi; }
+sha256() { if command -v shasum >/dev/null 2>&1; then shasum -a 256 | cut -d' ' -f1; else sha256sum | cut -d' ' -f1; fi; }
+md5f() { if [ $MAC = 1 ]; then md5 -q "$1"; else md5sum "$1" | cut -d' ' -f1; fi; }
+taille() { wc -c < "$1" | tr -d ' '; }
+mo() { echo "$1" | awk '{ printf "%.1f Mo", $1 / 1048576 }'; }
+JOURNAL=""
+log() {
+  local l; l="$(date '+%Y-%m-%d %H:%M:%S') $*"
+  [ -n "$JOURNAL" ] && echo "$l" >> "$JOURNAL"
+  [ -t 1 ] && echo "$*"
+  return 0
+}
+notifier() { # titre, message — jamais de secret
+  log "NOTIFICATION : $1 — $2"
+  if [ $MAC = 1 ]; then osascript -e "display notification \"$2\" with title \"$1\" sound name \"Submarine\"" >/dev/null 2>&1 || true; fi
+}
+lire_etat() { grep "^$1=" "$RACINE/.etat" 2>/dev/null | tail -1 | cut -d= -f2-; }
+ecrire_etat() { # cle valeur
+  touch "$RACINE/.etat"; grep -v "^$1=" "$RACINE/.etat" > "$RACINE/.etat.tmp" || true
+  echo "$1=$2" >> "$RACINE/.etat.tmp"; mv "$RACINE/.etat.tmp" "$RACINE/.etat"
+}
+
+# Secrets : Trousseau macOS (saisis par Yassin, jamais affichés). Sous Linux : variables d'environnement (tests seulement).
+secret() {
+  if [ $MAC = 1 ]; then security find-generic-password -a heavent -s "heavent-sauvegarde-$1" -w 2>/dev/null
+  else eval "printf '%s' \"\${HS_SECRET_$(echo "$1" | tr '-' '_')-}\""; fi
+}
+
+charger_config() {
+  [ -f "$CONFIG" ] || { echo "Configuration absente : $CONFIG (lancer l'installation)"; exit 2; }
+  # shellcheck disable=SC1090
+  . "$CONFIG"
+  PATH="$BIN_PG:$PATH"; export PATH
+  for o in pg_dump pg_dumpall pg_restore psql initdb pg_ctl age curl; do
+    command -v "$o" >/dev/null 2>&1 || { echo "Outil manquant : $o"; exit 2; }
+  done
+  mkdir -p "$RACINE/journal" "$RACINE/sauvegardes" "$RACINE/objets" "$RACINE/echecs"
+  JOURNAL="$RACINE/journal/$(date +%Y-%m).log"
+}
+
+verrou() {
+  if ! mkdir "$RACINE/.verrou" 2>/dev/null; then
+    local p; p=$(cat "$RACINE/.verrou/pid" 2>/dev/null)
+    if [ -n "$p" ] && kill -0 "$p" 2>/dev/null; then
+      log "Une sauvegarde est déjà en cours (processus $p)."
+      [ "${MODE:-}" = lancer ] && exit 0
+      echo "Une sauvegarde est déjà en cours (processus $p) : réessaie dans quelques minutes."; exit 4
+    fi
+    log "Verrou abandonné par un processus arrêté (extinction, redémarrage) : repris."
+    rm -rf "$RACINE/.verrou"; mkdir "$RACINE/.verrou"
+  fi
+  echo $$ > "$RACINE/.verrou/pid"
+  # Restes d'une sauvegarde interrompue brutalement : Postgres de contrôle arrêté, copies déchiffrées effacées
+  local d
+  for d in "$RACINE"/en-cours-*/tmp-verif/pg/d "$RACINE"/sauvegardes/*/tmp-verif/pg/d; do
+    [ -d "$d" ] && pg_ctl -D "$d" stop -m immediate >/dev/null 2>&1
+  done
+  for d in "$RACINE"/en-cours-* "$RACINE"/sauvegardes/*/tmp-verif; do
+    [ -e "$d" ] && { rm -rf "$d"; log "Restes d'une opération interrompue effacés : $(basename "$d")."; }
+  done
+  return 0
+}
+
+TRAVAIL=""; PG_TEST_DIR=""; SNAP_PID=""; VERIF=""
+nettoyer() {
+  [ -n "$VERIF" ] && rm -rf "$VERIF"   # copie déchiffrée de contrôle : jamais laissée sur le disque
+  [ -n "$SNAP_PID" ] && kill "$SNAP_PID" 2>/dev/null
+  if [ -n "$PG_TEST_DIR" ] && [ -d "$PG_TEST_DIR" ]; then pg_ctl -D "$PG_TEST_DIR/d" stop -m immediate >/dev/null 2>&1; rm -rf "$PG_TEST_DIR"; fi
+  [ -n "$TRAVAIL" ] && rm -rf "$TRAVAIL/tmp"
+  rm -rf "$RACINE/.verrou"
+}
+
+# Fichier de mot de passe temporaire (jamais dans la ligne de commande)
+preparer_acces() {
+  local mdp cle
+  mdp="$(secret base)"; cle="$(secret fichiers)"
+  [ -n "$mdp" ] || { echo "ACCES: mot de passe de la base introuvable dans le Trousseau"; return 1; }
+  [ -n "$cle" ] || { echo "ACCES: clé d'accès aux fichiers introuvable dans le Trousseau"; return 1; }
+  printf '%s:%s:%s:%s:%s\n' "$PG_HOTE" "$PG_PORT" "$PG_BASE" "$PG_UTIL" "$(printf '%s' "$mdp" | sed 's/\\/\\\\/g; s/:/\\:/g')" > "$TRAVAIL/tmp/pgpass"
+  # Clé « service_role » (jeton) : en-têtes Authorization + apikey ; nouvelle clé secrète « sb_secret_… » : apikey seul
+  case "$cle" in
+    sb_secret_*) printf 'header = "apikey: %s"\n' "$cle" > "$TRAVAIL/tmp/curl-auth" ;;
+    *) printf 'header = "Authorization: Bearer %s"\nheader = "apikey: %s"\n' "$cle" "$cle" > "$TRAVAIL/tmp/curl-auth" ;;
+  esac
+  export PGPASSFILE="$TRAVAIL/tmp/pgpass" PGSSLMODE="${PGSSLMODE:-require}" PGCONNECT_TIMEOUT=20 PGAPPNAME=heavent-sauvegarde
+}
+CONN() { echo "host=$PG_HOTE port=$PG_PORT dbname=$PG_BASE user=$PG_UTIL"; }
+
+# ---------- sauvegarde ----------
+sauvegarder() {
+  local debut id dossier snap ref nb_tables
+  debut=$(maintenant); id=$(date +%Y-%m-%d_%H%M%S)
+  TRAVAIL="$RACINE/en-cours-$id"; mkdir -p "$TRAVAIL/tmp"; dossier="$TRAVAIL"
+  local contexte="Terminal"; [ "${XPC_SERVICE_NAME:-}" = com.heavent.sauvegarde ] && contexte="tâche automatique macOS"
+  log "=== Sauvegarde $id — lancée par : $contexte ; démarrage du Mac : $(demarrage_mac) ; dernier réveil : $(dernier_reveil)"
+
+  # Espace disque
+  local libre; libre=$(df -k "$RACINE" | awk 'NR==2 { print $4 }')
+  if [ "$libre" -lt "$LIBRE_MIN_KO" ]; then echo "ESPACE: moins de 5 Go libres sur le disque"; return 1; fi
+
+  # Réseau : sans Internet, on n'essaie pas (nouvel essai dans une heure, sauvegarde précédente intacte)
+  local code; code=$(curl -s -o /dev/null -m 15 -w '%{http_code}' "$URL_PROJET/auth/v1/health" 2>/dev/null)
+  if [ "$code" = "000" ] || [ -z "$code" ]; then echo "RESEAU: projet injoignable (pas d'Internet ?)"; return 3; fi
+
+  preparer_acces || return 1
+
+  # 1. Instantané : une transaction en lecture seule garde une vue figée de la production pendant toute la copie
+  mkfifo "$TRAVAIL/tmp/ctl"
+  psql "$(CONN)" -X -q -At -v ON_ERROR_STOP=1 < "$TRAVAIL/tmp/ctl" > "$TRAVAIL/tmp/snap.out" 2> "$TRAVAIL/tmp/snap.err" &
+  SNAP_PID=$!
+  exec 3> "$TRAVAIL/tmp/ctl"
+  echo "begin transaction isolation level repeatable read read only; select pg_export_snapshot();" >&3
+  local i=0; snap=""
+  while [ $i -lt 60 ] && [ -z "$snap" ]; do sleep 1; i=$((i + 1)); snap=$(grep -E '^[0-9A-F]+-[0-9A-F]+-[0-9]+$' "$TRAVAIL/tmp/snap.out" | head -1); kill -0 $SNAP_PID 2>/dev/null || break; done
+  if [ -z "$snap" ]; then echo "BASE: connexion impossible ($(head -c 300 "$TRAVAIL/tmp/snap.err" | tr '\n' ' '))"; exec 3>&-; return 1; fi
+  log "Instantané de la production ouvert."
+  [ -n "${HS_TEST_APRES_INSTANTANE:-}" ] && [ $MAC = 0 ] && eval "$HS_TEST_APRES_INSTANTANE"   # tests automatiques (Linux) uniquement
+
+  # 2. Base : rôles (sans mots de passe), structure + données, tâches planifiées, extensions
+  pg_dumpall -d "$(CONN)" --roles-only --no-role-passwords -f "$TRAVAIL/tmp/roles.sql" 2> "$TRAVAIL/tmp/err" \
+    || { echo "BASE: export des rôles impossible ($(head -c 300 "$TRAVAIL/tmp/err" | tr "\n" " "))"; exec 3>&-; return 1; }
+  pg_dump -d "$(CONN)" --snapshot="$snap" -Fc -Z 6 -n public -n auth -n storage -n supabase_migrations \
+    -f "$TRAVAIL/tmp/base.dump" 2> "$TRAVAIL/tmp/err" \
+    || { echo "BASE: export impossible ($(head -c 400 "$TRAVAIL/tmp/err" | tr "\n" " "))"; exec 3>&-; return 1; }
+  # 3. Références (dans le MÊME instantané) + liste des fichiers stockés à cet instant
+  {
+    echo "begin transaction isolation level repeatable read read only;"
+    echo "set transaction snapshot '$snap';"
+    echo "\\copy (select jobname, schedule, command, active from cron.job order by jobname) to '$TRAVAIL/tmp/cron.csv' with (format csv, header)"
+    echo "\\copy (select extname, extversion, n.nspname from pg_extension e join pg_namespace n on n.oid = e.extnamespace order by 1) to '$TRAVAIL/tmp/extensions.csv' with (format csv, header)"
+    echo "\\copy (select bucket_id, name, coalesce(metadata->>'size',''), coalesce(metadata->>'mimetype',''), coalesce(replace(metadata->>'eTag','\"',''),''), coalesce(to_char(updated_at at time zone 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.US'),'') from storage.objects order by bucket_id, name) to '$TRAVAIL/tmp/objets.tsv'"
+    echo "\\set table_cron cron.job"
+    echo "\\i '$OUTILS/references.sql'"
+    echo "commit;"
+  } > "$TRAVAIL/tmp/ref-prod.sql"
+  psql "$(CONN)" -X -q -v ON_ERROR_STOP=1 -f "$TRAVAIL/tmp/ref-prod.sql" -o "$TRAVAIL/tmp/reference.txt" 2> "$TRAVAIL/tmp/err" \
+    || { echo "BASE: calcul des références impossible ($(head -c 400 "$TRAVAIL/tmp/err" | tr "\n" " "))"; exec 3>&-; return 1; }
+  echo "commit;" >&3; exec 3>&-; wait $SNAP_PID 2>/dev/null; SNAP_PID=""
+  sort -o "$TRAVAIL/tmp/reference.txt" "$TRAVAIL/tmp/reference.txt"
+  nb_tables=$(grep -c '^TABLE ' "$TRAVAIL/tmp/reference.txt")
+  log "Base exportée : $(mo "$(taille "$TRAVAIL/tmp/base.dump")") compressés, $nb_tables tables, $(grep -c '^ACCES .* public\.' "$TRAVAIL/tmp/reference.txt") contrôles d'accès."
+
+  # 4. Fichiers stockés : magasin par empreinte, un fichier identique n'est stocké qu'une fois
+  copier_fichiers || return 1
+
+  # 5. Chiffrement
+  local f
+  for f in base.dump roles.sql cron.csv extensions.csv reference.txt fichiers.tsv; do
+    age -r "$CLE_PUBLIQUE" -o "$dossier/$f.age" "$TRAVAIL/tmp/$f" || { echo "CHIFFREMENT: échec sur $f"; return 1; }
+  done
+  cut -f3 "$TRAVAIL/tmp/fichiers.tsv" | sort -u > "$dossier/objets.txt"
+  echo "$id" > "$dossier/ID"
+
+  # 6. Vérification complète : déchiffrement + restauration isolée + comparaison
+  verifier_dossier "$dossier" || return 1
+
+  # 7. Validation : publication atomique de la sauvegarde
+  local fin; fin=$(maintenant)
+  {
+    echo "Sauvegarde Heavent $id"
+    echo "Vérifiée le $(date_lisible "$fin") (durée $(( (fin - debut) / 60 )) min $(( (fin - debut) % 60 )) s)"
+    echo "Tables : $nb_tables ; fichiers stockés : $(wc -l < "$TRAVAIL/tmp/fichiers.tsv" | tr -d ' ')"
+    echo "Base : $(mo "$(taille "$TRAVAIL/tmp/base.dump")") ; nouveaux fichiers copiés : ${NOUVEAUX:-0}"
+    [ "${CONCURRENTS:-0}" -gt 0 ] && echo "Fichiers modifiés pendant la sauvegarde (version de l'instantané conservée ou reprise demain) : $CONCURRENTS"
+  } > "$dossier/RESUME.txt"
+  rm -rf "$TRAVAIL/tmp"
+  mv "$dossier" "$RACINE/sauvegardes/$id"; TRAVAIL=""
+  ecrire_etat derniere_verifiee "$fin"; ecrire_etat derniere_id "$id"; ecrire_etat derniere_tentative "$fin"; ecrire_etat dernier_resultat "OK"
+  log "Sauvegarde $id VÉRIFIÉE."
+  retention
+  historique_taille
+  return 0
+}
+
+# Copie les fichiers de l'instantané. Produit tmp/fichiers.tsv : seau, nom, sha256, taille, type, etag, maj, statut
+copier_fichiers() {
+  local prec index b n t m e u sha statut tmpf code
+  NOUVEAUX=0; CONCURRENTS=0
+  index="$TRAVAIL/tmp/index-precedent.tsv"; : > "$index"
+  prec=$(lire_etat derniere_id)
+  if [ -n "$prec" ] && [ -f "$RACINE/sauvegardes/$prec/fichiers.tsv.age" ]; then
+    age -d -i <(secret cle-age) "$RACINE/sauvegardes/$prec/fichiers.tsv.age" > "$index" 2>/dev/null || : > "$index"
+  fi
+  : > "$TRAVAIL/tmp/fichiers.tsv"
+  if grep -q "$(printf '\r')" "$TRAVAIL/tmp/objets.tsv"; then echo "FICHIERS: nom de fichier inattendu"; return 1; fi
+  while IFS="$(printf '\t')" read -r b n t m e u; do
+    [ -z "$b" ] && continue
+    statut=ok; sha=""
+    # Fichier inchangé depuis la sauvegarde précédente (même seau, nom, etag, taille, date) : on réutilise sa copie
+    sha=$(awk -F'\t' -v b="$b" -v n="$n" -v e="$e" -v t="$t" -v u="$u" '$1==b && $2==n && $6==e && $4==t && $7==u { print $3; exit }' "$index")
+    if [ -n "$sha" ] && [ -f "$RACINE/objets/$(echo "$sha" | cut -c1-2)/$sha.age" ]; then
+      :
+    else
+      tmpf="$TRAVAIL/tmp/fichier"
+      code=$(curl -s -K "$TRAVAIL/tmp/curl-auth" -o "$tmpf" -w '%{http_code}' -m 300 --retry 3 --retry-delay 5 \
+        "$URL_PROJET/storage/v1/object/authenticated/$(encoder "$b")/$(encoder_chemin "$n")")
+      if [ "$code" = "200" ] && { [ -z "$t" ] || [ "$(taille "$tmpf")" = "$t" ]; } && { ! echo "$e" | grep -qE '^[0-9a-f]{32}$' || [ "$(md5f "$tmpf")" = "$e" ]; }; then
+        sha=$(sha256 < "$tmpf")
+        local cible="$RACINE/objets/$(echo "$sha" | cut -c1-2)/$sha.age"
+        if [ ! -f "$cible" ]; then
+          mkdir -p "$(dirname "$cible")"
+          age -r "$CLE_PUBLIQUE" -o "$cible.part" "$tmpf" && mv "$cible.part" "$cible" || { echo "FICHIERS: chiffrement impossible"; return 1; }
+          NOUVEAUX=$((NOUVEAUX + 1))
+        fi
+      elif { [ "$code" = "200" ] || [ "$code" = "400" ] || [ "$code" = "404" ]; } && ! encore_identique "$b" "$n" "$e"; then
+        # Contenu différent de l'instantané ou fichier supprimé entre-temps : modifié PENDANT la sauvegarde.
+        # On garde la version identique de la sauvegarde précédente si elle existe (même etag), sinon on le note.
+        sha=$(awk -F'\t' -v b="$b" -v n="$n" -v e="$e" '$1==b && $2==n && $6==e { print $3; exit }' "$index")
+        CONCURRENTS=$((CONCURRENTS + 1))
+        if [ -n "$sha" ]; then statut=instantane_precedent; else statut=modifie_pendant_sauvegarde; sha="-"; fi
+        log "Fichier modifié pendant la sauvegarde : $b/$n ($statut)"
+      else
+        echo "FICHIERS: téléchargement impossible (code $code) pour $b/$n"; return 1
+      fi
+      rm -f "$tmpf"
+    fi
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$b" "$n" "$sha" "$t" "$m" "$e" "$u" "$statut" >> "$TRAVAIL/tmp/fichiers.tsv"
+  done < "$TRAVAIL/tmp/objets.tsv"
+  log "Fichiers : $(wc -l < "$TRAVAIL/tmp/fichiers.tsv" | tr -d ' ') listés, $NOUVEAUX nouveau(x) copié(s), $CONCURRENTS modifié(s) pendant la sauvegarde."
+}
+# Le fichier est-il toujours, en production, exactement celui de l'instantané ? (sinon : modifié pendant la sauvegarde)
+encore_identique() {
+  local r
+  r=$(printf '%s\n' "select count(*) from storage.objects where bucket_id = :'b' and name = :'n' and coalesce(replace(metadata->>'eTag', '\"', ''), '') = :'e';" \
+      | psql "$(CONN)" -X -At -v b="$1" -v n="$2" -v e="$3" 2>/dev/null)
+  [ "$r" = "1" ]
+}
+encoder() { printf '%s' "$1" | od -An -tx1 -v | tr -d ' \n' | sed 's/\(..\)/%\1/g'; }
+encoder_chemin() { local r="" p; local IFS=/; for p in $1; do r="$r/$(encoder "$p")"; done; echo "${r#/}"; }
+
+# ---------- vérification ----------
+# Déchiffre la sauvegarde avec la vraie clé (Trousseau), la restaure dans un Postgres temporaire SANS réseau,
+# puis compare toutes les références et vérifie l'intégrité de chaque fichier.
+verifier_dossier() {
+  local d="$1" v="$1/tmp-verif" port err
+  rm -rf "$v"; mkdir -p "$v"; VERIF="$v"
+  local cle; cle="$v/cle"; secret cle-age > "$cle"
+  [ -s "$cle" ] || { echo "VERIFICATION: clé de déchiffrement introuvable dans le Trousseau"; return 1; }
+  local f
+  for f in base.dump roles.sql cron.csv reference.txt fichiers.tsv; do
+    age -d -i "$cle" -o "$v/$f" "$d/$f.age" 2>/dev/null || { rm -f "$cle"; echo "VERIFICATION: déchiffrement impossible ($f)"; return 1; }
+  done
+  log "Déchiffrement réussi avec la clé du Trousseau."
+
+  # Postgres temporaire : uniquement une prise locale (aucune adresse réseau), aucune extension d'appel externe
+  PG_TEST_DIR="$v/pg"; mkdir -p "$PG_TEST_DIR"; port=$(( 50000 + $$ % 10000 ))
+  initdb -D "$PG_TEST_DIR/d" -U heavent_test --auth=trust -E UTF8 --locale=C >/dev/null 2>&1 || { rm -f "$cle"; echo "VERIFICATION: initdb impossible"; return 1; }
+  pg_ctl -D "$PG_TEST_DIR/d" -w -l "$PG_TEST_DIR/log" -o "-p $port -k $PG_TEST_DIR -c listen_addresses='' -c shared_preload_libraries='' -c fsync=off" start >/dev/null 2>&1 \
+    || { rm -f "$cle"; echo "VERIFICATION: démarrage du Postgres de contrôle impossible"; return 1; }
+  local Q="psql -h $PG_TEST_DIR -p $port -U heavent_test -X -q"
+  $Q -d postgres -c "create database restauree" >/dev/null
+  # Garde-fou : ni pg_net, ni pg_cron, ni http disponibles → aucune tâche ni aucun appel externe possible
+  local danger; danger=$($Q -d restauree -At -c "select string_agg(name, ',') from pg_available_extensions where name in ('pg_net','pg_cron','http','pg_http','dblink','postgres_fdw')")
+  case ",$danger," in *pg_net*|*pg_cron*|*http*) rm -f "$cle"; echo "VERIFICATION: extension d'action externe disponible ($danger) : contrôle annulé par sécurité"; return 1;; esac
+  # Rôles de production (sans mots de passe), sauf notre super-utilisateur de contrôle
+  grep -v -E '"?heavent_test"?' "$v/roles.sql" | $Q -d restauree >/dev/null 2>"$v/roles.err"
+  $Q -d restauree -c "create schema if not exists extensions; create extension if not exists pgcrypto schema extensions; create extension if not exists \"uuid-ossp\" schema extensions;" >/dev/null 2>&1
+  pg_restore -h "$PG_TEST_DIR" -p $port -U heavent_test -d restauree --no-comments "$v/base.dump" 2> "$v/restore.err"
+  log "Restauration isolée : $(grep -c 'error' "$v/restore.err") avertissement(s) de restauration (détail dans le dossier d'échec en cas de différence)."
+  # Tâches planifiées : recopiées comme simples données de contrôle (le moteur cron n'existe pas ici)
+  $Q -d restauree -c "create schema sauvegarde_cron; create table sauvegarde_cron.job(jobname text, schedule text, command text, active boolean);" >/dev/null
+  $Q -d restauree -c "\\copy sauvegarde_cron.job from '$v/cron.csv' with (format csv, header)" >/dev/null
+  log "Garde-fou : copie restaurée sans réseau, sans pg_cron ni pg_net ; $($Q -d restauree -At -c "select count(*) from sauvegarde_cron.job") tâche(s) planifiée(s) recopiée(s) comme simples données (aucune ne peut s'exécuter, aucun webhook ni e-mail possible)."
+  # Mêmes références que sur la production
+  { echo "\\set table_cron sauvegarde_cron.job"; echo "\\i '$OUTILS/references.sql'"; } > "$v/ref.sql"
+  $Q -d restauree -v ON_ERROR_STOP=1 -f "$v/ref.sql" -o "$v/reference-copie.txt" 2> "$v/ref.err"
+  sort -o "$v/reference-copie.txt" "$v/reference-copie.txt"
+  if ! cmp -s "$v/reference.txt" "$v/reference-copie.txt"; then
+    diff "$v/reference.txt" "$v/reference-copie.txt" | sed 's/^\([<>] [A-Z]* [^ ]*\).*/\1 …/' | head -40 > "$v/differences.txt"
+    log "Différences entre la production et la copie restaurée :"; while read -r l; do log "  $l"; done < "$v/differences.txt"
+    garder_echec "$d"; rm -f "$cle"
+    echo "VERIFICATION: la copie restaurée ne correspond pas à la production ($(grep -c '^[<>]' "$v/differences.txt") écart(s))"; return 1
+  fi
+  log "Copie restaurée identique : $(wc -l < "$v/reference.txt" | tr -d ' ') références (contenu de chaque table, structure, droits, tâches, accès de chaque compte)."
+  # Fichiers : chaque fichier de l'instantané existe dans la base restaurée, est présent dans le magasin et intact
+  $Q -d restauree -At -c "select bucket_id || chr(9) || name from storage.objects order by 1" > "$v/objets-copie.txt"
+  cut -f1,2 "$v/fichiers.tsv" | sort > "$v/objets-manifeste.txt"; sort -o "$v/objets-copie.txt" "$v/objets-copie.txt"
+  cmp -s "$v/objets-copie.txt" "$v/objets-manifeste.txt" || { garder_echec "$d"; rm -f "$cle"; echo "VERIFICATION: la liste des fichiers ne correspond pas aux informations de la base"; return 1; }
+  local b n sha t reste ko=0 ok=0
+  while IFS="$(printf '\t')" read -r b n sha t reste; do
+    [ "$sha" = "-" ] && continue
+    if [ "$(age -d -i "$cle" "$RACINE/objets/$(echo "$sha" | cut -c1-2)/$sha.age" 2>/dev/null | sha256)" = "$sha" ]; then ok=$((ok + 1)); else ko=$((ko + 1)); log "Fichier illisible ou altéré : $b/$n"; fi
+  done < "$v/fichiers.tsv"
+  rm -f "$cle"
+  pg_ctl -D "$PG_TEST_DIR/d" stop -m fast >/dev/null 2>&1; rm -rf "$v"; PG_TEST_DIR=""; VERIF=""
+  [ $ko -eq 0 ] || { echo "VERIFICATION: $ko fichier(s) illisible(s) ou altéré(s)"; return 1; }
+  log "Fichiers : $ok déchiffré(s) et intact(s) (empreinte SHA-256 identique)."
+  return 0
+}
+
+# Garde un diagnostic SANS données : seulement les messages d'erreur (tronqués) et les noms d'éléments en écart
+garder_echec() {
+  local d="$1" n f; n="$RACINE/echecs/$(basename "$d")"; mkdir -p "$n"
+  for f in "$d"/tmp-verif/*.err; do [ -f "$f" ] && grep -E '^(pg_restore|psql|ERROR|ERREUR)' "$f" | grep -v -E 'CONTEXT|DETAIL|LINE|COPY' | cut -c1-200 > "$n/$(basename "$f")"; done
+  cp "$d/tmp-verif/differences.txt" "$n/" 2>/dev/null; true
+}
+
+# ---------- conservation ----------
+# Conserve : les 30 derniers jours, la plus ancienne de chaque mois sur 12 mois, et TOUJOURS la dernière vérifiée.
+# Un fichier stocké n'est effacé que s'il n'appartient plus à aucune sauvegarde conservée.
+retention() {
+  local derniere s jour mois limite_j limite_m garder supprimees=0
+  derniere=$(lire_etat derniere_id)
+  if [ $MAC = 1 ]; then limite_j=$(date -v-${JOURS_QUOTIDIENS}d +%Y-%m-%d); limite_m=$(date -v-${MOIS_MENSUELS}m +%Y-%m)
+  else limite_j=$(date -d "-$JOURS_QUOTIDIENS days" +%Y-%m-%d); limite_m=$(date -d "-$MOIS_MENSUELS months" +%Y-%m); fi
+  local vus=" "
+  for s in $(ls "$RACINE/sauvegardes" | sort); do
+    jour=${s%%_*}; mois=${jour%-*}; garder=0
+    [ "$s" = "$derniere" ] && garder=1
+    [ ! "$jour" \< "$limite_j" ] && garder=1
+    if [ ! "$mois" \< "$limite_m" ]; then case "$vus" in *" $mois "*) ;; *) garder=1; vus="$vus$mois ";; esac; fi
+    if [ $garder = 0 ]; then rm -rf "$RACINE/sauvegardes/$s"; supprimees=$((supprimees + 1)); log "Conservation : sauvegarde $s retirée (au-delà de la durée de conservation)."; fi
+  done
+  # Nettoyage du magasin uniquement à partir des sauvegardes conservées et vérifiées
+  cat "$RACINE"/sauvegardes/*/objets.txt 2>/dev/null | sort -u > "$RACINE/.utilises"
+  if [ -s "$RACINE/.utilises" ] || [ -z "$(ls "$RACINE/sauvegardes")" ]; then
+    find "$RACINE/objets" -name '*.age' -type f | while read -r f; do
+      s=$(basename "$f" .age); grep -qx "$s" "$RACINE/.utilises" || { rm -f "$f"; log "Magasin : copie $s retirée (plus utilisée)."; }
+    done
+  fi
+  find "$RACINE/echecs" -mindepth 1 -maxdepth 1 -mtime +14 -exec rm -rf {} + 2>/dev/null
+  find "$RACINE" -maxdepth 1 -name 'en-cours-*' -mtime +1 -exec rm -rf {} + 2>/dev/null
+  rm -f "$RACINE/.utilises"
+}
+
+historique_taille() {
+  local t; t=$(du -sk "$RACINE" | cut -f1)
+  echo "$(maintenant) $t" >> "$RACINE/.historique"
+}
+
+# ---------- état visible ----------
+demarrage_mac() { if [ $MAC = 1 ]; then date_lisible "$(sysctl -n kern.boottime | sed 's/.*sec = \([0-9]*\).*/\1/')"; else uptime -s 2>/dev/null; fi; }
+dernier_reveil() { if [ $MAC = 1 ]; then local w; w=$(sysctl -n kern.waketime 2>/dev/null | sed 's/.*sec = \([0-9]*\).*/\1/'); [ -n "$w" ] && [ "$w" != 0 ] && date_lisible "$w" || echo "inconnu"; else echo "sans objet"; fi; }
+
+ecrire_resume_etat() {
+  local v t now age_h libre total croissance
+  now=$(maintenant); v=$(lire_etat derniere_verifiee)
+  libre=$(df -k "$RACINE" | awk 'NR==2 { printf "%.1f Go", $4 / 1048576 }')
+  total=$(du -sk "$RACINE" 2>/dev/null | awk '{ printf "%.1f Mo", $1 / 1024 }')
+  croissance=$(awk -v n="$now" 'NR==1 { } { if (n - $1 <= 30 * 86400 && d == "") d = $2; last = $2 } END { if (d != "") printf "%+.1f Mo sur 30 jours", (last - d) / 1024; else print "pas encore mesurée" }' "$RACINE/.historique" 2>/dev/null)
+  {
+    echo "SAUVEGARDE HEAVENT — état au $(date_lisible "$now")"
+    echo
+    if [ -n "$v" ]; then
+      age_h=$(( (now - v) / 3600 ))
+      echo "Dernière sauvegarde VÉRIFIÉE : $(date_lisible "$v") (il y a $age_h h) — $(lire_etat derniere_id)"
+      [ $age_h -ge $ALERTE_HEURES ] && echo "⚠️  ATTENTION : aucune sauvegarde vérifiée depuis plus de $ALERTE_HEURES h."
+    else echo "⚠️  Aucune sauvegarde vérifiée pour l'instant."; fi
+    t=$(lire_etat derniere_tentative); [ -n "$t" ] && echo "Dernière tentative : $(date_lisible "$t") — $(lire_etat dernier_resultat)"
+    echo "Sauvegardes conservées : $(ls "$RACINE/sauvegardes" 2>/dev/null | wc -l | tr -d ' ')"
+    echo "Espace utilisé : $total ($croissance) ; libre sur le disque : $libre"
+    echo
+    echo "Détails : $RACINE/journal/"
+  } > "$RACINE/ETAT.txt"
+}
+
+# ---------- commandes ----------
+lancer() { # $1 = 1 pour forcer
+  local forcer="${1:-0}" v now r
+  charger_config
+  [ -f "$RACINE/.ne-pas-lancer" ] && exit 0      # pendant l'installation
+  verrou; trap nettoyer EXIT; trap 'exit 130' INT TERM
+  now=$(maintenant); v=$(lire_etat derniere_verifiee)
+  if [ "$forcer" = 0 ] && [ -f "$RACINE/.forcer" ]; then forcer=1; rm -f "$RACINE/.forcer"; log "Demande de sauvegarde immédiate (essai de la tâche automatique)."; fi
+  if [ "$forcer" = 0 ] && [ -n "$v" ] && [ $(( now - v )) -lt $(( SEUIL_HEURES * 3600 )) ]; then ecrire_resume_etat; exit 0; fi
+  local sortie tty=0; sortie="$RACINE/.derniere-sortie"; [ -t 1 ] && tty=1
+  if [ $MAC = 1 ]; then caffeinate -i -w $$ & fi   # empêche la mise en veille automatique pendant la copie
+  sauvegarder > "$sortie" 2>&1; r=$?
+  local message; message=$(grep -E '^(ESPACE|RESEAU|ACCES|BASE|FICHIERS|CHIFFREMENT|VERIFICATION): ' "$sortie" | head -1 | cut -c1-300)
+  [ -n "$TRAVAIL" ] && { garder_echec "$TRAVAIL"; rm -rf "$TRAVAIL"; TRAVAIL=""; }
+  if [ $r -eq 0 ]; then
+    [ "$(lire_etat alerte_active)" = 1 ] && notifier "Sauvegarde Heavent" "Sauvegarde vérifiée à nouveau. Tout est rentré dans l'ordre."
+    ecrire_etat alerte_active 0
+  else
+    ecrire_etat derniere_tentative "$now"; ecrire_etat dernier_resultat "${message:-échec}"
+    log "ÉCHEC : ${message:-voir journal}"
+    v=$(lire_etat derniere_verifiee)
+    if [ $r -eq 3 ]; then
+      # Pas d'Internet : silencieux tant que la dernière sauvegarde vérifiée a moins de 36 h
+      if [ -z "$v" ] || [ $(( now - v )) -ge $(( ALERTE_HEURES * 3600 )) ]; then alerte "Pas de sauvegarde récente : le Mac n'a pas accès à Internet."; fi
+    else
+      alerte "${message:-La sauvegarde a échoué.}"
+    fi
+  fi
+  ecrire_resume_etat
+  if [ $tty = 1 ]; then grep -h "" "$JOURNAL" | grep -F "$(date '+%Y-%m-%d')" | tail -25; echo; cat "$RACINE/ETAT.txt"; fi
+  exit $r
+}
+alerte() { # au plus une notification toutes les 6 h pour le même problème
+  local d; d=$(lire_etat derniere_alerte); ecrire_etat alerte_active 1
+  if [ -z "$d" ] || [ $(( $(maintenant) - d )) -ge 21600 ]; then notifier "⚠️ Sauvegarde Heavent" "$1"; ecrire_etat derniere_alerte "$(maintenant)"; fi
+}
+
+MODE="${1:-}"
+case "${1:-}" in
+  lancer) lancer 0 ;;
+  forcer) lancer 1 ;;
+  rendre-due)
+    # Pour les essais (veille, redémarrage) : fait comme si la dernière sauvegarde vérifiée datait de 23 h.
+    # La sauvegarde elle-même n'est ni modifiée ni supprimée.
+    charger_config; v=$(lire_etat derniere_verifiee); [ -n "$v" ] && ecrire_etat derniere_verifiee $(( v - 23 * 3600 ))
+    echo "Prochaine vérification de la tâche (≤ 15 min, ou au réveil / à l'ouverture de session) : une sauvegarde sera faite." ;;
+  essai-tache)
+    # Fait exécuter une sauvegarde complète PAR LA TÂCHE AUTOMATIQUE macOS (accès au Trousseau dans le contexte réel)
+    charger_config; avant=$(lire_etat derniere_verifiee)
+    touch "$RACINE/.forcer"; launchctl kickstart -k "gui/$(id -u)/com.heavent.sauvegarde" || { echo "Tâche introuvable : relance l'installation."; exit 1; }
+    echo "Sauvegarde lancée par la tâche automatique… (jusqu'à 15 min)"
+    i=0; while [ $i -lt 90 ]; do sleep 10; i=$((i + 1)); [ -d "$RACINE/.verrou" ] || [ -f "$RACINE/.forcer" ] || break; done
+    apres=$(lire_etat derniere_verifiee)
+    grep "tâche automatique" "$JOURNAL" | tail -1
+    if [ -n "$apres" ] && [ "$apres" != "$avant" ]; then echo "✅ La tâche automatique a lu le Trousseau, sauvegardé et vérifié."; else echo "❌ Échec dans le contexte de la tâche : $(lire_etat dernier_resultat)"; exit 1; fi ;;
+  statut) charger_config; ecrire_resume_etat; cat "$RACINE/ETAT.txt" ;;
+  liste) charger_config; for s in $(ls "$RACINE/sauvegardes" | sort); do echo "$s — $(sed -n 2p "$RACINE/sauvegardes/$s/RESUME.txt" 2>/dev/null)"; done ;;
+  verifier)
+    charger_config; verrou; trap nettoyer EXIT
+    s="${2:-$(lire_etat derniere_id)}"; { [ -n "$s" ] && [ -d "$RACINE/sauvegardes/$s" ]; } || { echo "Sauvegarde inconnue : ${s:-(aucune)}"; exit 1; }
+    log "=== Nouvelle vérification de la sauvegarde $s"
+    if verifier_dossier "$RACINE/sauvegardes/$s"; then echo "Sauvegarde $s : déchiffrée, restaurée et identique. ✅"; else echo "Sauvegarde $s : vérification en échec (voir journal). ❌"; exit 1; fi ;;
+  extraire)
+    charger_config; s="${2:?numéro de sauvegarde}"; dest="${3:?dossier de destination}"
+    mkdir -p "$dest/fichiers"; cle="$dest/.cle"; secret cle-age > "$cle"
+    for f in base.dump roles.sql cron.csv extensions.csv reference.txt fichiers.tsv; do age -d -i "$cle" -o "$dest/$f" "$RACINE/sauvegardes/$s/$f.age"; done
+    while IFS="$(printf '\t')" read -r b n sha reste; do
+      [ "$sha" = "-" ] && continue; mkdir -p "$dest/fichiers/$b/$(dirname "$n")"
+      age -d -i "$cle" -o "$dest/fichiers/$b/$n" "$RACINE/objets/$(echo "$sha" | cut -c1-2)/$sha.age"
+    done < "$dest/fichiers.tsv"
+    rm -f "$cle"; echo "Sauvegarde $s déchiffrée dans $dest (base.dump à restaurer avec pg_restore, fichiers/ par espace de stockage)." ;;
+  cle-secours)
+    charger_config; out="$HOME/Desktop/Heavent-cle-de-secours.age"
+    echo "Choisis une phrase secrète longue (tu la noteras sur papier, séparément du fichier)."
+    secret cle-age | age -p -o "$out" && echo "Copie de secours créée : $out — copie-la sur une clé USB ou un support hors du Mac, puis supprime-la du Bureau." ;;
+  *) sed -n '2,15p' "$0"; exit 1 ;;
+esac
