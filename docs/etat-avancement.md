@@ -17,7 +17,7 @@
 |---|-----|------|------------------|
 | 0 | Audit initial | fait (24/10) | — |
 | 1 | Sauvegarde et restauration | diagnostic fait, en attente de décision (destination, fréquence) | Opus pour la conception, Sonnet possible pour l'écriture du workflow |
-| 2 | Champs CNSS (employeur + salarié) | prêt à démarrer | Sonnet |
+| 2 | Champs CNSS (employeur + salarié) | code et tests hors production possibles ; migration de production seulement après une première sauvegarde vérifiée | Sonnet |
 | 3 | Dates et fuseaux (conversions et planification seulement) | à faire | Sonnet avec relecture |
 | 4 | Navigation et tableau de bord « À traiter » | à faire | Sonnet |
 | 5 | Remplacements (avec état « en attente de validation ») | à faire | Sonnet |
@@ -29,10 +29,23 @@
 ## Lot 1 — diagnostic sauvegarde (24/10, lecture seule)
 - Base : 19 Mo, 42 tables publiques, 7 comptes, 7 tâches planifiées. Plan gratuit : aucune sauvegarde restaurable fournie.
 - Fichiers stockés : identites 2 fichiers (0,9 Mo), photos 1 (1,8 Mo), assets 434 (103 Mo). Non couverts par les sauvegardes de base, même en Pro.
-- Dépôt : 38 fichiers de migration contre 42 migrations appliquées ; le schéma ne se reconstruit pas fidèlement depuis le dépôt seul → la sauvegarde doit contenir un export complet du schéma.
-- Fonctions : 25 déployées ; « diagnostic-traduction » n'existe pas dans le dépôt (code récupérable seulement depuis Supabase).
+- Dépôt vs production (comparaison réelle, 25/10 : migrations du dépôt rejouées dans un Postgres local isolé, ~900 éléments comparés à la production) :
+  écarts = 4 colonnes absentes du dépôt (devis.rdv_demande_le, devis.rdv_message, parametres_agence.signataire_employeur, parametres_agence.signature_employeur),
+  5 fonctions différentes ou absentes (devis_avant_suppression, generer_fiches_paie, notifier_admins, suivi_enregistrer, vitrine_public),
+  3 politiques *_admin et droits plus restrictifs en production (vitrine, temoignages, references_clients), horaire de resume-du-matin (6:30 UTC en prod, 7:30 dans le dépôt).
+  → la sauvegarde doit exporter le schéma depuis la production ; une migration de « rattrapage » (fichier seulement) sera à écrire.
+- Historique des migrations : versions et découpage différents entre dépôt et production ; ne pas s'y fier pour reconstruire.
+- Fonctions : 25 déployées ; « diagnostic-traduction » (désactivée, renvoie 410) récupérée dans le dépôt le 25/10.
+- Messages familiaux : 740 lignes (imane 371, nawar 369) + surprise_bienvenue, sans pièce jointe ; RLS active, aucun droit direct, lecture via _mot_du_jour.
+- Comptes : 7, connexion e-mail uniquement ; aucune clé étrangère public → auth.users : restaurer auth.users avec les mêmes identifiants.
+
+## Lot 1 — architecture proposée (non validée)
+- Dépôt GitHub privé dédié ; sauvegardes en artefacts Actions (jamais en commit). Quota gratuit : 2 000 min/mois, 500 Mo de stockage partagé ; au-delà 0,25 $/Go/mois ou blocage sans moyen de paiement.
+- Quotidien : export base (public, auth, storage, cron, supabase_migrations ; sans historiques net/cron) + manifeste des fichiers (sha256) ; fichiers : complet mensuel + ajouts quotidiens.
+- Test automatique AVANT chiffrement, dans un conteneur sans réseau ; chiffrement age avec la clé publique de Yassin ; déchiffrement testé manuellement chaque mois.
+- Garde-fou : tâche qui échoue si la dernière sauvegarde réussie a plus de 26 h.
 - Configuration : une partie des réglages internes est en base (sera incluse dans l'export, donc export chiffré obligatoire) ; les variables des fonctions ne sont pas exportables automatiquement → inventaire des NOMS seulement, valeurs conservées par Yassin.
 - Site : reconstructible depuis deploy/site (Git).
 
 ## Prochaine action
-Lot 2 (champs CNSS) en attendant la décision sur le lot 1.
+Décision de Yassin sur le lot 1 (voir réponse du 25/10). En parallèle possible : « Champs CNSS — code et tests hors production ».
