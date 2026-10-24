@@ -66,10 +66,12 @@
 - Pas encore démontré sur le Mac : première sauvegarde réelle, accès Trousseau depuis la tâche, veille, redémarrage, coupure réseau, notifications (cases à cocher dans LISEZMOI.md).
 - Mot de passe de la base : NE PAS réinitialiser sans accord (règle « aucun secret régénéré »).
 
-## Lot 2 — paiement et validation (proposition, non appliquée)
-- Aujourd'hui fiches_paie.statut mélange deux notions : « valide » (bulletin émis) et « paye » (argent versé). Marquer « Payée » n'enregistre ni date, ni montant, ni auteur, et laisse croire que le bulletin a été validé.
-- Proposition : garder statut pour le cycle du bulletin (en_attente → valide) et ajouter une table paiements_paie (fiche_id, montant, date_paiement, mode, référence, note, enregistre_par = auth.email(), enregistre_le), insertion par l'admin seulement, aucune modification ni suppression (correction = ligne d'annulation tracée). Statut « paye » existant conservé en lecture pour l'historique.
-- En attendant : seule la validation est bloquée quand il manque un n° CNSS ; « Payée » reste possible ; le PDF reste un aperçu tant que le bulletin est incomplet.
+## Lot 2 — registre des paiements (branche lot-cnss, 25/10, testé hors production)
+- Migration additive 20261025100000_paiements_paie.sql : table paiements_paie en ajout seul (montant, date civile, mode, référence, note, correction motivée), auteur et heure imposés par la base, modification et suppression refusées (même super-utilisateur), bulletin payé non supprimable ; lecture admin + crew pour SES bulletins.
+- Enregistrer un paiement ne change jamais fiches_paie.statut. L'option « Payée » n'est plus proposée (affichée seulement pour d'anciens bulletins : aucun en production le 25/10).
+- Écran Paie : colonne « Payé » + fenêtre « Paiement » (net restant proposé, date du jour à Casablanca). PDF : ligne « Payé le … ». Espace crew : « Payé : … (le …) ».
+- Tests : permissions.sh 23 contrôles ; parcours CNSS (paiement sur bulletin incomplet, statut inchangé, crew voit le paiement) ; non-régression paie OK.
+- Constaté, hors lot : « Bulletin établi à Rabat le … » utilise la date UTC (à traiter dans le lot Dates et fuseaux).
 
 ## Lot 4 — exigences de Yassin (25/10), tous supports
 - Ordinateur et appli Mac : navigation latérale à quelques catégories, rubrique active visible, menu réductible (icônes + infobulles), adaptation aux fenêtres étroites.

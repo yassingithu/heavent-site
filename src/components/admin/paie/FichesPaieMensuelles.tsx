@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, Download, RefreshCw } from "lucide-react";
+import { AlertTriangle, Banknote, Download, RefreshCw } from "lucide-react";
+import PaiementsPaie, { MODES, totalPaye } from "./PaiementsPaie";
 import { STATUTS_FINAUX, doublonsCnss, etatBulletin, manquesBulletin } from "@/lib/cnss";
 import { MOIS, dateFr, enteteDoc, esc, logo, mad, nomFichier, piedAgence, telechargerPdf, InfosAgence } from "@/lib/pdf";
 
@@ -63,6 +64,7 @@ function pagePaie(f: any, agence: InfosAgence | null) {
       <div><span>AMO salarié (2,26 %)</span><span>- ${mad(f.amo)}</span></div>
       ${Number(f.deductions) > Number(f.cnss || 0) + Number(f.amo || 0) + 0.01 ? `<div><span>Autres retenues</span><span>- ${mad(Number(f.deductions) - Number(f.cnss || 0) - Number(f.amo || 0))}</span></div>` : ""}
       <div class="net"><span>NET À PAYER</span><span>${mad(f.salaire_net)}</span></div>
+      ${(f.paiements_paie ?? []).length ? `<div><span>Payé${(f.paiements_paie as any[]).filter((p) => Number(p.montant) > 0).map((p) => ` le ${dateFr(p.date_paiement)} (${esc(MODES[p.mode] ?? p.mode)})`).join(",")}</span><span>${mad(totalPaye(f.paiements_paie))}</span></div>` : ""}
     </div>
     <div class="insecable" style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-top:18px">
       <p style="color:#888;font-size:10px;margin:0">Bulletin établi à Rabat le ${dateFr(new Date().toISOString().slice(0, 10))}.<br>À conserver sans limitation de durée.</p>
@@ -75,7 +77,7 @@ function pagePaie(f: any, agence: InfosAgence | null) {
 
 export async function telechargerFichesPaie(ids: string[]) {
   const [{ data, error }, { data: agence }] = await Promise.all([
-    supabase.from("fiches_paie").select("*, staff(*)").in("id", ids),
+    supabase.from("fiches_paie").select("*, staff(*), paiements_paie(montant, date_paiement, mode)").in("id", ids),
     supabase.from("parametres_agence").select("*").eq("id", 1).maybeSingle(),
   ]);
   if (error) throw error;
@@ -96,13 +98,14 @@ export default function FichesPaieMensuelles() {
   const [enCours, setEnCours] = useState(false);
   const [agence, setAgence] = useState<{ cnss_affiliation_employeur?: string | null } | null>(null);
   const [doublons, setDoublons] = useState<any[][]>([]);
+  const [fichePaiement, setFichePaiement] = useState<any | null>(null);
   const [annee, mois] = periode.split("-").map(Number);
 
   const periodes = Array.from({ length: 13 }, (_, i) => { const d = new Date(maintenant.getFullYear(), maintenant.getMonth() - 6 + i, 1); return `${d.getFullYear()}-${d.getMonth() + 1}`; });
 
   const charger = useCallback(async () => {
     const [{ data }, { data: ag }, { data: equipe }] = await Promise.all([
-      supabase.from("fiches_paie").select("*, staff(nom, prenom, numero_securite_sociale)").eq("annee", annee).eq("mois", mois),
+      supabase.from("fiches_paie").select("*, staff(nom, prenom, numero_securite_sociale), paiements_paie(montant, date_paiement, mode)").eq("annee", annee).eq("mois", mois),
       supabase.from("parametres_agence").select("*").eq("id", 1).maybeSingle(),
       supabase.from("staff").select("id, prenom, nom, numero_securite_sociale").not("numero_securite_sociale", "is", null),
     ]);
@@ -150,7 +153,7 @@ export default function FichesPaieMensuelles() {
     // Seule la VALIDATION est bloquée. Un paiement réellement effectué doit toujours pouvoir être enregistré ;
     // le PDF d'un bulletin incomplet reste un « aperçu incomplet » même s'il est marqué payé.
     if (statut === "valide" && manques.length) {
-      toast({ title: "Bulletin incomplet", description: `Impossible de le valider : il manque ${manques.join(" et ")}. Un paiement déjà effectué peut tout de même être marqué « Payée ».`, variant: "destructive" });
+      toast({ title: "Bulletin incomplet", description: `Impossible de le valider : il manque ${manques.join(" et ")}. Un paiement déjà effectué peut tout de même être enregistré (bouton « Paiement »).`, variant: "destructive" });
       return;
     }
     const { error } = await supabase.from("fiches_paie").update({ statut }).eq("id", id);
@@ -187,7 +190,7 @@ export default function FichesPaieMensuelles() {
         {!String(agence?.cnss_affiliation_employeur ?? "").trim() && (
           <div className="flex gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" data-testid="alerte-cnss-employeur">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-            <span>N° d'affiliation CNSS de l'employeur non renseigné (Devis → Infos agence). Les PDF sont des aperçus incomplets et aucun bulletin ne peut être validé. Un paiement déjà effectué peut toujours être enregistré.</span>
+            <span>N° d'affiliation CNSS de l'employeur non renseigné (Devis → Infos agence). Les PDF sont des aperçus incomplets et aucun bulletin ne peut être validé. Un paiement réellement effectué peut toujours être enregistré (bouton « Paiement »).</span>
           </div>
         )}
         {doublons.map((g) => (
@@ -202,7 +205,7 @@ export default function FichesPaieMensuelles() {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Personne</TableHead><TableHead className="text-right">Heures</TableHead><TableHead className="text-right">Brut</TableHead>
-              <TableHead className="text-right">Net</TableHead><TableHead>Statut</TableHead><TableHead />
+              <TableHead className="text-right">Net</TableHead><TableHead className="text-right">Payé</TableHead><TableHead>Statut</TableHead><TableHead />
             </TableRow></TableHeader>
             <TableBody>
               {fiches.map((f) => (
@@ -212,20 +215,26 @@ export default function FichesPaieMensuelles() {
                   <TableCell className="text-right">{f.heures_travaillees ?? 0}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">{mad(f.salaire_brut)}</TableCell>
                   <TableCell className="text-right whitespace-nowrap font-medium">{mad(f.salaire_net)}</TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => setFichePaiement(f)} data-testid="bouton-paiement">
+                      <Banknote className="h-4 w-4 mr-1" />{(f.paiements_paie ?? []).length ? mad(totalPaye(f.paiements_paie)) : "Paiement"}
+                    </Button>
+                  </TableCell>
                   <TableCell>
                     <Select value={f.statut} onValueChange={(v) => changerStatut(f.id, v)}>
                       <SelectTrigger className="h-8 w-[120px] border-0 p-0 shadow-none"><Badge className={STATUTS[f.statut]?.className}>{STATUTS[f.statut]?.label ?? f.statut}</Badge></SelectTrigger>
-                      <SelectContent>{Object.entries(STATUTS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
+                      <SelectContent>{Object.entries(STATUTS).filter(([k]) => k !== "paye" || f.statut === "paye").map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
                     </Select>
                   </TableCell>
                   <TableCell className="text-right"><Button size="icon" variant="ghost" disabled={enCours} onClick={() => telecharger([f.id])}><Download className="h-4 w-4" /></Button></TableCell>
                 </TableRow>
               ))}
-              <TableRow><TableCell colSpan={3} className="font-medium">Total net du mois</TableCell><TableCell className="text-right font-bold whitespace-nowrap">{mad(total)}</TableCell><TableCell colSpan={2} /></TableRow>
+              <TableRow><TableCell colSpan={3} className="font-medium">Total net du mois</TableCell><TableCell className="text-right font-bold whitespace-nowrap">{mad(total)}</TableCell><TableCell className="text-right whitespace-nowrap">{mad(fiches.reduce((t, f) => t + totalPaye(f.paiements_paie), 0))}</TableCell><TableCell colSpan={2} /></TableRow>
             </TableBody>
           </Table>
         )}
       </CardContent>
+      <PaiementsPaie fiche={fichePaiement} onClose={() => setFichePaiement(null)} onSaved={charger} />
     </Card>
   );
 }

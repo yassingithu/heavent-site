@@ -66,7 +66,7 @@ await scenario("Devis mariage → équipe de 5 → contrats → paie → espace 
 });
 
 // 1 bis. Numéros CNSS : employeur manquant, doublons, validation refusée, numéro conservé tel quel
-await scenario("CNSS : n° employeur manquant, doublons signalés, bulletin non validable, numéro conservé tel quel", async (notes) => {
+await scenario("CNSS : n° employeur manquant, doublons signalés, bulletin non validable, paiement enregistré à part, numéro conservé tel quel", async (notes) => {
   const base = nouvelleBase();
   const m = new Date().getMonth() + 1, a = new Date().getFullYear();
   base.staff[0].numero_securite_sociale = "123 456 789"; base.staff[1].numero_securite_sociale = "123.456.789";
@@ -84,9 +84,21 @@ await scenario("CNSS : n° employeur manquant, doublons signalés, bulletin non 
   await statutDe(base.staff[0].prenom, "Validée");
   verifier(base.fiches_paie[0].statut === "en_attente", "un bulletin incomplet a pu être validé");
   verifier(/Bulletin incomplet/.test(await toasts(page)), "aucun message n'explique le refus de validation");
-  await statutDe(base.staff[1].prenom, "Payée");
-  verifier(base.fiches_paie[1].statut === "paye", "impossible d'enregistrer un paiement réellement effectué sur un bulletin incomplet");
-  notes.push("paiement enregistrable malgré le bulletin incomplet (validation, elle, refusée)");
+  // Paiement réellement effectué : enregistré dans le registre, sans valider le bulletin
+  await page.getByRole("row", { name: new RegExp(base.staff[1].prenom) }).getByTestId("bouton-paiement").click(); await page.waitForTimeout(800);
+  verifier(await page.getByTestId("paiement-montant").inputValue() === "447.65", "le montant proposé n'est pas le net restant à payer");
+  await page.getByTestId("paiement-enregistrer").click(); await page.waitForTimeout(1000);
+  verifier(base.paiements_paie.length === 1 && base.paiements_paie[0].fiche_id === "fc2" && base.paiements_paie[0].montant === 447.65, "paiement non enregistré dans le registre");
+  verifier(base.fiches_paie[1].statut === "en_attente", "enregistrer un paiement a changé le statut du bulletin");
+  verifier(/^\d{4}-\d{2}-\d{2}$/.test(base.paiements_paie[0].date_paiement), "date de paiement invalide");
+  await page.getByTestId("dialogue-paiements").locator("xpath=ancestor::*[@role='dialog']").getByRole("button", { name: /Close|Fermer/ }).click(); await page.waitForTimeout(600);
+  await page.getByRole("row", { name: new RegExp(base.staff[1].prenom) }).locator('button[role="combobox"]').click(); await page.waitForTimeout(300);
+  verifier(!(await page.getByRole("option", { name: "Payée" }).count()), "l'ancien statut « Payée » est encore proposé");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400);
+  const ligneNora = page.locator("tr", { has: page.getByTestId("bouton-paiement") }).filter({ hasText: base.staff[1].prenom });
+  const [pdfPaye] = await Promise.all([page.waitForEvent("download", { timeout: 90000 }), ligneNora.locator("td").last().locator("button").click()]);
+  await pdfPaye.saveAs(`${CAPTURES}/cnss-paye-incomplet.pdf`);
+  notes.push("paiement enregistré malgré le bulletin incomplet (date, montant, auteur) ; le bulletin reste « À valider »");
   const [pdfApercu] = await Promise.all([page.waitForEvent("download", { timeout: 90000 }), page.getByRole("button", { name: /Toutes les fiches/ }).click()]);
   await pdfApercu.saveAs(`${CAPTURES}/cnss-apercu-incomplet.pdf`);
   notes.push("alerte employeur + doublon affichés ; validation refusée tant que le n° employeur manque ; PDF « aperçu incomplet » enregistré");
@@ -115,6 +127,13 @@ await scenario("CNSS : n° employeur manquant, doublons signalés, bulletin non 
   verifier(/Validée/.test(texte) && !/En préparation/.test(texte), "le crew ne voit pas « Validée » pour son bulletin validé");
   notes.push("espace crew : bulletin validé affiché « Validée »");
   await c.ctx.close();
+  // Le crew du bulletin payé voit le paiement
+  const c2 = await contexte(navigateur, base, base.staff[1].email, { mobile: true });
+  await connecter(c2.page, BASE, base.staff[1].email, "/staff-dashboard");
+  await c2.page.getByRole("tab").nth(1).click(); await c2.page.waitForTimeout(1000);
+  verifier(await c2.page.getByTestId("crew-paye").isVisible(), "le crew ne voit pas le paiement de son bulletin");
+  notes.push("espace crew : paiement visible (montant et date)");
+  await c2.ctx.close();
 });
 
 // 2. Inscription d'un crew sur smartphone (parcours gamifié)

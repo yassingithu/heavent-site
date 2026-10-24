@@ -5,7 +5,7 @@ import * as F from "./fixture.mjs";
 export function nouvelleBase() {
   return {
     staff: F.staff.map((s) => ({ ...s, banni: false })), disponibilites: F.dispos.map((d) => ({ ...d })),
-    affectations: [], contrats: [], fiches_paie: [], devis: [], devis_lignes: [],
+    affectations: [], contrats: [], fiches_paie: [], paiements_paie: [], devis: [], devis_lignes: [],
     catalogue_prestations: F.catalogue, parametres_agence: F.param.map((p) => ({ ...p })), devis_entreprise: [],
     devis_mariage: F.dem.map((d) => ({ ...d })), admins: [{ email: "admin@heavent.test" }],
     agenda_parametres: [{ id: 1, duree_minutes: 45, pause_minutes: 15, delai_heures: 24, horizon_jours: 30, types: ["agence", "telephone", "visio"], adresse: null, lien_visio: null, actif: true }],
@@ -442,6 +442,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       const r = lignes.filter((x) => correspond(x, params)).map((x) => {
         const y = { ...x };
         if (select?.includes("staff(")) y.staff = base.staff.find((s) => s.id === x.staff_id) ?? null;
+        if (select?.includes("paiements_paie(")) y.paiements_paie = (base.paiements_paie ?? []).filter((p) => p.fiche_id === x.id);
         if (select?.includes("contrats(")) { const c = base.contrats.find((s) => s.id === x.contrat_id); y.contrats = c ? { ...c, devis: admin ? base.devis.find((d) => d.id === c.devis_id) ?? null : null } : null; }
         if (select?.includes("devis(")) y.devis = admin ? base.devis.find((s) => s.id === x.devis_id) ?? null : null;
         if (select?.includes("affectations(") && t === "devis") y.affectations = base.affectations.filter((af) => af.devis_id === x.id);
@@ -456,6 +457,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       const ins = corps.map((b) => ({ id: t + Math.random().toString(36).slice(2), statut: t === "affectations" ? "confirme" : t === "remarques_contrat" ? "nouvelle" : b.statut ?? "brouillon", created_at: new Date().toISOString(), ...b }));
       if (t === "studio_demos") ins.forEach((d) => { d.secteur ??= "evenementiel"; d.jeton = crypto.randomUUID(); d.vues = 0; d.active = true; d.cree_le = new Date().toISOString(); d.expire_le = new Date(Date.now() + 30 * 864e5).toISOString(); });
       if (t === "devis") ins.forEach((d) => { d.numero = "DEV-2026-0099"; d.date_validite = "2099-11-12"; d.total_ttc = 0; d.lien_token = crypto.randomUUID(); d.relances = 0; });
+      if (t === "paiements_paie") ins.forEach((p) => { delete p.statut; p.enregistre_par = email; p.enregistre_le = new Date().toISOString(); });
       base[t].push(...ins);
       ins.forEach((x) => synchroCatalogue(base, t, x));
       return route.fulfill({ status: 201, json: unique ? ins[0] : ins });

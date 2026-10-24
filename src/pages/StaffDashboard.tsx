@@ -150,7 +150,7 @@ const StaffDashboard = () => {
         // Récupérer les fiches de paie
         const { data: fichesData } = await supabase
           .from("fiches_paie")
-          .select("*")
+          .select("*, paiements_paie(montant, date_paiement)")
           .eq("staff_id", staff.id)
           .order("annee", { ascending: false })
           .order("mois", { ascending: false });
@@ -627,6 +627,10 @@ const StaffDashboard = () => {
                           <div>
                             <p><span className="font-medium">{t('dashboard.payslips.gross_salary')}:</span> {fiche.salaire_brut} DH</p>
                             <p><span className="font-medium">{t('dashboard.payslips.net_salary')}:</span> {fiche.salaire_net} DH</p>
+                            {(fiche as any).paiements_paie?.length ? (
+                              <p data-testid="crew-paye"><span className="font-medium">Payé :</span> {(fiche as any).paiements_paie.reduce((t: number, p: any) => t + Number(p.montant || 0), 0)} DH
+                                {" "}(le {format(new Date((fiche as any).paiements_paie.filter((p: any) => Number(p.montant) > 0).map((p: any) => p.date_paiement).sort().pop() + "T12:00:00"), "dd/MM/yyyy")})</p>
+                            ) : null}
                           </div>
                           <div>
                             {fiche.heures_travaillees ? (
