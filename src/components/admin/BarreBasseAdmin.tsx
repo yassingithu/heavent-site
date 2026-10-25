@@ -57,7 +57,7 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
               </section>
             ))}
             <div className="flex gap-2 pt-1">
-              <a href="/" target="_blank" rel="noreferrer" className="flex-1 inline-flex items-center justify-center min-h-11 rounded-full border border-[#DCCBA6] text-sm">Voir le site</a>
+              <a href="/?depuis-admin=1" target="_blank" rel="noreferrer" className="flex-1 inline-flex items-center justify-center min-h-11 rounded-full border border-[#DCCBA6] text-sm">Voir le site</a>
               <button onClick={onDeconnexion} className="flex-1 inline-flex items-center justify-center min-h-11 rounded-full bg-[#141414] text-white text-sm">Déconnexion</button>
             </div>
           </div>

@@ -1633,6 +1633,27 @@ if (process.env.BETA_LIVE) {
   });
 }
 
+// Appli Mac : « Voir le site » affiche le vrai site avec un bouton pour revenir (au lieu de renvoyer vers le bilan)
+await scenario("Appli Mac : le bouton « Le site » ouvre le site public, avec retour à l'administration", async (notes) => {
+  const base = nouvelleBase();
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN, { agent: "Mozilla/5.0 (Macintosh) Chrome/130 HeaventAdminApp/1.0" });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.waitForTimeout(1500);
+  await page.setViewportSize({ width: 1300, height: 900 });
+  await page.evaluate(() => localStorage.setItem("heavent-menu-reduit", "0")); await page.reload(); await page.waitForTimeout(1500);
+  const lien = page.locator('aside a[aria-label="Voir le site"]').first();
+  verifier(await lien.count(), "pas de lien « Le site » dans le menu");
+  await page.evaluate(() => { window.open = (u) => { window.location.href = u; }; });
+  await lien.evaluate((a) => { window.location.href = a.getAttribute("href"); }); await page.waitForTimeout(2500);
+  verifier(!/\/admin/.test(page.url()), "le bouton « Le site » renvoie encore vers l'administration : " + page.url());
+  verifier(await page.getByTestId("retour-admin").isVisible(), "pas de bouton « Retour à l'administration »");
+  verifier(/Heavent|hôtesse|événement/i.test(await page.locator("body").innerText()), "le site public ne s'affiche pas");
+  await page.getByTestId("retour-admin").click(); await page.waitForTimeout(2000);
+  verifier(/\/admin/.test(page.url()), "le retour ne ramène pas à l'administration : " + page.url());
+  notes.push("dans l'appli : « Le site » → site public avec barre « Retour à l'administration » → retour OK");
+  await ctx.close();
+});
+
 await navigateur.close();
 const ko = resultats.filter((r) => !r.ok);
 const rapport = `# Rapport du bêta-testeur Heavent — ${new Date().toLocaleDateString("fr-FR", { dateStyle: "full" })}

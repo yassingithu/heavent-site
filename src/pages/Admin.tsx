@@ -1045,7 +1045,7 @@ const Admin = () => {
             {reduit ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           </button>
           <div className="flex items-center gap-1 lg:hidden">
-            <a href="/" target="_blank" rel="noreferrer" className="h-9 w-9 rounded-full flex items-center justify-center text-white/70 hover:bg-white/10" aria-label="Voir le site"><Globe className="h-4 w-4" /></a>
+            <a href="/?depuis-admin=1" target="_blank" rel="noreferrer" className="h-9 w-9 rounded-full flex items-center justify-center text-white/70 hover:bg-white/10" aria-label="Voir le site"><Globe className="h-4 w-4" /></a>
             <button onClick={handleSignOut} className="h-9 w-9 rounded-full flex items-center justify-center text-white/70 hover:bg-white/10" aria-label="Déconnexion"><LogOut className="h-4 w-4" /></button>
           </div>
         </div>
@@ -1069,7 +1069,7 @@ const Admin = () => {
         <div className={`hidden lg:block border-t border-white/10 ${reduit ? "p-2" : "p-4"} space-y-2`}>
           {!reduit && <div className="flex items-center gap-2 text-xs text-white/50 min-w-0"><Shield className="h-3.5 w-3.5 shrink-0 text-[#E4D49A]" /><span className="truncate">{user?.email}</span><span className="ml-auto shrink-0 opacity-50" title="Version du site chargée dans cette fenêtre" data-testid="version-admin">v{(typeof document !== "undefined" && [...document.scripts].map((x) => x.src).find((x) => /\/assets\/index-/.test(x))?.match(/index-([\w-]{4})/)?.[1]) || "dev"}</span></div>}
           <div className={`flex gap-2 ${reduit ? "flex-col items-center" : ""}`}>
-            <a href="/" target="_blank" rel="noreferrer" title="Voir le site" aria-label="Voir le site" className={`inline-flex items-center justify-center gap-1.5 rounded-full border border-white/15 min-h-9 text-xs hover:bg-white/10 ${reduit ? "w-9" : "flex-1"}`}><Globe className="h-3.5 w-3.5" />{!reduit && " Le site"}</a>
+            <a href="/?depuis-admin=1" target="_blank" rel="noreferrer" title="Voir le site" aria-label="Voir le site" className={`inline-flex items-center justify-center gap-1.5 rounded-full border border-white/15 min-h-9 text-xs hover:bg-white/10 ${reduit ? "w-9" : "flex-1"}`}><Globe className="h-3.5 w-3.5" />{!reduit && " Le site"}</a>
             <button onClick={handleSignOut} title="Déconnexion" aria-label="Déconnexion" className={`inline-flex items-center justify-center gap-1.5 rounded-full bg-white/10 min-h-9 text-xs hover:bg-white/20 ${reduit ? "w-9" : "flex-1"}`}><LogOut className="h-3.5 w-3.5" />{!reduit && " Déconnexion"}</button>
           </div>
         </div>
