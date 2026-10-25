@@ -11,7 +11,7 @@ export const TRADUCTIONS: Record<string, { en: string; ar: string }> = {
   "Troupe folklorique": { en: "Folk troupe", ar: "فرقة فولكلورية" },
   "Danseurs et percussionnistes en tenues traditionnelles pour un spectacle ou une entrée remarquée.": { en: "Dancers and percussionists in traditional dress for a show or a memorable entrance.", ar: "راقصون وعازفو إيقاع بأزياء تقليدية لعرض أو دخول لافت." },
   "Neggafa": { en: "Negafa", ar: "النكافة" },
-  "Habille et prépare la mariée, change ses tenues et l'accompagne toute la soirée. Journée de 8 h.": { en: "Dresses and prepares the bride, changes her outfits and accompanies her all evening. 8-hour day.", ar: "تلبس العروس وتجهّزها وتغيّر أزياءها وترافقها طوال السهرة. يوم من 8 ساعات." },
+  "Habille et prépare la mariée, change ses tenues et l'accompagne toute la soirée.": { en: "Dresses and prepares the bride, changes her outfits and accompanies her all evening.", ar: "تلبس العروس وتجهّزها وتغيّر أزياءها وترافقها طوال السهرة." },
   "Photographe": { en: "Photographer", ar: "مصوّر فوتوغرافي" },
   "Reportage photo de la cérémonie et de la soirée, avec retouche et galerie en ligne.": { en: "Photo coverage of the ceremony and the evening, with retouching and an online gallery.", ar: "تغطية بالصور للحفل والسهرة، مع التنقيح ومعرض على الإنترنت." },
   "Candy bar": { en: "Candy bar", ar: "ركن الحلويات" },

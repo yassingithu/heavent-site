@@ -112,6 +112,10 @@ const handler = async (req: Request): Promise<Response> => {
           elements: nombres(brut.elements), centres: Number.isInteger(brut.centres) && brut.centres >= 0 && brut.centres <= 500 ? brut.centres : 0,
           libelles: Object.fromEntries(Object.entries(brut.libelles && typeof brut.libelles === "object" ? brut.libelles : {})
             .filter(([k]) => /^[a-z_]{2,20}$/.test(k)).slice(0, 30).map(([k, v]) => [k, String(v).slice(0, 60)])),
+          // Éléments agrandis (cases ajoutées par type) : le devis facture le supplément par case
+          agrandis: (Array.isArray(brut.agrandis) ? brut.agrandis : []).slice(0, 30)
+            .map((x: any) => ({ type: /^[a-z_]{2,20}$/.test(String(x?.type ?? "")) ? String(x.type) : "", cases: Number.isInteger(x?.cases) ? Math.min(200, Math.max(0, x.cases)) : 0 }))
+            .filter((x: { type: string; cases: number }) => x.type && x.cases > 0),
           // Idées sur mesure nommées par le visiteur (sans prix : à chiffrer dans le devis)
           sur_mesure: (Array.isArray(brut.sur_mesure) ? brut.sur_mesure : []).slice(0, 30)
             .map((x: any) => ({ nom: String(x?.nom ?? "").replace(/\s+/g, " ").trim().slice(0, 60), quantite: Number.isInteger(x?.quantite) ? Math.min(100, Math.max(1, x.quantite)) : 1 }))
