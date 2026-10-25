@@ -32,7 +32,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox, Instagram, Mail, Sparkles, Handshake, MapPin } from "lucide-react";
+import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox, Instagram, Mail, Sparkles, Handshake, MapPin, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import BarreBasseAdmin from "@/components/admin/BarreBasseAdmin";
 import NewsletterAdmin from "@/components/admin/newsletter/NewsletterAdmin";
 import InstagramAdmin from "@/components/admin/instagram/InstagramAdmin";
 import { format } from "date-fns";
@@ -153,13 +154,13 @@ interface Disponibilite {
 /** Menu de l'administration, regroupé par thème */
 const MENU_ADMIN: { titre: string; items: (readonly [string, string, typeof Users])[] }[] = [
   { titre: "Pilotage", items: [["tableau", "Bilan", BarChart3], ["statistiques", "Statistiques", TrendingUp], ["agenda", "Agenda", CalendarDays]] },
-  { titre: "Clients", items: [["entreprise", "Entreprise", Building2], ["mariage", "Événement", PartyPopper], ["devis-rapide", "Devis", FileText], ["devis-envoyes", "Envoyés", Inbox], ["envoyer-devis", "Envoyer", Send]] },
-  { titre: "Équipe", items: [["staff", "Personnel", Users], ["disponibilites", "Dispo", CalendarCheck], ["contrats", "Contrats", FileSignature], ["fiches", "Paie", Wallet]] },
+  { titre: "Clients", items: [["entreprise", "Demandes entreprise", Building2], ["mariage", "Demandes événement", PartyPopper], ["devis-rapide", "Devis", FileText], ["devis-envoyes", "Devis envoyés", Inbox], ["envoyer-devis", "Envoyer un devis", Send]] },
+  { titre: "Équipe", items: [["staff", "Personnel", Users], ["disponibilites", "Disponibilités", CalendarCheck], ["contrats", "Contrats", FileSignature], ["fiches", "Paie", Wallet]] },
   { titre: "Prestataires", items: [["prestataires", "Prestataires", Handshake]] },
   { titre: "Lieux", items: [["lieux", "Salles & palais", MapPin]] },
   { titre: "Communication", items: [["instagram", "Instagram", Instagram], ["newsletter", "Newsletter", Mail]] },
   { titre: "Heavent Studio", items: [["studio", "Démos agences", Sparkles]] },
-  { titre: "Réglages", items: [["realisations", "Site", Globe], ["securite", "Sécurité", Shield]] },
+  { titre: "Réglages", items: [["realisations", "Site web", Globe], ["securite", "Sécurité", Shield]] },
 ];
 const TITRES_ADMIN: Record<string, [string, string]> = {
   tableau: ["Bilan", "L'essentiel de l'activité en un coup d'œil"],
@@ -174,7 +175,7 @@ const TITRES_ADMIN: Record<string, [string, string]> = {
   disponibilites: ["Disponibilités", "Qui est disponible, et quand"],
   contrats: ["Contrats", "Contrats des crews et signatures"],
   fiches: ["Paie", "Fiches de paie mensuelles"],
-  realisations: ["Site", "Éléments de confiance, FAQ et réalisations publiées"],
+  realisations: ["Site web", "Éléments de confiance, FAQ et réalisations publiées"],
   instagram: ["Instagram", "Posts conseils préparés, photos et légendes prêtes à publier"],
   prestataires: ["Prestataires", "Candidatures, validation et tarifs des prestataires partenaires"],
   lieux: ["Salles & palais", "Lieux partenaires, tarifs et localisation"],
@@ -250,6 +251,12 @@ const Admin = () => {
 
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [ongletAdmin, setOngletAdmin] = useState("tableau");
+  // Menu latéral réductible (ordinateur / appli Mac) : choix mémorisé ; fenêtre étroite = réduit par défaut
+  const [reduit, setReduit] = useState<boolean>(() => {
+    try { const v = localStorage.getItem("heavent-menu-reduit"); if (v !== null) return v === "1"; } catch { /* stockage indisponible */ }
+    return typeof window !== "undefined" && window.innerWidth < 1280;
+  });
+  const basculerMenu = () => setReduit((r) => { try { localStorage.setItem("heavent-menu-reduit", r ? "0" : "1"); } catch { /* ignoré */ } return !r; });
 
   useEffect(() => {
     const versDevis = () => setOngletAdmin("devis-rapide");
@@ -979,12 +986,6 @@ const Admin = () => {
     return person ? `${person.prenom} ${person.nom}` : "Staff inconnu";
   };
 
-  // Sur smartphone, l'onglet choisi reste visible dans la barre de menu
-  useEffect(() => {
-    const el = document.querySelector<HTMLElement>('.admin-onglets [role="tab"][data-state="active"]');
-    if (el && window.innerWidth < 1024) el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
-  }, [ongletAdmin]);
-
   const { infos: accueil, recharger: rechargerAccueil } = useAccueil();
   useAppAdmin();
   const [surpriseFermee, setSurpriseFermee] = useState(false);
@@ -1014,71 +1015,88 @@ const Admin = () => {
     );
   }
 
+  const groupesVisibles = MENU_ADMIN
+    .filter((g) => !(estDemo() && (g.titre === "Heavent Studio" || g.items.every(([v]) => ongletMasque(v)))))
+    .map((g) => ({
+      titre: g.titre,
+      items: g.items.filter(([v]) => !(estDemo() && ongletMasque(v))).map(([valeur, libelleBase, Icone]) => ({
+        valeur, Icone,
+        libelle: estDemo() ? libelleOnglet(valeur, libelleBase) : libelleBase,
+        badge: valeur === "entreprise" ? nouvellesEntreprise : valeur === "mariage" ? nouvellesMariage : 0,
+      })),
+    }));
+
   return (
     <Tabs value={ongletAdmin} onValueChange={(v) => { setOngletAdmin(v); window.scrollTo({ top: 0 }); }} orientation="vertical" className="admin-theme min-h-screen bg-[#FAF7EE] lg:flex">
       <Seo noindex />
-      {/* Menu : colonne fixe sur ordinateur, barre défilante en haut sur smartphone */}
-      <aside className="sticky top-0 z-40 bg-[#141414] text-white lg:h-screen lg:w-60 lg:shrink-0 lg:flex lg:flex-col">
+      {/* Menu : colonne latérale réductible sur ordinateur / appli Mac ; sur téléphone, barre du bas (voir BarreBasseAdmin) */}
+      <aside className={`sticky top-0 z-40 bg-[#141414] text-white lg:h-screen lg:shrink-0 lg:flex lg:flex-col transition-[width] duration-200 ${reduit ? "lg:w-[4.5rem]" : "lg:w-60"}`} data-testid="menu-lateral" data-reduit={reduit ? "oui" : "non"}>
         {/* Application Mac : zone pour déplacer la fenêtre (et les boutons rouge / orange / vert) */}
         {dansApplication && <div className="h-8 shrink-0" style={{ WebkitAppRegion: "drag" } as React.CSSProperties} aria-hidden />}
-        <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 lg:px-5 lg:pt-6 lg:pb-5">
-          <div className="min-w-0">
+        <div className={`flex items-center justify-between gap-3 px-4 py-2 lg:pt-5 lg:pb-4 ${reduit ? "lg:flex-col lg:px-2 lg:gap-2" : "lg:px-5"}`}>
+          <div className={`min-w-0 ${reduit ? "lg:hidden" : ""}`}>
             {estDemo() && baseDemo()?._meta.logo && <img src={baseDemo()!._meta.logo} alt="" className="h-8 lg:h-10 w-auto max-w-[140px] object-contain mb-1.5 rounded bg-white/90 p-1" data-testid="logo-demo" />}
             <p className="uppercase tracking-[0.28em] text-[9px] lg:text-[10px] text-[#E4D49A]">{estDemo() ? baseDemo()?._meta.agence ?? "Votre agence" : "Heavent"}</p>
             <p className="font-serif text-lg lg:text-2xl leading-tight">Administration</p>
           </div>
+          <button onClick={basculerMenu} className="hidden lg:flex h-9 w-9 shrink-0 rounded-full items-center justify-center text-white/60 hover:text-white hover:bg-white/10" aria-label={reduit ? "Déplier le menu" : "Réduire le menu"} title={reduit ? "Déplier le menu" : "Réduire le menu"} data-testid="basculer-menu">
+            {reduit ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
           <div className="flex items-center gap-1 lg:hidden">
             <a href="/" target="_blank" rel="noreferrer" className="h-9 w-9 rounded-full flex items-center justify-center text-white/70 hover:bg-white/10" aria-label="Voir le site"><Globe className="h-4 w-4" /></a>
             <button onClick={handleSignOut} className="h-9 w-9 rounded-full flex items-center justify-center text-white/70 hover:bg-white/10" aria-label="Déconnexion"><LogOut className="h-4 w-4" /></button>
           </div>
         </div>
-        <TabsList className="admin-onglets h-auto w-full bg-transparent p-0 rounded-none text-white/70 flex justify-start gap-1 overflow-x-auto px-3 pb-3 lg:flex-1 lg:flex-col lg:items-stretch lg:overflow-y-auto lg:overflow-x-hidden lg:px-3 lg:pb-4 lg:gap-0.5">
-          {MENU_ADMIN.filter((g) => !(estDemo() && (g.titre === "Heavent Studio" || g.items.every(([v]) => ongletMasque(v))))).map((groupe) => (
-            <div key={groupe.titre} className="contents lg:block lg:mb-3">
-              <div className="hidden lg:block px-3 pt-2 pb-1 text-[10px] uppercase tracking-[0.2em] text-white/35">{groupe.titre}</div>
-              {groupe.items.filter(([valeur]) => !(estDemo() && ongletMasque(valeur))).map(([valeur, libelleBase, Icone]) => {
-                const libelle = estDemo() ? libelleOnglet(valeur, libelleBase) : libelleBase;
-                const badge = valeur === "entreprise" ? nouvellesEntreprise : valeur === "mariage" ? nouvellesMariage : 0;
-                return (
-                  <TabsTrigger key={valeur} value={valeur} data-testid={valeur === "agenda" ? "onglet-agenda" : undefined}
-                    className="relative shrink-0 lg:w-full justify-start gap-2.5 rounded-xl px-3 py-2 text-[13px] lg:text-sm font-medium text-white/70 hover:text-white hover:bg-white/[0.06] data-[state=active]:bg-white data-[state=active]:text-[#141414] data-[state=active]:shadow-none transition-colors">
-                    <Icone className="h-4 w-4 shrink-0" /><span>{libelle}</span>
-                    {badge > 0 && <span className="lg:ml-auto min-w-5 h-5 px-1.5 rounded-full bg-[#C8B560] text-[#141414] text-[11px] font-semibold inline-flex items-center justify-center" aria-hidden title={`${badge} nouvelle(s) demande(s)`}>{badge}</span>}
-                  </TabsTrigger>
-                );
-              })}
+        {/* Les rubriques : visibles seulement sur ordinateur (le téléphone utilise la barre du bas) */}
+        <TabsList className="admin-onglets hidden lg:flex h-auto w-full bg-transparent p-0 rounded-none text-white/70 justify-start overflow-y-auto overflow-x-hidden px-3 pb-4 flex-1 flex-col items-stretch gap-0.5">
+          {groupesVisibles.map((groupe) => (
+            <div key={groupe.titre} className="block mb-3">
+              {reduit
+                ? <div className="mx-3 my-2 border-t border-white/10" aria-hidden />
+                : <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-[0.2em] text-white/35">{groupe.titre}</div>}
+              {groupe.items.map(({ valeur, libelle, Icone, badge }) => (
+                <TabsTrigger key={valeur} value={valeur} data-testid={valeur === "agenda" ? "onglet-agenda" : undefined} title={libelle}
+                  className={`relative w-full gap-2.5 rounded-xl py-2 text-sm font-medium text-white/70 hover:text-white hover:bg-white/[0.06] data-[state=active]:bg-white data-[state=active]:text-[#141414] data-[state=active]:shadow-none transition-colors ${reduit ? "justify-center px-0" : "justify-start px-3"}`}>
+                  <Icone className="h-4 w-4 shrink-0" /><span className={reduit ? "sr-only" : ""}>{libelle}</span>
+                  {badge > 0 && <span className={reduit ? "absolute top-0.5 right-2 min-w-4 h-4 px-1 rounded-full bg-[#C8B560] text-[#141414] text-[10px] font-semibold inline-flex items-center justify-center" : "ml-auto min-w-5 h-5 px-1.5 rounded-full bg-[#C8B560] text-[#141414] text-[11px] font-semibold inline-flex items-center justify-center"} aria-hidden title={`${badge} nouvelle(s) demande(s)`}>{badge}</span>}
+                </TabsTrigger>
+              ))}
             </div>
           ))}
         </TabsList>
-        <div className="hidden lg:block border-t border-white/10 p-4 space-y-2">
-          <div className="flex items-center gap-2 text-xs text-white/50 min-w-0"><Shield className="h-3.5 w-3.5 shrink-0 text-[#E4D49A]" /><span className="truncate">{user?.email}</span><span className="ml-auto shrink-0 opacity-50" title="Version du site chargée dans cette fenêtre" data-testid="version-admin">v{(typeof document !== "undefined" && [...document.scripts].map((x) => x.src).find((x) => /\/assets\/index-/.test(x))?.match(/index-([\w-]{4})/)?.[1]) || "dev"}</span></div>
-          <div className="flex gap-2">
-            <a href="/" target="_blank" rel="noreferrer" className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-white/15 min-h-9 text-xs hover:bg-white/10"><Globe className="h-3.5 w-3.5" /> Le site</a>
-            <button onClick={handleSignOut} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-white/10 min-h-9 text-xs hover:bg-white/20"><LogOut className="h-3.5 w-3.5" /> Déconnexion</button>
+        <div className={`hidden lg:block border-t border-white/10 ${reduit ? "p-2" : "p-4"} space-y-2`}>
+          {!reduit && <div className="flex items-center gap-2 text-xs text-white/50 min-w-0"><Shield className="h-3.5 w-3.5 shrink-0 text-[#E4D49A]" /><span className="truncate">{user?.email}</span><span className="ml-auto shrink-0 opacity-50" title="Version du site chargée dans cette fenêtre" data-testid="version-admin">v{(typeof document !== "undefined" && [...document.scripts].map((x) => x.src).find((x) => /\/assets\/index-/.test(x))?.match(/index-([\w-]{4})/)?.[1]) || "dev"}</span></div>}
+          <div className={`flex gap-2 ${reduit ? "flex-col items-center" : ""}`}>
+            <a href="/" target="_blank" rel="noreferrer" title="Voir le site" aria-label="Voir le site" className={`inline-flex items-center justify-center gap-1.5 rounded-full border border-white/15 min-h-9 text-xs hover:bg-white/10 ${reduit ? "w-9" : "flex-1"}`}><Globe className="h-3.5 w-3.5" />{!reduit && " Le site"}</a>
+            <button onClick={handleSignOut} title="Déconnexion" aria-label="Déconnexion" className={`inline-flex items-center justify-center gap-1.5 rounded-full bg-white/10 min-h-9 text-xs hover:bg-white/20 ${reduit ? "w-9" : "flex-1"}`}><LogOut className="h-3.5 w-3.5" />{!reduit && " Déconnexion"}</button>
           </div>
         </div>
       </aside>
+      <BarreBasseAdmin onglet={ongletAdmin} groupes={groupesVisibles.map((g) => ({ titre: g.titre, items: g.items }))} onDeconnexion={handleSignOut}
+        onChoisir={(v) => { setOngletAdmin(v); window.scrollTo({ top: 0 }); }} />
 
       {accueil?.surprise && accueil.prenom && !surpriseFermee && (
         <SurpriseBienvenue surprise={accueil.surprise} prenom={accueil.prenom} onFermer={() => { setSurpriseFermee(true); rechargerAccueil(); }} />
       )}
       <main className="flex-1 min-w-0">
       {dansApplication && <div className="hidden lg:block h-8 sticky top-0 z-30" style={{ WebkitAppRegion: "drag" } as React.CSSProperties} aria-hidden />}
-      <div className="mx-auto max-w-[1400px] px-3 py-5 sm:px-6 lg:px-10 lg:py-8">
-        <header className="mb-5 lg:mb-7 flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h1 className="font-serif text-2xl sm:text-3xl text-[#141414]" data-testid="titre-section">{(estDemo() ? titreOnglet(ongletAdmin, TITRES_ADMIN[ongletAdmin]) : TITRES_ADMIN[ongletAdmin])?.[0] ?? "Administration"}</h1>
-            <p className="text-sm text-[#6B6155]">{(estDemo() ? titreOnglet(ongletAdmin, TITRES_ADMIN[ongletAdmin]) : TITRES_ADMIN[ongletAdmin])?.[1]}</p>
-          </div>
-          <p className="text-xs text-[#8C6D22] first-letter:uppercase">{new Date().toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" })}</p>
-        </header>
+      <div className="mx-auto max-w-[1400px] px-3 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-10 lg:pt-6 lg:pb-8">
+        {/* En-tête compact : le Bilan a déjà son propre accueil, il n'a donc pas de titre en plus */}
+        {(ongletAdmin !== "tableau" || !accueil?.prenom) && (
+          <header className="mb-4 lg:mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+            <h1 className="font-serif text-xl sm:text-2xl lg:text-3xl text-[#141414]" data-testid="titre-section">{(estDemo() ? titreOnglet(ongletAdmin, TITRES_ADMIN[ongletAdmin]) : TITRES_ADMIN[ongletAdmin])?.[0] ?? "Administration"}</h1>
+            <p className="text-xs sm:text-sm text-[#6B6155] hidden sm:block">{(estDemo() ? titreOnglet(ongletAdmin, TITRES_ADMIN[ongletAdmin]) : TITRES_ADMIN[ongletAdmin])?.[1]}</p>
+          </header>
+        )}
 
         <TabsContent value="tableau" className="space-y-4">
           {accueil?.prenom && <CarteAccueil infos={accueil} nouvellesDemandes={nouvellesEntreprise + nouvellesMariage} />}
-          {accueil?.prenom && <Celebrations infos={accueil} onVu={rechargerAccueil} />}
-          <BilanMois />
-          {!estDemo() && <CarteAppTelephone email={user?.email} />}
-          <TableauDeBord demandesMariage={devisMariage as any} demandesEntreprise={devisEntreprise as any} onOuvrirDevis={() => setOngletAdmin("devis-rapide")} />
+          <TableauDeBord demandesMariage={devisMariage as any} demandesEntreprise={devisEntreprise as any} onAller={(v) => { setOngletAdmin(v); window.scrollTo({ top: 0 }); }}
+            haut={<>
+              {accueil?.prenom && <Celebrations infos={accueil} onVu={rechargerAccueil} />}
+              {!estDemo() && <CarteAppTelephone email={user?.email} mode="invitation" />}
+            </>}
+            bas={<BilanMois />} />
         </TabsContent>
 
         <TabsContent value="statistiques" className="space-y-4">
@@ -2005,6 +2023,7 @@ const Admin = () => {
 
         {/* Sécurité Tab */}
         <TabsContent value="securite" className="space-y-4">
+          {!estDemo() && <CarteAppTelephone email={user?.email} mode="reglage" />}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">

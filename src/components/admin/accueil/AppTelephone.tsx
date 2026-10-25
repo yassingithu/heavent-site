@@ -66,7 +66,11 @@ const nomAppareil = () => {
 
 type Etat = "chargement" | "impossible" | "ios-installer" | "a-activer" | "refuse" | "active";
 
-export function CarteAppTelephone({ email }: { email: string | undefined }) {
+/**
+ * mode « invitation » (Bilan) : n'apparaît que s'il reste quelque chose à faire (activer / installer), jamais pour dire que tout va bien.
+ * mode « reglage » (Sécurité) : état permanent des notifications de cet appareil et bouton d'essai.
+ */
+export function CarteAppTelephone({ email, mode = "reglage" }: { email: string | undefined; mode?: "invitation" | "reglage" }) {
   const [etat, setEtat] = useState<Etat>("chargement");
   const [occupe, setOccupe] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -122,21 +126,22 @@ export function CarteAppTelephone({ email }: { email: string | undefined }) {
     invitationInstall = null; setInstallable(false);
   };
 
-  if (etat === "chargement" || masquee) return null;
+  if (etat === "chargement") return null;
+  if (mode === "invitation" && (masquee || !(etat === "a-activer" || etat === "ios-installer"))) return null;
 
   // Déjà tout bon : une simple ligne discrète
   if (etat === "active" && !message) {
     return (
-      <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#EADFC8] bg-white px-4 py-2.5 text-sm" data-testid="notifications-actives">
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#EADFC8] bg-white px-4 py-3 text-sm" data-testid="notifications-actives">
         <span className="flex items-center gap-2 text-[#5E554A]"><BellRing className="h-4 w-4 text-[#A8933F]" /> Notifications activées sur cet appareil</span>
-        <button onClick={essai} disabled={occupe} className="text-xs underline underline-offset-2 text-muted-foreground hover:text-foreground">Tester</button>
+        <button onClick={essai} disabled={occupe} className="text-xs underline underline-offset-2 text-muted-foreground hover:text-foreground" data-testid="tester-notification">Envoyer une notification d'essai</button>
       </div>
     );
   }
 
   return (
     <section className="relative rounded-3xl border border-[#EADFC8] bg-white p-5" data-testid="carte-app-telephone">
-      <button onClick={() => setMasquee(true)} className="absolute top-3 right-3 h-8 w-8 rounded-full hover:bg-black/5 flex items-center justify-center" aria-label="Masquer"><X className="h-4 w-4" /></button>
+      {mode === "invitation" && <button onClick={() => setMasquee(true)} className="absolute top-3 right-3 h-8 w-8 rounded-full hover:bg-black/5 flex items-center justify-center" aria-label="Masquer"><X className="h-4 w-4" /></button>}
       <div className="flex items-start gap-4 pr-6">
         <img src="/admin-192.png" alt="" className="h-12 w-12 rounded-2xl shrink-0" />
         <div className="space-y-2 min-w-0">

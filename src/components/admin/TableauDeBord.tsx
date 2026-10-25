@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { ChevronRight } from "lucide-react";
+import { aujourdhuiMaroc } from "@/lib/dateMaroc";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CATALOGUE, TypeElement } from "@/components/jeu-evenement/config";
@@ -49,21 +51,24 @@ function Barres({ titre, donnees, format, testId }: { titre: string; donnees: { 
 function Tuile({ titre, valeur, detail, testId }: { titre: string; valeur: string; detail?: string; testId?: string }) {
   return (
     <Card data-testid={testId}>
-      <CardContent className="p-4">
-        <div className="text-[11px] uppercase tracking-[0.14em] font-semibold text-[#8C6D22]">{titre}</div>
-        <div className="font-serif text-3xl mt-1 text-[#141414]">{valeur}</div>
-        {detail && <div className="text-xs text-muted-foreground mt-0.5">{detail}</div>}
+      <CardContent className="p-3 sm:p-4">
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-[0.12em] font-semibold text-[#8C6D22] leading-tight">{titre}</div>
+        <div className="font-serif text-2xl mt-0.5 text-[#141414] truncate">{valeur}</div>
+        {detail && <div className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 leading-tight">{detail}</div>}
       </CardContent>
     </Card>
   );
 }
 
 /** Tableau de bord de l'activité : demandes, devis, signatures, chiffre d'affaires, événements à venir, choix du jeu. */
-export default function TableauDeBord({ demandesMariage, demandesEntreprise, onOuvrirDevis }: {
-  demandesMariage: Demande[]; demandesEntreprise: Demande[]; onOuvrirDevis?: () => void;
+export default function TableauDeBord({ demandesMariage, demandesEntreprise, onAller, haut, bas }: {
+  demandesMariage: Demande[]; demandesEntreprise: Demande[]; onAller?: (onglet: string) => void; haut?: ReactNode; bas?: ReactNode;
 }) {
   const [devis, setDevis] = useState<DevisLigne[]>([]);
+  const [bulletinsAValider, setBulletinsAValider] = useState<number | null>(null);
   useEffect(() => {
+    supabase.from("fiches_paie").select("id", { count: "exact", head: true }).eq("statut", "en_attente")
+      .then(({ count }) => setBulletinsAValider(count ?? 0));
     supabase.from("devis").select("id, numero, client_nom, titre, statut, total_ttc, date_emission, date_envoi, signe_le, date_evenement, relances")
       .order("date_emission", { ascending: false })
       .then(({ data }) => setDevis((data ?? []) as any));
@@ -81,7 +86,7 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onO
     const envoyes6 = devis.filter((d) => d.date_envoi && d.date_envoi.slice(0, 7) >= cles[0]);
     const acceptes6 = envoyes6.filter((d) => d.statut === "accepte");
     const enAttente = devis.filter((d) => d.statut === "envoye" && !d.signe_le);
-    const aujourdhui = now.toISOString().slice(0, 10);
+    const aujourdhui = aujourdhuiMaroc();
     const aVenir = acceptes.filter((d) => d.date_evenement && d.date_evenement >= aujourdhui).sort((a, b) => a.date_evenement!.localeCompare(b.date_evenement!));
     const sansReponse = enAttente.filter((d) => d.date_envoi && (now.getTime() - new Date(d.date_envoi).getTime()) / 864e5 >= 5)
       .sort((a, b) => (a.date_envoi ?? "").localeCompare(b.date_envoi ?? ""));
@@ -103,34 +108,62 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onO
   }, [devis, demandesMariage, demandesEntreprise]);
 
   const maxTop = Math.max(1, ...s.top.map((t) => t.n));
+  const aujourdhuiMa = aujourdhuiMaroc();
+  const dansJours = (jour: string) => Math.round((new Date(jour + "T12:00:00Z").getTime() - new Date(aujourdhuiMa + "T12:00:00Z").getTime()) / 864e5);
+  const quand = (jour: string) => { const n = dansJours(jour); return n === 0 ? "Aujourd'hui" : n === 1 ? "Demain" : `Dans ${n} jours`; };
+  const nbEntreprise = demandesEntreprise.filter((d) => d.statut === "en_attente").length;
+  const nbEvenement = demandesMariage.filter((d) => d.statut === "en_attente").length;
+  const aTraiter: { cle: string; nombre: number; libelle: string; onglet: string }[] = [
+    { cle: "mariage", nombre: nbEvenement, libelle: nbEvenement > 1 ? "demandes événement à traiter" : "demande événement à traiter", onglet: "mariage" },
+    { cle: "entreprise", nombre: nbEntreprise, libelle: nbEntreprise > 1 ? "demandes entreprise à traiter" : "demande entreprise à traiter", onglet: "entreprise" },
+    { cle: "sansreponse", nombre: s.sansReponse.length, libelle: s.sansReponse.length > 1 ? "devis sans réponse depuis 5 jours ou plus" : "devis sans réponse depuis 5 jours ou plus", onglet: "devis-rapide" },
+    { cle: "bulletins", nombre: bulletinsAValider ?? 0, libelle: (bulletinsAValider ?? 0) > 1 ? "bulletins de paie à valider" : "bulletin de paie à valider", onglet: "fiches" },
+  ].filter((x) => x.nombre > 0);
   return (
     <div className="space-y-4" data-testid="tableau-de-bord">
-      <MissionsDuJour />
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Tuile testId="tuile-demandes" titre="Demandes ce mois-ci" valeur={String(s.demandesMois)} detail={`${s.demandesPrec} le mois dernier`} />
-        <Tuile titre="Devis en attente de réponse" valeur={String(s.enAttente.length)} detail={s.enAttente.length ? `${mad(s.montantAttente)} TTC en jeu` : "Aucun"} />
-        <Tuile testId="tuile-ca" titre="Signé ce mois-ci" valeur={mad(s.caMois)} detail={`${s.acceptesMois} devis accepté${s.acceptesMois > 1 ? "s" : ""}`} />
-        <Tuile titre="Taux de signature (6 mois)" valeur={s.taux === null ? "—" : `${s.taux} %`} detail={`${s.acceptes6} accepté${s.acceptes6 > 1 ? "s" : ""} sur ${s.envoyes6} envoyé${s.envoyes6 > 1 ? "s" : ""}`} />
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-4">
-        <Card><CardContent className="p-4"><Barres testId="graph-demandes" titre="Demandes reçues par mois" donnees={s.courbeDemandes} format={(n) => `${n} demande${n > 1 ? "s" : ""}`} /></CardContent></Card>
-        <Card><CardContent className="p-4"><Barres testId="graph-ca" titre="Chiffre d'affaires signé par mois (TTC)" donnees={s.ca} format={mad} /></CardContent></Card>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="font-serif text-lg font-normal">Prochains événements confirmés</CardTitle></CardHeader>
+      {haut}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card data-testid="a-traiter">
+          <CardHeader className="pb-2"><CardTitle className="font-serif text-lg font-normal">À traiter maintenant</CardTitle></CardHeader>
+          <CardContent className="space-y-1.5 text-sm">
+            {aTraiter.length === 0 && <p className="text-muted-foreground" data-testid="rien-a-traiter">Rien d'urgent : tout est à jour.</p>}
+            {aTraiter.map((x) => (
+              <button key={x.cle} onClick={() => onAller?.(x.onglet)} data-testid={`a-traiter-${x.cle}`}
+                className="w-full flex items-center gap-3 rounded-xl border border-[#EADFC8] bg-[#FDFBF5] px-3 min-h-12 text-left hover:bg-[#F6EFD9] transition-colors">
+                <span className="font-serif text-xl w-8 text-center text-[#8C6D22] tabular-nums">{x.nombre}</span>
+                <span className="flex-1 leading-tight">{x.libelle}</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </button>
+            ))}
+          </CardContent>
+        </Card>
+        <Card data-testid="prochains-evenements">
+          <CardHeader className="pb-2"><CardTitle className="font-serif text-lg font-normal">Prochains événements</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
             {s.aVenir.length === 0 && <p className="text-muted-foreground">Aucun événement confirmé à venir.</p>}
-            {s.aVenir.slice(0, 6).map((d) => (
-              <div key={d.id} className="flex justify-between gap-3 border-b last:border-0 pb-2">
-                <div className="min-w-0"><div className="font-medium truncate">{d.titre || d.client_nom}</div><div className="text-xs text-muted-foreground">{d.client_nom} · {d.numero}</div></div>
-                <div className="text-right text-xs whitespace-nowrap"><div className="capitalize">{jourFr(d.date_evenement!)}</div><div className="text-muted-foreground">{mad(d.total_ttc)}</div></div>
+            {s.aVenir.slice(0, 5).map((d) => (
+              <div key={d.id} className="flex justify-between gap-3 border-b last:border-0 pb-2 last:pb-0">
+                <div className="min-w-0"><div className="font-medium truncate">{d.titre || d.client_nom}</div><div className="text-xs text-muted-foreground truncate">{d.client_nom} · {d.numero}</div></div>
+                <div className="text-right text-xs whitespace-nowrap"><div className="font-medium text-[#8C6D22]">{quand(d.date_evenement!)}</div><div className="text-muted-foreground capitalize">{jourFr(d.date_evenement!)}</div></div>
               </div>
             ))}
           </CardContent>
         </Card>
+      </div>
+      <MissionsDuJour />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+        <Tuile testId="tuile-demandes" titre="Demandes ce mois-ci" valeur={String(s.demandesMois)} detail={`${s.demandesPrec} le mois dernier`} />
+        <Tuile titre="Devis en attente" valeur={String(s.enAttente.length)} detail={s.enAttente.length ? `${mad(s.montantAttente)} TTC en jeu` : "Aucun"} />
+        <Tuile testId="tuile-ca" titre="Signé ce mois-ci" valeur={mad(s.caMois)} detail={`${s.acceptesMois} devis accepté${s.acceptesMois > 1 ? "s" : ""}`} />
+        <Tuile titre="Taux de signature (6 mois)" valeur={s.taux === null ? "—" : `${s.taux} %`} detail={`${s.acceptes6} accepté${s.acceptes6 > 1 ? "s" : ""} sur ${s.envoyes6} envoyé${s.envoyes6 > 1 ? "s" : ""}`} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card><CardContent className="p-4"><Barres testId="graph-demandes" titre="Demandes reçues par mois" donnees={s.courbeDemandes} format={(n) => `${n} demande${n > 1 ? "s" : ""}`} /></CardContent></Card>
+        <Card><CardContent className="p-4"><Barres testId="graph-ca" titre="Chiffre d'affaires signé par mois (TTC)" donnees={s.ca} format={mad} /></CardContent></Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="font-serif text-lg font-normal">Devis sans réponse depuis 5 jours ou plus</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
@@ -141,7 +174,7 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onO
                 <div className="text-right text-xs whitespace-nowrap"><div>{mad(d.total_ttc)}</div><div className="text-muted-foreground">{d.relances ? `${d.relances} relance${d.relances > 1 ? "s" : ""} auto` : "relance auto prévue"}</div></div>
               </div>
             ))}
-            {s.sansReponse.length > 0 && onOuvrirDevis && <button className="text-xs underline text-muted-foreground" onClick={onOuvrirDevis}>Voir les devis</button>}
+            {s.sansReponse.length > 0 && onAller && <button className="text-xs underline text-muted-foreground" onClick={() => onAller("devis-rapide")}>Voir les devis</button>}
           </CardContent>
         </Card>
         <Card>
@@ -158,6 +191,7 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onO
           </CardContent>
         </Card>
       </div>
+      {bas}
     </div>
   );
 }

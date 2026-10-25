@@ -21,7 +21,21 @@ async function scenario(nom, fn) {
   if (process.env.SEUL && !nom.includes(process.env.SEUL)) return;
   const debut = Date.now(); const notes = [];
   try { await fn(notes); resultats.push({ nom, ok: true, notes, duree: Date.now() - debut }); console.log(`✅ ${nom}`); }
-  catch (e) { resultats.push({ nom, ok: false, notes, erreur: e.message.split("\n")[0], duree: Date.now() - debut }); console.log(`❌ ${nom} — ${e.message.split("\n")[0]}`); }
+  catch (e) { resultats.push({ nom, ok: false, notes, erreur: e.message.split("\n").slice(0, 16).join(" / "), duree: Date.now() - debut }); console.log(`❌ ${nom} — ${e.message.split("\n")[0]}`); }
+}
+
+/** Ouvre une rubrique de l'admin : menu latéral sur ordinateur, « Plus » de la barre du bas sur téléphone. */
+async function clicOnglet(page, nom) {
+  const t = page.getByRole("tab", { name: nom }).first();
+  if (await t.waitFor({ state: "visible", timeout: 4000 }).then(() => true).catch(() => false)) return t.click();
+  const plus = page.getByTestId("bas-plus");
+  if (await plus.isVisible().catch(() => false)) {
+    await plus.click();
+    // le bouton peut porter un badge (nombre de nouvelles demandes) après son libellé
+    const nomPlus = nom instanceof RegExp ? new RegExp(nom.source.replace(/\$$/, "\\s*\\d*$"), nom.flags) : nom;
+    return page.getByRole("dialog").getByRole("button", { name: nomPlus }).first().click();
+  }
+  return t.click();
 }
 const toasts = async (page) => (await page.locator("li[data-state]").allInnerTexts()).join(" | ");
 
@@ -30,7 +44,7 @@ await scenario("Devis mariage → équipe de 5 → contrats → paie → espace 
   const base = nouvelleBase();
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(800);
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(800);
   await page.getByRole("button", { name: /Faire le devis/ }).first().click(); await page.waitForTimeout(1000);
   await page.getByRole("button", { name: /^Enregistrer$/ }).click(); await page.waitForTimeout(1500);
   verifier(base.devis.length === 1, "le devis n'a pas été enregistré");
@@ -43,7 +57,7 @@ await scenario("Devis mariage → équipe de 5 → contrats → paie → espace 
   notes.push("5 contrats créés automatiquement (16:00–00:00, 8 h)");
   const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 90000 }), page.getByRole("button", { name: /Contrats \(PDF\)/ }).click()]);
   verifier(/\.pdf$/.test(dl.suggestedFilename()), "le PDF des contrats n'a pas été téléchargé");
-  await page.getByRole("tab", { name: /Paie$/ }).click(); await page.waitForTimeout(800);
+  await clicOnglet(page, /Paie$/); await page.waitForTimeout(800);
   await page.getByRole("button", { name: /Calculer le mois/ }).click(); await page.waitForTimeout(1500);
   verifier(base.fiches_paie.length === 5, `${base.fiches_paie.length} fiche(s) de paie au lieu de 5`);
   verifier(base.fiches_paie[0].salaire_brut === 480, "salaire brut attendu : 8 h × 60 MAD = 480 MAD");
@@ -78,7 +92,7 @@ await scenario("CNSS : n° employeur manquant, doublons signalés, bulletin non 
   };
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Paie$/ }).click(); await page.waitForTimeout(1000);
+  await clicOnglet(page, /Paie$/); await page.waitForTimeout(1000);
   verifier(await page.getByTestId("alerte-cnss-employeur").isVisible(), "pas d'alerte « n° CNSS employeur manquant »");
   verifier(await page.getByTestId("alerte-cnss-doublon").isVisible(), "doublon CNSS (123 456 789 / 123.456.789) non signalé");
   await statutDe(base.staff[0].prenom, "Validée");
@@ -104,14 +118,14 @@ await scenario("CNSS : n° employeur manquant, doublons signalés, bulletin non 
   notes.push("alerte employeur + doublon affichés ; validation refusée tant que le n° employeur manque ; PDF « aperçu incomplet » enregistré");
   await page.screenshot({ path: `${CAPTURES}/cnss-paie.png`, fullPage: true });
   // Saisie du numéro employeur : enregistré exactement comme tapé
-  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(600);
-  await page.getByRole("tab", { name: /Infos agence/ }).click(); await page.waitForTimeout(600);
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(600);
+  await clicOnglet(page, /Infos agence/); await page.waitForTimeout(600);
   verifier(await page.getByTestId("cnss-employeur-manquant").isVisible(), "le champ employeur vide n'est pas signalé");
   await page.getByTestId("cnss-employeur").fill(" 0012-345 ");
   await page.getByRole("button", { name: /^Enregistrer$/ }).last().click(); await page.waitForTimeout(1000);
   verifier(base.parametres_agence[0].cnss_affiliation_employeur === " 0012-345 ", `numéro modifié à l'enregistrement : « ${base.parametres_agence[0].cnss_affiliation_employeur} »`);
   notes.push("n° employeur enregistré tel quel (espaces, zéros, tiret), avec avertissement non bloquant");
-  await page.getByRole("tab", { name: /Paie$/ }).click(); await page.waitForTimeout(1000);
+  await clicOnglet(page, /Paie$/); await page.waitForTimeout(1000);
   verifier(!(await page.getByTestId("alerte-cnss-employeur").count()), "l'alerte employeur reste affichée après saisie");
   await statutDe(base.staff[0].prenom, "Validée");
   verifier(base.fiches_paie[0].statut === "valide", "bulletin complet non validable");
@@ -177,7 +191,7 @@ await scenario("Admin : corriger les dispos, changer un mot de passe, bannir un 
   const base = nouvelleBase();
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Dispo$/ }).click(); await page.waitForTimeout(1000);
+  await clicOnglet(page, /Disponibilités$/); await page.waitForTimeout(1000);
   await page.getByPlaceholder("Rechercher…").fill(base.staff[1].prenom);
   await page.locator('button[title="Modifier les disponibilités de ce jour"]').nth(1).click(); await page.waitForTimeout(800);
   const dlg = page.getByRole("dialog");
@@ -185,7 +199,7 @@ await scenario("Admin : corriger les dispos, changer un mot de passe, bannir un 
   await dlg.getByRole("button", { name: "Enregistrer" }).click(); await page.waitForTimeout(1200);
   verifier(base.disponibilites.filter((d) => d.staff_id === base.staff[1].id && d.disponible && d.creneau).length >= 3, "les disponibilités corrigées n'ont pas été enregistrées");
   notes.push("disponibilités d'une journée corrigées");
-  await page.getByRole("tab", { name: /Personnel$/ }).click(); await page.waitForTimeout(800);
+  await clicOnglet(page, /Personnel$/); await page.waitForTimeout(800);
   await page.locator('button[title="Modifier la fiche / mot de passe"]').first().click(); await page.waitForTimeout(800);
   await page.getByPlaceholder("Nouveau mot de passe").fill("Heavent2026!"); await page.getByPlaceholder("Confirmer").fill("Heavent2026!");
   await page.getByRole("button", { name: "Changer le mot de passe" }).click(); await page.waitForTimeout(1000);
@@ -203,7 +217,7 @@ await scenario("Admin : créer, modifier et supprimer un contrat à la main", as
   const base = nouvelleBase();
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Contrats$/ }).click(); await page.waitForTimeout(1000);
+  await clicOnglet(page, /Contrats$/); await page.waitForTimeout(1000);
   await page.getByRole("button", { name: /Nouveau contrat/ }).click(); await page.waitForTimeout(800);
   const dlg = page.getByRole("dialog");
   await dlg.getByRole("combobox").first().click(); await page.getByRole("option").first().click();
@@ -268,7 +282,7 @@ await scenario("Crew : signer contrat + conditions (contresignés par l'employeu
   // 4. L'admin voit le contrat signé dans l'onglet Contrats
   { const a = await contexte(navigateur, base, ADMIN);
     await connecter(a.page, BASE, ADMIN, "/admin");
-    await a.page.getByRole("tab", { name: /Contrats$/ }).click(); await a.page.waitForTimeout(1200);
+    await clicOnglet(a.page, /Contrats$/); await a.page.waitForTimeout(1200);
     const suivi = a.page.getByTestId("suivi-signatures");
     verifier((await suivi.innerText()).includes("Signé le"), "l'admin ne voit pas le contrat signé");
     verifier(await a.page.getByText(/contresigné par l'employeur/).count(), "la contresignature n'est pas indiquée côté admin");
@@ -308,7 +322,7 @@ await scenario("Crew : remarque « heures en plus » sur un contrat → l'admin 
     await ctx.close(); }
   { const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
     await connecter(page, BASE, ADMIN, "/admin");
-    await page.getByRole("tab", { name: /Contrats$/ }).click(); await page.waitForTimeout(1200);
+    await clicOnglet(page, /Contrats$/); await page.waitForTimeout(1200);
     const carte = page.getByTestId("remarques-admin");
     verifier((await carte.innerText()).includes("2 nouvelles"), "l'admin ne voit pas les 2 nouvelles remarques");
     verifier((await carte.innerText()).includes("+1.5 h") && (await carte.innerText()).includes("120 MAD"), "détail heures / montant absent côté admin");
@@ -331,7 +345,7 @@ await scenario("Admin : devis Nawar bar à parfums (logo Nawar, 80 MAD par parfu
   base.catalogue_prestations = [...base.catalogue_prestations];
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(800);
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(800);
   await page.getByRole("button", { name: /Devis Nawar/ }).click(); await page.waitForTimeout(800);
   const desig = page.getByPlaceholder(/Désignation/);
   verifier((await desig.first().inputValue()) === "Parfums — bar à parfums Nawar", "la ligne parfums n'est pas en tête");
@@ -365,7 +379,7 @@ await scenario("Devis envoyé au client → signature en ligne sur smartphone �
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   page.on("dialog", (d) => d.accept());
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(800);
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(800);
   await page.getByRole("button", { name: /Devis Nawar/ }).click(); await page.waitForTimeout(800);
   await page.getByText("Nom du contact").locator("..").locator("input").fill("Salma Bennani");
   await page.getByTestId("envoyer-client").click(); await page.waitForTimeout(800);
@@ -413,7 +427,7 @@ await scenario("Devis envoyé au client → signature en ligne sur smartphone �
 
   // Retour côté admin : devis signé dans la liste, envoi bloqué
   await page.reload(); await page.waitForTimeout(2500);
-  await page.getByRole("tab", { name: /Devis/ }).first().click().catch(() => {}); await page.waitForTimeout(800);
+  await clicOnglet(page, /Devis/).catch(() => {}); await page.waitForTimeout(800);
   verifier(await page.getByText("✍️ Signé en ligne").count(), "l'admin ne voit pas que le devis est signé");
   notes.push("l'admin voit « ✍️ Signé en ligne » dans la liste");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
@@ -437,7 +451,7 @@ await scenario("Admin : bilan de l'activité, puis réalisations en photos publi
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   page.on("dialog", (d) => d.accept());
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Bilan/ }).click(); await page.waitForTimeout(1200);
+  await clicOnglet(page, /Bilan/); await page.waitForTimeout(1200);
   const bilan = await page.getByTestId("tableau-de-bord").innerText();
   verifier(/Demandes ce mois-ci\s*2/i.test(bilan), "les 2 demandes du mois ne sont pas comptées");
   verifier(bilan.replace(/\s/g, "").includes("60000MAD"), "le chiffre signé du mois (60 000 MAD) n'apparaît pas");
@@ -447,7 +461,7 @@ await scenario("Admin : bilan de l'activité, puis réalisations en photos publi
   await page.screenshot({ path: `${CAPTURES}/10-bilan.png`, fullPage: true });
   notes.push("bilan : demandes du mois, chiffre signé, événements à venir, devis sans réponse, choix du jeu");
 
-  await page.getByRole("tab", { name: /Site$/ }).click(); await page.waitForTimeout(600);
+  await clicOnglet(page, /Site web$/); await page.waitForTimeout(600);
   await page.getByRole("button", { name: "Ajouter", exact: true }).click();
   await page.getByPlaceholder("Ex. Mariage de Salma & Karim").fill("Mariage de Salma & Karim");
   await page.getByPlaceholder(/Palais des Congrès/).fill("Rabat");
@@ -518,7 +532,7 @@ await scenario("Factures : acompte payé, solde avec acompte déduit, PDF, envoi
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   page.on("dialog", (d) => d.accept());
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(800);
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(800);
   await page.getByText("Atlas Events SARL").first().click(); await page.waitForTimeout(1500);
   const bloc = page.getByTestId("bloc-factures");
   verifier(await bloc.getByTestId("facture-ligne").count() === 1, "la facture d'acompte n'apparaît pas dans le devis");
@@ -544,7 +558,7 @@ await scenario("Factures : acompte payé, solde avec acompte déduit, PDF, envoi
   const encaisser = (await page.getByTestId("factures-a-encaisser").innerText()).replace(/\s+/g, " ");
   verifier(encaisser.includes("7 056,00"), "le reste à encaisser est faux : " + encaisser);
   await page.screenshot({ path: `${CAPTURES}/14-factures.png`, fullPage: true });
-  await page.getByRole("tab", { name: "Mes devis" }).click(); await page.waitForTimeout(500);
+  await clicOnglet(page, "Mes devis"); await page.waitForTimeout(500);
   verifier(!(await page.getByTestId("supprimer-devis").count()) && await page.getByTestId("archiver-devis").count(), "un devis facturé propose encore « Supprimer » au lieu d'« Archiver »");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
@@ -674,7 +688,7 @@ await scenario("Pointage : confirmation, fiche mission, arrivée sur le lieu ave
 
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Bilan/ }).first().click().catch(() => {}); await page.waitForTimeout(1200);
+  await clicOnglet(page, /Bilan/).catch(() => {}); await page.waitForTimeout(1200);
   const suivi = await page.getByTestId("missions-du-jour").innerText();
   verifier(/Arrivée/.test(suivi) && /hors lieu/.test(suivi) && /1 pointage à vérifier/.test(suivi), "le suivi du jour est incomplet : " + suivi);
   await page.screenshot({ path: `${CAPTURES}/19-suivi-pointage.png`, fullPage: true });
@@ -720,13 +734,13 @@ await scenario("Avis client : notes du service et des crews, avis Google, notes 
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   page.on("dialog", (d) => d.accept());
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(800);
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(800);
   await page.getByText("Henné Yasmine").first().click(); await page.waitForTimeout(1800);
   await page.getByTestId("reprendre-equipe-admin").click(); await page.getByRole("option", { name: /DEV-2026-0160/ }).click(); await page.waitForTimeout(2500);
   const nouvelles = base.affectations.filter((a) => a.devis_id === "dv7").map((a) => a.staff_id).sort();
   verifier(nouvelles.length === 2 && nouvelles.join() === [s1.id, s2.id].sort().join(), "l'équipe précédente n'est pas reprise : " + JSON.stringify(nouvelles));
   verifier(await page.getByText("5.0").count() && await page.getByText("4.0").count(), "les notes des crews ne s'affichent pas dans l'équipe");
-  await page.getByRole("tab", { name: "Mes devis" }).click(); await page.waitForTimeout(500);
+  await clicOnglet(page, "Mes devis"); await page.waitForTimeout(500);
   await page.getByText("Mariage Yasmine").first().click(); await page.waitForTimeout(1500);
   verifier(/5\/5/.test(await page.getByTestId("avis-client-admin").innerText()) && /même équipe/.test(await page.getByTestId("avis-client-admin").innerText()), "l'avis du client n'apparaît pas dans le devis");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
@@ -812,7 +826,7 @@ await scenario("Espace mariés : check-list, budget, programme, invités qui ré
   // Vue agence
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(800);
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(800);
   await page.getByText("Mariage Salma").first().click(); await page.waitForTimeout(1800);
   const vue = await page.getByTestId("espace-maries-admin").innerText();
   verifier(/3\s*personnes confirmées/.test(vue) && /Entrée des mariés/.test(vue) && /allergique/.test(vue), "l'agence ne voit pas l'espace mariés : " + vue.slice(0, 200));
@@ -844,10 +858,10 @@ await scenario("Statistiques : visites, provenance, clics WhatsApp et demandes c
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
   await page.addInitScript(() => { window.__suiviTest = true; }); // après la connexion : la page de connexion ne fausse pas le compte
-  await page.getByRole("tab", { name: /Statistiques$/ }).click();
+  await clicOnglet(page, /Statistiques$/);
   await page.getByTestId("stat-visites").waitFor({ timeout: 8000 }).catch(() => {});
   if (!(await page.getByTestId("stat-visites").count())) { // relance (premier chargement de l'admin parfois lent)
-    await page.getByRole("tab", { name: /Bilan$/ }).click(); await page.getByRole("tab", { name: /Statistiques$/ }).click();
+    await clicOnglet(page, /Bilan$/); await clicOnglet(page, /Statistiques$/);
     await page.getByTestId("stat-visites").waitFor({ timeout: 10000 }).catch(() => {});
   }
   const bloc = await page.getByTestId("stats-site").innerText();
@@ -856,7 +870,7 @@ await scenario("Statistiques : visites, provenance, clics WhatsApp et demandes c
   await page.goto(`${BASE}/`); await page.waitForTimeout(1500);
   verifier(base.evenements_site.length === nAvant, "les visites de l'administratrice sont comptées");
   await page.goto(`${BASE}/admin`); await page.waitForTimeout(2000);
-  await page.getByRole("tab", { name: /Statistiques$/ }).click(); await page.waitForTimeout(1200);
+  await clicOnglet(page, /Statistiques$/); await page.waitForTimeout(1200);
   await page.getByTestId("stats-site").screenshot({ path: `${CAPTURES}/24-statistiques.png` });
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
@@ -885,7 +899,7 @@ await scenario("Cohérence : devis signé/facturé archivable (pas supprimable),
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   const dialogues = []; page.on("dialog", (d) => { dialogues.push(d.message()); d.accept(); });
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(1000);
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(1000);
   const ligne = (t) => page.locator("tr", { hasText: t });
   verifier(!(await ligne("BARAKA motor").getByTestId("supprimer-devis").count()) && await ligne("BARAKA motor").getByTestId("archiver-devis").count(), "le devis signé et facturé propose encore « Supprimer »");
   verifier(await ligne("Brouillon Test").getByTestId("supprimer-devis").count(), "le brouillon ne peut pas être supprimé");
@@ -900,14 +914,14 @@ await scenario("Cohérence : devis signé/facturé archivable (pas supprimable),
   await ligne("Salon Atlas").click(); await page.waitForTimeout(1500);
   verifier(await page.getByTestId("equipe-liberee").isVisible(), "le devis annulé propose encore de constituer une équipe");
   // Archiver le devis BARAKA
-  await page.getByRole("tab", { name: "Mes devis" }).click(); await page.waitForTimeout(500);
+  await clicOnglet(page, "Mes devis"); await page.waitForTimeout(500);
   await ligne("BARAKA motor").getByTestId("archiver-devis").click(); await page.waitForTimeout(800);
   verifier(base.devis.find((d) => d.id === "dvA").archive === true && !(await ligne("BARAKA motor").count()), "le devis archivé reste dans la liste");
   // Supprimer le brouillon
   await ligne("Brouillon Test").getByTestId("supprimer-devis").click(); await page.waitForTimeout(800);
   verifier(!base.devis.some((d) => d.id === "dvB"), "le brouillon n'est pas supprimé");
   // Crew avec fiche de paie : bouton supprimer désactivé
-  await page.getByRole("tab", { name: /Personnel$/ }).click(); await page.waitForTimeout(1000);
+  await clicOnglet(page, /Personnel$/); await page.waitForTimeout(1000);
   const btn = page.locator("tr", { hasText: s1.nom }).locator("button[title*='Contrats signés']");
   verifier(await btn.count() && await btn.first().isDisabled(), "on peut encore supprimer un crew qui a des fiches de paie");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
@@ -929,7 +943,7 @@ await scenario("Site : éléments de confiance réglés dans l'admin, témoignag
     avis_commentaire: "Une équipe adorable et très professionnelle", avis_publiable: true, lien_token: crypto.randomUUID(), date_emission: "2026-09-01" }];
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Site$/ }).click(); await page.waitForTimeout(1200);
+  await clicOnglet(page, /Site web$/); await page.waitForTimeout(1200);
   await page.getByTestId("vitrine-annees").fill("10");
   await page.getByTestId("vitrine-google-note").fill("4,9");
   await page.getByTestId("engagement-remplacement").click();
@@ -973,7 +987,7 @@ await scenario("Paie : « Calculer le mois » retire les fiches sans mission (ja
   base.contrats.push({ id: "cm", staff_id: c.id, devis_id: null, titre: "Hôtesse", statut: "actif", date_debut: jour, date_fin: jour, taux_horaire: 60, total_heures: 7, salaire_brut: 420, dates: [{ date: jour, heures: 7 }] });
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Paie$/ }).click(); await page.waitForTimeout(1000);
+  await clicOnglet(page, /Paie$/); await page.waitForTimeout(1000);
   await page.getByRole("button", { name: "Calculer le mois" }).click(); await page.waitForTimeout(1500);
   const ids = base.fiches_paie.map((f) => f.id);
   verifier(!ids.includes("orpheline"), "la fiche sans mission est toujours là");
@@ -999,7 +1013,7 @@ await scenario("Admin : demande du jeu → devis ligne par ligne aux prix du cat
     { id: "j5", categorie: "decoration", designation: "Centre de table", description: null, unite: "unite", prix_unitaire: 180, actif: true, ordre: 45, jeu_element: "centres" }];
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(800);
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(800);
   verifier(await page.getByText(/Créé avec le jeu/).count(), "la demande du jeu n'est pas signalée");
   await page.getByRole("button", { name: /Faire le devis/ }).first().click(); await page.waitForTimeout(1000);
   const valeurs = await page.getByPlaceholder(/Désignation/).evaluateAll((els) => els.map((e) => e.value));
@@ -1050,7 +1064,7 @@ await scenario("Cadeau : surprise de bienvenue, mot du jour de Yassin, célébra
   await page.reload(); await page.waitForTimeout(2500);
   verifier(!(await page.getByTestId("surprise-bienvenue").count()) && !(await page.getByTestId("celebration").count()), "la surprise ou la célébration revient après rechargement");
   // Réponses WhatsApp prêtes sur une demande
-  await page.getByRole("tab", { name: /Devis$/ }).first().click(); await page.waitForTimeout(1000);
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(1000);
   await page.getByTestId("reponses-whatsapp").first().click(); await page.waitForTimeout(400);
   verifier(await page.getByTestId("modeles-whatsapp").count(), "les réponses WhatsApp ne s'ouvrent pas");
   await page.getByText("Bien reçu").click(); await page.waitForTimeout(300);
@@ -1082,7 +1096,7 @@ await scenario("Instagram : clé Pixabay cachée, visuels montés automatiquemen
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await ctx.route("https://pixabay.com/**", (r) => r.fulfill({ status: 200, body: base.photoTest, contentType: "image/jpeg", headers: { "access-control-allow-origin": "*" } }));
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Instagram$/ }).click(); await page.waitForTimeout(1000);
+  await clicOnglet(page, /Instagram$/); await page.waitForTimeout(1000);
   verifier(await page.getByTestId("carte-post").count() === 2, "les posts ne s'affichent pas");
   await page.getByTestId("cle-pixabay").fill("cle-de-test-123");
   await page.getByRole("button", { name: "Enregistrer" }).click(); await page.waitForTimeout(1200);
@@ -1138,9 +1152,9 @@ await scenario("Espace de Nawar : lettre de papa, mot du jour signé Papa, Insta
   const carte = await page.getByTestId("carte-mot-papa").innerText();
   verifier(/Nawar/.test(carte) && /frites/.test(carte) && /Papa/.test(carte), "mot du jour manquant : " + carte);
   verifier(!(await page.getByRole("tab", { name: /Devis|Personnel|Paie|Contrats/ }).count()), "Nawar ne doit pas voir les onglets de l'agence");
-  await page.getByRole("tab", { name: /Instagram/ }).click(); await page.waitForTimeout(800);
+  await clicOnglet(page, /Instagram/); await page.waitForTimeout(800);
   verifier(await page.getByTestId("carte-post").count() === 1 && !(await page.getByTestId("cle-pixabay").count()) && !(await page.getByTestId("jeton-instagram").count()), "onglet Instagram incorrect pour Nawar");
-  await page.getByRole("tab", { name: /Le site/ }).click(); await page.waitForTimeout(1200);
+  await clicOnglet(page, /Le site/); await page.waitForTimeout(1200);
   verifier(await page.getByTestId("stat-visites").count(), "statistiques non visibles");
   notes.push("lettre « Pour toi, mon bébé d'amour » → « Merci papa » ; mot du jour signé Papa ; onglets Mot de papa, Instagram (sans clés), Le site ; aucun onglet client/crew/paie");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
@@ -1179,13 +1193,13 @@ await scenario("Guides gratuits et newsletter : guide débloqué contre l'e-mail
   // Admin : newsletter depuis le post, test, envoi
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Instagram$/ }).click(); await page.waitForTimeout(800);
+  await clicOnglet(page, /Instagram$/); await page.waitForTimeout(800);
   await page.getByTestId("carte-post").first().click(); await page.waitForTimeout(600);
   await page.getByTestId("creer-newsletter").click(); await page.waitForTimeout(800);
   const nl = base.newsletters?.[0];
   verifier(nl && nl.guide_slug === "10-conseils-mariage-reussi" && nl.themes[0] === "mariage" && !/#mariagemaroc|lien en bio/.test(nl.contenu) && nl.image_url === "https://exemple.test/v.jpg", "newsletter mal préparée : " + JSON.stringify(nl));
   await page.getByTestId("editeur-post").getByRole("button", { name: "Fermer" }).last().click(); await page.waitForTimeout(500);
-  await page.getByRole("tab", { name: /Newsletter$/ }).click(); await page.waitForTimeout(1000);
+  await clicOnglet(page, /Newsletter$/); await page.waitForTimeout(1000);
   verifier((await page.getByTestId("nb-abonnes").innerText()).trim() === "1" && await page.getByTestId("ligne-abonne").count() === 1, "abonnés mal comptés");
   await page.getByTestId("ligne-newsletter").first().click(); await page.waitForTimeout(600);
   verifier(/1 abonné/.test(await page.getByTestId("nb-destinataires").innerText()), "nombre de destinataires faux");
@@ -1228,8 +1242,8 @@ await scenario("Affichage smartphone (pages publiques et admin)", async (notes) 
     if ((await largeur()) > 2) trop.push(p);
   }
   await connecter(page, BASE, ADMIN, "/admin");
-  for (const t of ["Devis", "Personnel", "Dispo", "Contrats", "Paie", "Événement", "Envoyés"]) {
-    await page.getByRole("tab", { name: new RegExp(t + "$") }).first().click(); await page.waitForTimeout(700);
+  for (const t of ["Devis", "Personnel", "Disponibilités", "Contrats", "Paie", "Demandes événement", "Devis envoyés"]) {
+    await clicOnglet(page, new RegExp(t + "$")); await page.waitForTimeout(700);
     if ((await largeur()) > 2) trop.push("admin › " + t);
   }
   verifier(!trop.length, "dépasse de l'écran sur : " + trop.join(", "));
@@ -1247,7 +1261,7 @@ await scenario("Instagram : générer 1 mois de posts (2/jour) pour Heavent et N
   await ctx.route("https://pixabay.com/**", (r) => r.fulfill({ status: 200, body: base.photoTest, contentType: "image/jpeg", headers: { "access-control-allow-origin": "*" } }));
   page.on("dialog", (d) => d.accept());
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Instagram$/ }).click(); await page.waitForTimeout(1000);
+  await clicOnglet(page, /Instagram$/); await page.waitForTimeout(1000);
   await page.getByTestId("generer-mois").click(); await page.waitForTimeout(2000);
   const h = base.posts_instagram.filter((p) => p.compte === "heavent" && p.id !== "p0");
   verifier(h.length === 60, `${h.length} posts Heavent au lieu de 60`);
@@ -1325,7 +1339,7 @@ await scenario("Heavent Studio : démo personnalisée générée en un clic, pui
   base.studio_demandes = [{ id: "sd1", cree_le: new Date().toISOString(), nom: "Karim Bennani", agence: "Atlas Events", email: "karim@atlas.test", telephone: "+212600000001", ville: "Fès", formule: "Gestion", message: "Agence de 12 personnes.", statut: "nouvelle" }];
   const a = await contexte(navigateur, base, ADMIN);
   await connecter(a.page, BASE, ADMIN, "/admin");
-  await a.page.getByRole("tab", { name: /Démos agences$/ }).click(); await a.page.waitForTimeout(1000);
+  await clicOnglet(a.page, /Démos agences$/); await a.page.waitForTimeout(1000);
   verifier(await a.page.getByTestId("studio-demande").count() === 1, "la demande de démo n'apparaît pas");
   await a.page.getByTestId("generer-demo").click(); await a.page.waitForTimeout(1500);
   const lien = (await a.page.getByTestId("lien-demo").first().innerText()).trim();
@@ -1350,7 +1364,7 @@ await scenario("Heavent Studio : démo personnalisée générée en un clic, pui
   verifier(await p.page.getByTestId("bandeau-demo").count(), "le bandeau de démo est absent");
   verifier(/atlas events/i.test(await p.page.locator("body").innerText()), "le nom de l'agence n'apparaît pas dans la démo");
   verifier(base.studio_demos[0].vues === 1, "l'ouverture n'est pas comptée");
-  await p.page.getByRole("tab", { name: /Devis$/ }).first().click(); await p.page.waitForTimeout(1000);
+  await clicOnglet(p.page, /Devis$/); await p.page.waitForTimeout(1000);
   verifier(!(await p.page.getByRole("button", { name: /Nawar/ }).count()), "le devis Nawar ne doit pas apparaître dans la démo");
   await p.page.getByRole("button", { name: /Faire le devis/ }).first().click(); await p.page.waitForTimeout(1200);
   await p.page.getByRole("button", { name: /^Enregistrer$/ }).click(); await p.page.waitForTimeout(1500);
@@ -1371,7 +1385,7 @@ await scenario("Heavent Studio : démo concession automobile avec logo, site vit
   base.studio_demandes = [{ id: "sd2", cree_le: new Date().toISOString(), nom: "Youssef Alami", agence: "Atlas Motors", email: "y@atlas.test", telephone: null, ville: "Tanger", formule: "Gestion", message: null, statut: "nouvelle", secteur: "automobile", logo_url: null }];
   const a = await contexte(navigateur, base, ADMIN);
   await connecter(a.page, BASE, ADMIN, "/admin");
-  await a.page.getByRole("tab", { name: /Démos agences$/ }).click(); await a.page.waitForTimeout(1000);
+  await clicOnglet(a.page, /Démos agences$/); await a.page.waitForTimeout(1000);
   verifier(await a.page.getByTestId("choix-secteur").first().inputValue() === "automobile", "le métier envoyé par le prospect n'est pas présélectionné");
   await a.page.getByTestId("choix-logo").first().locator("input").setInputFiles(new URL("./photo-test.jpg", import.meta.url).pathname);
   await a.page.getByTestId("generer-demo").click(); await a.page.waitForTimeout(1500);
@@ -1384,14 +1398,14 @@ await scenario("Heavent Studio : démo concession automobile avec logo, site vit
   const texte = await p.page.locator("body").innerText();
   verifier(/Demandes clients/.test(texte) && /Flottes/.test(texte) && !/Instagram/.test(await p.page.locator("[role=tablist]").first().innerText()), "le menu n'est pas adapté à la concession");
   verifier(await p.page.getByTestId("logo-demo").count(), "le logo n'apparaît pas dans l'administration de la démo");
-  await p.page.getByRole("tab", { name: /Demandes clients$/ }).click(); await p.page.waitForTimeout(800);
+  await clicOnglet(p.page, /Demandes clients$/); await p.page.waitForTimeout(800);
   verifier(/Essai routier/.test(await p.page.locator("body").innerText()), "les demandes ne sont pas celles d'une concession");
   // Le site vitrine : une demande envoyée arrive dans l'administration
   await p.page.getByTestId("vue-site").click(); await p.page.waitForTimeout(1500);
   verifier(/Votre prochaine voiture vous attend/.test(await p.page.locator("body").innerText()), "le site vitrine n'est pas celui d'une concession");
   await p.page.getByTestId("demo-site-nom").fill("Client Test"); await p.page.getByTestId("demo-site-envoyer").click(); await p.page.waitForTimeout(800);
   await p.page.getByTestId("demo-voir-admin").click(); await p.page.waitForTimeout(2500);
-  await p.page.getByRole("tab", { name: /Demandes clients$/ }).click(); await p.page.waitForTimeout(800);
+  await clicOnglet(p.page, /Demandes clients$/); await p.page.waitForTimeout(800);
   verifier(/Client/.test(await p.page.locator("body").innerText()), "la demande du site n'arrive pas dans l'administration");
   notes.push("métier « Concession automobile » + logo : menu, demandes et site adaptés ; une demande envoyée sur le site arrive dans l'admin");
   // L'espace équipe : mission, contrat à signer, fiche de paie
@@ -1433,7 +1447,7 @@ await scenario("Prestataires : inscription avec logo et photos, confirmation e-m
 
   const a = await contexte(navigateur, base, ADMIN);
   await connecter(a.page, BASE, ADMIN, "/admin");
-  await a.page.getByRole("tab", { name: /Prestataires$/ }).click(); await a.page.waitForTimeout(1000);
+  await clicOnglet(a.page, /Prestataires$/); await a.page.waitForTimeout(1000);
   verifier(await a.page.getByTestId("fiche-prestataire").count() === 1, "le prestataire à valider n'apparaît pas");
   await a.page.getByTestId("fiche-prestataire").first().locator("button").first().click(); await a.page.waitForTimeout(500);
   await a.page.getByTestId("prix-vente").first().fill("9500");
@@ -1442,7 +1456,7 @@ await scenario("Prestataires : inscription avec logo et photos, confirmation e-m
   const ligne = base.catalogue_prestations.find((c) => c.categorie === "prestataires" && c.actif);
   verifier(ligne && ligne.designation === "DJ soirée de mariage — DJ Atlas Sound" && ligne.prix_unitaire === 9500, "le prestataire n'est pas dans le catalogue des devis");
   verifier(base.appelsFonctions.some((x) => x.nom === "prestataires" && x.corps.action === "decision" && x.corps.statut === "valide"), "le prestataire n'est pas prévenu par e-mail");
-  await a.page.getByRole("tab", { name: /Devis$/ }).first().click(); await a.page.waitForTimeout(800);
+  await clicOnglet(a.page, /Devis$/); await a.page.waitForTimeout(800);
   await a.page.getByRole("button", { name: /Nouveau devis/ }).first().click(); await a.page.waitForTimeout(800);
   const options = await a.page.getByTestId("ajout-prestataires").locator("option").allInnerTexts();
   verifier(options.some((o) => o.includes("DJ Atlas Sound")), "le prestataire n'est pas proposé dans le devis");
@@ -1459,7 +1473,7 @@ await scenario("Salles & palais : ajout d'un lieu avec lien Google Maps, tarifs 
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await ctx.route(/openstreetmap\.org/, (r) => r.fulfill({ status: 200, body: "<html></html>", contentType: "text/html" }));
   await connecter(page, BASE, ADMIN, "/admin");
-  await page.getByRole("tab", { name: /Salles & palais$/ }).click(); await page.waitForTimeout(800);
+  await clicOnglet(page, /Salles & palais$/); await page.waitForTimeout(800);
   await page.getByTestId("ajouter-lieu").click(); await page.waitForTimeout(1200);
   await page.getByTestId("lieu-nom").fill("Palais Andalou"); await page.getByTestId("lieu-ville").fill("Rabat");
   await page.getByTestId("lieu-maps").fill("https://www.google.com/maps/place/Palais/@33.9715,-6.8498,17z");
