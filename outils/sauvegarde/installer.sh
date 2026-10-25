@@ -34,8 +34,13 @@ if security find-generic-password -a heavent -s heavent-sauvegarde-base >/dev/nu
   echo "  Colle le MOT DE PASSE DE LA BASE (Supabase → Project Settings → Database). Rien ne s'affichera :"
   security add-generic-password -a heavent -s heavent-sauvegarde-base -l "Heavent sauvegarde — base" -U -w || stop "non enregistré"; ok "enregistré"; fi
 if security find-generic-password -a heavent -s heavent-sauvegarde-fichiers >/dev/null 2>&1; then ok "clé d'accès aux fichiers déjà présente"; else
-  echo "  Colle la clé « service_role » (Supabase → Project Settings → API Keys → Legacy API keys → Reveal). Rien ne s'affichera :"
-  security add-generic-password -a heavent -s heavent-sauvegarde-fichiers -l "Heavent sauvegarde — fichiers" -U -w || stop "non enregistré"; ok "enregistrée"; fi
+  # L'invite masquée de macOS coupe à 128 caractères : la clé (plus longue) est prise dans le presse-papiers, puis celui-ci est vidé.
+  echo "  Copie la clé « service_role » (Supabase → Project Settings → API Keys → Legacy API keys → Reveal → icône de copie),"
+  printf "  puis appuie sur Entrée ici… "; read -r _
+  K=$(pbpaste | tr -d '[:space:]')
+  case "$K" in eyJ*.*.*|sb_secret_*) ;; *) unset K; pbcopy < /dev/null; stop "Le presse-papiers ne contient pas une clé complète (eyJ… avec 2 points, ou sb_secret_…). Recopie-la avec l'icône de copie et relance.";; esac
+  security add-generic-password -a heavent -s heavent-sauvegarde-fichiers -l "Heavent sauvegarde — fichiers" -U -w "$K" || { unset K; stop "non enregistrée"; }
+  ok "clé enregistrée ($(printf '%s' "$K" | wc -c | tr -d ' ') caractères) ; presse-papiers vidé"; unset K; pbcopy < /dev/null; fi
 
 etape "4/7 Clé de chiffrement"
 if security find-generic-password -a heavent -s heavent-sauvegarde-cle-age >/dev/null 2>&1 && [ -f "$RACINE/config" ]; then ok "clé déjà créée (conservée)"; CLE_PUB=$(grep '^CLE_PUBLIQUE=' "$RACINE/config" | cut -d= -f2); else
