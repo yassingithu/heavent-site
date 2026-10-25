@@ -149,8 +149,14 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       if (nom === "instagram-photos") {
         if (!admin && !(base.admin_profils ?? []).some((x) => x.email === email && x.espace === "nawar")) return route.fulfill({ status: 403, json: { error: "Accès refusé" } });
         if (!base.cle_pixabay) return route.fulfill({ status: 400, json: { error: "Clé Pixabay manquante" } });
-        if (corps.action === "chercher") return route.fulfill({ json: { total: 3, photos: [1, 2, 3].map((i) => ({ id: 100 + i, apercu: `https://pixabay.com/get/apercu-${i}.jpg`, grande: `https://pixabay.com/get/grande-${i}.jpg`, page: `https://pixabay.com/photos/${i}`, auteur: "Photographe" + i, largeur: 800, hauteur: 1000 })) } });
+        const idsPris = () => { const m = new Map(); const ajout = (id, post) => { if (!m.has(id)) m.set(id, new Set()); m.get(id).add(post); };
+          for (const x of base.posts_instagram ?? []) { const r = String(x.photo_url ?? "").match(/-(\d+)\.jpg/); if (r) ajout(r[1], x.id); }
+          for (const k of Object.keys(base.fichiers ?? {})) { const r = k.match(/instagram\/photos\/(.+)-(\d+)\.jpg$/); if (r) ajout(r[2], r[1]); } return m; };
+        if (corps.action === "utilisees") return route.fulfill({ json: { ids: [...idsPris().keys()] } });
+        if (corps.action === "chercher") return route.fulfill({ json: { total: 3, photos: [1, 2, 3].map((i) => ({ id: 100 + ((Number(corps.page) || 1) - 1) * 3 + i, apercu: `https://pixabay.com/get/apercu-${i}.jpg`, grande: `https://pixabay.com/get/grande-${i}.jpg`, page: `https://pixabay.com/photos/${i}`, auteur: "Photographe" + i, largeur: 800, hauteur: 1000 })) } });
         if (corps.action === "choisir") {
+          const prises = idsPris().get(String(corps.photo.id));
+          if (prises && [...prises].some((a) => a !== String(corps.post_id))) return route.fulfill({ status: 409, json: { error: "Cette photo a déjà été utilisée pour un autre post. Choisis-en une autre." } });
           const chemin = `assets/instagram/photos/${corps.post_id}-${corps.photo.id}.jpg`;
           base.fichiers ??= {}; base.fichiers[chemin] = base.photoTest;
           const photo_url = `https://mapiwnsjsluiwmnulhqk.supabase.co/storage/v1/object/public/${chemin}`;
@@ -278,6 +284,17 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       const { p_devis_id, p_type } = JSON.parse(req.postData() || "{}");
       try { return route.fulfill({ json: creerFacture(base, p_devis_id, p_type) }); }
       catch (e) { return route.fulfill({ status: 400, json: { message: e.message, code: "P0001" } }); }
+    }
+    if (url.pathname.includes("/rpc/supprimer_devis_test")) {
+      if (!admin) return route.fulfill({ status: 403, json: { message: "Réservé aux administrateurs." } });
+      const { p_devis, p_confirmation } = JSON.parse(req.postData() || "{}");
+      const d = base.devis.find((x) => x.id === p_devis);
+      if (!d) return route.fulfill({ status: 400, json: { message: "Devis introuvable." } });
+      if ((p_confirmation || "").trim() !== (d.numero || "")) return route.fulfill({ status: 400, json: { message: "Le numéro saisi ne correspond pas au devis." } });
+      base.factures = (base.factures ?? []).filter((f) => f.devis_id !== p_devis);
+      base.contrats = (base.contrats ?? []).filter((c) => c.devis_id !== p_devis);
+      base.devis = base.devis.filter((x) => x.id !== p_devis);
+      return route.fulfill({ json: { numero: d.numero } });
     }
     if (url.pathname.includes("/rpc/devis_public")) {
       const { p_token } = JSON.parse(req.postData() || "{}");

@@ -888,7 +888,8 @@ await scenario("Cohérence : devis signé/facturé archivable (pas supprimable),
     L({ id: "dvB", numero: "DEV-2026-0013", client_nom: "Brouillon Test", titre: "Brouillon", statut: "brouillon", total_ttc: 1000, lien_token: crypto.randomUUID() }),
     L({ id: "dvC", numero: "DEV-2026-0014", client_nom: "Salon Atlas", titre: "Salon Atlas", statut: "accepte", total_ttc: 9000, signe_le: "2026-10-10T09:00:00Z", lien_token: crypto.randomUUID(), date_evenement: dans10 }),
   ];
-  base.factures = [{ id: "fA", devis_id: "dvA", numero: "FAC-2026-0001", type: "acompte", statut: "payee", net_a_payer: 5400, total_ttc: 5400, devise: "MAD", date_emission: "2026-10-19", client_nom: "BARAKA motor" }];
+  base.devis.push(L({ id: "dvT", numero: "DEV-2026-0099", client_nom: "Client Essai", client_societe: "Société Essai", titre: "Essai", statut: "accepte", total_ttc: 1200, signe_le: "2026-10-20T09:00:00Z", lien_token: "bbbbbbbb-1111-2222-3333-444444444444", date_evenement: "2026-10-20" }));
+  base.factures = [{ id: "fT", devis_id: "dvT", numero: "FAC-2026-0002", type: "acompte", statut: "a_payer", net_a_payer: 600, total_ttc: 600, devise: "MAD", date_emission: "2026-10-20", client_nom: "Client Essai" }, { id: "fA", devis_id: "dvA", numero: "FAC-2026-0001", type: "acompte", statut: "payee", net_a_payer: 5400, total_ttc: 5400, devise: "MAD", date_emission: "2026-10-19", client_nom: "BARAKA motor" }];
   base.affectations = [s1, s2].map((s, i) => ({ id: "afC" + i, devis_id: "dvC", staff_id: s.id, date_jour: dans10, heure_debut: "09:00:00", heure_fin: "17:00:00", heures: 8, poste: "Hôtesse", taux_horaire: 60, statut: "confirme" }));
   base.contrats = [
     { id: "ctC0", devis_id: "dvC", staff_id: s1.id, titre: "Hôtesse", statut: "actif", signe_le: "2026-10-11T10:00:00Z", date_debut: dans10, date_fin: dans10, dates: [{ date: dans10, heures: 8 }], total_heures: 8, salaire_brut: 480 },
@@ -897,7 +898,7 @@ await scenario("Cohérence : devis signé/facturé archivable (pas supprimable),
   base.fiches_paie = [{ id: "fp1", staff_id: s1.id, annee: 2026, mois: 9, statut: "payee", salaire_brut: 480, salaire_net: 450, heures_travaillees: 8, generee_auto: true }];
 
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
-  const dialogues = []; page.on("dialog", (d) => { dialogues.push(d.message()); d.accept(); });
+  const dialogues = []; let reponsePrompt = ""; page.on("dialog", (d) => { dialogues.push(d.message()); d.accept(d.type() === "prompt" ? reponsePrompt : undefined); });
   await connecter(page, BASE, ADMIN, "/admin");
   await clicOnglet(page, /Devis$/); await page.waitForTimeout(1000);
   const ligne = (t) => page.locator("tr", { hasText: t });
@@ -917,6 +918,15 @@ await scenario("Cohérence : devis signé/facturé archivable (pas supprimable),
   await clicOnglet(page, "Mes devis"); await page.waitForTimeout(500);
   await ligne("BARAKA motor").getByTestId("archiver-devis").click(); await page.waitForTimeout(800);
   verifier(base.devis.find((d) => d.id === "dvA").archive === true && !(await ligne("BARAKA motor").count()), "le devis archivé reste dans la liste");
+  // Supprimer un devis de TEST signé et facturé : exige de retaper son numéro
+  const avant = base.devis.length;
+  verifier(await ligne("Société Essai").getByTestId("supprimer-devis-test").count(), "pas de bouton « supprimer (test) » sur un devis signé/facturé");
+  reponsePrompt = "MAUVAIS-NUMERO";
+  await ligne("Société Essai").getByTestId("supprimer-devis-test").click(); await page.waitForTimeout(800);
+  verifier(base.devis.length === avant, "un mauvais numéro a quand même supprimé le devis");
+  reponsePrompt = "DEV-2026-0099";
+  await ligne("Société Essai").getByTestId("supprimer-devis-test").click(); await page.waitForTimeout(800);
+  verifier(!base.devis.some((d) => d.id === "dvT") && !base.factures.some((f) => f.devis_id === "dvT") && base.factures.some((f) => f.id === "fA"), "le devis de test n'est pas supprimé avec ses seules factures");
   // Supprimer le brouillon
   await ligne("Brouillon Test").getByTestId("supprimer-devis").click(); await page.waitForTimeout(800);
   verifier(!base.devis.some((d) => d.id === "dvB"), "le brouillon n'est pas supprimé");
@@ -1115,7 +1125,11 @@ await scenario("Instagram : clé Pixabay cachée, visuels montés automatiquemen
   await page.getByTestId("titre-post").fill("Le plan de table sans stress");
   await page.getByTestId("chercher-photo").click(); await page.waitForTimeout(800);
   verifier(await page.getByTestId("resultats-photos").locator("button").count() === 3, "pas de résultats de recherche");
-  await page.getByTestId("resultats-photos").locator("button").nth(1).click(); await page.waitForTimeout(1200);
+  const idPhoto = (x) => x.photo_url.match(/-(\d+)\.jpg/)[1];
+  verifier(idPhoto(base.posts_instagram[0]) !== idPhoto(base.posts_instagram[1]), "deux posts ont reçu la même photo");
+  verifier(await page.getByTestId("resultats-photos").locator("button[data-deja='oui']").count() === 1, "la photo déjà prise par l'autre post doit être signalée");
+  verifier(await page.getByTestId("resultats-photos").locator("button[data-deja='oui']").isDisabled(), "une photo déjà utilisée ne doit pas être choisissable");
+  await page.getByTestId("resultats-photos").locator("button").nth(2).click(); await page.waitForTimeout(1200);
   verifier(await page.getByTestId("apercu-visuel").count(), "pas d'aperçu du visuel");
   await page.getByTestId("enregistrer-post").click(); await page.waitForTimeout(1500);
   const p1 = base.posts_instagram[0];
@@ -1408,6 +1422,15 @@ await scenario("Heavent Studio : démo concession automobile avec logo, site vit
   await clicOnglet(p.page, /Demandes clients$/); await p.page.waitForTimeout(800);
   verifier(/Client/.test(await p.page.locator("body").innerText()), "la demande du site n'arrive pas dans l'administration");
   notes.push("métier « Concession automobile » + logo : menu, demandes et site adaptés ; une demande envoyée sur le site arrive dans l'admin");
+  // L'administrateur supprime la démo : son lien ne fonctionne plus
+  const a2 = await contexte(navigateur, base, ADMIN);
+  a2.page.on("dialog", (d) => d.accept());
+  await connecter(a2.page, BASE, ADMIN, "/admin");
+  await clicOnglet(a2.page, /Démos agences$/); await a2.page.waitForTimeout(1000);
+  verifier(await a2.page.getByTestId("supprimer-demo").count(), "pas de bouton pour supprimer une démo");
+  await a2.page.getByTestId("supprimer-demo").first().click(); await a2.page.waitForTimeout(1000);
+  verifier(!(base.studio_demos ?? []).some((x) => x.jeton === demo.jeton) && !(await a2.page.getByTestId("ligne-demo").count()), "la démo supprimée est encore là");
+  await a2.ctx.close();
   // L'espace équipe : mission, contrat à signer, fiche de paie
   await p.page.getByTestId("vue-crew").click(); await p.page.waitForTimeout(3000);
   const crew = await p.page.locator("body").innerText();
@@ -1485,6 +1508,38 @@ await scenario("Salles & palais : ajout d'un lieu avec lien Google Maps, tarifs 
   const c = base.catalogue_prestations.find((x) => x.categorie === "lieux" && x.actif);
   verifier(c && c.designation === "Location de la salle — Palais Andalou (Rabat)" && c.prix_unitaire === 45000, "le lieu n'est pas dans le catalogue des devis : " + JSON.stringify(c));
   notes.push("Palais Andalou (Rabat) : position lue dans le lien Google Maps, carte affichée, tarif 45 000 MAD ajouté au catalogue des devis");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
+
+// Instagram : jamais deux fois la même photo (tous comptes, plusieurs pages de résultats)
+await scenario("Instagram : jamais deux fois la même photo (Heavent + Nawar, 8 posts, mêmes mots-clés)", async (notes) => {
+  const base = nouvelleBase();
+  base.photoTest = readFileSync(new URL("./photo-test.jpg", import.meta.url));
+  base.cle_pixabay = "cle";
+  base.fichiers = { "assets/instagram/photos/ancien-post-supprime-101.jpg": base.photoTest }; // photo d'un post supprimé : reste interdite
+  const mk = (i, compte) => ({ id: "q" + i, compte, date_prevue: `2026-11-0${(i % 8) + 1}T18:30:00Z`, theme: "mariage", accroche: "A", titre: "Titre " + i, legende: "L", recherche: "wedding", style: "sombre", statut: "brouillon", photo_url: null, visuel_url: null });
+  base.posts_instagram = [1, 2, 3, 4].map((i) => mk(i, "heavent")).concat([5, 6, 7, 8].map((i) => mk(i, "nawar")));
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await ctx.route("https://pixabay.com/**", (r) => r.fulfill({ status: 200, body: base.photoTest, contentType: "image/jpeg", headers: { "access-control-allow-origin": "*" } }));
+  await connecter(page, BASE, ADMIN, "/admin");
+  await clicOnglet(page, /Instagram$/); await page.waitForTimeout(1000);
+  await page.getByTestId("preparer-visuels").click();
+  await page.waitForFunction(() => !document.querySelector('[data-testid="preparer-visuels"]'), null, { timeout: 40000 }).catch(() => {});
+  await page.waitForTimeout(800);
+  const heavent = base.posts_instagram.filter((p) => p.compte === "heavent");
+  verifier(heavent.every((p) => p.photo_url && p.visuel_url), "les 4 posts Heavent n'ont pas tous leur visuel");
+  // Nawar : même mots-clés, doit recevoir d'autres photos que Heavent
+  await page.getByTestId("compte-nawar").click(); await page.waitForTimeout(1000);
+  await page.getByTestId("preparer-visuels").click();
+  await page.waitForFunction(() => !document.querySelector('[data-testid="preparer-visuels"]'), null, { timeout: 40000 }).catch(() => {});
+  await page.waitForTimeout(800);
+  const ids = base.posts_instagram.map((p) => p.photo_url?.match(/-(\d+)\.jpg/)?.[1]);
+  verifier(ids.every(Boolean), "des posts sont restés sans photo : " + JSON.stringify(ids));
+  verifier(new Set(ids).size === 8, "une même photo a été utilisée deux fois : " + ids.join(","));
+  verifier(!ids.includes("101"), "la photo d'un post supprimé a été réutilisée");
+  notes.push("8 posts (2 comptes, mêmes mots-clés) → 8 photos toutes différentes, résultats suivants consultés quand la 1re page est épuisée, photo d'un post supprimé jamais réutilisée");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
 });

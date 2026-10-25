@@ -462,6 +462,19 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     charger();
   };
 
+  /** Suppression volontaire d'un devis de TEST, même signé ou facturé : il faut retaper son numéro. */
+  const supprimerTest = async (d: { id: string; numero: string | null; nbFactures?: number }) => {
+    const num = d.numero ?? "";
+    const avertissement = `ATTENTION — suppression définitive du devis ${num}.\n\nÀ n'utiliser que pour un devis de TEST. Le devis, ses factures (${d.nbFactures ?? 0}) et ses contrats seront effacés, sans retour possible. Une trace (numéro, date) est conservée dans le journal.\n\nPour confirmer, retape le numéro du devis :`;
+    const saisie = window.prompt(avertissement, "");
+    if (saisie === null) return;
+    const { error } = await (supabase as any).rpc("supprimer_devis_test", { p_devis: d.id, p_confirmation: saisie.trim() });
+    if (error) { toast({ title: "Suppression impossible", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Devis de test supprimé", description: num });
+    if (form?.id === d.id) setForm(null);
+    charger();
+  };
+
   /** Archiver : retire un devis de la liste sans rien effacer (devis signés, facturés, annulés…). */
   const archiver = async (id: string, archive: boolean) => {
     const { error } = await (supabase as any).from("devis").update({ archive }).eq("id", id);
@@ -592,6 +605,9 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                           : <Button size="icon" variant="ghost" data-testid="archiver-devis"
                               title={d.archive ? "Ressortir des archives" : `Archiver (${d.signe_le ? "devis signé" : d.nbFactures ? "devis facturé" : "contrats signés"} : il ne peut pas être supprimé, mais tu peux le retirer de la liste)`}
                               onClick={() => archiver(d.id, !d.archive)}>{d.archive ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}</Button>}
+                        {!devisSupprimable(d) && (
+                          <Button size="icon" variant="ghost" title="Supprimer définitivement (devis de test)" onClick={() => supprimerTest(d)} data-testid="supprimer-devis-test"><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

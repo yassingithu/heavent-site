@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Copy, Eye, ImagePlus, Loader2, Mail, MessageCircle, Plus, RefreshCw, Sparkles } from "lucide-react";
+import { Check, Copy, Eye, ImagePlus, Loader2, Mail, MessageCircle, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { SECTEURS } from "@/demo/secteurs";
 
 /** Heavent Studio : demandes de démo reçues depuis /studio, et démos personnalisées à partager en un clic. */
@@ -59,6 +59,13 @@ export default function StudioAdmin() {
   const copier = async (t: string, quoi = "Lien copié ✓") => { await navigator.clipboard?.writeText(t).catch(() => {}); toast({ title: quoi }); };
   const changerStatut = async (id: string, statut: string) => { await (supabase as any).from("studio_demandes").update({ statut }).eq("id", id); setDemandes((l) => l.map((d) => (d.id === id ? { ...d, statut } : d))); };
   const desactiver = async (j: string) => { await (supabase as any).from("studio_demos").update({ active: false }).eq("jeton", j); charger(); };
+  const supprimer = async (j: string) => {
+    const d = demos.find((x) => x.jeton === j);
+    if (!window.confirm(`Supprimer définitivement la démo « ${d?.agence ?? ""} » ? Son lien cessera de fonctionner. La demande du prospect est conservée.`)) return;
+    const { error } = await (supabase as any).from("studio_demos").delete().eq("jeton", j);
+    if (error) { toast({ title: "Suppression impossible", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Démo supprimée" }); charger();
+  };
   const prolonger = async (j: string) => { await (supabase as any).from("studio_demos").update({ active: true, expire_le: new Date(Date.now() + 30 * 864e5).toISOString() }).eq("jeton", j); charger(); };
 
   // « Voir » ouvre la démo dans le navigateur (Safari, Chrome…), exactement comme le lien envoyé au prospect.
@@ -97,7 +104,7 @@ export default function StudioAdmin() {
                   {d.telephone && <a href={`https://wa.me/${d.telephone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm"><MessageCircle className="h-4 w-4 text-emerald-600" /> WhatsApp</a>}
                   <a href={`mailto:${d.email}?subject=${encodeURIComponent("Votre démo Heavent Studio")}`} className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm"><Mail className="h-4 w-4" /> E-mail</a>
                 </div>
-                {demosDe(d.id).map((x) => <LigneDemo key={x.jeton} d={x} tel={d.telephone} email={d.email} onCopier={copier} onDesactiver={desactiver} onProlonger={prolonger} onVoir={voir} />)}
+                {demosDe(d.id).map((x) => <LigneDemo key={x.jeton} d={x} tel={d.telephone} email={d.email} onCopier={copier} onDesactiver={desactiver} onProlonger={prolonger} onVoir={voir} onSupprimer={supprimer} />)}
               </div>
             ))}
           </div>
@@ -116,14 +123,14 @@ export default function StudioAdmin() {
             {occupe === "libre" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Générer
           </button>
         </div>
-        {demos.filter((d) => !d.demande_id).map((x) => <LigneDemo key={x.jeton} d={x} onCopier={copier} onDesactiver={desactiver} onProlonger={prolonger} onVoir={voir} />)}
+        {demos.filter((d) => !d.demande_id).map((x) => <LigneDemo key={x.jeton} d={x} onCopier={copier} onDesactiver={desactiver} onProlonger={prolonger} onVoir={voir} onSupprimer={supprimer} />)}
       </section>
     </div>
   );
 }
 
-function LigneDemo({ d, tel, email, onCopier, onDesactiver, onProlonger, onVoir }: {
-  d: Demo; tel?: string | null; email?: string; onCopier: (t: string, q?: string) => void; onDesactiver: (j: string) => void; onProlonger: (j: string) => void; onVoir: (d: Demo) => void;
+function LigneDemo({ d, tel, email, onCopier, onDesactiver, onProlonger, onVoir, onSupprimer }: {
+  d: Demo; tel?: string | null; email?: string; onCopier: (t: string, q?: string) => void; onDesactiver: (j: string) => void; onProlonger: (j: string) => void; onVoir: (d: Demo) => void; onSupprimer: (j: string) => void;
 }) {
   const expiree = !d.active || new Date(d.expire_le) < new Date();
   const lien = lienDemo(d.jeton);
@@ -145,6 +152,7 @@ function LigneDemo({ d, tel, email, onCopier, onDesactiver, onProlonger, onVoir 
         <button onClick={() => onVoir(d)} className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs" data-testid="voir-demo"><Eye className="h-3.5 w-3.5" /> Voir</button>
         {expiree ? <button onClick={() => onProlonger(d.jeton)} className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs"><Check className="h-3.5 w-3.5" /> Réactiver 30 jours</button>
           : <button onClick={() => onDesactiver(d.jeton)} className="rounded-md px-2 h-7 text-xs text-muted-foreground hover:text-red-700">Désactiver</button>}
+        <button onClick={() => onSupprimer(d.jeton)} className="inline-flex items-center gap-1 rounded-md px-2 h-7 text-xs text-red-700 hover:bg-red-50" data-testid="supprimer-demo"><Trash2 className="h-3.5 w-3.5" /> Supprimer</button>
       </div>
     </div>
   );

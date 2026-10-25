@@ -5,10 +5,26 @@ import { corsHeaders, deny, getCaller } from "../_shared/auth.ts";
  * Photos des posts Instagram (bibliothèque gratuite Pixabay), réservé à l'administration.
  * - « chercher » : liste de photos pour des mots-clés
  * - « choisir » : copie la photo choisie dans notre stockage (Pixabay interdit le lien direct permanent)
+ * - « utilisees » : identifiants Pixabay déjà utilisés (tous comptes, y compris posts supprimés dont le fichier est resté en stockage)
+ * Règle : jamais deux fois la même photo. « choisir » refuse une photo déjà prise par un AUTRE post.
  */
 const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   { auth: { autoRefreshToken: false, persistSession: false } });
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", ...corsHeaders } });
+
+/** Identifiants Pixabay déjà utilisés, et ceux de chaque post (nom de fichier : <post>-<idPixabay>.jpg). */
+async function photosUtilisees() {
+  const ids = new Map<string, Set<string>>(); // idPixabay -> posts qui l'utilisent
+  const ajouter = (id: string, post: string) => { if (!ids.has(id)) ids.set(id, new Set()); ids.get(id)!.add(post); };
+  const { data: posts } = await db.from("posts_instagram").select("id, photo_url").not("photo_url", "is", null);
+  for (const p of posts ?? []) { const m = String(p.photo_url).match(/-(\d+)\.jpg/); if (m) ajouter(m[1], p.id); }
+  for (let decalage = 0; decalage < 20000; decalage += 1000) {
+    const { data: fichiers } = await db.storage.from("assets").list("instagram/photos", { limit: 1000, offset: decalage });
+    for (const f of fichiers ?? []) { const m = f.name.match(/^(.+)-(\d+)\.jpg$/); if (m) ajouter(m[2], m[1]); }
+    if (!fichiers || fichiers.length < 1000) break;
+  }
+  return ids;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -22,6 +38,8 @@ Deno.serve(async (req) => {
   const { action, recherche, page, post_id, photo } = await req.json().catch(() => ({}));
   const { data: secret } = await db.from("secrets_internes").select("valeur").eq("nom", "pixabay").maybeSingle();
   if (!secret?.valeur) return json({ error: "Clé Pixabay manquante" }, 400);
+
+  if (action === "utilisees") return json({ ids: [...(await photosUtilisees()).keys()] });
 
   if (action === "chercher") {
     const q = String(recherche ?? "").trim().slice(0, 100);
@@ -37,6 +55,8 @@ Deno.serve(async (req) => {
 
   if (action === "choisir") {
     if (!post_id || !photo?.grande || !/^https:\/\/pixabay\.com\//.test(String(photo.grande))) return json({ error: "Photo invalide" }, 400);
+    const prises = (await photosUtilisees()).get(String(photo.id));
+    if (prises && [...prises].some((autre) => autre !== String(post_id))) return json({ error: "Cette photo a déjà été utilisée pour un autre post. Choisis-en une autre." }, 409);
     const r = await fetch(photo.grande);
     if (!r.ok) return json({ error: "Téléchargement impossible" }, 502);
     const chemin = `instagram/photos/${post_id}-${photo.id}.jpg`;

@@ -22,7 +22,7 @@ const WHATSAPP = "https://wa.me/212610939655?text=" + encodeURIComponent("Bonjou
 const VISUELS = "https://mapiwnsjsluiwmnulhqk.supabase.co/storage/v1/object/public/assets/instagram/visuels/";
 const POSTS = ["6d4fb285-2828-4278-97b6-8c79a45448aa", "ec37691c-ad68-4803-b50b-f0f48a5d01be", "945d232d-9c51-4915-bfea-28211318488d"];
 
-const METIERS: Record<string, string> = { evenementiel: "Agence événementielle", automobile: "Concession automobile", ecommerce: "E-commerce / boutique", immobilier: "Agence immobilière" };
+import { METIERS } from "@/demo/metiers";
 
 const OFFRES = [
   { nom: "Vitrine", tag: "Essentiel", plus: null,

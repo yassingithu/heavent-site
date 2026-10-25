@@ -108,19 +108,24 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
     const aFaire = (posts ?? []).filter((p) => p.statut !== "publie" && !p.visuel_url);
     setAuto({ fait: 0, total: aFaire.length });
     let erreurs = 0;
-    // Jamais deux fois la même photo : on garde les identifiants Pixabay déjà utilisés (dans le nom du fichier)
-    const utilisees = new Set((posts ?? []).map((x) => x.photo_url?.match(/-(\d+)\.jpg/)?.[1]).filter(Boolean) as string[]);
+    // Jamais deux fois la même photo : identifiants déjà pris par TOUS les posts (Heavent et Nawar, publiés ou non, même supprimés)
+    const utilisees = new Set<string>(((await fonction({ action: "utilisees" })).ids ?? []).map(String));
     const cache = new Map<string, Photo[]>();
     for (const p of aFaire) {
       try {
         let photo = p.photo_url;
         if (!photo) {
-          if (!cache.has(p.recherche)) cache.set(p.recherche, (await fonction({ action: "chercher", recherche: p.recherche })).photos as Photo[]);
-          const photos = cache.get(p.recherche)!;
-          const libres = photos.filter((x) => !utilisees.has(String(x.id)));
-          const choix = libres.find((x) => x.hauteur >= x.largeur * 0.9) ?? libres[0] ?? photos[0];
-          if (choix) utilisees.add(String(choix.id));
-          if (!choix) throw new Error("aucune photo");
+          let choix: Photo | undefined;
+          // Pas de photo libre sur la 1re page de résultats : on cherche sur les suivantes, jamais de doublon
+          for (let page = 1; page <= 5 && !choix; page++) {
+            const cle = `${p.recherche}|${page}`;
+            if (!cache.has(cle)) cache.set(cle, (await fonction({ action: "chercher", recherche: p.recherche, page })).photos as Photo[]);
+            const libres = cache.get(cle)!.filter((x) => !utilisees.has(String(x.id)));
+            choix = libres.find((x) => x.hauteur >= x.largeur * 0.9) ?? libres[0];
+            if (!cache.get(cle)!.length) break;
+          }
+          if (!choix) throw new Error("aucune photo libre");
+          utilisees.add(String(choix.id));
           photo = (await fonction({ action: "choisir", post_id: p.id, photo: choix })).photo_url;
         }
         await enregistrerVisuel(p, photo!);
@@ -238,6 +243,7 @@ function EditeurPost({ post: initial, pixabay, instagram, famille, onFermer }: {
   const { toast } = useToast();
   const [p, setP] = useState(initial);
   const [photos, setPhotos] = useState<Photo[] | null>(null);
+  const [prises, setPrises] = useState<Set<string>>(new Set());
   const [recherche, setRecherche] = useState(initial.recherche);
   const [occupe, setOccupe] = useState<string | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -252,7 +258,13 @@ function EditeurPost({ post: initial, pixabay, instagram, famille, onFermer }: {
 
   const chercher = async () => {
     setOccupe("chercher");
-    try { setPhotos((await fonction({ action: "chercher", recherche })).photos); }
+    try {
+      const [r, u] = await Promise.all([fonction({ action: "chercher", recherche }), fonction({ action: "utilisees" })]);
+      // les photos déjà prises par un AUTRE post sont signalées et non choisissables ; celle de ce post reste choisissable
+      const miennes = String(p.photo_url ?? "").match(/-(\d+)\.jpg/)?.[1];
+      setPrises(new Set((u.ids ?? []).map(String).filter((id: string) => id !== miennes)));
+      setPhotos(r.photos);
+    }
     catch (e: any) { toast({ title: "Recherche impossible", description: e.message, variant: "destructive" }); }
     setOccupe(null);
   };
@@ -356,8 +368,9 @@ function EditeurPost({ post: initial, pixabay, instagram, famille, onFermer }: {
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-80 overflow-y-auto" data-testid="resultats-photos">
                   {photos.length === 0 && <p className="col-span-full text-sm text-muted-foreground">Aucune photo, essaie d'autres mots.</p>}
                   {photos.map((ph) => (
-                    <button key={ph.id} onClick={() => choisir(ph)} disabled={!!occupe} className="aspect-[4/5] rounded-md overflow-hidden relative group">
-                      <img src={ph.apercu} alt="" className="h-full w-full object-cover group-hover:scale-105 transition" loading="lazy" />
+                    <button key={ph.id} onClick={() => choisir(ph)} disabled={!!occupe || prises.has(String(ph.id))} className="aspect-[4/5] rounded-md overflow-hidden relative group disabled:cursor-not-allowed" data-deja={prises.has(String(ph.id)) ? "oui" : undefined}>
+                      <img src={ph.apercu} alt="" className={`h-full w-full object-cover group-hover:scale-105 transition ${prises.has(String(ph.id)) ? "opacity-30 grayscale" : ""}`} loading="lazy" />
+                      {prises.has(String(ph.id)) && <span className="absolute inset-x-0 bottom-0 bg-black/70 text-white text-[10px] py-0.5 text-center">Déjà utilisée</span>}
                     </button>
                   ))}
                 </div>
