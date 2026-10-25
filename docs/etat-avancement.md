@@ -114,3 +114,9 @@
 
 ## Prochaine action
 Retours de Yassin sur le lot 4 en usage réel (Mac, iPhone). Puis lot Dates et fuseaux (reste : « établi à Rabat le », horaire resume-du-matin). Essais veille / redémarrage / réseau de la sauvegarde à cocher par Yassin.
+
+## Mise en production du 25/10 (après le lot 4)
+- En production : onglet Dépenses, Instagram sans photo en double, suppression des démos, 12 métiers de démo (images créées), suppression volontaire des devis de test (journal `suppressions_test`). Site : commit ee11866 (77 fichiers). Migrations : depenses, studio_secteurs_elargis, supprimer_devis_test. Fonctions : instagram-photos v4, studio-images v3.
+- Données de test supprimées à la demande de Yassin : DEV-2026-0012 + sa facture annulée, 3 demandes (2 mariage, 1 entreprise), 4 démos.
+- À décider : les compteurs de numérotation (le prochain devis/facture repart-il à 0001 ?).
+- Retour arrière du site : commit précédent 550eba8 (déploiement lot 4).
