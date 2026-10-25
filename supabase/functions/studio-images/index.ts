@@ -12,6 +12,14 @@ const RECHERCHES: Record<string, string[]> = {
   automobile: ["car showroom", "suv car road", "luxury sedan car", "electric car charging", "sports car red", "car interior dashboard", "white car", "car dealership"],
   ecommerce: ["natural cosmetics flat lay", "scented candle", "argan oil bottle", "gift box ribbon", "handmade soap", "skincare products", "delivery package", "essential oils"],
   immobilier: ["modern villa pool", "apartment living room", "luxury house exterior", "modern kitchen interior", "bedroom interior", "terrace view", "house keys", "penthouse"],
+  restaurant: ["restaurant interior", "moroccan tagine", "gourmet dish plating", "restaurant terrace", "chef cooking", "buffet catering", "mint tea", "dinner table"],
+  beaute: ["beauty salon interior", "facial treatment", "spa massage", "hair salon", "hammam spa", "manicure nails", "makeup artist", "bridal hairstyle"],
+  sante: ["medical clinic reception", "doctor consultation", "dentist office", "stethoscope", "medical check up", "dental care", "clinic waiting room", "nurse"],
+  fitness: ["gym interior", "personal trainer", "yoga class", "weight training", "group fitness class", "treadmill gym", "healthy food bowl", "running outdoor"],
+  hotel: ["boutique hotel room", "hotel lobby", "hotel pool", "hotel breakfast", "riad courtyard", "hotel suite", "hotel terrace sunset", "conference room hotel"],
+  formation: ["classroom students", "training session", "teacher whiteboard", "students studying library", "online learning laptop", "workshop adults", "graduation", "language class"],
+  btp: ["house renovation", "painter wall", "bathroom renovation", "construction site", "electrician work", "tiling floor", "plasterboard ceiling", "architect plans"],
+  voyage: ["morocco desert dunes", "essaouira sea", "agadir beach", "kasbah morocco", "airplane window", "marrakech medina", "travel suitcase", "hotel resort pool"],
   evenementiel: ["wedding reception hall", "event table decoration", "gala dinner", "wedding flowers table", "conference audience", "party lights night", "champagne glasses", "outdoor wedding"],
 };
 
