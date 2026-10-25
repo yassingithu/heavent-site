@@ -20,7 +20,7 @@
 | 1 | Sauvegarde et restauration | OPÉRATIONNELLE le 25/10 : 1re sauvegarde réelle vérifiée (tâche automatique, 1 401 références, 437 fichiers), copie disque « My Passport for Mac » vérifiée, restauration avec clé de secours réussie ; reste : essais veille / redémarrage / réseau | Opus pour la conception, Sonnet possible pour les scripts |
 | 2 | Champs CNSS + registre des paiements | EN PRODUCTION le 25/10 (migrations cnss_employeur et paiements_paie, site fc9a8e2) après sauvegarde vérifiée ; reste : saisir le n° d'affiliation CNSS employeur | — |
 | 3 | Dates et fuseaux (conversions et planification seulement) | à faire | Sonnet avec relecture |
-| 4 | Navigation et tableau de bord « À traiter » | fait sur la branche lot-4-navigation, NON déployé (aperçus à valider par Yassin) | Sonnet, relecture visuelle |
+| 4 | Navigation et tableau de bord « À traiter » | en production le 25/10 (commit 2c8d463, 77 fichiers) | Sonnet, relecture visuelle |
 | 5 | Remplacements (avec état « en attente de validation ») | à faire | Sonnet |
 | 6 | Dépenses, justificatifs, lecture automatique, export Excel + ZIP | à faire (indépendant de la paie) | Sonnet ; banc d'essai OCR d'abord |
 | 7 | Paie (taux datés, versions, IR) | bloqué : statut des personnes, vérification des règles de l'exercice | Opus |
@@ -89,7 +89,7 @@
 - Prévisualisations à fournir : téléphone, navigateur ordinateur, appli Mac (si possible) ; signaler les supports non testés.
 - Aucune règle métier, donnée ou connexion modifiée par cette refonte.
 
-## Lot 4 — réalisé sur la branche lot-4-navigation (25/10, non déployé)
+## Lot 4 — en production le 25/10 (commit 2c8d463 ; retour arrière = renvoyer les fichiers du commit fc9a8e2)
 - Menu latéral (ordinateur / appli Mac) : réductible (icônes + infobulles), choix mémorisé (localStorage, avec repli), réduit par défaut sous 1280 px. Sous 1024 px (fenêtre Mac étroite : minimum 960) : mise en page téléphone.
 - iPhone : barre du bas Accueil · Événements · Équipe · Plus (nouveau composant BarreBasseAdmin) ; « Plus » = toutes les rubriques groupées, badge des nouvelles demandes ; barre sous les fenêtres modales (z-45) pour ne jamais masquer leurs boutons ; marge basse + zone sûre iPhone.
 - Libellés sans ambiguïté : Demandes entreprise / Demandes événement / Devis / Devis envoyés / Envoyer un devis / Disponibilités / Site web.
@@ -113,4 +113,4 @@
 - Liste des fichiers à envoyer : git diff --no-renames (sinon les renommages donnent les anciens noms).
 
 ## Prochaine action
-Lot 4 « Navigation et esthétique » sur une branche séparée, avec aperçus avant toute mise en ligne. Essais veille / redémarrage / réseau de la sauvegarde à cocher par Yassin.
+Retours de Yassin sur le lot 4 en usage réel (Mac, iPhone). Puis lot Dates et fuseaux (reste : « établi à Rabat le », horaire resume-du-matin). Essais veille / redémarrage / réseau de la sauvegarde à cocher par Yassin.
