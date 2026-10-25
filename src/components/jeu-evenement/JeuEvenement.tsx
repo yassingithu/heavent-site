@@ -165,9 +165,20 @@ export default function JeuEvenement() {
     if (placeLibre(creation.elements, cand, cols, rows, e.uid)) modifier((c) => ({ ...c, elements: c.elements.map((x) => (x.uid === e.uid ? cand : x)) }));
     else dire(tr("Pas assez de place pour tourner cet élément ici : déplacez-le d'abord."));
   };
+  /** Agrandit (+1) ou réduit (−1) l'élément sélectionné, si la place le permet. */
+  const agrandir = (delta: number) => {
+    const e = creation.elements.find((x) => x.uid === selection); if (!e) return;
+    const max = defElement(e.type).etire?.max ?? 0;
+    const plus = Math.max(0, Math.min(max, (e.plus ?? 0) + delta));
+    if (plus === (e.plus ?? 0)) return;
+    const cand = { ...e, plus: plus || undefined };
+    const g = grilleDe({ ...creation, elements: creation.elements.map((x) => (x.uid === e.uid ? cand : x)) });
+    if (!placeLibre(creation.elements, cand, g.cols, g.rows, e.uid)) { dire(tr("Pas assez de place pour agrandir ici : déplacez les éléments voisins.")); return; }
+    modifier((c) => ({ ...c, elements: c.elements.map((x) => (x.uid === e.uid ? cand : x)) }));
+  };
   const dupliquer = () => {
     const e = creation.elements.find((x) => x.uid === selection); if (!e) return;
-    const p = trouverPlace(creation.elements, e.type, cols, rows, { x: e.x + 1, y: e.y + 1 }, e.tourne);
+    const p = trouverPlace(creation.elements, e.type, cols, rows, { x: e.x + 1, y: e.y + 1 }, e.tourne, e.plus);
     if (!p) { dire(tr("Plus de place libre pour dupliquer cet élément.")); return; }
     const uid = nouvelId();
     modifier((c) => ({ ...c, elements: [...c.elements, { ...e, uid, x: p.x, y: p.y }] }));
@@ -288,7 +299,13 @@ export default function JeuEvenement() {
                       {([["↖", -1, 0, "Vers le fond, à gauche"], ["↗", 0, -1, "Vers le fond, à droite"], ["↙", 0, 1, "Vers l'avant, à gauche"], ["↘", 1, 0, "Vers l'avant, à droite"]] as const).map(([f, dx, dy, nom]) => (
                         <button key={f} className="h-11 w-11 rounded-xl border border-[#E3D6BA] bg-white text-lg active:bg-[#F6EEDC]" aria-label={tr(nom)} onClick={() => pas(dx, dy)}>{f}</button>
                       ))}
-                      {defElement(sel.type).w !== defElement(sel.type).h && <button className="h-11 px-3 rounded-xl border border-[#E3D6BA] bg-white text-sm" onClick={tourner}>{tr("Tourner")}</button>}
+                      {defElement(sel.type).etire && (
+                        <>
+                          <button className="h-11 px-3 rounded-xl border border-[#E3D6BA] bg-white text-sm disabled:opacity-40" aria-label={tr("Réduire")} disabled={!(sel.plus ?? 0)} onClick={() => agrandir(-1)} data-testid="reduire-mobile">− {tr("Réduire")}</button>
+                          <button className="h-11 px-3 rounded-xl border border-[#E3D6BA] bg-white text-sm disabled:opacity-40" aria-label={tr("Agrandir")} disabled={(sel.plus ?? 0) >= (defElement(sel.type).etire?.max ?? 0)} onClick={() => agrandir(1)} data-testid="agrandir-mobile">+ {tr("Agrandir")}</button>
+                        </>
+                      )}
+                      {(defElement(sel.type).w !== defElement(sel.type).h || (sel.plus ?? 0) > 0 && emprise(sel).w !== emprise(sel).h) && <button className="h-11 px-3 rounded-xl border border-[#E3D6BA] bg-white text-sm" onClick={tourner}>{tr("Tourner")}</button>}
                       <button className="h-11 px-3 rounded-xl border border-[#E7C3BF] bg-white text-sm text-[#9B2C2C]" onClick={supprimer}>{tr("Supprimer")}</button>
                     </div>
                   </div>
@@ -308,7 +325,7 @@ export default function JeuEvenement() {
               {sel && (
                 <PanneauSelection creation={creation} element={sel} enDeplacement={mode?.type === "deplacer"}
                   onCouleur={(c) => couleur(c)} onCouleurTous={(c) => couleur(c, true)} onDeplacer={() => { const actif = mode?.type !== "deplacer"; setMode(actif ? { type: "deplacer", uid: sel.uid } : null); if (actif) requestAnimationFrame(montrerScene); }}
-                  onPas={pas} onTourner={tourner} onDupliquer={dupliquer} onSupprimer={supprimer} onFermer={() => { setSelection(null); setMode(null); }}
+                  onPas={pas} onAgrandir={agrandir} onTourner={tourner} onDupliquer={dupliquer} onSupprimer={supprimer} onFermer={() => { setSelection(null); setMode(null); }}
                   onCentresCouleur={(c) => modifier((x) => ({ ...x, centres: { ...x.centres, couleur: c } }))}
                   onNom={(nom) => modifier((x) => ({ ...x, elements: x.elements.map((e) => (e.uid === sel.uid ? { ...e, nom: nom || undefined } : e)) }))} />
               )}

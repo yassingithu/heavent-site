@@ -28,7 +28,7 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
   { creation, cols, rows, selection, mode, lectureSeule, futur, onPlacer, onDeplacer, onSelection, onCaseRefusee }, ref,
 ) {
   const svgLocal = useRef<SVGSVGElement | null>(null);
-  const [survol, setSurvol] = useState<{ type: TypeElement; x: number; y: number; tourne?: boolean; ignorer?: string } | null>(null);
+  const [survol, setSurvol] = useState<{ type: TypeElement; x: number; y: number; tourne?: boolean; plus?: number; ignorer?: string } | null>(null);
   const glisse = useRef<{ uid: string; dx: number; dy: number; depart: [number, number]; bouge: boolean } | null>(null);
   // Au doigt : tant qu'un élément est tenu, la page ne défile pas (sinon le navigateur « vole » le geste).
   useEffect(() => {
@@ -79,7 +79,7 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
     if (mode.type === "placer") { const { w, h } = emprise({ type: mode.element }); return { type: mode.element, tourne: false, ignorer: undefined as string | undefined, ...ancre(g, w, h) }; }
     const el = elements.find((e) => e.uid === mode.uid); if (!el) return null;
     const { w, h } = emprise(el);
-    return { type: el.type, tourne: el.tourne, ignorer: el.uid as string | undefined, ...ancre(g, w, h) };
+    return { type: el.type, tourne: el.tourne, plus: el.plus, ignorer: el.uid as string | undefined, ...ancre(g, w, h) };
   };
 
   // ── Souris / toucher ───────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
       if (!g || !el) return;
       const x = Math.floor(g.gx - gl.dx), y = Math.floor(g.gy - gl.dy);
       if (x !== gl.depart[0] || y !== gl.depart[1]) gl.bouge = true;
-      if (gl.bouge) setSurvol({ type: el.type, x, y, tourne: el.tourne, ignorer: el.uid });
+      if (gl.bouge) setSurvol({ type: el.type, x, y, tourne: el.tourne, plus: el.plus, ignorer: el.uid });
       return;
     }
     if (mode && ev.pointerType === "mouse") setSurvol(candidatMode(ev.clientX, ev.clientY));
@@ -192,7 +192,7 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
         {survol && (
           <g style={{ pointerEvents: "none" }}>
             <polygon points={contourEmprise(survol.x, survol.y, emprise(survol).w, emprise(survol).h)} fill={valide ? "#6FA36B" : "#C2524A"} fillOpacity={0.3} stroke={valide ? "#4E8A4A" : "#A33B33"} strokeWidth={2} strokeDasharray="5 4" />
-            {valide && <g opacity={0.6}><DessinElement e={{ uid: "apercu", type: survol.type, x: survol.x, y: survol.y, tourne: survol.tourne }} ctx={{ palette: pal, type: reglages.type, centres }} /></g>}
+            {valide && <g opacity={0.6}><DessinElement e={{ uid: "apercu", type: survol.type, x: survol.x, y: survol.y, tourne: survol.tourne, plus: survol.plus }} ctx={{ palette: pal, type: reglages.type, centres }} /></g>}
           </g>
         )}
       </g>

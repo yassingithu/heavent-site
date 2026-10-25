@@ -105,6 +105,8 @@ export interface DefElement {
   types?: TypeEvenement[];
   /** Proposé seulement dans ces lieux (tous par défaut) : la tente marocaine, par exemple, se monte en jardin ou sur une terrasse */
   lieux?: Lieu[];
+  /** Peut être agrandi : « w » = en longueur, « h » = en profondeur, « carre » = dans les deux sens ; `prixCase` = supplément par case ajoutée */
+  etire?: { axe: "w" | "h" | "carre"; max: number; prixCase: number };
   /** Élément « sur mesure » : le visiteur lui donne un nom, l'agence le chiffre dans le devis (pas de prix dans le jeu) */
   surDevis?: boolean;
 }
@@ -156,6 +158,21 @@ export const CATALOGUE: DefElement[] = [
   { id: "estrade", categorie: "decoration", nom: "Estrade de cérémonie", description: "Estrade avec marches, tapis et fond tendu : pour la cérémonie, les discours ou la remise de cadeaux.", w: 3, h: 2, prix: 3200, couleur: "deco", role: "decoration" },
   { id: "pergola", categorie: "decoration", nom: "Pergola fleurie", description: "Grande pergola blanche habillée de fleurs : un abri ombragé et photogénique pour la cérémonie ou le cocktail.", w: 3, h: 3, prix: 9000, couleur: "fleurs", role: "decoration", lieux: ["jardin", "terrasse"] },
 ];
+
+/** Éléments que le visiteur peut agrandir (la taille et le prix suivent). */
+const ETIREMENTS: Partial<Record<TypeElement, NonNullable<DefElement["etire"]>>> = {
+  piste: { axe: "carre", max: 3, prixCase: 650 },
+  buffet: { axe: "w", max: 4, prixCase: 700 },
+  bar: { axe: "w", max: 3, prixCase: 500 },
+  mur_fleurs: { axe: "w", max: 3, prixCase: 1800 },
+  allee: { axe: "h", max: 6, prixCase: 500 },
+  estrade: { axe: "w", max: 3, prixCase: 900 },
+  espace_enfants: { axe: "carre", max: 2, prixCase: 350 },
+  salon_marocain: { axe: "w", max: 2, prixCase: 1500 },
+  the: { axe: "w", max: 2, prixCase: 500 },
+  candy_bar: { axe: "w", max: 3, prixCase: 400 },
+};
+CATALOGUE.forEach((d) => { const t = ETIREMENTS[d.id]; if (t) d.etire = t; });
 
 /** Option « centres de table » : posée sur toutes les tables, facturée par table. */
 export const CENTRES_DE_TABLE = {

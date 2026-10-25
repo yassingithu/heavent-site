@@ -1,7 +1,7 @@
 // Dessins SVG en vue isométrique 2D : sol, décor du lieu et chaque élément du catalogue.
 import { Fragment, ReactNode } from "react";
 import { Lieu, LIEUX, Palette, TypeEvenement } from "./config";
-import { Element, emprise } from "./logique";
+import { Element, dimsBase, emprise } from "./logique";
 
 export const TW = 64; // largeur d'une case à l'écran
 export const TH = 32; // hauteur d'une case à l'écran
@@ -184,8 +184,9 @@ export interface ContexteDessin { palette: Palette; type: TypeEvenement; centres
 function local(e: Element) {
   const { w, h } = emprise(e);
   const t = !!e.tourne;
+  const b = dimsBase(e); // dimensions avant rotation, agrandissement compris
   return {
-    L: w, P: h, t,
+    L: w, P: h, Lb: b.w, Pb: b.h, t,
     p: (u: number, v: number): [number, number] => (t ? [e.x + v, e.y + u] : [e.x + u, e.y + v]),
     r: (u: number, v: number, du: number, dv: number) => (t ? { x: e.x + v, y: e.y + u, w: dv, h: du } : { x: e.x + u, y: e.y + v, w: du, h: dv }),
   };
@@ -333,7 +334,7 @@ export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
         <g>
           <Boite x={e.x} y={e.y} w={w} h={h} ht={4} c={teinte(b, 0.15)} />
           {dalles}
-          {[[0.7, 0.8], [2.1, 1.3], [1.4, 2.3]].map(([u, v], i) => { const [x, y] = pt(e.x + u, e.y + v, 4); return <path key={i} d={`M${x},${y - 5} L${x + 1.6},${y - 1.6} L${x + 5},${y} L${x + 1.6},${y + 1.6} L${x},${y + 5} L${x - 1.6},${y + 1.6} L${x - 5},${y} L${x - 1.6},${y - 1.6} Z`} fill="#FFFFFF" opacity={0.85} />; })}
+          {[[0.7, 0.8], [2.1, 1.3], [1.4, 2.3]].map(([u, v], i) => { const [x, y] = pt(e.x + u * w / 3, e.y + v * h / 3, 4); return <path key={i} d={`M${x},${y - 5} L${x + 1.6},${y - 1.6} L${x + 5},${y} L${x + 1.6},${y + 1.6} L${x},${y + 5} L${x - 1.6},${y + 1.6} L${x - 5},${y} L${x - 1.6},${y - 1.6} Z`} fill="#FFFFFF" opacity={0.85} />; })}
         </g>
       );
     }
@@ -355,26 +356,26 @@ export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
     }
     case "buffet": {
       const l = local(e);
-      const plats = [0.5, 1.5, 2.5].map((u) => l.p(u, 0.55));
-      const mets = ["#D9A441", "#9DAE89", "#C9705A"];
+      const plats = Array.from({ length: Math.round(l.Lb) }, (_, i) => l.p(0.5 + i, 0.55));
+      const mets = ["#D9A441", "#9DAE89", "#C9705A", "#E8C07A"];
       return (
         <g>
-          <Boite {...l.r(0.06, 0.22, 2.88, 0.62)} ht={17} c={coul} />
-          {plats.map(([x, y], i) => <g key={i}><Cylindre cx={x} cy={y} r={0.2} z={17} ht={6} c="#CFCFCF" haut="#EDEDED" /><Rond x={x} y={y} z={24} r={5} c={mets[i]} o={0.9} /></g>)}
+          <Boite {...l.r(0.06, 0.22, l.Lb - 0.12, 0.62)} ht={17} c={coul} />
+          {plats.map(([x, y], i) => <g key={i}><Cylindre cx={x} cy={y} r={0.2} z={17} ht={6} c="#CFCFCF" haut="#EDEDED" /><Rond x={x} y={y} z={24} r={5} c={mets[i % 4]} o={0.9} /></g>)}
         </g>
       );
     }
     case "bar": {
       const l = local(e);
-      const bouteilles = Array.from({ length: 7 }, (_, i) => l.p(0.25 + i * 0.25, 0.18));
-      const verres = Array.from({ length: 4 }, (_, i) => l.p(0.4 + i * 0.4, 0.78));
+      const bouteilles = Array.from({ length: Math.round(l.Lb * 3.5) }, (_, i) => l.p(0.25 + i * 0.25, 0.18));
+      const verres = Array.from({ length: Math.round(l.Lb * 2) }, (_, i) => l.p(0.4 + i * 0.4, 0.78));
       const cb = ["#7A9A6A", "#C98261", "#D9A441", "#9CC3DA", "#B05A6A", "#7A9A6A", "#D9A441"];
       return (
         <g>
-          <Boite {...l.r(0.05, 0.04, 1.9, 0.18)} ht={44} c="#7A5C43" />
+          <Boite {...l.r(0.05, 0.04, l.Lb - 0.1, 0.18)} ht={44} c="#7A5C43" />
           {bouteilles.map(([x, y], i) => { const [sx, sy] = pt(x, y, 44); return <rect key={i} x={sx - 2} y={sy - 13} width={4} height={13} rx={1.5} fill={cb[i]} />; })}
-          <Boite {...l.r(0.05, 0.42, 1.9, 0.5)} ht={30} c="#8A6A4F" />
-          <Boite {...l.r(0.02, 0.4, 1.96, 0.54)} z={30} ht={2} c="#D8C3A1" />
+          <Boite {...l.r(0.05, 0.42, l.Lb - 0.1, 0.5)} ht={30} c="#8A6A4F" />
+          <Boite {...l.r(0.02, 0.4, l.Lb - 0.04, 0.54)} z={30} ht={2} c="#D8C3A1" />
           {verres.map(([x, y], i) => { const [sx, sy] = pt(x, y, 32); return <path key={i} d={`M${sx - 2.5},${sy - 7} L${sx + 2.5},${sy - 7} L${sx + 1.5},${sy} L${sx - 1.5},${sy} Z`} fill="#E8F1F5" stroke="#9FB7C4" strokeWidth={0.5} />; })}
         </g>
       );
@@ -510,18 +511,18 @@ export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
       const l = local(e);
       const fl = ctx.couleur ?? palette.fleurs;
       const fleurs: ReactNode[] = [];
-      for (let j = 0; j < 7; j++) for (let i = 0; i < 13; i++) {
+      for (let j = 0; j < 7; j++) for (let i = 0; i < Math.ceil(l.Lb / 0.22) + 1; i++) {
         const u = 0.18 + i * 0.22 + (j % 2) * 0.1, z = 10 + j * 11;
-        if (u > 2.85) continue;
+        if (u > l.Lb - 0.15) continue;
         const [x, y] = pt(...l.p(u, 0.52), z);
         const c = (i + j) % 4 === 0 ? teinte(fl, -0.35) : (i * 3 + j) % 5 === 0 ? "#FBF8F1" : (i + 2 * j) % 3 === 0 ? teinte(fl, 0.1) : fl;
         fleurs.push(<g key={`${i}-${j}`}><ellipse cx={x + 4} cy={y + 3} rx={4} ry={2.4} fill="#7E9A6A" /><circle cx={x} cy={y} r={5.2} fill={c} stroke={teinte(c, 0.25)} strokeWidth={0.5} /></g>);
       }
       return (
         <g>
-          <Boite {...l.r(0.05, 0.3, 2.9, 0.2)} ht={88} c="#6F8A5E" />
+          <Boite {...l.r(0.05, 0.3, l.Lb - 0.1, 0.2)} ht={88} c="#6F8A5E" />
           {fleurs}
-          <Boite {...l.r(0, 0.25, 2.98, 0.3)} ht={6} c={palette.accent === "#2B2B2B" ? "#2B2B2B" : "#F4EFE6"} />
+          <Boite {...l.r(0, 0.25, l.Lb - 0.02, 0.3)} ht={6} c={palette.accent === "#2B2B2B" ? "#2B2B2B" : "#F4EFE6"} />
         </g>
       );
     }
@@ -553,11 +554,11 @@ export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
       const l = local(e);
       const fl = ctx.couleur ?? palette.fleurs;
       const tapis = palette.accent === "#2B2B2B" ? "#F4F4F4" : (palette.nappe === "#7C2436" ? "#7C2436" : "#F4EFE6");
-      const bords = Array.from({ length: 4 }, (_, i) => 0.35 + i * 0.77);
-      const petales = Array.from({ length: 16 }, (_, i) => l.p(0.3 + ((i * 37) % 40) / 100, 0.15 + i * 0.17));
+      const bords = Array.from({ length: Math.round(l.Pb * 4 / 3) }, (_, i) => 0.35 + i * (l.Pb - 0.7) / (Math.round(l.Pb * 4 / 3) - 1));
+      const nPet = Math.round(l.Pb * 5.3); const petales = Array.from({ length: nPet }, (_, i) => l.p(0.3 + ((i * 37) % 40) / 100, 0.15 + i * (l.Pb - 0.3) / nPet));
       return (
         <g>
-          <Boite {...l.r(0.2, 0, 0.6, l.P)} ht={1.5} c={tapis} />
+          <Boite {...l.r(0.2, 0, 0.6, l.Pb)} ht={1.5} c={tapis} />
           {petales.map(([x, y], i) => { const [px, py] = pt(x, y, 2); return <ellipse key={i} cx={px} cy={py} rx={1.8} ry={1.1} fill={i % 3 ? fl : teinte(fl, -0.3)} />; })}
           {bords.flatMap((v) => [0.07, 0.93].map((u) => {
             const [x, y] = l.p(u, v);
@@ -569,22 +570,23 @@ export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
               </g>
             );
           }))}
-          <Bouquet x={l.p(0.07, 2.92)[0]} y={l.p(0.07, 2.92)[1]} z={4} c={fl} taille={0.75} />
-          <Bouquet x={l.p(0.93, 2.92)[0]} y={l.p(0.93, 2.92)[1]} z={4} c={fl} taille={0.75} />
+          <Bouquet x={l.p(0.07, l.Pb - 0.08)[0]} y={l.p(0.07, l.Pb - 0.08)[1]} z={4} c={fl} taille={0.75} />
+          <Bouquet x={l.p(0.93, l.Pb - 0.08)[0]} y={l.p(0.93, l.Pb - 0.08)[1]} z={4} c={fl} taille={0.75} />
         </g>
       );
     }
     case "the": {
       const l = local(e);
       const or = "#C9A74E";
-      const [tx, ty] = l.p(1, 0.45);
-      const verres = [0.62, 0.82, 1.18, 1.38].map((u) => l.p(u, 0.62));
-      const [px, py] = l.p(0.45, 0.42), [p2x, p2y] = l.p(1.55, 0.42);
-      const poufs = [l.p(0.5, 0.92), l.p(1.5, 0.92)];
+      const k = l.Lb / 2; // facteur d'étirement par rapport à la taille de base
+      const [tx, ty] = l.p(1 * k, 0.45);
+      const verres = [0.62, 0.82, 1.18, 1.38].map((u) => l.p(u * k, 0.62));
+      const [px, py] = l.p(0.45 * k, 0.42), [p2x, p2y] = l.p(1.55 * k, 0.42);
+      const poufs = [l.p(0.5 * k, 0.92), l.p(1.5 * k, 0.92)];
       const cuir = ["#B9785A", "#9C6B3C"];
       return (
         <g>
-          <Boite {...l.r(0.1, 0.12, 1.8, 0.6)} ht={13} c={coul} />
+          <Boite {...l.r(0.1, 0.12, l.Lb - 0.2, 0.6)} ht={13} c={coul} />
           <Cylindre cx={tx} cy={ty} r={0.34} z={13} ht={1.5} c={or} haut={teinte(or, -0.25)} />
           <Cylindre cx={tx} cy={ty} r={0.08} z={15} ht={8} c="#D7D7D7" haut="#EEEEEE" />
           <path d={`M${pt(tx, ty, 21)[0] + 4},${pt(tx, ty, 21)[1]} q6,-3 8,-7`} stroke="#BFBFBF" strokeWidth={1.4} fill="none" />
@@ -691,18 +693,19 @@ export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
       const l = local(e);
       const c = ctx.couleur ?? palette.deco;
       const tissu = teinte(c, -0.2);
-      const [tx, ty] = l.p(1.5, 1);
+      const Lb = l.Lb;
+      const [tx, ty] = l.p(Lb / 2, 1);
       return (
         <g>
-          <Boite {...l.r(0.15, 0.15, 2.7, 1.7)} ht={1.5} c={teinte(palette.piste[0], 0)} />
-          <Boite {...l.r(0.2, 0.1, 2.6, 0.42)} ht={14} c={tissu} />
-          <Boite {...l.r(0.2, 0.1, 2.6, 0.14)} z={14} ht={14} c={teinte(tissu, 0.1)} />
+          <Boite {...l.r(0.15, 0.15, Lb - 0.3, 1.7)} ht={1.5} c={teinte(palette.piste[0], 0)} />
+          <Boite {...l.r(0.2, 0.1, Lb - 0.4, 0.42)} ht={14} c={tissu} />
+          <Boite {...l.r(0.2, 0.1, Lb - 0.4, 0.14)} z={14} ht={14} c={teinte(tissu, 0.1)} />
           <Boite {...l.r(0.2, 0.52, 0.42, 1.3)} ht={14} c={tissu} />
-          <Boite {...l.r(2.38, 0.52, 0.42, 1.3)} ht={14} c={tissu} />
-          {[0.5, 1.1, 1.7, 2.2].map((u, i) => <Boite key={i} {...l.r(u, 0.3, 0.3, 0.2)} z={14} ht={7} c={i % 2 ? "#FFF3D6" : teinte(palette.fleurs, -0.1)} />)}
+          <Boite {...l.r(Lb - 0.62, 0.52, 0.42, 1.3)} ht={14} c={tissu} />
+          {Array.from({ length: Math.round(Lb * 4 / 3) }, (_, i, t) => 0.5 + i * (Lb - 1.3) / Math.max(1, t.length - 1)).map((u, i) => <Boite key={i} {...l.r(u, 0.3, 0.3, 0.2)} z={14} ht={7} c={i % 2 ? "#FFF3D6" : teinte(palette.fleurs, -0.1)} />)}
           <Cylindre cx={tx} cy={ty} r={0.42} ht={10} c="#B08E6A" haut="#E9C46A" />
           <Cylindre cx={tx} cy={ty} r={0.1} z={10} ht={7} c="#D7D7D7" haut="#EEEEEE" />
-          {[l.p(1.0, 1.7), l.p(2.0, 1.7)].map(([x, y], i) => <Cylindre key={i} cx={x} cy={y} r={0.2} ht={9} c={i ? "#9C6B3C" : "#B9785A"} />)}
+          {[l.p(Lb / 2 - 0.5, 1.7), l.p(Lb / 2 + 0.5, 1.7)].map(([x, y], i) => <Cylindre key={i} cx={x} cy={y} r={0.2} ht={9} c={i ? "#9C6B3C" : "#B9785A"} />)}
         </g>
       );
     }
@@ -760,8 +763,8 @@ export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
       const col = ["#E9B8BC", "#F9E3A6", "#B7D7C0", "#D8587A", "#C9A74E"];
       return (
         <g>
-          <Boite {...l.r(0.1, 0.12, 1.8, 0.7)} ht={14} c={coul} />
-          {[0.3, 0.6, 0.9, 1.2, 1.5].map((u, i) => { const [x, y] = l.p(u, 0.45); const [sx, sy] = pt(x, y, 14); return <g key={i}><rect x={sx - 3.6} y={sy - 12} width={7.2} height={11} rx={2} fill={col[i]} opacity={0.85} stroke={teinte(col[i], 0.3)} strokeWidth={0.5} /><rect x={sx - 3} y={sy - 14.5} width={6} height={2.6} rx={1} fill="#E8D8A8" /></g>; })}
+          <Boite {...l.r(0.1, 0.12, l.Lb - 0.2, 0.7)} ht={14} c={coul} />
+          {Array.from({ length: Math.round(l.Lb * 2.5) }, (_, i) => 0.3 + i * 0.3).map((u, i) => { const [x, y] = l.p(u, 0.45); const [sx, sy] = pt(x, y, 14); return <g key={i}><rect x={sx - 3.6} y={sy - 12} width={7.2} height={11} rx={2} fill={col[i % 5]} opacity={0.85} stroke={teinte(col[i % 5], 0.3)} strokeWidth={0.5} /><rect x={sx - 3} y={sy - 14.5} width={6} height={2.6} rx={1} fill="#E8D8A8" /></g>; })}
           {[l.p(0.35, 0.95), l.p(0.7, 0.95), l.p(1.15, 0.95)].map(([x, y], i) => <Boite key={i} x={x - 0.1} y={y - 0.1} w={0.2} h={0.2} ht={5} c={col[(i + 2) % 5]} />)}
         </g>
       );
@@ -840,10 +843,10 @@ export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
       const col = ["#E9B8BC", "#F9E3A6", "#B7D7C0", "#9DB7E6"];
       return (
         <g>
-          <Boite x={e.x + 0.1} y={e.y + 0.1} w={1.8} h={1.8} ht={1.5} c="#8FC1A9" />
+          <Boite x={e.x + 0.1} y={e.y + 0.1} w={w - 0.2} h={h - 0.2} ht={1.5} c="#8FC1A9" />
           <Boite x={e.x + 0.35} y={e.y + 0.35} w={1.1} h={1.1} z={1.5} ht={18} c={col[0]} />
           {[[0.35, 0.35], [1.15, 0.35], [0.35, 1.15], [1.15, 1.15]].map(([u, v], i) => <Boite key={i} x={e.x + u} y={e.y + v} w={0.3} h={0.3} z={19.5} ht={8} c={col[(i + 1) % 4]} />)}
-          {[[1.55, 1.5, 0], [1.7, 1.15, 1], [1.4, 1.75, 2]].map(([u, v, i]) => { const [sx, sy] = pt(e.x + u, e.y + v, 24 + i * 4); return <g key={i}><line x1={sx} y1={sy} x2={sx} y2={sy + 24} stroke="#999" strokeWidth={0.6} /><ellipse cx={sx} cy={sy - 5} rx={6} ry={7.5} fill={["#D8587A", "#F4B740", "#2E86AB"][i]} /></g>; })}
+          {[[w - 0.45, h - 0.5, 0], [w - 0.3, h - 0.85, 1], [w - 0.6, h - 0.25, 2]].map(([u, v, i]) => { const [sx, sy] = pt(e.x + u, e.y + v, 24 + i * 4); return <g key={i}><line x1={sx} y1={sy} x2={sx} y2={sy + 24} stroke="#999" strokeWidth={0.6} /><ellipse cx={sx} cy={sy - 5} rx={6} ry={7.5} fill={["#D8587A", "#F4B740", "#2E86AB"][i]} /></g>; })}
         </g>
       );
     }
@@ -853,13 +856,13 @@ export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
       const c = ctx.couleur ?? palette.deco;
       return (
         <g>
-          <Boite {...l.r(0.1, 0.9, 2.8, 1)} ht={9} c={teinte(c, 0.2)} />
-          <Boite {...l.r(0.9, 1.6, 1.2, 0.4)} ht={4.5} c={teinte(c, 0.1)} />
-          <Boite {...l.r(1, 1.0, 1, 0.9)} z={9} ht={0.8} c="#8C2F39" />
-          <Boite {...l.r(0.1, 0.15, 2.8, 0.12)} ht={46} c={teinte(palette.nappe, 0)} />
+          <Boite {...l.r(0.1, 0.9, l.Lb - 0.2, 1)} ht={9} c={teinte(c, 0.2)} />
+          <Boite {...l.r(l.Lb / 2 - 0.6, 1.6, 1.2, 0.4)} ht={4.5} c={teinte(c, 0.1)} />
+          <Boite {...l.r(l.Lb / 2 - 0.5, 1.0, 1, 0.9)} z={9} ht={0.8} c="#8C2F39" />
+          <Boite {...l.r(0.1, 0.15, l.Lb - 0.2, 0.12)} ht={46} c={teinte(palette.nappe, 0)} />
           <Boite {...l.r(0.1, 0.15, 0.14, 0.12)} z={46} ht={3} c="#C9A74E" />
-          <Boite {...l.r(2.76, 0.15, 0.14, 0.12)} z={46} ht={3} c="#C9A74E" />
-          {[l.p(0.35, 0.9), l.p(2.65, 0.9)].map(([x, y], i) => <Bouquet key={i} x={x} y={y} z={9} c={palette.fleurs} taille={0.9} />)}
+          <Boite {...l.r(l.Lb - 0.24, 0.15, 0.14, 0.12)} z={46} ht={3} c="#C9A74E" />
+          {[l.p(0.35, 0.9), l.p(l.Lb - 0.35, 0.9)].map(([x, y], i) => <Bouquet key={i} x={x} y={y} z={9} c={palette.fleurs} taille={0.9} />)}
         </g>
       );
     }
