@@ -14,7 +14,7 @@ import {
 } from "./logique";
 import Scene, { ModeScene } from "./Scene";
 import { Accueil, Personnalisation } from "./Ecrans";
-import { Catalogue, JaugeBudget, Missions, PanneauSelection } from "./Panneaux";
+import { BarreSuivi, Catalogue, JaugeBudget, Missions, PanneauSelection, Tiroir } from "./Panneaux";
 import { FenetreDevis, FenetrePartage, FenetreTelechargement, Recapitulatif, VuePartagee } from "./Fin";
 import { creationDansLien, oublierLien } from "./partage";
 import { Bouton, Confettis } from "./ui";
@@ -43,6 +43,10 @@ export default function JeuEvenement() {
   const [telechargement, setTelechargement] = useState(false);
   const [devis, setDevis] = useState(false);
   const [zoom, setZoom] = useState(1);
+  // Téléphone / tablette : « ajout rapide » = un geste pose l'élément au meilleur endroit libre (réglage mémorisé)
+  const [ajoutRapide, setAjoutRapideEtat] = useState<boolean>(() => { try { return localStorage.getItem("heavent-jeu-ajout-rapide") !== "non"; } catch { return true; } });
+  const setAjoutRapide = (v: boolean) => { setAjoutRapideEtat(v); try { localStorage.setItem("heavent-jeu-ajout-rapide", v ? "oui" : "non"); } catch { /* sans mémoire */ } };
+  const [dernierAjout, setDernierAjout] = useState<{ nom: string; n: number } | null>(null);
   const svgRecap = useRef<SVGSVGElement | null>(null);
   const zoneScene = useRef<HTMLDivElement>(null);
   /** Sur petit écran, le catalogue est sous la scène : on y remonte pour choisir la place. */
@@ -117,6 +121,24 @@ export default function JeuEvenement() {
     modifier((c) => ({ ...c, elements: [...c.elements, { uid, type, x: p.x, y: p.y, tourne }] }));
     setMode(null); setSelection(uid); dire(tr("{nom} ajouté(e) à la scène.", { nom: libelle(type, creation.reglages.type).nom }));
   };
+  /** Ajout rapide depuis le tiroir : pose l'élément, signale-le et permet d'annuler en un geste. */
+  const ajouterRapide = (type: TypeElement) => {
+    const avant = creation.elements.length;
+    placerAuto(type);
+    const nom = libelle(type, creation.reglages.type).nom;
+    setDernierAjout({ nom, n: avant + 1 });
+  };
+  useEffect(() => {
+    if (!dernierAjout) return;
+    const t = setTimeout(() => setDernierAjout(null), 3500);
+    return () => clearTimeout(t);
+  }, [dernierAjout]);
+  // Le tiroir occupe le bas de l'écran : on masque le bouton WhatsApp flottant pendant le jeu (téléphone)
+  useEffect(() => {
+    if (etape !== "jeu") return;
+    document.body.classList.add("jeu-tiroir");
+    return () => document.body.classList.remove("jeu-tiroir");
+  }, [etape]);
   const deplacer = (uid: string, x: number, y: number) => {
     modifier((c) => ({ ...c, elements: c.elements.map((e) => (e.uid === uid ? { ...e, x, y } : e)) }));
     setMode(null); setSelection(uid);
@@ -198,7 +220,7 @@ export default function JeuEvenement() {
       )}
 
       {etape === "jeu" && (
-        <div className="space-y-4">
+        <div className="space-y-4 pb-56 lg:pb-0">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="uppercase tracking-[0.2em] text-[11px] text-[#8C6D22]">{typeNom} · {tr("{n} invités", { n: creation.reglages.invites })}</p>
@@ -230,8 +252,9 @@ export default function JeuEvenement() {
                   <button className="rounded-full border border-white/40 px-3 min-h-9" onClick={() => setMode(null)}>{tr("Annuler")}</button>
                 </div>
               )}
+              <BarreSuivi creation={creation} missions={missions} />
               <div className="relative rounded-[1.75rem] bg-white border border-[#EADFC8] shadow-[0_20px_60px_-35px_rgba(140,109,34,0.5)] overflow-hidden">
-                <div className="overflow-auto max-h-[70vh]" data-testid="scene-conteneur">
+                <div className="overflow-auto max-h-[max(18rem,min(70vh,calc(100dvh-19rem)))] lg:max-h-[70vh]" data-testid="scene-conteneur">
                   <div style={{ width: `${zoom * 100}%` }}>
                     <Scene creation={creation} cols={cols} rows={rows} selection={selection} mode={mode}
                       onPlacer={placer} onDeplacer={deplacer} onSelection={(u) => { setSelection(u); }} onCaseRefusee={() => dire(tr("Cette zone est occupée ou trop petite : choisissez une zone en vert."))} />
@@ -257,6 +280,12 @@ export default function JeuEvenement() {
                     </div>
                   </div>
                 )}
+                {dernierAjout && (
+                  <div role="status" className="lg:hidden absolute left-2 top-2 right-24 z-10 flex items-center gap-2 rounded-full bg-[#2A2420]/95 text-white text-xs pl-3 pr-1 py-1 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2" data-testid="toast-ajout">
+                    <span className="truncate">✓ {tr("{nom} ajouté(e)", { nom: dernierAjout.nom })}</span>
+                    <button className="ml-auto shrink-0 rounded-full bg-white/15 px-3 min-h-8 font-medium" onClick={() => { annuler(); setDernierAjout(null); }}>↶ {tr("Annuler")}</button>
+                  </div>
+                )}
                 {!creation.elements.length && !mode && (
                   <div className="absolute inset-x-0 top-3 mx-auto w-fit max-w-[90%] rounded-full bg-white/90 border border-[#EADFC8] px-4 py-1.5 text-xs text-[#5E554A] text-center">
                     {tr("Choisissez un élément dans le catalogue, ou laissez-nous « proposer une disposition ».")}
@@ -276,12 +305,8 @@ export default function JeuEvenement() {
               </div>
             </div>
 
-            <aside className="space-y-3 lg:sticky lg:top-20 min-w-0" aria-label={tr("Catalogue et suivi")}>
-              <div className="hidden lg:block space-y-3">
-                <JaugeBudget creation={creation} onAjuster={() => aller("reglages")} />
-                <Missions missions={missions} celebre={celebre} />
-              </div>
-              <div className="rounded-2xl border border-[#EADFC8] bg-[#FFFDF8] p-3">
+            <aside className="space-y-3 lg:sticky lg:top-20 min-w-0 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:pr-1" aria-label={tr("Catalogue et suivi")}>
+              <div className="hidden lg:block rounded-2xl border border-[#EADFC8] bg-[#FFFDF8] p-3">
                 <h3 className="font-serif text-base mb-2 px-1">{tr("Catalogue")}</h3>
                 <Catalogue creation={creation} enPlacement={mode?.type === "placer" ? mode.element : null}
                   onChoisir={(t) => {
@@ -292,10 +317,19 @@ export default function JeuEvenement() {
                   }}
                   onCentres={(actif) => modifier((c) => ({ ...c, centres: { ...c.centres, actif } }))} />
               </div>
+              <div className="hidden lg:block space-y-3">
+                <JaugeBudget creation={creation} onAjuster={() => aller("reglages")} />
+                <Missions missions={missions} celebre={celebre} />
+              </div>
             </aside>
           </div>
 
-          <div className="sticky bottom-3 z-10 flex justify-center">
+          <Tiroir creation={creation} enPlacement={mode?.type === "placer" ? mode.element : null} ajoutRapide={ajoutRapide} onAjoutRapide={setAjoutRapide}
+            onAjouter={ajouterRapide} missions={missions} onDecouvrir={() => aller("recap")} onAjuster={() => aller("reglages")}
+            onChoisir={(t) => { setSelection(null); const actif = !(mode?.type === "placer" && mode.element === t); setMode(actif ? { type: "placer", element: t } : null); }}
+            onCentres={(actif) => modifier((c) => ({ ...c, centres: { ...c.centres, actif } }))} />
+
+          <div className="hidden lg:flex sticky bottom-3 z-10 justify-center">
             <Bouton onClick={() => aller("recap")} className="px-6 shadow-lg">{tr("Découvrir mon événement")}</Bouton>
           </div>
         </div>

@@ -33,6 +33,7 @@ export function Miniature({ type, creation, taille = 56 }: { type: TypeElement; 
 export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
   creation: Creation; enPlacement?: TypeElement | null; onChoisir: (t: TypeElement) => void; onCentres: (actif: boolean) => void;
 }) {
+  // Sur ordinateur, la colonne de droite est un petit présentoir de tuiles (sans descendre dans la page) ; ailleurs, la liste détaillée.
   const [cat, setCat] = useState<string>("places");
   const t = creation.reglages.type;
   return (
@@ -45,7 +46,7 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
           </button>
         ))}
       </div>
-      <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2" aria-label={tr("Éléments à ajouter")}>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2" aria-label={tr("Éléments à ajouter")}>
         {CATALOGUE.filter((d) => d.categorie === cat && (!d.types || d.types.includes(t))).map((d) => {
           const l = libelle(d.id, t);
           const places = placesDe(d.id, t);
@@ -60,15 +61,16 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
                 onClick={() => onChoisir(d.id)}
                 aria-pressed={actif}
                 aria-label={tr("{nom} : {prix}{places}. Ajouter à la scène", { nom: l.nom, prix: d.surDevis ? tr("Prix sur devis") : prixTexte(d.prix, d.prixParInvite, true), places: places ? tr(", {n} places", { n: places }) : "" })}
-                className={`w-full flex items-center gap-3 rounded-2xl border p-2.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A74E] ${actif ? "border-[#C9A74E] bg-[#FBF3DF]" : "border-[#EADFC8] bg-white hover:border-[#D8C391] hover:shadow-sm"}`}
+                title={l.description}
+                className={`w-full h-full flex items-center gap-3 lg:flex-col lg:justify-start lg:gap-1 lg:text-center rounded-2xl border p-2.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A74E] ${actif ? "border-[#C9A74E] bg-[#FBF3DF]" : "border-[#EADFC8] bg-white hover:border-[#D8C391] hover:shadow-sm"}`}
               >
                 <Miniature type={d.id} creation={creation} />
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium text-sm text-[#2A2420] flex items-center gap-2">
+                <div className="min-w-0 flex-1 lg:flex-none lg:w-full">
+                  <div className="font-medium text-sm text-[#2A2420] flex items-center gap-2 lg:flex-col lg:gap-0.5 lg:text-[13px] lg:leading-tight">
                     <span>{l.nom}</span>
                     {surScene > 0 && <span className="shrink-0 rounded-full bg-[#F1E4C2] text-[#6F5518] text-[10px] font-semibold px-1.5 py-0.5" data-sur-scene={surScene}>{tr("× {n} sur la scène", { n: surScene })}</span>}
                   </div>
-                  <div className="text-xs text-[#6B6155] line-clamp-2">{l.description}</div>
+                  <div className="text-xs text-[#6B6155] line-clamp-2 lg:hidden">{l.description}</div>
                   <div className="text-xs mt-0.5 text-[#8C6D22] font-medium">
                     {d.surDevis ? tr("Prix sur devis") : prixTexte(d.prix, d.prixParInvite)}{places ? ` · ${tr("{n} places", { n: places })}` : ""}
                   </div>
@@ -91,6 +93,80 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
         )}
       </ul>
       <p className="text-xs text-[#6B6155]">{tr("Sur ordinateur, glissez un élément sur la scène. Partout ailleurs : touchez-le, puis touchez une zone libre.")}</p>
+    </div>
+  );
+}
+
+// ── Tiroir du catalogue (téléphone et tablette) ───────────────────────────────
+/**
+ * Barre fixe en bas de l'écran : on choisit un élément SANS quitter la scène des yeux.
+ * « Ajout rapide » (par défaut) : un geste = l'élément est posé au meilleur endroit libre ; on peut ensuite le déplacer au doigt.
+ * Sinon : on touche l'élément, puis la zone souhaitée de la scène.
+ */
+export function Tiroir({ creation, enPlacement, ajoutRapide, onAjoutRapide, onAjouter, onChoisir, onCentres, onDecouvrir, onAjuster, missions }: {
+  creation: Creation; enPlacement?: TypeElement | null; ajoutRapide: boolean; onAjoutRapide: (v: boolean) => void;
+  onAjouter: (t: TypeElement) => void; onChoisir: (t: TypeElement) => void; onCentres: (actif: boolean) => void;
+  onDecouvrir: () => void; onAjuster: () => void; missions: EtatMission[];
+}) {
+  const [cat, setCat] = useState<string>("places");
+  const [ouvert, setOuvert] = useState(true);
+  const t = creation.reglages.type;
+  const b = calculerBudget(creation);
+  const depasse = b.depassement > 0;
+  return (
+    <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 rounded-t-3xl border-t border-[#E3D6BA] bg-[#FFFDF8]/97 backdrop-blur shadow-[0_-12px_30px_-18px_rgba(60,40,10,0.45)] pb-[env(safe-area-inset-bottom)]" data-testid="tiroir" data-ouvert={ouvert ? "oui" : "non"}>
+      <div className="flex items-center gap-2 px-3 pt-2">
+        <button onClick={() => setOuvert((o) => !o)} aria-expanded={ouvert} aria-label={tr("Catalogue")} data-testid="tiroir-bascule" className="h-8 px-3 rounded-full bg-[#F6EEDC] text-xs font-medium text-[#5A4B2E] shrink-0">{ouvert ? "▾" : "▴"} {tr("Catalogue")}</button>
+        <button onClick={onAjuster} className={`min-w-0 flex-1 truncate text-left text-xs ${depasse ? "text-[#8A2E26] font-medium" : "text-[#4F6B3A]"}`} data-testid="tiroir-budget">
+          {depasse ? tr("Dépassement : {montant}", { montant: format(b.depassement) }) : tr("Il reste {montant}", { montant: format(b.reste) })}
+        </button>
+        <span className="flex gap-1 shrink-0" aria-hidden>{missions.map((m) => <span key={m.id} className={`h-2.5 w-2.5 rounded-full ${m.ok ? "bg-[#7C9A5C]" : "bg-[#E3D6BA]"}`} />)}</span>
+        <Bouton onClick={onDecouvrir} aria-label={tr("Découvrir mon événement")} className="!min-h-9 !px-3 text-xs shrink-0">{tr("Découvrir")} ✨</Bouton>
+      </div>
+      {ouvert && (
+        <div className="px-3 pb-2 pt-1.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5" role="tablist" aria-label={tr("Catégories du catalogue")}>
+            {CATEGORIES.map((c) => (
+              <button key={c.id} role="tab" aria-selected={cat === c.id} onClick={() => setCat(c.id)}
+                className={`shrink-0 rounded-full px-3 min-h-8 text-xs font-medium border ${cat === c.id ? "bg-[#2A2420] text-white border-[#2A2420]" : "bg-white text-[#5A4B2E] border-[#E3D6BA]"}`}>{tr(c.nom)}</button>
+            ))}
+            <label className="ml-auto shrink-0 inline-flex items-center gap-1.5 text-[11px] text-[#5A4B2E] pl-2">
+              <input type="checkbox" className="h-4 w-4 accent-[#C9A74E]" checked={ajoutRapide} onChange={(e) => onAjoutRapide(e.target.checked)} data-testid="ajout-rapide" />
+              {tr("Ajout rapide")}
+            </label>
+          </div>
+          <ul className="flex gap-2 overflow-x-auto pb-1 snap-x" aria-label={tr("Éléments à ajouter")} data-testid="tiroir-elements">
+            {CATALOGUE.filter((d) => d.categorie === cat && (!d.types || d.types.includes(t))).map((d) => {
+              const l = libelle(d.id, t);
+              const places = placesDe(d.id, t);
+              const actif = enPlacement === d.id;
+              const surScene = creation.elements.filter((e) => e.type === d.id).length;
+              return (
+                <li key={d.id} className="snap-start shrink-0">
+                  <button onClick={() => (ajoutRapide ? onAjouter(d.id) : onChoisir(d.id))} aria-pressed={actif}
+                    aria-label={tr("{nom} : {prix}{places}. Ajouter à la scène", { nom: l.nom, prix: d.surDevis ? tr("Prix sur devis") : prixTexte(d.prix, d.prixParInvite, true), places: places ? tr(", {n} places", { n: places }) : "" })}
+                    className={`relative w-[92px] h-full flex flex-col items-center gap-0.5 rounded-2xl border px-1.5 py-2 text-center transition-transform active:scale-95 ${actif ? "border-[#C9A74E] bg-[#FBF3DF]" : "border-[#EADFC8] bg-white"}`}>
+                    <Miniature type={d.id} creation={creation} taille={48} />
+                    <span className="text-[11px] font-medium leading-tight text-[#2A2420] line-clamp-2 min-h-[1.9em]">{l.nom}</span>
+                    <span className="text-[10px] text-[#8C6D22] font-medium leading-tight">{d.surDevis ? tr("Prix sur devis") : prixTexte(d.prix, d.prixParInvite)}</span>
+                    {surScene > 0 && <span className="absolute -top-1.5 -right-1 min-w-5 h-5 px-1 rounded-full bg-[#C9A74E] text-white text-[10px] font-semibold inline-flex items-center justify-center" data-sur-scene={surScene}>{surScene}</span>}
+                  </button>
+                </li>
+              );
+            })}
+            {cat === "decoration" && (
+              <li className="snap-start shrink-0">
+                <button onClick={() => onCentres(!creation.centres.actif)} aria-pressed={creation.centres.actif}
+                  className={`w-[92px] h-full flex flex-col items-center justify-center gap-1 rounded-2xl border px-1.5 py-2 text-center active:scale-95 ${creation.centres.actif ? "border-[#C9A74E] bg-[#FBF3DF]" : "border-[#EADFC8] bg-white"}`}>
+                  <span className="text-xl" aria-hidden>🌸</span>
+                  <span className="text-[11px] font-medium leading-tight">{tr(CENTRES_DE_TABLE.nom)}</span>
+                  <span className="text-[10px] text-[#8C6D22] font-medium">{creation.centres.actif ? tr("Ajoutés ✓") : tr("{prix} par table", { prix: format(CENTRES_DE_TABLE.prixParTable) })}</span>
+                </button>
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
@@ -241,5 +317,27 @@ export function Missions({ missions, celebre }: { missions: EtatMission[]; celeb
         ))}
       </ol>
     </section>
+  );
+}
+
+/** Résumé compact budget + missions, au-dessus de la scène (ordinateur) : on garde le catalogue en haut de la colonne de droite. */
+export function BarreSuivi({ creation, missions }: { creation: Creation; missions: EtatMission[] }) {
+  const b = calculerBudget(creation);
+  const ratio = b.budget > 0 ? b.total / b.budget : 0;
+  const couleur = ratio > 1 ? "#B5473E" : ratio > 0.9 ? "#C98A2E" : "#7C9A5C";
+  return (
+    <div className="hidden lg:flex items-center gap-4 rounded-2xl border border-[#EADFC8] bg-white px-4 py-2.5" data-testid="barre-suivi">
+      <div className="min-w-[220px]">
+        <div className="flex items-baseline justify-between text-xs"><span className="font-medium">{tr("Budget")}</span><span><b>{format(b.total)}</b> <span className="text-[#6B6155]">/ {format(b.budget)}</span></span></div>
+        <div className="mt-1 h-2 rounded-full bg-[#F1E8D8] overflow-hidden"><div className="h-full rounded-full motion-safe:transition-all motion-safe:duration-500" style={{ width: `${Math.min(100, ratio * 100)}%`, background: couleur }} /></div>
+      </div>
+      <ul className="flex flex-1 flex-wrap items-center gap-1.5 justify-end" aria-label={tr("Missions")}>
+        {missions.map((m) => (
+          <li key={m.id} title={m.aide} className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] max-w-[230px] ${m.ok ? "border-[#BFD3A8] bg-[#EFF5E6] text-[#3F5A2C]" : "border-[#EADFC8] bg-[#FFFDF8] text-[#5E554A]"}`}>
+            <span aria-hidden>{m.ok ? "✓" : "○"}</span><span className="truncate">{m.titre}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
