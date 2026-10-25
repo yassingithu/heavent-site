@@ -18,7 +18,7 @@
 |---|-----|------|------------------|
 | 0 | Audit initial | fait (24/10) | — |
 | 1 | Sauvegarde et restauration | OPÉRATIONNELLE le 25/10 : 1re sauvegarde réelle vérifiée (tâche automatique, 1 401 références, 437 fichiers), copie disque « My Passport for Mac » vérifiée, restauration avec clé de secours réussie ; reste : essais veille / redémarrage / réseau | Opus pour la conception, Sonnet possible pour les scripts |
-| 2 | Champs CNSS (employeur + salarié) | branche lot-cnss : validation bloquée si incomplet, paiement toujours enregistrable, « Validée » corrigé côté crew ; NON déployé ; ordre : sauvegarde vérifiée → migration → site | Sonnet |
+| 2 | Champs CNSS + registre des paiements | EN PRODUCTION le 25/10 (migrations cnss_employeur et paiements_paie, site fc9a8e2) après sauvegarde vérifiée ; reste : saisir le n° d'affiliation CNSS employeur | — |
 | 3 | Dates et fuseaux (conversions et planification seulement) | à faire | Sonnet avec relecture |
 | 4 | Navigation et tableau de bord « À traiter » | à faire — exigences détaillées ci-dessous (25/10) | Sonnet, relecture visuelle |
 | 5 | Remplacements (avec état « en attente de validation ») | à faire | Sonnet |
@@ -95,5 +95,11 @@
 - Encodage des chemins de fichiers corrigé (Supabase refusait les lettres encodées).
 - Contrôles d'accès lents (~1 s par requête vers l'Irlande) : à regrouper en quelques requêtes (amélioration prévue).
 
+## Mise en ligne du 25/10 (lot CNSS)
+- Base : migrations additives cnss_employeur + paiements_paie (RLS active, aucun droit anonyme, triggers trace/immuable) ; messages familiaux intacts (740).
+- Site : commit fc9a8e2, 78 fichiers envoyés (sans suppression). one.com refuse « targetCharset=utf-8 » sur cet envoi : fichiers envoyés tels quels, accents vérifiés en ligne.
+- Retour arrière site : renvoyer les fichiers du commit 4982ae6 (anciens fichiers techniques toujours présents).
+- Liste des fichiers à envoyer : git diff --no-renames (sinon les renommages donnent les anciens noms).
+
 ## Prochaine action
-Yassin installe la sauvegarde sur le Mac et coche les essais ; Claude relit ETAT.txt et le journal. Puis décision sur la mise en production du lot CNSS et sur la proposition « paiements ».
+Lot 4 « Navigation et esthétique » sur une branche séparée, avec aperçus avant toute mise en ligne. Essais veille / redémarrage / réseau de la sauvegarde à cocher par Yassin.
