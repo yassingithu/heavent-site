@@ -1,0 +1,21 @@
+// Tests unitaires de la logique des dépenses : node --experimental-strip-types tests/depenses.mjs
+import assert from "node:assert/strict";
+import { nombreDepuisTexte, totalDepenses, totauxParCategorie, moisPrecedentSuivant, csvDepenses, nomFichierJustificatif } from "../src/lib/depenses.ts";
+assert.equal(nombreDepuisTexte("1 200,50"), 1200.5);
+assert.equal(nombreDepuisTexte("85 MAD"), 85);
+assert.equal(nombreDepuisTexte("12.5dh"), 12.5);
+assert.equal(nombreDepuisTexte("abc"), null);
+assert.equal(nombreDepuisTexte(""), null);
+assert.equal(totalDepenses([{ montant_ttc: 0.1 }, { montant_ttc: 0.2 }]), 0.3);
+assert.deepEqual(totauxParCategorie([{ categorie: "Repas", montant_ttc: 10 }, { categorie: "Transport", montant_ttc: 50 }, { categorie: "Repas", montant_ttc: 5.5 }]), [["Transport", 50], ["Repas", 15.5]]);
+assert.deepEqual(moisPrecedentSuivant("2026-01"), { precedent: "2025-12", suivant: "2026-02" });
+assert.deepEqual(moisPrecedentSuivant("2026-12"), { precedent: "2026-11", suivant: "2027-01" });
+const d = [{ id: "1", date_depense: "2026-10-25", fournisseur: "Café \"Le Rif\"; Rabat", montant_ttc: 85, tva: 7.73, categorie: "Repas", moyen_paiement: "especes", devis_id: null, note: "=1+1", justificatifs: ["2026-10/a.jpg"] }];
+const csv = csvDepenses(d);
+assert.ok(csv.startsWith("Date;Fournisseur;Catégorie;Montant TTC (MAD)"));
+assert.ok(csv.includes('"Café ""Le Rif""; Rabat"'), "guillemets et point-virgule protégés");
+assert.ok(csv.includes("'=1+1"), "formule neutralisée");
+assert.ok(csv.includes("25/10/2026;") && csv.includes("85,00;7,73;Espèces"), csv);
+assert.ok(csv.includes(";TOTAL;85,00;"), "total");
+assert.equal(nomFichierJustificatif(d[0], 0, "x/a.jpg"), "2026-10-25_Cafe-Le-Rif-Rabat_85.00_1.jpg");
+console.log("TOUT EST BON : dépenses (11 contrôles)");

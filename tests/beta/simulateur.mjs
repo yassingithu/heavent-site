@@ -5,7 +5,7 @@ import * as F from "./fixture.mjs";
 export function nouvelleBase() {
   return {
     staff: F.staff.map((s) => ({ ...s, banni: false })), disponibilites: F.dispos.map((d) => ({ ...d })),
-    affectations: [], contrats: [], fiches_paie: [], paiements_paie: [], devis: [], devis_lignes: [],
+    affectations: [], contrats: [], fiches_paie: [], paiements_paie: [], depenses: [], categories_depenses: ["Transport", "Repas", "Matériel", "Location", "Fournitures", "Prestataires", "Autres"].map((nom, i) => ({ nom, ordre: (i + 1) * 10 })), devis: [], devis_lignes: [],
     catalogue_prestations: F.catalogue, parametres_agence: F.param.map((p) => ({ ...p })), devis_entreprise: [],
     devis_mariage: F.dem.map((d) => ({ ...d })), admins: [{ email: "admin@heavent.test" }],
     agenda_parametres: [{ id: 1, duree_minutes: 45, pause_minutes: 15, delai_heures: 24, horizon_jours: 30, types: ["agence", "telephone", "visio"], adresse: null, lien_visio: null, actif: true }],
@@ -121,7 +121,10 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
     if (url.pathname.includes("/storage/")) {
       // Stockage simulé : on garde les fichiers envoyés et on les resservit
       base.fichiers ??= {};
-      const m = url.pathname.match(/\/storage\/v1\/object\/(?:public\/)?(.+)$/);
+      // Liens signés (stockage privé) : lot « Dépenses »
+      const sg = url.pathname.match(/\/storage\/v1\/object\/sign\/([^/]+)$/);
+      if (sg && req.method() === "POST") { const { paths } = JSON.parse(req.postData() || "{}"); return route.fulfill({ json: (paths ?? []).map((p) => ({ error: null, path: p, signedURL: `/object/sign/${sg[1]}/${p}?token=t` })) }); }
+      const m = url.pathname.match(/\/storage\/v1\/object\/(?:public\/|sign\/)?(.+)$/);
       if (m && req.method() === "POST") { base.fichiers[m[1]] = req.postDataBuffer(); return route.fulfill({ json: { Key: m[1] } }); }
       if (m && req.method() === "GET" && base.fichiers[m[1]]) return route.fulfill({ status: 200, body: base.fichiers[m[1]], contentType: "image/jpeg", headers: { "access-control-allow-origin": "*" } });
       if (req.method() === "DELETE") return route.fulfill({ json: [] });
@@ -457,6 +460,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
       const ins = corps.map((b) => ({ id: t + Math.random().toString(36).slice(2), statut: t === "affectations" ? "confirme" : t === "remarques_contrat" ? "nouvelle" : b.statut ?? "brouillon", created_at: new Date().toISOString(), ...b }));
       if (t === "studio_demos") ins.forEach((d) => { d.secteur ??= "evenementiel"; d.jeton = crypto.randomUUID(); d.vues = 0; d.active = true; d.cree_le = new Date().toISOString(); d.expire_le = new Date(Date.now() + 30 * 864e5).toISOString(); });
       if (t === "devis") ins.forEach((d) => { d.numero = "DEV-2026-0099"; d.date_validite = "2099-11-12"; d.total_ttc = 0; d.lien_token = crypto.randomUUID(); d.relances = 0; });
+      if (t === "depenses") ins.forEach((d) => { d.cree_par = email; d.cree_le = new Date().toISOString(); });
       if (t === "paiements_paie") ins.forEach((p) => { delete p.statut; p.enregistre_par = email; p.enregistre_le = new Date().toISOString(); });
       base[t].push(...ins);
       ins.forEach((x) => synchroCatalogue(base, t, x));
