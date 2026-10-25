@@ -1133,7 +1133,7 @@ await scenario("Instagram : clé Pixabay cachée, visuels montés automatiquemen
   verifier(await page.getByTestId("apercu-visuel").count(), "pas d'aperçu du visuel");
   await page.getByTestId("enregistrer-post").click(); await page.waitForTimeout(1500);
   const p1 = base.posts_instagram[0];
-  verifier(p1.titre === "Le plan de table sans stress" && /p1-102\.jpg/.test(p1.photo_url) && p1.statut === "pret" && p1.visuel_url, "modification non enregistrée : " + JSON.stringify(p1));
+  verifier(p1.titre === "Le plan de table sans stress" && /p1-103\.jpg/.test(p1.photo_url) && p1.statut === "pret" && p1.visuel_url, "modification non enregistrée : " + JSON.stringify(p1));
   notes.push("post modifié : texte changé, 2e photo choisie, aperçu en direct, visuel ré-enregistré");
   // Connexion Instagram puis publication immédiate
   await page.getByTestId("editeur-post").getByRole("button", { name: "Fermer" }).last().click(); await page.waitForTimeout(800);
@@ -1269,7 +1269,7 @@ await scenario("Affichage smartphone (pages publiques et admin)", async (notes) 
 await scenario("Instagram : générer 1 mois de posts (2/jour) pour Heavent et Nawar, visuels Nawar", async (notes) => {
   const base = nouvelleBase();
   base.photoTest = readFileSync(new URL("./photo-test.jpg", import.meta.url));
-  base.cle_pixabay = "cle";
+  base.cle_pixabay = "cle"; base.photosParPage = 20;
   base.posts_instagram = [{ id: "p0", compte: "heavent", date_prevue: "2026-11-13T19:30:00Z", theme: "mariage", accroche: "x", titre: "Réservez votre lieu 12 mois avant la date", legende: "", recherche: "x", style: "sombre", statut: "pret", visuel_url: "x", photo_url: "x" }];
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await ctx.route("https://pixabay.com/**", (r) => r.fulfill({ status: 200, body: base.photoTest, contentType: "image/jpeg", headers: { "access-control-allow-origin": "*" } }));

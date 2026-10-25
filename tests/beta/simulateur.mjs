@@ -153,7 +153,7 @@ export async function contexte(navigateur, base, email, { mobile = false } = {})
           for (const x of base.posts_instagram ?? []) { const r = String(x.photo_url ?? "").match(/-(\d+)\.jpg/); if (r) ajout(r[1], x.id); }
           for (const k of Object.keys(base.fichiers ?? {})) { const r = k.match(/instagram\/photos\/(.+)-(\d+)\.jpg$/); if (r) ajout(r[2], r[1]); } return m; };
         if (corps.action === "utilisees") return route.fulfill({ json: { ids: [...idsPris().keys()] } });
-        if (corps.action === "chercher") return route.fulfill({ json: { total: 3, photos: [1, 2, 3].map((i) => ({ id: 100 + ((Number(corps.page) || 1) - 1) * 3 + i, apercu: `https://pixabay.com/get/apercu-${i}.jpg`, grande: `https://pixabay.com/get/grande-${i}.jpg`, page: `https://pixabay.com/photos/${i}`, auteur: "Photographe" + i, largeur: 800, hauteur: 1000 })) } });
+        if (corps.action === "chercher") return route.fulfill({ json: { total: base.photosParPage ?? 3, photos: Array.from({ length: base.photosParPage ?? 3 }, (_, k) => k + 1).map((i) => ({ id: 100 + ((Number(corps.page) || 1) - 1) * (base.photosParPage ?? 3) + i, apercu: `https://pixabay.com/get/apercu-${i}.jpg`, grande: `https://pixabay.com/get/grande-${i}.jpg`, page: `https://pixabay.com/photos/${i}`, auteur: "Photographe" + i, largeur: 800, hauteur: 1000 })) } });
         if (corps.action === "choisir") {
           const prises = idsPris().get(String(corps.photo.id));
           if (prises && [...prises].some((a) => a !== String(corps.post_id))) return route.fulfill({ status: 409, json: { error: "Cette photo a déjà été utilisée pour un autre post. Choisis-en une autre." } });
