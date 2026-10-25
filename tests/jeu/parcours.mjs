@@ -201,11 +201,12 @@ const mission = (p, id) => p.locator(`[data-mission="${id}"]`).first().getAttrib
   await p.getByRole("button", { name: /^Buffet :/ }).click(); await p.getByRole("button", { name: "Placer automatiquement" }).click(); await p.waitForTimeout(200);
   assert.equal(await estimation(p), 12000 + 450 * 100, "prix du catalogue : DJ 12 000 + traiteur 450 × 100");
   ok("prix du catalogue interne appliqués (DJ 12 000 MAD, traiteur 450 MAD par invité)");
-  // Élément agrandi : le supplément par case vient du catalogue (« piste+case » = 800 MAD)
+  // Élément agrandi : le supplément par case vient du catalogue (« piste+case » = 800 MAD) ; scène vidée pour avoir la place
+  await p.getByRole("button", { name: "Réinitialiser" }).click(); await p.getByRole("button", { name: "Oui, tout retirer" }).click(); await p.waitForTimeout(200);
   await p.getByRole("tab", { name: "Animation" }).click();
   await p.getByRole("button", { name: /^Piste de danse :/ }).click(); await p.getByRole("button", { name: "Placer automatiquement" }).click(); await p.waitForTimeout(200);
   const avantPiste = await estimation(p);
-  await p.getByTestId("agrandir").click(); await p.waitForTimeout(200);
+  await p.getByTestId("agrandir").click(); await p.waitForTimeout(400);
   assert.equal(await estimation(p) - avantPiste, 7 * 800, "piste 3×3 → 4×4 : 7 cases × 800 MAD du catalogue");
   ok("supplément par case de l'agrandissement repris du catalogue (7 cases × 800 MAD)");
   await ctx.close();
