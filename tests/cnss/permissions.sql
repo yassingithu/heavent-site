@@ -87,6 +87,36 @@ do $$ declare n int; begin
 end $$;
 reset role;
 
+
+-- 7. Dépenses (lot Dépenses) : réservées à l'administration
+set role authenticated; select set_config('request.jwt.claims', '{"email":"admin@test.invalid"}', false), set_config('request.jwt.claim.email', 'admin@test.invalid', false);
+insert into public.depenses(id, date_depense, fournisseur, montant_ttc, categorie, cree_par, cree_le)
+values ('00000000-0000-0000-0000-0000000000d1', '2026-10-25', 'Café', 85.5, 'Repas', 'faux@auteur', '2000-01-01');
+insert into resultats select 'dépenses : auteur et date imposés par la base', cree_par = 'admin@test.invalid' and cree_le > '2020-01-01' from public.depenses where id = '00000000-0000-0000-0000-0000000000d1';
+update public.depenses set cree_par = 'autre@x', cree_le = '2001-01-01', montant_ttc = 90 where id = '00000000-0000-0000-0000-0000000000d1';
+insert into resultats select 'dépenses : l''auteur ne peut pas être changé après coup', cree_par = 'admin@test.invalid' and montant_ttc = 90 from public.depenses where id = '00000000-0000-0000-0000-0000000000d1';
+do $$ begin
+  begin insert into public.depenses(date_depense, montant_ttc, categorie) values ('2026-10-25', 0, 'Repas'); insert into resultats values ('dépenses : montant nul refusé', false);
+  exception when check_violation then insert into resultats values ('dépenses : montant nul refusé', true); end;
+end $$;
+insert into resultats select 'dépenses : catégories par défaut présentes', count(*) >= 7 from public.categories_depenses;
+reset role;
+set role authenticated; select set_config('request.jwt.claims', '{"email":"crew.a@test.invalid"}', false), set_config('request.jwt.claim.email', 'crew.a@test.invalid', false);
+do $$ declare n int; begin
+  select count(*) into n from public.depenses; insert into resultats values ('dépenses : un crew n''en voit aucune', n = 0);
+  select count(*) into n from public.categories_depenses; insert into resultats values ('dépenses : un crew ne voit pas les catégories', n = 0);
+  begin insert into public.depenses(date_depense, montant_ttc, categorie) values ('2026-10-25', 5, 'Repas'); insert into resultats values ('dépenses : un crew ne peut pas en ajouter', false);
+  exception when insufficient_privilege then insert into resultats values ('dépenses : un crew ne peut pas en ajouter', true); end;
+end $$;
+reset role;
+set role anon; select set_config('request.jwt.claims', '{}', false), set_config('request.jwt.claim.email', '', false);
+do $$ declare n int; begin
+  begin select count(*) into n from public.depenses; exception when insufficient_privilege then n := 0; end;
+  insert into resultats values ('dépenses : anonyme n''en voit aucune', n = 0);
+end $$;
+reset role;
+insert into resultats select 'dépenses : espace de stockage privé', public = false from storage.buckets where id = 'depenses';
+
 \o
 select (case when ok then '✅ ' else '❌ ' end) || test from resultats;
 select case when bool_and(ok) then 'TOUT EST BON (' || count(*) || ' contrôles)' else 'ÉCHEC' end from resultats;

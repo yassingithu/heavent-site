@@ -32,7 +32,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox, Instagram, Mail, Sparkles, Handshake, MapPin, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox, Instagram, Mail, Sparkles, Handshake, MapPin, PanelLeftClose, PanelLeftOpen, Receipt } from "lucide-react";
+import DepensesAdmin from "@/components/admin/depenses/DepensesAdmin";
 import BarreBasseAdmin from "@/components/admin/BarreBasseAdmin";
 import NewsletterAdmin from "@/components/admin/newsletter/NewsletterAdmin";
 import InstagramAdmin from "@/components/admin/instagram/InstagramAdmin";
@@ -153,7 +154,7 @@ interface Disponibilite {
 
 /** Menu de l'administration, regroupé par thème */
 const MENU_ADMIN: { titre: string; items: (readonly [string, string, typeof Users])[] }[] = [
-  { titre: "Pilotage", items: [["tableau", "Bilan", BarChart3], ["statistiques", "Statistiques", TrendingUp], ["agenda", "Agenda", CalendarDays]] },
+  { titre: "Pilotage", items: [["tableau", "Bilan", BarChart3], ["statistiques", "Statistiques", TrendingUp], ["agenda", "Agenda", CalendarDays], ["depenses", "Dépenses", Receipt]] },
   { titre: "Clients", items: [["entreprise", "Demandes entreprise", Building2], ["mariage", "Demandes événement", PartyPopper], ["devis-rapide", "Devis", FileText], ["devis-envoyes", "Devis envoyés", Inbox], ["envoyer-devis", "Envoyer un devis", Send]] },
   { titre: "Équipe", items: [["staff", "Personnel", Users], ["disponibilites", "Disponibilités", CalendarCheck], ["contrats", "Contrats", FileSignature], ["fiches", "Paie", Wallet]] },
   { titre: "Prestataires", items: [["prestataires", "Prestataires", Handshake]] },
@@ -166,6 +167,7 @@ const TITRES_ADMIN: Record<string, [string, string]> = {
   tableau: ["Bilan", "L'essentiel de l'activité en un coup d'œil"],
   statistiques: ["Statistiques du site", "Visites, provenance des visiteurs, clics et demandes"],
   agenda: ["Agenda", "Rendez-vous clients et créneaux proposés"],
+  depenses: ["Dépenses", "Tickets et factures en photo, classés par mois pour le comptable"],
   entreprise: ["Demandes entreprise", "Demandes reçues via le formulaire entreprise"],
   mariage: ["Demandes événement", "Demandes de mariage, d'événement et du jeu"],
   "devis-rapide": ["Devis", "Créer, envoyer et suivre les devis et factures"],
@@ -1016,10 +1018,10 @@ const Admin = () => {
   }
 
   const groupesVisibles = MENU_ADMIN
-    .filter((g) => !(estDemo() && (g.titre === "Heavent Studio" || g.items.every(([v]) => ongletMasque(v)))))
+    .filter((g) => !(estDemo() && (g.titre === "Heavent Studio" || g.items.every(([v]) => ongletMasque(v) || v === "depenses"))))
     .map((g) => ({
       titre: g.titre,
-      items: g.items.filter(([v]) => !(estDemo() && ongletMasque(v))).map(([valeur, libelleBase, Icone]) => ({
+      items: g.items.filter(([v]) => !(estDemo() && (ongletMasque(v) || v === "depenses"))).map(([valeur, libelleBase, Icone]) => ({
         valeur, Icone,
         libelle: estDemo() ? libelleOnglet(valeur, libelleBase) : libelleBase,
         badge: valeur === "entreprise" ? nouvellesEntreprise : valeur === "mariage" ? nouvellesMariage : 0,
@@ -1097,6 +1099,10 @@ const Admin = () => {
               {!estDemo() && <CarteAppTelephone email={user?.email} mode="invitation" />}
             </>}
             bas={<BilanMois />} />
+        </TabsContent>
+
+        <TabsContent value="depenses" className="space-y-4">
+          <DepensesAdmin />
         </TabsContent>
 
         <TabsContent value="statistiques" className="space-y-4">

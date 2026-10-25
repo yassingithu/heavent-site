@@ -1489,6 +1489,74 @@ await scenario("Salles & palais : ajout d'un lieu avec lien Google Maps, tarifs 
   await ctx.close();
 });
 
+
+// Dépenses : photo du ticket, classement par mois et catégorie, export pour le comptable (sur iPhone)
+await scenario("Dépenses : ticket en photo → liste du mois → catégories → export tableau + ZIP → suppression", async (notes) => {
+  const base = nouvelleBase();
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN, { mobile: true });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await clicOnglet(page, /Dépenses$/); await page.waitForTimeout(1000);
+  verifier((await page.getByTestId("titre-section").innerText()) === "Dépenses", "l'onglet Dépenses ne s'ouvre pas");
+  verifier(await page.getByText("Aucune dépense ce mois-ci").count(), "le message « aucune dépense » manque");
+  const jour = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Casablanca" });
+  const ajouter = async (montant, fournisseur, categorie, photo) => {
+    await page.getByTestId("ajouter-depense").click(); await page.waitForTimeout(500);
+    if (photo) { await page.getByTestId("champ-photo").setInputFiles(new URL("./photo-test.jpg", import.meta.url).pathname); await page.waitForTimeout(1500); }
+    await page.getByTestId("depense-montant").fill(montant);
+    await page.getByTestId("depense-fournisseur").fill(fournisseur);
+    await page.getByTestId("depense-categorie").click(); await page.getByRole("option", { name: categorie }).click();
+    await page.getByTestId("enregistrer-depense").click(); await page.waitForTimeout(1000);
+  };
+  // refus sans montant
+  await page.getByTestId("ajouter-depense").click(); await page.getByTestId("enregistrer-depense").click(); await page.waitForTimeout(500);
+  verifier(await page.getByText("Montant manquant").count(), "une dépense sans montant doit être refusée");
+  for (let k = 0; k < 3 && await page.getByTestId("formulaire-depense").count(); k++) { await page.keyboard.press("Escape"); await page.waitForTimeout(500); }
+  verifier(!(await page.getByTestId("formulaire-depense").count()), "le formulaire ne se ferme pas");
+  await ajouter("85,50", "Café Le Rif", "Repas", true);
+  await ajouter("1 200", "Location sono", "Location", false);
+  await ajouter("40", "Taxi", "Repas", false);
+  verifier(base.depenses.length === 3, "3 dépenses attendues, trouvées " + base.depenses.length);
+  const d1 = base.depenses.find((d) => d.fournisseur === "Café Le Rif");
+  verifier(d1.montant_ttc === 85.5 && d1.categorie === "Repas" && d1.date_depense === jour && d1.justificatifs.length === 1 && d1.justificatifs[0].endsWith(".jpg"), "dépense mal enregistrée : " + JSON.stringify(d1));
+  verifier(d1.cree_par === ADMIN, "l'auteur n'est pas tracé");
+  verifier((await page.getByTestId("ligne-depense").count()) === 3, "la liste doit montrer 3 lignes");
+  const total = (await page.getByTestId("depenses-total").innerText()).replace(/\s|\u00A0|\u202F/g, "");
+  verifier(total === "1325,5MAD", "total du mois faux : " + total);
+  const cats = await page.getByTestId("depenses-categories").innerText();
+  verifier(/Location sono|Location/.test(cats) && /Repas/.test(cats), "totaux par catégorie absents : " + cats);
+  verifier(await page.getByTestId("ligne-depense").first().locator("svg").count(), "le repère de justificatif joint manque");
+  notes.push("3 dépenses saisies sur iPhone (1 avec photo) → total du mois 1 325,50 MAD, totaux par catégorie, auteur tracé");
+  // modification : la photo reste visible
+  await page.getByTestId("ligne-depense").filter({ hasText: "Café Le Rif" }).click(); await page.waitForTimeout(800);
+  verifier((await page.getByTestId("justificatif").count()) === 1 && await page.locator("[data-testid=justificatif] img").count(), "la photo du ticket ne s'affiche pas à la réouverture");
+  await page.getByTestId("depense-montant").fill("90"); await page.getByTestId("enregistrer-depense").click(); await page.waitForTimeout(900);
+  verifier(base.depenses.find((d) => d.fournisseur === "Café Le Rif").montant_ttc === 90, "la modification n'est pas enregistrée");
+  // export
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.getByTestId("export-csv").click()]);
+  const csv = readFileSync(await dl.path(), "utf8");
+  verifier(csv.charCodeAt(0) === 0xFEFF && csv.includes("Café Le Rif") && csv.includes("90,00") && csv.includes(";TOTAL;1330,00;"), "contenu du tableau incorrect : " + csv.slice(0, 300));
+  const [dz] = await Promise.all([page.waitForEvent("download"), page.getByTestId("export-zip").click()]);
+  const zip = readFileSync(await dz.path());
+  verifier(zip.subarray(0, 2).toString() === "PK" && zip.includes("justificatifs/") && zip.includes("Cafe-Le-Rif") && zip.includes(".csv"), "le ZIP ne contient pas le tableau et la photo");
+  notes.push("export : tableau Excel (UTF-8, total 1 330,00) et ZIP avec tableau + photo nommée « date_fournisseur_montant »");
+  // catégorie ajoutée
+  await page.getByTestId("gerer-categories").click(); await page.getByTestId("nouvelle-categorie").fill("Communication"); await page.keyboard.press("Enter"); await page.waitForTimeout(600);
+  verifier(base.categories_depenses.some((c) => c.nom === "Communication"), "la catégorie n'est pas ajoutée");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400);
+  // suppression (confirmation acceptée)
+  page.once("dialog", (d) => d.accept());
+  await page.getByTestId("ligne-depense").filter({ hasText: "Taxi" }).click(); await page.waitForTimeout(600);
+  await page.getByTestId("supprimer-depense").click(); await page.waitForTimeout(900);
+  verifier(base.depenses.length === 2 && (await page.getByTestId("ligne-depense").count()) === 2, "la dépense n'est pas supprimée");
+  // mois précédent : vide
+  await page.getByRole("button", { name: "Mois précédent" }).click(); await page.waitForTimeout(800);
+  verifier(await page.getByText("Aucune dépense ce mois-ci").count(), "le mois précédent doit être vide");
+  await page.screenshot({ path: `${CAPTURES}/depenses-iphone.png` });
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  notes.push("modification, catégorie ajoutée, suppression confirmée, navigation de mois : OK");
+  await ctx.close();
+});
+
 // 5. Site en ligne (lecture seule : aucune donnée envoyée)
 if (process.env.BETA_LIVE) {
   await scenario("Site en ligne : pages, erreurs, formulaires vides refusés", async (notes) => {
