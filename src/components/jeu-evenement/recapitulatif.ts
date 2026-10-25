@@ -22,17 +22,48 @@ export function optionsChoisies(c: Creation) {
 /** Image PNG (data URL) de la scène SVG affichée à l'écran. */
 export async function sceneEnPng(svg: SVGSVGElement, echelle = 2): Promise<string> {
   const clone = svg.cloneNode(true) as SVGSVGElement;
-  const [, , w, h] = (svg.getAttribute("viewBox") ?? "0 0 800 600").split(" ").map(Number);
+  let [vx, vy, w, h] = (svg.getAttribute("viewBox") ?? "0 0 800 600").split(" ").map(Number);
+  // Recadrage sur la scène elle-même (sans les grandes marges vides), pour qu'elle occupe bien l'image
+  try {
+    const g = svg.querySelector(":scope > g[transform]") as SVGGElement | null;
+    const t = g?.getAttribute("transform")?.match(/translate\(\s*(-?[\d.]+)[ ,]+(-?[\d.]+)/);
+    if (g && t) {
+      const b = g.getBBox(), m = 16;
+      const x0 = Math.max(vx, Number(t[1]) + b.x - m), y0 = Math.max(vy, Number(t[2]) + b.y - m);
+      const x1 = Math.min(vx + w, Number(t[1]) + b.x + b.width + m), y1 = Math.min(vy + h, Number(t[2]) + b.y + b.height + m);
+      if (x1 - x0 > 50 && y1 - y0 > 50) { vx = x0; vy = y0; w = x1 - x0; h = y1 - y0; }
+    }
+  } catch { /* scène non affichée : image complète */ }
+  clone.setAttribute("viewBox", `${vx} ${vy} ${w} ${h}`);
   clone.setAttribute("width", String(w)); clone.setAttribute("height", String(h));
   const src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(clone));
   const img = new Image();
   await new Promise<void>((ok, ko) => { img.onload = () => ok(); img.onerror = () => ko(new Error("Image de la scène non créée")); img.src = src; });
   const canvas = document.createElement("canvas");
-  canvas.width = w * echelle; canvas.height = h * echelle;
+  canvas.width = Math.round(w * echelle); canvas.height = Math.round(h * echelle);
   const g = canvas.getContext("2d")!;
   g.fillStyle = "#FFFFFF"; g.fillRect(0, 0, canvas.width, canvas.height);
   g.drawImage(img, 0, 0, canvas.width, canvas.height);
   return canvas.toDataURL("image/png");
+}
+
+/** Largeur et hauteur d'une image PNG (data URL), lues dans son en-tête. */
+export function dimensionsPng(url: string): { w: number; h: number } | null {
+  try {
+    const o = atob(url.slice(url.indexOf(",") + 1, url.indexOf(",") + 45));
+    const n = (i: number) => (o.charCodeAt(i) << 24) | (o.charCodeAt(i + 1) << 16) | (o.charCodeAt(i + 2) << 8) | o.charCodeAt(i + 3);
+    const w = n(16), h = n(20);
+    return w > 0 && h > 0 ? { w, h } : null;
+  } catch { return null; }
+}
+
+/** Taille d'affichage de la scène dans le récapitulatif : proportions respectées, sans dépendre de « object-fit » (que la création du PDF ne gère pas : l'image était étirée). */
+const LARGEUR_MAX_SCENE = 700, HAUTEUR_MAX_SCENE = 290;
+export function tailleSceneRecap(url: string) {
+  const d = dimensionsPng(url);
+  if (!d) return null;
+  const k = Math.min(LARGEUR_MAX_SCENE / d.w, HAUTEUR_MAX_SCENE / d.h);
+  return { w: Math.round(d.w * k), h: Math.round(d.h * k) };
 }
 
 export function telechargerFichier(nom: string, contenu: string | Blob, type = "text/plain;charset=utf-8") {
@@ -53,7 +84,8 @@ export const CSS_RECAP = `
   .recap .tuiles { display:grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .recap .tuile { background:#FAF7EE; border:1px solid #ECE3CC; padding: 7px 10px; }
   .recap .tuile .e { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color:#A8862F; } .recap .tuile .v { font-size: 12.5px; color:#141414; font-weight: 600; }
-  .recap .scene { display:block; width: 100%; max-height: 215px; object-fit: contain; border:1px solid #ECE3CC; margin-top: 4px; background:#FBF8F1; }
+  .recap .scene-cadre { text-align:center; border:1px solid #ECE3CC; margin-top: 4px; background:#FBF8F1; padding: 3px 0; }
+  .recap .scene { display:inline-block; vertical-align:top; }
   .recap table { width:100%; border-collapse: collapse; font-size: 10.5px; } .recap th { text-align:left; background:#F3EAD3; padding:5px 8px; font-weight:600; }
   .recap td { padding: 3.5px 8px; border-bottom: 1px solid #F0E9D8; } .recap td.n, .recap th.n { text-align:right; white-space:nowrap; }
   .recap .total td { font-weight: 700; background:#FAF7EE; }
@@ -75,7 +107,7 @@ export function documentRecap(c: Creation, o: OptionsRecap, imageScene?: string 
       ${tuile(tr("Événement"), nomType(c))}${tuile(tr("Ambiance"), nomAmbiance(c))}${tuile(tr("Lieu"), nomLieu(c))}
       ${tuile(tr("Invités"), String(r.invites))}${tuile(tr("Places prévues"), String(placesPrevues(c)))}${tuile(tr("Budget souhaité"), format(r.budget))}
     </div>
-    ${o.scene && imageScene ? `<h2>${esc(tr("Aperçu de la scène"))}</h2><img class="scene" src="${imageScene}" alt="${esc(tr("Aperçu de la scène"))}">` : ""}
+    ${o.scene && imageScene ? `<h2>${esc(tr("Aperçu de la scène"))}</h2><div class="scene-cadre"><img class="scene" src="${imageScene}"${(() => { const t = tailleSceneRecap(imageScene); return t ? ` width="${t.w}" height="${t.h}" style="width:${t.w}px;height:${t.h}px"` : ""; })()} alt="${esc(tr("Aperçu de la scène"))}"></div>` : ""}
     <h2>${esc(tr("Options choisies"))}</h2><div style="font-size:11px">${esc(optionsChoisies(c).join(" · ") || tr("Aucun élément pour l'instant."))}</div>
     ${o.estimation ? `<h2>${esc(tr("Estimation : {montant}", { montant: format(b.total) }))}</h2>
       <table><thead><tr><th>${esc(tr("Élément"))}</th><th>${esc(tr("Calcul"))}</th><th class="n">${esc(tr("Fixe"))}</th><th class="n">${esc(tr("Par invité"))}</th><th class="n">${esc(tr("Total"))}</th></tr></thead><tbody>
