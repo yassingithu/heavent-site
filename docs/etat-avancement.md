@@ -17,7 +17,7 @@
 | # | Lot | État | Modèle conseillé |
 |---|-----|------|------------------|
 | 0 | Audit initial | fait (24/10) | — |
-| 1 | Sauvegarde et restauration | outil prêt et testé (27/27 avec disque externe, 25/10) ; installation guidée en cours (étape 1 : age) | Opus pour la conception, Sonnet possible pour les scripts |
+| 1 | Sauvegarde et restauration | OPÉRATIONNELLE le 25/10 : 1re sauvegarde réelle vérifiée (tâche automatique, 1 401 références, 437 fichiers), copie disque « My Passport for Mac » vérifiée, restauration avec clé de secours réussie ; reste : essais veille / redémarrage / réseau | Opus pour la conception, Sonnet possible pour les scripts |
 | 2 | Champs CNSS (employeur + salarié) | branche lot-cnss : validation bloquée si incomplet, paiement toujours enregistrable, « Validée » corrigé côté crew ; NON déployé ; ordre : sauvegarde vérifiée → migration → site | Sonnet |
 | 3 | Dates et fuseaux (conversions et planification seulement) | à faire | Sonnet avec relecture |
 | 4 | Navigation et tableau de bord « À traiter » | à faire — exigences détaillées ci-dessous (25/10) | Sonnet, relecture visuelle |
@@ -88,6 +88,12 @@
 - Appli Mac (desktop/main.js) : charge le SITE EN LIGNE (https://heaventagency.com) dans une fenêtre Electron ; une mise en ligne du site s'y voit sans réinstaller le DMG. Seuls la coque (menu, page hors ligne offline.html, règles d'ouverture des liens) demandent une nouvelle compilation ; la vérifier avant diffusion.
 - Prévisualisations à fournir : téléphone, navigateur ordinateur, appli Mac (si possible) ; signaler les supports non testés.
 - Aucune règle métier, donnée ou connexion modifiée par cette refonte.
+
+## Lot 1 — constats de l'installation réelle (25/10)
+- age installé depuis la publication officielle (v1.3.1) : Homebrew sans version pour macOS 27.
+- L'invite masquée de macOS coupe à 128 caractères : clé « service_role » lue dans le presse-papiers (corrigé dans installer.sh).
+- Encodage des chemins de fichiers corrigé (Supabase refusait les lettres encodées).
+- Contrôles d'accès lents (~1 s par requête vers l'Irlande) : à regrouper en quelques requêtes (amélioration prévue).
 
 ## Prochaine action
 Yassin installe la sauvegarde sur le Mac et coche les essais ; Claude relit ETAT.txt et le journal. Puis décision sur la mise en production du lot CNSS et sur la proposition « paiements ».
