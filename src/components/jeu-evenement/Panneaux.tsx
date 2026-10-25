@@ -11,7 +11,7 @@ import { Bouton } from "./ui";
 
 /** Petite vignette SVG d'un élément, dessinée comme dans la scène. */
 /** Hauteur visible de chaque élément au-dessus du sol (pour cadrer les vignettes). */
-const HAUTEUR: Partial<Record<TypeElement, number>> = { tente: 125, arche: 135, guirlandes: 100, photobooth: 72, fleurs: 70, honneur: 66, gateau: 66, dj: 56, bar: 52, lounge: 32, piste: 8, nawar: 80, hotesse: 54, serveur: 54, maitre_hotel: 54, fauteuils: 58, table_haute: 40, amaria: 112, mur_fleurs: 94, candelabre: 82, allee: 22, the: 32, objet_libre: 62, espace_libre: 40 };
+const HAUTEUR: Partial<Record<TypeElement, number>> = { salon_marocain: 36, espace_henne: 30, orchestre: 70, troupe: 62, neggafa: 54, photographe: 54, candy_bar: 42, livre_dor: 40, feux_froids: 64, fontaine: 58, lanternes: 100, torches: 78, espace_enfants: 60, estrade: 70, pergola: 105, tente: 125, arche: 135, guirlandes: 100, photobooth: 72, fleurs: 70, honneur: 66, gateau: 66, dj: 56, bar: 52, lounge: 32, piste: 8, nawar: 80, hotesse: 54, serveur: 54, maitre_hotel: 54, fauteuils: 58, table_haute: 40, amaria: 112, mur_fleurs: 94, candelabre: 82, allee: 22, the: 32, objet_libre: 62, espace_libre: 40 };
 /** « 1 500 MAD + 50 MAD / invité », « 450 MAD / invité » ou « 12 000 MAD ». */
 export const prixTexte = (prix: number, parInvite?: number, long = false) => {
   const pi = parInvite ? `${format(parInvite)} ${long ? tr("par invité") : tr("/ invité")}` : "";

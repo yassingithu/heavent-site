@@ -70,7 +70,7 @@ export default function JeuEvenement() {
 
   // La grille s'agrandit avec le nombre d'invités, sans jamais couper un élément déjà posé.
   const { cols, rows } = useMemo(() => {
-    const g = tailleGrille(creation.reglages.invites);
+    const g = tailleGrille(creation.reglages.invites, creation.reglages.lieu);
     creation.elements.forEach((e) => { const { w, h } = emprise(e); g.cols = Math.max(g.cols, e.x + w); g.rows = Math.max(g.rows, e.y + h); });
     return g;
   }, [creation]);

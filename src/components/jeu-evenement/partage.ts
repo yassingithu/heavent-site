@@ -34,7 +34,7 @@ export function decoderCreation(code: string): Creation | null {
       invites: Math.min(LIMITES_INVITES.max, Math.max(LIMITES_INVITES.min, Math.round(invites) || LIMITES_INVITES.defaut)),
       budget: Math.max(0, Math.round(budget) || 0),
     });
-    const g = tailleGrille(c.reglages.invites);
+    const g = tailleGrille(c.reglages.invites, c.reglages.lieu);
     const cols = g.cols + 20, rows = g.rows + 20; // marge : la grille s'adapte ensuite aux éléments
     for (const x of d.e) {
       const type = TYPES_EL[Number(x[0])] as TypeElement | undefined;
