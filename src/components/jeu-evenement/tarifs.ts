@@ -24,6 +24,11 @@ export function appliquerTarifs(lignes: LigneTarif[]) {
     d.prix = t.fixe;
     d.prixParInvite = t.parInvite || undefined;
   }
+  // Suppléments par case ajoutée (éléments agrandis) : ligne « <élément>+case » du catalogue
+  for (const d of CATALOGUE) {
+    const s = parElement.get(`${d.id}+case`);
+    if (s && d.etire) d.etire = { ...d.etire, prixCase: s.fixe };
+  }
   const c = parElement.get("centres");
   if (c) CENTRES_DE_TABLE.prixParTable = c.fixe;
   return parElement.size;

@@ -37,7 +37,7 @@ interface DemandeMariage {
   date_mariage?: string | null; lieu?: string | null; nb_invites?: number | null; services?: string | null;
   remarques?: string | null; statut?: string | null; created_at?: string | null;
   /** Demande venue du jeu « Crée ton événement » : nombre d'éléments par type */
-  configuration?: { invites?: number | null; elements?: Record<string, number>; centres?: number; libelles?: Record<string, string>; sur_mesure?: { nom: string; quantite: number }[] } | null;
+  configuration?: { invites?: number | null; elements?: Record<string, number>; centres?: number; libelles?: Record<string, string>; sur_mesure?: { nom: string; quantite: number }[]; agrandis?: { type: string; cases: number }[] } | null;
 }
 interface DevisRow {
   id: string; numero: string | null; type: string; client_nom: string; client_societe: string | null;
@@ -196,6 +196,15 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
         res.push({ ...ligneVide(), designation: type === "honneur" && conf.libelles?.honneur ? conf.libelles.honneur : c.designation,
           description: c.description ?? "", quantite: parPersonne ? qte : n, duree: 1, unite: c.unite as Ligne["unite"], prix_unitaire: Number(c.prix_unitaire) });
       }
+    }
+    // Éléments agrandis : une ligne de supplément par type (cases ajoutées × prix de la case du catalogue)
+    const casesParType: Record<string, number> = {};
+    for (const a of conf.agrandis ?? []) casesParType[a.type] = (casesParType[a.type] ?? 0) + (Number(a.cases) || 0);
+    for (const [type, cases] of Object.entries(casesParType)) {
+      if (cases <= 0) continue;
+      const c = catalogue.find((x) => x.actif && (x as any).jeu_element === `${type}+case`);
+      if (c) res.push({ ...ligneVide(), designation: c.designation, description: c.description ?? "", quantite: cases, duree: 1, unite: c.unite as Ligne["unite"], prix_unitaire: Number(c.prix_unitaire) });
+      else sansPrix.push(`${conf.libelles?.[type] ?? type} : ${cases} case(s) en plus`);
     }
     if (sansPrix.length) res.push({ ...ligneVide(), designation: sansPrix.join(", "), description: "Élément(s) du jeu sans prix au catalogue : à chiffrer", quantite: 1, unite: "forfait" });
     // Idées sur mesure nommées par le client dans le jeu : une ligne chacune, prix à renseigner
