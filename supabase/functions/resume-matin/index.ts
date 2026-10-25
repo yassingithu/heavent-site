@@ -16,7 +16,12 @@ Deno.serve(async (req) => {
   if (!secret?.valeur || req.headers.get("x-cle-rappel") !== secret.valeur) return new Response("Accès refusé", { status: 403 });
   const essai = new URL(req.url).searchParams.get("essai") === "1";
 
-  const jour = new Date().toISOString().slice(0, 10);
+  // Heure du Maroc (Africa/Casablanca : UTC+1, UTC+0 pendant le ramadan) : le planning tourne à 6 h 30 ET 7 h 30 UTC,
+  // et seul l'envoi tombant à 7 h (heure du Maroc) part ; « ?essai=1 » ignore cette règle.
+  const maintenant = new Date();
+  const heureMaroc = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Casablanca", hour: "2-digit", hour12: false }).format(maintenant)) % 24;
+  if (!essai && heureMaroc !== 7) return new Response(JSON.stringify({ envoyes: 0, raison: "pas l'heure" }));
+  const jour = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Casablanca" }).format(maintenant);
   const hier = new Date(Date.now() - 864e5).toISOString();
   const [{ data: profils }, { data: mot }, { data: rdv }, { data: evts }, { data: dm }, { data: de }, { data: equipes }, { data: signes }] = await Promise.all([
     db.from("admin_profils").select("email, prenom").eq("recoit_mots", true).eq("espace", "admin"),
@@ -43,7 +48,7 @@ Deno.serve(async (req) => {
   const envoyes: string[] = [];
   const resend = new Resend(Deno.env.get("RESEND_API_KEY") ?? "");
   for (const p of profils as any[]) {
-    const dateLongue = new Date().toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
+    const dateLongue = new Date().toLocaleDateString("fr-FR", { timeZone: "Africa/Casablanca", weekday: "long", day: "numeric", month: "long" });
     const html = `<div style="font-family:Georgia,serif;background:#FBF8F1;padding:24px">
       <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:24px;overflow:hidden;border:1px solid #EADFC8">
         <div style="background:#141414;color:#fff;padding:28px 28px 24px">

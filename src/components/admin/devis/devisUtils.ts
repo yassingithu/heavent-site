@@ -2,6 +2,7 @@ import { SIGNATAIRE_EMPLOYEUR, signatureEmployeurHtml } from "@/lib/signatureEmp
 import { format } from "date-fns";
 import { CGV_DEFAUT, CGV_NAWAR_DEFAUT, articlesHtml } from "@/lib/conditions";
 import { fr } from "date-fns/locale";
+import { aujourdhuiMaroc } from "@/lib/dateMaroc";
 
 export type Unite = "heure" | "jour" | "forfait" | "unite" | "personne";
 
@@ -185,7 +186,7 @@ export const ligneVide = (): Ligne => ({
   remise_pct: 0,
 });
 
-export const today = () => new Date().toISOString().slice(0, 10);
+export const today = () => aujourdhuiMaroc();
 
 export function nouveauDevis(p?: Parametres | null): DevisForm {
   return {

@@ -11,6 +11,7 @@ import { AlertTriangle, Banknote, Download, RefreshCw } from "lucide-react";
 import PaiementsPaie, { MODES, totalPaye } from "./PaiementsPaie";
 import { STATUTS_FINAUX, doublonsCnss, etatBulletin, manquesBulletin } from "@/lib/cnss";
 import { MOIS, dateFr, enteteDoc, esc, logo, mad, nomFichier, piedAgence, telechargerPdf, InfosAgence } from "@/lib/pdf";
+import { aujourdhuiMaroc } from "@/lib/dateMaroc";
 
 const STATUTS: Record<string, { label: string; className: string }> = {
   en_attente: { label: "À valider", className: "bg-yellow-100 text-yellow-800" },
@@ -67,7 +68,7 @@ function pagePaie(f: any, agence: InfosAgence | null) {
       ${(f.paiements_paie ?? []).length ? `<div><span>Payé${(f.paiements_paie as any[]).filter((p) => Number(p.montant) > 0).map((p) => ` le ${dateFr(p.date_paiement)} (${esc(MODES[p.mode] ?? p.mode)})`).join(",")}</span><span>${mad(totalPaye(f.paiements_paie))}</span></div>` : ""}
     </div>
     <div class="insecable" style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-top:18px">
-      <p style="color:#888;font-size:10px;margin:0">Bulletin établi à Rabat le ${dateFr(new Date().toISOString().slice(0, 10))}.<br>À conserver sans limitation de durée.</p>
+      <p style="color:#888;font-size:10px;margin:0">Bulletin établi à Rabat le ${dateFr(aujourdhuiMaroc())}.<br>À conserver sans limitation de durée.</p>
       <div style="min-width:200px"><div style="font-size:10px;color:#777">Pour l'employeur</div>${e.definitif ? signatureEmployeurHtml(48) : `<div style="font-size:10px;color:#b45309;margin-top:8px">Signature apposée à la validation</div>`}</div>
     </div>
   </div>

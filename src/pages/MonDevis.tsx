@@ -13,10 +13,11 @@ import { Facture, TYPES_FACTURE } from "@/components/admin/devis/factureUtils";
 import ChoisirRendezVous from "@/components/rendez-vous/ChoisirRendezVous";
 import { ArrowRight, CalendarClock, CheckCircle2, Download, FileText, Heart, Loader2, MessageCircle, Receipt, Star } from "lucide-react";
 import { photoUrl } from "@/lib/pdf";
+import { aujourdhuiMaroc } from "@/lib/dateMaroc";
 
 type Etat = "chargement" | "introuvable" | "pret";
 
-const aujourdhuiMaroc = () => new Date().toISOString().slice(0, 10);
+
 
 /**
  * Page reçue par le client (lien secret envoyé par e-mail) : il consulte son devis,

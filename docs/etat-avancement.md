@@ -131,3 +131,8 @@ Retours de Yassin sur le lot 4 en usage réel (Mac, iPhone). Puis lot Dates et f
 - Tests : tests/jeu/lancer.mjs (logique, traductions FR/EN/AR, agrandissement), tests/jeu/parcours.mjs (14 contrôles ordinateur + téléphone).
 - Prototype 3D réaliste (three.js) abandonné à la demande de Yassin (« trop spécial ») : branche `lot-jeu-3d`, non fusionnée, hors production.
 - Retour arrière du site : commit précédent 58ad22c (avant le jeu), puis 44fae63 (jeu fluide + tente).
+
+## Lot Fuseaux (25/10, préparé, NON mis en ligne)
+- « Établi à Rabat le », fiche profil staff, contrat, date par défaut des devis, missions du jour, Mon devis : date du Maroc (`aujourdhuiMaroc`) au lieu de la date UTC (écart entre minuit et 1 h).
+- Mail du matin (`resume-matin`) : jour et date longue à l'heure du Maroc ; planning 6 h 30 et 7 h 30 UTC, seul l'envoi tombant à 7 h heure du Maroc part (ramadan = UTC+0). « ?essai=1 » ignore la règle.
+- Migration 20261025170000 : planning du mail + `mon_accueil` (mot du jour à la date du Maroc). Retour arrière dans l'en-tête de la migration.

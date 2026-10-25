@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EtatPointage, { Pointage } from "./EtatPointage";
+import { aujourdhuiMaroc, jourMarocPlus } from "@/lib/dateMaroc";
 
 /** Bilan : qui travaille aujourd'hui et demain, avec la confirmation et le pointage de chacun (mis à jour toutes les minutes). */
 interface Ligne extends Pointage { staff: { prenom: string; nom: string; telephone: string | null } | null; devis: { numero: string; titre: string | null } | null; heure_fin: string | null }
@@ -9,15 +10,15 @@ interface Ligne extends Pointage { staff: { prenom: string; nom: string; telepho
 export default function MissionsDuJour() {
   const [lignes, setLignes] = useState<Ligne[]>([]);
   const charger = async () => {
-    const auj = new Date().toISOString().slice(0, 10);
-    const dem = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+    const auj = aujourdhuiMaroc();
+    const dem = jourMarocPlus(1);
     const { data } = await (supabase as any).from("affectations").select("*, staff(prenom, nom, telephone), devis(numero, titre)")
       .in("date_jour", [auj, dem]).neq("statut", "annule").order("date_jour").order("heure_debut");
     setLignes((data ?? []) as Ligne[]);
   };
   useEffect(() => { charger(); const t = setInterval(charger, 60000); return () => clearInterval(t); }, []);
   if (!lignes.length) return null;
-  const auj = new Date().toISOString().slice(0, 10);
+  const auj = aujourdhuiMaroc();
   const groupes = [["Aujourd'hui", lignes.filter((l) => l.date_jour === auj)], ["Demain", lignes.filter((l) => l.date_jour !== auj)]] as const;
   const aVerifier = lignes.filter((l) => l.pointage_a_verifier).length;
   return (

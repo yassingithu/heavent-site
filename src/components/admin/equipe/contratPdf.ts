@@ -4,6 +4,7 @@ import { CONDITIONS_CONTRAT_DEFAUT, articlesHtml } from "@/lib/conditions";
 import { dateFr, esc, mad, nomFichier, telechargerPdf, InfosAgence } from "@/lib/pdf";
 import { cssDevis } from "@/components/admin/devis/devisUtils";
 import logoDevis from "@/assets/logo-devis-noir.png";
+import { aujourdhuiMaroc } from "@/lib/dateMaroc";
 
 interface LigneDate { date: string; heures: number; heure_debut?: string | null; heure_fin?: string | null }
 
@@ -56,7 +57,7 @@ function pageContrat(c: any, s: any, ev: Evenement, agence: InfosAgence | null, 
   const adresse = [agence?.adresse, agence?.ville].filter(Boolean).join(", ");
   const evenement = ev.titre || c.evenement || "la mission";
   const lieu = c.lieu || ev.lieu;
-  const aujourdhui = dateFr(new Date().toISOString().slice(0, 10));
+  const aujourdhui = dateFr(aujourdhuiMaroc());
   const periode = `${dateFr(dates[0]?.date)}${dates.length > 1 ? ` → ${dateFr(dates[dates.length - 1].date)}` : ""}`;
   const identite = [
     s.date_naissance && `Né(e) le ${dateFr(s.date_naissance)}${s.lieu_naissance ? ` à ${esc(s.lieu_naissance)}` : ""}`,

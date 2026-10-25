@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Download, Pencil, Search } from "lucide-react";
 import EditionStaff from "./EditionStaff";
 import { COULEURS, dateFr, enDataUrl, enteteDoc, esc, logo, nomFichier, photoUrl, piedAgence, telechargerPdf, InfosAgence } from "@/lib/pdf";
+import { aujourdhuiMaroc } from "@/lib/dateMaroc";
 
 type StaffComplet = Record<string, any> & { id: string; nom: string; prenom: string; email: string };
 
@@ -42,7 +43,7 @@ async function pageProfil(s: StaffComplet, logoSrc: string, agence: InfosAgence 
   const cases = (champs: [string, string][]) =>
     champs.filter(([k]) => valeur(s, k) !== "").map(([k, l]) => `<div class="case"><div class="etiquette">${l}</div><div class="v">${esc(valeur(s, k))}</div></div>`).join("");
   return `<div class="doc-heavent">
-  ${enteteDoc(logoSrc, "FICHE PROFIL", `Éditée le ${dateFr(new Date().toISOString().slice(0, 10))}`)}
+  ${enteteDoc(logoSrc, "FICHE PROFIL", `Éditée le ${dateFr(aujourdhuiMaroc())}`)}
   <div class="corps">
     <div class="profil">
       <div class="photos">
