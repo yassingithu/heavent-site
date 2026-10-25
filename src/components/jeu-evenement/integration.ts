@@ -12,7 +12,7 @@ import { suivre } from "@/lib/suivi";
  */
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
 import { CENTRES_DE_TABLE, libelle } from "./config";
-import { Creation, calculerBudget, placesPrevues } from "./logique";
+import { Creation, calculerBudget, placesPrevues, plusDe } from "./logique";
 import type { Coordonnees } from "./recapitulatif";
 import { nomAmbiance, nomLieu, nomType, optionsChoisies, texteDemande } from "./recapitulatif";
 import { enFrancais, tr } from "./langue";
@@ -58,6 +58,8 @@ export async function envoyerDemandeDevis(d: DemandeDevis): Promise<{ envoye: bo
             elements: c.elements.reduce<Record<string, number>>((acc, e) => { acc[e.type] = (acc[e.type] ?? 0) + 1; return acc; }, {}),
             centres: c.centres.actif ? c.elements.filter((e) => e.type === "table_ronde" || e.type === "table_rect").length : 0,
             libelles: Object.fromEntries([...new Set(c.elements.map((e) => e.type))].map((t) => [t, libelle(t, c.reglages.type).nom])),
+            // Éléments agrandis : cases ajoutées (le prix du devis en tient compte)
+            agrandis: c.elements.filter((e) => plusDe(e) > 0).map((e) => ({ type: e.type, cases_en_plus: plusDe(e) })),
             // Idées sur mesure nommées par le visiteur : l'agence fixe leur prix dans le devis
             sur_mesure: b.lignes.filter((l) => l.surDevis).map((l) => ({ nom: l.libelle, quantite: l.quantite })),
           },

@@ -7,7 +7,7 @@ import { clesDuJeu } from "./cles-traduction";
 import { creationDepuisModele } from "../../src/components/jeu-evenement/logique";
 import { decoderCreation, encoderCreation } from "../../src/components/jeu-evenement/partage";
 import {
-  calculerBudget, evaluerMissions, nouvelleCreation, placeLibre, placesPrevues, proposerDisposition, reglagesParDefaut, tailleGrille, trouverPlace,
+  calculerBudget, emprise, evaluerMissions, nouvelleCreation, placeLibre, placesPrevues, proposerDisposition, reglagesParDefaut, tailleGrille, trouverPlace,
 } from "../../src/components/jeu-evenement/logique";
 
 const r = { ...reglagesParDefaut(), invites: 100, budget: 60000 };
@@ -130,5 +130,24 @@ for (const m of MODELES) {
   const relu = decoderCreation(encoderCreation(s))!;
   assert.deepEqual(relu.elements.map((e) => e.nom ?? null), [null, "Calèche dorée", "Calèche dorée", "ركن الأطفال", null], "noms conservés dans le lien (accents et arabe)");
   console.log(`  sur mesure : ${bs.lignes.filter((l) => l.surDevis).length} idées nommées, prix sur devis, gardées dans le lien de partage`);
+}
+// Agrandissement : la taille, le prix, le lien de partage et le placement suivent
+{
+  const base = nouvelleCreation({ ...reglagesParDefaut(), invites: 80, budget: 90000 });
+  base.elements.push(el("piste", 0, 0), el("buffet", 0, 5), el("allee", 8, 0));
+  const avant = calculerBudget(base).total;
+  const g = nouvelleCreation(base.reglages);
+  g.elements.push({ ...el("piste", 0, 0), plus: 1 }, { ...el("buffet", 0, 5), plus: 2 }, { ...el("allee", 8, 0), plus: 3 });
+  // piste 3×3 → 4×4 : +7 cases × 650 ; buffet 3×1 → 5×1 : +2 × 700 ; allée 1×3 → 1×6 : +3 × 500
+  assert.equal(calculerBudget(g).total - avant, 7 * 650 + 2 * 700 + 3 * 500, "supplément par case ajoutée");
+  assert.deepEqual([emprise(g.elements[0]), emprise(g.elements[1]), emprise(g.elements[2])], [{ w: 4, h: 4 }, { w: 5, h: 1 }, { w: 1, h: 6 }], "emprises agrandies");
+  assert.deepEqual(emprise({ ...g.elements[1], tourne: true }), { w: 1, h: 5 }, "rotation d'un élément agrandi");
+  assert.equal(emprise({ ...el("table_ronde", 0, 0), plus: 5 }).w, 2, "une table ne s'agrandit pas");
+  assert.equal(emprise({ ...el("buffet", 0, 0), plus: 99 }).w, 7, "agrandissement borné au maximum");
+  assert.ok(!placeLibre([...g.elements], { ...el("dj", 3, 0) }, 30, 30), "la piste agrandie occupe 4×4");
+  const relu = decoderCreation(encoderCreation(g))!;
+  assert.deepEqual(relu.elements.map((e) => e.plus ?? 0), [1, 2, 3], "tailles conservées dans le lien de partage");
+  assert.equal(calculerBudget(relu).total, calculerBudget(g).total, "même prix après partage");
+  console.log(`  agrandissement : +${calculerBudget(g).total - avant} MAD pour 12 cases en plus, tailles gardées dans le lien`);
 }
 console.log("✅ logique du jeu : tous les tests passent");

@@ -62,7 +62,9 @@ export type TypeElement =
   | "nawar" | "hotesse" | "serveur" | "maitre_hotel"
   | "fauteuils" | "table_haute" | "amaria" | "mur_fleurs" | "candelabre" | "allee" | "the"
   | "objet_libre" | "espace_libre"
-  | "tente";
+  | "tente"
+  | "salon_marocain" | "espace_henne" | "orchestre" | "troupe" | "neggafa" | "photographe" | "candy_bar" | "livre_dor"
+  | "feux_froids" | "fontaine" | "lanternes" | "torches" | "espace_enfants" | "estrade" | "pergola";
 
 export type Categorie = "places" | "decoration" | "lumiere" | "animation" | "gourmand" | "detente" | "personnel" | "sur_mesure";
 export const CATEGORIES: { id: Categorie; nom: string }[] = [
@@ -103,6 +105,8 @@ export interface DefElement {
   types?: TypeEvenement[];
   /** Proposé seulement dans ces lieux (tous par défaut) : la tente marocaine, par exemple, se monte en jardin ou sur une terrasse */
   lieux?: Lieu[];
+  /** Peut être agrandi : « w » = en longueur, « h » = en profondeur, « carre » = dans les deux sens ; `prixCase` = supplément par case ajoutée */
+  etire?: { axe: "w" | "h" | "carre"; max: number; prixCase: number };
   /** Élément « sur mesure » : le visiteur lui donne un nom, l'agence le chiffre dans le devis (pas de prix dans le jeu) */
   surDevis?: boolean;
 }
@@ -137,7 +141,38 @@ export const CATALOGUE: DefElement[] = [
   { id: "espace_libre", categorie: "sur_mesure", nom: "Espace sur mesure", description: "Une zone à aménager selon votre idée (coin enfants, calèche, scène de spectacle…). Nommez-la : nous la chiffrons dans votre devis.", w: 2, h: 2, prix: 0, couleur: "deco", surDevis: true },
   // Ajout (toujours en fin de liste : l'ordre sert aux liens de partage)
   { id: "tente", categorie: "decoration", nom: "Tente marocaine", description: "La grande tente caïdale aux toiles brodées et à l'intérieur drapé, avec tapis, poufs et lanternes : l'écrin d'une soirée marocaine en plein air.", w: 4, h: 4, prix: 28000, couleur: "deco", role: "decoration", lieux: ["jardin", "terrasse"] },
+  // Ajouts (toujours en fin de liste : l'ordre sert aux liens de partage)
+  { id: "salon_marocain", categorie: "detente", nom: "Salon marocain", description: "Banquettes en U, coussins brodés, table basse et grand tapis : le salon traditionnel pour recevoir vos invités.", w: 3, h: 2, prix: 6500, couleur: "deco", role: "convivial" },
+  { id: "espace_henne", categorie: "detente", nom: "Espace henné", description: "Coussins au sol, table basse, cônes de henné et bougies pour la soirée du henné.", w: 2, h: 2, prix: 3500, couleur: "fleurs", role: "convivial", types: ["mariage", "fiancailles", "anniversaire"] },
+  { id: "orchestre", categorie: "animation", nom: "Orchestre marocain", description: "Trois musiciens (luth, percussions, chant) sur estrade, avec sonorisation, pour vos entrées et vos danses.", w: 3, h: 2, prix: 14000, couleur: "deco", role: "convivial" },
+  { id: "troupe", categorie: "animation", nom: "Troupe folklorique", description: "Danseurs et percussionnistes en tenues traditionnelles pour un spectacle ou une entrée remarquée.", w: 2, h: 2, prix: 6000, role: "convivial" },
+  { id: "neggafa", categorie: "personnel", nom: "Neggafa", description: "Habille et prépare la mariée, change ses tenues et l'accompagne toute la soirée. Journée de 8 h.", w: 1, h: 1, prix: 4500, couleur: "deco", types: ["mariage", "fiancailles"] },
+  { id: "photographe", categorie: "personnel", nom: "Photographe", description: "Reportage photo de la cérémonie et de la soirée, avec retouche et galerie en ligne.", w: 1, h: 1, prix: 3500 },
+  { id: "candy_bar", categorie: "gourmand", nom: "Candy bar", description: "Table de bonbons, bocaux et friandises à emporter, joliment décorée.", w: 2, h: 1, prix: 2200, prixParInvite: 12, couleur: "nappe", role: "convivial" },
+  { id: "livre_dor", categorie: "decoration", nom: "Livre d'or", description: "Un guéridon fleuri avec son livre d'or et son stylo, pour les messages de vos invités.", w: 1, h: 1, prix: 400, couleur: "nappe" },
+  { id: "feux_froids", categorie: "animation", nom: "Feux froids", description: "Deux fontaines d'étincelles sans fumée ni danger, pour l'entrée des mariés ou la première danse.", w: 1, h: 1, prix: 2500, role: "convivial" },
+  { id: "fontaine", categorie: "decoration", nom: "Fontaine zellige", description: "Fontaine à bassin décoré de zellige et petit jet d'eau, pour un coin d'eau apaisant.", w: 1, h: 1, prix: 3500, couleur: "deco", role: "decoration" },
+  { id: "lanternes", categorie: "lumiere", nom: "Lanternes marocaines", description: "Mât orné de lanternes ajourées dont la lumière dessine des motifs sur les tables.", w: 1, h: 1, prix: 1100, couleur: "deco", role: "eclairage" },
+  { id: "torches", categorie: "lumiere", nom: "Torches de jardin", description: "Torches à flamme pour éclairer les allées et l'entrée à la tombée du jour.", w: 1, h: 1, prix: 700, role: "eclairage", lieux: ["jardin", "terrasse"] },
+  { id: "espace_enfants", categorie: "animation", nom: "Espace enfants", description: "Tapis, château gonflable et animatrice pour occuper les enfants pendant la soirée.", w: 2, h: 2, prix: 2800, role: "convivial", types: ["mariage", "fiancailles", "anniversaire", "babyshower"] },
+  { id: "estrade", categorie: "decoration", nom: "Estrade de cérémonie", description: "Estrade avec marches, tapis et fond tendu : pour la cérémonie, les discours ou la remise de cadeaux.", w: 3, h: 2, prix: 3200, couleur: "deco", role: "decoration" },
+  { id: "pergola", categorie: "decoration", nom: "Pergola fleurie", description: "Grande pergola blanche habillée de fleurs : un abri ombragé et photogénique pour la cérémonie ou le cocktail.", w: 3, h: 3, prix: 9000, couleur: "fleurs", role: "decoration", lieux: ["jardin", "terrasse"] },
 ];
+
+/** Éléments que le visiteur peut agrandir (la taille et le prix suivent). */
+const ETIREMENTS: Partial<Record<TypeElement, NonNullable<DefElement["etire"]>>> = {
+  piste: { axe: "carre", max: 3, prixCase: 650 },
+  buffet: { axe: "w", max: 4, prixCase: 700 },
+  bar: { axe: "w", max: 3, prixCase: 500 },
+  mur_fleurs: { axe: "w", max: 3, prixCase: 1800 },
+  allee: { axe: "h", max: 6, prixCase: 500 },
+  estrade: { axe: "w", max: 3, prixCase: 900 },
+  espace_enfants: { axe: "carre", max: 2, prixCase: 350 },
+  salon_marocain: { axe: "w", max: 2, prixCase: 1500 },
+  the: { axe: "w", max: 2, prixCase: 500 },
+  candy_bar: { axe: "w", max: 3, prixCase: 400 },
+};
+CATALOGUE.forEach((d) => { const t = ETIREMENTS[d.id]; if (t) d.etire = t; });
 
 /** Option « centres de table » : posée sur toutes les tables, facturée par table. */
 export const CENTRES_DE_TABLE = {

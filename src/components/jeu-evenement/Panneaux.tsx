@@ -4,14 +4,14 @@ import {
   CATALOGUE, CATEGORIES, CENTRES_DE_TABLE, CleCouleur, NUANCIER, TypeElement, defElement, format, libelle, mentionEstimation, placesDe,
 } from "./config";
 import { tr } from "./langue";
-import { Creation, Element, EtatMission, NOM_MAX, calculerBudget, couleurDe, emprise, nomElement, palette } from "./logique";
+import { Creation, Element, EtatMission, NOM_MAX, calculerBudget, casesAjoutees, couleurDe, emprise, nomElement, palette } from "./logique";
 import { DessinElement, TH, TW } from "./dessins";
 import { TYPE_GLISSE } from "./Scene";
 import { Bouton } from "./ui";
 
 /** Petite vignette SVG d'un élément, dessinée comme dans la scène. */
 /** Hauteur visible de chaque élément au-dessus du sol (pour cadrer les vignettes). */
-const HAUTEUR: Partial<Record<TypeElement, number>> = { tente: 125, arche: 135, guirlandes: 100, photobooth: 72, fleurs: 70, honneur: 66, gateau: 66, dj: 56, bar: 52, lounge: 32, piste: 8, nawar: 80, hotesse: 54, serveur: 54, maitre_hotel: 54, fauteuils: 58, table_haute: 40, amaria: 112, mur_fleurs: 94, candelabre: 82, allee: 22, the: 32, objet_libre: 62, espace_libre: 40 };
+const HAUTEUR: Partial<Record<TypeElement, number>> = { salon_marocain: 36, espace_henne: 30, orchestre: 70, troupe: 62, neggafa: 54, photographe: 54, candy_bar: 42, livre_dor: 40, feux_froids: 64, fontaine: 58, lanternes: 100, torches: 78, espace_enfants: 60, estrade: 70, pergola: 105, tente: 125, arche: 135, guirlandes: 100, photobooth: 72, fleurs: 70, honneur: 66, gateau: 66, dj: 56, bar: 52, lounge: 32, piste: 8, nawar: 80, hotesse: 54, serveur: 54, maitre_hotel: 54, fauteuils: 58, table_haute: 40, amaria: 112, mur_fleurs: 94, candelabre: 82, allee: 22, the: 32, objet_libre: 62, espace_libre: 40 };
 /** « 1 500 MAD + 50 MAD / invité », « 450 MAD / invité » ou « 12 000 MAD ». */
 export const prixTexte = (prix: number, parInvite?: number, long = false) => {
   const pi = parInvite ? `${format(parInvite)} ${long ? tr("par invité") : tr("/ invité")}` : "";
@@ -174,9 +174,9 @@ export function Tiroir({ creation, enPlacement, ajoutRapide, onAjoutRapide, onAj
 // ── Élément sélectionné ─────────────────────────────────────────────────────
 const LIBELLE_COULEUR: Record<CleCouleur, string> = { nappe: "Couleur des nappes", fleurs: "Couleur des fleurs", deco: "Couleur de la décoration" };
 
-export function PanneauSelection({ creation, element, enDeplacement, onCouleur, onCouleurTous, onDeplacer, onPas, onTourner, onDupliquer, onSupprimer, onFermer, onCentresCouleur, onNom }: {
+export function PanneauSelection({ creation, element, enDeplacement, onCouleur, onCouleurTous, onDeplacer, onPas, onAgrandir, onTourner, onDupliquer, onSupprimer, onFermer, onCentresCouleur, onNom }: {
   creation: Creation; element: Element; enDeplacement: boolean; onNom: (nom: string) => void;
-  onCouleur: (c: string) => void; onCouleurTous: (c: string) => void; onDeplacer: () => void; onPas: (dx: number, dy: number) => void;
+  onCouleur: (c: string) => void; onCouleurTous: (c: string) => void; onDeplacer: () => void; onPas: (dx: number, dy: number) => void; onAgrandir: (delta: number) => void;
   onTourner: () => void; onDupliquer: () => void; onSupprimer: () => void; onFermer: () => void; onCentresCouleur: (c: string) => void;
 }) {
   const d = defElement(element.type);
@@ -237,8 +237,18 @@ export function PanneauSelection({ creation, element, enDeplacement, onCouleur, 
           </div>
         </div>
       </div>
+      {d.etire && (
+        <div>
+          <div className="text-xs font-medium mb-1.5">{tr("Taille")}</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Bouton variante="secondaire" onClick={() => onAgrandir(-1)} disabled={!(element.plus ?? 0)} data-testid="reduire">− {tr("Réduire")}</Bouton>
+            <Bouton variante="secondaire" onClick={() => onAgrandir(1)} disabled={(element.plus ?? 0) >= d.etire.max} data-testid="agrandir">+ {tr("Agrandir")}</Bouton>
+            <span className="text-xs text-[#6B6155]" data-testid="taille-element">{emprise(element).w} × {emprise(element).h} {tr("cases")}{(element.plus ?? 0) > 0 ? ` · +${format(casesAjoutees(element) * d.etire.prixCase)}` : ` · ${tr("+{prix} par case en plus", { prix: format(d.etire.prixCase) })}`}</span>
+          </div>
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
-        {d.w !== d.h && <Bouton variante="secondaire" onClick={onTourner}>{tr("Tourner")}</Bouton>}
+        {(d.w !== d.h || emprise(element).w !== emprise(element).h) && <Bouton variante="secondaire" onClick={onTourner}>{tr("Tourner")}</Bouton>}
         <Bouton variante="secondaire" onClick={onDupliquer}>{tr("Dupliquer")}</Bouton>
         <Bouton variante="danger" onClick={onSupprimer}>{tr("Supprimer")}</Bouton>
       </div>

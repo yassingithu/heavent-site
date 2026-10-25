@@ -7,7 +7,7 @@ import {
 
 // ── État ────────────────────────────────────────────────────────────────────
 export interface Reglages { type: TypeEvenement; invites: number; budget: number; lieu: Lieu; ambiance: Ambiance }
-export interface Element { uid: string; type: TypeElement; x: number; y: number; tourne?: boolean; couleur?: string; /** Nom choisi par le visiteur (éléments sur mesure) */ nom?: string }
+export interface Element { uid: string; type: TypeElement; x: number; y: number; tourne?: boolean; /** Cases ajoutées (élément agrandi) */ plus?: number; couleur?: string; /** Nom choisi par le visiteur (éléments sur mesure) */ nom?: string }
 export interface Centres { actif: boolean; couleur?: string }
 export interface Creation { reglages: Reglages; elements: Element[]; centres: Centres }
 
@@ -28,10 +28,13 @@ export function couleurDe(e: Element, ambiance: Ambiance): string | undefined {
 }
 
 // ── Grille ──────────────────────────────────────────────────────────────────
-/** Taille de la scène en cases, proportionnelle au nombre d'invités. */
-export function tailleGrille(invites: number) {
+/** Agrandissement de la surface selon le lieu : on a plus de place dans un jardin que dans une salle. */
+export const AMPLEUR_LIEU: Record<Lieu, number> = { salle: 1.5, terrasse: 1.7, jardin: 2.1 };
+
+/** Taille de la scène en cases, proportionnelle au nombre d'invités et au lieu. */
+export function tailleGrille(invites: number, lieu: Lieu = "salle") {
   const tables = Math.ceil(invites / 10);
-  const surface = tables * 4 * 1.7 + 46;
+  const surface = (tables * 4 * 1.7 + 46) * AMPLEUR_LIEU[lieu];
   const cols = Math.max(10, Math.round(Math.sqrt(surface * 1.3)));
   const rows = Math.max(8, Math.ceil(surface / cols));
   return { cols, rows };
@@ -39,18 +42,38 @@ export function tailleGrille(invites: number) {
 
 /** Grille d'une création : selon les invités, agrandie pour contenir tous les éléments posés. */
 export function grilleDe(c: Creation) {
-  const g = tailleGrille(c.reglages.invites);
+  const g = tailleGrille(c.reglages.invites, c.reglages.lieu);
   c.elements.forEach((e) => { const { w, h } = emprise(e); g.cols = Math.max(g.cols, e.x + w); g.rows = Math.max(g.rows, e.y + h); });
   return g;
 }
 
-export function emprise(e: Pick<Element, "type" | "tourne">) {
+/** Cases ajoutées, bornées par ce que l'élément permet (0 si l'élément ne s'agrandit pas). */
+export function plusDe(e: Pick<Element, "type" | "plus">) {
+  const t = defElement(e.type).etire;
+  return t ? Math.max(0, Math.min(t.max, Math.round(e.plus ?? 0))) : 0;
+}
+
+/** Dimensions de l'élément avant rotation, agrandissement compris. */
+export function dimsBase(e: Pick<Element, "type" | "plus">) {
   const d = defElement(e.type);
-  return e.tourne ? { w: d.h, h: d.w } : { w: d.w, h: d.h };
+  const p = plusDe(e);
+  const t = d.etire?.axe;
+  return { w: d.w + (t === "w" || t === "carre" ? p : 0), h: d.h + (t === "h" || t === "carre" ? p : 0) };
+}
+
+/** Cases ajoutées en surface (pour le supplément de prix). */
+export function casesAjoutees(e: Pick<Element, "type" | "plus">) {
+  const d = defElement(e.type), b = dimsBase(e);
+  return b.w * b.h - d.w * d.h;
+}
+
+export function emprise(e: Pick<Element, "type" | "tourne" | "plus">) {
+  const b = dimsBase(e);
+  return e.tourne ? { w: b.h, h: b.w } : b;
 }
 
 /** Vrai si l'élément tient dans la grille sans chevaucher un autre (on ignore `ignorer`). */
-export function placeLibre(elements: Element[], cand: Pick<Element, "type" | "x" | "y" | "tourne">, cols: number, rows: number, ignorer?: string) {
+export function placeLibre(elements: Element[], cand: Pick<Element, "type" | "x" | "y" | "tourne" | "plus">, cols: number, rows: number, ignorer?: string) {
   const { w, h } = emprise(cand);
   if (cand.x < 0 || cand.y < 0 || cand.x + w > cols || cand.y + h > rows) return false;
   return !elements.some((o) => {
@@ -61,13 +84,13 @@ export function placeLibre(elements: Element[], cand: Pick<Element, "type" | "x"
 }
 
 /** Première place libre, la plus proche possible d'un point cible (centre de la scène par défaut). */
-export function trouverPlace(elements: Element[], type: TypeElement, cols: number, rows: number, cible?: { x: number; y: number }, tourne = false) {
-  const { w, h } = emprise({ type, tourne });
+export function trouverPlace(elements: Element[], type: TypeElement, cols: number, rows: number, cible?: { x: number; y: number }, tourne = false, plus = 0) {
+  const { w, h } = emprise({ type, tourne, plus });
   const c = cible ?? { x: (cols - w) / 2, y: (rows - h) / 2 };
   const candidats: { x: number; y: number; d: number }[] = [];
   for (let y = 0; y <= rows - h; y++) for (let x = 0; x <= cols - w; x++) candidats.push({ x, y, d: (x - c.x) ** 2 + (y - c.y) ** 2 });
   candidats.sort((a, b) => a.d - b.d);
-  return candidats.find((p) => placeLibre(elements, { type, x: p.x, y: p.y, tourne }, cols, rows)) ?? null;
+  return candidats.find((p) => placeLibre(elements, { type, x: p.x, y: p.y, tourne, plus }, cols, rows)) ?? null;
 }
 
 // ── Budget ──────────────────────────────────────────────────────────────────
@@ -82,22 +105,28 @@ export const nomElement = (e: Pick<Element, "type" | "nom">, type: TypeEvenement
 export function calculerBudget(c: Creation) {
   const { type, invites } = c.reglages;
   const parType = new Map<TypeElement, number>();
+  const casesPlus = new Map<TypeElement, number>();
   const surMesure = new Map<string, number>();
   c.elements.forEach((e) => {
     if (defElement(e.type).surDevis) { const k = nomElement(e, type); surMesure.set(k, (surMesure.get(k) ?? 0) + 1); }
-    else parType.set(e.type, (parType.get(e.type) ?? 0) + 1);
+    else {
+      parType.set(e.type, (parType.get(e.type) ?? 0) + 1);
+      const sup = casesAjoutees(e);
+      if (sup > 0) casesPlus.set(e.type, (casesPlus.get(e.type) ?? 0) + sup);
+    }
   });
   const lignes: LigneBudget[] = [];
   for (const [id, n] of parType) {
     const d = defElement(id);
-    const fixe = d.prix * n;
+    const sup = casesPlus.get(id) ?? 0;
+    const fixe = d.prix * n + sup * (d.etire?.prixCase ?? 0);
     // Le coût par invité (repas, boissons, parts de gâteau) ne compte qu'une fois, même avec 2 buffets.
     // Minimum facturé (ex. 50 parfums pour le bar Nawar, même pour 30 invités)
     const qte = Math.max(invites, d.minimumInvites ?? 0);
     const parInvite = d.prixParInvite ? d.prixParInvite * qte : 0;
     lignes.push({
       libelle: libelle(id, type).nom, quantite: n, fixe, parInvite, total: fixe + parInvite,
-      detail: [d.prix ? `${n} × ${d.prix}` : "",
+      detail: [d.prix ? `${n} × ${d.prix}` : "", sup ? `+ ${sup} ${sup > 1 ? tr("cases en plus") : tr("case en plus")} × ${d.etire?.prixCase ?? 0}` : "",
         d.prixParInvite ? `${d.prix ? "+ " : ""}${d.prixParInvite} × ${qte} ${qte > invites ? tr("(minimum {n})", { n: d.minimumInvites ?? 0 }) : tr("invités")}` : ""].filter(Boolean).join(" "),
     });
   }
@@ -143,7 +172,7 @@ export function evaluerMissions(c: Creation): EtatMission[] {
 // ── « Propose-moi une disposition » ─────────────────────────────────────────
 /** Construit un aménagement cohérent, puis retire les extras si le budget est dépassé. */
 export function proposerDisposition(r: Reglages): Creation {
-  const { cols, rows } = tailleGrille(r.invites);
+  const { cols, rows } = tailleGrille(r.invites, r.lieu);
   const c = nouvelleCreation(r);
   const els = c.elements;
   const poser = (type: TypeElement, cible: { x: number; y: number }, tourne = false) => {
@@ -194,7 +223,7 @@ export function creationDepuisModele(id: string): Creation | null {
   const m = MODELES.find((x) => x.id === id);
   if (!m) return null;
   const c = proposerDisposition({ ...m.reglages });
-  const g = tailleGrille(m.reglages.invites);
+  const g = tailleGrille(m.reglages.invites, m.reglages.lieu);
   // Personnel près de l'entrée (devant), bar à parfums sur un côté
   for (const t of m.extras) {
     // Chaque extra à sa place logique : fond de scène, entrée, côtés…
