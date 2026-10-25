@@ -112,7 +112,7 @@ nettoyer() {
 # Fichier de mot de passe temporaire (jamais dans la ligne de commande)
 preparer_acces() {
   local mdp cle
-  mdp="$(secret base)"; cle="$(secret fichiers)"
+  mdp="$(secret base)"; cle="$(secret fichiers | tr -d '[:space:]')"   # une clé ne contient jamais d'espace : ceux collés par erreur sont retirés
   [ -n "$mdp" ] || { echo "ACCES: mot de passe de la base introuvable dans le Trousseau"; return 1; }
   [ -n "$cle" ] || { echo "ACCES: clé d'accès aux fichiers introuvable dans le Trousseau"; return 1; }
   printf '%s:%s:%s:%s:%s\n' "$PG_HOTE" "$PG_PORT" "$PG_BASE" "$PG_UTIL" "$(printf '%s' "$mdp" | sed 's/\\/\\\\/g; s/:/\\:/g')" > "$TRAVAIL/tmp/pgpass"

@@ -53,6 +53,16 @@ done
 rm -f "$MDP_F"
 [ -n "$HOTE" ] || stop "Connexion impossible : vérifie le mot de passe de la base (relance le script après : security delete-generic-password -a heavent -s heavent-sauvegarde-base)."
 ok "connecté via $HOTE"
+# Clé d'accès aux fichiers : essai de lecture de la liste des espaces de stockage (aucune modification)
+CLE_F=$(security find-generic-password -a heavent -s heavent-sauvegarde-fichiers -w | tr -d '[:space:]')
+CURL_F=$(mktemp "$RACINE/.cf.XXXX")
+case "$CLE_F" in
+  sb_secret_*) printf 'header = "apikey: %s"\n' "$CLE_F" > "$CURL_F" ;;
+  eyJ*) printf 'header = "Authorization: Bearer %s"\nheader = "apikey: %s"\n' "$CLE_F" "$CLE_F" > "$CURL_F" ;;
+  *) rm -f "$CURL_F"; stop "La clé enregistrée n'est ni une clé « service_role » (commence par eyJ) ni une clé secrète (commence par sb_secret_). Efface-la : security delete-generic-password -a heavent -s heavent-sauvegarde-fichiers, puis relance." ;;
+esac
+CODE_F=$(curl -s -o /dev/null -w '%{http_code}' -K "$CURL_F" "https://$PROJET.supabase.co/storage/v1/bucket"); rm -f "$CURL_F"; unset CLE_F
+[ "$CODE_F" = 200 ] && ok "clé d'accès aux fichiers valide" || stop "Clé d'accès aux fichiers refusée (code $CODE_F). Efface-la : security delete-generic-password -a heavent -s heavent-sauvegarde-fichiers, puis relance."
 cat > "$RACINE/config" <<C
 PG_HOTE=$HOTE
 PG_PORT=5432
