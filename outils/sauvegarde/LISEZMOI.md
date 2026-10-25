@@ -11,7 +11,7 @@ bash ~/Downloads/elegant-heavent-web-main/sauvegarde-heavent/installer.sh
 ```
 
 Le script :
-1. installe uniquement `age`, l'outil de chiffrement gratuit, avec Homebrew. PostgreSQL 18 est déjà sur ton Mac.
+1. vérifie les outils : PostgreSQL 18 (déjà sur ton Mac) et `age`. Pour `age`, Homebrew n'a pas de version prête pour macOS 27 : on installe le fichier officiel de son auteur (GitHub FiloSottile/age, v1.3.1, empreinte SHA-256 `01120ea2cbf0463d4c6bd767f99f3271bbed1cdc8a9aa718a76ba1fe4f01998b`) dans `~/Sauvegardes-Heavent/bin` ;
 2. te demande **deux secrets**, dans une invite masquée du Trousseau. Rien ne s'affiche à l'écran et rien n'est gardé dans l'historique :
    - le **mot de passe de la base** (Supabase → Project Settings → Database). Si tu ne le connais plus, **ne le réinitialise pas sans en parler d'abord à Claude** ;
    - la **clé « service_role »** (Supabase → Project Settings → API Keys → *Legacy API keys* → *Reveal*). L'afficher ne la change pas ;
