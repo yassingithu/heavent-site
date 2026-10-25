@@ -61,7 +61,8 @@ export type TypeElement =
   | "dj" | "buffet" | "bar" | "photobooth" | "lounge" | "gateau"
   | "nawar" | "hotesse" | "serveur" | "maitre_hotel"
   | "fauteuils" | "table_haute" | "amaria" | "mur_fleurs" | "candelabre" | "allee" | "the"
-  | "objet_libre" | "espace_libre";
+  | "objet_libre" | "espace_libre"
+  | "tente";
 
 export type Categorie = "places" | "decoration" | "lumiere" | "animation" | "gourmand" | "detente" | "personnel" | "sur_mesure";
 export const CATEGORIES: { id: Categorie; nom: string }[] = [
@@ -100,6 +101,8 @@ export interface DefElement {
   role?: "decoration" | "eclairage" | "convivial";
   /** Proposé seulement pour ces types d'événement (tous par défaut) */
   types?: TypeEvenement[];
+  /** Proposé seulement dans ces lieux (tous par défaut) : la tente marocaine, par exemple, se monte en jardin ou sur une terrasse */
+  lieux?: Lieu[];
   /** Élément « sur mesure » : le visiteur lui donne un nom, l'agence le chiffre dans le devis (pas de prix dans le jeu) */
   surDevis?: boolean;
 }
@@ -132,6 +135,8 @@ export const CATALOGUE: DefElement[] = [
   { id: "the", categorie: "gourmand", nom: "Service à thé marocain", description: "Table à thé, théières et pâtisseries marocaines, servis par notre équipe.", w: 2, h: 1, prix: 1500, prixParInvite: 15, couleur: "nappe", role: "convivial" },
   { id: "objet_libre", categorie: "sur_mesure", nom: "Objet sur mesure", description: "Une idée qui n'est pas dans le catalogue ? Ajoutez-la et donnez-lui le nom que vous voulez : nous la chiffrons dans votre devis.", w: 1, h: 1, prix: 0, couleur: "deco", surDevis: true },
   { id: "espace_libre", categorie: "sur_mesure", nom: "Espace sur mesure", description: "Une zone à aménager selon votre idée (coin enfants, calèche, scène de spectacle…). Nommez-la : nous la chiffrons dans votre devis.", w: 2, h: 2, prix: 0, couleur: "deco", surDevis: true },
+  // Ajout (toujours en fin de liste : l'ordre sert aux liens de partage)
+  { id: "tente", categorie: "decoration", nom: "Tente marocaine", description: "La grande tente caïdale aux toiles brodées et à l'intérieur drapé, avec tapis, poufs et lanternes : l'écrin d'une soirée marocaine en plein air.", w: 4, h: 4, prix: 28000, couleur: "deco", role: "decoration", lieux: ["jardin", "terrasse"] },
 ];
 
 /** Option « centres de table » : posée sur toutes les tables, facturée par table. */

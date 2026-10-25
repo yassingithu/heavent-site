@@ -620,6 +620,69 @@ export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
         </g>
       );
     }
+    case "tente": {
+      // Tente marocaine (caïdale) : toit à quatre pans en bandes ivoire et couleur, bordure festonnée, intérieur drapé avec tapis, poufs et lanternes
+      const acc = ctx.couleur ?? palette.deco;
+      const toile = "#F3EAD6";
+      const interieur = teinte(acc, 0.2);
+      const ox = e.x, oy = e.y, W = w, H = h, zp = 64, zs = 124;
+      const sommet = pt(cx, cy, zs);
+      const bord = (u: number, v: number) => pt(ox + u, oy + v, zp);
+      // Face du toit en 6 bandes (éventail depuis le sommet), une sur deux de la couleur choisie
+      const face = (de: [number, number], vers: [number, number], clair: string, sombre: string, cle: string) => (
+        <g key={cle}>
+          {Array.from({ length: 6 }, (_, i) => {
+            const a = bord(de[0] + (vers[0] - de[0]) * (i / 6), de[1] + (vers[1] - de[1]) * (i / 6));
+            const b = bord(de[0] + (vers[0] - de[0]) * ((i + 1) / 6), de[1] + (vers[1] - de[1]) * ((i + 1) / 6));
+            return <polygon key={i} points={pts([a, b, sommet])} fill={i % 2 ? sombre : clair} stroke={teinte(acc, 0.45)} strokeWidth={0.5} strokeLinejoin="round" />;
+          })}
+        </g>
+      );
+      // Bordure à festons sous l'avant-toit
+      const festons = (de: [number, number], vers: [number, number], couleur: string) => {
+        const n = 12;
+        return Array.from({ length: n }, (_, i) => {
+          const a = pt(ox + de[0] + (vers[0] - de[0]) * (i / n), oy + de[1] + (vers[1] - de[1]) * (i / n), zp);
+          const b = pt(ox + de[0] + (vers[0] - de[0]) * ((i + 1) / n), oy + de[1] + (vers[1] - de[1]) * ((i + 1) / n), zp);
+          const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + 9];
+          return <path key={`${de}${i}`} d={`M${a[0]},${a[1]} Q${m[0]},${m[1] + 5} ${b[0]},${b[1]} Z`} fill={i % 2 ? couleur : teinte(couleur, -0.15)} stroke={teinte(acc, 0.45)} strokeWidth={0.4} />;
+        });
+      };
+      const lanterne = (u: number, v: number) => {
+        const [lx, ly] = pt(ox + u, oy + v, zp - 14);
+        return <g key={`${u}${v}`}><line x1={lx} y1={ly - 8} x2={lx} y2={ly - 1} stroke="#8B6B4E" strokeWidth={0.8} /><path d={`M${lx - 3.2},${ly} L${lx - 4.6},${ly + 8} L${lx + 4.6},${ly + 8} L${lx + 3.2},${ly} Z`} fill="#E9C46A" stroke="#8C6D22" strokeWidth={0.6} /><ellipse cx={lx} cy={ly + 8.5} rx={4.8} ry={1.6} fill="#8C6D22" /><circle cx={lx} cy={ly + 4} r={6} fill="#FFE9A8" opacity={0.28} /></g>;
+      };
+      const pouf = (u: number, v: number, col: string) => <Cylindre key={`${u}${v}`} cx={ox + u} cy={oy + v} r={0.28} ht={10} c={col} haut={teinte(col, -0.18)} />;
+      return (
+        <g>
+          {/* Tapis et sol de la tente */}
+          <polygon points={pts([pt(ox + 0.1, oy + 0.1), pt(ox + W - 0.1, oy + 0.1), pt(ox + W - 0.1, oy + H - 0.1), pt(ox + 0.1, oy + H - 0.1)])} fill={teinte(acc, 0.1)} stroke={teinte(acc, 0.45)} strokeWidth={0.8} />
+          <polygon points={pts([pt(ox + 0.5, oy + 0.5), pt(ox + W - 0.5, oy + 0.5), pt(ox + W - 0.5, oy + H - 0.5), pt(ox + 0.5, oy + H - 0.5)])} fill="#F3EAD6" opacity={0.85} stroke="#C9A74E" strokeWidth={1.2} />
+          <polygon points={pts([pt(ox + 0.85, oy + 0.85), pt(ox + W - 0.85, oy + 0.85), pt(ox + W - 0.85, oy + H - 0.85), pt(ox + 0.85, oy + H - 0.85)])} fill={teinte(acc, -0.1)} opacity={0.55} />
+          {/* Murs du fond, drapés, avec arcatures dorées */}
+          <polygon points={pts([pt(ox, oy), pt(ox + W, oy), pt(ox + W, oy, zp), pt(ox, oy, zp)])} fill={interieur} stroke={teinte(acc, 0.45)} strokeWidth={0.6} />
+          <polygon points={pts([pt(ox, oy), pt(ox, oy + H), pt(ox, oy + H, zp), pt(ox, oy, zp)])} fill={teinte(interieur, 0.15)} stroke={teinte(acc, 0.45)} strokeWidth={0.6} />
+          {[0.7, 1.9, 3.1].map((u) => <path key={`a${u}`} d={`M${pt(ox + u, oy, 6)[0]},${pt(ox + u, oy, 6)[1]} L${pt(ox + u, oy, 36)[0]},${pt(ox + u, oy, 36)[1]} Q${pt(ox + u + 0.35, oy, 52)[0]},${pt(ox + u + 0.35, oy, 52)[1]} ${pt(ox + u + 0.7, oy, 36)[0]},${pt(ox + u + 0.7, oy, 36)[1]} L${pt(ox + u + 0.7, oy, 6)[0]},${pt(ox + u + 0.7, oy, 6)[1]} Z`} fill={teinte(acc, -0.3)} stroke="#E9C46A" strokeWidth={1.1} />)}
+          {[0.7, 1.9, 3.1].map((v) => <path key={`b${v}`} d={`M${pt(ox, oy + v, 6)[0]},${pt(ox, oy + v, 6)[1]} L${pt(ox, oy + v, 36)[0]},${pt(ox, oy + v, 36)[1]} Q${pt(ox, oy + v + 0.35, 52)[0]},${pt(ox, oy + v + 0.35, 52)[1]} ${pt(ox, oy + v + 0.7, 36)[0]},${pt(ox, oy + v + 0.7, 36)[1]} L${pt(ox, oy + v + 0.7, 6)[0]},${pt(ox, oy + v + 0.7, 6)[1]} Z`} fill={teinte(acc, -0.2)} stroke="#E9C46A" strokeWidth={1.1} />)}
+          {/* Coin salon : table basse, poufs et coussins */}
+          <Cylindre cx={cx} cy={cy} r={0.5} ht={11} c="#B08E6A" haut="#E9C46A" />
+          {pouf(1.2, 1.3, teinte(acc, -0.1))}{pouf(2.7, 1.1, "#F3EAD6")}{pouf(1.1, 2.8, "#F3EAD6")}{pouf(2.9, 2.9, teinte(acc, -0.1))}
+          {/* Poteaux */}
+          {[[0, 0], [W, 0], [0, H]].map(([u, v]) => <Boite key={`p${u}${v}`} x={ox + u - 0.05} y={oy + v - 0.05} w={0.1} h={0.1} ht={zp} c="#8B6B4E" />)}
+          <Boite x={ox + W - 0.05} y={oy + H - 0.05} w={0.1} h={0.1} ht={zp} c="#8B6B4E" />
+          {/* Toit : seules les deux faces tournées vers nous sont visibles */}
+          {face([W, 0], [W, H], toile, acc, "f1")}
+          {face([W, H], [0, H], teinte(toile, 0.12), teinte(acc, 0.15), "f2")}
+          {festons([W, 0], [W, H], acc)}
+          {festons([W, H], [0, H], teinte(acc, 0.1))}
+          {lanterne(W, 1)}{lanterne(W, 3)}{lanterne(1, H)}{lanterne(3, H)}
+          {/* Pointe dorée et fanion */}
+          <line x1={sommet[0]} y1={sommet[1]} x2={sommet[0]} y2={sommet[1] - 22} stroke="#8C6D22" strokeWidth={1.4} />
+          <circle cx={sommet[0]} cy={sommet[1] - 24} r={3.6} fill="#E9C46A" stroke="#8C6D22" strokeWidth={0.7} />
+          <path d={`M${sommet[0]},${sommet[1] - 20} l16,4 l-16,5 Z`} fill={acc} stroke={teinte(acc, 0.4)} strokeWidth={0.5} />
+        </g>
+      );
+    }
     case "gateau": {
       const ruban = ctx.couleur ?? palette.fleurs;
       const blanc = "#FFFDF7";

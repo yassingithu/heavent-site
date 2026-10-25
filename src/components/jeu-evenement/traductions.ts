@@ -1,6 +1,15 @@
 // Traductions du jeu « Crée ton événement de rêve » : clé = texte français (référence), valeur = anglais et arabe.
 // Vérifiées par tests/jeu (toute phrase du jeu doit être ici, avec les mêmes variables {…}).
 export const TRADUCTIONS: Record<string, { en: string; ar: string }> = {
+  "Effets": { en: "Effects", ar: "المؤثرات" },
+  "Tente marocaine": { en: "Moroccan tent", ar: "الخيمة المغربية" },
+  "La grande tente caïdale aux toiles brodées et à l'intérieur drapé, avec tapis, poufs et lanternes : l'écrin d'une soirée marocaine en plein air.": { en: "The grand caidal tent with embroidered canvas and a draped interior, with rugs, poufs and lanterns: the setting for an open-air Moroccan evening.", ar: "الخيمة القائدية الكبيرة بأقمشتها المطرّزة وداخلها المزيّن بالستائر، مع الزرابي والمقاعد والفوانيس: إطار سهرة مغربية في الهواء الطلق." },
+  "Découvrir": { en: "Discover", ar: "اكتشفوا" },
+  "Ajout rapide": { en: "Quick add", ar: "إضافة سريعة" },
+  "Ajoutés ✓": { en: "Added ✓", ar: "تمت الإضافة ✓" },
+  "Dépassement : {montant}": { en: "Over budget: {montant}", ar: "تجاوز الميزانية: {montant}" },
+  "Il reste {montant}": { en: "{montant} left", ar: "المتبقي {montant}" },
+  "{nom} ajouté(e)": { en: "{nom} added", ar: "تمت إضافة {nom}" },
   " : accomplie": { en: ": done", ar: ": مُنجزة" },
   " : à faire": { en: ": to do", ar: ": قيد الإنجاز" },
   "(compté une fois)": { en: "(counted once)", ar: "(يُحتسب مرة واحدة)" },
