@@ -20,7 +20,7 @@
 | 1 | Sauvegarde et restauration | OPÉRATIONNELLE le 25/10 : 1re sauvegarde réelle vérifiée (tâche automatique, 1 401 références, 437 fichiers), copie disque « My Passport for Mac » vérifiée, restauration avec clé de secours réussie ; reste : essais veille / redémarrage / réseau | Opus pour la conception, Sonnet possible pour les scripts |
 | 2 | Champs CNSS + registre des paiements | EN PRODUCTION le 25/10 (migrations cnss_employeur et paiements_paie, site fc9a8e2) après sauvegarde vérifiée ; reste : saisir le n° d'affiliation CNSS employeur | — |
 | 3 | Dates et fuseaux (conversions et planification seulement) | à faire | Sonnet avec relecture |
-| 4 | Navigation et tableau de bord « À traiter » | à faire — exigences détaillées ci-dessous (25/10) | Sonnet, relecture visuelle |
+| 4 | Navigation et tableau de bord « À traiter » | fait sur la branche lot-4-navigation, NON déployé (aperçus à valider par Yassin) | Sonnet, relecture visuelle |
 | 5 | Remplacements (avec état « en attente de validation ») | à faire | Sonnet |
 | 6 | Dépenses, justificatifs, lecture automatique, export Excel + ZIP | à faire (indépendant de la paie) | Sonnet ; banc d'essai OCR d'abord |
 | 7 | Paie (taux datés, versions, IR) | bloqué : statut des personnes, vérification des règles de l'exercice | Opus |
@@ -88,6 +88,17 @@
 - Appli Mac (desktop/main.js) : charge le SITE EN LIGNE (https://heaventagency.com) dans une fenêtre Electron ; une mise en ligne du site s'y voit sans réinstaller le DMG. Seuls la coque (menu, page hors ligne offline.html, règles d'ouverture des liens) demandent une nouvelle compilation ; la vérifier avant diffusion.
 - Prévisualisations à fournir : téléphone, navigateur ordinateur, appli Mac (si possible) ; signaler les supports non testés.
 - Aucune règle métier, donnée ou connexion modifiée par cette refonte.
+
+## Lot 4 — réalisé sur la branche lot-4-navigation (25/10, non déployé)
+- Menu latéral (ordinateur / appli Mac) : réductible (icônes + infobulles), choix mémorisé (localStorage, avec repli), réduit par défaut sous 1280 px. Sous 1024 px (fenêtre Mac étroite : minimum 960) : mise en page téléphone.
+- iPhone : barre du bas Accueil · Événements · Équipe · Plus (nouveau composant BarreBasseAdmin) ; « Plus » = toutes les rubriques groupées, badge des nouvelles demandes ; barre sous les fenêtres modales (z-45) pour ne jamais masquer leurs boutons ; marge basse + zone sûre iPhone.
+- Libellés sans ambiguïté : Demandes entreprise / Demandes événement / Devis / Devis envoyés / Envoyer un devis / Disponibilités / Site web.
+- Bilan : « À traiter maintenant » (demandes, devis sans réponse ≥ 5 j, bulletins en attente de validation) + « Prochains événements » (avec « Demain / Dans N jours ») en tête ; indicateurs compacts ; carte d'accueil plus basse (mot du jour conservé) ; en-têtes de section sur une ligne ; notifications retirées du Bilan (invitation seulement s'il reste à les activer) et placées dans Sécurité (état + notification d'essai).
+- Dates : « aujourd'hui », salutation et date longue calculés à l'heure du Maroc (src/lib/dateMaroc.ts) ; stockage UTC inchangé ; aucune donnée existante touchée.
+- Défaut réel corrigé au passage : les grilles du Bilan sans colonne mobile élargissaient la page au-delà de 390 px.
+- Non modifié : règles métier, données, permissions, espaces crew / clients / Nawar (leur navigation reste celle d'avant), coque Electron (desktop/main.js : le site en ligne suffit).
+- Tests : tests/beta (34 parcours, helper clicOnglet : menu latéral ou « Plus ») + tests/beta/apercus-lot4.mjs (32 contrôles : menu déplié/réduit/mémorisé, fenêtre 1100 px, barre iPhone, contenu non masqué, 18 rubriques sous « Plus »). Captures : dossier passé en argument.
+- Supports NON testés : appli Mac réelle (Electron) et iPhone réel / Safari (essais Chromium émulé 390 × 844 seulement).
 
 ## Lot 1 — constats de l'installation réelle (25/10)
 - age installé depuis la publication officielle (v1.3.1) : Homebrew sans version pour macOS 27.

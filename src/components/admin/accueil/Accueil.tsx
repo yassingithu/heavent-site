@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Confettis } from "@/components/inscription/ParcoursInscription";
+import { aujourdhuiMaroc, dateLongueMaroc, heureMaroc, jourMarocPlus } from "@/lib/dateMaroc";
 import { CalendarDays, Heart, Inbox, PartyPopper, Sparkles, Trophy, X } from "lucide-react";
 
 /**
@@ -18,7 +19,7 @@ export interface InfosAccueil {
 interface DevisMini { id: string; numero: string | null; client_nom: string; client_societe: string | null; total_ttc: number; statut: string; signe_le: string | null; date_evenement: string | null; titre: string | null }
 
 const mad = (n: number) => `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Math.round(n))} MAD`;
-const aujourdhui = () => new Date().toISOString().slice(0, 10);
+const aujourdhui = () => aujourdhuiMaroc();
 const marquer = (quoi: string) => (supabase as any).rpc("accueil_marquer", { p_quoi: quoi });
 
 export function useAccueil() {
@@ -114,7 +115,7 @@ export function CarteAccueil({ infos, nouvellesDemandes }: { infos: InfosAccueil
   useEffect(chargerPolice, []);
   useEffect(() => {
     const j = aujourdhui();
-    const dans7 = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
+    const dans7 = jourMarocPlus(7);
     Promise.all([
       (supabase as any).from("rendez_vous").select("id", { count: "exact", head: true }).eq("statut", "confirme").gte("debut", `${j}T00:00:00Z`).lte("debut", `${j}T23:59:59Z`),
       supabase.from("devis").select("titre, client_nom, client_societe, date_evenement").eq("statut", "accepte").gte("date_evenement", j).lte("date_evenement", dans7),
@@ -123,25 +124,25 @@ export function CarteAccueil({ infos, nouvellesDemandes }: { infos: InfosAccueil
       setJour({ rdv: r.count ?? 0, evenements: ev.filter((x) => x.date_evenement === j).map((x) => ({ titre: x.titre || "Événement", client: x.client_societe || x.client_nom })), semaine: ev.length });
     });
   }, []);
-  const h = new Date().getHours();
+  const h = heureMaroc();
   const salut = h < 5 ? "Douce nuit" : h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : "Bonsoir";
   const emoji = h < 5 ? "🌙" : h < 12 ? "☀️" : h < 18 ? "🌤️" : "🌙";
-  const dateLongue = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const dateLongue = dateLongueMaroc();
 
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-[#141414] text-white p-6 sm:p-8" data-testid="carte-accueil">
+    <section className="relative overflow-hidden rounded-3xl bg-[#141414] text-white p-4 sm:p-6" data-testid="carte-accueil">
       <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_0%_0%,#C8B560_0,transparent_45%),radial-gradient(circle_at_100%_100%,#A8933F_0,transparent_40%)]" />
-      <div className="relative grid lg:grid-cols-[1.3fr_1fr] gap-6 items-start">
-        <div className="space-y-4">
+      <div className="relative grid lg:grid-cols-[1.3fr_1fr] gap-4 items-start">
+        <div className="space-y-3">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-[#E4D49A] first-letter:uppercase">{dateLongue}</p>
-            <h2 className="font-serif text-3xl sm:text-4xl mt-1">{salut} {infos.prenom} {emoji}</h2>
+            <h2 className="font-serif text-2xl sm:text-3xl mt-0.5">{salut} {infos.prenom} {emoji}</h2>
           </div>
           {infos.mot && (
-            <figure className="rounded-2xl bg-white/[0.07] border border-white/10 p-5" data-testid="mot-du-jour">
-              <Heart className="h-4 w-4 text-[#E4D49A] fill-[#E4D49A] mb-2" />
-              <blockquote className="font-serif text-lg sm:text-xl leading-snug text-[#FAF7EE]">{infos.mot}</blockquote>
-              <figcaption className="text-right text-2xl text-[#E4D49A] mt-2" style={{ fontFamily: "'Great Vibes', cursive" }}>{infos.espace === "nawar" ? "Papa" : "Yassin"}</figcaption>
+            <figure className="rounded-2xl bg-white/[0.07] border border-white/10 p-4" data-testid="mot-du-jour">
+              <Heart className="h-4 w-4 text-[#E4D49A] fill-[#E4D49A] mb-1.5" />
+              <blockquote className="font-serif text-base sm:text-lg leading-snug text-[#FAF7EE]">{infos.mot}</blockquote>
+              <figcaption className="text-right text-xl text-[#E4D49A] mt-1" style={{ fontFamily: "'Great Vibes', cursive" }}>{infos.espace === "nawar" ? "Papa" : "Yassin"}</figcaption>
             </figure>
           )}
         </div>
@@ -246,9 +247,9 @@ export function Celebrations({ infos, onVu }: { infos: InfosAccueil; onVu: () =>
 /* ---------------- Espace de Nawar : le mot de papa ---------------- */
 export function CarteMotPapa({ infos }: { infos: InfosAccueil }) {
   useEffect(chargerPolice, []);
-  const h = new Date().getHours();
+  const h = heureMaroc();
   const salut = h < 5 ? "Douce nuit" : h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : "Bonsoir";
-  const dateLongue = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const dateLongue = dateLongueMaroc();
   return (
     <section className="relative overflow-hidden rounded-3xl bg-[#141414] text-white p-7 sm:p-10" data-testid="carte-mot-papa">
       <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_0%_0%,#C8B560_0,transparent_45%),radial-gradient(circle_at_100%_100%,#A8933F_0,transparent_40%)]" />
