@@ -88,7 +88,13 @@ launchctl bootstrap "gui/$(id -u)" "$AGENT" && ok "tâche installée" || stop "t
 
 etape "7/7 Première sauvegarde complète (quelques minutes), puis vérification par restauration isolée"
 rm -f "$RACINE/.ne-pas-lancer"
-"$RACINE/outils/heavent-sauvegarde" forcer && ok "première sauvegarde VÉRIFIÉE" || stop "la première sauvegarde a échoué : envoie le contenu de $RACINE/ETAT.txt à Claude (il ne contient aucun secret)."
+"$RACINE/outils/heavent-sauvegarde" forcer; r=$?
+if [ $r = 4 ]; then # la tâche automatique a démarré la sauvegarde la première : on attend son résultat
+  echo "  La tâche automatique fait déjà la sauvegarde : attente de la fin…"
+  while [ -d "$RACINE/.verrou" ]; do sleep 10; done
+  grep -q '^derniere_verifiee=' "$RACINE/.etat" 2>/dev/null && r=0 || r=1
+fi
+[ $r = 0 ] && ok "première sauvegarde VÉRIFIÉE" || stop "la première sauvegarde a échoué : envoie le contenu de $RACINE/ETAT.txt à Claude (il ne contient aucun secret)."
 echo
 echo "Étapes suivantes (voir $RACINE/outils/LISEZMOI.md) :"
 echo "  • Essai dans le contexte réel de la tâche automatique :  $RACINE/outils/heavent-sauvegarde essai-tache"
