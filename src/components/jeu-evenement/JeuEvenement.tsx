@@ -47,6 +47,17 @@ export default function JeuEvenement() {
   const [ajoutRapide, setAjoutRapideEtat] = useState<boolean>(() => { try { return localStorage.getItem("heavent-jeu-ajout-rapide") !== "non"; } catch { return true; } });
   const setAjoutRapide = (v: boolean) => { setAjoutRapideEtat(v); try { localStorage.setItem("heavent-jeu-ajout-rapide", v ? "oui" : "non"); } catch { /* sans mémoire */ } };
   const [dernierAjout, setDernierAjout] = useState<{ nom: string; n: number } | null>(null);
+  // Mode « 2030 » (décor holographique, éléments qui tombent, halos) : activé par défaut, désactivable
+  const [futur, setFuturEtat] = useState<boolean>(() => { try { return localStorage.getItem("heavent-jeu-futur") !== "non"; } catch { return true; } });
+  const setFutur = (v: boolean) => { setFuturEtat(v); try { localStorage.setItem("heavent-jeu-futur", v ? "oui" : "non"); } catch { /* sans mémoire */ } };
+  const fondFutur = useRef<HTMLDivElement>(null);
+  /** Parallaxe : le fond bouge doucement à l'opposé du pointeur, la scène reste nette (le placement reste précis). */
+  const bougerFond = (ev: React.PointerEvent<HTMLDivElement>) => {
+    const f = fondFutur.current; if (!f || ev.pointerType !== "mouse") return;
+    const r = ev.currentTarget.getBoundingClientRect();
+    f.style.setProperty("--px", String((ev.clientX - r.left) / r.width - 0.5));
+    f.style.setProperty("--py", String((ev.clientY - r.top) / r.height - 0.5));
+  };
   const svgRecap = useRef<SVGSVGElement | null>(null);
   const zoneScene = useRef<HTMLDivElement>(null);
   /** Sur petit écran, le catalogue est sous la scène : on y remonte pour choisir la place. */
@@ -202,7 +213,7 @@ export default function JeuEvenement() {
   const typeNom = nomTypeEv(creation.reglages.type);
 
   return (
-    <div ref={haut} className="text-[#2A2420] scroll-mt-24" onKeyDown={surClavier} dir={estRtl() ? "rtl" : "ltr"} lang={lng}>
+    <div ref={haut} className={`text-[#2A2420] scroll-mt-24 ${futur ? "jeu-futur" : ""}`} onKeyDown={surClavier} dir={estRtl() ? "rtl" : "ltr"} lang={lng}>
       <div aria-live="polite" className="sr-only" data-testid="annonce">{annonce}</div>
       <Confettis actif={fete} />
 
@@ -231,6 +242,7 @@ export default function JeuEvenement() {
               <Bouton variante="secondaire" onClick={annuler} disabled={!historique.length} aria-label={tr("Annuler la dernière action")}>↶ {tr("Annuler")}</Bouton>
               <Bouton variante="discret" onClick={() => setConfirmerReset(true)} disabled={!creation.elements.length && !creation.centres.actif}>{tr("Réinitialiser")}</Bouton>
               <Bouton variante="discret" onClick={() => aller("reglages")}>{tr("Mes choix")}</Bouton>
+              <Bouton variante="discret" onClick={() => setFutur(!futur)} aria-pressed={futur} data-testid="effets">✨ {tr("Effets")}</Bouton>
               <Bouton variante="discret" onClick={() => setPartage(true)} disabled={!creation.elements.length}>{tr("Partager")}</Bouton>
             </div>
           </div>
@@ -253,10 +265,11 @@ export default function JeuEvenement() {
                 </div>
               )}
               <BarreSuivi creation={creation} missions={missions} />
-              <div className="relative rounded-[1.75rem] bg-white border border-[#EADFC8] shadow-[0_20px_60px_-35px_rgba(140,109,34,0.5)] overflow-hidden">
+              <div onPointerMove={futur ? bougerFond : undefined} className={`relative rounded-[1.75rem] border overflow-hidden ${futur ? `bg-[#171310] border-[#5b4a24] shadow-[0_0_0_1px_rgba(228,212,154,0.18),0_30px_80px_-30px_rgba(201,167,78,0.55)] ${celebre ? "jeu-fete-anneau" : ""}` : "bg-white border-[#EADFC8] shadow-[0_20px_60px_-35px_rgba(140,109,34,0.5)]"}`} data-futur={futur ? "oui" : "non"}>
+                {futur && <div ref={fondFutur} className="jeu-fond" aria-hidden><span className="jeu-grille" /><span className="jeu-aurore" /></div>}
                 <div className="overflow-auto max-h-[max(18rem,min(70vh,calc(100dvh-19rem)))] lg:max-h-[70vh]" data-testid="scene-conteneur">
                   <div style={{ width: `${zoom * 100}%` }}>
-                    <Scene creation={creation} cols={cols} rows={rows} selection={selection} mode={mode}
+                    <Scene creation={creation} cols={cols} rows={rows} selection={selection} mode={mode} futur={futur}
                       onPlacer={placer} onDeplacer={deplacer} onSelection={(u) => { setSelection(u); }} onCaseRefusee={() => dire(tr("Cette zone est occupée ou trop petite : choisissez une zone en vert."))} />
                   </div>
                 </div>

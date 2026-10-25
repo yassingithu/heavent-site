@@ -14,6 +14,8 @@ interface Props {
   selection?: string | null;
   mode?: ModeScene;
   lectureSeule?: boolean;
+  /** Mode « 2030 » : fond transparent (le décor sombre est derrière), chute des éléments, halo animé. Jamais utilisé pour les exports. */
+  futur?: boolean;
   onPlacer?: (type: TypeElement, x: number, y: number) => void;
   onDeplacer?: (uid: string, x: number, y: number) => void;
   onSelection?: (uid: string | null) => void;
@@ -23,7 +25,7 @@ interface Props {
 export const TYPE_GLISSE = "application/x-heavent-element";
 
 const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
-  { creation, cols, rows, selection, mode, lectureSeule, onPlacer, onDeplacer, onSelection, onCaseRefusee }, ref,
+  { creation, cols, rows, selection, mode, lectureSeule, futur, onPlacer, onDeplacer, onSelection, onCaseRefusee }, ref,
 ) {
   const svgLocal = useRef<SVGSVGElement | null>(null);
   const [survol, setSurvol] = useState<{ type: TypeElement; x: number; y: number; tourne?: boolean; ignorer?: string } | null>(null);
@@ -36,6 +38,17 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
     return () => svg.removeEventListener("touchmove", bloquer);
   }, []);
   const { reglages, elements, centres } = creation;
+  // Éléments qui viennent d'être posés : ils « tombent » sur la scène avec une onde dorée (mode 2030)
+  const vus = useRef<Set<string> | null>(null);
+  const [recents, setRecents] = useState<string[]>([]);
+  useEffect(() => {
+    const maintenant = new Set(elements.map((e) => e.uid));
+    if (vus.current && futur) {
+      const nouveaux = elements.filter((e) => !vus.current!.has(e.uid)).map((e) => e.uid);
+      if (nouveaux.length && nouveaux.length <= 3) { setRecents(nouveaux); const t = setTimeout(() => setRecents([]), 1000); vus.current = maintenant; return () => clearTimeout(t); }
+    }
+    vus.current = maintenant;
+  }, [elements, futur]);
   const pal = palette(reglages.ambiance);
 
   // Cadre : marges pour les murs / arbres derrière et la hauteur des éléments
@@ -149,16 +162,18 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
       onDragOver={surSurvolGlisse} onDrop={surDepot} onDragLeave={() => setSurvol(null)}
     >
       <defs>
+        <filter id="flou-halo" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="22" /></filter>
         <linearGradient id="ciel" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0" stopColor={reglages.lieu === "salle" ? "#FBF6EC" : "#EEF3F2"} />
           <stop offset="1" stopColor="#FBF8F1" />
         </linearGradient>
       </defs>
-      <rect x={0} y={0} width={largeur} height={hauteur} fill="url(#ciel)" />
+      {!futur && <rect x={0} y={0} width={largeur} height={hauteur} fill="url(#ciel)" />}
+      {futur && <ellipse cx={largeur / 2} cy={hauteur - 70} rx={largeur * 0.42} ry={hauteur * 0.12} fill="#C9A74E" opacity={0.38} filter="url(#flou-halo)" className="jeu-halo-sol" />}
       <g transform={`translate(${ox},${oy})`}>
         <DecorArriere cols={cols} rows={rows} lieu={reglages.lieu} />
         <Sol cols={cols} rows={rows} lieu={reglages.lieu} />
-        {sel && <polygon points={contourEmprise(sel.x, sel.y, emprise(sel).w, emprise(sel).h)} fill="#C9A74E" fillOpacity={0.22} stroke="#A8862F" strokeWidth={2} strokeDasharray="6 4" />}
+        {sel && <polygon className={futur ? "sel-halo" : undefined} points={contourEmprise(sel.x, sel.y, emprise(sel).w, emprise(sel).h)} fill="#C9A74E" fillOpacity={0.22} stroke={futur ? "#E4D49A" : "#A8862F"} strokeWidth={2} strokeDasharray="6 4" />}
         {mode && !survol && <text x={pt(cols / 2, rows / 2)[0]} y={pt(cols / 2, rows / 2)[1]} textAnchor="middle" fontSize={14} fill="#8A7A58" opacity={0.7} style={{ pointerEvents: "none" }}>{tr("Touchez une zone libre")}</text>}
         {ordre.map((e) => {
           const nom = nomElement(e, reglages.type);
@@ -169,7 +184,8 @@ const Scene = forwardRef<SVGSVGElement, Props>(function Scene(
               onPointerDown={(ev) => surAppuiElement(ev, e)} onKeyDown={(ev) => clavierElement(ev, e)}
               opacity={enDeplacement ? 0.35 : 1} style={{ cursor: lectureSeule ? "default" : mode ? "crosshair" : "grab", pointerEvents: mode ? "none" : "auto", outline: "none", touchAction: lectureSeule ? "auto" : "none" }}>
               {!lectureSeule && <title>{nom}</title>}
-              <DessinElement e={e} ctx={ctx(e)} />
+              {futur && recents.includes(e.uid) && <polygon className="jeu-onde" points={contourEmprise(e.x, e.y, emprise(e).w, emprise(e).h)} fill="none" stroke="#E4D49A" strokeWidth={3} style={{ pointerEvents: "none" }} />}
+              <g className={futur && recents.includes(e.uid) ? "el-pose" : undefined}><DessinElement e={e} ctx={ctx(e)} /></g>
             </g>
           );
         })}

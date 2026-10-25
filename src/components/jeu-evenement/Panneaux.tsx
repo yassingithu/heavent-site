@@ -11,7 +11,7 @@ import { Bouton } from "./ui";
 
 /** Petite vignette SVG d'un élément, dessinée comme dans la scène. */
 /** Hauteur visible de chaque élément au-dessus du sol (pour cadrer les vignettes). */
-const HAUTEUR: Partial<Record<TypeElement, number>> = { arche: 135, guirlandes: 100, photobooth: 72, fleurs: 70, honneur: 66, gateau: 66, dj: 56, bar: 52, lounge: 32, piste: 8, nawar: 80, hotesse: 54, serveur: 54, maitre_hotel: 54, fauteuils: 58, table_haute: 40, amaria: 112, mur_fleurs: 94, candelabre: 82, allee: 22, the: 32, objet_libre: 62, espace_libre: 40 };
+const HAUTEUR: Partial<Record<TypeElement, number>> = { tente: 125, arche: 135, guirlandes: 100, photobooth: 72, fleurs: 70, honneur: 66, gateau: 66, dj: 56, bar: 52, lounge: 32, piste: 8, nawar: 80, hotesse: 54, serveur: 54, maitre_hotel: 54, fauteuils: 58, table_haute: 40, amaria: 112, mur_fleurs: 94, candelabre: 82, allee: 22, the: 32, objet_libre: 62, espace_libre: 40 };
 /** « 1 500 MAD + 50 MAD / invité », « 450 MAD / invité » ou « 12 000 MAD ». */
 export const prixTexte = (prix: number, parInvite?: number, long = false) => {
   const pi = parInvite ? `${format(parInvite)} ${long ? tr("par invité") : tr("/ invité")}` : "";
@@ -47,7 +47,7 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
         ))}
       </div>
       <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2" aria-label={tr("Éléments à ajouter")}>
-        {CATALOGUE.filter((d) => d.categorie === cat && (!d.types || d.types.includes(t))).map((d) => {
+        {CATALOGUE.filter((d) => d.categorie === cat && (!d.types || d.types.includes(t)) && (!d.lieux || d.lieux.includes(creation.reglages.lieu))).map((d) => {
           const l = libelle(d.id, t);
           const places = placesDe(d.id, t);
           const actif = enPlacement === d.id;
@@ -136,7 +136,7 @@ export function Tiroir({ creation, enPlacement, ajoutRapide, onAjoutRapide, onAj
             </label>
           </div>
           <ul className="flex gap-2 overflow-x-auto pb-1 snap-x" aria-label={tr("Éléments à ajouter")} data-testid="tiroir-elements">
-            {CATALOGUE.filter((d) => d.categorie === cat && (!d.types || d.types.includes(t))).map((d) => {
+            {CATALOGUE.filter((d) => d.categorie === cat && (!d.types || d.types.includes(t)) && (!d.lieux || d.lieux.includes(creation.reglages.lieu))).map((d) => {
               const l = libelle(d.id, t);
               const places = placesDe(d.id, t);
               const actif = enPlacement === d.id;
