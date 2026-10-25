@@ -118,5 +118,16 @@ Retours de Yassin sur le lot 4 en usage réel (Mac, iPhone). Puis lot Dates et f
 ## Mise en production du 25/10 (après le lot 4)
 - En production : onglet Dépenses, Instagram sans photo en double, suppression des démos, 12 métiers de démo (images créées), suppression volontaire des devis de test (journal `suppressions_test`). Site : commit ee11866 (77 fichiers). Migrations : depenses, studio_secteurs_elargis, supprimer_devis_test. Fonctions : instagram-photos v4, studio-images v3.
 - Données de test supprimées à la demande de Yassin : DEV-2026-0012 + sa facture annulée, 3 demandes (2 mariage, 1 entreprise), 4 démos.
-- À décider : les compteurs de numérotation (le prochain devis/facture repart-il à 0001 ?).
+- Compteur de devis remis à 0001 le 25/10 à la demande de Yassin (aucun devis ni facture en base à ce moment ; séquence `devis_numero_seq`). Les factures n'ont pas de séquence en base.
 - Retour arrière du site : commit précédent 550eba8 (déploiement lot 4).
+
+## Jeu « Crée ton événement de rêve » — mises en ligne du 25/10
+- Appli Mac : le bouton « Site web / Le site » ne renvoie plus vers le Bilan (drapeau `heavent-vue-site` dans Layout.tsx + barre « Aperçu du site » avec retour à l'administration). Pas de réinstallation de l'appli nécessaire.
+- Jeu plus fluide : catalogue en tuiles compactes à côté de la scène, tiroir sur téléphone, ajout rapide, annulation, mode « Effets » (fond sombre, halos, parallaxe, désactivable ; respecte « réduire les animations »).
+- Tente marocaine (jardin et terrasse seulement, champ `lieux` du catalogue).
+- Surfaces agrandies : salle ×1,5, terrasse ×1,7, jardin ×2,1 (`AMPLEUR_LIEU` dans logique.ts) ; les anciens liens de partage restent valides (la grille ne fait que grandir).
+- 15 nouveaux éléments (salon marocain, espace henné, orchestre, troupe, neggafa, photographe, candy bar, livre d'or, feux froids, fontaine zellige, lanternes, torches, espace enfants, estrade, pergola), ajoutés EN FIN de catalogue (l'ordre sert aux liens de partage).
+- Éléments agrandissables (`etire` dans config.ts : piste, buffet, bar, mur de fleurs, allée, estrade, espace enfants, salon marocain, service à thé, candy bar) : champ `plus` de l'élément, supplément `prixCase` par case ajoutée, conservé dans le lien de partage et envoyé dans la demande de devis (`configuration.agrandis`).
+- Tests : tests/jeu/lancer.mjs (logique, traductions FR/EN/AR, agrandissement), tests/jeu/parcours.mjs (14 contrôles ordinateur + téléphone).
+- Prototype 3D réaliste (three.js) abandonné à la demande de Yassin (« trop spécial ») : branche `lot-jeu-3d`, non fusionnée, hors production.
+- Retour arrière du site : commit précédent 58ad22c (avant le jeu), puis 44fae63 (jeu fluide + tente).
