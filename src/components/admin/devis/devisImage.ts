@@ -47,7 +47,7 @@ export function imageDevisHtml(d: DevisForm, params: Parametres | null, logoSrc:
   const infos = cols.length
     ? `<div class="cols">${cols.map(([l, v], k) => `${k ? '<i class="sep"></i>' : ""}<div class="col"><div class="cl">${esc(l)}</div><div class="cv">${esc(v)}</div></div>`).join("")}</div>`
     : "";
-  const inclus = [...new Set(d.lignes.map((l) => (l.designation || "").replace(/\s+/g, " ").trim()).filter(Boolean).filter((x) => x.length <= 24 && !/[()]/.test(x)))].slice(0, 4);
+  const inclus = [...new Set(d.lignes.map((l) => (l.designation || "").replace(/\s+/g, " ").trim()).filter(Boolean).filter((x) => x.length <= 24 && !/[()]/.test(x)))].slice(0, 3);
   const validite = d.date_validite ? `Offre valable jusqu'au ${new Date(d.date_validite.slice(0, 10) + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}` : "";
   const acompte = t.acompte > 0 ? `Réservez votre date avec un acompte de ${montant(t.acompte)} ${devise}` : "Réservez votre date dès maintenant";
   const contact = [params?.telephone, params?.site_web?.replace(/^https?:\/\//, "")].filter(Boolean).join("   ·   ");
@@ -60,8 +60,8 @@ export function imageDevisHtml(d: DevisForm, params: Parametres | null, logoSrc:
   .img-devis, .img-devis * { box-sizing: border-box; margin: 0; padding: 0; }
   .img-devis { width: ${L}px; height: ${H}px; position: relative; overflow: hidden; font-family: "Inter", "Helvetica Neue", Arial, sans-serif; color: ${noir};
     background: #F6EBD6 url("${fondSrc}") center / cover no-repeat; }
-  .img-devis .contenu { position: absolute; inset: 0; padding: 92px 84px 70px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-  .img-devis .logo { height: 128px; object-fit: contain; }
+  .img-devis .contenu { position: absolute; inset: 0; padding: ${d.marque === "nawar" ? 62 : 92}px 84px 70px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .img-devis .logo { height: ${d.marque === "nawar" ? 168 : 128}px; object-fit: contain; }
   .img-devis .eyebrow { margin-top: 30px; font-size: 23px; letter-spacing: 10px; color: ${orFonce}; font-weight: 700; text-transform: uppercase; }
   .img-devis .titre { margin-top: 20px; font-family: "Playfair Display", Georgia, serif; font-size: ${tailleTitre}px; line-height: 1.1; color: #2b1f0e; font-weight: 700; max-width: 900px; }
   .img-devis .filet { margin: 28px 0 26px; display: flex; align-items: center; gap: 16px; width: 560px; }
