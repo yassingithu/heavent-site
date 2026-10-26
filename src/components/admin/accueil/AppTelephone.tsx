@@ -44,11 +44,26 @@ export function useAppAdmin() {
         const html = await fetch("/admin/index.html", { cache: "no-store" }).then((r) => r.text());
         const enLigne = html.match(/\/assets\/(index-[\w-]+\.js)/)?.[1];
         const ici = actuel();
-        if (enLigne && ici && enLigne !== ici) window.location.reload();
+        if (enLigne && ici && enLigne !== ici) {
+          // Jamais de rechargement pendant une saisie (devis, contrat…) : on perdrait le travail en cours.
+          // Rechargement automatique seulement si rien n'a été saisi depuis l'ouverture ; sinon une barre propose de recharger.
+          if (!saisieEnCours) { window.location.reload(); return; }
+          if (!document.getElementById("barre-nouvelle-version")) {
+            const b = document.createElement("div");
+            b.id = "barre-nouvelle-version";
+            b.setAttribute("style", "position:fixed;left:12px;right:12px;bottom:76px;z-index:60;background:#141414;color:#fff;border-radius:14px;padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;font:14px system-ui;box-shadow:0 6px 24px rgba(0,0,0,.25)");
+            b.innerHTML = '<span>Une nouvelle version est disponible. Termine ta saisie puis recharge.</span><button style="background:#C8B560;color:#141414;border:0;border-radius:999px;padding:8px 14px;font-weight:600">Recharger</button>';
+            b.querySelector("button")!.addEventListener("click", () => window.location.reload());
+            document.body.appendChild(b);
+          }
+        }
       } catch { /* hors ligne : on réessaiera */ }
     };
+    let saisieEnCours = false;
+    const noterSaisie = () => { saisieEnCours = true; };
+    document.addEventListener("input", noterSaisie, true);
     document.addEventListener("visibilitychange", verifier);
-    return () => { if (theme && ancien) theme.setAttribute("content", ancien); document.removeEventListener("visibilitychange", verifier); };
+    return () => { if (theme && ancien) theme.setAttribute("content", ancien); document.removeEventListener("visibilitychange", verifier); document.removeEventListener("input", noterSaisie, true); };
   }, []);
 }
 
