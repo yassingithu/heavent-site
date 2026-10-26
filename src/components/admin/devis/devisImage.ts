@@ -39,52 +39,64 @@ export function imageDevisHtml(d: DevisForm, params: Parametres | null, logoSrc:
   const losange = (t: number) => `<svg width="${t}" height="${t}" viewBox="0 0 10 10" style="flex:none"><path d="M5 0 L10 5 L5 10 L0 5 Z" fill="${or}"/></svg>`;
   const t = calculerTotaux(d.lignes, d.remise_globale_pct, d.taux_tva, d.acompte_pct);
   const devise = params?.devise || "MAD";
-  const infos = [
-    dateLongue(d.date_evenement) && `<div class="info">${esc(dateLongue(d.date_evenement))}</div>`,
-    d.lieu?.trim() && `<div class="info">${esc(d.lieu.trim())}</div>`,
-    d.nb_personnes?.trim() && Number(d.nb_personnes) > 0 && `<div class="info">${esc(d.nb_personnes.trim())} invités</div>`,
-  ].filter(Boolean).join("");
-  const validite = d.date_validite ? `Valable jusqu'au ${new Date(d.date_validite.slice(0, 10) + "T12:00:00").toLocaleDateString("fr-FR")}` : "";
-  const contact = [params?.telephone, params?.site_web?.replace(/^https?:\/\//, "")].filter(Boolean).join("  ·  ");
-  const tailleTitre = titreImage(d).length > 34 ? 56 : titreImage(d).length > 22 ? 66 : 78;
+  const cols = [
+    dateLongue(d.date_evenement) && ["Date", dateLongue(d.date_evenement).replace(/^\w+ /, "")],
+    d.lieu?.trim() && ["Lieu", d.lieu.trim()],
+    d.nb_personnes?.trim() && Number(d.nb_personnes) > 0 && ["Invités", d.nb_personnes.trim()],
+  ].filter(Boolean) as string[][];
+  const infos = cols.length
+    ? `<div class="cols">${cols.map(([l, v], k) => `${k ? '<i class="sep"></i>' : ""}<div class="col"><div class="cl">${esc(l)}</div><div class="cv">${esc(v)}</div></div>`).join("")}</div>`
+    : "";
+  const inclus = [...new Set(d.lignes.map((l) => (l.designation || "").replace(/\s+/g, " ").trim()).filter(Boolean).filter((x) => x.length <= 24 && !/[()]/.test(x)))].slice(0, 4);
+  const validite = d.date_validite ? `Offre valable jusqu'au ${new Date(d.date_validite.slice(0, 10) + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}` : "";
+  const acompte = t.acompte > 0 ? `Réservez votre date avec un acompte de ${montant(t.acompte)} ${devise}` : "Réservez votre date dès maintenant";
+  const contact = [params?.telephone, params?.site_web?.replace(/^https?:\/\//, "")].filter(Boolean).join("   ·   ");
+  const tailleTitre = titreImage(d).length > 34 ? 60 : titreImage(d).length > 22 ? 72 : 86;
+  const marque = d.marque === "nawar" ? "Nawar · bar à parfums" : params?.raison_sociale || "Heavent People Agency";
   return `
 <style>
   .img-devis, .img-devis * { box-sizing: border-box; margin: 0; padding: 0; }
   .img-devis { width: ${L}px; height: ${H}px; position: relative; overflow: hidden; font-family: "Inter", "Helvetica Neue", Arial, sans-serif; color: ${noir};
     background: #F6EBD6 url("${fondSrc}") center / cover no-repeat; }
-  .img-devis .contenu { position: absolute; inset: 0; padding: 120px 90px 96px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-  .img-devis .logo { height: 140px; object-fit: contain; }
-  .img-devis .eyebrow { margin-top: 36px; font-size: 22px; letter-spacing: 9px; color: ${orFonce}; font-weight: 600; text-transform: uppercase; }
-  .img-devis .titre { margin-top: 22px; font-family: "Playfair Display", Georgia, serif; font-size: ${tailleTitre}px; line-height: 1.12; color: #2b241b; font-weight: 600; max-width: 860px; }
-  .img-devis .filet { margin: 32px 0 28px; display: flex; align-items: center; gap: 16px; width: 520px; }
-  .img-devis .filet i { flex: 1; height: 1.5px; background: linear-gradient(90deg, transparent, ${or}); } .img-devis .filet i:last-child { background: linear-gradient(270deg, transparent, ${or}); }
-  .img-devis .infos { display: flex; flex-direction: column; gap: 12px; align-items: center; min-height: 40px; }
-  .img-devis .info { font-size: 29px; line-height: 36px; color: #5a4d3a; }
-  .img-devis .prix { margin-top: auto; width: 100%; padding: 36px 30px 38px; position: relative; display: flex; flex-direction: column; align-items: center;
-    background: rgba(255, 252, 244, 0.62); border: 1.5px solid ${or}; border-radius: 22px; }
-  .img-devis .prix::after { content: ""; position: absolute; inset: 8px; border: 1px solid ${or}77; border-radius: 15px; }
-  .img-devis .prix .lib { height: 28px; line-height: 28px; font-size: 21px; letter-spacing: 8px; color: ${orFonce}; text-transform: uppercase; font-weight: 600; }
-  .img-devis .prix .val { margin: 8px 0 30px; height: 118px; line-height: 1; font-family: "Playfair Display", Georgia, serif; font-size: 118px; color: #8C6D22; font-weight: 600; white-space: nowrap; }
-  .img-devis .prix .val small { font-size: 44px; line-height: 44px; letter-spacing: 3px; color: ${orFonce}; margin-left: 14px; font-weight: 500; }
-  .img-devis .prix .ttc { height: 26px; line-height: 26px; font-size: 20px; letter-spacing: 6px; color: #7a6b4f; text-transform: uppercase; }
-  .img-devis .val-ok { margin-top: 26px; font-size: 22px; color: ${orFonce}; font-style: italic; min-height: 28px; }
-  .img-devis .pied { margin-top: 14px; font-size: 22px; letter-spacing: 1px; color: #6b5d45; }
-  .img-devis .pied b { display: block; font-family: "Playfair Display", Georgia, serif; font-size: 27px; letter-spacing: 3px; color: #2b241b; font-weight: 600; margin-bottom: 6px; }
+  .img-devis .contenu { position: absolute; inset: 0; padding: 92px 84px 70px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .img-devis .logo { height: 128px; object-fit: contain; }
+  .img-devis .eyebrow { margin-top: 30px; font-size: 23px; letter-spacing: 10px; color: ${orFonce}; font-weight: 700; text-transform: uppercase; }
+  .img-devis .titre { margin-top: 20px; font-family: "Playfair Display", Georgia, serif; font-size: ${tailleTitre}px; line-height: 1.1; color: #2b1f0e; font-weight: 700; max-width: 900px; }
+  .img-devis .filet { margin: 28px 0 26px; display: flex; align-items: center; gap: 16px; width: 560px; }
+  .img-devis .filet i { flex: 1; height: 2px; background: linear-gradient(90deg, transparent, ${or}); } .img-devis .filet i:last-child { background: linear-gradient(270deg, transparent, ${or}); }
+  .img-devis .cols { display: flex; align-items: stretch; justify-content: center; gap: 0; width: 100%; }
+  .img-devis .col { flex: 1; padding: 0 14px; }
+  .img-devis .sep { width: 2px; background: ${or}99; margin: 6px 0; flex: none; }
+  .img-devis .cl { font-size: 18px; letter-spacing: 6px; color: ${orFonce}; text-transform: uppercase; font-weight: 700; height: 24px; line-height: 24px; }
+  .img-devis .cv { margin-top: 10px; font-family: "Playfair Display", Georgia, serif; font-size: 33px; line-height: 40px; color: #2b1f0e; font-weight: 600; }
+  .img-devis .inclus { margin-top: 26px; font-size: 22px; font-style: italic; color: #6b5a3a; line-height: 32px; max-width: 880px; }
+  .img-devis .prix { margin-top: auto; width: 100%; padding: 34px 30px 36px; display: flex; flex-direction: column; align-items: center; border-radius: 30px;
+    background: linear-gradient(160deg, #F5E3A1 0%, #E2C26A 38%, #C9A247 62%, #EBD48B 100%); border: 2px solid #FFF3C4; box-shadow: 0 18px 40px rgba(120, 86, 20, 0.38); }
+  .img-devis .prix .lib { height: 26px; line-height: 26px; font-size: 21px; letter-spacing: 9px; color: #5a4210; text-transform: uppercase; font-weight: 700; }
+  .img-devis .prix .val { margin: 6px 0 46px; height: 124px; line-height: 1; font-family: "Playfair Display", Georgia, serif; font-size: 124px; color: #2b1f0e; font-weight: 700; white-space: nowrap; text-shadow: 2px 3px 0 rgba(255, 244, 200, 0.7); }
+  .img-devis .prix .val small { font-size: 46px; line-height: 46px; letter-spacing: 3px; color: #5a4210; margin-left: 14px; font-weight: 600; text-shadow: none; }
+  .img-devis .prix .ttc { height: 24px; line-height: 24px; font-size: 19px; letter-spacing: 6px; color: #5a4210; text-transform: uppercase; font-weight: 600; }
+  .img-devis .appel { margin-top: 28px; font-family: "Playfair Display", Georgia, serif; font-size: 31px; line-height: 40px; color: #2b1f0e; font-weight: 600; max-width: 900px; }
+  .img-devis .valide { margin-top: 8px; font-size: 21px; letter-spacing: 2px; color: ${orFonce}; font-weight: 700; min-height: 28px; text-transform: uppercase; }
+  .img-devis .pied { margin-top: 12px; font-size: 22px; letter-spacing: 1px; color: #5f5035; }
+  .img-devis .pied b { display: block; font-family: "Playfair Display", Georgia, serif; font-size: 26px; letter-spacing: 4px; color: #2b1f0e; font-weight: 700; margin-bottom: 4px; }
 </style>
 <div class="img-devis">
   <div class="contenu">
     <img class="logo" src="${esc(logoSrc)}" alt="">
-    <div class="eyebrow">Votre devis</div>
+    <div class="eyebrow">Votre devis sur mesure</div>
     <div class="titre">${esc(titreImage(d))}</div>
-    <div class="filet"><i></i>${losange(16)}<i></i></div>
-    <div class="infos">${infos}</div>
+    <div class="filet"><i></i>${losange(18)}<i></i></div>
+    ${infos}
+    ${inclus.length ? `<div class="inclus">${esc(inclus.join("  ·  "))}</div>` : ""}
     <div class="prix">
-      <div class="lib">Total</div>
+      <div class="lib">Votre prix</div>
       <div class="val">${montant(t.ttc)}<small>${esc(devise)}</small></div>
       <div class="ttc">Toutes taxes comprises</div>
     </div>
-    <div class="val-ok">${esc(validite)}</div>
-    <div class="pied"><b>${esc(d.marque === "nawar" ? "Nawar · bar à parfums" : params?.raison_sociale || "Heavent People Agency")}</b>${esc(contact)}</div>
+    <div class="appel">${esc(acompte)}</div>
+    <div class="valide">${esc(validite)}</div>
+    <div class="pied"><b>${esc(marque)}</b>${esc(contact)}</div>
   </div>
 </div>`;
 }
