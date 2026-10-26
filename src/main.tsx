@@ -7,3 +7,10 @@ const racine = document.getElementById("root")!;
 // Page pré-générée déjà affichée : pas d'écran d'accueil animé par-dessus (plus rapide, et mieux noté par Google)
 (window as unknown as { __pagePregeneree?: boolean }).__pagePregeneree = racine.children.length > 0;
 createRoot(racine).render(<App />);
+
+// Tout champ numérique (administration, formulaires) : le contenu est sélectionné au toucher, donc ce qu'on tape remplace
+// la valeur au lieu de s'ajouter à un « 0 » (125 ne devient plus 1250).
+document.addEventListener("focusin", (e) => {
+  const c = e.target as HTMLInputElement | null;
+  if (c && c.tagName === "INPUT" && c.type === "number") { try { c.select(); } catch { /* ignoré */ } }
+});
