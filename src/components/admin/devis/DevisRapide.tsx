@@ -11,12 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Archive, ArchiveRestore, ArrowDown, ArrowUp, Copy, Download, FileText, Link2, Plus, Save, Search, Send, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowDown, ArrowUp, Copy, Download, FileText, Image as ImageIcon, Link2, Plus, Save, Search, Send, Trash2, X } from "lucide-react";
 import {
   DevisForm, Ligne, Parametres, Prestation, STATUTS, UNITES, devisSupprimable, statutsPermis,
   calculerTotaux, dateFr, dateHeureFr, devisDepuisBase, lienClientDevis, ligneVide, money, nouveauDevis, today, totalLigne,
 } from "./devisUtils";
 import { telechargerDevisPdf } from "./devisPdf";
+import { telechargerImageDevis, FormatImage } from "./devisImage";
 import CataloguePrestations from "./CataloguePrestations";
 import ParametresAgence from "./ParametresAgence";
 import EspaceMariesAdmin from "./EspaceMariesAdmin";
@@ -410,6 +411,29 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     }
   };
 
+  /** Image du devis à partager sur les réseaux (titre, essentiel et prix final seulement). */
+  const [imageEnCours, setImageEnCours] = useState(false);
+  const genererImage = async (d: DevisForm, format: FormatImage) => {
+    setImageEnCours(true);
+    try {
+      const nom = await telechargerImageDevis(d, params, format);
+      toast({ title: "Image créée", description: nom });
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: "Erreur", description: "L'image n'a pas pu être créée", variant: "destructive" });
+    } finally {
+      setImageEnCours(false);
+    }
+  };
+  const imageDepuisEditeur = async (format: FormatImage) => {
+    const saved = await enregistrer();
+    if (saved) await genererImage(saved, format);
+  };
+  const imageDepuisListe = async (id: string, format: FormatImage) => {
+    const d = await chargerDevis(id);
+    if (d) await genererImage(d, format);
+  };
+
   // ---------- envoi au client avec lien de signature ----------
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const envoyerAuClient = async () => {
@@ -608,6 +632,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                       </TableCell>
                       <TableCell className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <Button size="icon" variant="ghost" title="Télécharger le PDF" disabled={pdfEnCours} onClick={() => telechargerPdfDepuisListe(d.id)}><Download className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" title="Image à partager (PNG)" disabled={imageEnCours} onClick={() => imageDepuisListe(d.id, "png")} data-testid="image-devis-liste"><ImageIcon className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" title="Dupliquer" onClick={() => ouvrir(d.id, true)}><Copy className="h-4 w-4" /></Button>
                         {devisSupprimable(d)
                           ? <Button size="icon" variant="ghost" title="Supprimer" onClick={() => supprimer(d.id, d.numero)} data-testid="supprimer-devis"><Trash2 className="h-4 w-4 text-red-600" /></Button>
@@ -805,6 +830,11 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
               <div className="grid gap-2">
                 <Button onClick={() => enregistrer()} disabled={saving}><Save className="h-4 w-4 mr-1" /> Enregistrer</Button>
                 <Button variant="outline" onClick={telechargerPdf} disabled={saving || pdfEnCours}><Download className="h-4 w-4 mr-1" /> {pdfEnCours ? "Création du PDF…" : "Télécharger le PDF"}</Button>
+                <div className="grid grid-cols-2 gap-2" title="Belle image avec le prix final seulement, à envoyer sur Instagram, TikTok, WhatsApp…">
+                  <Button variant="outline" onClick={() => imageDepuisEditeur("png")} disabled={saving || imageEnCours} data-testid="image-devis-png"><ImageIcon className="h-4 w-4 mr-1" /> {imageEnCours ? "Création…" : "Image PNG"}</Button>
+                  <Button variant="outline" onClick={() => imageDepuisEditeur("jpg")} disabled={saving || imageEnCours} data-testid="image-devis-jpg"><ImageIcon className="h-4 w-4 mr-1" /> Image JPG</Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground -mt-1">L'image n'affiche que le titre, la date, le lieu et le prix final : pour les clients qui te contactent sur Instagram, TikTok…</p>
                 {form.rdv_demande_le && !form.signe_le && (
                   <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900" data-testid="rdv-demande">
                     📅 Le client a demandé un rendez-vous avant de signer ({dateHeureFr(form.rdv_demande_le)}).
