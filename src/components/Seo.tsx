@@ -43,8 +43,8 @@ export const PAGES_SEO = {
   },
   jeu: {
     chemin: "/cree-ton-evenement",
-    titre: "Crée ton événement de rêve | Simulateur mariage et événement | Heavent",
-    description: "Composez votre mariage ou votre événement en quelques minutes : tables, arche, fleurs, piste, DJ… Visualisez la scène, suivez votre budget et demandez votre devis.",
+    titre: "Heavent City : crée ton événement de rêve en jouant | Heavent",
+    description: "Jeu gratuit : choisis ton lieu d'inspiration, compose ton mariage ou ton événement (décor, lumière, musique, accueil) et confie ton projet à Heavent People Agency.",
     motsCles: "simulateur mariage Maroc, budget mariage Maroc, décoration mariage, organiser son événement, wedding planner Maroc",
   },
   realisations: {

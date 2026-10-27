@@ -75,8 +75,9 @@ const App = () => {
               <Route path="/contact" element={<Contact />} />
               <Route path="/politique-confidentialite" element={<PrivacyPolicy />} />
               <Route path="/mentions-legales" element={<MentionsLegales />} />
-              <Route path="/cree-ton-evenement" element={<CreeTonEvenement />} />
-              <Route path="/apercu/heavent-city" element={<HeaventCityPage />} />
+              <Route path="/cree-ton-evenement" element={<HeaventCityPage />} />
+              <Route path="/cree-ton-evenement-ancien" element={<CreeTonEvenement />} />
+              <Route path="/apercu/heavent-city" element={<HeaventCityPage apercu />} />
               <Route path="/mon-devis/:token" element={<MonDevis />} />
               <Route path="/mon-mariage/:token" element={<EspaceMaries />} />
               <Route path="/rsvp/:jeton" element={<Rsvp />} />

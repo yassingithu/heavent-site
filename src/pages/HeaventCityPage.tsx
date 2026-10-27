@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import Seo from "@/components/Seo";
 import HeaventCity from "@/components/heavent-city/HeaventCity";
 
-/** Prévisualisation isolée du nouveau jeu « Heavent City — Mission événement ». Non indexée, absente du menu et du plan du site. */
-const HeaventCityPage = () => {
+/** Page du jeu « Heavent City — Mission événement » (/cree-ton-evenement). En mode aperçu (/apercu/heavent-city) : non indexée. */
+const HeaventCityPage = ({ apercu = false }: { apercu?: boolean }) => {
   useEffect(() => {
     const avant = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -11,7 +11,7 @@ const HeaventCityPage = () => {
   }, []);
   return (
     <div className="fixed inset-0 z-[80]">
-      <Seo noindex />
+      {apercu ? <Seo noindex /> : <Seo page="jeu" />}
       <HeaventCity />
     </div>
   );

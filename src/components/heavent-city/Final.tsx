@@ -101,6 +101,7 @@ export default function Final({ choix, logos, onModifier, onDemande, onRecommenc
               <button onClick={() => setEssai((n) => n + 1)} className={btnContour}>Rejouer l'ouverture</button>
               <button onClick={onRecommencer} className={btnContour} data-testid="recommencer"><RotateCcw className="h-4 w-4" />Recommencer</button>
             </div>
+            <a href="/" className="mt-3 block text-center text-[13px] text-[#E4D49A] underline underline-offset-4" data-testid="retour-site-final">Retour au site Heavent</a>
           </div>
           <p className="mt-4 text-[12px] leading-snug text-[#8f8777]">Heavent City est une inspiration : les lieux sont des ambiances, pas des réservations. Aucun prix n'est affiché — l'équipe établit ton devis et tu reçois ton prix final dès sa validation.</p>
         </aside>

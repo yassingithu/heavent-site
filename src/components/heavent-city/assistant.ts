@@ -14,7 +14,8 @@ import {
 } from "./donnees";
 
 export const MESSAGE_MAX = 280;
-export const IA_CONFIGUREE = import.meta.env.VITE_HEAVENT_CITY_IA === "1";
+/** L'assistant tente toujours la fonction serveur ; sans clé côté serveur elle répond « indisponible » et le jeu reste sur ses suggestions automatiques. VITE_HEAVENT_CITY_IA=0 coupe tout appel. */
+export const IA_CONFIGUREE = import.meta.env.VITE_HEAVENT_CITY_IA !== "0";
 const DELAI_MS = 9000;
 const MAX_APPELS = 8;
 
@@ -152,7 +153,8 @@ export async function demanderAssistant(message: string, type: TypeEvt, lieu: Li
   try {
     const r = await fetch(`${FUNCTIONS_URL}/heavent-city-ia`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: texte, type, lieu }), signal: ctrl.signal });
     const j = await r.json().catch(() => null);
-    if (r.ok && j?.disponible !== false) {
+    if (j?.disponible === false) return { proposition: auto(), note: "Suggestion automatique : l'assistant IA n'est pas encore activé." };
+    if (r.ok) {
       const p = validerProposition(j?.proposition, type, lieu, "ia");
       if (p) return { proposition: p };
     }

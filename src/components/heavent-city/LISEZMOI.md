@@ -27,3 +27,8 @@ Coût variable : un petit appel par message envoyé volontairement (limité : 28
 ## Remplacer l'ancien jeu / revenir en arrière
 Remplacer : dans `src/App.tsx`, faire pointer la route `/cree-ton-evenement` vers `HeaventCityPage` (et ajouter la route au prérendu si souhaité).
 Revenir en arrière : remettre l'ancienne ligne de route ; rien d'autre n'est modifié (aucune migration de base de données).
+
+## Mise en production (27/10/2026)
+`/cree-ton-evenement` affiche maintenant Heavent City. L'ancien jeu reste sur `/cree-ton-evenement-ancien` (non indexé).
+Retour en arrière : dans `src/App.tsx`, remettre `<CreeTonEvenement />` sur la route `/cree-ton-evenement` (et `Seo page="jeu"` dans `CreeTonEvenement.tsx`), reconstruire, renvoyer chez one.com.
+Assistant IA : la fonction `heavent-city-ia` répond « indisponible » tant que le secret `ANTHROPIC_API_KEY` n'existe pas ; le site utilise alors les suggestions automatiques.

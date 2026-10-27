@@ -23,6 +23,7 @@ export function Titre({ onCommencer, onReprendre, onRecommencer, logo, sauvegard
             </div>
           )}
           <p className="text-[12.5px] text-[#D9D0BC]">Sans inscription · 3 à 5 minutes · aucun prix affiché</p>
+          <a href="/" className="text-[12.5px] text-[#E4D49A] underline underline-offset-4" data-testid="retour-site">Retour au site Heavent</a>
         </div>
       </div>
     </div>

@@ -10,7 +10,10 @@
  * - Coût : variable, un appel par envoi volontaire (petit modèle, ~300 jetons de sortie).
  */
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { corsHeaders } from "../_shared/auth.ts";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 // Identifiants autorisés — copie de src/components/heavent-city/donnees.ts (un test vérifie qu'ils sont identiques)
 const IDS = {"lieux":["riad","villa","rooftop","jardin","salle"],"styles":["maroc","beige_or","romantique","festif","minimal"],"palettes":["sable_or","terracotta","poudre","emeraude","ivoire_noir","nuit_or"],"lumieres":["chaleureuse","etoilee","bougies","festive"],"musiques":["dj","orchestre","troupe","playlist","acoustique"],"accueils":["discret","hotesses","maitre_hotel","the"],"options":["arche","fleurs","mur_fleurs","allee","fontaine","petales","ciel_lanternes","piste","photobooth","nawar","buffet","the_bar","candy_bar","livre_dor","feux_froids","photographe","salon","brume"]};
