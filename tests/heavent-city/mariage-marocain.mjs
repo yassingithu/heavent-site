@@ -1,0 +1,17 @@
+const { chromium } = await import("/opt/npm-tools/node_modules/playwright/index.mjs");
+const [lieu = "salle", invites = "120", tables = "rondes"] = process.argv.slice(2);
+const b = await chromium.launch(); const ctx = await b.newContext({ locale: "fr-FR", viewport: { width: 1360, height: 820 }, deviceScaleFactor: 2 });
+await ctx.addInitScript(() => { try { sessionStorage.setItem("heavent-splash-vu", "1"); } catch {} });
+await ctx.route(/fonts\.(googleapis|gstatic)|googletagmanager|supabase\.co/, (r) => r.abort());
+const p = await ctx.newPage(); const err = []; p.on("pageerror", (e) => err.push(e.message)); const t = (i) => p.getByTestId(i);
+await p.goto("http://127.0.0.1:5180/apercu/heavent-city"); await p.waitForTimeout(1000);
+await t("commencer").click(); await t("type-mariage").click(); await t("q-passer").click(); await t("ville-Casablanca").click(); await t("q-passer").click(); await t("q-passer").click();
+await t("liste-lieu-" + lieu).click(); await p.waitForTimeout(2500);
+await t("onglet-salle").click(); await t(`salle-invites-${invites}`).click(); await t(`tables-${tables}`).click();
+await t("onglet-decor").click(); for (const o of ["amariya","fauteuils","arche"]) await t("option-"+o).click(); await t("onglet-experiences").click(); for (const o of ["neggafa","henne","gateau"]) await t("option-"+o).click();
+await t("onglet-decor").click(); 
+await t("onglet-experiences").click(); 
+await p.waitForTimeout(1000);
+await p.screenshot({ path: `/tmp/claude-0/hc/mar-${lieu}.png`, clip: { x: 0, y: 200, width: 950, height: 420 } });
+console.log(await p.locator('[aria-live="polite"]').first().innerText().catch(() => ""), JSON.stringify({ err }));
+await b.close();

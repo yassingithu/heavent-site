@@ -19,8 +19,8 @@ export type PaletteId = "sable_or" | "terracotta" | "poudre" | "emeraude" | "ivo
 export type LumiereId = "chaleureuse" | "etoilee" | "bougies" | "festive";
 export type MusiqueId = "dj" | "orchestre" | "troupe" | "playlist" | "acoustique";
 export type AccueilId = "discret" | "hotesses" | "maitre_hotel" | "the";
-export type DecorId = "arche" | "fleurs" | "mur_fleurs" | "allee" | "fontaine" | "petales" | "ciel_lanternes";
-export type ExperienceId = "piste" | "photobooth" | "nawar" | "buffet" | "candy_bar" | "livre_dor" | "feux_froids" | "photographe" | "salon" | "the_bar" | "brume";
+export type DecorId = "arche" | "fleurs" | "mur_fleurs" | "allee" | "fontaine" | "petales" | "ciel_lanternes" | "amariya" | "fauteuils";
+export type ExperienceId = "piste" | "photobooth" | "nawar" | "buffet" | "candy_bar" | "livre_dor" | "feux_froids" | "photographe" | "salon" | "the_bar" | "brume" | "henne" | "neggafa" | "gateau";
 export type OptionId = DecorId | ExperienceId;
 
 export interface InfoType { id: TypeEvt; nom: string; court: string; emoji: string; nomPlaceholder: string; article: string }
@@ -92,6 +92,8 @@ export const DECORS: (InfoOption & { id: DecorId })[] = [
   { id: "mur_fleurs", nom: "Mur de fleurs", phrase: "Un fond spectaculaire", catalogue: "mur_fleurs" },
   { id: "allee", nom: "Allée d'entrée", phrase: "Tapis, bougies et fleurs", catalogue: "allee" },
   { id: "fontaine", nom: "Fontaine zellige", phrase: "Un coin d'eau apaisant", catalogue: "fontaine" },
+  { id: "amariya", nom: "Amariya", phrase: "Le palanquin doré qui porte les mariés pour leur entrée, avec ses porteurs", catalogue: "amaria", types: ["mariage"] },
+  { id: "fauteuils", nom: "Fauteuils des mariés", phrase: "Deux fauteuils d'apparat sur une petite estrade fleurie", catalogue: "fauteuils", types: ["mariage"] },
   { id: "petales", nom: "Pluie de pétales", phrase: "Un instant poétique — à discuter" },
   { id: "ciel_lanternes", nom: "Ciel de lanternes", phrase: "Des lumières suspendues — à discuter" },
 ];
@@ -107,6 +109,9 @@ export const EXPERIENCES: (InfoOption & { id: ExperienceId })[] = [
   { id: "feux_froids", nom: "Feux froids", phrase: "Étincelles sans fumée pour un moment fort", catalogue: "feux_froids", types: ["mariage", "fete"] },
   { id: "photographe", nom: "Photographe", phrase: "Reportage de la soirée", catalogue: "photographe" },
   { id: "salon", nom: "Salon marocain", phrase: "Banquettes, coussins et tapis", catalogue: "salon_marocain" },
+  { id: "neggafa", nom: "Neggafa", phrase: "Elle habille la mariée, change ses tenues et l'accompagne toute la soirée", catalogue: "neggafa", types: ["mariage"] },
+  { id: "henne", nom: "Espace henné", phrase: "Coussins au sol, table basse, cônes de henné et bougies", catalogue: "espace_henne", types: ["mariage", "fete"] },
+  { id: "gateau", nom: "Pièce montée", phrase: "Le gâteau des mariés, dressé sur sa table", catalogue: "gateau", types: ["mariage", "fete"] },
   { id: "brume", nom: "Brume d'ambiance", phrase: "Une légère brume lumineuse — à discuter" },
 ];
 

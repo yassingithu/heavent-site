@@ -565,6 +565,102 @@ export function Allee({ gx, gy, w, d, pal }: { gx: number; gy: number; w: number
   );
 }
 
+// ── Mariage marocain : amariya, fauteuils des mariés, neggafa, henné, pièce montée ──────────────
+/** Amariya : le palanquin doré porté par quatre porteurs. (gx, gy) = angle de l'ensemble, qui occupe 2,3 × 1,4 cases */
+export function Amariya({ gx, gy, pal, animer }: { gx: number; gy: number; pal: Pal; animer?: boolean }) {
+  const px = gx + 0.45, w = 1.4, d = 1.4, or = pal.deco, tissu = pal.nappe, haut = 66;
+  const poteaux: [number, number][] = [[px + 0.06, gy + 0.06], [px + w - 0.18, gy + 0.06], [px + 0.06, gy + d - 0.18], [px + w - 0.18, gy + d - 0.18]];
+  const porteurs: [number, number, number][] = [[gx + 0.15, gy + 0.3, 0], [gx + 0.15, gy + d - 0.3, 1], [gx + w + 0.75, gy + 0.3, 2], [gx + w + 0.75, gy + d - 0.3, 3]];
+  return (
+    <g>
+      <Ombre gx={px + w / 2} gy={gy + d / 2} r={1.1} o={0.18} />
+      <Boite gx={px} gy={gy} w={w} d={d} h={9} z0={20} haut={eclaircir(or, 0.25)} gauche={assombrir(or, 0.05)} droite={assombrir(or, 0.2)} />
+      <Boite gx={px + 0.2} gy={gy + 0.2} w={w - 0.4} d={d - 0.4} h={5} z0={29} haut={tissu} />
+      {poteaux.filter((_, i) => i < 2).map(([x, y], i) => <Boite key={`a${i}`} gx={x} gy={y} w={0.12} d={0.12} h={haut - 29} z0={29} haut={or} />)}
+      {/* rideaux brodés */}
+      <polygon points={poly([px, gy + d, haut], [px + w, gy + d, haut], [px + w, gy + d, 38], [px, gy + d, 38])} fill={pal.fleurs} opacity="0.35" />
+      <polygon points={poly([px + w, gy, haut], [px + w, gy + d, haut], [px + w, gy + d, 38], [px + w, gy, 38])} fill={pal.fleurs} opacity="0.3" />
+      <Boite gx={px - 0.1} gy={gy - 0.1} w={w + 0.2} d={d + 0.2} h={7} z0={haut} haut={eclaircir(or, 0.3)} gauche={or} droite={assombrir(or, 0.15)} />
+      <Boite gx={px + 0.25} gy={gy + 0.25} w={w - 0.5} d={d - 0.5} h={9} z0={haut + 7} haut={or} />
+      <circle cx={X(px + w / 2, gy + d / 2)} cy={Y(px + w / 2, gy + d / 2, haut + 20)} r="3.4" fill={eclaircir(or, 0.5)} />
+      {poteaux.filter((_, i) => i >= 2).map(([x, y], i) => <Boite key={`b${i}`} gx={x} gy={y} w={0.12} d={0.12} h={haut - 29} z0={29} haut={or} />)}
+      {[[px, gy + d], [px + w, gy + d], [px + w, gy]].map(([x, y], i) => <g key={i}><line x1={X(x, y)} y1={Y(x, y, haut)} x2={X(x, y)} y2={Y(x, y, haut - 12)} stroke={or} strokeWidth="1.2" /><circle cx={X(x, y)} cy={Y(x, y, haut - 13)} r="2" fill={pal.accent} /></g>)}
+      {/* brancards et porteurs */}
+      {[0.3, d - 0.3].map((dy, i) => <polygon key={i} points={poly([gx + 0.2, gy + dy, 20], [gx + w + 0.7, gy + dy, 20], [gx + w + 0.7, gy + dy, 17], [gx + 0.2, gy + dy, 17])} fill={assombrir(or, 0.3)} />)}
+      {porteurs.map(([x, y, i]) => <Personne key={i} x={X(x, y)} y={Y(x, y)} corps={i % 2 ? "#F4EEE0" : pal.accent} echarpe={or} peau={peauDe(i + 1)} cheveux={cheveuxDe(i)} s={1.08} bob={animer} retard={i * 0.25} />)}
+    </g>
+  );
+}
+
+/** Deux fauteuils d'apparat sur une petite estrade fleurie */
+export function FauteuilsMaries({ gx, gy, w = 2.0, d = 1.2, pal, couple, animer }: { gx: number; gy: number; w?: number; d?: number; pal: Pal; couple?: boolean; animer?: boolean }) {
+  const or = pal.deco;
+  return (
+    <g>
+      <Ombre gx={gx + w / 2} gy={gy + d / 2} r={1.2} o={0.14} />
+      <Boite gx={gx} gy={gy} w={w} d={d} h={7} haut={pal.nappe} gauche={assombrir(pal.nappe, 0.1)} droite={assombrir(pal.nappe, 0.22)} />
+      <polygon points={poly([gx, gy + d, 5], [gx + w, gy + d, 5], [gx + w, gy + d, 3], [gx, gy + d, 3])} fill={or} opacity="0.9" />
+      {[0.25, 1.05].map((dx, i) => (
+        <g key={i}>
+          <Boite gx={gx + dx} gy={gy + 0.15} w={0.7} d={0.12} h={46} z0={7} haut={eclaircir(or, 0.2)} gauche={or} droite={assombrir(or, 0.2)} />
+          <Boite gx={gx + dx} gy={gy + 0.15} w={0.7} d={0.7} h={12} z0={7} haut={pal.accent} gauche={assombrir(pal.accent, 0.12)} droite={assombrir(pal.accent, 0.25)} />
+          {couple && <Personne x={X(gx + dx + 0.35, gy + 0.55)} y={Y(gx + dx + 0.35, gy + 0.55, 12)} assis robe={i === 0} corps={i === 0 ? "#FBF8F1" : "#2c2a2f"} peau={peauDe(i + 1)} cheveux={cheveuxDe(i)} s={0.95} bob={animer} />}
+        </g>
+      ))}
+      {[0.1, 0.55, 1.0, 1.45, 1.9].map((dx, i) => <circle key={i} cx={X(gx + dx, gy + d + 0.05)} cy={Y(gx + dx, gy + d + 0.05, 9)} r="4.2" fill={i % 2 ? pal.fleurs : eclaircir(pal.fleurs, 0.25)} />)}
+    </g>
+  );
+}
+
+/** Neggafa : elle prépare la mariée ; sa malle de tenues est posée à côté */
+export function Neggafa({ gx, gy, pal, animer }: { gx: number; gy: number; pal: Pal; animer?: boolean }) {
+  return (
+    <g>
+      <Boite gx={gx + 0.35} gy={gy - 0.1} w={0.55} d={0.4} h={14} haut={eclaircir(pal.deco, 0.1)} gauche={assombrir(pal.deco, 0.1)} droite={assombrir(pal.deco, 0.3)} />
+      <path d={`M${X(gx + 0.5, gy + 0.1) - 5} ${Y(gx + 0.5, gy + 0.1, 14)} q5 -22 10 0 z`} fill={pal.accent} />
+      <Personne x={X(gx, gy)} y={Y(gx, gy)} robe corps={pal.deco} echarpe={pal.fleurs} peau={peauDe(2)} cheveux={cheveuxDe(1)} s={1.28} bob={animer} />
+    </g>
+  );
+}
+
+/** Pièce montée à trois étages sur sa petite table */
+export function PieceMontee({ gx, gy, pal }: { gx: number; gy: number; pal: Pal }) {
+  const cx = X(gx, gy), cy = Y(gx, gy), a = rx(0.38), b = ry(0.38), h = 20;
+  const etage = (r: number, z: number, hh: number, c: string) => (
+    <g>
+      <path d={`M${cx - rx(r)} ${cy - z - hh} L${cx - rx(r)} ${cy - z} A${rx(r)} ${ry(r)} 0 0 0 ${cx + rx(r)} ${cy - z} L${cx + rx(r)} ${cy - z - hh} Z`} fill={assombrir(c, 0.1)} />
+      <ellipse cx={cx} cy={cy - z - hh} rx={rx(r)} ry={ry(r)} fill={c} />
+      <path d={`M${cx - rx(r)} ${cy - z - 3} A${rx(r)} ${ry(r)} 0 0 0 ${cx + rx(r)} ${cy - z - 3}`} fill="none" stroke={pal.deco} strokeWidth="1.2" />
+    </g>
+  );
+  return (
+    <g>
+      <ellipse cx={cx} cy={cy + 2} rx={a + 6} ry={b + 3} fill="#2b1a10" opacity="0.18" />
+      <path d={`M${cx - a} ${cy - h} L${cx - a} ${cy - 4} A${a} ${b} 0 0 0 ${cx + a} ${cy - 4} L${cx + a} ${cy - h} Z`} fill={assombrir(pal.nappe, 0.14)} />
+      <ellipse cx={cx} cy={cy - h} rx={a} ry={b} fill={pal.nappe} />
+      {etage(0.3, h, 9, "#FBF6EA")}{etage(0.22, h + 9, 8, "#F7EEDC")}{etage(0.14, h + 17, 7, "#FBF6EA")}
+      <circle cx={cx} cy={cy - h - 28} r="2.4" fill={pal.fleurs} /><circle cx={cx + 3} cy={cy - h - 26} r="1.8" fill={eclaircir(pal.fleurs, 0.3)} />
+    </g>
+  );
+}
+
+/** Espace henné : tapis, coussins, table basse, cônes de henné et bougies */
+export function EspaceHenne({ gx, gy, w = 2.2, d = 2.2, pal }: { gx: number; gy: number; w?: number; d?: number; pal: Pal }) {
+  const cx = gx + w / 2, cy = gy + d / 2;
+  const coussins: [number, number, string][] = [[gx + 0.3, gy + 0.4, pal.accent], [gx + 0.3, gy + d - 0.5, pal.fleurs], [gx + w - 0.4, gy + 0.4, pal.fleurs], [gx + w - 0.4, gy + d - 0.5, pal.accent], [cx, gy + 0.2, pal.deco], [cx, gy + d - 0.2, pal.deco]];
+  return (
+    <g>
+      <polygon points={poly([gx, gy], [gx + w, gy], [gx + w, gy + d], [gx, gy + d])} fill={assombrir(pal.accent, 0.1)} opacity="0.92" />
+      <polygon points={poly([gx + 0.15, gy + 0.15], [gx + w - 0.15, gy + 0.15], [gx + w - 0.15, gy + d - 0.15], [gx + 0.15, gy + d - 0.15])} fill="none" stroke={pal.deco} strokeWidth="1.4" />
+      <polygon points={poly([gx + 0.4, gy + 0.4], [gx + w - 0.4, gy + 0.4], [gx + w - 0.4, gy + d - 0.4], [gx + 0.4, gy + d - 0.4])} fill={pal.fleurs} opacity="0.22" />
+      <Boite gx={cx - 0.45} gy={cy - 0.45} w={0.9} d={0.9} h={9} haut={eclaircir(pal.deco, 0.15)} />
+      {[[-0.25, -0.1], [0.05, 0.15], [0.25, -0.2]].map(([dx, dy], i) => <path key={i} d={`M${X(cx + dx, cy + dy) - 2.4} ${Y(cx + dx, cy + dy, 9)} L${X(cx + dx, cy + dy)} ${Y(cx + dx, cy + dy, 19)} L${X(cx + dx, cy + dy) + 2.4} ${Y(cx + dx, cy + dy, 9)} Z`} fill="#6B3B1E" />)}
+      {[[cx - 0.3, cy + 0.3], [cx + 0.3, cy - 0.3]].map(([x, y], i) => <g key={i}><rect x={X(x, y) - 1.3} y={Y(x, y, 15)} width="2.6" height="6" rx="1" fill="#F7EEDC" /><ellipse cx={X(x, y)} cy={Y(x, y, 17.5)} rx="1.5" ry="2.6" fill="#FFD27A" /></g>)}
+      {coussins.map(([x, y, c], i) => <ellipse key={i} cx={X(x, y)} cy={Y(x, y, 4)} rx="12" ry="6" fill={c} stroke={assombrir(c, 0.25)} strokeWidth="0.8" />)}
+    </g>
+  );
+}
+
 export function Photographe({ gx, gy }: { gx: number; gy: number }) {
   const x = X(gx, gy), y = Y(gx, gy);
   return <g><Personne x={x} y={y} corps="#2c2a2f" peau={peauDe(2)} s={1.1} bob /><rect x={x + 2} y={y - 22} width="9" height="6.4" rx="1.4" fill="#222" /><circle cx={x + 6.5} cy={y - 19} r="2" fill="#7da0be" /></g>;

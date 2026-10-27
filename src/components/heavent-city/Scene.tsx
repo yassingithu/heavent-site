@@ -7,7 +7,7 @@ import { PALETTES, STYLES, type LieuId } from "./donnees";
 import type { Rendu } from "./etat";
 import { VB, X, Y, poly, melanger, assombrir, eclaircir, hasard } from "./iso";
 import {
-  Acoustique, Allee, Arche, Bar, BarParfums, BarreThe, Boite, Bouquet, Brume, Buffet, Candelabre, CielLanternes, Comptoir, Dj, EnceintesAmbiance, FeuxFroids, Fontaine,
+  Acoustique, Allee, Amariya, Arche, EspaceHenne, FauteuilsMaries, Neggafa, PieceMontee, Bar, BarParfums, BarreThe, Boite, Bouquet, Brume, Buffet, Candelabre, CielLanternes, Comptoir, Dj, EnceintesAmbiance, FeuxFroids, Fontaine,
   LivreDor, MurFleurs, Orchestre, Personne, Petales, Photobooth, Photographe, PisteDanse, Plan, PosteLanterne, Porte, SalonMarocain, STYLE_CSS, TableHonneur, TableHaute, TableRect, TableRonde,
   Troupe, cheveuxDe, cintre, peauDe, type Pal,
 } from "./dessins";
@@ -440,6 +440,11 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
   }
   const AR = P.ARCHE, MF = P.MUR_FLEURS;
   if (o.has("arche")) add(AR.gx + AR.gy + 0.8, "arche", <Arche gx={AR.gx} gy={AR.gy} largeur={AR.largeur} pal={pal} />, mob("arche", AR.gx + AR.largeur / 2, AR.gy + 0.5));
+  if (o.has("amariya")) { const [x, y] = P.AMARIYA; add(x + y + 1.2, "amariya", <Amariya gx={x} gy={y} pal={pal} animer={animer} />, mob("amariya", x + 1.15, y + 0.7)); }
+  if (o.has("fauteuils")) { const [x, y] = P.FAUTEUILS; add(x + y + 1, "fauteuils", <FauteuilsMaries gx={x} gy={y} pal={pal} couple={assis && r.type === "mariage"} animer={animer} />, mob("fauteuils", x + 1, y + 0.6)); }
+  if (o.has("neggafa")) { const [x, y] = P.NEGGAFA; add(x + y + 0.3, "neggafa", <Neggafa gx={x} gy={y} pal={pal} animer={animer} />, mob("neggafa", x, y)); }
+  if (o.has("gateau")) { const [x, y] = P.GATEAU; add(x + y + 0.3, "gateau", <PieceMontee gx={x} gy={y} pal={pal} />, mob("gateau", x, y)); }
+  if (o.has("henne")) { const [x, y] = P.HENNE; add(x + y + 1, "henne", <EspaceHenne gx={x} gy={y} pal={pal} />, mob("henne", x + 1.1, y + 1.1)); }
   if (o.has("mur_fleurs")) add(MF.u0 + 0.3, "mur", <MurFleurs u0={MF.u0} u1={MF.u1} gy={MF.gy} pal={pal} />);
 
   // Musique

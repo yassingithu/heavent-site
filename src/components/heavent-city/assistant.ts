@@ -117,11 +117,18 @@ export function suggestionAutomatique(texte: string, type: TypeEvt, lieuCourant:
   if (a(t, "danse", "piste", "danser") || musique.includes("dj")) opts.add("piste");
   if (a(t, "fleur", "bouquet")) opts.add("fleurs");
   if (a(t, "arche")) opts.add("arche");
+  if (type === "mariage") {
+    if (a(t, "amaria", "amariya", "palanquin", "entree des maries")) opts.add("amariya");
+    if (a(t, "fauteuil", "trone", "estrade")) opts.add("fauteuils");
+    if (a(t, "neggafa", "negafa", "tenues", "caftan")) opts.add("neggafa");
+  }
+  if (a(t, "henne", "henna")) opts.add("henne");
+  if (a(t, "gateau", "piece montee")) opts.add("gateau");
   if (a(t, "petale")) opts.add("petales");
   if (a(t, "fontaine")) opts.add("fontaine");
   if (opts.size < 2) { // quelques idées cohérentes avec le style, sans rien pousser de plus
     if (style === "romantique") { opts.add("fleurs"); opts.add("arche"); }
-    else if (style === "maroc") { opts.add("the_bar"); opts.add("fontaine"); }
+    else if (style === "maroc") { opts.add("the_bar"); opts.add("fontaine"); if (type === "mariage") opts.add("amariya"); }
     else if (style === "festif") { opts.add("photobooth"); opts.add("piste"); }
     else if (style === "minimal") { opts.add("photographe"); }
     else { opts.add("fleurs"); opts.add("photobooth"); }

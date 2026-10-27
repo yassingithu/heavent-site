@@ -74,12 +74,27 @@ export function positions(n: number, ax: number, A: Actifs) {
   if (o.has("nawar")) placed.push(boite("nawar", NAWAR.gx, NAWAR.gy, NAWAR.w, NAWAR.d));
   if (o.has("buffet")) placed.push(boite("buffet", BUFFET.gx, BUFFET.gy, BUFFET.w, BUFFET.d));
 
-  // — piste (au sol) et musique —
   const pisteW = 3.8 + 0.45 * (n - 12);
   const PISTE = { gx: n - 1.6 - pisteW, gy: 2.3, w: pisteW, d: 1.7 };
   if (o.has("piste")) placed.push(boite("piste", PISTE.gx, PISTE.gy, PISTE.w, PISTE.d));
   const SCENE_ORCHESTRE = { gx: n - 4.8, gy: 0.5, w: 3.8, d: 1.5 };
   if (mus.includes("orchestre")) placed.push(boite("orch", SCENE_ORCHESTRE.gx, SCENE_ORCHESTRE.gy, SCENE_ORCHESTRE.w, SCENE_ORCHESTRE.d));
+  const THE_BAR = { gx: n - 1.1, gy: 2.6, w: 0.8, d: 1.9 };
+  if (o.has("the_bar")) placed.push(boite("the", THE_BAR.gx, THE_BAR.gy, THE_BAR.w, THE_BAR.d));
+  const SALON = { gx: n - 3.9, gy: n - 1.45, w: 3.0, d: 1.3 };
+  if (o.has("salon")) placed.push(boite("salon", SALON.gx, SALON.gy, SALON.w, SALON.d));
+  const FEUX: [number, number][] = [[PISTE.gx - 0.3, 4.2], [PISTE.gx + PISTE.w - 0.3, 4.2]];
+  if (o.has("feux_froids")) FEUX.forEach(([x, y], i) => placed.push(centre(`feu${i}`, x, y, 0.4)));
+
+  // — le mariage marocain passe avant le reste : amariya, fauteuils des mariés, neggafa, pièce montée —
+  const AMARIYA = poser(o.has("amariya"), [[5.0, 1.0], [5.0, 2.9], [1.0, n - 4.4]] as [number, number][], ([x, y]) => boite("amariya", x, y, 2.3, 1.4));
+  const FAUTEUILS = poser(o.has("fauteuils"), [[5.0, 3.0], [n - 8.5, 3.0], [5.0, 1.0]] as [number, number][], ([x, y]) => boite("fauteuils", x, y, 2.0, 1.2));
+  const NEGGAFA = poser(o.has("neggafa"), [[4.95, 2.5], [1.0, 3.3], [4.95, 3.3]] as [number, number][], ([x, y]) => centre("neggafa", x, y, 0.45));
+  const GATEAU = poser(o.has("gateau"), [[3.0, 3.4], [4.4, 3.4], [3.0, 3.0]] as [number, number][], ([x, y]) => centre("gateau", x, y, 0.5));
+
+  const HENNE = poser(o.has("henne"), [[n - 3.4, 6.2], [n - 3.4, 8.6], [0.4, 11.4]] as [number, number][], ([x, y]) => boite("henne", x, y, 2.2, 2.2));
+
+  // — piste (au sol) et musique —
   const djW = mus.includes("orchestre") ? 1.8 : 2.1;
   const [djX, djY] = poser(mus.includes("dj"), [[mus.includes("orchestre") ? 5.0 : n - 4.4, 0.5], [5.0, 0.5], [n - 8.2, 0.5]] as [number, number][], ([x, y]) => boite("dj", x, y, djW, 1.0));
   const DJ = { gx: djX, gy: djY, w: djW, d: 1.0 };
@@ -91,16 +106,10 @@ export function positions(n: number, ax: number, A: Actifs) {
 
   // — bars et expériences : première place libre parmi plusieurs —
   const CANDY = poser(o.has("candy_bar"), [[n - 2.0, 0.4, 1.6, 0.9], [n - 1.2, 5.0, 0.9, 1.6], [n - 1.2, 7.0, 0.9, 1.6], [n - 1.2, 9.0, 0.9, 1.6], [n - 6.4, 0.4, 1.6, 0.9]] as [number, number, number, number][], ([x, y, w, d]) => boite("candy", x, y, w, d));
-  const THE_BAR = { gx: n - 1.1, gy: 2.6, w: 0.8, d: 1.9 };
-  if (o.has("the_bar")) placed.push(boite("the", THE_BAR.gx, THE_BAR.gy, THE_BAR.w, THE_BAR.d));
-  const SALON = { gx: n - 3.9, gy: n - 1.45, w: 3.0, d: 1.3 };
-  if (o.has("salon")) placed.push(boite("salon", SALON.gx, SALON.gy, SALON.w, SALON.d));
   const COMPTOIR: [number, number] = poser(A.accueils.includes("the") || A.accueils.includes("discret"), [[n - 6.7, n - 0.9], [n - 9.5, n - 0.9], [n - 12, n - 0.9]] as [number, number][], ([x, y]) => centre("comptoir", x + 0.6, y + 0.4, 0.8, 0.5));
   const FONTAINE = poser(o.has("fontaine"), [[n - 5.5, n - 0.9], [n - 9.2, n - 0.9], [n - 11.6, n - 0.9], [n - 0.9, n / 2 + 1.5]] as [number, number][], ([x, y]) => centre("fontaine", x, y, 0.9));
   const LIVRE_DOR = poser(o.has("livre_dor"), [[1.8, n - 1.0], [1.8, n - 2.2], [3.0, n - 1.0]] as [number, number][], ([x, y]) => centre("livre", x, y, 0.5));
   const PHOTOGRAPHE = poser(o.has("photographe"), [[5.2, 3.3], [3.6, 3.3], [5.2, 3.0]] as [number, number][], ([x, y]) => centre("photographe", x, y, 0.5));
-  const FEUX: [number, number][] = [[PISTE.gx - 0.3, 4.2], [PISTE.gx + PISTE.w - 0.3, 4.2]];
-  if (o.has("feux_froids")) FEUX.forEach(([x, y], i) => placed.push(centre(`feu${i}`, x, y, 0.4)));
 
   // — lumières décoratives : posées là où il reste de la place —
   const POSTES_LANTERNES = facultatifs(A.lumiere === "chaleureuse", [[1.0, 1.3], [n - 5.5, 1.5], [ax, 4.2], [n - 0.4, 4.8], [1.0, n - 2.5], [n - 0.4, n - 2.5]], "pl", 0.35);
@@ -110,6 +119,7 @@ export function positions(n: number, ax: number, A: Actifs) {
   const PORTE = { gauche: ax - 1.1, droite: ax + 1.1, gy: n - 0.15 };
   /** Centre de chaque option (halo de mise en avant quand un choix change la scène) */
   const ANCRES: Partial<Record<OptionId | "accueil" | "musique" | "lumiere", [number, number]>> = {
+    amariya: [AMARIYA[0] + 1.1, AMARIYA[1] + 0.7], fauteuils: [FAUTEUILS[0] + 1, FAUTEUILS[1] + 0.6], neggafa: NEGGAFA, gateau: GATEAU, henne: [HENNE[0] + 1.1, HENNE[1] + 1.1],
     arche: [3.0, 1.0], fleurs: [ax, n - 0.7], mur_fleurs: [6.1, 0.5],
     allee: [ax, n / 2 + 2], fontaine: FONTAINE, petales: [n / 2, n / 2 - 1], ciel_lanternes: [n / 2, n / 2 - 2],
     piste: [PISTE.gx + PISTE.w / 2, 3.1], photobooth: [0.7, 4.3], nawar: [0.7, 7.0], buffet: [0.7, 9.9], candy_bar: [CANDY[0] + CANDY[2] / 2, CANDY[1] + CANDY[3] / 2], livre_dor: LIVRE_DOR,
@@ -117,7 +127,7 @@ export function positions(n: number, ax: number, A: Actifs) {
     accueil: [ax, n - 1.0], musique: [n - 3.1, 1.2], lumiere: [n / 2, n / 2 - 1],
   };
   return {
-    PISTE, FONTAINE, LIVRE_DOR, COMPTOIR, PHOTOGRAPHE, SALON, HONNEUR, ARCHE, MUR_FLEURS, DJ, SCENE_ORCHESTRE, PHOTOBOOTH, NAWAR, BUFFET,
+    AMARIYA, FAUTEUILS, NEGGAFA, GATEAU, HENNE, PISTE, FONTAINE, LIVRE_DOR, COMPTOIR, PHOTOGRAPHE, SALON, HONNEUR, ARCHE, MUR_FLEURS, DJ, SCENE_ORCHESTRE, PHOTOBOOTH, NAWAR, BUFFET,
     CANDY: { gx: CANDY[0], gy: CANDY[1], w: CANDY[2], d: CANDY[3] }, THE_BAR, TROUPE, ACOUSTIQUE, ENCEINTES, ALLEE, PORTE, POSTES_LANTERNES, CANDELABRES, BOUQUETS, FEUX,
     HOTESSES, MAITRE_HOTEL, HOTESSE_3, DEPART_INVITES, ANCRES, obstacles: placed as readonly Rect[],
   };
