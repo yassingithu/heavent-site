@@ -23,7 +23,7 @@ await t("assistant-texte").fill("Un mariage marocain chic, beige et doré, festi
 await t("assistant-envoyer").click(); await t("proposition").waitFor();
 const prop = await t("proposition").innerText();
 await p.screenshot({ path: `${o}-assistant.png` });
-await t("prop-musique").click(); await t("appliquer-ambiance").click(); await p.waitForTimeout(500);
+await p.locator("[data-testid^=\"prop-m:\"]").first().click(); await t("appliquer-ambiance").click(); await p.waitForTimeout(500);
 await t("tel-fermer").click();
 await p.screenshot({ path: `${o}-apres-ia.png` });
 // annuler / refaire

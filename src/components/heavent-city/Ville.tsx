@@ -234,12 +234,6 @@ export default function Ville({ onChoisir, choisi, bloque, logo, nuit = 0.22 }: 
           <path d="M400 46 L400 470 M10 250 L790 250" stroke={melanger("#C9AE7C", "#2a2440", nuit * 0.4)} strokeWidth="26" opacity="0.55" />
           <path d="M400 46 L400 470 M10 250 L790 250" stroke="#E8D6A2" strokeWidth="1.5" strokeDasharray="10 12" opacity="0.7" />
           {Array.from({ length: 22 }, (_, i) => <ellipse key={i} cx={40 + g() * 720} cy={270 + g() * 200} rx={8 + g() * 22} ry={2 + g() * 6} fill={melanger("#B8935F", "#1a1830", 0.2)} opacity="0.3" />)}
-          {/* portail Heavent City avec le vrai logo de la marque */}
-          <g transform="translate(400 468)">
-            {[-70, 70].map((x) => <g key={x}><rect x={x - 7} y="-62" width="14" height="62" fill="#EBDDBF" /><rect x={x - 10} y="-68" width="20" height="8" fill="#C9A74E" /><circle cx={x} cy="-76" r="5" fill="#FFD98A" opacity={0.6 + nuit} /></g>)}
-            <rect x="-70" y="-76" width="140" height="26" rx="5" fill="#17141a" stroke="#C9A74E" strokeWidth="1.5" />
-            {logo ? <image href={logo} x="-56" y="-74" width="112" height="22" preserveAspectRatio="xMidYMid meet" /> : <text x="0" y="-58" textAnchor="middle" fill="#E4D49A" fontSize="12" fontFamily="serif" letterSpacing="3">HEAVENT CITY</text>}
-          </g>
           {[[130, 330], [680, 330], [100, 400], [700, 410], [250, 440], [560, 450]].map(([x, y], i) => <Palmier key={i} x={x} y={y} s={0.95} nuit={nuit} />)}
           {/* promeneurs */}
           {!reduit && (
@@ -277,6 +271,12 @@ export default function Ville({ onChoisir, choisi, bloque, logo, nuit = 0.22 }: 
               </g>
             );
           })}
+          {/* portail Heavent City avec le vrai logo : dessiné après les terrains (devant eux) mais sous les étiquettes */}
+          <g transform="translate(400 476)" style={{ pointerEvents: "none" }}>
+            {[-70, 70].map((x) => <g key={x}><rect x={x - 7} y="-62" width="14" height="62" fill="#EBDDBF" /><rect x={x - 10} y="-68" width="20" height="8" fill="#C9A74E" /><circle cx={x} cy="-76" r="5" fill="#FFD98A" opacity={0.6 + nuit} /></g>)}
+            <rect x="-70" y="-76" width="140" height="26" rx="5" fill="#17141a" stroke="#C9A74E" strokeWidth="1.5" />
+            {logo ? <image href={logo} x="-56" y="-74" width="112" height="22" preserveAspectRatio="xMidYMid meet" /> : <text x="0" y="-58" textAnchor="middle" fill="#E4D49A" fontSize="12" fontFamily="serif" letterSpacing="3">HEAVENT CITY</text>}
+          </g>
           {PLOTS.map(({ id, ox, oy }) => {
             const info = LIEUX.find((l) => l.id === id)!;
             const actif = survol === id || choisi === id;

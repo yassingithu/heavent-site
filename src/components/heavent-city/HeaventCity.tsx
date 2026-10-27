@@ -48,7 +48,7 @@ export default function HeaventCity() {
 
   const progression = avancement(choix);
   const nuit = phase === "scene" ? 0.06 + 0.5 * progression : 0.2;
-  const touches = [choix.style, choix.palette, choix.lumiere, choix.musique, choix.accueil].filter(Boolean).length + (choix.manuels.length ? 1 : 0);
+  const touches = [choix.style, choix.palette, choix.lumiere, choix.musiques.length ? 1 : null, choix.accueil].filter(Boolean).length + (choix.manuels.length ? 1 : 0);
   const missions = missionsDuType(choix.type);
   const repondues = missions.filter((m) => choix.missions[m.id]).length;
   const missionsOuvertes = Math.min(missions.length, Math.max(1 + (touches >= 2 ? 1 : 0) + (touches >= 4 ? 1 : 0), repondues + (repondues < missions.length ? 1 : 0)));
@@ -74,7 +74,7 @@ export default function HeaventCity() {
   const agir = useCallback((a: Action) => {
     dispatch(a);
     if (a.t === "basculer" && !optionsActives(choix).includes(a.option)) montrer(a.option);
-    if (a.t === "choisir") { for (const c of ["lumiere", "musique", "accueil"] as const) if (a.patch[c]) montrer(c); }
+    if (a.t === "choisir") { for (const c of ["lumiere", "accueil"] as const) if (a.patch[c]) montrer(c); if (a.patch.musiques) montrer("musique"); }
   }, [choix, montrer]);
 
   const repondre = useCallback((m: string, r: string) => {
@@ -90,7 +90,8 @@ export default function HeaventCity() {
     if (!exclus.includes("style")) patch.style = p.style;
     if (!exclus.includes("palette")) patch.palette = p.palette;
     if (p.lumiere && !exclus.includes("lumiere")) patch.lumiere = p.lumiere;
-    if (p.musique && !exclus.includes("musique")) patch.musique = p.musique;
+    const mus = p.musiques.filter((m) => !exclus.includes(`m:${m}`));
+    if (mus.length) patch.musiques = [...new Set([...choix.musiques, ...mus])];
     if (p.accueil && !exclus.includes("accueil")) patch.accueil = p.accueil;
     const ajout = p.options.filter((o) => !exclus.includes(`o:${o}`));
     patch.manuels = [...new Set([...choix.manuels, ...ajout])] as OptionId[];
@@ -135,7 +136,7 @@ export default function HeaventCity() {
   }, [choix, missions, missionsOuvertes, phase]);
 
   const r = rendu(choix);
-  const nbEtapes = (choix.style ? 1 : 0) + (choix.palette ? 1 : 0) + (choix.lumiere ? 1 : 0) + (choix.musique ? 1 : 0) + (choix.accueil ? 1 : 0) + (choix.manuels.length ? 1 : 0) + repondues;
+  const nbEtapes = (choix.style ? 1 : 0) + (choix.palette ? 1 : 0) + (choix.lumiere ? 1 : 0) + (choix.musiques.length ? 1 : 0) + (choix.accueil ? 1 : 0) + (choix.manuels.length ? 1 : 0) + repondues;
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#17141a] text-[#F0E8D6]" data-testid="heavent-city" data-phase={phase}>
@@ -183,7 +184,7 @@ export default function HeaventCity() {
                 </button>
               </div>
             </div>
-            <div className="pointer-events-none absolute bottom-2 left-3 rounded-full bg-black/45 px-3 py-1 text-[12px] text-[#F0E8D6]" aria-live="polite">{r.tablesTotal > 6 ? `${r.tablesTotal} tables environ · 6 affichées` : `${r.tablesTotal} tables environ`}</div>
+            <div className="pointer-events-none absolute bottom-2 left-3 rounded-full bg-black/45 px-3 py-1 text-[12px] text-[#F0E8D6]" aria-live="polite">{r.tablesTotal > r.tablesVisibles ? `${r.tablesTotal} tables environ · ${r.tablesVisibles} affichées` : `${r.tablesTotal} tables environ`}</div>
             {toast && (
               <button onClick={() => { setToast(null); setTelOnglet("missions"); setTelOuvert(true); }} data-testid="toast-mission" className="hc-fondu absolute inset-x-3 bottom-10 z-10 mx-auto flex max-w-sm items-center gap-3 rounded-2xl border border-[#C9A74E]/60 bg-[#17141a]/95 px-3.5 py-3 text-left shadow-xl">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#C9A74E] text-[#17141a]"><Phone className="h-4 w-4" /></span>

@@ -19,7 +19,7 @@ const DELAI_MS = 9000;
 const MAX_APPELS = 8;
 
 export interface Proposition {
-  lieu: LieuId | null; style: StyleId; palette: PaletteId; lumiere: LumiereId | null; musique: MusiqueId | null; accueil: AccueilId | null;
+  lieu: LieuId | null; style: StyleId; palette: PaletteId; lumiere: LumiereId | null; musiques: MusiqueId[]; accueil: AccueilId | null;
   options: OptionId[]; explication: string; source: "ia" | "auto";
 }
 
@@ -41,7 +41,6 @@ export function validerProposition(brut: unknown, type: TypeEvt, lieuCourant: Li
   const palette = enumOu<PaletteId>(o.palette, IDS_AUTORISES.palettes) ?? STYLES.find((s) => s.id === style)!.palette;
   const lieu = enumOu<LieuId>(o.lieu, IDS_AUTORISES.lieux);
   const lieuEff = lieuCourant ?? lieu;
-  const musique = enumOu<MusiqueId>(o.musique, IDS_AUTORISES.musiques);
   const ok = (id: string) => { const i = infoOption(id); return !!i && disponiblePour(i, type, lieuEff); };
   const options = [...new Set((Array.isArray(o.options) ? o.options : []).filter((x): x is string => typeof x === "string" && IDS_AUTORISES.options.includes(x) && ok(x)))].slice(0, 8) as OptionId[];
   let explication = typeof o.explication === "string" ? o.explication.replace(/\s+/g, " ").trim().slice(0, 320) : "";
@@ -50,7 +49,7 @@ export function validerProposition(brut: unknown, type: TypeEvt, lieuCourant: Li
   return {
     lieu, style, palette,
     lumiere: enumOu<LumiereId>(o.lumiere, IDS_AUTORISES.lumieres),
-    musique: musique && ok(musique) ? musique : null,
+    musiques: [...new Set([...(Array.isArray(o.musiques) ? o.musiques : []), o.musique].filter((x): x is string => typeof x === "string" && IDS_AUTORISES.musiques.includes(x) && ok(x)))].slice(0, 3) as MusiqueId[],
     accueil: enumOu<AccueilId>(o.accueil, IDS_AUTORISES.accueils),
     options, explication: explication || explicationAuto({ style, palette, options }), source,
   };
@@ -94,9 +93,16 @@ export function suggestionAutomatique(texte: string, type: TypeEvt, lieuCourant:
   if (a(t, "bougie")) lumiere = "bougies"; else if (a(t, "guirlande", "etoile", "ampoule")) lumiere = "etoilee"; else if (a(t, "lanterne")) lumiere = "chaleureuse"; else if (a(t, "projecteur", "laser", "disco")) lumiere = "festive";
   if (pasBling && lumiere === "festive") lumiere = "chaleureuse";
 
-  let musique: MusiqueId | null = style === "festif" ? "dj" : style === "maroc" && type !== "pro" ? "orchestre" : "playlist";
-  if (a(t, "dj")) musique = "dj"; else if (a(t, "orchestre", "live", "andalou", "chaabi", "gnaoua")) musique = "orchestre"; else if (a(t, "folklor", "troupe", "danseur")) musique = "troupe"; else if (a(t, "guitare", "acoustique", "duo")) musique = "acoustique"; else if (a(t, "playlist", "calme", "discret", "doux")) musique = "playlist";
-  if (type === "pro" && (musique === "orchestre" || musique === "troupe")) musique = "playlist";
+  // Plusieurs musiques possibles dans la même soirée (ex. orchestre + troupe folklorique)
+  const musiques = new Set<MusiqueId>();
+  if (a(t, "dj")) musiques.add("dj");
+  if (a(t, "orchestre", "live", "andalou", "chaabi", "gnaoua")) musiques.add("orchestre");
+  if (a(t, "folklor", "troupe", "danseur")) musiques.add("troupe");
+  if (a(t, "guitare", "acoustique", "duo")) musiques.add("acoustique");
+  if (a(t, "playlist", "calme", "discret", "doux")) musiques.add("playlist");
+  if (!musiques.size) musiques.add(style === "festif" ? "dj" : style === "maroc" && type !== "pro" ? "orchestre" : "playlist");
+  if (type === "pro") { musiques.delete("orchestre"); musiques.delete("troupe"); if (!musiques.size) musiques.add("playlist"); }
+  const musique = [...musiques];
 
   const opts = new Set<OptionId>();
   if (a(t, "photo")) opts.add("photobooth");
@@ -107,7 +113,7 @@ export function suggestionAutomatique(texte: string, type: TypeEvt, lieuCourant:
   if (a(t, "livre d")) opts.add("livre_dor");
   if (a(t, "feux", "etincelle")) opts.add("feux_froids");
   if (a(t, "salon", "banquette", "discuter", "lounge")) opts.add("salon");
-  if (a(t, "danse", "piste", "danser") || musique === "dj") opts.add("piste");
+  if (a(t, "danse", "piste", "danser") || musique.includes("dj")) opts.add("piste");
   if (a(t, "fleur", "bouquet")) opts.add("fleurs");
   if (a(t, "arche")) opts.add("arche");
   if (a(t, "petale")) opts.add("petales");
@@ -124,7 +130,7 @@ export function suggestionAutomatique(texte: string, type: TypeEvt, lieuCourant:
   const explication = pasBling
     ? `Pour rester chic sans en faire trop, je te propose un style « ${STYLES.find((s) => s.id === style)!.nom.toLowerCase()} », une lumière chaleureuse et quelques touches discrètes. Tu peux tout ajuster avant d'appliquer.`
     : explicationAuto({ style, palette, options });
-  return validerProposition({ lieu, style, palette, lumiere, musique, accueil, options, explication }, type, lieuCourant, "auto")!;
+  return validerProposition({ lieu, style, palette, lumiere, musiques: musique, accueil, options, explication }, type, lieuCourant, "auto")!;
 }
 
 // ── Appel de l'IA (optionnel) ───────────────────────────────────────────────

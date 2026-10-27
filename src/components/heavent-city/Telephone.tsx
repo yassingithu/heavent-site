@@ -161,7 +161,7 @@ function Assistant({ choix, onAppliquer }: { choix: Choix; onAppliquer: (p: Prop
             <Ligne k="style" label="Style" valeur={STYLES.find((s) => s.id === p.style)!.nom} />
             <Ligne k="palette" label="Couleurs" valeur={PALETTES.find((x) => x.id === p.palette)!.nom} />
             {p.lumiere && <Ligne k="lumiere" label="Lumière" valeur={LUMIERES.find((x) => x.id === p.lumiere)!.nom} res={reservable(infoOption(p.lumiere))} />}
-            {p.musique && <Ligne k="musique" label="Musique" valeur={MUSIQUES.find((x) => x.id === p.musique)!.nom} res={reservable(infoOption(p.musique))} />}
+            {p.musiques.map((m) => <Ligne key={`m:${m}`} k={`m:${m}`} label="Musique" valeur={MUSIQUES.find((x) => x.id === m)!.nom} res={reservable(infoOption(m))} />)}
             {p.accueil && <Ligne k="accueil" label="Accueil" valeur={ACCUEILS.find((x) => x.id === p.accueil)!.nom} res={reservable(infoOption(p.accueil))} />}
             {p.options.filter((o) => { const i = infoOption(o); return i && disponiblePour(i, type, choix.lieu); }).map((o) => <Ligne key={o} k={`o:${o}`} label="Idée" valeur={infoOption(o)!.nom} res={reservable(infoOption(o))} />)}
           </ul>

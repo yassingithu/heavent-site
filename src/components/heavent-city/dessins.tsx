@@ -75,9 +75,9 @@ export function Chaise({ x, y, couleur, devant }: { x: number; y: number; couleu
   );
 }
 
-export function TableRonde({ gx, gy, r = 0.85, pal, fleurs, bougies, invites = 0, retard = 0, animer }: { gx: number; gy: number; r?: number; pal: Pal; fleurs?: boolean; bougies?: boolean; invites?: number; retard?: number; animer?: boolean }) {
+export function TableRonde({ gx, gy, r = 0.85, nbChaises = 8, pal, fleurs, bougies, invites = 0, retard = 0, animer }: { gx: number; gy: number; r?: number; nbChaises?: number; pal: Pal; fleurs?: boolean; bougies?: boolean; invites?: number; retard?: number; animer?: boolean }) {
   const cx = X(gx, gy), cy = Y(gx, gy), a = rx(r), b = ry(r);
-  const nappe = pal.nappe, ch = 8, chairs = Array.from({ length: 8 }, (_, i) => (i / 8) * Math.PI * 2 + 0.2);
+  const nappe = pal.nappe, ch = 8, chairs = Array.from({ length: nbChaises }, (_, i) => (i / nbChaises) * Math.PI * 2 + 0.2);
   const chaise = melanger(pal.sombre ? pal.deco : "#EFE5D0", pal.accent, 0.18);
   const pos = (t: number) => ({ x: cx + Math.cos(t) * (a + 11), y: cy + Math.sin(t) * (b + 7) });
   const hauteur = 23;
@@ -496,9 +496,11 @@ export function Porte({ pal, nuit, logo }: { pal: Pal; nuit: number; logo?: stri
       <path d={`M${x1} ${y1 - 94} Q${(x1 + x2) / 2} ${(y1 + y2) / 2 - 126} ${x2} ${y2 - 94}`} stroke={pal.deco} strokeWidth="5" fill="none" strokeLinecap="round" />
       <path d={`M${x1} ${y1 - 94} Q${(x1 + x2) / 2} ${(y1 + y2) / 2 - 126} ${x2} ${y2 - 94}`} stroke="#fff" strokeWidth="1" fill="none" opacity="0.4" />
       {logo && (
-        <g transform={`translate(${(x1 + x2) / 2 - 27} ${(y1 + y2) / 2 - 126})`}>
-          <rect width="54" height="22" rx="4" fill="#1B1511" opacity={0.92} />
-          <image href={logo} x="4" y="2" width="46" height="18" preserveAspectRatio="xMidYMid meet" />
+        // enseigne suspendue au milieu de l'arche, inclinée comme le mur de la porte
+        <g transform={`translate(${(x1 + x2) / 2} ${(y1 + y2) / 2 - 108}) matrix(1 0.5 0 1 0 0)`}>
+          <line x1="-18" y1="0" x2="-18" y2="8" stroke={pal.deco} strokeWidth="1.6" /><line x1="18" y1="0" x2="18" y2="8" stroke={pal.deco} strokeWidth="1.6" />
+          <rect x="-36" y="8" width="72" height="28" rx="5" fill="#1B1511" stroke={pal.deco} strokeWidth="1.4" />
+          <image href={logo} x="-31" y="10" width="62" height="24" preserveAspectRatio="xMidYMid meet" />
         </g>
       )}
       <ellipse cx={(x1 + x2) / 2} cy={(y1 + y2) / 2 - 20} rx="40" ry="12" fill="#FFD98A" opacity={0.12 + nuit * 0.2} />

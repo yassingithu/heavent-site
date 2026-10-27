@@ -13,7 +13,7 @@ import {
 } from "./dessins";
 import {
   ALLEE, ANCRES, ARCHE, BOUQUETS, BUFFET, CANDELABRES, CANDY, COMPTOIR, DEPART_INVITES, DJ, FEUX, FONTAINE, HONNEUR, HOTESSES, LIVRE_DOR, MUR_FLEURS, NAWAR,
-  PHOTOBOOTH, PHOTOGRAPHE, PISTE, POSTES_LANTERNES, SALON, SCENE_ORCHESTRE, TABLES, THE_BAR,
+  PHOTOBOOTH, PHOTOGRAPHE, PISTE, RAYON_TABLE, DJ_AVEC_ORCHESTRE, POSTES_LANTERNES, SALON, SCENE_ORCHESTRE, TABLES, THE_BAR,
 } from "./positions";
 
 export type EtapeFinal = null | "avant" | "arrive" | "assis";
@@ -343,7 +343,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
   // Tables
   const tbl = TABLES.slice(0, r.tablesVisibles);
   tbl.forEach(([gx, gy], i) => {
-    add(gx + gy, `t${i}`, <TableRonde gx={gx} gy={gy} pal={pal} fleurs={o.has("fleurs") || style === "romantique"} bougies={r.lumiere === "bougies"} invites={assis ? 6 : 0} retard={i * 0.4} animer={animer} />);
+    add(gx + gy, `t${i}`, <TableRonde gx={gx} gy={gy} r={RAYON_TABLE} nbChaises={6} pal={pal} fleurs={o.has("fleurs") || style === "romantique"} bougies={r.lumiere === "bougies"} invites={assis ? 5 : 0} retard={i * 0.4} animer={animer} />);
     if (r.lumiere === "bougies") halos.push({ x: X(gx, gy), y: Y(gx, gy, 30), r: 34, a: 0.55, c: "chaud" });
   });
 
@@ -363,11 +363,11 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
 
   // Musique
   const musiqueActive = actif && (final ? true : animer);
-  if (r.musique === "dj") add(DJ.gx + DJ.gy + 1, "dj", <Dj gx={DJ.gx} gy={DJ.gy} w={DJ.w} d={DJ.d} pal={pal} actif={musiqueActive} />);
-  if (r.musique === "orchestre") add(SCENE_ORCHESTRE.gx + SCENE_ORCHESTRE.gy + 1, "orch", <Orchestre gx={SCENE_ORCHESTRE.gx} gy={SCENE_ORCHESTRE.gy} w={SCENE_ORCHESTRE.w} d={SCENE_ORCHESTRE.d} pal={pal} actif={musiqueActive} />);
-  if (r.musique === "troupe") add(7.4 + 3.4, "troupe", <Troupe gx={7.4} gy={3.4} pal={pal} actif={musiqueActive} />);
-  if (r.musique === "playlist") add(6, "enceintes", <EnceintesAmbiance pal={pal} actif={musiqueActive} />);
-  if (r.musique === "acoustique") add(8.8, "acoustique", <Acoustique gx={7.6} gy={1.3} pal={pal} actif={musiqueActive} />);
+  if (r.musiques.includes("dj")) { const dj = r.musiques.includes("orchestre") ? DJ_AVEC_ORCHESTRE : DJ; add(dj.gx + dj.gy + 1, "dj", <Dj gx={dj.gx} gy={dj.gy} w={dj.w} d={dj.d} pal={pal} actif={musiqueActive} />); }
+  if (r.musiques.includes("orchestre")) add(SCENE_ORCHESTRE.gx + SCENE_ORCHESTRE.gy + 1, "orch", <Orchestre gx={SCENE_ORCHESTRE.gx} gy={SCENE_ORCHESTRE.gy} w={SCENE_ORCHESTRE.w} d={SCENE_ORCHESTRE.d} pal={pal} actif={musiqueActive} />);
+  if (r.musiques.includes("troupe")) add(7.4 + 3.4, "troupe", <Troupe gx={7.4} gy={3.4} pal={pal} actif={musiqueActive} />);
+  if (r.musiques.includes("playlist")) add(6, "enceintes", <EnceintesAmbiance pal={pal} actif={musiqueActive} />);
+  if (r.musiques.includes("acoustique")) add(8.8, "acoustique", <Acoustique gx={7.6} gy={1.3} pal={pal} actif={musiqueActive} />);
 
   // Expériences
   if (o.has("photobooth")) add(PHOTOBOOTH.gx + PHOTOBOOTH.gy + 1, "photobooth", <Photobooth gx={PHOTOBOOTH.gx} gy={PHOTOBOOTH.gy} w={PHOTOBOOTH.w} d={PHOTOBOOTH.d} pal={pal} flash={animer && actif} />);

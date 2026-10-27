@@ -22,7 +22,8 @@ export interface Choix {
   style: StyleId | null;
   palette: PaletteId | null;
   lumiere: LumiereId | null;
-  musique: MusiqueId | null;
+  /** plusieurs musiques possibles dans la même soirée (ex. orchestre + troupe folklorique) */
+  musiques: MusiqueId[];
   accueil: AccueilId | null;
   /** options ajoutées à la main, et options retirées alors qu'une mission les avait apportées */
   manuels: OptionId[];
@@ -35,7 +36,7 @@ export interface Choix {
 
 export const CHOIX_VIDE: Choix = {
   type: null, nomEvt: "", ville: "", invites: INVITES.defaut, date: "", dateInconnue: false, lieu: null,
-  style: null, palette: null, lumiere: null, musique: null, accueil: null, manuels: [], retires: [], missions: {}, note: "",
+  style: null, palette: null, lumiere: null, musiques: [], accueil: null, manuels: [], retires: [], missions: {}, note: "",
 };
 
 export interface Etat {
@@ -94,7 +95,7 @@ export function reducteur(e: Etat, a: Action): Etat {
         // La dernière décision l'emporte : la réponse remplace un choix manuel contradictoire
         if (rep.accueil) c.accueil = null;
         if (rep.lumiere) c.lumiere = null;
-        if (rep.musique) c.musique = null;
+        if (rep.musique && !c.musiques.includes(rep.musique as MusiqueId)) c.musiques = [...c.musiques, rep.musique as MusiqueId];
         c.retires = c.retires.filter((o) => !rep.ajoute.includes(o));
       }
       return avecChoix(e, c);
@@ -119,11 +120,11 @@ function nettoyer(c: Choix): Choix {
   if (!type) return c;
   const garde = (id: string) => { const o = infoOption(id); return !!o && disponiblePour(o, type, c.lieu); };
   const invites = Math.min(INVITES.max, Math.max(INVITES.min, Math.round(Number(c.invites) || INVITES.defaut)));
-  const musique = c.musique && garde(c.musique) ? c.musique : null;
+  const musiques = (Array.isArray(c.musiques) ? c.musiques : []).filter(garde);
   return {
     ...c, invites,
     manuels: c.manuels.filter(garde), retires: c.retires.filter(garde),
-    musique,
+    musiques,
     missions: Object.fromEntries(Object.entries(c.missions).filter(([k]) => missionsDuType(type).some((m) => m.id === k))),
   };
 }
@@ -142,7 +143,7 @@ export function optionsActives(c: Choix): OptionId[] {
   return [...set].filter((o) => { const i = infoOption(o); return !!i && !!c.type && disponiblePour(i, c.type, c.lieu); });
 }
 
-function dernierDeMission<K extends "accueil" | "lumiere" | "musique">(c: Choix, cle: K) {
+function dernierDeMission<K extends "accueil" | "lumiere">(c: Choix, cle: K) {
   let v: string | null = null;
   for (const m of missionsDuType(c.type)) {
     const r = m.reponses.find((x) => x.id === c.missions[m.id]);
@@ -152,11 +153,10 @@ function dernierDeMission<K extends "accueil" | "lumiere" | "musique">(c: Choix,
 }
 export const accueilEffectif = (c: Choix): AccueilId | null => (c.accueil ?? dernierDeMission(c, "accueil")) as AccueilId | null;
 export const lumiereEffective = (c: Choix): LumiereId | null => (c.lumiere ?? dernierDeMission(c, "lumiere")) as LumiereId | null;
-export const musiqueEffective = (c: Choix): MusiqueId | null => (c.musique ?? dernierDeMission(c, "musique")) as MusiqueId | null;
 
 /** Tout ce que la scène doit dessiner, déduit du choix */
 export interface Rendu {
-  type: TypeEvt; lieu: LieuId; style: StyleId; palette: PaletteId; lumiere: LumiereId | null; musique: MusiqueId | null; accueil: AccueilId | null;
+  type: TypeEvt; lieu: LieuId; style: StyleId; palette: PaletteId; lumiere: LumiereId | null; musiques: MusiqueId[]; accueil: AccueilId | null;
   options: Set<OptionId>; invites: number; tablesTotal: number; tablesVisibles: number; titre: string;
 }
 export const nbTables = (invites: number) => Math.max(2, Math.ceil(invites / 10));
@@ -167,8 +167,8 @@ export function rendu(c: Choix): Rendu | null {
   const palette = c.palette ?? STYLES.find((s) => s.id === style)!.palette;
   const tables = nbTables(c.invites);
   return {
-    type: c.type, lieu: c.lieu ?? "riad", style, palette, lumiere: lumiereEffective(c), musique: musiqueEffective(c), accueil: accueilEffectif(c),
-    options: new Set(optionsActives(c)), invites: c.invites, tablesTotal: tables, tablesVisibles: Math.min(8, tables), titre: titreEvenement(c),
+    type: c.type, lieu: c.lieu ?? "riad", style, palette, lumiere: lumiereEffective(c), musiques: c.musiques, accueil: accueilEffectif(c),
+    options: new Set(optionsActives(c)), invites: c.invites, tablesTotal: tables, tablesVisibles: Math.min(12, tables), titre: titreEvenement(c),
   };
 }
 
@@ -184,17 +184,17 @@ export function titreEvenement(c: Choix): string {
 
 /** Part de la soirée atteinte (0 = coucher de soleil, 1 = pleine soirée) selon l'avancement */
 export function avancement(c: Choix): number {
-  const etapes = [c.style, c.palette, c.lumiere ?? dernierDeMission(c, "lumiere"), c.musique ?? dernierDeMission(c, "musique"), c.accueil ?? dernierDeMission(c, "accueil")]
+  const etapes = [c.style, c.palette, c.lumiere ?? dernierDeMission(c, "lumiere"), c.musiques.length ? 1 : null, c.accueil ?? dernierDeMission(c, "accueil")]
     .filter(Boolean).length + Math.min(3, optionsActives(c).length) + Object.keys(c.missions).length;
   return Math.min(1, etapes / 10);
 }
 
 export function badges(c: Choix): { id: string; nom: string }[] {
   const out: { id: string; nom: string }[] = [];
-  const acc = accueilEffectif(c); const mus = musiqueEffective(c); const lum = lumiereEffective(c);
+  const acc = accueilEffectif(c); const mus = c.musiques; const lum = lumiereEffective(c);
   const opts = optionsActives(c);
   if (acc && acc !== "discret") out.push(BADGES[0]);
-  if (mus === "dj" || mus === "orchestre" || mus === "troupe" || lum === "festive" || lum === "etoilee" || opts.includes("piste") || opts.includes("feux_froids")) out.push(BADGES[1]);
+  if (mus.some((m) => m === "dj" || m === "orchestre" || m === "troupe") || lum === "festive" || lum === "etoilee" || opts.includes("piste") || opts.includes("feux_froids")) out.push(BADGES[1]);
   const exp = opts.filter((o) => EXPERIENCES.some((x) => x.id === o)).length;
   if (exp >= 2 || opts.length >= 4) out.push(BADGES[2]);
   return out.map((b) => ({ id: b.id, nom: b.nom }));
@@ -213,14 +213,14 @@ const ligne = (id: string): Ligne => { const o = infoOption(id)!; return { nom: 
 
 export function resume(c: Choix): Resume {
   const opts = optionsActives(c);
-  const acc = accueilEffectif(c); const mus = musiqueEffective(c); const lum = lumiereEffective(c);
+  const acc = accueilEffectif(c); const mus = c.musiques; const lum = lumiereEffective(c);
   const style = STYLES.find((s) => s.id === (c.style ?? "beige_or"))!;
   return {
     type: TYPES.find((t) => t.id === c.type)?.nom ?? "Événement", titre: titreEvenement(c), invites: c.invites, tables: nbTables(c.invites),
     lieu: LIEUX.find((l) => l.id === c.lieu)?.nom ?? "Non choisi", style: style.nom,
     palette: PALETTES.find((p) => p.id === (c.palette ?? style.palette))!.nom,
     lumiere: lum ? LUMIERES.find((l) => l.id === lum)!.nom : null,
-    musique: mus ? MUSIQUES.find((m) => m.id === mus)!.nom : null,
+    musique: mus.length ? mus.map((id) => MUSIQUES.find((m) => m.id === id)!.nom).join(" + ") : null,
     accueil: acc ? ACCUEILS.find((a) => a.id === acc)!.nom : null,
     decors: opts.filter((o) => DECORS.some((d) => d.id === o)).map(ligne),
     experiences: opts.filter((o) => EXPERIENCES.some((x) => x.id === o)).map(ligne),
@@ -256,7 +256,7 @@ export function configurationAdmin(c: Choix): { elements: Record<string, number>
   const nom: Record<string, string> = {};
   mettre("table_ronde", nbTables(c.invites)); nom.table_ronde = "Tables rondes";
   if (c.type === "mariage") { mettre("honneur", 1); nom.honneur = "Table d'honneur"; }
-  const ids = [...optionsActives(c), lumiereEffective(c), musiqueEffective(c), accueilEffectif(c)].filter(Boolean) as string[];
+  const ids = [...optionsActives(c), lumiereEffective(c), ...c.musiques, accueilEffectif(c)].filter(Boolean) as string[];
   for (const id of ids) {
     const o = infoOption(id); if (!o?.catalogue) continue;
     const n = id === "hotesses" ? Math.max(2, Math.ceil(c.invites / 60))
@@ -279,6 +279,8 @@ export function lireSauvegarde(): Etat | null {
     if (!brut) return null;
     const j = JSON.parse(brut);
     if (!j || j.version !== VERSION || typeof j.choix !== "object") { localStorage.removeItem(CLE_SAUVEGARDE); return null; }
+    // anciennes sauvegardes : une seule musique
+    if (j.choix.musique && !j.choix.musiques) j.choix.musiques = [j.choix.musique];
     const choix = nettoyer({ ...CHOIX_VIDE, ...j.choix, note: "" });
     const phase: Phase = ["accueil", "ville", "scene", "final"].includes(j.phase) ? j.phase : "accueil";
     return { ...ETAT_INITIAL, accueilLu: !!j.accueilLu, phase: choix.type ? (phase === "accueil" ? "accueil" : phase) : "accueil", choix, onglet: typeof j.onglet === "string" ? j.onglet : "style" };

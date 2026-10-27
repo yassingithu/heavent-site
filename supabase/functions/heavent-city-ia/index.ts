@@ -56,12 +56,12 @@ serve(async (req) => {
 
   const consigne = `Tu es le directeur artistique de Heavent People Agency (Maroc). Le visiteur imagine un événement (${type}${lieu ? `, lieu d'inspiration : ${lieu}` : ""}).
 Réponds UNIQUEMENT par un objet JSON, sans texte autour, de la forme :
-{"style":…,"palette":…,"lumiere":…,"musique":…,"accueil":…,"options":[…],"explication":"…"}
+{"style":…,"palette":…,"lumiere":…,"musiques":[…],"accueil":…,"options":[…],"explication":"…"}
 Tu ne peux utiliser QUE ces identifiants :
 style: ${IDS.styles.join(", ")}
 palette: ${IDS.palettes.join(", ")}
 lumiere: ${IDS.lumieres.join(", ")}
-musique: ${IDS.musiques.join(", ")}
+musiques (1 à 3, on peut cumuler, ex. orchestre + troupe): ${IDS.musiques.join(", ")}
 accueil: ${IDS.accueils.join(", ")}
 options (0 à 6 maximum): ${IDS.options.join(", ")}
 "explication" : une ou deux phrases chaleureuses en français (200 caractères max) qui décrivent l'ambiance.
@@ -88,7 +88,7 @@ Interdits : tout prix, tarif, budget, chiffre d'argent, promesse de disponibilit
       disponible: true,
       proposition: {
         style: garde(brut.style, IDS.styles), palette: garde(brut.palette, IDS.palettes), lumiere: garde(brut.lumiere, IDS.lumieres),
-        musique: garde(brut.musique, IDS.musiques), accueil: garde(brut.accueil, IDS.accueils), lieu, options, explication,
+        musiques: [...new Set((Array.isArray(brut.musiques) ? brut.musiques : [brut.musique]).filter((x: unknown) => typeof x === "string" && IDS.musiques.includes(x)))].slice(0, 3), accueil: garde(brut.accueil, IDS.accueils), lieu, options, explication,
       },
     });
   } catch {
