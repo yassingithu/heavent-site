@@ -8,7 +8,7 @@ import type { Rendu } from "./etat";
 import { VB, X, Y, poly, melanger, assombrir, eclaircir, hasard } from "./iso";
 import {
   Acoustique, Allee, Amariya, Arche, EspaceHenne, FauteuilsMaries, Neggafa, PieceMontee, Bar, BarParfums, BarreThe, Boite, Bouquet, Brume, Buffet, Candelabre, CielLanternes, Comptoir, Dj, EnceintesAmbiance, FeuxFroids, Fontaine,
-  LivreDor, MurFleurs, Orchestre, Personne, Petales, Photobooth, Photographe, PisteDanse, Plan, PosteLanterne, Porte, SalonMarocain, STYLE_CSS, TableHonneur, TableHaute, TableRect, TableRonde,
+  BuffetSandwichs, ChaiseConf, EcranProjection, Estrade, LivreDor, MicroPied, MurFleurs, Regie, TableIntervenants, Orchestre, Personne, Petales, Photobooth, Photographe, PisteDanse, Plan, PosteLanterne, Porte, SalonMarocain, STYLE_CSS, TableHonneur, TableHaute, TableRect, TableRonde,
   Troupe, cheveuxDe, cintre, peauDe, type Pal,
 } from "./dessins";
 import { RAYON_TABLE } from "./positions";
@@ -418,7 +418,9 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
   const nb = Math.max(1, r.tablesTotal);
   const parChaises = r.tables === "rondes" ? Math.max(4, Math.min(10, Math.round(r.invites / nb))) : r.tables === "rectangulaires" ? Math.max(2, Math.min(6, Math.round(r.invites / nb))) : Math.max(2, Math.min(4, Math.round(r.invites / nb)));
   const fleursTable = o.has("fleurs") || style === "romantique";
-  tbl.forEach(([gx, gy], i) => {
+  const conference = r.tables === "conference";
+  if (conference) tbl.forEach(([gx, gy], i) => add(gx + gy, `ch${i}`, <ChaiseConf gx={gx} gy={gy} i={i} pal={pal} assis={assis} />));
+  else tbl.forEach(([gx, gy], i) => {
     const c = { pal, fleurs: fleursTable, bougies: r.lumiere === "bougies", retard: i * 0.4, animer };
     const node = r.tables === "rondes" ? <TableRonde gx={gx} gy={gy} r={RAYON_TABLE} nbChaises={parChaises} invites={assis ? parChaises : 0} {...c} />
       : r.tables === "rectangulaires" ? <TableRect gx={gx} gy={gy} nbChaises={parChaises} invites={assis ? parChaises : 0} {...c} />
@@ -430,7 +432,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
   // Honneur / écran / arche (pas de table d'honneur quand tout le monde est autour de tables hautes)
   if (r.type !== "pro") {
     if (r.tables !== "hautes") { const H = P.HONNEUR; add(H.gx + H.gy + 2, "honneur", <TableHonneur gx={H.gx} gy={H.gy} w={H.w} d={H.d} pal={pal} fleurs={fleursTable} couple={assis && r.type === "mariage"} type={r.type} animer={animer} />, mob("honneur", H.gx + H.w / 2, H.gy + H.d / 2)); }
-  } else {
+  } else if (!o.has("ecran") && !conference) {
     add(2.4, "ecran", (
       <Plan sens="d" c={0.1} u={1.3} z0={14}>
         <rect width="150" height="82" rx="4" fill="#1d1b22" stroke={pal.deco} strokeWidth="3" />
@@ -446,7 +448,14 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
   if (o.has("neggafa")) { const [x, y] = P.NEGGAFA; add(x + y + 0.3, "neggafa", <Neggafa gx={x} gy={y} pal={pal} animer={animer} />, mob("neggafa", x, y)); }
   if (o.has("gateau")) { const [x, y] = P.GATEAU; add(x + y + 0.3, "gateau", <PieceMontee gx={x} gy={y} pal={pal} />, mob("gateau", x, y)); }
   if (o.has("henne")) { const [x, y] = P.HENNE; add(x + y + 1, "henne", <EspaceHenne gx={x} gy={y} pal={pal} />, mob("henne", x + 1.1, y + 1.1)); }
-  if (o.has("mur_fleurs")) add(MF.u0 + 0.3, "mur", <MurFleurs u0={MF.u0} u1={MF.u1} gy={MF.gy} pal={pal} />);
+  if (o.has("podium")) { const E = P.ESTRADE; add(E.gx + E.gy + 1, "estrade", <Estrade gx={E.gx} gy={E.gy} w={E.w} d={E.d} pal={pal} orateur={assis} />, mob("estrade", E.gx + E.w / 2, E.gy + E.d / 2)); }
+  const ecranU = P.ESTRADE.gx + P.ESTRADE.w / 2 - 2.35;
+  if (o.has("ecran")) add(ecranU + 0.1, "ecran-conf", <EcranProjection u0={ecranU} pal={pal} anime={animer} />);
+  if (o.has("table_intervenants")) { const T = P.INTERVENANTS; add(T.gx + T.gy + 0.8, "interv", <TableIntervenants gx={T.gx} gy={T.gy} w={T.w} d={T.d} pal={pal} assis={assis} />, mob("interv", T.gx + T.w / 2, T.gy + T.d / 2)); }
+  if (o.has("micros")) P.MICROS.forEach(([gx, gy], i) => add(gx + gy, `mic${i}`, <MicroPied gx={gx} gy={gy} />, mob(`mic${i}`, gx, gy)));
+  if (o.has("regie")) { const [qx, qy] = P.REGIE; add(qx + qy + 0.8, "regie", <Regie gx={qx} gy={qy} w={1.8} d={0.8} pal={pal} assis={assis} />, mob("regie", qx + 0.9, qy + 0.4)); }
+  if (o.has("buffet_sandwichs")) { const B = P.SANDWICHS, long = B[0] <= N - 2, w = long ? 2.6 : 0.9, d = long ? 0.9 : 2.6; add(B[0] + B[1] + 1, "sandw", <BuffetSandwichs gx={B[0]} gy={B[1]} w={w} d={d} pal={pal} />, mob("sandw", B[0] + w / 2, B[1] + d / 2)); }
+  if (o.has("mur_fleurs") && !(o.has("ecran") && ecranU < MF.u1 && ecranU + 4.7 > MF.u0)) add(MF.u0 + 0.3, "mur", <MurFleurs u0={MF.u0} u1={MF.u1} gy={MF.gy} pal={pal} />);
 
   // Musique
   const musiqueActive = actif && (final ? true : animer);
@@ -494,7 +503,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
   // Invités qui arrivent (on en montre une vingtaine : assez pour l'ambiance, sans alourdir l'image)
   if (final) {
     const g = hasard(31), cibles = tbl.length ? tbl : [[ax, N / 2] as [number, number]];
-    const total = Math.min(40, 14 + Math.round(tbl.length / 2));
+    const total = conference ? 0 : Math.min(40, 14 + Math.round(tbl.length / 2));
     for (let i = 0; i < total; i++) {
       const [tx, ty] = cibles[i % cibles.length];
       const a = g() * Math.PI * 2, cx = tx + Math.cos(a) * 1.5, cy = ty + Math.sin(a) * 1.3 + 0.2;

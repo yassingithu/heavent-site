@@ -145,7 +145,7 @@ function nettoyer(c: Choix): Choix {
   const invites = Math.min(INVITES.max, Math.max(INVITES.min, Math.round(Number(c.invites) || INVITES.defaut)));
   const musiques = (Array.isArray(c.musiques) ? c.musiques : []).filter(garde);
   const accueils = (Array.isArray(c.accueils) ? c.accueils : []).filter(garde);
-  const tables: TableId = c.tables === "rectangulaires" || c.tables === "hautes" ? c.tables : "rondes";
+  const tables: TableId = c.tables === "rectangulaires" || c.tables === "hautes" || (c.tables === "conference" && type === "pro") ? c.tables : "rondes";
   const dep: Record<string, [number, number]> = {};
   for (const [k, v] of Object.entries(c.deplacements && typeof c.deplacements === "object" ? c.deplacements : {})) {
     if (/^[a-z0-9_]{1,24}$/.test(k) && Array.isArray(v) && Number.isFinite(v[0]) && Number.isFinite(v[1])) dep[k] = [Math.max(-30, Math.min(30, v[0])), Math.max(-30, Math.min(30, v[1]))];
@@ -199,7 +199,7 @@ export interface Rendu {
   tables: TableId; salle: Salle; deplacements: Record<string, [number, number]>;
 }
 /** Nombre de tables : automatique (120 invités → 12 tables de 10, 400 invités → 40 tables) */
-export const nbTables = (invites: number, tables: TableId = "rondes") => Math.max(2, Math.ceil(invites / infoTable(tables).places));
+export const nbTables = (invites: number, tables: TableId = "rondes") => (tables === "conference" ? Math.max(1, invites) : Math.max(2, Math.ceil(invites / infoTable(tables).places)));
 
 export function rendu(c: Choix): Rendu | null {
   if (!c.type) return null;
@@ -260,7 +260,7 @@ export function resume(c: Choix): Resume {
   const acc = accueilsEffectifs(c); const mus = c.musiques; const lum = lumiereEffective(c);
   const style = STYLES.find((s) => s.id === (c.style ?? "beige_or"))!;
   return {
-    type: TYPES.find((t) => t.id === c.type)?.nom ?? tr("Événement"), titre: titreEvenement(c), invites: c.invites, tables: nbTables(c.invites, c.tables), typeTables: infoTable(c.tables).nom.toLowerCase(), deplaces: Object.keys(c.deplacements).length,
+    type: TYPES.find((t) => t.id === c.type)?.nom ?? tr("Événement"), titre: titreEvenement(c), invites: c.invites, tables: nbTables(c.invites, c.tables), typeTables: infoTable(c.tables).compte, deplaces: Object.keys(c.deplacements).length,
     lieu: LIEUX.find((l) => l.id === c.lieu)?.nom ?? tr("Non choisi"), style: style.nom,
     palette: PALETTES.find((p) => p.id === (c.palette ?? style.palette))!.nom,
     lumiere: lum ? LUMIERES.find((l) => l.id === lum)!.nom : null,
@@ -300,7 +300,7 @@ export function configurationAdmin(c: Choix): { elements: Record<string, number>
   const mettre = (k: string, n: number) => { el[k] = Math.max(el[k] ?? 0, Math.min(500, Math.max(1, Math.round(n)))); };
   const nom: Record<string, string> = {};
   const tt = infoTable(c.tables);
-  mettre(tt.catalogue, nbTables(c.invites, c.tables)); nom[tt.catalogue] = tt.libelle;
+  if (tt.catalogue) { mettre(tt.catalogue, nbTables(c.invites, c.tables)); nom[tt.catalogue] = tt.libelle; }
   if (c.type === "mariage" && c.tables !== "hautes") { mettre("honneur", 1); nom.honneur = "Table d'honneur"; }
   const ids = [...optionsActives(c), lumiereEffective(c), ...c.musiques, ...accueilsEffectifs(c)].filter(Boolean) as string[];
   for (const id of ids) {

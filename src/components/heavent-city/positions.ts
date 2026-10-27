@@ -13,6 +13,8 @@ export const GABARITS: Record<TableId, { px: number; py: number; dx: number; dy:
   rondes: { px: 2.5, py: 2.15, dx: 0.95, dy: 0.95 },
   rectangulaires: { px: 2.6, py: 1.95, dx: 1.0, dy: 0.9 },
   hautes: { px: 1.45, py: 1.4, dx: 0.55, dy: 0.55 },
+  // une chaise (rangées face à l'estrade)
+  conference: { px: 0.62, py: 0.72, dx: 0.3, dy: 0.3 },
 };
 export const RAYON_TABLE = 0.52;
 /** Part maximale du sol occupée par les objets (hors tables) avant que la salle ne s'agrandisse */
@@ -65,10 +67,18 @@ export function positions(n: number, ax: number, A: Actifs) {
 
   // — côté du fond : honneur, arche —
   const HONNEUR = { gx: 1.3, gy: 1.8, w: 3.4, d: 1.1 };
-  if (A.type !== "pro" && A.tables !== "hautes") placed.push(boite("honneur", HONNEUR.gx, HONNEUR.gy - 0.2, HONNEUR.w, HONNEUR.d + 0.2));
+  if (A.type !== "pro" && A.tables !== "hautes" && A.tables !== "conference") placed.push(boite("honneur", HONNEUR.gx, HONNEUR.gy - 0.2, HONNEUR.w, HONNEUR.d + 0.2));
   const ARCHE = { gx: 1.9, gy: 0.5, largeur: 2.2 };
   if (o.has("arche")) placed.push(boite("arche", ARCHE.gx, ARCHE.gy, ARCHE.largeur, 0.8));
   const MUR_FLEURS = { u0: 5.2, u1: 7.1, gy: 0.15 };
+
+  // — conférence : estrade au centre du fond, table des intervenants devant, micros dans l'allée —
+  const [esx, esy] = poser(o.has("podium"), [[ax - 2.4, 0.45], [ax - 2.4, 0.3]] as [number, number][], ([x, y]) => boite("estrade", x, y, 4.8, 2.0), 0);
+  const ESTRADE = { gx: esx, gy: esy, w: 4.8, d: 2.0 };
+  const [inx, iny] = poser(o.has("table_intervenants"), [[ESTRADE.gx + 0.4, ESTRADE.gy + 2.3], [ESTRADE.gx + 0.4, ESTRADE.gy + 2.6]] as [number, number][], ([x, y]) => boite("interv", x, y, 4.0, 0.85), 0.05);
+  const INTERVENANTS = { gx: inx, gy: iny, w: 4.0, d: 0.85 };
+  const MICROS: [number, number][] = [[ax, 5.6], [ax, 8.0]];
+  if (o.has("micros")) MICROS.forEach(([x, y], i) => placed.push(centre(`mic${i}`, x, y, 0.3)));
 
   // — bande de gauche : photobooth, bar à parfums, buffet —
   const PHOTOBOOTH = { gx: 0.3, gy: 3.3, w: 0.8, d: 2.1 }, NAWAR = { gx: 0.3, gy: 5.9, w: 0.9, d: 2.3 }, BUFFET = { gx: 0.3, gy: 8.7, w: 0.9, d: 2.4 };
@@ -93,6 +103,9 @@ export function positions(n: number, ax: number, A: Actifs) {
   const FAUTEUILS = poser(o.has("fauteuils"), [[5.0, 3.0], [n - 8.5, 3.0], [5.0, 1.0]] as [number, number][], ([x, y]) => boite("fauteuils", x, y, 2.0, 1.2));
   const NEGGAFA = poser(o.has("neggafa"), [[4.95, 2.5], [1.0, 3.3], [4.95, 3.3]] as [number, number][], ([x, y]) => centre("neggafa", x, y, 0.45));
   const GATEAU = poser(o.has("gateau"), [[3.0, 3.4], [4.4, 3.4], [3.0, 3.0]] as [number, number][], ([x, y]) => centre("gateau", x, y, 0.5));
+
+  const REGIE = poser(o.has("regie"), [[n - 3.2, n - 1.4], [1.4, n - 1.4], [n - 3.2, n - 2.6]] as [number, number][], ([x, y]) => boite("regie", x, y, 1.8, 0.8));
+  const SANDWICHS = poser(o.has("buffet_sandwichs"), [[n - 1.2, 5.0], [n - 1.2, 8.0], [1.4, n - 1.4], [n - 6.0, n - 1.4]] as [number, number][], ([x, y]) => (x > n - 2 ? boite("sandw", x, y, 0.9, 2.6) : boite("sandw", x, y, 2.6, 0.9)));
 
   const HENNE = poser(o.has("henne"), [[n - 3.4, 6.2], [n - 3.4, 8.6], [0.4, 11.4]] as [number, number][], ([x, y]) => boite("henne", x, y, 2.2, 2.2));
 
@@ -121,6 +134,7 @@ export function positions(n: number, ax: number, A: Actifs) {
   const PORTE = { gauche: ax - 1.1, droite: ax + 1.1, gy: n - 0.15 };
   /** Centre de chaque option (halo de mise en avant quand un choix change la scène) */
   const ANCRES: Partial<Record<OptionId | "accueil" | "musique" | "lumiere", [number, number]>> = {
+    podium: [ESTRADE.gx + ESTRADE.w / 2, ESTRADE.gy + 1], ecran: [ESTRADE.gx + ESTRADE.w / 2, 0.6], table_intervenants: [INTERVENANTS.gx + 2, INTERVENANTS.gy + 0.4], micros: MICROS[0], regie: [REGIE[0] + 0.9, REGIE[1] + 0.4], buffet_sandwichs: [SANDWICHS[0] + 0.5, SANDWICHS[1] + 0.5],
     amariya: [AMARIYA[0] + 1.1, AMARIYA[1] + 0.7], fauteuils: [FAUTEUILS[0] + 1, FAUTEUILS[1] + 0.6], neggafa: NEGGAFA, gateau: GATEAU, henne: [HENNE[0] + 1.1, HENNE[1] + 1.1],
     arche: [3.0, 1.0], fleurs: [ax, n - 0.7], mur_fleurs: [6.1, 0.5],
     allee: [ax, n / 2 + 2], fontaine: FONTAINE, petales: [n / 2, n / 2 - 1], ciel_lanternes: [n / 2, n / 2 - 2],
@@ -129,7 +143,7 @@ export function positions(n: number, ax: number, A: Actifs) {
     accueil: [ax, n - 1.0], musique: [n - 3.1, 1.2], lumiere: [n / 2, n / 2 - 1],
   };
   return {
-    AMARIYA, FAUTEUILS, NEGGAFA, GATEAU, HENNE, PISTE, FONTAINE, LIVRE_DOR, COMPTOIR, PHOTOGRAPHE, SALON, HONNEUR, ARCHE, MUR_FLEURS, DJ, SCENE_ORCHESTRE, PHOTOBOOTH, NAWAR, BUFFET,
+    ESTRADE, INTERVENANTS, MICROS, REGIE, SANDWICHS, AMARIYA, FAUTEUILS, NEGGAFA, GATEAU, HENNE, PISTE, FONTAINE, LIVRE_DOR, COMPTOIR, PHOTOGRAPHE, SALON, HONNEUR, ARCHE, MUR_FLEURS, DJ, SCENE_ORCHESTRE, PHOTOBOOTH, NAWAR, BUFFET,
     CANDY: { gx: CANDY[0], gy: CANDY[1], w: CANDY[2], d: CANDY[3] }, THE_BAR, TROUPE, ACOUSTIQUE, ENCEINTES, ALLEE, PORTE, POSTES_LANTERNES, CANDELABRES, BOUQUETS, FEUX,
     HOTESSES, MAITRE_HOTEL, HOTESSE_3, DEPART_INVITES, ANCRES, obstacles: placed as readonly Rect[],
   };
@@ -137,6 +151,14 @@ export function positions(n: number, ax: number, A: Actifs) {
 
 function grille(n: number, type: TableId) {
   const g = GABARITS[type];
+  if (type === "conference") {
+    // deux blocs de chaises séparés par une allée centrale ; la première rangée est devant l'estrade
+    const gauche = 1.6, droite = n - 0.6, allee = 1.1, cx = (gauche + droite) / 2;
+    const par = Math.max(1, Math.floor(((droite - gauche - allee) / 2 - 2 * g.dx) / g.px) + 1);
+    const xs = [...Array.from({ length: par }, (_, k) => cx - allee / 2 - g.dx - k * g.px).reverse(), ...Array.from({ length: par }, (_, k) => cx + allee / 2 + g.dx + k * g.px)];
+    const y0 = 4.5, rows = Math.max(1, Math.floor((n - 2.05 - y0) / g.py) + 1);
+    return { cols: xs.length, rows, xs, ys: Array.from({ length: rows }, (_, r) => y0 + r * g.py), ax: cx };
+  }
   const cols = Math.max(1, Math.floor((n - 0.5 - 1.3 - 2 * g.dx - 0.7) / g.px) + 1);
   const rows = Math.max(1, Math.floor((n - 5.75 - 2 * g.dy) / g.py) + 1);
   const x0 = 1.3 + g.dx, y0 = 4.0 + g.dy;
@@ -158,7 +180,9 @@ export function dimensionner(nb: number, type: TableId, A: Actifs): Salle {
       const libre = !pos.obstacles.some((p) => !/^(pl|cd)\d/.test(p.id) &&  x - g.dx < p.x1 - 0.02 && p.x0 < x + g.dx - 0.02 && y - g.dy < p.y1 - 0.02 && p.y0 < y + g.dy - 0.02);
       if (libre) cases.push({ x, y, d: Math.hypot(x - cx, (y - cy) * 1.2) });
     }
-    cases.sort((a, b) => a.d - b.d || a.y - b.y || a.x - b.x);
+    // conférence : on remplit d'abord les rangées de devant, en partant du centre ; sinon on part du centre de la salle
+    if (type === "conference") cases.sort((a, b) => a.y - b.y || Math.abs(a.x - cx) - Math.abs(b.x - cx) || a.x - b.x);
+    else cases.sort((a, b) => a.d - b.d || a.y - b.y || a.x - b.x);
     const tables = cases.slice(0, nb).map((c) => [c.x, c.y] as [number, number]);
     // les lanternes et candélabres ne s'imposent jamais aux tables : ceux qui les gêneraient sont simplement omis
     const gene = ([x, y]: [number, number]) => tables.some(([tx, ty]) => Math.abs(x - tx) < g.dx + 0.35 && Math.abs(y - ty) < g.dy + 0.35);

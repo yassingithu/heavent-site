@@ -4,13 +4,15 @@ import { useTranslation } from "react-i18next";
 import { tr } from "./langue";
 import {
   Camera, Sparkles, Flower2, Music, Drum, Mic2, Coffee, CandyCane, Sofa, Flame, Wind, Lamp, Utensils, PartyPopper, Users, BookHeart, Moon, Heart, Droplets, DoorOpen, Disc3, Music2,
-  Speaker, ConciergeBell, Leaf, Crown, Check, Star, Guitar, Gem, Radio, SprayCan, Footprints, Store, Lightbulb, Wand2, Palette, Cake,
+  Speaker, ConciergeBell, Leaf, Crown, Check, Star, Guitar, Gem, Radio, SprayCan, Footprints, Store, Lightbulb, Wand2, Palette, Cake, Presentation, Projector, SlidersHorizontal,
 } from "lucide-react";
 
 type Icone = ComponentType<LucideProps>;
 const ICONES: Record<string, Icone> = {
   // décor
   arche: Flower2, fleurs: Flower2, mur_fleurs: Leaf, allee: Footprints, fontaine: Droplets, petales: Sparkles, ciel_lanternes: Lamp, amariya: Crown, fauteuils: Sofa, neggafa: Gem, henne: Flower2, gateau: Cake,
+  // conférence
+  podium: Presentation, ecran: Projector, table_intervenants: Users, micros: Mic2, regie: SlidersHorizontal, buffet_sandwichs: Utensils,
   // expériences
   piste: Disc3, photobooth: Camera, nawar: SprayCan, buffet: Utensils, the_bar: Coffee, candy_bar: CandyCane, livre_dor: BookHeart, feux_froids: Flame, photographe: Camera, salon: Sofa, brume: Wind,
   // lumière

@@ -31,7 +31,7 @@ export function enFrancais<T>(fn: () => T): T {
 }
 
 /** Champs de texte affiché (les identifiants, catalogues et libellés destinés à l'agence ne sont jamais traduits) */
-const CHAMPS = new Set(["nom", "phrase", "court", "titre", "message", "effet", "article", "nomPlaceholder"]);
+const CHAMPS = new Set(["nom", "phrase", "court", "titre", "message", "effet", "article", "nomPlaceholder", "compte"]);
 /** Enveloppe chaque objet d'une liste (ou d'un dictionnaire de listes) : ses champs de texte sont traduits au moment où on les lit. */
 export function traduit<T>(donnees: T): T {
   if (Array.isArray(donnees)) {

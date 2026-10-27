@@ -159,6 +159,118 @@ export function TableHaute({ gx, gy, pal, fleurs, bougies, invites = 0, retard =
   );
 }
 
+
+// ── Conférences et événements professionnels ───────────────────────────────
+/** Une chaise de la salle, tournée vers l'estrade (on la voit de dos) ; avec un participant assis quand la salle est pleine */
+export function ChaiseConf({ gx, gy, i, pal, assis }: { gx: number; gy: number; i: number; pal: Pal; assis?: boolean }) {
+  const x = X(gx, gy), y = Y(gx, gy), c = pal.sombre ? "#8a7f98" : "#5b5068";
+  const corps = [pal.accent, "#3d352e", "#5b6b7a", pal.deco, "#7a5a4a"][i % 5];
+  return (
+    <g>
+      <ellipse cx={x} cy={y + 1} rx="8" ry="3" fill="#2b1a10" opacity="0.2" />
+      <ellipse cx={x} cy={y - 4} rx="6.2" ry="3" fill={c} />
+      {assis && <Personne x={x} y={y - 3} assis s={0.72} corps={corps} peau={peauDe(i)} cheveux={cheveuxDe(i)} robe={i % 3 === 1} />}
+      <rect x={x - 5.8} y={y - 8.5} width="11.6" height="10.8" rx="2.6" fill={assombrir(c, 0.1)} />
+      <rect x={x - 5.8} y={y - 8.5} width="11.6" height="2" rx="1" fill={pal.accent} opacity="0.85" />
+    </g>
+  );
+}
+
+export function MicroPied({ gx, gy, haut = 34 }: { gx: number; gy: number; haut?: number }) {
+  const x = X(gx, gy), y = Y(gx, gy);
+  return (
+    <g>
+      <ellipse cx={x} cy={y + 0.5} rx="6" ry="2.4" fill="#2b1a10" opacity="0.25" />
+      <ellipse cx={x} cy={y} rx="4.4" ry="1.8" fill="#2a2730" />
+      <rect x={x - 0.7} y={y - haut} width="1.4" height={haut} fill="#3a3640" />
+      <rect x={x - 1.6} y={y - haut - 7} width="3.2" height="7.5" rx="1.6" fill="#1f1d22" />
+      <ellipse cx={x} cy={y - haut - 7} rx="2.6" ry="2.2" fill="#8d8a93" />
+    </g>
+  );
+}
+
+/** Estrade surélevée avec tapis, pupitre et micro ; un orateur la rejoint quand la salle est pleine */
+export function Estrade({ gx, gy, w, d, pal, orateur }: { gx: number; gy: number; w: number; d: number; pal: Pal; orateur?: boolean }) {
+  const bois = "#9b7a55", h = 11;
+  const px = gx + w * 0.5, py = gy + d * 0.55;
+  const X0 = X(px, py), Y0 = Y(px, py, h);
+  return (
+    <g>
+      <Ombre gx={gx + w / 2} gy={gy + d / 2} r={2.2} o={0.14} />
+      <Boite gx={gx} gy={gy} w={w} d={d} h={h} haut={bois} gauche={assombrir(bois, 0.14)} droite={assombrir(bois, 0.28)} />
+      <polygon points={poly([gx + 0.15, gy + 0.15, h + 0.4], [gx + w - 0.15, gy + 0.15, h + 0.4], [gx + w - 0.15, gy + d - 0.15, h + 0.4], [gx + 0.15, gy + d - 0.15, h + 0.4])} fill={pal.deco} opacity="0.9" />
+      <polygon points={poly([gx + 0.15, gy + d, 5], [gx + w - 0.15, gy + d, 5], [gx + w - 0.15, gy + d, 3.5], [gx + 0.15, gy + d, 3.5])} fill={pal.accent} opacity="0.85" />
+      {orateur && <Personne x={X0 + 7} y={Y0 - 3} corps="#25222b" peau={peauDe(2)} cheveux={cheveuxDe(1)} echarpe={pal.accent} s={1.12} />}
+      {/* pupitre */}
+      <g>
+        <Boite gx={px - 0.3} gy={py - 0.25} w={0.6} d={0.5} h={22} z0={h} haut={eclaircir("#7a5a3c", 0.12)} gauche="#6b4d33" droite="#5a3f29" />
+        <polygon points={poly([px - 0.3, py + 0.25, h + 22], [px + 0.3, py + 0.25, h + 22], [px + 0.3, py + 0.25, h + 17], [px - 0.3, py + 0.25, h + 17])} fill={pal.accent} opacity="0.8" />
+        <rect x={X0 - 0.7} y={Y0 - 38} width="1.4" height="14" fill="#3a3640" />
+        <rect x={X0 - 1.6} y={Y0 - 43} width="3.2" height="6.5" rx="1.6" fill="#1f1d22" />
+        <ellipse cx={X0} cy={Y0 - 43} rx="2.6" ry="2.2" fill="#8d8a93" />
+      </g>
+    </g>
+  );
+}
+
+/** Grand écran de projection fixé au mur du fond, centré derrière l'estrade */
+export function EcranProjection({ u0, pal, anime }: { u0: number; pal: Pal; anime?: boolean }) {
+  return (
+    <Plan sens="d" c={0.1} u={u0} z0={26}>
+      <rect width="150" height="84" rx="4" fill="#1d1b22" stroke={pal.deco} strokeWidth="3" />
+      <rect x="6" y="6" width="138" height="72" rx="2" fill={melanger(pal.accent, "#1d1b22", 0.55)} />
+      <rect x="16" y="14" width="86" height="9" rx="2" fill="#fff" opacity="0.93" />
+      <rect x="16" y="29" width="58" height="4.5" rx="2" fill={pal.nappe} opacity="0.9" /><rect x="16" y="38" width="48" height="4.5" rx="2" fill={pal.nappe} opacity="0.75" />
+      {[0, 1, 2, 3].map((k) => <rect key={k} x={84 + k * 13} y={68 - (14 + ((k * 7) % 4) * 6)} width="9" height={14 + ((k * 7) % 4) * 6} fill={k % 2 ? pal.nappe : "#fff"} opacity="0.85" className={anime ? "hc-bob" : undefined} style={anime ? { animationDelay: `${k * 0.3}s` } : undefined} />)}
+    </Plan>
+  );
+}
+
+/** Table des intervenants : nappe, chevalets, micros et chaises du côté du public opposé */
+export function TableIntervenants({ gx, gy, w, d, pal, assis }: { gx: number; gy: number; w: number; d: number; pal: Pal; assis?: boolean }) {
+  const n = 4, c = pal.nappe;
+  return (
+    <g>
+      <Ombre gx={gx + w / 2} gy={gy + d / 2} r={1.6} o={0.12} />
+      {Array.from({ length: n }, (_, i) => { const px = gx + (w / n) * (i + 0.5), x = X(px, gy - 0.25), y = Y(px, gy - 0.25);
+        return <g key={`c${i}`}>{assis && <Personne x={x} y={y} assis s={0.95} corps={["#25222b", pal.accent, "#3d352e", "#5b6b7a"][i]} peau={peauDe(i + 1)} cheveux={cheveuxDe(i)} robe={i % 2 === 1} />}<ellipse cx={x} cy={y - 3} rx="6" ry="3" fill="#3a3340" /></g>; })}
+      <Boite gx={gx} gy={gy} w={w} d={d} h={20} haut={c} gauche={assombrir(c, 0.1)} droite={assombrir(c, 0.22)} />
+      <polygon points={poly([gx, gy + d, 6], [gx + w, gy + d, 6], [gx + w, gy + d, 4], [gx, gy + d, 4])} fill={pal.accent} opacity="0.85" />
+      {Array.from({ length: n }, (_, i) => { const px = gx + (w / n) * (i + 0.5), x = X(px, gy + d * 0.5), y = Y(px, gy + d * 0.5, 20);
+        return <g key={i}><rect x={x - 5} y={y - 6} width="10" height="5" rx="1" fill="#fff" opacity="0.95" /><rect x={x - 0.6} y={y - 13} width="1.2" height="8" fill="#3a3640" /><ellipse cx={x} cy={y - 14} rx="1.8" ry="1.6" fill="#1f1d22" /></g>; })}
+    </g>
+  );
+}
+
+/** Régie son et lumière : console, écrans et technicien */
+export function Regie({ gx, gy, w, d, pal, assis }: { gx: number; gy: number; w: number; d: number; pal: Pal; assis?: boolean }) {
+  const noir = "#2b2830";
+  return (
+    <g>
+      <Ombre gx={gx + w / 2} gy={gy + d / 2} r={1.2} o={0.14} />
+      {assis && <Personne x={X(gx + w * 0.4, gy - 0.2)} y={Y(gx + w * 0.4, gy - 0.2)} corps="#1f1d22" peau={peauDe(3)} cheveux={cheveuxDe(2)} s={1.05} />}
+      <Boite gx={gx} gy={gy} w={w} d={d} h={15} haut={noir} gauche={assombrir(noir, 0.2)} droite={assombrir(noir, 0.35)} />
+      {[0.25, 0.55].map((u, i) => { const x = X(gx + w * u, gy + d * 0.4), y = Y(gx + w * u, gy + d * 0.4, 15); return <g key={i}><rect x={x - 7} y={y - 12} width="14" height="9" rx="1.5" fill="#15131a" /><rect x={x - 5.5} y={y - 10.5} width="11" height="6" fill={pal.accent} opacity="0.55" /></g>; })}
+      {Array.from({ length: 7 }, (_, k) => { const x = X(gx + w * (0.1 + k * 0.12), gy + d * 0.75), y = Y(gx + w * (0.1 + k * 0.12), gy + d * 0.75, 15); return <rect key={k} x={x - 1} y={y - 4 - (k % 3)} width="2" height={3 + (k % 3)} fill={k % 2 ? "#F4D774" : "#9DD3C8"} />; })}
+    </g>
+  );
+}
+
+/** Buffet de sandwichs et de pause café (long axe selon w ou d) */
+export function BuffetSandwichs({ gx, gy, w, d, pal }: { gx: number; gy: number; w: number; d: number; pal: Pal }) {
+  const c = pal.nappe, long = w >= d, n = 6;
+  const pt2 = (t: number, z: number) => long ? [X(gx + 0.35 + t * (w - 1.1), gy + d / 2), Y(gx + 0.35 + t * (w - 1.1), gy + d / 2, z)] : [X(gx + w / 2, gy + 0.35 + t * (d - 1.1)), Y(gx + w / 2, gy + 0.35 + t * (d - 1.1), z)];
+  return (
+    <g>
+      <Ombre gx={gx + w / 2} gy={gy + d / 2} r={1.2} o={0.14} />
+      <Boite gx={gx} gy={gy} w={w} d={d} h={26} haut={c} gauche={assombrir(c, 0.1)} droite={assombrir(c, 0.22)} />
+      <polygon points={poly([gx + w, gy, 7], [gx + w, gy + d, 7], [gx + w, gy + d, 4], [gx + w, gy, 4])} fill={pal.accent} opacity="0.85" />
+      {Array.from({ length: n }, (_, i) => { const [x, y] = pt2(i / (n - 1), 26); return <g key={i}><ellipse cx={x} cy={y} rx="7" ry="3.6" fill="#f3efe6" stroke="#d8cfbb" strokeWidth="0.5" /><path d={`M${x - 4.5} ${y - 1} L${x + 4.5} ${y - 1} L${x + 3} ${y - 5} L${x - 3} ${y - 5} Z`} fill={["#E8C06A", "#C77B4A", "#9DAE89", "#D9A28A", "#E8D6A2", "#C9A0A0"][i]} /><rect x={x - 4.5} y={y - 3.2} width="9" height="1.6" fill="#7a5a3c" opacity="0.7" /></g>; })}
+      {[0, 1].map((k) => { const [x, y] = pt2(0.97 - k * 0.1, 26); return <g key={`u${k}`}><rect x={x - 3.5} y={y - 15} width="7" height="14" rx="2" fill="#b9b2a4" /><rect x={x - 4.2} y={y - 17} width="8.4" height="3" rx="1.5" fill="#8d877b" /><circle cx={x + 4.6} cy={y - 8} r="1" fill="#E24E8B" /></g>; })}
+    </g>
+  );
+}
+
 // ── Mariés, honneur, arche ──────────────────────────────────────────────────
 export function TableHonneur({ gx, gy, w, d, pal, fleurs, couple, type, animer }: { gx: number; gy: number; w: number; d: number; pal: Pal; fleurs?: boolean; couple?: boolean; type: string; animer?: boolean }) {
   const h = 22;

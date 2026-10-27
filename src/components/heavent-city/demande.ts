@@ -35,7 +35,8 @@ const noterEnvoyee = (c: Choix, email: string) => { try { const l = JSON.parse(s
 function construireCorps(c: Choix, k: Coordonnees) {
   const r = resume(c);
   const conf = configurationAdmin(c);
-  const lignes = [...r.decors, ...r.experiences].map((l) => ({ libelle: l.reservable ? l.nom : `${l.nom} (inspiration à discuter)`, detail: "", surDevis: false }));
+  const chaises = c.tables === "conference" ? [{ libelle: `${nbTables(c.invites, c.tables)} chaises (disposition conférence, une par participant)`, detail: "", surDevis: false }] : [];
+  const lignes = [...chaises, ...[...r.decors, ...r.experiences].map((l) => ({ libelle: l.reservable ? l.nom : `${l.nom} (inspiration à discuter)`, detail: "", surDevis: false }))];
   const ids = optionsActives(c);
   const options = [r.style && `Style : ${r.style}`, `Couleurs : ${r.palette}`, r.lumiere && `Lumière : ${r.lumiere}`, r.musique && `Musique : ${r.musique}`, r.accueil && `Accueil : ${r.accueil}`, ...ids.map((o) => infoOption(o)?.nom)].filter(Boolean);
   const note = c.note.trim();

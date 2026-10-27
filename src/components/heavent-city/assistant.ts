@@ -125,6 +125,8 @@ export function suggestionAutomatique(texte: string, type: TypeEvt, lieuCourant:
   }
   if (a(t, "henne", "henna")) opts.add("henne");
   if (a(t, "gateau", "piece montee")) opts.add("gateau");
+  if (type === "pro" && a(t, "conference", "seminaire", "podium", "pupitre", "orateur", "intervenant", "keynote")) { opts.add("podium"); opts.add("ecran"); opts.add("micros"); }
+  if (type === "pro" && a(t, "sandwich", "pause cafe", "pause-cafe")) opts.add("buffet_sandwichs");
   if (a(t, "petale")) opts.add("petales");
   if (a(t, "fontaine")) opts.add("fontaine");
   if (opts.size < 2) { // quelques idées cohérentes avec le style, sans rien pousser de plus

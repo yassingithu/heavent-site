@@ -8,7 +8,7 @@ import { ArrowLeft, Hand, Phone, Redo2, Undo2, DoorOpen } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
 import logoHeavent from "@/assets/logo-heavent-or.png";
 import logoNawar from "@/assets/logo-nawar.png";
-import { LIEUX, MESSAGE_BIENVENUE, MENTION_LIEUX, TYPES, type OptionId } from "./donnees";
+import { LIEUX, MESSAGE_BIENVENUE, MENTION_LIEUX, TYPES, infoTable, type OptionId } from "./donnees";
 import {
   ETAT_INITIAL, aUneSauvegarde, avancement, ecrireSauvegarde, effacerSauvegarde, lireSauvegarde, missionsDuType, optionsActives, reducteur, rendu, resume,
   type Action, type Choix, type Etat,
@@ -192,7 +192,7 @@ export default function HeaventCity() {
                 </button>
               </div>
             </div>
-            <div className="pointer-events-none absolute bottom-2 start-3 rounded-full bg-black/45 px-3 py-1 text-[12px] text-[#F0E8D6]" aria-live="polite">{tr("{nb} {type} · {n} invités", { nb: r.tablesTotal, type: r.tables === "hautes" ? tr("tables hautes") : r.tables === "rectangulaires" ? tr("tables rectangulaires") : tr("tables rondes"), n: r.invites })}</div>
+            <div className="pointer-events-none absolute bottom-2 start-3 rounded-full bg-black/45 px-3 py-1 text-[12px] text-[#F0E8D6]" aria-live="polite">{r.tables === "conference" ? tr("{n} chaises · {n} participants", { n: r.invites }) : tr("{nb} {type} · {n} invités", { nb: r.tablesTotal, type: infoTable(r.tables).compte, n: r.invites })}</div>
             {deplacer && (
               <div className="absolute inset-x-3 bottom-10 z-10 mx-auto flex max-w-md flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#F4D774]/60 bg-[#17141a]/95 px-3.5 py-2.5 shadow-xl" data-testid="bandeau-deplacer" role="status">
                 <span className="text-[13px] leading-snug text-[#F6EFDD]">{tr("Fais glisser un objet pour le déplacer.")}</span>

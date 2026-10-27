@@ -1,7 +1,7 @@
 import * as D from "../../src/components/heavent-city/donnees";
 import * as fs from "fs";
 import { TRADUCTIONS as T } from "../../src/components/heavent-city/traductions";
-const CH = new Set(["nom","phrase","court","titre","message","effet","article","nomPlaceholder"]);
+const CH = new Set(["nom","phrase","court","titre","message","effet","article","nomPlaceholder","compte"]);
 const cles = new Set<string>();
 const marcher = (v: unknown) => { if (Array.isArray(v)) v.forEach(marcher); else if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) { if (CH.has(k) && typeof x === "string") cles.add(x); else if (typeof x === "object") marcher(x); } };
 for (const [, v] of Object.entries(D)) if (typeof v !== "function") marcher(v);

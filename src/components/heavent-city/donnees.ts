@@ -22,7 +22,7 @@ export type LumiereId = "chaleureuse" | "etoilee" | "bougies" | "festive";
 export type MusiqueId = "dj" | "orchestre" | "troupe" | "playlist" | "acoustique";
 export type AccueilId = "discret" | "hotesses" | "maitre_hotel" | "the";
 export type DecorId = "arche" | "fleurs" | "mur_fleurs" | "allee" | "fontaine" | "petales" | "ciel_lanternes" | "amariya" | "fauteuils";
-export type ExperienceId = "piste" | "photobooth" | "nawar" | "buffet" | "candy_bar" | "livre_dor" | "feux_froids" | "photographe" | "salon" | "the_bar" | "brume" | "henne" | "neggafa" | "gateau";
+export type ExperienceId = "piste" | "photobooth" | "nawar" | "buffet" | "candy_bar" | "livre_dor" | "feux_froids" | "photographe" | "salon" | "the_bar" | "brume" | "henne" | "neggafa" | "gateau" | "podium" | "ecran" | "table_intervenants" | "micros" | "regie" | "buffet_sandwichs";
 export type OptionId = DecorId | ExperienceId;
 
 export interface InfoType { id: TypeEvt; nom: string; court: string; emoji: string; nomPlaceholder: string; article: string }
@@ -115,6 +115,13 @@ export const EXPERIENCES: (InfoOption & { id: ExperienceId })[] = traduit([
   { id: "henne", nom: "Espace henné", phrase: "Coussins au sol, table basse, cônes de henné et bougies", catalogue: "espace_henne", types: ["mariage", "fete"] },
   { id: "gateau", nom: "Pièce montée", phrase: "Le gâteau des mariés, dressé sur sa table", catalogue: "gateau", types: ["mariage", "fete"] },
   { id: "brume", nom: "Brume d'ambiance", phrase: "Une légère brume lumineuse — à discuter" },
+  // conférences et événements professionnels
+  { id: "podium", nom: "Estrade, pupitre et micro", phrase: "Scène surélevée pour les orateurs, avec pupitre et micro", catalogue: "estrade", types: ["pro"] },
+  { id: "ecran", nom: "Écran de projection", phrase: "Grand écran derrière l'estrade pour les présentations", types: ["pro"] },
+  { id: "table_intervenants", nom: "Table des intervenants", phrase: "Table nappée avec chaises, micros et chevalets pour un panel", types: ["pro"] },
+  { id: "micros", nom: "Micros dans la salle", phrase: "Deux micros sur pied dans l'allée pour les questions du public", types: ["pro"] },
+  { id: "regie", nom: "Régie son et lumière", phrase: "Console, technicien et retours pour une sonorisation claire", types: ["pro"] },
+  { id: "buffet_sandwichs", nom: "Buffet sandwichs et pause café", phrase: "Sandwichs, viennoiseries, café et thé pour les pauses", catalogue: "buffet", types: ["pro"] },
 ]);
 
 export const toutesOptions = (): InfoOption[] => [...DECORS, ...EXPERIENCES];
@@ -206,11 +213,12 @@ export const MESSAGE_BIENVENUE = "Un événement exceptionnel se prépare. Et c'
 export const PROMESSE = "Tu as les clés. Crée l'événement dont tout le monde parlera.";
 
 // ── Tables (types réellement proposés par Heavent : table ronde, table rectangulaire, table haute) ─────────
-export type TableId = "rondes" | "rectangulaires" | "hautes";
-export interface InfoTable { id: TableId; nom: string; phrase: string; places: number; catalogue: "table_ronde" | "table_rect" | "table_haute"; libelle: string }
+export type TableId = "rondes" | "rectangulaires" | "hautes" | "conference";
+export interface InfoTable { id: TableId; nom: string; phrase: string; places: number; catalogue: "table_ronde" | "table_rect" | "table_haute" | null; libelle: string; compte: string }
 export const TABLES_TYPES: InfoTable[] = traduit([
-  { id: "rondes", nom: "Tables rondes", phrase: "10 convives, chaises et nappe : le classique des mariages", places: 10, catalogue: "table_ronde", libelle: "Tables rondes" },
-  { id: "rectangulaires", nom: "Tables rectangulaires", phrase: "6 places, façon banquet : une allure plus sobre", places: 6, catalogue: "table_rect", libelle: "Tables rectangulaires" },
-  { id: "hautes", nom: "Tables hautes", phrase: "Mange-debout nappés, invités debout : idéal pour un cocktail", places: 6, catalogue: "table_haute", libelle: "Tables hautes (mange-debout)" },
+  { id: "rondes", nom: "Tables rondes", phrase: "10 convives, chaises et nappe : le classique des mariages", places: 10, catalogue: "table_ronde", libelle: "Tables rondes", compte: "tables rondes" },
+  { id: "rectangulaires", nom: "Tables rectangulaires", phrase: "6 places, façon banquet : une allure plus sobre", places: 6, catalogue: "table_rect", libelle: "Tables rectangulaires", compte: "tables rectangulaires" },
+  { id: "hautes", nom: "Tables hautes", phrase: "Mange-debout nappés, invités debout : idéal pour un cocktail", places: 6, catalogue: "table_haute", libelle: "Tables hautes (mange-debout)", compte: "tables hautes" },
+  { id: "conference", nom: "Conférence (rangées de chaises)", phrase: "Une chaise par participant, en rangées face à l'estrade", places: 1, catalogue: null, libelle: "Chaises (disposition conférence)", compte: "chaises" },
 ]);
 export const infoTable = (id: TableId) => TABLES_TYPES.find((t) => t.id === id)!;

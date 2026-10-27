@@ -44,7 +44,7 @@ function Salle({ choix, dispatch }: { choix: Choix; dispatch: Dispatch<Action> }
   return (
     <div className="grid gap-4" data-testid="onglet-salle-contenu">
       <div>
-        <label htmlFor="salle-invites" className="flex items-baseline justify-between text-[14px] text-[#F6EFDD]"><span>{tr("Nombre d'invités")}</span><b className="font-serif text-xl text-[#E4D49A]" data-testid="salle-valeur">{valeur}</b></label>
+        <label htmlFor="salle-invites" className="flex items-baseline justify-between text-[14px] text-[#F6EFDD]"><span>{choix.tables === "conference" ? tr("Nombre de participants") : tr("Nombre d'invités")}</span><b className="font-serif text-xl text-[#E4D49A]" data-testid="salle-valeur">{valeur}</b></label>
         <input id="salle-invites" type="range" min={INVITES.min} max={INVITES.max} step={5} value={valeur} data-testid="salle-curseur"
           onChange={(e) => setSaisie(Number(e.target.value))} onPointerUp={() => saisie !== null && fixer(saisie)} onKeyUp={() => saisie !== null && fixer(saisie)} onBlur={() => saisie !== null && fixer(saisie)}
           className="mt-2 h-8 w-full accent-[#C9A74E]" />
@@ -52,16 +52,18 @@ function Salle({ choix, dispatch }: { choix: Choix; dispatch: Dispatch<Action> }
           {[50, 120, 200, 300, 400].map((v) => <button key={v} type="button" onClick={() => fixer(v)} data-testid={`salle-invites-${v}`} className={`min-h-10 rounded-full border px-3 text-[13px] ${choix.invites === v ? "border-[#C9A74E] bg-[#C9A74E] font-semibold text-[#17141a]" : "border-white/15 bg-white/[0.05] text-[#F0E8D6]"}`}>{v}</button>)}
         </div>
         <p className="mt-2 text-[13px] leading-snug text-[#D9D0BC]" aria-live="polite" data-testid="salle-bilan">
-          {tr("{nb} {type} pour {n} invités.", { nb, type: info.nom.toLowerCase(), n: valeur })}{n > N_MIN ? " " + tr("La salle s'est agrandie pour tout accueillir.") : ""}
+          {choix.tables === "conference" ? tr("{n} chaises : une par participant, en rangées face à l'estrade.", { n: valeur }) : tr("{nb} {type} pour {n} invités.", { nb, type: info.compte, n: valeur })}{n > N_MIN ? " " + tr("La salle s'est agrandie pour tout accueillir.") : ""}
         </p>
       </div>
       <div>
         <p className="mb-2 text-[14px] text-[#F6EFDD]">{tr("Type de tables")}</p>
         <div className="grid gap-2" role="radiogroup" aria-label={tr("Type de tables")}>
-          {TABLES_TYPES.map((t) => {
+          {TABLES_TYPES.filter((t) => t.id !== "conference" || choix.type === "pro").map((t) => {
             const on = choix.tables === t.id;
             return (
-              <button key={t.id} type="button" role="radio" aria-checked={on} data-testid={`tables-${t.id}`} onClick={() => { petitSon("clic"); dispatch({ t: "choisir", patch: { tables: t.id as TableId } }); }}
+              <button key={t.id} type="button" role="radio" aria-checked={on} data-testid={`tables-${t.id}`} onClick={() => { petitSon("clic"); dispatch({ t: "choisir", patch: t.id === "conference"
+                ? { tables: "conference", manuels: [...new Set([...choix.manuels, "podium", "ecran"])] as OptionId[], retires: choix.retires.filter((o) => o !== "podium" && o !== "ecran") }
+                : { tables: t.id as TableId } }); }}
                 className={`flex min-h-[64px] items-start gap-3 rounded-2xl border p-3 text-start transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F4D774] ${on ? "border-[#C9A74E] bg-[#C9A74E]/15" : "border-white/12 bg-white/[0.04] hover:bg-white/[0.09]"}`}>
                 <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${on ? "border-[#C9A74E] bg-[#C9A74E] text-[#17141a]" : "border-white/30"}`}>{on && <Check className="h-3.5 w-3.5" />}</span>
                 <span><span className="block text-[14px] font-medium text-[#F6EFDD]">{t.nom}</span><span className="block text-[12px] leading-snug text-[#B9B09C]">{t.phrase}</span></span>

@@ -1,0 +1,15 @@
+import { chromium } from "/opt/npm-tools/node_modules/playwright/index.mjs";
+const b = await chromium.launch();
+const p = await (await b.newContext({ viewport: { width: 1366, height: 800 } })).newPage();
+const err = []; p.on("pageerror", (e) => err.push(e.message));
+await p.goto("http://127.0.0.1:5180/apercu/heavent-city");
+await p.click('[data-testid="commencer"]'); await p.click('[data-testid="type-pro"]');
+for (let i = 0; i < 3; i++) await p.click('[data-testid="q-passer"]');
+await p.click('[data-testid="q-passer"]').catch(() => {});
+await p.click('[data-testid="liste-lieu-salle"]'); await p.waitForSelector('[data-testid="scene"]'); await p.waitForTimeout(2500);
+await p.click('[data-testid="onglet-salle"]'); await p.click('[data-testid="tables-conference"]');
+await p.click('[data-testid="onglet-experiences"]');
+for (const id of ["table_intervenants", "micros", "regie", "buffet_sandwichs"]) await p.click(`[data-testid="option-${id}"]`);
+await p.click('[data-testid="ouvrir-portes"]'); await p.waitForSelector('[data-testid="bilan"]', { timeout: 20000 });
+await p.waitForTimeout(800); await p.screenshot({ path: "conf-final.png" });
+console.log("err", err); await b.close();
