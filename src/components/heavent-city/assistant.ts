@@ -76,7 +76,7 @@ export function suggestionAutomatique(texte: string, type: TypeEvt, lieuCourant:
   if (a(t, "romantique", "fleur", "poudr", "champetre", "doux", "tendre", "rose")) score.romantique += 2;
   if (a(t, "fete", "festif", "danse", "party", "energie", "dj", "ambiance de feu", "anime", "colore")) score.festif += 2;
   if (a(t, "minimal", "epure", "sobre", "moderne", "simple", "noir", "contemporain")) score.minimal += 2;
-  if (type === "pro") score.minimal += 1; if (type === "mariage") score.beige_or += 0.5;
+  if (type === "pro" || type === "conference") score.minimal += 1; if (type === "mariage") score.beige_or += 0.5;
   const style = (Object.entries(score).sort((x, y) => y[1] - x[1])[0][0]) as StyleId;
 
   let palette: PaletteId = STYLES.find((s) => s.id === style)!.palette;
@@ -102,8 +102,8 @@ export function suggestionAutomatique(texte: string, type: TypeEvt, lieuCourant:
   if (a(t, "folklor", "troupe", "danseur")) musiques.add("troupe");
   if (a(t, "guitare", "acoustique", "duo")) musiques.add("acoustique");
   if (a(t, "playlist", "calme", "discret", "doux")) musiques.add("playlist");
-  if (!musiques.size) musiques.add(style === "festif" ? "dj" : style === "maroc" && type !== "pro" ? "orchestre" : "playlist");
-  if (type === "pro") { musiques.delete("orchestre"); musiques.delete("troupe"); if (!musiques.size) musiques.add("playlist"); }
+  if (!musiques.size) musiques.add(style === "festif" ? "dj" : style === "maroc" && type !== "pro" && type !== "conference" ? "orchestre" : "playlist");
+  if (type === "pro" || type === "conference") { musiques.delete("orchestre"); musiques.delete("troupe"); if (!musiques.size) musiques.add("playlist"); }
   const musique = [...musiques];
 
   const opts = new Set<OptionId>();
@@ -125,8 +125,8 @@ export function suggestionAutomatique(texte: string, type: TypeEvt, lieuCourant:
   }
   if (a(t, "henne", "henna")) opts.add("henne");
   if (a(t, "gateau", "piece montee")) opts.add("gateau");
-  if (type === "pro" && a(t, "conference", "seminaire", "podium", "pupitre", "orateur", "intervenant", "keynote")) { opts.add("podium"); opts.add("ecran"); opts.add("micros"); }
-  if (type === "pro" && a(t, "sandwich", "pause cafe", "pause-cafe")) opts.add("buffet_sandwichs");
+  if (type === "conference" || (type === "pro" && a(t, "conference", "seminaire", "podium", "pupitre", "orateur", "intervenant", "keynote"))) { opts.add("podium"); opts.add("ecran"); opts.add("micros"); }
+  if ((type === "pro" || type === "conference") && a(t, "sandwich", "pause cafe", "pause-cafe")) opts.add("buffet_sandwichs");
   if (a(t, "petale")) opts.add("petales");
   if (a(t, "fontaine")) opts.add("fontaine");
   if (opts.size < 2) { // quelques idées cohérentes avec le style, sans rien pousser de plus
@@ -137,7 +137,7 @@ export function suggestionAutomatique(texte: string, type: TypeEvt, lieuCourant:
     else { opts.add("fleurs"); opts.add("photobooth"); }
   }
   const options = [...opts].filter((o) => { const i = infoOption(o); return !!i && disponiblePour(i, type, lieuEff); }).slice(0, 5);
-  const accueil: AccueilId | null = type === "pro" ? "hotesses" : a(t, "the de bienvenue") ? "the" : style === "beige_or" || style === "maroc" ? "hotesses" : "discret";
+  const accueil: AccueilId | null = type === "pro" || type === "conference" ? "hotesses" : a(t, "the de bienvenue") ? "the" : style === "beige_or" || style === "maroc" ? "hotesses" : "discret";
   const explication = pasBling
     ? tr("Pour rester chic sans en faire trop, je te propose un style « {style} », une lumière chaleureuse et quelques touches discrètes. Tu peux tout ajuster avant d'appliquer.", { style: STYLES.find((s) => s.id === style)!.nom.toLowerCase() })
     : explicationAuto({ style, palette, options });

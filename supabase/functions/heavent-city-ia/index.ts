@@ -17,7 +17,7 @@ const corsHeaders = {
 
 // Identifiants autorisés — copie de src/components/heavent-city/donnees.ts (un test vérifie qu'ils sont identiques)
 const IDS = {"lieux":["riad","villa","rooftop","jardin","salle"],"styles":["maroc","beige_or","romantique","festif","minimal"],"palettes":["sable_or","terracotta","poudre","emeraude","ivoire_noir","nuit_or"],"lumieres":["chaleureuse","etoilee","bougies","festive"],"musiques":["dj","orchestre","troupe","playlist","acoustique"],"accueils":["discret","hotesses","maitre_hotel","the"],"options":["arche","fleurs","mur_fleurs","allee","fontaine","amariya","fauteuils","petales","ciel_lanternes","piste","photobooth","nawar","buffet","the_bar","candy_bar","livre_dor","feux_froids","photographe","salon","neggafa","henne","gateau","brume","podium","ecran","table_intervenants","micros","regie","buffet_sandwichs"]};
-const TYPES = ["mariage", "fete", "pro"];
+const TYPES = ["mariage", "fete", "pro", "conference"];
 const MESSAGE_MAX = 280;
 const MODELE = Deno.env.get("HEAVENT_CITY_IA_MODELE") ?? "claude-haiku-4-5";
 const PRIX = /\d[\d\s.,]*\s?(mad|dh|dhs|dirhams?|€|eur|euros?|\$)|\b(mad|dh|dirhams?)\s?\d|tarif|prix|co[uû]t|budget|remise|gratuit/i;

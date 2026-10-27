@@ -14,7 +14,7 @@
 
 import { traduit } from "./langue";
 
-export type TypeEvt = "mariage" | "fete" | "pro";
+export type TypeEvt = "mariage" | "fete" | "pro" | "conference";
 export type LieuId = "riad" | "villa" | "rooftop" | "jardin" | "salle";
 export type StyleId = "maroc" | "beige_or" | "romantique" | "festif" | "minimal";
 export type PaletteId = "sable_or" | "terracotta" | "poudre" | "emeraude" | "ivoire_noir" | "nuit_or";
@@ -30,6 +30,7 @@ export const TYPES: InfoType[] = traduit([
   { id: "mariage", nom: "Mariage", court: "Mariage", emoji: "💍", nomPlaceholder: "Prénoms (facultatif)", article: "ton mariage" },
   { id: "fete", nom: "Anniversaire ou fête privée", court: "Fête privée", emoji: "🎂", nomPlaceholder: "Nom de la fête (facultatif)", article: "ta fête" },
   { id: "pro", nom: "Événement professionnel", court: "Professionnel", emoji: "🏢", nomPlaceholder: "Nom de l'événement (facultatif)", article: "ton événement" },
+  { id: "conference", nom: "Conférence ou séminaire", court: "Conférence", emoji: "🎤", nomPlaceholder: "Nom de la conférence (facultatif)", article: "ta conférence" },
 ]);
 
 export const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Fès", "Agadir", "Autre ville"];
@@ -116,12 +117,12 @@ export const EXPERIENCES: (InfoOption & { id: ExperienceId })[] = traduit([
   { id: "gateau", nom: "Pièce montée", phrase: "Le gâteau des mariés, dressé sur sa table", catalogue: "gateau", types: ["mariage", "fete"] },
   { id: "brume", nom: "Brume d'ambiance", phrase: "Une légère brume lumineuse — à discuter" },
   // conférences et événements professionnels
-  { id: "podium", nom: "Estrade, pupitre et micro", phrase: "Scène surélevée pour les orateurs, avec pupitre et micro", catalogue: "estrade", types: ["pro"] },
-  { id: "ecran", nom: "Écran de projection", phrase: "Grand écran derrière l'estrade pour les présentations", catalogue: "ecran_projection", types: ["pro"] },
-  { id: "table_intervenants", nom: "Table des intervenants", phrase: "Table nappée avec chaises, micros et chevalets pour un panel", catalogue: "table_intervenants", types: ["pro"] },
-  { id: "micros", nom: "Micros dans la salle", phrase: "Deux micros sur pied dans l'allée pour les questions du public", catalogue: "micro_pied", types: ["pro"] },
-  { id: "regie", nom: "Régie son et lumière", phrase: "Console, technicien et retours pour une sonorisation claire", catalogue: "regie_son", types: ["pro"] },
-  { id: "buffet_sandwichs", nom: "Buffet sandwichs et pause café", phrase: "Sandwichs, viennoiseries, café et thé pour les pauses", catalogue: "buffet_sandwichs", types: ["pro"] },
+  { id: "podium", nom: "Estrade, pupitre et micro", phrase: "Scène surélevée pour les orateurs, avec pupitre et micro", catalogue: "estrade", types: ["pro", "conference"] },
+  { id: "ecran", nom: "Écran de projection", phrase: "Grand écran derrière l'estrade pour les présentations", catalogue: "ecran_projection", types: ["pro", "conference"] },
+  { id: "table_intervenants", nom: "Table des intervenants", phrase: "Table nappée avec chaises, micros et chevalets pour un panel", catalogue: "table_intervenants", types: ["pro", "conference"] },
+  { id: "micros", nom: "Micros dans la salle", phrase: "Deux micros sur pied dans l'allée pour les questions du public", catalogue: "micro_pied", types: ["pro", "conference"] },
+  { id: "regie", nom: "Régie son et lumière", phrase: "Console, technicien et retours pour une sonorisation claire", catalogue: "regie_son", types: ["pro", "conference"] },
+  { id: "buffet_sandwichs", nom: "Buffet sandwichs et pause café", phrase: "Sandwichs, viennoiseries, café et thé pour les pauses", catalogue: "buffet_sandwichs", types: ["pro", "conference"] },
 ]);
 
 export const toutesOptions = (): InfoOption[] => [...DECORS, ...EXPERIENCES];
@@ -198,6 +199,25 @@ export const MISSIONS: Record<TypeEvt, Mission[]> = traduit({
         { id: "nawar", nom: "Un parfum signature", phrase: "Un cadeau personnalisé", ajoute: ["nawar"], effet: "Le bar à parfums Nawar s'installe." },
         { id: "photographe", nom: "Un reportage photo", phrase: "Garder la trace de la soirée", ajoute: ["photographe"], effet: "Un photographe circule dans la salle." },
         { id: "musique", nom: "Une ambiance musicale", phrase: "Discrète et élégante", ajoute: [], musique: "playlist", effet: "Une enceinte d'ambiance s'allume." },
+      ],
+    },
+  ],
+  conference: [
+    M_ACCUEIL("Tes participants arrivent, badge en main : prépare leur accueil."),
+    {
+      id: "pauses", titre: "Les pauses", message: "Une conférence se joue aussi entre deux sessions : prépare les pauses.",
+      reponses: [
+        { id: "sandwichs", nom: "Un buffet sandwichs", phrase: "Sandwichs, café et thé", ajoute: ["buffet_sandwichs"], effet: "Un buffet sandwichs s'installe." },
+        { id: "the", nom: "Une pause thé", phrase: "Un rituel simple et convivial", ajoute: ["the_bar"], effet: "Un service à thé s'installe." },
+        { id: "echange", nom: "Un espace d'échange", phrase: "Banquettes, café et conversation", ajoute: ["salon"], effet: "Un salon prend place au centre." },
+      ],
+    },
+    {
+      id: "scene", titre: "La scène et le son", message: "Pour qu'on voie et qu'on entende bien, équipe la scène.",
+      reponses: [
+        { id: "micros", nom: "Des micros dans la salle", phrase: "Pour les questions du public", ajoute: ["micros"], effet: "Deux micros se placent dans l'allée." },
+        { id: "panel", nom: "Une table d'intervenants", phrase: "Pour un panel ou une table ronde", ajoute: ["table_intervenants"], effet: "La table des intervenants s'installe devant l'estrade." },
+        { id: "regie", nom: "Une régie son et lumière", phrase: "Un son clair, des lumières maîtrisées", ajoute: ["regie"], effet: "La régie s'installe au fond de la salle." },
       ],
     },
   ],

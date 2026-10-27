@@ -67,7 +67,7 @@ export function positions(n: number, ax: number, A: Actifs) {
 
   // — côté du fond : honneur, arche —
   const HONNEUR = { gx: 1.3, gy: 1.8, w: 3.4, d: 1.1 };
-  if (A.type !== "pro" && A.tables !== "hautes" && A.tables !== "conference") placed.push(boite("honneur", HONNEUR.gx, HONNEUR.gy - 0.2, HONNEUR.w, HONNEUR.d + 0.2));
+  if (A.type !== "pro" && A.type !== "conference" && A.tables !== "hautes" && A.tables !== "conference") placed.push(boite("honneur", HONNEUR.gx, HONNEUR.gy - 0.2, HONNEUR.w, HONNEUR.d + 0.2));
   const ARCHE = { gx: 1.9, gy: 0.5, largeur: 2.2 };
   if (o.has("arche")) placed.push(boite("arche", ARCHE.gx, ARCHE.gy, ARCHE.largeur, 0.8));
   const MUR_FLEURS = { u0: 5.2, u1: 7.1, gy: 0.15 };

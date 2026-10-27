@@ -51,7 +51,7 @@ function construireCorps(c: Choix, k: Coordonnees) {
       lignes, centres: null, honneur: "",
       texte: texteDemande({ ...c, note }), langue_visiteur: "fr",
       configuration: {
-        version: 1, type: c.type === "fete" ? "anniversaire" : c.type, invites: c.invites, elements: conf.elements, centres: 0, libelles: conf.libelles, agrandis: [], sur_mesure: [],
+        version: 1, type: c.type === "fete" ? "anniversaire" : c.type === "conference" ? "pro" : c.type, invites: c.invites, elements: conf.elements, centres: 0, libelles: conf.libelles, agrandis: [], sur_mesure: [],
       },
     },
   };

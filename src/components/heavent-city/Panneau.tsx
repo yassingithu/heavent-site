@@ -58,7 +58,7 @@ function Salle({ choix, dispatch }: { choix: Choix; dispatch: Dispatch<Action> }
       <div>
         <p className="mb-2 text-[14px] text-[#F6EFDD]">{tr("Type de tables")}</p>
         <div className="grid gap-2" role="radiogroup" aria-label={tr("Type de tables")}>
-          {TABLES_TYPES.filter((t) => t.id !== "conference" || choix.type === "pro").map((t) => {
+          {TABLES_TYPES.filter((t) => t.id !== "conference" || choix.type === "pro" || choix.type === "conference").map((t) => {
             const on = choix.tables === t.id;
             return (
               <button key={t.id} type="button" role="radio" aria-checked={on} data-testid={`tables-${t.id}`} onClick={() => { petitSon("clic"); dispatch({ t: "choisir", patch: t.id === "conference"

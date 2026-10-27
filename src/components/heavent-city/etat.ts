@@ -88,6 +88,9 @@ export function reducteur(e: Etat, a: Action): Etat {
     case "accueil_lu": return { ...e, accueilLu: true };
     case "choisir": {
       let suivant = { ...e.choix, ...a.patch };
+      if (a.patch.type === "conference" && e.choix.type !== "conference") {
+        suivant = { ...suivant, tables: "conference", manuels: [...new Set([...suivant.manuels, "podium", "ecran"])] as OptionId[], retires: suivant.retires.filter((o) => o !== "podium" && o !== "ecran") };
+      }
       // les tables changent de nombre ou de forme : leurs déplacements n'ont plus de sens
       if ((a.patch.invites !== undefined && a.patch.invites !== e.choix.invites) || (a.patch.tables !== undefined && a.patch.tables !== e.choix.tables)) {
         suivant = { ...suivant, deplacements: Object.fromEntries(Object.entries(suivant.deplacements).filter(([k]) => !/^t\d+$/.test(k))) };
@@ -145,7 +148,7 @@ function nettoyer(c: Choix): Choix {
   const invites = Math.min(INVITES.max, Math.max(INVITES.min, Math.round(Number(c.invites) || INVITES.defaut)));
   const musiques = (Array.isArray(c.musiques) ? c.musiques : []).filter(garde);
   const accueils = (Array.isArray(c.accueils) ? c.accueils : []).filter(garde);
-  const tables: TableId = c.tables === "rectangulaires" || c.tables === "hautes" || (c.tables === "conference" && type === "pro") ? c.tables : "rondes";
+  const tables: TableId = c.tables === "rectangulaires" || c.tables === "hautes" || (c.tables === "conference" && (type === "pro" || type === "conference")) ? c.tables : "rondes";
   const dep: Record<string, [number, number]> = {};
   for (const [k, v] of Object.entries(c.deplacements && typeof c.deplacements === "object" ? c.deplacements : {})) {
     if (/^[a-z0-9_]{1,24}$/.test(k) && Array.isArray(v) && Number.isFinite(v[0]) && Number.isFinite(v[1])) dep[k] = [Math.max(-30, Math.min(30, v[0])), Math.max(-30, Math.min(30, v[1]))];
@@ -222,7 +225,7 @@ export function titreEvenement(c: Choix): string {
   const type = TYPES.find((t) => t.id === c.type);
   const style = STYLES.find((s) => s.id === c.style);
   if (!type) return tr("Mon événement");
-  const base = c.type === "mariage" ? tr("Notre mariage") : c.type === "pro" ? tr("Notre événement") : tr("Ma fête");
+  const base = c.type === "mariage" ? tr("Notre mariage") : c.type === "conference" ? tr("Notre conférence") : c.type === "pro" ? tr("Notre événement") : tr("Ma fête");
   return style ? `${base} · ${style.nom.toLowerCase()}` : base;
 }
 

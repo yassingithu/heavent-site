@@ -430,7 +430,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
   });
 
   // Honneur / écran / arche (pas de table d'honneur quand tout le monde est autour de tables hautes)
-  if (r.type !== "pro") {
+  if (r.type !== "pro" && r.type !== "conference") {
     if (r.tables !== "hautes") { const H = P.HONNEUR; add(H.gx + H.gy + 2, "honneur", <TableHonneur gx={H.gx} gy={H.gy} w={H.w} d={H.d} pal={pal} fleurs={fleursTable} couple={assis && r.type === "mariage"} type={r.type} animer={animer} />, mob("honneur", H.gx + H.w / 2, H.gy + H.d / 2)); }
   } else if (!o.has("ecran") && !conference) {
     add(2.4, "ecran", (

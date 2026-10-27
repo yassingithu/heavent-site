@@ -1,0 +1,15 @@
+import { chromium } from "/opt/npm-tools/node_modules/playwright/index.mjs";
+const b = await chromium.launch();
+const p = await (await b.newContext({ viewport: { width: 1366, height: 800 } })).newPage();
+const err = []; p.on("pageerror", (e) => err.push(e.message));
+await p.goto("http://127.0.0.1:5180/apercu/heavent-city");
+await p.click('[data-testid="commencer"]'); await p.screenshot({ path: "type-liste.png" });
+await p.click('[data-testid="type-conference"]');
+for (let i = 0; i < 3; i++) await p.click('[data-testid="q-passer"]');
+await p.click('[data-testid="q-passer"]').catch(() => {});
+await p.click('[data-testid="liste-lieu-salle"]'); await p.waitForSelector('[data-testid="scene"]'); await p.waitForTimeout(2500);
+console.log(await p.textContent('[data-testid="progression"]'));
+await p.screenshot({ path: "conf-type.png" });
+await p.click('[data-testid="onglet-missions"]'); await p.waitForTimeout(300);
+console.log((await p.textContent('[data-testid="mission-pauses"]').catch(()=>"pas de mission pauses")).slice(0,80));
+console.log("err", err); await b.close();
