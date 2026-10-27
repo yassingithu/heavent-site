@@ -301,12 +301,13 @@ export function configurationAdmin(c: Choix): { elements: Record<string, number>
   const nom: Record<string, string> = {};
   const tt = infoTable(c.tables);
   if (tt.catalogue) { mettre(tt.catalogue, nbTables(c.invites, c.tables)); nom[tt.catalogue] = tt.libelle; }
+  if (c.tables === "conference") { mettre("chaise_conf", c.invites); nom.chaise_conf = tt.libelle; } // une chaise par participant
   if (c.type === "mariage" && c.tables !== "hautes") { mettre("honneur", 1); nom.honneur = "Table d'honneur"; }
   const ids = [...optionsActives(c), lumiereEffective(c), ...c.musiques, ...accueilsEffectifs(c)].filter(Boolean) as string[];
   for (const id of ids) {
     const o = infoOption(id); if (!o?.catalogue) continue;
     const n = id === "hotesses" ? Math.max(2, Math.ceil(c.invites / 60))
-      : id === "maitre_hotel" ? Math.max(2, Math.ceil(c.invites / 60)) : id === "lanternes" || id === "chaleureuse" || id === "guirlandes" || id === "etoilee" || id === "bougies" || id === "candelabres" ? 2 : 1;
+      : id === "maitre_hotel" ? Math.max(2, Math.ceil(c.invites / 60)) : id === "micros" || id === "lanternes" || id === "chaleureuse" || id === "guirlandes" || id === "etoilee" || id === "bougies" || id === "candelabres" ? 2 : 1;
     mettre(o.catalogue, n); nom[o.catalogue] = o.nom;
     if (id === "maitre_hotel") { mettre("hotesse", n); nom.hotesse = "Hôtesses d'accueil"; el.maitre_hotel = 1; }
   }

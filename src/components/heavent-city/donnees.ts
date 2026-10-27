@@ -117,11 +117,11 @@ export const EXPERIENCES: (InfoOption & { id: ExperienceId })[] = traduit([
   { id: "brume", nom: "Brume d'ambiance", phrase: "Une légère brume lumineuse — à discuter" },
   // conférences et événements professionnels
   { id: "podium", nom: "Estrade, pupitre et micro", phrase: "Scène surélevée pour les orateurs, avec pupitre et micro", catalogue: "estrade", types: ["pro"] },
-  { id: "ecran", nom: "Écran de projection", phrase: "Grand écran derrière l'estrade pour les présentations", types: ["pro"] },
-  { id: "table_intervenants", nom: "Table des intervenants", phrase: "Table nappée avec chaises, micros et chevalets pour un panel", types: ["pro"] },
-  { id: "micros", nom: "Micros dans la salle", phrase: "Deux micros sur pied dans l'allée pour les questions du public", types: ["pro"] },
-  { id: "regie", nom: "Régie son et lumière", phrase: "Console, technicien et retours pour une sonorisation claire", types: ["pro"] },
-  { id: "buffet_sandwichs", nom: "Buffet sandwichs et pause café", phrase: "Sandwichs, viennoiseries, café et thé pour les pauses", catalogue: "buffet", types: ["pro"] },
+  { id: "ecran", nom: "Écran de projection", phrase: "Grand écran derrière l'estrade pour les présentations", catalogue: "ecran_projection", types: ["pro"] },
+  { id: "table_intervenants", nom: "Table des intervenants", phrase: "Table nappée avec chaises, micros et chevalets pour un panel", catalogue: "table_intervenants", types: ["pro"] },
+  { id: "micros", nom: "Micros dans la salle", phrase: "Deux micros sur pied dans l'allée pour les questions du public", catalogue: "micro_pied", types: ["pro"] },
+  { id: "regie", nom: "Régie son et lumière", phrase: "Console, technicien et retours pour une sonorisation claire", catalogue: "regie_son", types: ["pro"] },
+  { id: "buffet_sandwichs", nom: "Buffet sandwichs et pause café", phrase: "Sandwichs, viennoiseries, café et thé pour les pauses", catalogue: "buffet_sandwichs", types: ["pro"] },
 ]);
 
 export const toutesOptions = (): InfoOption[] => [...DECORS, ...EXPERIENCES];
