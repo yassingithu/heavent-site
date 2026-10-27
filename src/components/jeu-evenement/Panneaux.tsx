@@ -8,15 +8,26 @@ import { Creation, Element, EtatMission, NOM_MAX, calculerBudget, casesAjoutees,
 import { DessinElement, TH, TW } from "./dessins";
 import { TYPE_GLISSE } from "./Scene";
 import { Bouton } from "./ui";
+import { prixVisibles } from "./prix";
 
 /** Petite vignette SVG d'un élément, dessinée comme dans la scène. */
 /** Hauteur visible de chaque élément au-dessus du sol (pour cadrer les vignettes). */
 const HAUTEUR: Partial<Record<TypeElement, number>> = { salon_marocain: 36, espace_henne: 30, orchestre: 70, troupe: 62, neggafa: 54, photographe: 54, candy_bar: 42, livre_dor: 40, feux_froids: 64, fontaine: 58, lanternes: 100, torches: 78, espace_enfants: 60, estrade: 70, pergola: 105, tente: 125, arche: 135, guirlandes: 100, photobooth: 72, fleurs: 70, honneur: 66, gateau: 66, dj: 56, bar: 52, lounge: 32, piste: 8, nawar: 80, hotesse: 54, serveur: 54, maitre_hotel: 54, fauteuils: 58, table_haute: 40, amaria: 112, mur_fleurs: 94, candelabre: 82, allee: 22, the: 32, objet_libre: 62, espace_libre: 40 };
 /** « 1 500 MAD + 50 MAD / invité », « 450 MAD / invité » ou « 12 000 MAD ». */
 export const prixTexte = (prix: number, parInvite?: number, long = false) => {
+  if (!prixVisibles()) return "";
   const pi = parInvite ? `${format(parInvite)} ${long ? tr("par invité") : tr("/ invité")}` : "";
   return prix || !pi ? [format(prix), pi].filter(Boolean).join(long ? ` ${tr("plus")} ` : " + ") : pi;
 };
+
+/** Libellé de prix d'un élément du catalogue : vide pour les visiteurs (prix cachés). */
+const libPrix = (d: { surDevis?: boolean; prix: number; prixParInvite?: number }, long = false) =>
+  !prixVisibles() ? "" : d.surDevis ? tr("Prix sur devis") : prixTexte(d.prix, d.prixParInvite, long);
+/** Étiquette lue par les lecteurs d'écran (sans prix si cachés). */
+const etiquetteAjout = (nom: string, d: { surDevis?: boolean; prix: number; prixParInvite?: number }, places: number) =>
+  prixVisibles()
+    ? tr("{nom} : {prix}{places}. Ajouter à la scène", { nom, prix: libPrix(d, true), places: places ? tr(", {n} places", { n: places }) : "" })
+    : tr("{nom}{places}. Ajouter à la scène", { nom, places: places ? tr(", {n} places", { n: places }) : "" });
 
 export function Miniature({ type, creation, taille = 56 }: { type: TypeElement; creation: Creation; taille?: number }) {
   const { w, h } = emprise({ type });
@@ -60,7 +71,7 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
                 onDragEnd={() => { (window as any).__heaventGlisse = undefined; }}
                 onClick={() => onChoisir(d.id)}
                 aria-pressed={actif}
-                aria-label={tr("{nom} : {prix}{places}. Ajouter à la scène", { nom: l.nom, prix: d.surDevis ? tr("Prix sur devis") : prixTexte(d.prix, d.prixParInvite, true), places: places ? tr(", {n} places", { n: places }) : "" })}
+                aria-label={etiquetteAjout(l.nom, d, places)}
                 title={l.description}
                 className={`w-full h-full flex items-center gap-3 lg:flex-col lg:justify-start lg:gap-1 lg:text-center rounded-2xl border p-2.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A74E] ${actif ? "border-[#C9A74E] bg-[#FBF3DF]" : "border-[#EADFC8] bg-white hover:border-[#D8C391] hover:shadow-sm"}`}
               >
@@ -72,7 +83,7 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
                   </div>
                   <div className="text-xs text-[#6B6155] line-clamp-2 lg:hidden">{l.description}</div>
                   <div className="text-xs mt-0.5 text-[#8C6D22] font-medium">
-                    {d.surDevis ? tr("Prix sur devis") : prixTexte(d.prix, d.prixParInvite)}{places ? ` · ${tr("{n} places", { n: places })}` : ""}
+                    {libPrix(d)}{places ? ` · ${tr("{n} places", { n: places })}` : ""}
                   </div>
                 </div>
               </button>
@@ -86,7 +97,7 @@ export function Catalogue({ creation, enPlacement, onChoisir, onCentres }: {
               <div>
                 <div className="font-medium text-sm">{tr(CENTRES_DE_TABLE.nom)}</div>
                 <div className="text-xs text-[#6B6155]">{tr(CENTRES_DE_TABLE.description)}</div>
-                <div className="text-xs mt-0.5 text-[#8C6D22] font-medium">{tr("{prix} par table", { prix: format(CENTRES_DE_TABLE.prixParTable) })}</div>
+                {prixVisibles() && <div className="text-xs mt-0.5 text-[#8C6D22] font-medium">{tr("{prix} par table", { prix: format(CENTRES_DE_TABLE.prixParTable) })}</div>}
               </div>
             </label>
           </li>
@@ -117,8 +128,8 @@ export function Tiroir({ creation, enPlacement, ajoutRapide, onAjoutRapide, onAj
     <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 rounded-t-3xl border-t border-[#E3D6BA] bg-[#FFFDF8]/97 backdrop-blur shadow-[0_-12px_30px_-18px_rgba(60,40,10,0.45)] pb-[env(safe-area-inset-bottom)]" data-testid="tiroir" data-ouvert={ouvert ? "oui" : "non"}>
       <div className="flex items-center gap-2 px-3 pt-2">
         <button onClick={() => setOuvert((o) => !o)} aria-expanded={ouvert} aria-label={tr("Catalogue")} data-testid="tiroir-bascule" className="h-8 px-3 rounded-full bg-[#F6EEDC] text-xs font-medium text-[#5A4B2E] shrink-0">{ouvert ? "▾" : "▴"} {tr("Catalogue")}</button>
-        <button onClick={onAjuster} className={`min-w-0 flex-1 truncate text-left text-xs ${depasse ? "text-[#8A2E26] font-medium" : "text-[#4F6B3A]"}`} data-testid="tiroir-budget">
-          {depasse ? tr("Dépassement : {montant}", { montant: format(b.depassement) }) : tr("Il reste {montant}", { montant: format(b.reste) })}
+        <button onClick={onAjuster} className={`min-w-0 flex-1 truncate text-left text-xs ${prixVisibles() && depasse ? "text-[#8A2E26] font-medium" : "text-[#4F6B3A]"}`} data-testid="tiroir-budget">
+          {!prixVisibles() ? tr("{n} éléments placés", { n: creation.elements.length }) : depasse ? tr("Dépassement : {montant}", { montant: format(b.depassement) }) : tr("Il reste {montant}", { montant: format(b.reste) })}
         </button>
         <span className="flex gap-1 shrink-0" aria-hidden>{missions.map((m) => <span key={m.id} className={`h-2.5 w-2.5 rounded-full ${m.ok ? "bg-[#7C9A5C]" : "bg-[#E3D6BA]"}`} />)}</span>
         <Bouton onClick={onDecouvrir} aria-label={tr("Découvrir mon événement")} className="!min-h-9 !px-3 text-xs shrink-0">{tr("Découvrir")} ✨</Bouton>
@@ -144,11 +155,11 @@ export function Tiroir({ creation, enPlacement, ajoutRapide, onAjoutRapide, onAj
               return (
                 <li key={d.id} className="snap-start shrink-0">
                   <button onClick={() => (ajoutRapide ? onAjouter(d.id) : onChoisir(d.id))} aria-pressed={actif}
-                    aria-label={tr("{nom} : {prix}{places}. Ajouter à la scène", { nom: l.nom, prix: d.surDevis ? tr("Prix sur devis") : prixTexte(d.prix, d.prixParInvite, true), places: places ? tr(", {n} places", { n: places }) : "" })}
+                    aria-label={etiquetteAjout(l.nom, d, places)}
                     className={`relative w-[92px] h-full flex flex-col items-center gap-0.5 rounded-2xl border px-1.5 py-2 text-center transition-transform active:scale-95 ${actif ? "border-[#C9A74E] bg-[#FBF3DF]" : "border-[#EADFC8] bg-white"}`}>
                     <Miniature type={d.id} creation={creation} taille={48} />
                     <span className="text-[11px] font-medium leading-tight text-[#2A2420] line-clamp-2 min-h-[1.9em]">{l.nom}</span>
-                    <span className="text-[10px] text-[#8C6D22] font-medium leading-tight">{d.surDevis ? tr("Prix sur devis") : prixTexte(d.prix, d.prixParInvite)}</span>
+                    <span className="text-[10px] text-[#8C6D22] font-medium leading-tight">{libPrix(d)}</span>
                     {surScene > 0 && <span className="absolute -top-1.5 -right-1 min-w-5 h-5 px-1 rounded-full bg-[#C9A74E] text-white text-[10px] font-semibold inline-flex items-center justify-center" data-sur-scene={surScene}>{surScene}</span>}
                   </button>
                 </li>
@@ -160,7 +171,7 @@ export function Tiroir({ creation, enPlacement, ajoutRapide, onAjoutRapide, onAj
                   className={`w-[92px] h-full flex flex-col items-center justify-center gap-1 rounded-2xl border px-1.5 py-2 text-center active:scale-95 ${creation.centres.actif ? "border-[#C9A74E] bg-[#FBF3DF]" : "border-[#EADFC8] bg-white"}`}>
                   <span className="text-xl" aria-hidden>🌸</span>
                   <span className="text-[11px] font-medium leading-tight">{tr(CENTRES_DE_TABLE.nom)}</span>
-                  <span className="text-[10px] text-[#8C6D22] font-medium">{creation.centres.actif ? tr("Ajoutés ✓") : tr("{prix} par table", { prix: format(CENTRES_DE_TABLE.prixParTable) })}</span>
+                  <span className="text-[10px] text-[#8C6D22] font-medium">{creation.centres.actif ? tr("Ajoutés ✓") : prixVisibles() ? tr("{prix} par table", { prix: format(CENTRES_DE_TABLE.prixParTable) }) : ""}</span>
                 </button>
               </li>
             )}
@@ -193,7 +204,7 @@ export function PanneauSelection({ creation, element, enDeplacement, onCouleur, 
         <div className="flex-1 min-w-0">
           <h3 className="font-serif text-lg leading-tight break-words">{nom}</h3>
           <p className="text-xs text-[#6B6155]">{d.surDevis ? tr("Donnez-lui le nom de votre choix : nous le chiffrons dans votre devis.") : l.description}</p>
-          <p className="text-xs text-[#8C6D22] font-medium mt-1">{d.surDevis ? tr("Prix sur devis") : `${prixTexte(d.prix, d.prixParInvite, true)}${d.prixParInvite ? ` ${tr("(compté une fois)")}` : ""}`}{places ? ` · ${tr("{n} places", { n: places })}` : ""}</p>
+          <p className="text-xs text-[#8C6D22] font-medium mt-1">{prixVisibles() ? (d.surDevis ? tr("Prix sur devis") : `${prixTexte(d.prix, d.prixParInvite, true)}${d.prixParInvite ? ` ${tr("(compté une fois)")}` : ""}`) : ""}{prixVisibles() && places ? " · " : ""}{places ? tr("{n} places", { n: places }) : ""}</p>
         </div>
         <button onClick={onFermer} className="rounded-full h-9 w-9 hover:bg-[#F1E8D8] text-[#6B6155]" aria-label={tr("Fermer le panneau")}>✕</button>
       </div>
@@ -243,7 +254,7 @@ export function PanneauSelection({ creation, element, enDeplacement, onCouleur, 
           <div className="flex flex-wrap items-center gap-2">
             <Bouton variante="secondaire" onClick={() => onAgrandir(-1)} disabled={!(element.plus ?? 0)} data-testid="reduire">− {tr("Réduire")}</Bouton>
             <Bouton variante="secondaire" onClick={() => onAgrandir(1)} disabled={(element.plus ?? 0) >= d.etire.max} data-testid="agrandir">+ {tr("Agrandir")}</Bouton>
-            <span className="text-xs text-[#6B6155]" data-testid="taille-element">{emprise(element).w} × {emprise(element).h} {tr("cases")}{(element.plus ?? 0) > 0 ? ` · +${format(casesAjoutees(element) * d.etire.prixCase)}` : ` · ${tr("+{prix} par case en plus", { prix: format(d.etire.prixCase) })}`}</span>
+            <span className="text-xs text-[#6B6155]" data-testid="taille-element">{emprise(element).w} × {emprise(element).h} {tr("cases")}{!prixVisibles() ? "" : (element.plus ?? 0) > 0 ? ` · +${format(casesAjoutees(element) * d.etire.prixCase)}` : ` · ${tr("+{prix} par case en plus", { prix: format(d.etire.prixCase) })}`}</span>
           </div>
         </div>
       )}
@@ -280,6 +291,17 @@ function ChampNom({ valeur, onNom }: { valeur: string; onNom: (nom: string) => v
 // ── Budget ──────────────────────────────────────────────────────────────────
 export function JaugeBudget({ creation, onAjuster }: { creation: Creation; onAjuster: () => void }) {
   const b = calculerBudget(creation);
+  if (!prixVisibles()) {
+    return (
+      <section aria-label={tr("Votre devis")} className="rounded-2xl border border-[#EADFC8] bg-white p-4" data-testid="devis-en-etude">
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="font-serif text-base">{tr("Votre devis")}</h3>
+          <span className="text-sm font-semibold text-[#8C6D22]">{tr("{n} éléments placés", { n: creation.elements.length })}</span>
+        </div>
+        <p className="mt-2 text-xs text-[#5E554A]">{tr("Notre équipe chiffre votre création sur mesure. Vous recevrez votre prix final une fois votre devis validé.")}</p>
+      </section>
+    );
+  }
   const ratio = b.budget > 0 ? b.total / b.budget : 0;
   const couleur = ratio > 1 ? "#B5473E" : ratio > 0.9 ? "#C98A2E" : "#7C9A5C";
   return (
@@ -333,14 +355,15 @@ export function Missions({ missions, celebre }: { missions: EtatMission[]; celeb
 /** Résumé compact budget + missions, au-dessus de la scène (ordinateur) : on garde le catalogue en haut de la colonne de droite. */
 export function BarreSuivi({ creation, missions }: { creation: Creation; missions: EtatMission[] }) {
   const b = calculerBudget(creation);
+  const afficherPrix = prixVisibles();
   const ratio = b.budget > 0 ? b.total / b.budget : 0;
   const couleur = ratio > 1 ? "#B5473E" : ratio > 0.9 ? "#C98A2E" : "#7C9A5C";
   return (
     <div className="hidden lg:flex items-center gap-4 rounded-2xl border border-[#EADFC8] bg-white px-4 py-2.5" data-testid="barre-suivi">
-      <div className="min-w-[220px]">
+      {afficherPrix && <div className="min-w-[220px]">
         <div className="flex items-baseline justify-between text-xs"><span className="font-medium">{tr("Budget")}</span><span><b>{format(b.total)}</b> <span className="text-[#6B6155]">/ {format(b.budget)}</span></span></div>
         <div className="mt-1 h-2 rounded-full bg-[#F1E8D8] overflow-hidden"><div className="h-full rounded-full motion-safe:transition-all motion-safe:duration-500" style={{ width: `${Math.min(100, ratio * 100)}%`, background: couleur }} /></div>
-      </div>
+      </div>}
       <ul className="flex flex-1 flex-wrap items-center gap-1.5 justify-end" aria-label={tr("Missions")}>
         {missions.map((m) => (
           <li key={m.id} title={m.aide} className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] max-w-[230px] ${m.ok ? "border-[#BFD3A8] bg-[#EFF5E6] text-[#3F5A2C]" : "border-[#EADFC8] bg-[#FFFDF8] text-[#5E554A]"}`}>

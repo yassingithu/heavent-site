@@ -5,6 +5,7 @@ import { localeDates, tr } from "./langue";
 import { Creation, Reglages, Sauvegarde, calculerBudget, creationDepuisModele, grilleDe, nouvelleCreation, palette } from "./logique";
 import Scene from "./Scene";
 import { Bouton, Puce } from "./ui";
+import { prixVisibles } from "./prix";
 
 /** Vignettes des modèles prêts à l'emploi. */
 function Modeles({ onModele, tarifs }: { onModele: (c: Creation) => void; tarifs: number }) {
@@ -24,7 +25,7 @@ function Modeles({ onModele, tarifs }: { onModele: (c: Creation) => void; tarifs
               <div className="p-3">
                 <div className="font-medium text-[#2A2420]">{tr(m.nom)}</div>
                 <div className="text-xs text-[#6B6155] mt-0.5">{tr(m.description)}</div>
-                <div className="text-xs text-[#8C6D22] mt-1.5">{tr("Environ {montant}", { montant: format(calculerBudget(c).total) })}</div>
+                {prixVisibles() && <div className="text-xs text-[#8C6D22] mt-1.5">{tr("Environ {montant}", { montant: format(calculerBudget(c).total) })}</div>}
               </div>
             </button>
           );
@@ -49,7 +50,7 @@ export function Accueil({ sauvegarde, onCommencer, onReprendre, onModele, tarifs
         <p className="uppercase tracking-[0.25em] text-xs text-[#8C6D22]">{tr("Crée ton événement de rêve")}</p>
         <h1 className="font-serif text-4xl sm:text-5xl leading-tight text-[#2A2420]">{tr("Et si on créait votre événement idéal ?")}</h1>
         <p className="text-[#5E554A] leading-relaxed max-w-xl">
-          {tr("Choisissez votre type d'événement, votre lieu et votre ambiance, puis composez la scène : tables, arche, fleurs, lumières, piste de danse… Votre budget se met à jour à chaque ajout. En quelques minutes, vous repartez avec un récapitulatif à garder ou à nous envoyer pour un devis.")}
+          {tr(prixVisibles() ? "Choisissez votre type d'événement, votre lieu et votre ambiance, puis composez la scène : tables, arche, fleurs, lumières, piste de danse… Votre budget se met à jour à chaque ajout. En quelques minutes, vous repartez avec un récapitulatif à garder ou à nous envoyer pour un devis." : "Choisissez votre type d'événement, votre lieu et votre ambiance, puis composez la scène : tables, arche, fleurs, lumières, piste de danse… En quelques minutes, vous repartez avec un récapitulatif à garder ou à nous envoyer pour un devis : notre équipe vous répond avec votre prix final.")}
         </p>
         <p className="text-xs text-[#6B6155]">{tr("Sans inscription · 3 à 5 minutes · Vos choix sont enregistrés sur cet appareil, sans aucune coordonnée.")}</p>
         <div className="flex flex-wrap gap-3">

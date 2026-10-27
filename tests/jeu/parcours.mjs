@@ -13,6 +13,8 @@ const ok = (t) => { etapes.push(t); console.log("  ✓", t); };
 async function ouvrir(options = {}) {
   const ctx = await nav.newContext({ acceptDownloads: true, locale: "fr-FR", ...options });
   await ctx.route(/fonts\.(googleapis|gstatic)|googletagmanager|supabase\.co/, (r) => r.abort());
+  // L'écran d'accueil animé ne doit pas bloquer les onglets ouverts ensuite (le sessionStorage est propre à chaque onglet)
+  await ctx.addInitScript(() => { try { sessionStorage.setItem("heavent-splash-vu", "1"); } catch { /* ignoré */ } });
   const p = await ctx.newPage();
   const erreurs = []; p.on("pageerror", (e) => erreurs.push(e.message));
   await p.goto(BASE + "/cree-ton-evenement"); await p.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await p.reload(); await p.waitForTimeout(1000);

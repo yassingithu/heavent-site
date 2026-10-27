@@ -3,6 +3,7 @@ import { RefObject, useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cssBase, partagerFichier, peutPartagerFichier } from "@/lib/pdf";
 import { TYPES_EVENEMENT, format, mentionEstimation, nomTypeEv } from "./config";
+import { prixVisibles } from "./prix";
 import { tr } from "./langue";
 import { Creation, calculerBudget, evaluerMissions, placesPrevues } from "./logique";
 import {
@@ -39,6 +40,15 @@ export function Recapitulatif({ creation, cols, rows, onModifier, onTelecharger,
             {info(tr("Lieu"), nomLieu(creation))}{info(tr("Invités"), `${r.invites}`)}
             {info(tr("Places prévues"), `${placesPrevues(creation)}`)}{info(tr("Budget souhaité"), format(r.budget))}
           </div>
+          {!prixVisibles() ? (
+            <div className="rounded-2xl border border-[#EADFC8] bg-white p-4" data-testid="recap-sans-prix">
+              <div className="flex items-baseline justify-between"><h3 className="font-serif">{tr("Votre devis")}</h3><span className="text-sm font-semibold text-[#8C6D22]">{tr("Devis en cours d'étude")}</span></div>
+              <ul className="mt-2 text-sm divide-y divide-[#F1E9D6]">
+                {b.lignes.map((l) => <li key={l.libelle} className="py-1">{l.quantite > 1 ? `${l.quantite} × ` : ""}{l.libelle}</li>)}
+              </ul>
+              <p className="text-[11px] text-[#6B6155] italic mt-2">{tr("Votre prix final vous sera communiqué après validation de votre devis par notre équipe.")}</p>
+            </div>
+          ) : (
           <div className="rounded-2xl border border-[#EADFC8] bg-white p-4">
             <div className="flex items-baseline justify-between"><h3 className="font-serif">{tr("Estimation")}</h3><span className="font-semibold" data-testid="recap-total">{format(b.total)}</span></div>
             <ul className="mt-2 text-sm divide-y divide-[#F1E9D6]">
@@ -48,6 +58,7 @@ export function Recapitulatif({ creation, cols, rows, onModifier, onTelecharger,
             <p className={`text-xs mt-2 ${b.depassement ? "text-[#8A2E26]" : "text-[#4F6B3A]"}`}>{b.depassement ? tr("Dépasse votre budget de {montant}.", { montant: format(b.depassement) }) : tr("Reste {montant} sur votre budget.", { montant: format(b.reste) })}</p>
             <p className="text-[11px] text-[#6B6155] italic mt-1">{mentionEstimation()}</p>
           </div>
+          )}
         </div>
       </div>
       <div className="grid md:grid-cols-2 gap-4">
@@ -193,7 +204,7 @@ export function FenetreDevis({ ouvert, onFermer, creation }: { ouvert: boolean; 
             {etat === "envoye"
               ? tr("Nous l'avons bien reçue avec votre création. Nous revenons vers vous sous 24 h.")
               : INTEGRATION_ACTIVE
-                ? tr("Votre création (type, ambiance, invités, éléments, estimation) est jointe automatiquement à votre demande.")
+                ? (prixVisibles() ? tr("Votre création (type, ambiance, invités, éléments, estimation) est jointe automatiquement à votre demande.") : tr("Votre création (type, ambiance, invités, éléments) est jointe automatiquement à votre demande."))
                 : tr("Démonstration : ce formulaire prépare votre demande à télécharger, sans l'envoyer.")}
           </DialogDescription>
         </DialogHeader>
@@ -301,7 +312,7 @@ export function VuePartagee({ creation, cols, rows, onReprendre, onZero }: { cre
       <div className="text-center space-y-2">
         <p className="uppercase tracking-[0.25em] text-xs text-[#8C6D22]">{tr("Une création partagée avec vous")}</p>
         <h2 className="font-serif text-3xl sm:text-4xl">{nomTypeEv(creation.reglages.type)} · {tr("{n} invités", { n: creation.reglages.invites })}</h2>
-        <p className="text-sm text-[#5E554A]">{tr("Ambiance {ambiance}, {lieu} · estimation {montant}", { ambiance: nomAmbiance(creation).toLowerCase(), lieu: nomLieu(creation).toLowerCase(), montant: format(b.total) })}</p>
+        <p className="text-sm text-[#5E554A]">{prixVisibles() ? tr("Ambiance {ambiance}, {lieu} · estimation {montant}", { ambiance: nomAmbiance(creation).toLowerCase(), lieu: nomLieu(creation).toLowerCase(), montant: format(b.total) }) : tr("Ambiance {ambiance}, {lieu}", { ambiance: nomAmbiance(creation).toLowerCase(), lieu: nomLieu(creation).toLowerCase() })}</p>
       </div>
       <div className="rounded-[2rem] bg-white border border-[#EADFC8] p-3 shadow-[0_20px_60px_-35px_rgba(140,109,34,0.5)] max-w-4xl mx-auto">
         <Scene creation={creation} cols={cols} rows={rows} lectureSeule />

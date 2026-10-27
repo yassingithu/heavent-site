@@ -15,6 +15,7 @@ import {
 import Scene, { ModeScene } from "./Scene";
 import { Accueil, Personnalisation } from "./Ecrans";
 import { BarreSuivi, Catalogue, JaugeBudget, Missions, PanneauSelection, Tiroir } from "./Panneaux";
+import { prixVisibles } from "./prix";
 import { FenetreDevis, FenetrePartage, FenetreTelechargement, Recapitulatif, VuePartagee } from "./Fin";
 import { creationDansLien, oublierLien } from "./partage";
 import { Bouton, Confettis } from "./ui";
@@ -80,7 +81,7 @@ export default function JeuEvenement() {
 
   // Prix du catalogue interne (Admin → Devis → Catalogue de prix) : on recalcule dès qu'ils arrivent
   const [tarifs, setTarifs] = useState(0);
-  useEffect(() => { chargerTarifs().then((n) => { if (n) { setTarifs(n); setCreation((c) => ({ ...c })); } }); }, []);
+  useEffect(() => { if (!prixVisibles()) return; chargerTarifs().then((n) => { if (n) { setTarifs(n); setCreation((c) => ({ ...c })); } }); }, []);
 
   // Sauvegarde automatique (aucune coordonnée personnelle)
   useEffect(() => { if (etape === "jeu" || etape === "recap") sauvegarder({ creation, etape }); }, [creation, etape]);
@@ -97,10 +98,10 @@ export default function JeuEvenement() {
       return () => clearTimeout(t);
     }
   }, [missions, etape]);
-  const toutReussi = missions.every((m) => m.ok) && budget.depassement === 0;
+  const toutReussi = missions.every((m) => m.ok) && (!prixVisibles() || budget.depassement === 0);
   const dejaFete = useRef(false);
   useEffect(() => {
-    if (etape === "jeu" && toutReussi && !dejaFete.current) { dejaFete.current = true; setFete(true); setAnnonce(tr("Bravo, les trois missions sont remplies dans votre budget !")); setTimeout(() => setFete(false), 3000); }
+    if (etape === "jeu" && toutReussi && !dejaFete.current) { dejaFete.current = true; setFete(true); setAnnonce(prixVisibles() ? tr("Bravo, les trois missions sont remplies dans votre budget !") : tr("Bravo, les trois missions sont remplies !")); setTimeout(() => setFete(false), 3000); }
     if (!toutReussi) dejaFete.current = false;
   }, [toutReussi, etape]);
 
@@ -260,7 +261,7 @@ export default function JeuEvenement() {
 
           {fete && (
             <div role="status" className="rounded-2xl border border-[#E3C98A] bg-gradient-to-r from-[#FBF3DF] to-[#F8E6E6] px-4 py-3 text-sm motion-safe:animate-in motion-safe:fade-in">
-              ✨ <b>{tr("Bravo !")}</b> {tr("Vos trois missions sont remplies, dans votre budget. Découvrez votre événement quand vous voulez.")}
+              ✨ <b>{tr("Bravo !")}</b> {prixVisibles() ? tr("Vos trois missions sont remplies, dans votre budget. Découvrez votre événement quand vous voulez.") : tr("Vos trois missions sont remplies. Découvrez votre événement quand vous voulez.")}
             </div>
           )}
 

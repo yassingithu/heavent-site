@@ -1,5 +1,6 @@
 // Récapitulatif : document téléchargeable (PDF), image de la scène (PNG) et texte de la demande de devis.
 import { CENTRES_DE_TABLE, format, libelle, mentionEstimation, nomAmbianceEv, nomLieuEv, nomTypeEv } from "./config";
+import { prixVisibles } from "./prix";
 import { estRtl, localeDates, tr } from "./langue";
 import { Creation, calculerBudget, evaluerMissions, nomElement, placesPrevues } from "./logique";
 import { esc, logo, nomFichier, telechargerPdf } from "@/lib/pdf";
@@ -109,7 +110,10 @@ export function documentRecap(c: Creation, o: OptionsRecap, imageScene?: string 
     </div>
     ${o.scene && imageScene ? `<h2>${esc(tr("Aperçu de la scène"))}</h2><div class="scene-cadre"><img class="scene" src="${imageScene}"${(() => { const t = tailleSceneRecap(imageScene); return t ? ` width="${t.w}" height="${t.h}" style="width:${t.w}px;height:${t.h}px"` : ""; })()} alt="${esc(tr("Aperçu de la scène"))}"></div>` : ""}
     <h2>${esc(tr("Options choisies"))}</h2><div style="font-size:11px">${esc(optionsChoisies(c).join(" · ") || tr("Aucun élément pour l'instant."))}</div>
-    ${o.estimation ? `<h2>${esc(tr("Estimation : {montant}", { montant: format(b.total) }))}</h2>
+    ${o.estimation && !prixVisibles() ? `<h2>${esc(tr("Devis en cours d'étude"))}</h2>
+      <ul style="font-size:11px">${b.lignes.map((l) => `<li>${esc(l.quantite > 1 ? `${l.quantite} × ${l.libelle}` : l.libelle)}</li>`).join("")}</ul>
+      <div class="mention">${esc(tr("Votre prix final vous sera communiqué après validation de votre devis par notre équipe."))}</div>` : ""}
+    ${o.estimation && prixVisibles() ? `<h2>${esc(tr("Estimation : {montant}", { montant: format(b.total) }))}</h2>
       <table><thead><tr><th>${esc(tr("Élément"))}</th><th>${esc(tr("Calcul"))}</th><th class="n">${esc(tr("Fixe"))}</th><th class="n">${esc(tr("Par invité"))}</th><th class="n">${esc(tr("Total"))}</th></tr></thead><tbody>
       ${b.lignes.map((l) => l.surDevis
         ? `<tr><td>${esc(l.quantite > 1 ? `${l.quantite} × ${l.libelle}` : l.libelle)}</td><td colspan="3">${esc(l.detail)}</td><td class="n">—</td></tr>`
@@ -146,9 +150,8 @@ export function texteDemande(c: Creation, k: Coordonnees) {
     `${tr("Options")} : ${optionsChoisies(c).join(", ") || tr("aucune")}`,
     "",
     titres[1],
-    ...b.lignes.map((l) => (l.surDevis ? `- ${l.quantite > 1 ? `${l.quantite} × ` : ""}${l.libelle} : ${l.detail}` : `- ${l.libelle} : ${l.detail} = ${format(l.total)}`)),
-    `${tr("Total")} : ${format(b.total)}`,
-    mentionEstimation(),
+    ...b.lignes.map((l) => (!prixVisibles() ? `- ${l.quantite > 1 ? `${l.quantite} × ` : ""}${l.libelle}` : l.surDevis ? `- ${l.quantite > 1 ? `${l.quantite} × ` : ""}${l.libelle} : ${l.detail}` : `- ${l.libelle} : ${l.detail} = ${format(l.total)}`)),
+    ...(prixVisibles() ? [`${tr("Total")} : ${format(b.total)}`, mentionEstimation()] : [tr("Votre prix final vous sera communiqué après validation de votre devis par notre équipe.")]),
     "",
     titres[2],
     ...evaluerMissions(c).map((m) => `${m.ok ? "[x]" : "[ ]"} ${m.titre} — ${m.aide}`),

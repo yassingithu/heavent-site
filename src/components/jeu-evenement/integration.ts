@@ -1,4 +1,5 @@
 import { suivre } from "@/lib/suivi";
+import { prixVisibles } from "./prix";
 /**
  * ─────────────────────────────────────────────────────────────────────────────
  *  POINT D'INTÉGRATION — demande de devis
@@ -45,9 +46,9 @@ export async function envoyerDemandeDevis(d: DemandeDevis): Promise<{ envoye: bo
           prenom: k.prenom.trim(), email: k.email.trim(), telephone: k.telephone.trim(), ville: k.ville.trim(), message: k.message.trim(),
           date: k.dateInconnue ? null : k.date || null,
           typeEvenement: nomType(c), ambiance: nomAmbiance(c), lieu: nomLieu(c),
-          invites: c.reglages.invites, places: placesPrevues(c), budget: c.reglages.budget, estimation: b.total,
+          invites: c.reglages.invites, places: placesPrevues(c), budget: c.reglages.budget, ...(prixVisibles() ? { estimation: b.total } : {}),
           options: optionsChoisies(c), services: services(c),
-          lignes: b.lignes.map((l) => ({ libelle: l.surDevis && l.quantite > 1 ? `${l.quantite} × ${l.libelle}` : l.libelle, detail: l.detail, total: l.total, surDevis: !!l.surDevis })),
+          lignes: b.lignes.map((l) => ({ libelle: l.surDevis && l.quantite > 1 ? `${l.quantite} × ${l.libelle}` : l.libelle, detail: prixVisibles() ? l.detail : "", ...(prixVisibles() ? { total: l.total } : {}), surDevis: !!l.surDevis })),
           centres: c.centres.actif ? CENTRES_DE_TABLE.nom : null,
           honneur: libelle("honneur", c.reglages.type).nom,
           texte: texteDemande(c, k),
