@@ -11,6 +11,8 @@ const CLE_VAPID = "BIu9cEfrETK9nZb-CgswMH5NnogUR87EcF3acx5-v5TroLMNkzzIk6Xk5OIJ5
 function ajouterBalise(tag: "link" | "meta", attrs: Record<string, string>) {
   const cle = attrs.rel ?? attrs.name;
   if (document.head.querySelector(`${tag}[data-app-admin="${cle}"]`)) return;
+  // Un seul manifeste à la fois : sinon iPhone prend le premier (celui de l'autre appli, admin ou staff).
+  if (cle === "manifest") document.head.querySelectorAll('link[rel="manifest"]').forEach((l) => l.remove());
   const el = document.createElement(tag);
   Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
   el.setAttribute("data-app-admin", cle);
@@ -31,7 +33,10 @@ export function useInstallationAdmin() {
     anciennes.forEach((l) => l.setAttribute("href", "/admin-180.png"));
     ajouterBalise("meta", { name: "apple-mobile-web-app-capable", content: "yes" });
     ajouterBalise("meta", { name: "apple-mobile-web-app-title", content: "Heavent" });
-    return () => memoire.forEach(([l, h]) => h && l.setAttribute("href", h));
+    return () => {
+      memoire.forEach(([l, h]) => h && l.setAttribute("href", h));
+      document.head.querySelectorAll("[data-app-admin]").forEach((e) => e.remove());
+    };
   }, []);
 }
 
@@ -80,7 +85,7 @@ export function useAppAdmin() {
     const noterSaisie = () => { saisieEnCours = true; };
     document.addEventListener("input", noterSaisie, true);
     document.addEventListener("visibilitychange", verifier);
-    return () => { memoire.forEach(([l, h]) => h && l.setAttribute("href", h)); if (theme && ancien) theme.setAttribute("content", ancien); document.removeEventListener("visibilitychange", verifier); document.removeEventListener("input", noterSaisie, true); };
+    return () => { memoire.forEach(([l, h]) => h && l.setAttribute("href", h)); document.head.querySelectorAll("[data-app-admin]").forEach((e) => e.remove()); if (theme && ancien) theme.setAttribute("content", ancien); document.removeEventListener("visibilitychange", verifier); document.removeEventListener("input", noterSaisie, true); };
   }, []);
 }
 
