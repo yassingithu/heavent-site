@@ -8,6 +8,8 @@ import { Download, Share, X } from "lucide-react";
 function ajouterBalise(tag: "link" | "meta", attrs: Record<string, string>) {
   const cle = attrs.rel ?? attrs.name;
   if (document.head.querySelector(`${tag}[data-app-staff="${cle}"]`)) return;
+  // Un seul manifeste à la fois : sinon iPhone prend le premier (celui de l'autre appli, admin ou staff).
+  if (cle === "manifest") document.head.querySelectorAll('link[rel="manifest"]').forEach((l) => l.remove());
   const el = document.createElement(tag);
   Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
   el.setAttribute("data-app-staff", cle);
@@ -33,7 +35,10 @@ export function useAppStaff() {
     ajouterBalise("meta", { name: "apple-mobile-web-app-title", content: "Heavent Staff" });
     ajouterBalise("meta", { name: "apple-mobile-web-app-status-bar-style", content: "default" });
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/staff-sw.js", { scope: "/staff-dashboard" }).catch(() => {});
-    return () => memoire.forEach(([l, h]) => h && l.setAttribute("href", h));
+    return () => {
+      memoire.forEach(([l, h]) => h && l.setAttribute("href", h));
+      document.head.querySelectorAll("[data-app-staff]").forEach((e) => e.remove());
+    };
   }, []);
 }
 
