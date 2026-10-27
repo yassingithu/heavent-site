@@ -26,6 +26,7 @@ const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const MentionsLegales = lazy(() => import("./pages/MentionsLegales"));
 const CreeTonEvenement = lazy(() => import("./pages/CreeTonEvenement"));
+const HeaventCityPage = lazy(() => import("./pages/HeaventCityPage"));
 const ListeGuides = lazy(() => import("./pages/Guides").then((m) => ({ default: m.ListeGuides })));
 const PageGuide = lazy(() => import("./pages/Guides").then((m) => ({ default: m.PageGuide })));
 const Liens = lazy(() => import("./pages/Guides").then((m) => ({ default: m.Liens })));
@@ -75,6 +76,7 @@ const App = () => {
               <Route path="/politique-confidentialite" element={<PrivacyPolicy />} />
               <Route path="/mentions-legales" element={<MentionsLegales />} />
               <Route path="/cree-ton-evenement" element={<CreeTonEvenement />} />
+              <Route path="/apercu/heavent-city" element={<HeaventCityPage />} />
               <Route path="/mon-devis/:token" element={<MonDevis />} />
               <Route path="/mon-mariage/:token" element={<EspaceMaries />} />
               <Route path="/rsvp/:jeton" element={<Rsvp />} />

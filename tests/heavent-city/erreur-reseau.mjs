@@ -1,0 +1,17 @@
+const { chromium } = await import("/opt/npm-tools/node_modules/playwright/index.mjs");
+const b = await chromium.launch(); const ctx = await b.newContext({ locale: "fr-FR", viewport: { width: 1360, height: 820 } });
+await ctx.addInitScript(() => { try { sessionStorage.setItem("heavent-splash-vu", "1"); } catch {} });
+await ctx.route(/fonts\.(googleapis|gstatic)|googletagmanager/, (r) => r.abort());
+let n = 0;
+await ctx.route(/supabase\.co/, (r) => { const u = r.request().url(); if (!/send-email/.test(u)) return r.abort(); const pd = JSON.parse(r.request().postData()); if (pd.type !== "jeu") return r.fulfill({ status: 200, json: {} }); n++; return n === 1 ? r.fulfill({ status: 500, json: { error: "x" } }) : r.fulfill({ status: 200, json: { success: true } }); });
+const p = await ctx.newPage(); const t = (i) => p.getByTestId(i);
+await p.goto("http://127.0.0.1:5180/apercu/heavent-city"); await p.waitForTimeout(1000);
+await t("commencer").click(); await t("type-fete").click(); await t("q-passer").click(); await t("ville-Casablanca").click(); await t("q-passer").click(); await t("q-passer").click();
+await t("liste-lieu-rooftop").click(); await p.waitForTimeout(2500);
+await t("ouvrir-portes").click(); await t("passer-final").click(); await t("bilan").waitFor();
+await t("confier").click(); await t("d-nom").fill("Karim"); await t("d-email").fill("k@example.com"); await t("d-ville").fill("Rabat"); await t("d-consent").check();
+await t("demande-envoyer").click(); await p.waitForTimeout(800);
+const alerte = await p.locator("[role=alert]").allInnerTexts(); const nomGarde = await t("d-nom").inputValue();
+await t("demande-envoyer").click(); await t("demande-ok").waitFor();
+console.log(JSON.stringify({ alerte, nomGarde, tentatives: n }));
+await b.close();

@@ -37,3 +37,6 @@ verify_jwt = false
 
 [functions.instagram-webhook]
 verify_jwt = false
+
+[functions.heavent-city-ia]
+verify_jwt = false
