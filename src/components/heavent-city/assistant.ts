@@ -145,7 +145,7 @@ export async function demanderAssistant(message: string, type: TypeEvt, lieu: Li
   const texte = message.replace(/\s+/g, " ").trim().slice(0, MESSAGE_MAX);
   if (!texte) throw new Error("Écris quelques mots sur l'ambiance que tu imagines.");
   const auto = () => suggestionAutomatique(texte, type, lieu);
-  if (!IA_CONFIGUREE) return { proposition: auto(), note: "Suggestion automatique : aucune IA n'est connectée pour le moment." };
+  if (!IA_CONFIGUREE) return { proposition: auto() };
   if (lireAppels() >= MAX_APPELS) return { proposition: auto(), note: "Suggestion automatique (limite d'échanges atteinte pour cette visite)." };
   noterAppel();
   const ctrl = new AbortController();
@@ -153,14 +153,14 @@ export async function demanderAssistant(message: string, type: TypeEvt, lieu: Li
   try {
     const r = await fetch(`${FUNCTIONS_URL}/heavent-city-ia`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: texte, type, lieu }), signal: ctrl.signal });
     const j = await r.json().catch(() => null);
-    if (j?.disponible === false) return { proposition: auto(), note: "Suggestion automatique : l'assistant IA n'est pas encore activé." };
+    if (j?.disponible === false) return { proposition: auto() }; // IA non activée : suggestions automatiques, sans message d'excuse
     if (r.ok) {
       const p = validerProposition(j?.proposition, type, lieu, "ia");
       if (p) return { proposition: p };
     }
-    return { proposition: auto(), note: "L'assistant IA est indisponible : voici une suggestion automatique." };
+    return { proposition: auto() };
   } catch {
-    return { proposition: auto(), note: "L'assistant IA ne répond pas : voici une suggestion automatique." };
+    return { proposition: auto() };
   } finally {
     window.clearTimeout(minuteur);
   }
