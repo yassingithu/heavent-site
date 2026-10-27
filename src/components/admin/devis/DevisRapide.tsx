@@ -11,7 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Archive, ArchiveRestore, ArrowDown, ArrowUp, Copy, Download, FileText, Image as ImageIcon, Link2, Plus, Save, Search, Send, Trash2, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Archive, ArchiveRestore, ArrowDown, ChevronsUpDown, ArrowUp, Copy, Download, FileText, Image as ImageIcon, Link2, Plus, Save, Search, Send, Trash2, X } from "lucide-react";
 import {
   DevisForm, Ligne, Parametres, Prestation, STATUTS, UNITES, devisSupprimable, statutsPermis,
   calculerTotaux, dateFr, dateHeureFr, devisDepuisBase, lienClientDevis, ligneVide, money, nouveauDevis, today, totalLigne,
@@ -470,6 +472,14 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     if (d) await genererPdf(d);
   };
 
+  const changerStatutEditeur = (v: string) => {
+    if (!form) return;
+    const ligne = devisList.find((x) => x.id === form.id);
+    if ((v === "annule" || v === "refuse") && ligne?.equipe && !["annule", "refuse"].includes(ligne.statut)
+      && !confirm(`En enregistrant ce devis « ${STATUTS[v].label} », l'équipe prévue (${ligne.equipe} personne${ligne.equipe > 1 ? "s" : ""}) sera libérée : plus de mission, de pointage ni de paie pour cet événement. Continuer ?`)) return;
+    set("statut", v);
+  };
+
   const changerStatut = async (id: string, statut: string) => {
     const d = devisList.find((x) => x.id === id);
     if (d && (statut === "annule" || statut === "refuse") && d.statut !== "annule" && d.statut !== "refuse") {
@@ -655,7 +665,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       {/* ------------------------- ÉDITEUR ------------------------- */}
       <TabsContent value="editeur">
         {form && totaux && (
-          <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+          <div className="grid gap-4 lg:grid-cols-[1fr_320px] pb-28 lg:pb-0">
             <div className="space-y-4 min-w-0">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
@@ -732,16 +742,37 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                             {items.map((p) => <option key={p.id} value={p.id}>{p.designation} — {money(p.prix_unitaire, devise)}</option>)}
                           </select>
                         </div>
-                      ) : (
-                        <div key={cat} className="flex flex-wrap gap-2 items-center">
-                          <span className="text-xs uppercase tracking-wide text-muted-foreground w-24">{cat}</span>
-                          {items.map((p) => (
-                            <Button key={p.id} size="sm" variant="secondary" className="h-auto min-h-9 max-w-full whitespace-normal text-left py-1.5" onClick={() => ajouterDuCatalogue(p)}>
-                              + {p.designation} <span className="ml-1 text-muted-foreground">{money(p.prix_unitaire, devise)}</span>
-                            </Button>
-                          ))}
+                      ) : null)}
+                      {Object.entries(parCategorie).some(([cat]) => !["prestataires", "lieux"].includes(cat)) && (
+                        <div className="flex flex-wrap gap-2 items-center">
+                          <span className="text-xs uppercase tracking-wide text-muted-foreground w-24">Prestations</span>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" role="combobox" className="flex-1 min-w-[220px] justify-between font-normal h-9" data-testid="ajout-catalogue">
+                                + Ajouter une prestation du catalogue… <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="p-0 w-[min(92vw,420px)] bg-white z-[60] border-[#EADFC8] shadow-xl" align="start" collisionPadding={{ bottom: 140, top: 60 }}>
+                              <Command>
+                                <CommandInput placeholder="Tape les premières lettres…" data-testid="recherche-catalogue" />
+                                <CommandList className="max-h-[50vh]">
+                                  <CommandEmpty>Aucune prestation trouvée.</CommandEmpty>
+                                  {Object.entries(parCategorie).filter(([cat]) => !["prestataires", "lieux"].includes(cat)).map(([cat, items]) => (
+                                    <CommandGroup key={cat} heading={cat}>
+                                      {items.map((p) => (
+                                        <CommandItem key={p.id} value={`${p.designation} ${cat}`} onSelect={() => ajouterDuCatalogue(p)}>
+                                          <span className="flex-1">{p.designation}</span>
+                                          <span className="ml-2 text-muted-foreground">{money(p.prix_unitaire, devise)}</span>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  ))}
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
-                      ))}
+                      )}
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">
@@ -788,7 +819,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
             </div>
 
             {/* Récapitulatif */}
-            <div className="space-y-4 lg:sticky lg:top-4 h-fit">
+            <div className="space-y-4 lg:sticky lg:top-4 h-fit lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
               <Card>
                 <CardHeader><CardTitle className="text-base">Récapitulatif</CardTitle></CardHeader>
                 <CardContent className="space-y-3 text-sm">
@@ -815,12 +846,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   </div>
                   <div>
                     <Label className="text-xs">Statut</Label>
-                    <Select value={form.statut} onValueChange={(v) => {
-                      const ligne = devisList.find((x) => x.id === form.id);
-                      if ((v === "annule" || v === "refuse") && ligne?.equipe && !["annule", "refuse"].includes(ligne.statut)
-                        && !confirm(`En enregistrant ce devis « ${STATUTS[v].label} », l'équipe prévue (${ligne.equipe} personne${ligne.equipe > 1 ? "s" : ""}) sera libérée : plus de mission, de pointage ni de paie pour cet événement. Continuer ?`)) return;
-                      set("statut", v);
-                    }}>
+                    <Select value={form.statut} onValueChange={changerStatutEditeur}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{statutsPermis({ statut: form.statut, signe_le: form.signe_le, nbFactures: devisList.find((x) => x.id === form.id)?.nbFactures }).map((k) => <SelectItem key={k} value={k}>{STATUTS[k].label}</SelectItem>)}</SelectContent>
                     </Select>
@@ -852,6 +878,22 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 <Button variant="ghost" onClick={() => { setForm(null); setOnglet("liste"); }}>Fermer</Button>
               </div>
               <FacturesDevis devis={form} params={params} avantCreation={() => enregistrer()} />
+            </div>
+
+            {/* Barre d'actions toujours visible sur téléphone / tablette (au-dessus de la barre du bas) */}
+            <div className="lg:hidden fixed inset-x-0 z-[44] border-t border-[#EADFC8] bg-[#FAF7EE]/95 backdrop-blur px-3 py-2 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] bottom-[calc(3.5rem+env(safe-area-inset-bottom))]" data-testid="barre-actions-devis">
+              <div className="mx-auto flex max-w-xl items-center gap-2">
+                <div className="min-w-0 shrink-0 leading-tight">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Total TTC</div>
+                  <div className="text-sm font-bold">{money(totaux.ttc, devise)}</div>
+                </div>
+                <Select value={form.statut} onValueChange={changerStatutEditeur}>
+                  <SelectTrigger className="h-10 min-w-0 flex-1 text-xs" aria-label="Statut du devis"><SelectValue /></SelectTrigger>
+                  <SelectContent>{statutsPermis({ statut: form.statut, signe_le: form.signe_le, nbFactures: devisList.find((x) => x.id === form.id)?.nbFactures }).map((k) => <SelectItem key={k} value={k}>{STATUTS[k].label}</SelectItem>)}</SelectContent>
+                </Select>
+                <Button className="h-10" onClick={() => enregistrer()} disabled={saving} data-testid="barre-enregistrer"><Save className="h-4 w-4 mr-1" /> Enregistrer</Button>
+                <Button className="h-10" variant="outline" size="icon" title="Envoyer au client pour signature" aria-label="Envoyer au client pour signature" onClick={envoyerAuClient} disabled={saving || envoiEnCours || !!form.signe_le} data-testid="barre-envoyer"><Send className="h-4 w-4" /></Button>
+              </div>
             </div>
           </div>
         )}
