@@ -132,7 +132,26 @@ Retours de Yassin sur le lot 4 en usage réel (Mac, iPhone). Puis lot Dates et f
 - Prototype 3D réaliste (three.js) abandonné à la demande de Yassin (« trop spécial ») : branche `lot-jeu-3d`, non fusionnée, hors production.
 - Retour arrière du site : commit précédent 58ad22c (avant le jeu), puis 44fae63 (jeu fluide + tente).
 
-## Lot Fuseaux (25/10, préparé, NON mis en ligne)
+## Lot Fuseaux (25/10, en production le 26/10)
 - « Établi à Rabat le », fiche profil staff, contrat, date par défaut des devis, missions du jour, Mon devis : date du Maroc (`aujourdhuiMaroc`) au lieu de la date UTC (écart entre minuit et 1 h).
 - Mail du matin (`resume-matin`) : jour et date longue à l'heure du Maroc ; planning 6 h 30 et 7 h 30 UTC, seul l'envoi tombant à 7 h heure du Maroc part (ramadan = UTC+0). « ?essai=1 » ignore la règle.
 - Migration 20261025170000 : planning du mail + `mon_accueil` (mot du jour à la date du Maroc). Retour arrière dans l'en-tête de la migration.
+
+## Mises en production des 26 et 27/10 (retours arrière = renvoyer les fichiers du commit précédent, listés par `git diff`)
+- Lot Fuseaux en production (26/10) : `send-email` v11, `resume-matin` v4 puis v5, site au commit d67e68a ; correctif PDF et prix du catalogue du jeu.
+- Garde-base-active (migration 20261026060000) : tâche quotidienne à 5 h 17 UTC qui évite la mise en pause de la base gratuite (Supabase met en pause après 7 jours d'inactivité).
+- Champs numériques : le « 0 » ne reste plus devant la saisie (125 invités ne devient plus 1250) ; sélection du contenu au focus (`input.tsx`, `main.tsx`).
+- Pas de rechargement automatique pendant une saisie (`AppTelephone.tsx`) : une barre « Recharger » propose la nouvelle version.
+- Image du devis (`devisImage.ts`, `fond-devis.jpg`) : PNG/JPG 1080×1350 avec le prix final seul, panneau doré qui s'adapte à la longueur du montant, logo Nawar agrandi pour les devis Nawar, 3 prestations maximum ; boutons dans l'éditeur et la liste (`image-devis-png/jpg/liste`). iPhone : feuille de partage.
+- Tarifs Nawar (migration 20261026150000, appliquée le 26/10) : « Parfum Nawar — moins de 150 pièces » 55 MAD, « … 150 pièces et plus » 45 MAD ; minimum de 50 parfums gardé ; la ligne à 80 MAD du jeu est inchangée (description précisée). Retour arrière dans l'en-tête de la migration.
+- Espace staff installable (27/10) : `staff.webmanifest`, `staff-sw.js` (sans cache), icônes `staff-*.png` ; carte d'invitation (`AppStaff.tsx`) sur Android et iPhone ; page de connexion `/auth` installable aussi. Un seul manifeste à la fois (admin / staff) : iPhone prenait le premier. Icône d'accueil iPhone remplacée (celle d'`index.html` restait prioritaire). Pas d'APK, pas de notifications pour le staff pour l'instant.
+- Icônes d'accueil : symbole Heavent doré avec « ADMIN » ou « STAFF » dessous (`public/admin-*.png`, `staff-*.png`).
+- Mail du matin séparé des mots doux (migration 20261027100000, appliquée le 27/10, `resume-matin` v5) : colonne `admin_profils.recoit_resume` ; le mot du jour n'apparaît que pour `recoit_mots` (Imane, Nawar). Yassin reçoit le résumé sans le mot. Retour arrière dans l'en-tête de la migration. Attention : `recoit_mots` commande aussi les mots doux et la surprise, ne jamais l'activer pour Yassin.
+- Vraie erreur 404 (27/10) : `.htaccess` renvoie 404 pour toute adresse inexistante (page `/404.html`, non indexée) ; restent en application : `/mon-devis`, `/mon-mariage`, `/rsvp`, `/desinscription`, `/studio/demo`, `/prestataires/confirmer`, `/realisations`. Retour arrière : renvoyer l'ancien `.htaccess` (commit 8ba9f00).
+- Contrôle complet du 27/10 : 37 parcours bêta sur 37, tests du jeu, traductions, CNSS, 28 adresses en ligne, 8 tâches planifiées sans échec, cohérence des données, droits des fonctions. Page du jeu : 1 Mo avant compression (~130 Ko envoyés), laissée telle quelle à la demande de Yassin.
+
+## Reste à faire
+- Sauvegardes du Mac : essais veille et coupure réseau à faire avec Yassin ; l'essai de redémarrage est reporté (demande de Yassin du 27/10).
+- Saisir le numéro employeur CNSS (Devis → Infos agence), par Imane.
+- Essayer l'espace staff avec un vrai membre du staff (Android) et le jeu de bout en bout sur iPhone.
+- Plus tard : lecture automatique des dépenses (OCR gratuit), règles de paie, déclarations, rattrapage de l'historique des migrations, déploiement automatisé (identifiants saisis par Yassin lui-même).
