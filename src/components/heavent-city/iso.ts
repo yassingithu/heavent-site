@@ -1,5 +1,5 @@
-/** Géométrie isométrique 2:1 et petites fonctions de couleur. Le sol est une grille de 10 × 10 cases. */
-export const N = 10;
+/** Géométrie isométrique 2:1 et petites fonctions de couleur. Le sol est une grille de 12 × 12 cases. */
+export const N = 12;
 export const VB = { w: 800, h: 600 };
 const CX = 400, CY = 190, DX = 32, DY = 16;
 

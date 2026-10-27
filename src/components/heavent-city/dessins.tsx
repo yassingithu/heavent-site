@@ -4,6 +4,7 @@
  */
 import type { ReactNode } from "react";
 import { X, Y, poly, pt, rx, ry, assombrir, eclaircir, melanger, hasard } from "./iso";
+import { PORTE } from "./positions";
 
 export interface Pal { nappe: string; fleurs: string; accent: string; deco: string; sombre?: boolean }
 
@@ -400,7 +401,7 @@ export function Troupe({ gx, gy, pal, actif }: { gx: number; gy: number; pal: Pa
 export function EnceintesAmbiance({ pal, actif }: { pal: Pal; actif?: boolean }) {
   return (
     <g>
-      {[[5.6, 0.5], [9.2, 0.5]].map(([gx, gy], i) => (
+      {[[6.8, 0.5], [11.0, 0.5]].map(([gx, gy], i) => (
         <g key={i}>
           <Boite gx={gx} gy={gy} w={0.5} d={0.5} h={46} haut="#2b2b30" />
           <circle cx={X(gx + 0.5, gy + 0.25)} cy={Y(gx + 0.5, gy + 0.25, 30)} r="5" fill="#4a4a52" />
@@ -481,8 +482,8 @@ export function Comptoir({ gx, gy, pal, the }: { gx: number; gy: number; pal: Pa
 }
 
 export function Porte({ pal, nuit, logo }: { pal: Pal; nuit: number; logo?: string }) {
-  const g = (a: number) => X(a, 9.85), gy = (a: number, z = 0) => Y(a, 9.85, z);
-  const x1 = g(2.2), y1 = gy(2.2), x2 = g(4.0), y2 = gy(4.0);
+  const g = (a: number) => X(a, PORTE.gy), gy = (a: number, z = 0) => Y(a, PORTE.gy, z);
+  const x1 = g(PORTE.gauche), y1 = gy(PORTE.gauche), x2 = g(PORTE.droite), y2 = gy(PORTE.droite);
   return (
     <g>
       {[[x1, y1], [x2, y2]].map(([x, y], i) => (

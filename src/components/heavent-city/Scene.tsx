@@ -141,7 +141,7 @@ function Sol({ lieu, pal, style }: { lieu: LieuId; pal: Pal; style: string }) {
     return (
       <g>
         {Array.from({ length: N * 2 }, (_, k) => <polygon key={k} points={poly([k / 2, 0], [(k + 1) / 2, 0], [(k + 1) / 2, N], [k / 2, N])} fill={k % 2 ? "#B98E65" : "#AA7F58"} stroke="#00000012" strokeWidth="0.5" />)}
-        {Array.from({ length: 5 }, (_, k) => <polygon key={`j${k}`} points={poly([0, k * 2 + 1.2], [N, k * 2 + 1.2], [N, k * 2 + 1.25], [0, k * 2 + 1.25])} fill="#00000018" />)}
+        {Array.from({ length: 6 }, (_, k) => <polygon key={`j${k}`} points={poly([0, k * 2 + 1.2], [N, k * 2 + 1.2], [N, k * 2 + 1.25], [0, k * 2 + 1.25])} fill="#00000018" />)}
       </g>
     );
   }
@@ -149,8 +149,8 @@ function Sol({ lieu, pal, style }: { lieu: LieuId; pal: Pal; style: string }) {
     return (
       <g>
         {cases.map(({ i, j }) => <polygon key={`${i}-${j}`} points={dalle(i, j)} fill={(i + j) % 2 ? "#E8E1D6" : "#DDD4C6"} stroke="#00000014" strokeWidth="0.6" />)}
-        <polygon points={poly([0, 8.8], [N, 8.8], [N, N], [0, N])} fill="#9A7650" opacity="0.9" />
-        {Array.from({ length: 12 }, (_, k) => <polygon key={k} points={poly([k * 0.84, 8.8], [k * 0.84 + 0.04, 8.8], [k * 0.84 + 0.04, N], [k * 0.84, N])} fill="#00000025" />)}
+        <polygon points={poly([0, N - 1.2], [N, N - 1.2], [N, N], [0, N])} fill="#9A7650" opacity="0.9" />
+        {Array.from({ length: 15 }, (_, k) => <polygon key={k} points={poly([k * 0.84, N - 1.2], [k * 0.84 + 0.04, N - 1.2], [k * 0.84 + 0.04, N], [k * 0.84, N])} fill="#00000025" />)}
       </g>
     );
   }
@@ -159,9 +159,9 @@ function Sol({ lieu, pal, style }: { lieu: LieuId; pal: Pal; style: string }) {
       <g>
         <polygon points={poly([0, 0], [N, 0], [N, N], [0, N])} fill="#BBCB8B" />
         {cases.map(({ i, j }) => <polygon key={`${i}-${j}`} points={dalle(i, j)} fill={(i + j) % 2 ? "#B3C583" : "#C0D091"} />)}
-        {Array.from({ length: 34 }, (_, k) => { const gx = g() * 9.6, gy = g() * 9.6; return <ellipse key={k} cx={X(gx, gy)} cy={Y(gx, gy)} rx={5 + g() * 12} ry={2 + g() * 5} fill="#9DB373" opacity="0.4" />; })}
+        {Array.from({ length: 34 }, (_, k) => { const gx = g() * (N - 0.4), gy = g() * (N - 0.4); return <ellipse key={k} cx={X(gx, gy)} cy={Y(gx, gy)} rx={5 + g() * 12} ry={2 + g() * 5} fill="#9DB373" opacity="0.4" />; })}
         {Array.from({ length: 16 }, (_, k) => <ellipse key={`p${k}`} cx={X(3.1 + (k % 2 ? 0.3 : -0.3), 10 - k * 0.38)} cy={Y(3.1 + (k % 2 ? 0.3 : -0.3), 10 - k * 0.38)} rx="11" ry="5" fill="#E7DCC0" opacity="0.8" />)}
-        {Array.from({ length: 50 }, (_, k) => { const gx = g() * 9.6, gy = g() * 9.6; return <circle key={`f${k}`} cx={X(gx, gy)} cy={Y(gx, gy)} r="1.5" fill={["#FFFFFF", "#F4D774", "#E8A6B0"][k % 3]} opacity="0.85" />; })}
+        {Array.from({ length: 50 }, (_, k) => { const gx = g() * (N - 0.4), gy = g() * (N - 0.4); return <circle key={`f${k}`} cx={X(gx, gy)} cy={Y(gx, gy)} r="1.5" fill={["#FFFFFF", "#F4D774", "#E8A6B0"][k % 3]} opacity="0.85" />; })}
       </g>
     );
   }
@@ -180,7 +180,7 @@ function Mur({ lieu, cote, pal, nuit, style }: { lieu: LieuId; cote: "g" | "d"; 
   const sens = cote === "g" ? "u" : "d";
   const L = 320, teinte = cote === "g" ? 0.07 : 0;
   const lampe = "#FFD98A";
-  const Corps = ({ children }: { children: ReactNode }) => <Plan sens={sens} c={0} u={cote === "g" ? N : 0}>{children}</Plan>;
+  const Corps = ({ children }: { children: ReactNode }) => <Plan sens={sens} c={0} u={cote === "g" ? N : 0}><g transform={`scale(${N / 10} 1)`}>{children}</g></Plan>;
   const ciel = melanger("#F2B58A", "#252a5a", nuit);
 
   if (lieu === "riad") {
@@ -342,8 +342,10 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
 
   // Tables
   const tbl = TABLES.slice(0, r.tablesVisibles);
+  // autant de chaises que d'invités par table (120 invités / 12 tables = 10), entre 4 et 10
+  const parChaises = Math.max(4, Math.min(10, Math.round(r.invites / r.tablesTotal)));
   tbl.forEach(([gx, gy], i) => {
-    add(gx + gy, `t${i}`, <TableRonde gx={gx} gy={gy} r={RAYON_TABLE} nbChaises={6} pal={pal} fleurs={o.has("fleurs") || style === "romantique"} bougies={r.lumiere === "bougies"} invites={assis ? 5 : 0} retard={i * 0.4} animer={animer} />);
+    add(gx + gy, `t${i}`, <TableRonde gx={gx} gy={gy} r={RAYON_TABLE} nbChaises={parChaises} pal={pal} fleurs={o.has("fleurs") || style === "romantique"} bougies={r.lumiere === "bougies"} invites={assis ? parChaises : 0} retard={i * 0.4} animer={animer} />);
     if (r.lumiere === "bougies") halos.push({ x: X(gx, gy), y: Y(gx, gy, 30), r: 34, a: 0.55, c: "chaud" });
   });
 
@@ -408,7 +410,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
     for (let i = 0; i < 22; i++) {
       const [tx, ty] = cibles[i % cibles.length];
       const a = g() * Math.PI * 2, cx = tx + Math.cos(a) * 1.5, cy = ty + Math.sin(a) * 1.3 + 0.2;
-      const px = Math.min(9.4, Math.max(0.8, cx)), py = Math.min(9.5, Math.max(1.2, cy));
+      const px = Math.min(N - 0.6, Math.max(0.8, cx)), py = Math.min(N - 0.5, Math.max(1.2, cy));
       const dx = X(DEPART_INVITES[0], DEPART_INVITES[1]) - X(px, py), dy = Y(DEPART_INVITES[0], DEPART_INVITES[1]) - Y(px, py);
       const dehors = final === "avant";
       invites.push(
@@ -428,7 +430,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
   const aria = `Scène « ${r.titre} » : ${r.tablesTotal} tables environ pour ${r.invites} invités, ambiance ${STYLES.find((s) => s.id === style)?.nom.toLowerCase()}.`;
 
   return (
-    <svg viewBox="70 50 660 500" role="img" aria-label={aria} className={className} preserveAspectRatio={cadrage === "slice" ? "xMidYMid slice" : "xMidYMid meet"} style={{ display: "block", width: "100%", height: "100%", overflow: "visible" }}>
+    <svg viewBox="10 20 780 590" role="img" aria-label={aria} className={className} preserveAspectRatio={cadrage === "slice" ? "xMidYMid slice" : "xMidYMid meet"} style={{ display: "block", width: "100%", height: "100%", overflow: "visible" }}>
       {animer && <style>{STYLE_CSS}</style>}
       <defs>
         {([["chaud", "#FFD58A"], ["froid", "#BFE3FF"], ["rose", "#FF9FC4"], ["vert", "#9FFFD0"], ["violet", "#C8A6FF"]] as const).map(([k, c]) => (
@@ -455,7 +457,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
       {/* Guirlandes étoilées */}
       {r.lumiere === "etoilee" && (
         <g>
-          {([[[0.3, 9.6], [0.3, 0.3]], [[0.3, 0.3], [9.7, 0.3]], [[0.3, 5.1], [9.7, 5.1]], [[2.5, 9.8], [9.7, 5.1]]] as [[number, number], [number, number]][]).map(([[ax, ay], [bx, by]], i) => {
+          {([[[0.3, 11.5], [0.3, 0.3]], [[0.3, 0.3], [11.6, 0.3]], [[0.3, 6.1], [11.6, 6.1]], [[3.0, 11.8], [11.6, 6.1]]] as [[number, number], [number, number]][]).map(([[ax, ay], [bx, by]], i) => {
             const x1 = X(ax, ay), y1 = Y(ax, ay, 116), x2 = X(bx, by), y2 = Y(bx, by, 116), cx = (x1 + x2) / 2, cy = (y1 + y2) / 2 + 26;
             const pts = Array.from({ length: 14 }, (_, k) => { const t = (k + 0.5) / 14; return { x: (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2, y: (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2 }; });
             return (
@@ -465,7 +467,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
               </g>
             );
           })}
-          {[[0.3, 9.6], [0.3, 0.3], [9.7, 0.3], [0.3, 5.1], [9.7, 5.1]].map(([gx, gy], i) => <rect key={i} x={X(gx, gy) - 1.6} y={Y(gx, gy, 116)} width="3.2" height="116" fill="#3a3128" opacity="0.8" />)}
+          {[[0.3, 11.5], [0.3, 0.3], [11.6, 0.3], [0.3, 6.1], [11.6, 6.1]].map(([gx, gy], i) => <rect key={i} x={X(gx, gy) - 1.6} y={Y(gx, gy, 116)} width="3.2" height="116" fill="#3a3128" opacity="0.8" />)}
         </g>
       )}
       <rect x={-2400} y={-2400} width={VB.w + 4800} height={VB.h + 5000} fill="#10163f" opacity={0.4 * n} style={{ transition: "opacity 1.8s ease" }} />
