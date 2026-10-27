@@ -5,9 +5,9 @@ import {
   ACCUEILS, DECORS, EXPERIENCES, INVITES, LUMIERES, MUSIQUES, PALETTES, STYLES, TABLES_TYPES, disponiblePour, reservable, type TableId, type InfoOption, type MusiqueId, type OptionId,
 } from "./donnees";
 import {
-  accueilEffectif, lumiereEffective, missionsDuType, nbTables, optionsActives, type Action, type Choix,
+  accueilEffectif, lumiereEffective, missionsDuType, nbTables, optionsActives, rendu, type Action, type Choix,
 } from "./etat";
-import { dimensionner, N_MIN } from "./positions";
+import { N_MIN } from "./positions";
 import { MissionCarte } from "./Missions";
 import { Picto, Pastille } from "./ui";
 import { petitSon } from "./son";
@@ -37,7 +37,7 @@ function Salle({ choix, dispatch }: { choix: Choix; dispatch: Dispatch<Action> }
   const [saisie, setSaisie] = useState<number | null>(null);
   const valeur = saisie ?? choix.invites;
   const info = TABLES_TYPES.find((t) => t.id === choix.tables)!;
-  const nb = nbTables(valeur, choix.tables), n = dimensionner(nb, choix.tables).n;
+  const nb = nbTables(valeur, choix.tables), n = rendu({ ...choix, invites: valeur })?.salle.n ?? N_MIN;
   const fixer = (v: number) => { setSaisie(null); dispatch({ t: "choisir", patch: { invites: Math.min(INVITES.max, Math.max(INVITES.min, Math.round(v) || INVITES.defaut)) } }); };
   const deplaces = Object.keys(choix.deplacements).length;
   return (

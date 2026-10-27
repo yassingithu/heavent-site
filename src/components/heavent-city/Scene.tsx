@@ -11,7 +11,7 @@ import {
   LivreDor, MurFleurs, Orchestre, Personne, Petales, Photobooth, Photographe, PisteDanse, Plan, PosteLanterne, Porte, SalonMarocain, STYLE_CSS, TableHonneur, TableHaute, TableRect, TableRonde,
   Troupe, cheveuxDe, cintre, peauDe, type Pal,
 } from "./dessins";
-import { RAYON_TABLE, positions } from "./positions";
+import { RAYON_TABLE } from "./positions";
 
 export type EtapeFinal = null | "avant" | "arrive" | "assis";
 export interface SceneProps {
@@ -344,7 +344,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
   const n = final ? 1 : nuit;
   const assis = final === "assis";
   const N = r.salle.n, ax = r.salle.ax;
-  const P = positions(N, ax);
+  const P = r.salle.pos;
   const halos: Halo[] = [];
   const E: Entite[] = [];
 
@@ -444,7 +444,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
 
   // Musique
   const musiqueActive = actif && (final ? true : animer);
-  if (r.musiques.includes("dj")) { const dj = r.musiques.includes("orchestre") ? P.DJ_AVEC_ORCHESTRE : P.DJ; add(dj.gx + dj.gy + 1, "dj", <Dj gx={dj.gx} gy={dj.gy} w={dj.w} d={dj.d} pal={pal} actif={musiqueActive} />, mob("dj", dj.gx + dj.w / 2, dj.gy + dj.d / 2)); }
+  if (r.musiques.includes("dj")) { const dj = P.DJ; add(dj.gx + dj.gy + 1, "dj", <Dj gx={dj.gx} gy={dj.gy} w={dj.w} d={dj.d} pal={pal} actif={musiqueActive} />, mob("dj", dj.gx + dj.w / 2, dj.gy + dj.d / 2)); }
   if (r.musiques.includes("orchestre")) { const so = P.SCENE_ORCHESTRE; add(so.gx + so.gy + 1, "orch", <Orchestre gx={so.gx} gy={so.gy} w={so.w} d={so.d} pal={pal} actif={musiqueActive} />, mob("orch", so.gx + so.w / 2, so.gy + so.d / 2)); }
   if (r.musiques.includes("troupe")) { const [tx, ty] = P.TROUPE; add(tx + ty, "troupe", <Troupe gx={tx} gy={ty} pal={pal} actif={musiqueActive} />, mob("troupe", tx + 0.5, ty + 0.5)); }
   if (r.musiques.includes("playlist")) add(6, "enceintes", <EnceintesAmbiance pal={pal} actif={musiqueActive} pos={P.ENCEINTES} />, mob("enceintes", (P.ENCEINTES[0][0] + P.ENCEINTES[1][0]) / 2, 0.75));

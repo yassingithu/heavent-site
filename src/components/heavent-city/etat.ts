@@ -194,10 +194,12 @@ export function rendu(c: Choix): Rendu | null {
   const style = c.style ?? "beige_or";
   const palette = c.palette ?? STYLES.find((s) => s.id === style)!.palette;
   const tables = nbTables(c.invites, c.tables);
-  const salle = dimensionner(tables, c.tables);
+  const options = new Set(optionsActives(c));
+  const lum = lumiereEffective(c), acc = accueilEffectif(c);
+  const salle = dimensionner(tables, c.tables, { options, musiques: c.musiques, accueil: acc, lumiere: lum, type: c.type, tables: c.tables });
   return {
     type: c.type, lieu: c.lieu ?? "riad", style, palette, lumiere: lumiereEffective(c), musiques: c.musiques, accueil: accueilEffectif(c),
-    options: new Set(optionsActives(c)), invites: c.invites, tablesTotal: tables, tablesVisibles: salle.tables.length, titre: titreEvenement(c),
+    options, invites: c.invites, tablesTotal: tables, tablesVisibles: salle.tables.length, titre: titreEvenement(c),
     tables: c.tables, salle, deplacements: c.deplacements,
   };
 }
