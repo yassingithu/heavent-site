@@ -5,6 +5,7 @@
  */
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
 import { suivre } from "@/lib/suivi";
+import { enFrancais, langue, tr } from "./langue";
 import { infoOption, infoTable } from "./donnees";
 import { configurationAdmin, nbTables, resume, texteDemande, optionsActives, type Choix } from "./etat";
 
@@ -14,10 +15,10 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export function erreurs(k: Coordonnees, consentement: boolean): Record<string, string> {
   const e: Record<string, string> = {};
-  if (!k.nom.trim()) e.nom = "Dis-nous comment t'appeler.";
-  if (!EMAIL.test(k.email.trim())) e.email = "Une adresse e-mail valide nous permet de te répondre.";
-  if (!k.ville.trim()) e.ville = "Indique la ville de l'événement.";
-  if (!consentement) e.consentement = "Ton accord est nécessaire pour que nous puissions te recontacter.";
+  if (!k.nom.trim()) e.nom = tr("Dis-nous comment t'appeler.");
+  if (!EMAIL.test(k.email.trim())) e.email = tr("Une adresse e-mail valide nous permet de te répondre.");
+  if (!k.ville.trim()) e.ville = tr("Indique la ville de l'événement.");
+  if (!consentement) e.consentement = tr("Ton accord est nécessaire pour que nous puissions te recontacter.");
   return e;
 }
 
@@ -31,7 +32,7 @@ function signature(c: Choix, email: string) {
 export const dejaEnvoyee = (c: Choix, email: string) => { try { return (JSON.parse(sessionStorage.getItem(CLE_ENVOYEES) ?? "[]") as string[]).includes(signature(c, email)); } catch { return false; } };
 const noterEnvoyee = (c: Choix, email: string) => { try { const l = JSON.parse(sessionStorage.getItem(CLE_ENVOYEES) ?? "[]") as string[]; l.push(signature(c, email)); sessionStorage.setItem(CLE_ENVOYEES, JSON.stringify(l.slice(-10))); } catch { /* ignoré */ } };
 
-export async function envoyerDemande(c: Choix, k: Coordonnees): Promise<{ envoye: boolean; message?: string }> {
+function construireCorps(c: Choix, k: Coordonnees) {
   const r = resume(c);
   const conf = configurationAdmin(c);
   const lignes = [...r.decors, ...r.experiences].map((l) => ({ libelle: l.reservable ? l.nom : `${l.nom} (inspiration à discuter)`, detail: "", surDevis: false }));
@@ -53,12 +54,20 @@ export async function envoyerDemande(c: Choix, k: Coordonnees): Promise<{ envoye
       },
     },
   };
+  return corps;
+}
+
+export async function envoyerDemande(c: Choix, k: Coordonnees): Promise<{ envoye: boolean; message?: string }> {
+  // Tout ce qui part vers l'agence est rédigé en français, quelle que soit la langue du visiteur
+  const lng = langue();
+  const corps = enFrancais(() => construireCorps(c, k));
+  corps.data.langue_visiteur = lng; // sert à répondre au visiteur dans sa langue ; le contenu reste en français
   try {
     const rep = await fetch(`${FUNCTIONS_URL}/send-email`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });
     const j = await rep.json().catch(() => ({}));
     if (rep.ok && j?.success) { noterEnvoyee(c, k.email); suivre("demande", "heavent-city"); return { envoye: true }; }
-    return { envoye: false, message: "Le serveur n'a pas pu enregistrer la demande pour le moment." };
+    return { envoye: false, message: tr("Le serveur n'a pas pu enregistrer la demande pour le moment.") };
   } catch {
-    return { envoye: false, message: "Connexion impossible pour le moment." };
+    return { envoye: false, message: tr("Connexion impossible pour le moment.") };
   }
 }

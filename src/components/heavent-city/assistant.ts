@@ -8,6 +8,7 @@
  *  - Un seul appel par envoi volontaire du visiteur, jamais à chaque clic. Message limité, délai d'attente court.
  */
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
+import { tr } from "./langue";
 import {
   ACCUEILS, DECORS, EXPERIENCES, LIEUX, LUMIERES, MUSIQUES, PALETTES, STYLES, disponiblePour, infoOption,
   type AccueilId, type LieuId, type LumiereId, type MusiqueId, type OptionId, type PaletteId, type StyleId, type TypeEvt,
@@ -59,7 +60,7 @@ export function validerProposition(brut: unknown, type: TypeEvt, lieuCourant: Li
 function explicationAuto(p: { style: StyleId; palette: PaletteId; options: OptionId[] }) {
   const s = STYLES.find((x) => x.id === p.style)!, c = PALETTES.find((x) => x.id === p.palette)!;
   const exp = p.options.map((o) => infoOption(o)?.nom.toLowerCase()).filter(Boolean).slice(0, 3);
-  return `Un style « ${s.nom.toLowerCase()} » avec des tons ${c.nom.toLowerCase()}${exp.length ? `, relevé par ${exp.join(", ")}` : ""}. Tu peux tout ajuster avant d'appliquer.`;
+  return tr("Un style « {style} » avec des tons {palette}", { style: s.nom.toLowerCase(), palette: c.nom.toLowerCase() }) + (exp.length ? tr(", relevé par {x}", { x: exp.join(", ") }) : "") + ". " + tr("Tu peux tout ajuster avant d'appliquer.");
 }
 
 // ── Suggestions automatiques (sans IA) ──────────────────────────────────────
@@ -136,7 +137,7 @@ export function suggestionAutomatique(texte: string, type: TypeEvt, lieuCourant:
   const options = [...opts].filter((o) => { const i = infoOption(o); return !!i && disponiblePour(i, type, lieuEff); }).slice(0, 5);
   const accueil: AccueilId | null = type === "pro" ? "hotesses" : a(t, "the de bienvenue") ? "the" : style === "beige_or" || style === "maroc" ? "hotesses" : "discret";
   const explication = pasBling
-    ? `Pour rester chic sans en faire trop, je te propose un style « ${STYLES.find((s) => s.id === style)!.nom.toLowerCase()} », une lumière chaleureuse et quelques touches discrètes. Tu peux tout ajuster avant d'appliquer.`
+    ? tr("Pour rester chic sans en faire trop, je te propose un style « {style} », une lumière chaleureuse et quelques touches discrètes. Tu peux tout ajuster avant d'appliquer.", { style: STYLES.find((s) => s.id === style)!.nom.toLowerCase() })
     : explicationAuto({ style, palette, options });
   return validerProposition({ lieu, style, palette, lumiere, musiques: musique, accueil, options, explication }, type, lieuCourant, "auto")!;
 }
@@ -150,10 +151,10 @@ export interface ReponseAssistant { proposition: Proposition; note?: string }
 
 export async function demanderAssistant(message: string, type: TypeEvt, lieu: LieuId | null): Promise<ReponseAssistant> {
   const texte = message.replace(/\s+/g, " ").trim().slice(0, MESSAGE_MAX);
-  if (!texte) throw new Error("Écris quelques mots sur l'ambiance que tu imagines.");
+  if (!texte) throw new Error(tr("Écris quelques mots sur l'ambiance que tu imagines."));
   const auto = () => suggestionAutomatique(texte, type, lieu);
   if (!IA_CONFIGUREE) return { proposition: auto() };
-  if (lireAppels() >= MAX_APPELS) return { proposition: auto(), note: "Suggestion automatique (limite d'échanges atteinte pour cette visite)." };
+  if (lireAppels() >= MAX_APPELS) return { proposition: auto(), note: tr("Suggestion automatique (limite d'échanges atteinte pour cette visite).") };
   noterAppel();
   const ctrl = new AbortController();
   const minuteur = window.setTimeout(() => ctrl.abort(), DELAI_MS);

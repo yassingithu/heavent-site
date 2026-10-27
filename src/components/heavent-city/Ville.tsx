@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { LIEUX, type LieuId } from "./donnees";
 import { melanger, assombrir, eclaircir, hasard } from "./iso";
 import { STYLE_CSS } from "./dessins";
+import { tr } from "./langue";
 
 type G = { X: (gx: number, gy: number) => number; Y: (gx: number, gy: number, z?: number) => number; p: (a: number, b: number, z?: number) => string };
 const rep = (ox: number, oy: number, s: number): G => {
@@ -206,7 +207,7 @@ export default function Ville({ onChoisir, choisi, bloque, logo, nuit = 0.22 }: 
 
   return (
     <div className="relative w-full h-full overflow-hidden">
-      <svg viewBox="0 -40 800 580" preserveAspectRatio="xMidYMid meet" style={{ overflow: "visible" }} className="w-full h-full block" role="group" aria-label="Heavent City, une petite ville marocaine au coucher du soleil. Choisis un lieu.">
+      <svg viewBox="0 -40 800 580" preserveAspectRatio="xMidYMid meet" style={{ overflow: "visible" }} className="w-full h-full block" role="group" aria-label={tr("Heavent City, une petite ville marocaine au coucher du soleil. Choisis un lieu.")}>
         <style>{STYLE_CSS}</style>
         <defs>
           <linearGradient id={`ciel${uid}`} gradientUnits="userSpaceOnUse" x1="0" y1="-120" x2="0" y2="330"><stop offset="0" stopColor={haut} /><stop offset="0.55" stopColor={milieu} /><stop offset="0.9" stopColor={bas} /></linearGradient>
@@ -256,7 +257,7 @@ export default function Ville({ onChoisir, choisi, bloque, logo, nuit = 0.22 }: 
             const bascule = (v: boolean) => setSurvol(v ? id : (s) => (s === id ? null : s));
             return (
               <g
-                key={id} role="button" tabIndex={0} aria-label={`${info.nom} — ${info.phrase}. Appuyer pour choisir ce lieu.`} data-testid={`lieu-${id}`} style={{ cursor: bloque ? "default" : "pointer", outline: "none" }}
+                key={id} role="button" tabIndex={0} aria-label={tr("{nom} — {phrase}. Appuyer pour choisir ce lieu.", { nom: info.nom, phrase: info.phrase })} data-testid={`lieu-${id}`} style={{ cursor: bloque ? "default" : "pointer", outline: "none" }}
                 onClick={() => ouvrir(id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ouvrir(id); } }}
                 onPointerEnter={() => bascule(true)} onPointerLeave={() => bascule(false)} onFocus={() => bascule(true)} onBlur={() => bascule(false)}
               >
@@ -291,7 +292,7 @@ export default function Ville({ onChoisir, choisi, bloque, logo, nuit = 0.22 }: 
         </motion.g>
               </svg>
       {/* Mini-carte, à la manière d'un jeu en monde ouvert (dessin original Heavent) */}
-      <div className="absolute left-3 bottom-3 w-24 h-20 sm:w-32 sm:h-24 rounded-xl border border-[#C9A74E]/60 shadow-lg overflow-hidden pointer-events-none" aria-hidden="true"><MiniCarte choisi={choisi} survol={survol} /></div>
+      <div className="absolute start-3 bottom-3 w-24 h-20 sm:w-32 sm:h-24 rounded-xl border border-[#C9A74E]/60 shadow-lg overflow-hidden pointer-events-none" aria-hidden="true"><MiniCarte choisi={choisi} survol={survol} /></div>
     </div>
   );
 }

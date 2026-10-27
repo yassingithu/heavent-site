@@ -12,6 +12,7 @@ import {
   Troupe, cheveuxDe, cintre, peauDe, type Pal,
 } from "./dessins";
 import { RAYON_TABLE } from "./positions";
+import { tr } from "./langue";
 
 export type EtapeFinal = null | "avant" | "arrive" | "assis";
 export interface SceneProps {
@@ -516,7 +517,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
   const festif = r.lumiere === "festive";
   const couleurHalo = { chaud: "url(#hc-h-chaud-" + uid + ")", froid: "url(#hc-h-froid-" + uid + ")", rose: "url(#hc-h-rose-" + uid + ")", vert: "url(#hc-h-vert-" + uid + ")", violet: "url(#hc-h-violet-" + uid + ")" };
   const intensite = 0.25 + 0.75 * n;
-  const aria = `Scène « ${r.titre} » : ${r.tablesTotal} tables environ pour ${r.invites} invités, ambiance ${STYLES.find((s) => s.id === style)?.nom.toLowerCase()}.`;
+  const aria = tr("Scène « {titre} » : {nb} tables environ pour {n} invités, ambiance {style}.", { titre: r.titre, nb: r.tablesTotal, n: r.invites, style: STYLES.find((s) => s.id === style)?.nom.toLowerCase() ?? "" });
   const larg = 64 * N + 12, haute = 32 * N + 206;
   const PI = P.PISTE;
   const cordes: [[number, number], [number, number]][] = [[[0.3, N - 0.5], [0.3, 0.3]], [[0.3, 0.3], [N - 0.4, 0.3]], [[0.3, N / 2 + 0.1], [N - 0.4, N / 2 + 0.1]], [[ax - 0.9, N - 0.2], [N - 0.4, N / 2 + 0.1]]];
@@ -527,7 +528,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
       ref={svgRef} viewBox={`${400 - larg / 2} 20 ${larg} ${haute}`} role="img" aria-label={aria} className={className}
       onPointerDown={bas} onPointerMove={bouge} onPointerUp={haut} onPointerCancel={haut}
       preserveAspectRatio={cadrage === "slice" ? "xMidYMid slice" : "xMidYMid meet"}
-      style={{ display: "block", width: "100%", height: "100%", overflow: "visible", touchAction: deplacable ? "none" : undefined, userSelect: deplacable ? "none" : undefined }}
+      style={{ direction: "ltr", display: "block", width: "100%", height: "100%", overflow: "visible", touchAction: deplacable ? "none" : undefined, userSelect: deplacable ? "none" : undefined }}
     >
       {animer && <style>{STYLE_CSS}</style>}
       <defs>

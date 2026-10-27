@@ -22,13 +22,18 @@ import Final from "./Final";
 import Demande from "./Demande";
 import type { Proposition } from "./assistant";
 import { activerSon, couperSon, petitSon, sonActif } from "./son";
-import { btnOr, btnContour } from "./ui";
+import { btnOr, btnContour, SelecteurLangue } from "./ui";
+import { useTranslation } from "react-i18next";
+import { definirLangue, estRtl, langue, tr } from "./langue";
 
 const LOGOS = { nawar: logoNawar, heavent: logoHeavent };
 const CSS = `.hc-fondu{animation:hc-fondu .9s ease both}@keyframes hc-fondu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.hc-fondu{animation:none}}`;
 
 export default function HeaventCity() {
+  const { i18n } = useTranslation();
+  definirLangue(i18n.language); // la langue du jeu suit celle du site, dès le rendu
+  const lng = langue();
   const reduit = !!useReducedMotion();
   const sauvegarde = useRef<Etat | null | undefined>(undefined);
   if (sauvegarde.current === undefined) sauvegarde.current = lireSauvegarde();
@@ -37,9 +42,9 @@ export default function HeaventCity() {
   const [telOuvert, setTelOuvert] = useState(false);
   const [telOnglet, setTelOnglet] = useState<"messages" | "missions" | "assistant" | "reglages">("messages");
   const [son, setSon] = useState(false);
-  const [cine, setCine] = useState<string | null>(null);
+  const [cine, setCine] = useState<string | null>(null); // identifiant du lieu
   const [focus, setFocus] = useState<{ cle: string; n: number } | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<number | null>(null);
   const [demande, setDemande] = useState(false);
   const [deplacer, setDeplacer] = useState(false);
   const { choix, phase } = etat;
@@ -61,7 +66,7 @@ export default function HeaventCity() {
     if (missionsOuvertes > vues.current) {
       const nouvelle = missions[missionsOuvertes - 1];
       vues.current = missionsOuvertes;
-      if (nouvelle) { setToast(`Mission ${missionsOuvertes} — ${nouvelle.titre}`); const t = window.setTimeout(() => setToast(null), 7000); return () => window.clearTimeout(t); }
+      if (nouvelle) { setToast(missionsOuvertes); const t = window.setTimeout(() => setToast(null), 7000); return () => window.clearTimeout(t); }
     }
   }, [missionsOuvertes, phase, missions]);
   useEffect(() => { if (phase === "accueil") vues.current = 0; }, [phase]);
@@ -116,39 +121,40 @@ export default function HeaventCity() {
     dispatch({ t: "choisir", patch: { lieu: l } });
     dispatch({ t: "phase", phase: "scene" });
     dispatch({ t: "onglet", onglet: "style" });
-    setCine(LIEUX.find((x) => x.id === l)!.nom);
+    setCine(l);
     window.setTimeout(() => setCine(null), reduit ? 600 : 2100);
   };
 
   const messages: Message[] = useMemo(() => {
-    const m: Message[] = [{ id: "m0", de: "concierge", texte: MESSAGE_BIENVENUE }];
+    const m: Message[] = [{ id: "m0", de: "concierge", texte: tr(MESSAGE_BIENVENUE) }];
     const t = TYPES.find((x) => x.id === choix.type);
-    if (t) { m.push({ id: "m1", de: "moi", texte: t.nom }); m.push({ id: "m2", de: "concierge", texte: `Parfait : ${t.nom.toLowerCase()}. Choisis ton lieu d'inspiration dans la ville.` }); }
+    if (t) { m.push({ id: "m1", de: "moi", texte: t.nom }); m.push({ id: "m2", de: "concierge", texte: tr("Parfait : {type}. Choisis ton lieu d'inspiration dans la ville.", { type: t.nom.toLowerCase() }) }); }
     const l = LIEUX.find((x) => x.id === choix.lieu);
-    if (l) m.push({ id: "m3", de: "concierge", texte: `${l.nom} : excellent choix. Compose ton ambiance ; je te préviens dès qu'une mission t'attend.` });
+    if (l) m.push({ id: "m3", de: "concierge", texte: tr("{lieu} : excellent choix. Compose ton ambiance ; je te préviens dès qu'une mission t'attend.", { lieu: l.nom }) });
     missions.forEach((mi, i) => {
       if (i >= missionsOuvertes) return;
-      m.push({ id: `mis${i}`, de: "concierge", texte: `Mission ${i + 1} — ${mi.message}`, mission: mi.id });
+      m.push({ id: `mis${i}`, de: "concierge", texte: tr("Mission {n} — {message}", { n: i + 1, message: mi.message }), mission: mi.id });
       const r = choix.missions[mi.id];
-      if (r) m.push({ id: `rep${i}`, de: "moi", texte: r === "passe" ? "Je passe." : mi.reponses.find((x) => x.id === r)?.nom ?? "" });
+      if (r) m.push({ id: `rep${i}`, de: "moi", texte: r === "passe" ? tr("Je passe.") : mi.reponses.find((x) => x.id === r)?.nom ?? "" });
     });
-    if (phase === "final") m.push({ id: "fin", de: "concierge", texte: "Bravo, les portes sont ouvertes ! Tu peux confier ton projet à l'équipe Heavent quand tu veux." });
+    if (phase === "final") m.push({ id: "fin", de: "concierge", texte: tr("Bravo, les portes sont ouvertes ! Tu peux confier ton projet à l'équipe Heavent quand tu veux.") });
     return m;
-  }, [choix, missions, missionsOuvertes, phase]);
+  }, [choix, missions, missionsOuvertes, phase, lng]);
 
   const r = rendu(choix);
   const nbEtapes = (choix.style ? 1 : 0) + (choix.palette ? 1 : 0) + (choix.lumiere ? 1 : 0) + (choix.musiques.length ? 1 : 0) + (choix.accueils.length ? 1 : 0) + (choix.manuels.length ? 1 : 0) + repondues;
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[#17141a] text-[#F0E8D6]" data-testid="heavent-city" data-phase={phase}>
+    <div className="absolute inset-0 overflow-hidden bg-[#17141a] text-[#F0E8D6]" data-testid="heavent-city" data-phase={phase} dir={estRtl() ? "rtl" : "ltr"} lang={lng}>
       <style>{CSS}</style>
 
       {(phase === "accueil" || phase === "ville") && (
-        <div className="absolute inset-0">
+        <div className="absolute inset-0" dir="ltr">
           <Ville nuit={0.22} logo={logoHeavent} bloque={phase === "accueil"} choisi={choix.lieu} onChoisir={choisirLieu} />
         </div>
       )}
 
+      {phase === "accueil" && <SelecteurLangue className="absolute end-3 top-3 z-20" />}
       {phase === "accueil" && ecran === "titre" && <Titre onCommencer={commencer} onReprendre={reprendre} onRecommencer={recommencer} logo={logoHeavent} sauvegarde={aUneSauvegarde(sauvegarde.current ?? null)} />}
       {phase === "accueil" && ecran === "questions" && <Questions choix={choix} dispatch={dispatch} onTermine={() => dispatch({ t: "phase", phase: "ville" })} />}
 
@@ -156,17 +162,17 @@ export default function HeaventCity() {
         <>
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-[#17141a]/85 to-transparent px-4 pb-10 pt-4">
             <div className="pointer-events-auto flex items-start justify-between gap-3">
-              <button onClick={() => { dispatch({ t: "phase", phase: "accueil" }); setEcran("questions"); }} className={`${btnContour} bg-black/30`}><ArrowLeft className="h-4 w-4" />Retour</button>
-              <button onClick={() => { setTelOnglet("messages"); setTelOuvert(true); }} aria-label="Ouvrir le téléphone" className="flex h-11 w-11 items-center justify-center rounded-full bg-[#C9A74E] text-[#17141a] shadow-lg"><Phone className="h-5 w-5" /></button>
+              <button onClick={() => { dispatch({ t: "phase", phase: "accueil" }); setEcran("questions"); }} className={`${btnContour} bg-black/30`}><ArrowLeft className="h-4 w-4 rtl:rotate-180" />{tr("Retour")}</button>
+              <button onClick={() => { setTelOnglet("messages"); setTelOuvert(true); }} aria-label={tr("Ouvrir le téléphone")} className="flex h-11 w-11 items-center justify-center rounded-full bg-[#C9A74E] text-[#17141a] shadow-lg"><Phone className="h-5 w-5" /></button>
             </div>
-            <h2 className="mt-3 text-center font-serif text-2xl text-[#F6EFDD] drop-shadow sm:text-3xl">Choisis ton décor</h2>
-            <p className="mt-1 text-center text-[14px] text-[#F0E8D6] drop-shadow">Touche un lieu pour l'explorer.</p>
+            <h2 className="mt-3 text-center font-serif text-2xl text-[#F6EFDD] drop-shadow sm:text-3xl">{tr("Choisis ton décor")}</h2>
+            <p className="mt-1 text-center text-[14px] text-[#F0E8D6] drop-shadow">{tr("Touche un lieu pour l'explorer.")}</p>
           </div>
           <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#17141a] via-[#17141a]/90 to-transparent px-3 pb-3 pt-10">
-            <nav aria-label="Lieux d'inspiration" className="mx-auto flex max-w-3xl gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:justify-center">
+            <nav aria-label={tr("Lieux d'inspiration")} className="mx-auto flex max-w-3xl gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:justify-center">
               {LIEUX.map((l) => <button key={l.id} onClick={() => choisirLieu(l.id)} data-testid={`liste-lieu-${l.id}`} className="shrink-0 rounded-full border border-[#C9A74E]/60 bg-[#17141a]/80 px-4 min-h-11 text-[14px] text-[#F6EFDD] hover:bg-[#C9A74E] hover:text-[#17141a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F4D774]">{l.nom}</button>)}
             </nav>
-            <p className="mx-auto mt-1.5 max-w-xl text-center text-[11px] leading-snug text-[#B9B09C]">{MENTION_LIEUX}</p>
+            <p className="mx-auto mt-1.5 max-w-xl text-center text-[11px] leading-snug text-[#B9B09C]">{tr(MENTION_LIEUX)}</p>
           </div>
         </>
       )}
@@ -176,44 +182,44 @@ export default function HeaventCity() {
           <div className="relative h-[40dvh] shrink-0 overflow-hidden lg:h-auto lg:flex-1">
             <SceneSvg r={r} nuit={nuit} focus={focus} logos={LOGOS} animer={!reduit} deplacable={deplacer} onDeplacer={(id, dx, dy) => dispatch({ t: "deplacer", id, dx, dy })} />
             <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 bg-gradient-to-b from-black/55 to-transparent px-3 pb-6 pt-3">
-              <button onClick={() => dispatch({ t: "phase", phase: "ville" })} className={`${btnContour} bg-black/35 !px-3`} data-testid="changer-lieu"><ArrowLeft className="h-4 w-4" /><span className="hidden sm:inline">Changer de lieu</span><span className="sm:hidden">Lieu</span></button>
+              <button onClick={() => dispatch({ t: "phase", phase: "ville" })} className={`${btnContour} bg-black/35 !px-3`} data-testid="changer-lieu"><ArrowLeft className="h-4 w-4 rtl:rotate-180" /><span className="hidden sm:inline">{tr("Changer de lieu")}</span><span className="sm:hidden">{tr("Lieu")}</span></button>
               <div className="flex items-center gap-1.5">
-                <button onClick={() => setDeplacer((v) => !v)} aria-pressed={deplacer} data-testid="deplacer" className={`flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-[13.5px] font-medium ${deplacer ? "bg-[#F4D774] text-[#17141a]" : "bg-black/40 text-[#F0E8D6]"}`}><Hand className="h-4 w-4" />Déplacer</button>
-                <button onClick={() => dispatch({ t: "annuler" })} disabled={!etat.passe.length} aria-label="Annuler le dernier choix" data-testid="annuler" className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-[#F0E8D6] disabled:opacity-35"><Undo2 className="h-5 w-5" /></button>
-                <button onClick={() => dispatch({ t: "refaire" })} disabled={!etat.futur.length} aria-label="Rétablir" data-testid="refaire" className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-[#F0E8D6] disabled:opacity-35"><Redo2 className="h-5 w-5" /></button>
-                <button onClick={() => { setToast(null); setTelOnglet("messages"); setTelOuvert(true); }} aria-label="Ouvrir le téléphone" data-testid="ouvrir-telephone" className="relative flex h-11 w-11 items-center justify-center rounded-full bg-[#C9A74E] text-[#17141a] shadow-lg">
-                  <Phone className="h-5 w-5" />{toast && <span className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 animate-ping rounded-full bg-[#E24E8B]" />}
+                <button onClick={() => setDeplacer((v) => !v)} aria-pressed={deplacer} data-testid="deplacer" className={`flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-[13.5px] font-medium ${deplacer ? "bg-[#F4D774] text-[#17141a]" : "bg-black/40 text-[#F0E8D6]"}`}><Hand className="h-4 w-4" />{tr("Déplacer")}</button>
+                <button onClick={() => dispatch({ t: "annuler" })} disabled={!etat.passe.length} aria-label={tr("Annuler le dernier choix")} data-testid="annuler" className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-[#F0E8D6] disabled:opacity-35"><Undo2 className="h-5 w-5" /></button>
+                <button onClick={() => dispatch({ t: "refaire" })} disabled={!etat.futur.length} aria-label={tr("Rétablir")} data-testid="refaire" className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-[#F0E8D6] disabled:opacity-35"><Redo2 className="h-5 w-5" /></button>
+                <button onClick={() => { setToast(null); setTelOnglet("messages"); setTelOuvert(true); }} aria-label={tr("Ouvrir le téléphone")} data-testid="ouvrir-telephone" className="relative flex h-11 w-11 items-center justify-center rounded-full bg-[#C9A74E] text-[#17141a] shadow-lg">
+                  <Phone className="h-5 w-5" />{toast && <span className="absolute -end-0.5 -top-0.5 h-3.5 w-3.5 animate-ping rounded-full bg-[#E24E8B]" />}
                 </button>
               </div>
             </div>
-            <div className="pointer-events-none absolute bottom-2 left-3 rounded-full bg-black/45 px-3 py-1 text-[12px] text-[#F0E8D6]" aria-live="polite">{r.tablesTotal} {r.tables === "hautes" ? "tables hautes" : r.tables === "rectangulaires" ? "tables rectangulaires" : "tables rondes"} · {r.invites} invités</div>
+            <div className="pointer-events-none absolute bottom-2 start-3 rounded-full bg-black/45 px-3 py-1 text-[12px] text-[#F0E8D6]" aria-live="polite">{tr("{nb} {type} · {n} invités", { nb: r.tablesTotal, type: r.tables === "hautes" ? tr("tables hautes") : r.tables === "rectangulaires" ? tr("tables rectangulaires") : tr("tables rondes"), n: r.invites })}</div>
             {deplacer && (
               <div className="absolute inset-x-3 bottom-10 z-10 mx-auto flex max-w-md flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#F4D774]/60 bg-[#17141a]/95 px-3.5 py-2.5 shadow-xl" data-testid="bandeau-deplacer" role="status">
-                <span className="text-[13px] leading-snug text-[#F6EFDD]">Fais glisser un objet pour le déplacer.</span>
+                <span className="text-[13px] leading-snug text-[#F6EFDD]">{tr("Fais glisser un objet pour le déplacer.")}</span>
                 <span className="flex gap-2">
-                  {Object.keys(choix.deplacements).length > 0 && <button onClick={() => dispatch({ t: "remettre" })} data-testid="remettre" className="min-h-10 rounded-full border border-white/25 px-3 text-[13px] text-[#F0E8D6]">Tout remettre</button>}
-                  <button onClick={() => setDeplacer(false)} data-testid="termine-deplacer" className="min-h-10 rounded-full bg-[#C9A74E] px-4 text-[13px] font-semibold text-[#17141a]">Terminé</button>
+                  {Object.keys(choix.deplacements).length > 0 && <button onClick={() => dispatch({ t: "remettre" })} data-testid="remettre" className="min-h-10 rounded-full border border-white/25 px-3 text-[13px] text-[#F0E8D6]">{tr("Tout remettre")}</button>}
+                  <button onClick={() => setDeplacer(false)} data-testid="termine-deplacer" className="min-h-10 rounded-full bg-[#C9A74E] px-4 text-[13px] font-semibold text-[#17141a]">{tr("Terminé")}</button>
                 </span>
               </div>
             )}
             {toast && !deplacer && (
-              <button onClick={() => { setToast(null); setTelOnglet("missions"); setTelOuvert(true); }} data-testid="toast-mission" className="hc-fondu absolute inset-x-3 bottom-10 z-10 mx-auto flex max-w-sm items-center gap-3 rounded-2xl border border-[#C9A74E]/60 bg-[#17141a]/95 px-3.5 py-3 text-left shadow-xl">
+              <button onClick={() => { setToast(null); setTelOnglet("missions"); setTelOuvert(true); }} data-testid="toast-mission" className="hc-fondu absolute inset-x-3 bottom-10 z-10 mx-auto flex max-w-sm items-center gap-3 rounded-2xl border border-[#C9A74E]/60 bg-[#17141a]/95 px-3.5 py-3 text-start shadow-xl">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#C9A74E] text-[#17141a]"><Phone className="h-4 w-4" /></span>
-                <span className="min-w-0"><span className="block text-[11px] uppercase tracking-wider text-[#E4D49A]">Nouveau message</span><span className="block truncate text-[14px] text-[#F6EFDD]">{toast}</span></span>
+                <span className="min-w-0"><span className="block text-[11px] uppercase tracking-wider text-[#E4D49A]">{tr("Nouveau message")}</span><span className="block truncate text-[14px] text-[#F6EFDD]">{tr("Mission {n} — {titre}", { n: toast, titre: missions[toast - 1]?.titre ?? "" })}</span></span>
               </button>
             )}
             {cine && (
               <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/55 hc-fondu" data-testid="cine">
                 <div className="absolute inset-x-0 top-0 h-[10%] bg-black" /><div className="absolute inset-x-0 bottom-0 h-[10%] bg-black" />
-                <div className="text-center"><p className="text-[12px] uppercase tracking-[0.3em] text-[#E4D49A]">Ambiance d'inspiration</p><p className="mt-1 font-serif text-4xl text-[#F6EFDD]">{cine}</p></div>
+                <div className="text-center"><p className="text-[12px] uppercase tracking-[0.3em] text-[#E4D49A]">{tr("Ambiance d'inspiration")}</p><p className="mt-1 font-serif text-4xl text-[#F6EFDD]">{LIEUX.find((x) => x.id === cine)?.nom}</p></div>
               </div>
             )}
           </div>
-          <aside className="flex min-h-0 flex-1 flex-col border-t border-white/10 bg-[#17141a] lg:w-[410px] lg:flex-none lg:border-l lg:border-t-0" aria-label="Personnalisation">
-            <div className="flex items-center justify-between px-4 pb-1 pt-3"><p className="font-serif text-[18px] text-[#F6EFDD]">Donne vie à ton événement</p><p className="text-[12px] text-[#B9B09C]" data-testid="progression">{nbEtapes} choix · {repondues}/{missions.length} missions</p></div>
+          <aside className="flex min-h-0 flex-1 flex-col border-t border-white/10 bg-[#17141a] lg:w-[410px] lg:flex-none lg:border-l lg:border-t-0" aria-label={tr("Personnalisation")}>
+            <div className="flex items-center justify-between px-4 pb-1 pt-3"><p className="font-serif text-[18px] text-[#F6EFDD]">{tr("Donne vie à ton événement")}</p><p className="text-[12px] text-[#B9B09C]" data-testid="progression">{tr("{n} choix · {r}/{total} missions", { n: nbEtapes, r: repondues, total: missions.length })}</p></div>
             <Panneau choix={choix} dispatch={agir as never} onglet={etat.onglet} onOnglet={(o) => dispatch({ t: "onglet", onglet: o })} onRepondre={repondre} missionsOuvertes={missionsOuvertes} className="min-h-0 flex-1" />
             <div className="border-t border-white/10 bg-[#141116] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-              <button onClick={() => { setDeplacer(false); dispatch({ t: "phase", phase: "final" }); }} className={`${btnOr} w-full min-h-12 text-base`} data-testid="ouvrir-portes"><DoorOpen className="h-5 w-5" />Ouvrir les portes</button>
+              <button onClick={() => { setDeplacer(false); dispatch({ t: "phase", phase: "final" }); }} className={`${btnOr} w-full min-h-12 text-base`} data-testid="ouvrir-portes"><DoorOpen className="h-5 w-5" />{tr("Ouvrir les portes")}</button>
             </div>
           </aside>
         </div>

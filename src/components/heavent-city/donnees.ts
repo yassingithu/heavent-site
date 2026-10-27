@@ -12,6 +12,8 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+import { traduit } from "./langue";
+
 export type TypeEvt = "mariage" | "fete" | "pro";
 export type LieuId = "riad" | "villa" | "rooftop" | "jardin" | "salle";
 export type StyleId = "maroc" | "beige_or" | "romantique" | "festif" | "minimal";
@@ -24,69 +26,69 @@ export type ExperienceId = "piste" | "photobooth" | "nawar" | "buffet" | "candy_
 export type OptionId = DecorId | ExperienceId;
 
 export interface InfoType { id: TypeEvt; nom: string; court: string; emoji: string; nomPlaceholder: string; article: string }
-export const TYPES: InfoType[] = [
+export const TYPES: InfoType[] = traduit([
   { id: "mariage", nom: "Mariage", court: "Mariage", emoji: "💍", nomPlaceholder: "Prénoms (facultatif)", article: "ton mariage" },
   { id: "fete", nom: "Anniversaire ou fête privée", court: "Fête privée", emoji: "🎂", nomPlaceholder: "Nom de la fête (facultatif)", article: "ta fête" },
   { id: "pro", nom: "Événement professionnel", court: "Professionnel", emoji: "🏢", nomPlaceholder: "Nom de l'événement (facultatif)", article: "ton événement" },
-];
+]);
 
 export const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Fès", "Agadir", "Autre ville"];
 export const INVITES = { min: 10, max: 500, defaut: 120 };
 
 export interface InfoLieu { id: LieuId; nom: string; phrase: string; types?: TypeEvt[] }
-export const LIEUX: InfoLieu[] = [
+export const LIEUX: InfoLieu[] = traduit([
   { id: "riad", nom: "Le riad", phrase: "Une cour intérieure, des arcades et sa fontaine" },
   { id: "villa", nom: "La villa avec piscine", phrase: "Terrasse de bois, bassin et palmiers" },
   { id: "rooftop", nom: "Le rooftop", phrase: "Au-dessus de la ville, à la tombée du jour" },
   { id: "jardin", nom: "Le jardin", phrase: "Pelouse, haies fleuries et grands arbres" },
   { id: "salle", nom: "La salle de réception", phrase: "Grandes fenêtres, lustres et parquet" },
-];
+]);
 export const MENTION_LIEUX = "Ces lieux sont des ambiances d'inspiration : ils ne correspondent pas à des lieux précis disponibles à la réservation. L'équipe Heavent vous aide à trouver le lieu réel qui s'en rapproche.";
 
 export interface InfoStyle { id: StyleId; nom: string; phrase: string; palette: PaletteId }
-export const STYLES: InfoStyle[] = [
+export const STYLES: InfoStyle[] = traduit([
   { id: "maroc", nom: "Marocain contemporain", phrase: "Zellige, laiton et lanternes", palette: "terracotta" },
   { id: "beige_or", nom: "Élégance beige et dorée", phrase: "Lin, champagne et reflets d'or", palette: "sable_or" },
   { id: "romantique", nom: "Jardin romantique", phrase: "Fleurs, poudré et lumière douce", palette: "poudre" },
   { id: "festif", nom: "Soirée festive", phrase: "Couleurs, lumières et énergie", palette: "nuit_or" },
   { id: "minimal", nom: "Minimalisme chic", phrase: "Lignes pures et matières nobles", palette: "ivoire_noir" },
-];
+]);
 
 export interface InfoPalette { id: PaletteId; nom: string; nappe: string; fleurs: string; accent: string; deco: string; sombre?: boolean }
-export const PALETTES: InfoPalette[] = [
+export const PALETTES: InfoPalette[] = traduit([
   { id: "sable_or", nom: "Sable et or", nappe: "#F1E6CE", fleurs: "#FBF6EA", accent: "#C9A74E", deco: "#B8913A" },
   { id: "terracotta", nom: "Terracotta et laiton", nappe: "#E9D3B6", fleurs: "#C8714E", accent: "#B65B38", deco: "#C79A3F" },
   { id: "poudre", nom: "Rose poudré et champagne", nappe: "#F4DEDA", fleurs: "#E7A9B0", accent: "#D68C97", deco: "#D8BF8C" },
   { id: "emeraude", nom: "Émeraude et or", nappe: "#1F5E4F", fleurs: "#D9C27A", accent: "#2E7D68", deco: "#C9A227", sombre: true },
   { id: "ivoire_noir", nom: "Ivoire et noir", nappe: "#F8F6F1", fleurs: "#E6EDE2", accent: "#2B2B2B", deco: "#3A3A3A" },
   { id: "nuit_or", nom: "Bleu nuit et or", nappe: "#26365A", fleurs: "#E8C97E", accent: "#C9A74E", deco: "#E8C97E", sombre: true },
-];
+]);
 
 export interface InfoOption { id: string; nom: string; phrase: string; catalogue?: string; types?: TypeEvt[]; lieux?: LieuId[] }
 
-export const LUMIERES: (InfoOption & { id: LumiereId })[] = [
+export const LUMIERES: (InfoOption & { id: LumiereId })[] = traduit([
   { id: "chaleureuse", nom: "Lanternes chaleureuses", phrase: "Une lumière ambrée, enveloppante", catalogue: "lanternes" },
   { id: "etoilee", nom: "Guirlandes étoilées", phrase: "Un ciel de petites ampoules", catalogue: "guirlandes" },
   { id: "bougies", nom: "Bougies et candélabres", phrase: "Une lumière douce et élégante", catalogue: "candelabre" },
   { id: "festive", nom: "Projecteurs colorés", phrase: "Des faisceaux qui dansent avec la musique" },
-];
+]);
 
-export const MUSIQUES: (InfoOption & { id: MusiqueId })[] = [
+export const MUSIQUES: (InfoOption & { id: MusiqueId })[] = traduit([
   { id: "dj", nom: "DJ", phrase: "Sets et sonorisation pour la soirée", catalogue: "dj" },
   { id: "orchestre", nom: "Orchestre marocain", phrase: "Luth, percussions et chant en direct", catalogue: "orchestre", types: ["mariage", "fete"] },
   { id: "troupe", nom: "Troupe folklorique", phrase: "Danseurs et percussionnistes", catalogue: "troupe", types: ["mariage", "fete"] },
   { id: "playlist", nom: "Playlist d'ambiance", phrase: "Une sélection douce, sans scène" },
   { id: "acoustique", nom: "Duo acoustique", phrase: "Guitare et voix, côté inspiration" },
-];
+]);
 
-export const ACCUEILS: (InfoOption & { id: AccueilId })[] = [
+export const ACCUEILS: (InfoOption & { id: AccueilId })[] = traduit([
   { id: "discret", nom: "Accueil simple", phrase: "Un comptoir de bienvenue, sans équipe dédiée" },
   { id: "hotesses", nom: "Hôtesses d'accueil", phrase: "Accueil, placement et orientation", catalogue: "hotesse" },
   { id: "maitre_hotel", nom: "Maître d'hôtel et hôtesses", phrase: "Une équipe qui coordonne tout le service", catalogue: "maitre_hotel" },
   { id: "the", nom: "Thé de bienvenue", phrase: "Thé à la menthe et pâtisseries à l'arrivée", catalogue: "the" },
-];
+]);
 
-export const DECORS: (InfoOption & { id: DecorId })[] = [
+export const DECORS: (InfoOption & { id: DecorId })[] = traduit([
   { id: "arche", nom: "Arche fleurie", phrase: "Pour la cérémonie ou les photos", catalogue: "arche" },
   { id: "fleurs", nom: "Compositions florales", phrase: "Des bouquets pour habiller l'espace", catalogue: "fleurs" },
   { id: "mur_fleurs", nom: "Mur de fleurs", phrase: "Un fond spectaculaire", catalogue: "mur_fleurs" },
@@ -96,9 +98,9 @@ export const DECORS: (InfoOption & { id: DecorId })[] = [
   { id: "fauteuils", nom: "Fauteuils des mariés", phrase: "Deux fauteuils d'apparat sur une petite estrade fleurie", catalogue: "fauteuils", types: ["mariage"] },
   { id: "petales", nom: "Pluie de pétales", phrase: "Un instant poétique — à discuter" },
   { id: "ciel_lanternes", nom: "Ciel de lanternes", phrase: "Des lumières suspendues — à discuter" },
-];
+]);
 
-export const EXPERIENCES: (InfoOption & { id: ExperienceId })[] = [
+export const EXPERIENCES: (InfoOption & { id: ExperienceId })[] = traduit([
   { id: "piste", nom: "Piste de danse", phrase: "Posée et éclairée", catalogue: "piste" },
   { id: "photobooth", nom: "Photobooth", phrase: "Fond décoré et tirages instantanés", catalogue: "photobooth" },
   { id: "nawar", nom: "Bar à parfums Nawar", phrase: "Chacun compose son parfum et repart avec", catalogue: "nawar" },
@@ -113,7 +115,7 @@ export const EXPERIENCES: (InfoOption & { id: ExperienceId })[] = [
   { id: "henne", nom: "Espace henné", phrase: "Coussins au sol, table basse, cônes de henné et bougies", catalogue: "espace_henne", types: ["mariage", "fete"] },
   { id: "gateau", nom: "Pièce montée", phrase: "Le gâteau des mariés, dressé sur sa table", catalogue: "gateau", types: ["mariage", "fete"] },
   { id: "brume", nom: "Brume d'ambiance", phrase: "Une légère brume lumineuse — à discuter" },
-];
+]);
 
 export const toutesOptions = (): InfoOption[] => [...DECORS, ...EXPERIENCES];
 export const infoOption = (id: string): InfoOption | undefined => toutesOptions().find((o) => o.id === id) ?? [...LUMIERES, ...MUSIQUES, ...ACCUEILS].find((o) => o.id === id);
@@ -134,7 +136,7 @@ const M_ACCUEIL = (message: string): Mission => ({
   ],
 });
 
-export const MISSIONS: Record<TypeEvt, Mission[]> = {
+export const MISSIONS: Record<TypeEvt, Mission[]> = traduit({
   mariage: [
     M_ACCUEIL("Tes invités arrivent presque tous en même temps : prépare leur accueil."),
     {
@@ -192,13 +194,13 @@ export const MISSIONS: Record<TypeEvt, Mission[]> = {
       ],
     },
   ],
-};
+});
 
-export const BADGES: { id: string; nom: string; test: string }[] = [
+export const BADGES: { id: string; nom: string; test: string }[] = traduit([
   { id: "accueil", nom: "Accueil soigné", test: "accueil" },
   { id: "ambiance", nom: "Ambiance festive", test: "ambiance" },
   { id: "perso", nom: "Expérience personnalisée", test: "perso" },
-];
+]);
 
 export const MESSAGE_BIENVENUE = "Un événement exceptionnel se prépare. Et c'est toi qui prends les commandes.";
 export const PROMESSE = "Tu as les clés. Crée l'événement dont tout le monde parlera.";
@@ -206,9 +208,9 @@ export const PROMESSE = "Tu as les clés. Crée l'événement dont tout le monde
 // ── Tables (types réellement proposés par Heavent : table ronde, table rectangulaire, table haute) ─────────
 export type TableId = "rondes" | "rectangulaires" | "hautes";
 export interface InfoTable { id: TableId; nom: string; phrase: string; places: number; catalogue: "table_ronde" | "table_rect" | "table_haute"; libelle: string }
-export const TABLES_TYPES: InfoTable[] = [
+export const TABLES_TYPES: InfoTable[] = traduit([
   { id: "rondes", nom: "Tables rondes", phrase: "10 convives, chaises et nappe : le classique des mariages", places: 10, catalogue: "table_ronde", libelle: "Tables rondes" },
   { id: "rectangulaires", nom: "Tables rectangulaires", phrase: "6 places, façon banquet : une allure plus sobre", places: 6, catalogue: "table_rect", libelle: "Tables rectangulaires" },
   { id: "hautes", nom: "Tables hautes", phrase: "Mange-debout nappés, invités debout : idéal pour un cocktail", places: 6, catalogue: "table_haute", libelle: "Tables hautes (mange-debout)" },
-];
+]);
 export const infoTable = (id: TableId) => TABLES_TYPES.find((t) => t.id === id)!;

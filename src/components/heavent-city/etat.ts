@@ -4,6 +4,7 @@
  * Aucun montant n'existe dans cet état.
  */
 import { dimensionner, type Salle } from "./positions";
+import { tr } from "./langue";
 import {
   ACCUEILS, BADGES, DECORS, EXPERIENCES, INVITES, LIEUX, LUMIERES, MISSIONS, MUSIQUES, PALETTES, STYLES, TYPES, disponiblePour, infoOption, infoTable, reservable,
   type AccueilId, type LieuId, type LumiereId, type MusiqueId, type OptionId, type PaletteId, type StyleId, type TableId, type TypeEvt,
@@ -220,8 +221,8 @@ export function titreEvenement(c: Choix): string {
   if (nom) return nom.slice(0, 60);
   const type = TYPES.find((t) => t.id === c.type);
   const style = STYLES.find((s) => s.id === c.style);
-  if (!type) return "Mon événement";
-  const base = c.type === "mariage" ? "Notre mariage" : c.type === "pro" ? "Notre événement" : "Ma fête";
+  if (!type) return tr("Mon événement");
+  const base = c.type === "mariage" ? tr("Notre mariage") : c.type === "pro" ? tr("Notre événement") : tr("Ma fête");
   return style ? `${base} · ${style.nom.toLowerCase()}` : base;
 }
 
@@ -259,8 +260,8 @@ export function resume(c: Choix): Resume {
   const acc = accueilsEffectifs(c); const mus = c.musiques; const lum = lumiereEffective(c);
   const style = STYLES.find((s) => s.id === (c.style ?? "beige_or"))!;
   return {
-    type: TYPES.find((t) => t.id === c.type)?.nom ?? "Événement", titre: titreEvenement(c), invites: c.invites, tables: nbTables(c.invites, c.tables), typeTables: infoTable(c.tables).nom.toLowerCase(), deplaces: Object.keys(c.deplacements).length,
-    lieu: LIEUX.find((l) => l.id === c.lieu)?.nom ?? "Non choisi", style: style.nom,
+    type: TYPES.find((t) => t.id === c.type)?.nom ?? tr("Événement"), titre: titreEvenement(c), invites: c.invites, tables: nbTables(c.invites, c.tables), typeTables: infoTable(c.tables).nom.toLowerCase(), deplaces: Object.keys(c.deplacements).length,
+    lieu: LIEUX.find((l) => l.id === c.lieu)?.nom ?? tr("Non choisi"), style: style.nom,
     palette: PALETTES.find((p) => p.id === (c.palette ?? style.palette))!.nom,
     lumiere: lum ? LUMIERES.find((l) => l.id === lum)!.nom : null,
     musique: mus.length ? mus.map((id) => MUSIQUES.find((m) => m.id === id)!.nom).join(" + ") : null,
@@ -268,7 +269,7 @@ export function resume(c: Choix): Resume {
     decors: opts.filter((o) => DECORS.some((d) => d.id === o)).map(ligne),
     experiences: opts.filter((o) => EXPERIENCES.some((x) => x.id === o)).map(ligne),
     missions: missionsDuType(c.type).filter((m) => c.missions[m.id]).map((m) => ({
-      titre: m.titre, reponse: c.missions[m.id] === "passe" ? "Passée" : m.reponses.find((r) => r.id === c.missions[m.id])?.nom ?? "—",
+      titre: m.titre, reponse: c.missions[m.id] === "passe" ? tr("Passée") : m.reponses.find((r) => r.id === c.missions[m.id])?.nom ?? "—",
     })),
     badges: badges(c).map((b) => b.nom),
   };

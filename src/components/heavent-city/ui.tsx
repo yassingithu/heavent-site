@@ -1,5 +1,7 @@
 import type { ComponentType, ReactNode } from "react";
 import type { LucideProps } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { tr } from "./langue";
 import {
   Camera, Sparkles, Flower2, Music, Drum, Mic2, Coffee, CandyCane, Sofa, Flame, Wind, Lamp, Utensils, PartyPopper, Users, BookHeart, Moon, Heart, Droplets, DoorOpen, Disc3, Music2,
   Speaker, ConciergeBell, Leaf, Crown, Check, Star, Guitar, Gem, Radio, SprayCan, Footprints, Store, Lightbulb, Wand2, Palette, Cake,
@@ -31,8 +33,8 @@ export { Check, Lightbulb, Palette, DoorOpen, Music2 };
 /** Marque « disponible chez Heavent » ou « inspiration à discuter » : honnête sur ce qui est réservable */
 export function Pastille({ reservable, court }: { reservable: boolean; court?: boolean }) {
   return reservable
-    ? <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#E4D49A]"><span className="h-1.5 w-1.5 rounded-full bg-[#C9A74E]" />{court ? "Heavent" : "Proposé par Heavent"}</span>
-    : <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#B9B09C]"><span className="h-1.5 w-1.5 rounded-full border border-[#B9B09C]" />{court ? "Idée" : "Inspiration à discuter"}</span>;
+    ? <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#E4D49A]"><span className="h-1.5 w-1.5 rounded-full bg-[#C9A74E]" />{court ? "Heavent" : tr("Proposé par Heavent")}</span>
+    : <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#B9B09C]"><span className="h-1.5 w-1.5 rounded-full border border-[#B9B09C]" />{court ? tr("Idée") : tr("Inspiration à discuter")}</span>;
 }
 
 export const C = { anthracite: "#17141a", anthraciteClair: "#241f27", creme: "#F6EFDD", or: "#C9A74E", orClair: "#E4D49A", texte: "#F0E8D6", doux: "#B9B09C" };
@@ -43,4 +45,19 @@ export const champ = "w-full rounded-xl border border-white/15 bg-white/[0.06] p
 
 export function Titre({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <h2 className={`font-serif text-[#F6EFDD] ${className}`}>{children}</h2>;
+}
+
+/** Choix de la langue du jeu (la même que celle du site : français, anglais, arabe) */
+export function SelecteurLangue({ className = "" }: { className?: string }) {
+  const { i18n } = useTranslation();
+  const cur = i18n.language?.startsWith("ar") ? "ar" : i18n.language?.startsWith("en") ? "en" : "fr";
+  const choisir = (l: string) => { void i18n.changeLanguage(l); document.documentElement.lang = l; document.documentElement.dir = l === "ar" ? "rtl" : "ltr"; };
+  return (
+    <div role="group" aria-label={tr("Langue")} className={`inline-flex overflow-hidden rounded-full border border-white/25 bg-black/30 text-[12.5px] ${className}`} dir="ltr">
+      {[["fr", "FR"], ["en", "EN"], ["ar", "عربي"]].map(([c, n]) => (
+        <button key={c} type="button" onClick={() => choisir(c)} aria-pressed={cur === c} data-testid={`langue-${c}`} lang={c}
+          className={`min-h-9 min-w-10 px-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F4D774] ${cur === c ? "bg-[#C9A74E] font-semibold text-[#17141a]" : "text-[#F0E8D6] hover:bg-white/10"}`}>{n}</button>
+      ))}
+    </div>
+  );
 }

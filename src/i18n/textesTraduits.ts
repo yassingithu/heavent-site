@@ -621,7 +621,7 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "À propos": { en: "About", ar: "من نحن" },
   "Âge *": { en: "Age *", ar: "السن *" },
   "Éditeur du site": { en: "Site publisher", ar: "ناشر الموقع" },
-  "Église, mairie, lieu extérieur...": { en: "Church, town hall, outdoor venue...", ar: "مسجد، قاعة، فضاء خارجي..." },
+  "Église, mairie, lieu extérieur...": { en: "Church, town hall, outdoor venue...", ar: "كنيسة، بلدية، فضاء خارجي..." },
   "Étape débloquée !": { en: "Step unlocked!", ar: "تم فتح المرحلة!" },
   "Étape {n} sur 5": { en: "Step {n} of 5", ar: "المرحلة {n} من 5" },
   "Événement": { en: "Event", ar: "مناسبة" },

@@ -5,6 +5,7 @@
 import { createElement } from "react";
 import { PALETTES, STYLES } from "./donnees";
 import { rendu, resume, type Choix } from "./etat";
+import { estRtl, tr } from "./langue";
 
 const L = 1080, H = 1350;
 
@@ -34,6 +35,7 @@ export async function creerCarte(choix: Choix, logos: { nawar: string; heavent: 
     const [scene, logo] = await Promise.all([charger(url), charger(heavent)]);
     const cv = document.createElement("canvas"); cv.width = L; cv.height = H;
     const c = cv.getContext("2d")!;
+    c.direction = estRtl() ? "rtl" : "ltr";
     const fond = c.createLinearGradient(0, 0, 0, H); fond.addColorStop(0, "#1f1a22"); fond.addColorStop(1, "#0f0d12");
     c.fillStyle = fond; c.fillRect(0, 0, L, H);
     // cadre de la scène
@@ -58,7 +60,7 @@ export async function creerCarte(choix: Choix, logos: { nawar: string; heavent: 
     const b = res.badges.length ? res.badges.join("  ·  ") : `${res.lieu}`;
     c.fillText(b, L / 2, y0 + 128);
     c.fillStyle = "#B9B09C"; c.font = "400 24px Georgia, serif";
-    c.fillText("Créé sur Heavent City · heaventagency.com", L / 2, H - 46);
+    c.fillText(tr("Créé sur Heavent City · heaventagency.com"), L / 2, H - 46);
     return await new Promise<Blob>((ok, ko) => cv.toBlob((bl) => (bl ? ok(bl) : ko(new Error("png"))), "image/png"));
   } finally { URL.revokeObjectURL(url); }
 }
@@ -67,7 +69,7 @@ export async function partagerOuTelecharger(blob: Blob, titre: string): Promise<
   const fichier = new File([blob], "mon-evenement-heavent-city.png", { type: "image/png" });
   const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
   if (nav.share && nav.canShare?.({ files: [fichier] })) {
-    try { await nav.share({ files: [fichier], title: titre, text: "Mon événement imaginé sur Heavent City" }); return "partage"; } catch (e) { if ((e as DOMException)?.name === "AbortError") return "partage"; }
+    try { await nav.share({ files: [fichier], title: titre, text: tr("Mon événement imaginé sur Heavent City") }); return "partage"; } catch (e) { if ((e as DOMException)?.name === "AbortError") return "partage"; }
   }
   const u = URL.createObjectURL(blob); const a = document.createElement("a");
   a.href = u; a.download = "mon-evenement-heavent-city.png"; document.body.appendChild(a); a.click(); a.remove();
