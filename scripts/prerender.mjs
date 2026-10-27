@@ -27,7 +27,7 @@ const PUBLIQUES = [
   ...[...readFileSync("src/lib/pagesLocales.ts", "utf8").matchAll(/chemin: "(\/[a-z0-9-]+)"/g)].map((m) => ({ chemin: m[1], priorite: "0.8", frequence: "monthly" })),
 ];
 // Espaces privés et anciennes adresses : l'application seule, jamais indexée
-const PRIVEES = ["admin", "admin-auth", "auth", "auth/callback", "staff-dashboard", "rgpd", "desinscription"];
+const PRIVEES = ["admin", "admin-auth", "auth", "auth/callback", "staff-dashboard", "rgpd", "desinscription", "apercu/heavent-city"];
 
 const shell = readFileSync("dist/index.html", "utf8");
 const shellPrive = shell.replace("<head>", '<head>\n    <meta name="robots" content="noindex, nofollow" />');
