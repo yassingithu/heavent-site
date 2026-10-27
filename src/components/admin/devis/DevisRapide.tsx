@@ -734,9 +734,9 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                       <p className="text-xs text-muted-foreground">Ajout rapide depuis ton catalogue :</p>
                       {Object.entries(parCategorie).map(([cat, items]) => ["prestataires", "lieux"].includes(cat) ? (
                         // Prestataires et lieux : potentiellement nombreux, donc une liste déroulante avec recherche du navigateur
-                        <div key={cat} className="flex flex-wrap gap-2 items-center">
-                          <span className="text-xs uppercase tracking-wide text-muted-foreground w-24">{cat === "lieux" ? "Lieux" : "Prestataires"}</span>
-                          <select className="flex-1 min-w-[220px] rounded-md border bg-white px-3 h-9 text-sm" value="" data-testid={`ajout-${cat}`}
+                        <div key={cat} className="flex flex-wrap gap-2 items-center min-w-0">
+                          <span className="text-xs uppercase tracking-wide text-muted-foreground w-full sm:w-24">{cat === "lieux" ? "Lieux" : "Prestataires"}</span>
+                          <select className="w-full sm:flex-1 sm:w-auto min-w-0 rounded-md border bg-white px-3 h-10 sm:h-9 text-sm" value="" data-testid={`ajout-${cat}`}
                             onChange={(e) => { const p = items.find((x) => x.id === e.target.value); if (p) ajouterDuCatalogue(p); }}>
                             <option value="">{cat === "lieux" ? "+ Ajouter une salle ou un lieu…" : "+ Ajouter un prestataire partenaire…"}</option>
                             {items.map((p) => <option key={p.id} value={p.id}>{p.designation} — {money(p.prix_unitaire, devise)}</option>)}
@@ -744,12 +744,12 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                         </div>
                       ) : null)}
                       {Object.entries(parCategorie).some(([cat]) => !["prestataires", "lieux"].includes(cat)) && (
-                        <div className="flex flex-wrap gap-2 items-center">
-                          <span className="text-xs uppercase tracking-wide text-muted-foreground w-24">Prestations</span>
+                        <div className="flex flex-wrap gap-2 items-center min-w-0">
+                          <span className="text-xs uppercase tracking-wide text-muted-foreground w-full sm:w-24">Prestations</span>
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button variant="outline" role="combobox" className="flex-1 min-w-[220px] justify-between font-normal h-9" data-testid="ajout-catalogue">
-                                + Ajouter une prestation du catalogue… <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                              <Button variant="outline" role="combobox" className="w-full sm:flex-1 sm:w-auto min-w-0 justify-between font-normal h-10 sm:h-9" data-testid="ajout-catalogue">
+                                <span className="truncate">+ Ajouter une prestation du catalogue…</span> <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="p-0 w-[min(92vw,420px)] bg-white z-[60] border-[#EADFC8] shadow-xl" align="start" collisionPadding={{ bottom: 140, top: 60 }}>
@@ -784,7 +784,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   {form.lignes.map((l, i) => (
                     <div key={i} className="border rounded-md p-3 space-y-2">
                       <div className="flex gap-2">
-                        <Input className="font-medium" placeholder="Désignation (ex. Hôtesse d'accueil bilingue)" value={l.designation} onChange={(e) => setLigne(i, { designation: e.target.value })} />
+                        <Input className="font-medium min-w-0" placeholder="Désignation (ex. Hôtesse d'accueil bilingue)" value={l.designation} onChange={(e) => setLigne(i, { designation: e.target.value })} />
                         <Button size="icon" variant="ghost" onClick={() => deplacer(i, -1)} disabled={i === 0}><ArrowUp className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" onClick={() => deplacer(i, 1)} disabled={i === form.lignes.length - 1}><ArrowDown className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" onClick={() => supprimerLigne(i)}><X className="h-4 w-4" /></Button>
@@ -885,13 +885,13 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
               <div className="mx-auto flex max-w-xl items-center gap-2">
                 <div className="min-w-0 shrink-0 leading-tight">
                   <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Total TTC</div>
-                  <div className="text-sm font-bold">{money(totaux.ttc, devise)}</div>
+                  <div className="text-[13px] font-bold whitespace-nowrap">{money(totaux.ttc, devise)}</div>
                 </div>
                 <Select value={form.statut} onValueChange={changerStatutEditeur}>
-                  <SelectTrigger className="h-10 min-w-0 flex-1 text-xs" aria-label="Statut du devis"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 min-w-[92px] flex-1 px-2 text-xs [&>span]:truncate" aria-label="Statut du devis"><SelectValue /></SelectTrigger>
                   <SelectContent>{statutsPermis({ statut: form.statut, signe_le: form.signe_le, nbFactures: devisList.find((x) => x.id === form.id)?.nbFactures }).map((k) => <SelectItem key={k} value={k}>{STATUTS[k].label}</SelectItem>)}</SelectContent>
                 </Select>
-                <Button className="h-10" onClick={() => enregistrer()} disabled={saving} data-testid="barre-enregistrer"><Save className="h-4 w-4 mr-1" /> Enregistrer</Button>
+                <Button className="h-10 px-3" onClick={() => enregistrer()} disabled={saving} data-testid="barre-enregistrer"><Save className="h-4 w-4 sm:mr-1" /><span className="hidden min-[400px]:inline ml-1 sm:ml-0">Enregistrer</span></Button>
                 <Button className="h-10" variant="outline" size="icon" title="Envoyer au client pour signature" aria-label="Envoyer au client pour signature" onClick={envoyerAuClient} disabled={saving || envoiEnCours || !!form.signe_le} data-testid="barre-envoyer"><Send className="h-4 w-4" /></Button>
               </div>
             </div>
