@@ -15,6 +15,8 @@ export const GABARITS: Record<TableId, { px: number; py: number; dx: number; dy:
   hautes: { px: 1.45, py: 1.4, dx: 0.55, dy: 0.55 },
 };
 export const RAYON_TABLE = 0.52;
+/** Part maximale du sol occupée par les objets (hors tables) avant que la salle ne s'agrandisse */
+const PART_OBJETS = 0.17;
 
 /** Ce qui est choisi dans la scène (sert à poser les objets sans les superposer) */
 export interface Actifs { options: ReadonlySet<string>; musiques: readonly string[]; accueils: readonly string[]; lumiere: string | null; type: string; tables: TableId }
@@ -153,12 +155,19 @@ export function dimensionner(nb: number, type: TableId, A: Actifs): Salle {
     const cx = (gr.xs[0] + gr.xs[gr.cols - 1]) / 2, cy = (gr.ys[0] + gr.ys[gr.rows - 1]) / 2;
     const cases: { x: number; y: number; d: number }[] = [];
     for (const y of gr.ys) for (const x of gr.xs) {
-      const libre = !pos.obstacles.some((p) => x - g.dx < p.x1 + 0.1 && p.x0 < x + g.dx + 0.1 && y - g.dy < p.y1 + 0.1 && p.y0 < y + g.dy + 0.1);
+      const libre = !pos.obstacles.some((p) => !/^(pl|cd)\d/.test(p.id) &&  x - g.dx < p.x1 - 0.02 && p.x0 < x + g.dx - 0.02 && y - g.dy < p.y1 - 0.02 && p.y0 < y + g.dy - 0.02);
       if (libre) cases.push({ x, y, d: Math.hypot(x - cx, (y - cy) * 1.2) });
     }
     cases.sort((a, b) => a.d - b.d || a.y - b.y || a.x - b.x);
-    dernier = { n, ax: gr.ax, tables: cases.slice(0, nb).map((c) => [c.x, c.y] as [number, number]), capacite: cases.length, pos };
-    if (cases.length >= nb) return dernier;
+    const tables = cases.slice(0, nb).map((c) => [c.x, c.y] as [number, number]);
+    // les lanternes et candélabres ne s'imposent jamais aux tables : ceux qui les gêneraient sont simplement omis
+    const gene = ([x, y]: [number, number]) => tables.some(([tx, ty]) => Math.abs(x - tx) < g.dx + 0.35 && Math.abs(y - ty) < g.dy + 0.35);
+    pos.POSTES_LANTERNES.splice(0, pos.POSTES_LANTERNES.length, ...pos.POSTES_LANTERNES.filter((q) => !gene(q)));
+    pos.CANDELABRES.splice(0, pos.CANDELABRES.length, ...pos.CANDELABRES.filter((q) => !gene(q)));
+    dernier = { n, ax: gr.ax, tables, capacite: cases.length, pos };
+    // la salle doit aussi rester aérée : les objets ne prennent qu'une part limitée du sol
+    const aire = pos.obstacles.filter((r) => !/^(pl|cd)\d/.test(r.id)).reduce((t, r) => t + (r.x1 - r.x0) * (r.y1 - r.y0), 0);
+    if (cases.length >= nb && aire <= PART_OBJETS * n * n) return dernier;
   }
   return dernier!;
 }
