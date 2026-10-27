@@ -22,11 +22,28 @@ if (typeof window !== "undefined") {
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); invitationInstall = e; });
 }
 
+/** Page de connexion admin : mêmes manifeste et icône que l'appli, pour pouvoir l'installer dès cette page. */
+export function useInstallationAdmin() {
+  useEffect(() => {
+    ajouterBalise("link", { rel: "manifest", href: "/admin.webmanifest" });
+    const anciennes = [...document.head.querySelectorAll('link[rel="apple-touch-icon"]')] as HTMLLinkElement[];
+    const memoire = anciennes.map((l) => [l, l.getAttribute("href")] as const);
+    anciennes.forEach((l) => l.setAttribute("href", "/admin-180.png"));
+    ajouterBalise("meta", { name: "apple-mobile-web-app-capable", content: "yes" });
+    ajouterBalise("meta", { name: "apple-mobile-web-app-title", content: "Heavent" });
+    return () => memoire.forEach(([l, h]) => h && l.setAttribute("href", h));
+  }, []);
+}
+
 /** À appeler une fois dans la page /admin */
 export function useAppAdmin() {
   useEffect(() => {
     ajouterBalise("link", { rel: "manifest", href: "/admin.webmanifest" });
-    ajouterBalise("link", { rel: "apple-touch-icon", href: "/admin-180.png" });
+    // iPhone : une seule icône d'écran d'accueil possible. On remplace celle d'index.html (sinon Safari prend l'ancienne).
+    const anciennes = [...document.head.querySelectorAll('link[rel="apple-touch-icon"]')] as HTMLLinkElement[];
+    const memoire = anciennes.map((l) => [l, l.getAttribute("href")] as const);
+    if (anciennes.length) anciennes.forEach((l) => l.setAttribute("href", "/admin-180.png"));
+    else ajouterBalise("link", { rel: "apple-touch-icon", href: "/admin-180.png" });
     ajouterBalise("meta", { name: "apple-mobile-web-app-capable", content: "yes" });
     ajouterBalise("meta", { name: "mobile-web-app-capable", content: "yes" });
     ajouterBalise("meta", { name: "apple-mobile-web-app-title", content: "Heavent" });
@@ -63,7 +80,7 @@ export function useAppAdmin() {
     const noterSaisie = () => { saisieEnCours = true; };
     document.addEventListener("input", noterSaisie, true);
     document.addEventListener("visibilitychange", verifier);
-    return () => { if (theme && ancien) theme.setAttribute("content", ancien); document.removeEventListener("visibilitychange", verifier); document.removeEventListener("input", noterSaisie, true); };
+    return () => { memoire.forEach(([l, h]) => h && l.setAttribute("href", h)); if (theme && ancien) theme.setAttribute("content", ancien); document.removeEventListener("visibilitychange", verifier); document.removeEventListener("input", noterSaisie, true); };
   }, []);
 }
 

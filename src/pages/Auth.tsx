@@ -10,8 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { useTexte } from "@/i18n/textes";
+import { useAppStaff } from "@/components/staff/AppStaff";
 
 const Auth = () => {
+  useAppStaff(); // la page de connexion mène à l'espace staff : installable depuis ici aussi, avec la bonne icône
   const x = useTexte();
   const { t } = useTranslation();
   const [email, setEmail] = useState("");

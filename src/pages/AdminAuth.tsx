@@ -1,6 +1,7 @@
 import Seo from "@/components/Seo";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useInstallationAdmin } from "@/components/admin/accueil/AppTelephone";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { estAdmin, estEspaceNawar } from "@/lib/admin";
 
 
 const AdminAuth = () => {
+  useInstallationAdmin();
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
