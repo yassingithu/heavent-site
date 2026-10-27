@@ -3,7 +3,7 @@ import { Resend } from "npm:resend@2.0.0";
 
 /**
  * Le mail du matin (7 h 30, heure du Maroc) : la journée en un coup d'œil + le mot du jour de Yassin.
- * Envoyé aux admins qui reçoivent les mots (Imane). « ?essai=1 » : ne rien envoyer, renvoyer le contenu.
+ * Envoyé aux admins qui reçoivent le résumé (recoit_resume) ; le mot du jour n'y figure que pour ceux qui reçoivent les mots (Imane). « ?essai=1 » : ne rien envoyer, renvoyer le contenu.
  */
 const FROM = "Heavent People Agency <noreply@heaventagency.com>";
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   const jour = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Casablanca" }).format(maintenant);
   const hier = new Date(Date.now() - 864e5).toISOString();
   const [{ data: profils }, { data: mot }, { data: rdv }, { data: evts }, { data: dm }, { data: de }, { data: equipes }, { data: signes }] = await Promise.all([
-    db.from("admin_profils").select("email, prenom").eq("recoit_mots", true).eq("espace", "admin"),
+    db.from("admin_profils").select("email, prenom, recoit_mots").eq("recoit_resume", true).eq("espace", "admin"),
     db.rpc("_mot_du_jour", { p_jour: jour, p_pour: "imane" }),
     db.from("rendez_vous").select("debut, client_nom, type").eq("statut", "confirme").gte("debut", `${jour}T00:00:00Z`).lte("debut", `${jour}T23:59:59Z`).order("debut"),
     db.from("devis").select("id, titre, client_nom, client_societe, lieu").eq("statut", "accepte").eq("date_evenement", jour),
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
           <h1 style="font-weight:normal;font-size:30px;margin:6px 0 0">Bonjour ${esc(p.prenom)} ☀️</h1>
         </div>
         <div style="padding:24px 28px;font-family:Arial,sans-serif;color:#2A2420;font-size:15px">
-          ${mot ? `<div style="background:#FBF6E9;border-left:3px solid #C8B560;border-radius:12px;padding:16px 18px;font-family:Georgia,serif;font-size:17px;line-height:1.5">${esc(mot)}<div style="text-align:right;color:#8C6D22;font-style:italic;margin-top:8px">— Yassin 💛</div></div>` : ""}
+          ${mot && p.recoit_mots ? `<div style="background:#FBF6E9;border-left:3px solid #C8B560;border-radius:12px;padding:16px 18px;font-family:Georgia,serif;font-size:17px;line-height:1.5">${esc(mot)}<div style="text-align:right;color:#8C6D22;font-style:italic;margin-top:8px">— Yassin 💛</div></div>` : ""}
           ${signes?.length ? bloc("🎉 Signé depuis hier", (signes as any[]).map((s) => `<b>${esc(s.client_societe || s.client_nom)}</b> · ${Math.round(Number(s.total_ttc || 0)).toLocaleString("fr-FR")} MAD`), "") : ""}
           ${bloc("Aujourd'hui", (evts ?? []).map((e: any) => `<b>${esc(e.client_societe || e.client_nom)}</b> · ${esc(e.titre || "Événement")}${e.lieu ? ` · ${esc(e.lieu)}` : ""}${crews(e.id) ? ` · ${crews(e.id)} crew${crews(e.id) > 1 ? "s" : ""}` : ""}`), "Pas d'événement aujourd'hui.")}
           ${bloc("Rendez-vous", (rdv ?? []).map((r: any) => `<b>${heure(r.debut)}</b> · ${esc(r.client_nom)}${r.type ? ` · ${esc(r.type)}` : ""}`), "Aucun rendez-vous.")}
