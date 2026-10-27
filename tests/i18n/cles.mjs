@@ -38,6 +38,9 @@ for (const m of sql.matchAll(/\{"q": "((?:[^"\\]|\\.)*)", "r": "((?:[^"\\]|\\.)*
 const conf = lire("src/components/vitrine/Confiance.tsx");
 for (const m of conf.matchAll(/(?:titre|texte|titreFaq = )[:=]?\s*("(?:[^"\\]|\\.)*")/g)) ajouter(chaine(m[1]));
 ajouter("Questions fréquentes");
+// 4. Page Heavent Studio : métiers du formulaire et formules proposées
+for (const m of lire("src/demo/metiers.ts").matchAll(/:\s*("(?:[^"\\]|\\.)*")/g)) ajouter(chaine(m[1]));
+for (const o of ["Vitrine", "Gestion", "Agence complète", "Je ne sais pas encore"]) ajouter(o);
 
 const liste = [...cles].sort();
 if (process.argv[1].endsWith("cles.mjs")) console.log(JSON.stringify(liste, null, 1));

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useTexte } from "@/i18n/textes";
+import { LanguageSelector } from "@/components/ui/language-selector";
 import { Link } from "react-router-dom";
 import Seo from "@/components/Seo";
 import { FUNCTIONS_URL, supabase } from "@/integrations/supabase/client";
@@ -16,29 +18,30 @@ import imgMobileClient from "@/assets/studio/mobile-client.webp";
 
 /**
  * Heavent Studio : l'offre « outil complet pour agences événementielles », présentée aux professionnels.
- * Page en français uniquement (clientèle professionnelle), séparée du site grand public (pas de menu Heavent).
+ * Page en français, anglais et arabe (sélecteur dans l'en-tête), séparée du site grand public (pas de menu Heavent).
  */
-const WHATSAPP = "https://wa.me/212610939655?text=" + encodeURIComponent("Bonjour, je souhaite une démonstration de Heavent Studio.");
+const WHATSAPP = (texte: string) => "https://wa.me/212610939655?text=" + encodeURIComponent(texte);
 const VISUELS = "https://mapiwnsjsluiwmnulhqk.supabase.co/storage/v1/object/public/assets/instagram/visuels/";
 const POSTS = ["6d4fb285-2828-4278-97b6-8c79a45448aa", "ec37691c-ad68-4803-b50b-f0f48a5d01be", "945d232d-9c51-4915-bfea-28211318488d"];
 
 import { METIERS } from "@/demo/metiers";
 
-const OFFRES = [
-  { nom: "Vitrine", tag: "Essentiel", plus: null,
-    points: ["Site sur mesure, 2 langues", "Pages villes et services pour Google", "Formulaires de devis et contact", "Prise de rendez-vous en ligne", "Réalisations et témoignages modifiables", "Statistiques de visite"] },
-  { nom: "Gestion", tag: "Recommandée", plus: "Tout l'Essentiel, plus :",
-    points: ["3e langue (dont l'arabe)", "Administration privée + appli téléphone", "Devis, signature en ligne, relances", "Factures conformes, acompte et solde", "Agenda synchronisé, rappels clients", "Espace client, RSVP mariages, avis Google"] },
-  { nom: "Agence complète", tag: "Premium", plus: "Toute la Gestion, plus :",
-    points: ["Recrutement et espace des équipes", "Contrats signés en ligne", "Pointage selfie + position", "Fiches de paie mensuelles", "Configurateur « Créez votre événement »", "Instagram automatique, guides, newsletter"] },
+type Tr = ReturnType<typeof useTexte>;
+const offres = (x: Tr) => [
+  { nom: x("Vitrine"), tag: x("Essentiel"), plus: null,
+    points: [x("Site sur mesure, 2 langues"), x("Pages villes et services pour Google"), x("Formulaires de devis et contact"), x("Prise de rendez-vous en ligne"), x("Réalisations et témoignages modifiables"), x("Statistiques de visite")] },
+  { nom: x("Gestion"), tag: x("Recommandée"), plus: x("Tout l'Essentiel, plus :"),
+    points: [x("3e langue (dont l'arabe)"), x("Administration privée + appli téléphone"), x("Devis, signature en ligne, relances"), x("Factures conformes, acompte et solde"), x("Agenda synchronisé, rappels clients"), x("Espace client, RSVP mariages, avis Google")] },
+  { nom: x("Agence complète"), tag: x("Premium"), plus: x("Toute la Gestion, plus :"),
+    points: [x("Recrutement et espace des équipes"), x("Contrats signés en ligne"), x("Pointage selfie + position"), x("Fiches de paie mensuelles"), x("Configurateur « Créez votre événement »"), x("Instagram automatique, guides, newsletter")] },
 ];
 
-const FAQ = [
-  ["Faut-il être à l'aise avec l'informatique ?", "Non. Tout se fait en quelques clics, en français, depuis l'ordinateur ou le téléphone. Nous formons votre équipe à la mise en ligne."],
-  ["Peut-on commencer petit et évoluer ?", "Oui. Chaque formule évolue vers la suivante sans rien refaire : tout ce qui est déjà en place est conservé."],
-  ["Nos données actuelles peuvent-elles être reprises ?", "Oui : catalogue de prestations, clients, équipes, photos de réalisations. Nous nous en chargeons pendant la mise en place."],
-  ["À qui appartiennent l'outil et les données ?", "À vous. Chaque agence a son propre site, sa propre base de données et ses propres accès : rien n'est partagé avec d'autres clients."],
-  ["Que se passe-t-il après la mise en ligne ?", "L'accompagnement mensuel couvre l'hébergement, les sauvegardes, les mises à jour de sécurité et le support."],
+const faq = (x: Tr): [string, string][] => [
+  [x("Faut-il être à l'aise avec l'informatique ?"), x("Non. Tout se fait en quelques clics, en français, depuis l'ordinateur ou le téléphone. Nous formons votre équipe à la mise en ligne.")],
+  [x("Peut-on commencer petit et évoluer ?"), x("Oui. Chaque formule évolue vers la suivante sans rien refaire : tout ce qui est déjà en place est conservé.")],
+  [x("Nos données actuelles peuvent-elles être reprises ?"), x("Oui : catalogue de prestations, clients, équipes, photos de réalisations. Nous nous en chargeons pendant la mise en place.")],
+  [x("À qui appartiennent l'outil et les données ?"), x("À vous. Chaque agence a son propre site, sa propre base de données et ses propres accès : rien n'est partagé avec d'autres clients.")],
+  [x("Que se passe-t-il après la mise en ligne ?"), x("L'accompagnement mensuel couvre l'hébergement, les sauvegardes, les mises à jour de sécurité et le support.")],
 ];
 
 function Halo() {
@@ -82,6 +85,7 @@ function Bloc({ icone: Icone, surtitre, titre, texte, points, image, inverse = f
 }
 
 function FormulaireDemo() {
+  const x = useTexte();
   const [etat, setEtat] = useState<"saisie" | "envoi" | "ok" | "erreur">("saisie");
   const [f, setF] = useState({ nom: "", agence: "", email: "", telephone: "", ville: "", formule: "Gestion", secteur: "evenementiel", message: "", site: "" });
   const [logo, setLogo] = useState<File | null>(null);
@@ -120,52 +124,55 @@ function FormulaireDemo() {
   if (etat === "ok") return (
     <div className="rounded-3xl border border-[#C8B560]/40 bg-white/[0.04] p-8 text-center" data-testid="studio-merci">
       <span className="mx-auto h-14 w-14 rounded-full bg-[#C8B560] text-[#141414] grid place-items-center"><Check className="h-7 w-7" /></span>
-      <h3 className="font-serif text-3xl mt-5">Merci, c'est bien reçu</h3>
-      <p className="text-white/70 mt-3">Nous vous recontactons sous 24 h pour fixer votre démonstration.</p>
+      <h3 className="font-serif text-3xl mt-5">{x("Merci, c'est bien reçu")}</h3>
+      <p className="text-white/70 mt-3">{x("Nous vous recontactons sous 24 h pour fixer votre démonstration.")}</p>
     </div>
   );
 
   return (
     <form onSubmit={envoyer} className="grid sm:grid-cols-2 gap-3" data-testid="studio-formulaire">
-      <input className={champ} placeholder="Votre nom *" value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} data-testid="studio-nom" />
-      <input className={champ} placeholder="Nom de votre agence *" value={f.agence} onChange={(e) => setF({ ...f, agence: e.target.value })} data-testid="studio-agence" />
-      <input className={champ} type="email" placeholder="E-mail professionnel *" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} data-testid="studio-email" />
-      <input className={champ} type="tel" placeholder="Téléphone" value={f.telephone} onChange={(e) => setF({ ...f, telephone: e.target.value })} />
-      <input className={champ} placeholder="Ville" value={f.ville} onChange={(e) => setF({ ...f, ville: e.target.value })} />
+      <input className={champ} placeholder={x("Votre nom *")} value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} data-testid="studio-nom" />
+      <input className={champ} placeholder={x("Nom de votre agence *")} value={f.agence} onChange={(e) => setF({ ...f, agence: e.target.value })} data-testid="studio-agence" />
+      <input className={champ} type="email" placeholder={x("E-mail professionnel *")} value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} data-testid="studio-email" />
+      <input className={champ} type="tel" placeholder={x("Téléphone")} value={f.telephone} onChange={(e) => setF({ ...f, telephone: e.target.value })} />
+      <input className={champ} placeholder={x("Ville")} value={f.ville} onChange={(e) => setF({ ...f, ville: e.target.value })} />
       <select className={champ} value={f.formule} onChange={(e) => setF({ ...f, formule: e.target.value })} data-testid="studio-formule">
-        {["Vitrine", "Gestion", "Agence complète", "Je ne sais pas encore"].map((o) => <option key={o} className="text-black">{o}</option>)}
+        {["Vitrine", "Gestion", "Agence complète", "Je ne sais pas encore"].map((o) => <option key={o} value={o} className="text-black">{x(o)}</option>)}
       </select>
-      <select className={champ} value={f.secteur} onChange={(e) => setF({ ...f, secteur: e.target.value })} data-testid="studio-secteur" aria-label="Votre métier">
-        {Object.entries(METIERS).map(([k, v]) => <option key={k} value={k} className="text-black">{v}</option>)}
+      <select className={champ} value={f.secteur} onChange={(e) => setF({ ...f, secteur: e.target.value })} data-testid="studio-secteur" aria-label={x("Votre métier")}>
+        {Object.entries(METIERS).map(([k, v]) => <option key={k} value={k} className="text-black">{x(v)}</option>)}
       </select>
       <label className={`${champ} flex items-center gap-2 cursor-pointer text-white/60`} data-testid="studio-logo">
         <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => { const x = e.target.files?.[0]; if (x && x.size <= 5 * 1024 * 1024) setLogo(x); }} />
-        {logo ? <span className="text-white truncate">Logo : {logo.name}</span> : <span>Votre logo (facultatif)</span>}
+        {logo ? <span className="text-white truncate">{x("Logo :")} {logo.name}</span> : <span>{x("Votre logo (facultatif)")}</span>}
       </label>
-      <textarea className={`${champ} h-28 py-3 sm:col-span-2 resize-none`} placeholder="Parlez-nous de votre agence (activité, taille de l'équipe, outils actuels…)" value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} />
+      <textarea className={`${champ} h-28 py-3 sm:col-span-2 resize-none`} placeholder={x("Parlez-nous de votre agence (activité, taille de l'équipe, outils actuels…)")} value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} />
       <input tabIndex={-1} autoComplete="off" aria-hidden className="hidden" value={f.site} onChange={(e) => setF({ ...f, site: e.target.value })} />
       <div className="sm:col-span-2 flex flex-wrap items-center gap-3 mt-1">
         <button type="submit" disabled={!valide || etat === "envoi"} className="inline-flex items-center gap-2 rounded-full bg-[#C8B560] text-[#141414] font-medium px-7 h-12 disabled:opacity-50 hover:bg-[#d6c477] transition" data-testid="studio-envoyer">
-          {etat === "envoi" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />} Demander ma démo
+          {etat === "envoi" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />} {x("Demander ma démo")}
         </button>
-        <a href={WHATSAPP} target="_blank" rel="noreferrer" onClick={() => suivre("clic", "whatsapp")} className="inline-flex items-center gap-2 rounded-full border border-white/20 px-6 h-12 text-white/90 hover:bg-white/10 transition">
-          <MessageCircle className="h-4 w-4" /> Ou sur WhatsApp
+        <a href={WHATSAPP(x("Bonjour, je souhaite une démonstration de Heavent Studio."))} target="_blank" rel="noreferrer" onClick={() => suivre("clic", "whatsapp")} className="inline-flex items-center gap-2 rounded-full border border-white/20 px-6 h-12 text-white/90 hover:bg-white/10 transition">
+          <MessageCircle className="h-4 w-4" /> {x("Ou sur WhatsApp")}
         </a>
       </div>
-      {etat === "erreur" && <p className="sm:col-span-2 text-sm text-red-300">L'envoi n'a pas abouti. Réessayez dans un instant, ou écrivez-nous sur WhatsApp.</p>}
-      <p className="sm:col-span-2 text-xs text-white/45">Vos coordonnées servent uniquement à vous recontacter au sujet de Heavent Studio. <Link to="/politique-confidentialite" className="underline">Confidentialité</Link></p>
+      {etat === "erreur" && <p className="sm:col-span-2 text-sm text-red-300">{x("L'envoi n'a pas abouti. Réessayez dans un instant, ou écrivez-nous sur WhatsApp.")}</p>}
+      <p className="sm:col-span-2 text-xs text-white/45">{x("Vos coordonnées servent uniquement à vous recontacter au sujet de Heavent Studio.")} <Link to="/politique-confidentialite" className="underline">{x("Confidentialité")}</Link></p>
     </form>
   );
 }
 
 export default function Studio() {
+  const x = useTexte();
+  const OFFRES = offres(x);
+  const FAQ = faq(x);
   const [ouverte, setOuverte] = useState<number | null>(0);
   const versDemo = () => { suivre("clic", "studio:demo"); document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" }); };
 
   return (
-    <div className="min-h-screen bg-[#FBF8F1] text-[#2A2420]">
-      <Seo perso={{ chemin: "/studio", titre: "Heavent Studio | Le site et l'outil de gestion des agences événementielles",
-        description: "Site trilingue, devis et factures signés en ligne, agenda, équipes, paie, pointage, Instagram automatique : l'outil complet conçu par une agence événementielle, pour les agences événementielles." }} />
+    <div className="min-h-screen bg-[#FBF8F1] text-[#2A2420]" dir={x.langue === "ar" ? "rtl" : "ltr"} lang={x.langue}>
+      <Seo perso={{ chemin: "/studio", titre: x("Heavent Studio | Le site et l'outil de gestion des agences événementielles"),
+        description: x("Site trilingue, devis et factures signés en ligne, agenda, équipes, paie, pointage, Instagram automatique : l'outil complet conçu par une agence événementielle, pour les agences événementielles.") }} />
 
       {/* En-tête */}
       <header className="sticky top-0 z-40 bg-[#141414]/95 backdrop-blur text-white border-b border-white/10">
@@ -176,7 +183,8 @@ export default function Studio() {
           </Link>
           <div className="flex items-center gap-2 sm:gap-4">
             <Link to="/" className="hidden sm:inline text-sm text-white/60 hover:text-white">heaventagency.com</Link>
-            <button onClick={versDemo} className="rounded-full bg-[#C8B560] text-[#141414] text-sm font-medium px-4 h-10" data-testid="studio-cta-entete">Demander une démo</button>
+            <LanguageSelector />
+            <button onClick={versDemo} className="rounded-full bg-[#C8B560] text-[#141414] text-sm font-medium px-4 h-10" data-testid="studio-cta-entete">{x("Demander une démo")}</button>
           </div>
         </div>
       </header>
@@ -186,20 +194,20 @@ export default function Studio() {
         <Halo />
         <div className="relative max-w-6xl mx-auto px-4 pt-16 pb-20 sm:pt-24 grid lg:grid-cols-[1.05fr_1fr] gap-12 items-center">
           <div>
-            <Surtitre clair>Pour les agences événementielles</Surtitre>
-            <h1 className="font-serif text-4xl sm:text-6xl leading-[1.08] mt-5">Votre agence, entièrement digitalisée.</h1>
-            <p className="text-white/70 text-lg mt-6 max-w-xl leading-relaxed">Un site qui attire vos clients, et une administration qui gère tout le reste : devis signés en ligne, factures, agenda, équipes, paie, Instagram. Conçu par une agence événementielle, pour les agences événementielles.</p>
+            <Surtitre clair>{x("Pour les agences événementielles")}</Surtitre>
+            <h1 className="font-serif text-4xl sm:text-6xl leading-[1.08] mt-5">{x("Votre agence, entièrement digitalisée.")}</h1>
+            <p className="text-white/70 text-lg mt-6 max-w-xl leading-relaxed">{x("Un site qui attire vos clients, et une administration qui gère tout le reste : devis signés en ligne, factures, agenda, équipes, paie, Instagram. Conçu par une agence événementielle, pour les agences événementielles.")}</p>
             <div className="flex flex-wrap gap-3 mt-8">
-              <button onClick={versDemo} className="inline-flex items-center gap-2 rounded-full bg-[#C8B560] text-[#141414] font-medium px-7 h-12 hover:bg-[#d6c477] transition">Demander une démo <ArrowRight className="h-4 w-4" /></button>
-              <a href="#formules" className="inline-flex items-center rounded-full border border-white/20 px-7 h-12 text-white/90 hover:bg-white/10 transition">Voir les formules</a>
+              <button onClick={versDemo} className="inline-flex items-center gap-2 rounded-full bg-[#C8B560] text-[#141414] font-medium px-7 h-12 hover:bg-[#d6c477] transition">{x("Demander une démo")} <ArrowRight className="h-4 w-4" /></button>
+              <a href="#formules" className="inline-flex items-center rounded-full border border-white/20 px-7 h-12 text-white/90 hover:bg-white/10 transition">{x("Voir les formules")}</a>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 mt-10 text-sm text-white/60">
-              {["Français · anglais · arabe", "Sur ordinateur et téléphone", "Vos données restent à vous"].map((t) => <span key={t} className="flex items-center gap-2"><Check className="h-4 w-4 text-[#E4D49A]" />{t}</span>)}
+              {[x("Français · anglais · arabe"), x("Sur ordinateur et téléphone"), x("Vos données restent à vous")].map((t) => <span key={t} className="flex items-center gap-2"><Check className="h-4 w-4 text-[#E4D49A]" />{t}</span>)}
             </div>
           </div>
           <div className="relative">
-            <Ecran src={imgStats} alt="Statistiques du site dans l'administration" />
-            <Telephone src={imgMobileAdmin} alt="L'administration sur téléphone" className="absolute -bottom-10 -left-6 w-[34%] hidden sm:block" />
+            <Ecran src={imgStats} alt={x("Statistiques du site dans l'administration")} />
+            <Telephone src={imgMobileAdmin} alt={x("L'administration sur téléphone")} className="absolute -bottom-10 -left-6 w-[34%] hidden sm:block" />
           </div>
         </div>
       </section>
@@ -207,18 +215,18 @@ export default function Studio() {
       {/* Constat */}
       <section className="max-w-6xl mx-auto px-4 py-20 sm:py-28">
         <div className="max-w-3xl">
-          <Surtitre>Le constat</Surtitre>
-          <h2 className="font-serif text-3xl sm:text-5xl text-[#141414] mt-4 leading-tight">Vous passez trop de temps à gérer, pas assez à créer.</h2>
-          <p className="text-[#5E554A] text-lg mt-5 leading-relaxed">Demandes éparpillées entre WhatsApp, e-mails et appels. Devis refaits à la main. Contrats imprimés, signés, scannés. Relances oubliées. Chaque heure passée là-dessus est une heure de moins pour vos clients.</p>
+          <Surtitre>{x("Le constat")}</Surtitre>
+          <h2 className="font-serif text-3xl sm:text-5xl text-[#141414] mt-4 leading-tight">{x("Vous passez trop de temps à gérer, pas assez à créer.")}</h2>
+          <p className="text-[#5E554A] text-lg mt-5 leading-relaxed">{x("Demandes éparpillées entre WhatsApp, e-mails et appels. Devis refaits à la main. Contrats imprimés, signés, scannés. Relances oubliées. Chaque heure passée là-dessus est une heure de moins pour vos clients.")}</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-12">
-          {[["24 h", "pour répondre à chaque demande, même le week-end"], ["3", "langues, dont l'arabe, pour vos clients du monde entier"], ["0", "ressaisie entre devis, contrat et facture"], ["1", "seul outil, sur ordinateur et téléphone"]].map(([c, t]) => (
+          {[["24 h", x("pour répondre à chaque demande, même le week-end")], ["3", x("langues, dont l'arabe, pour vos clients du monde entier")], ["0", x("ressaisie entre devis, contrat et facture")], ["1", x("seul outil, sur ordinateur et téléphone")]].map(([c, t]) => (
             <div key={t} className="rounded-2xl bg-[#141414] text-white p-6"><div className="font-serif text-4xl text-[#E4D49A]">{c}</div><p className="text-white/70 text-sm mt-2">{t}</p></div>
           ))}
         </div>
         <blockquote className="mt-14 border-y border-[#EADFC8] py-10 text-center font-serif italic text-2xl sm:text-3xl text-[#3d362d] leading-snug max-w-4xl mx-auto">
-          « Nous avons construit pour nous-mêmes l'outil que nous aurions rêvé d'avoir. Aujourd'hui, nous le mettons au service de votre agence. »
-          <footer className="not-italic font-sans text-xs uppercase tracking-[0.3em] text-[#8C6D22] mt-5">Heavent People Agency</footer>
+          {x("« Nous avons construit pour nous-mêmes l'outil que nous aurions rêvé d'avoir. Aujourd'hui, nous le mettons au service de votre agence. »")}
+          <footer className="not-italic font-sans text-xs uppercase tracking-[0.3em] text-[#8C6D22] mt-5">{x("Heavent People Agency")}</footer>
         </blockquote>
       </section>
 
@@ -226,44 +234,44 @@ export default function Studio() {
       <section className="bg-white border-y border-[#EADFC8]">
         <div className="max-w-6xl mx-auto px-4 py-20 sm:py-28 space-y-24">
           <div className="text-center max-w-2xl mx-auto">
-            <Surtitre>La solution</Surtitre>
-            <h2 className="font-serif text-3xl sm:text-5xl text-[#141414] mt-4">Tout votre métier, dans un seul outil</h2>
+            <Surtitre>{x("La solution")}</Surtitre>
+            <h2 className="font-serif text-3xl sm:text-5xl text-[#141414] mt-4">{x("Tout votre métier, dans un seul outil")}</h2>
           </div>
-          <Bloc icone={Globe} surtitre="Votre site" titre="Un site à la hauteur de vos événements"
-            texte="Élégant, rapide, pensé pour le téléphone, et construit pour transformer chaque visite en demande de devis."
-            points={["Design sur mesure, vos vraies réalisations en photos", "Plusieurs langues ; les messages étrangers vous arrivent traduits", "Pages dédiées à vos villes et services, pour Google", "Formulaires de devis, rendez-vous en ligne, WhatsApp"]}
+          <Bloc icone={Globe} surtitre={x("Votre site")} titre={x("Un site à la hauteur de vos événements")}
+            texte={x("Élégant, rapide, pensé pour le téléphone, et construit pour transformer chaque visite en demande de devis.")}
+            points={[x("Design sur mesure, vos vraies réalisations en photos"), x("Plusieurs langues ; les messages étrangers vous arrivent traduits"), x("Pages dédiées à vos villes et services, pour Google"), x("Formulaires de devis, rendez-vous en ligne, WhatsApp")]}
             image={<div className="rounded-2xl bg-[#141414] p-6 sm:p-8 text-white relative overflow-hidden"><Halo />
-              <div className="relative"><Surtitre clair>Essayez-le en direct</Surtitre>
-                <h4 className="font-serif text-2xl sm:text-3xl mt-3">Le configurateur « Créez votre événement »</h4>
-                <p className="text-white/70 mt-3">Vos visiteurs composent leur événement sur un plan, voient une estimation en direct avec vos tarifs, et vous envoient une demande prête à chiffrer. Celui de Heavent est en ligne : testez-le.</p>
-                <Link to="/cree-ton-evenement" onClick={() => suivre("clic", "studio:jeu")} className="inline-flex items-center gap-2 mt-6 rounded-full bg-[#C8B560] text-[#141414] font-medium px-6 h-11"><Sparkles className="h-4 w-4" /> Ouvrir le configurateur</Link>
+              <div className="relative"><Surtitre clair>{x("Essayez-le en direct")}</Surtitre>
+                <h4 className="font-serif text-2xl sm:text-3xl mt-3">{x("Le configurateur « Créez votre événement »")}</h4>
+                <p className="text-white/70 mt-3">{x("Vos visiteurs composent leur événement sur un plan, voient une estimation en direct avec vos tarifs, et vous envoient une demande prête à chiffrer. Celui de Heavent est en ligne : testez-le.")}</p>
+                <Link to="/cree-ton-evenement" onClick={() => suivre("clic", "studio:jeu")} className="inline-flex items-center gap-2 mt-6 rounded-full bg-[#C8B560] text-[#141414] font-medium px-6 h-11"><Sparkles className="h-4 w-4" /> {x("Ouvrir le configurateur")}</Link>
               </div></div>} />
-          <Bloc inverse icone={FileSignature} surtitre="Commercial" titre="De la demande à la facture, sans ressaisie"
-            texte="Chaque demande devient un devis en un clic. Le client le signe sur son téléphone, l'acompte et les relances suivent tout seuls."
-            points={["Devis pré-remplis depuis la demande, PDF à votre image", "Signature en ligne, relances automatiques à J+5 et J+10", "Factures conformes, numérotation protégée, acompte et solde", "Espace personnel du client, avis Google après l'événement"]}
-            image={<div className="relative"><Ecran src={imgDevis} alt="Création d'un devis" /><Telephone src={imgMobileClient} alt="Le devis vu par le client" className="absolute -bottom-8 -right-3 w-[32%] hidden sm:block" /></div>} />
-          <Bloc icone={Users} surtitre="Équipes" titre="Vos crews, du recrutement à la paie"
-            texte="Hôtesses, hôtes et extras s'inscrivent seuls, reçoivent leurs missions, signent leurs contrats et pointent depuis leur téléphone."
-            points={["Inscription en ligne, fiches profil à envoyer aux clients", "Disponibilités et constitution de l'équipe par date", "Contrats générés et signés en ligne", "Pointage selfie + position, fiches de paie en un clic"]}
-            image={<Ecran src={imgEquipe} alt="Gestion du personnel" />} />
-          <Bloc inverse icone={CalendarDays} surtitre="Organisation" titre="Un agenda qui se remplit tout seul"
-            texte="Vos clients réservent un rendez-vous sur vos créneaux libres. Vous recevez une notification, eux un rappel la veille, dans leur langue."
-            points={["Horaires, pauses, indisponibilités", "Agence, téléphone ou visio", "Synchronisation avec le calendrier de votre téléphone"]}
-            image={<Ecran src={imgAgenda} alt="Agenda et rendez-vous" />} />
-          <Bloc icone={Instagram} surtitre="Marketing" titre="Instagram, guides et newsletter en pilote automatique"
-            texte="Des posts conseils mis en page à vos couleurs et publiés à l'heure prévue. Quand quelqu'un commente « GUIDE », il reçoit votre guide en message privé, et vous récupérez un contact."
-            points={["Visuels composés automatiquement : photo, texte, logo", "Publication via l'API officielle de Meta", "Guides PDF offerts contre un e-mail, newsletter avec consentement"]}
-            image={<div className="grid grid-cols-3 gap-3">{POSTS.map((id) => <img key={id} src={`${VISUELS}${id}.jpg`} alt="Post Instagram généré automatiquement" loading="lazy" className="rounded-xl w-full aspect-[4/5] object-cover shadow-lg" />)}</div>} />
+          <Bloc inverse icone={FileSignature} surtitre={x("Commercial")} titre={x("De la demande à la facture, sans ressaisie")}
+            texte={x("Chaque demande devient un devis en un clic. Le client le signe sur son téléphone, l'acompte et les relances suivent tout seuls.")}
+            points={[x("Devis pré-remplis depuis la demande, PDF à votre image"), x("Signature en ligne, relances automatiques à J+5 et J+10"), x("Factures conformes, numérotation protégée, acompte et solde"), x("Espace personnel du client, avis Google après l'événement")]}
+            image={<div className="relative"><Ecran src={imgDevis} alt={x("Création d'un devis")} /><Telephone src={imgMobileClient} alt={x("Le devis vu par le client")} className="absolute -bottom-8 -right-3 w-[32%] hidden sm:block" /></div>} />
+          <Bloc icone={Users} surtitre={x("Équipes")} titre={x("Vos crews, du recrutement à la paie")}
+            texte={x("Hôtesses, hôtes et extras s'inscrivent seuls, reçoivent leurs missions, signent leurs contrats et pointent depuis leur téléphone.")}
+            points={[x("Inscription en ligne, fiches profil à envoyer aux clients"), x("Disponibilités et constitution de l'équipe par date"), x("Contrats générés et signés en ligne"), x("Pointage selfie + position, fiches de paie en un clic")]}
+            image={<Ecran src={imgEquipe} alt={x("Gestion du personnel")} />} />
+          <Bloc inverse icone={CalendarDays} surtitre={x("Organisation")} titre={x("Un agenda qui se remplit tout seul")}
+            texte={x("Vos clients réservent un rendez-vous sur vos créneaux libres. Vous recevez une notification, eux un rappel la veille, dans leur langue.")}
+            points={[x("Horaires, pauses, indisponibilités"), x("Agence, téléphone ou visio"), x("Synchronisation avec le calendrier de votre téléphone")]}
+            image={<Ecran src={imgAgenda} alt={x("Agenda et rendez-vous")} />} />
+          <Bloc icone={Instagram} surtitre={x("Marketing")} titre={x("Instagram, guides et newsletter en pilote automatique")}
+            texte={x("Des posts conseils mis en page à vos couleurs et publiés à l'heure prévue. Quand quelqu'un commente « GUIDE », il reçoit votre guide en message privé, et vous récupérez un contact.")}
+            points={[x("Visuels composés automatiquement : photo, texte, logo"), x("Publication via l'API officielle de Meta"), x("Guides PDF offerts contre un e-mail, newsletter avec consentement")]}
+            image={<div className="grid grid-cols-3 gap-3">{POSTS.map((id) => <img key={id} src={`${VISUELS}${id}.jpg`} alt={x("Post Instagram généré automatiquement")} loading="lazy" className="rounded-xl w-full aspect-[4/5] object-cover shadow-lg" />)}</div>} />
         </div>
       </section>
 
       {/* Bénéfices automatiques */}
       <section className="max-w-6xl mx-auto px-4 py-20 sm:py-28">
-        <div className="max-w-2xl"><Surtitre>Ce qui se fait tout seul</Surtitre><h2 className="font-serif text-3xl sm:text-5xl text-[#141414] mt-4">Pendant que vous êtes sur le terrain</h2></div>
+        <div className="max-w-2xl"><Surtitre>{x("Ce qui se fait tout seul")}</Surtitre><h2 className="font-serif text-3xl sm:text-5xl text-[#141414] mt-4">{x("Pendant que vous êtes sur le terrain")}</h2></div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-10">
-          {[[Workflow, "Relance des devis sans réponse", "Plus de devis signés, sans y penser"], [FileSignature, "Facture de solde après l'événement", "Une trésorerie encaissée plus vite"],
-            [BarChart3, "Demande d'avis le lendemain", "Plus d'avis Google, une meilleure réputation"], [CalendarDays, "Rappels de rendez-vous et de signatures", "Moins d'oublis, moins d'appels"],
-            [Smartphone, "Notifications sur votre téléphone", "Vous répondez en premier"], [ShieldCheck, "Sauvegardes et sécurité", "Chacun ne voit que ce qui le concerne"]].map(([I, t, d]) => {
+          {[[Workflow, x("Relance des devis sans réponse"), x("Plus de devis signés, sans y penser")], [FileSignature, x("Facture de solde après l'événement"), x("Une trésorerie encaissée plus vite")],
+            [BarChart3, x("Demande d'avis le lendemain"), x("Plus d'avis Google, une meilleure réputation")], [CalendarDays, x("Rappels de rendez-vous et de signatures"), x("Moins d'oublis, moins d'appels")],
+            [Smartphone, x("Notifications sur votre téléphone"), x("Vous répondez en premier")], [ShieldCheck, x("Sauvegardes et sécurité"), x("Chacun ne voit que ce qui le concerne")]].map(([I, t, d]) => {
             const Icone = I as typeof Globe;
             return <div key={t as string} className="rounded-2xl border border-[#EADFC8] bg-white p-6"><Icone className="h-6 w-6 text-[#A8933F]" /><h3 className="font-serif text-xl text-[#141414] mt-4">{t as string}</h3><p className="text-[#5E554A] text-sm mt-1.5">{d as string}</p></div>;
           })}
@@ -274,28 +282,28 @@ export default function Studio() {
       <section className="bg-[#141414] text-white relative overflow-hidden">
         <Halo />
         <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-28">
-          <Surtitre clair>Notre méthode</Surtitre>
-          <h2 className="font-serif text-3xl sm:text-5xl mt-4">Quatre étapes, un seul interlocuteur</h2>
+          <Surtitre clair>{x("Notre méthode")}</Surtitre>
+          <h2 className="font-serif text-3xl sm:text-5xl mt-4">{x("Quatre étapes, un seul interlocuteur")}</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
-            {[["Écoute", "Un atelier pour comprendre votre activité, vos clients et vos priorités."], ["Maquettes", "Vous validez le design et le parcours avant toute construction."],
-              ["Construction", "Des livraisons régulières : vous testez au fur et à mesure."], ["Mise en ligne", "Reprise de vos contenus, formation de votre équipe, accompagnement."]].map(([t, d], i) => (
+            {[[x("Écoute"), x("Un atelier pour comprendre votre activité, vos clients et vos priorités.")], [x("Maquettes"), x("Vous validez le design et le parcours avant toute construction.")],
+              [x("Construction"), x("Des livraisons régulières : vous testez au fur et à mesure.")], [x("Mise en ligne"), x("Reprise de vos contenus, formation de votre équipe, accompagnement.")]].map(([t, d], i) => (
               <div key={t} className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
                 <div className="font-serif text-4xl text-[#C8B560]">{String(i + 1).padStart(2, "0")}</div>
                 <h3 className="font-serif text-xl mt-3">{t}</h3><p className="text-white/65 text-sm mt-1.5">{d}</p>
               </div>
             ))}
           </div>
-          <p className="text-white/60 mt-10 max-w-3xl">La preuve : cet outil fait tourner chaque jour <Link to="/" className="text-[#E4D49A] underline">heaventagency.com</Link> et toute notre agence. Démonstration en direct sur simple demande.</p>
+          <p className="text-white/60 mt-10 max-w-3xl">{x("La preuve : cet outil fait tourner chaque jour")} <Link to="/" className="text-[#E4D49A] underline">heaventagency.com</Link> {x("et toute notre agence. Démonstration en direct sur simple demande.")}</p>
         </div>
       </section>
 
       {/* Formules */}
       <section id="formules" className="max-w-6xl mx-auto px-4 py-20 sm:py-28 scroll-mt-16">
-        <div className="text-center max-w-2xl mx-auto"><Surtitre>Formules</Surtitre><h2 className="font-serif text-3xl sm:text-5xl text-[#141414] mt-4">Trois formules, selon votre ambition</h2>
-          <p className="text-[#5E554A] mt-4">Conception sur mesure, mise en ligne, formation et un mois d'accompagnement inclus.</p></div>
+        <div className="text-center max-w-2xl mx-auto"><Surtitre>{x("Formules")}</Surtitre><h2 className="font-serif text-3xl sm:text-5xl text-[#141414] mt-4">{x("Trois formules, selon votre ambition")}</h2>
+          <p className="text-[#5E554A] mt-4">{x("Conception sur mesure, mise en ligne, formation et un mois d'accompagnement inclus.")}</p></div>
         <div className="grid lg:grid-cols-3 gap-5 mt-12">
           {OFFRES.map((o) => {
-            const vedette = o.tag === "Recommandée";
+            const vedette = OFFRES.indexOf(o) === 1;
             return (
               <div key={o.nom} className={`rounded-3xl p-7 flex flex-col ${vedette ? "bg-[#141414] text-white lg:-translate-y-3 shadow-2xl" : "bg-white border border-[#EADFC8]"}`} data-testid="studio-offre">
                 <span className={`text-[11px] uppercase tracking-[0.25em] ${vedette ? "text-[#E4D49A]" : "text-[#8C6D22]"}`}>{o.tag}</span>
@@ -304,17 +312,17 @@ export default function Studio() {
                 <ul className={`space-y-2 ${o.plus ? "mt-2" : "mt-5"} flex-1`}>
                   {o.points.map((p) => <li key={p} className={`flex gap-2.5 text-sm ${vedette ? "text-white/85" : "text-[#3d362d]"}`}><Check className="h-4 w-4 text-[#C8B560] shrink-0 mt-0.5" />{p}</li>)}
                 </ul>
-                <button onClick={versDemo} className={`mt-7 rounded-full h-11 font-medium ${vedette ? "bg-[#C8B560] text-[#141414]" : "border border-[#141414] text-[#141414] hover:bg-[#141414] hover:text-white transition"}`}>Demander une démo</button>
+                <button onClick={versDemo} className={`mt-7 rounded-full h-11 font-medium ${vedette ? "bg-[#C8B560] text-[#141414]" : "border border-[#141414] text-[#141414] hover:bg-[#141414] hover:text-white transition"}`}>{x("Demander une démo")}</button>
               </div>
             );
           })}
         </div>
-        <p className="text-center text-sm text-[#7a705f] mt-8">Chaque projet est chiffré sur mesure après la démonstration. Modules à la carte possibles.</p>
+        <p className="text-center text-sm text-[#7a705f] mt-8">{x("Chaque projet est chiffré sur mesure après la démonstration. Modules à la carte possibles.")}</p>
       </section>
 
       {/* FAQ */}
       <section className="max-w-3xl mx-auto px-4 pb-20 sm:pb-28">
-        <div className="text-center"><Surtitre>Vos questions</Surtitre><h2 className="font-serif text-3xl sm:text-4xl text-[#141414] mt-4">Ce que l'on nous demande souvent</h2></div>
+        <div className="text-center"><Surtitre>{x("Vos questions")}</Surtitre><h2 className="font-serif text-3xl sm:text-4xl text-[#141414] mt-4">{x("Ce que l'on nous demande souvent")}</h2></div>
         <div className="mt-10 divide-y divide-[#EADFC8] border-y border-[#EADFC8]">
           {FAQ.map(([q, r], i) => (
             <div key={q}>
@@ -332,11 +340,11 @@ export default function Studio() {
         <Halo />
         <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-28 grid lg:grid-cols-[0.9fr_1.1fr] gap-12">
           <div>
-            <Surtitre clair>Démonstration gratuite</Surtitre>
-            <h2 className="font-serif text-3xl sm:text-5xl mt-4 leading-tight">Voyons ensemble ce que l'outil changerait pour votre agence</h2>
-            <p className="text-white/70 mt-5 leading-relaxed">30 minutes en visio ou dans nos bureaux de Rabat : nous vous montrons l'outil en conditions réelles et vous repartez avec une proposition adaptée.</p>
+            <Surtitre clair>{x("Démonstration gratuite")}</Surtitre>
+            <h2 className="font-serif text-3xl sm:text-5xl mt-4 leading-tight">{x("Voyons ensemble ce que l'outil changerait pour votre agence")}</h2>
+            <p className="text-white/70 mt-5 leading-relaxed">{x("30 minutes en visio ou dans nos bureaux de Rabat : nous vous montrons l'outil en conditions réelles et vous repartez avec une proposition adaptée.")}</p>
             <ul className="mt-6 space-y-2.5 text-white/80">
-              {["Sans engagement", "Réponse sous 24 h", "Un interlocuteur unique, du premier échange à la mise en ligne"].map((t) => <li key={t} className="flex gap-2.5"><Check className="h-5 w-5 text-[#E4D49A] shrink-0" />{t}</li>)}
+              {[x("Sans engagement"), x("Réponse sous 24 h"), x("Un interlocuteur unique, du premier échange à la mise en ligne")].map((t) => <li key={t} className="flex gap-2.5"><Check className="h-5 w-5 text-[#E4D49A] shrink-0" />{t}</li>)}
             </ul>
           </div>
           <FormulaireDemo />
@@ -345,8 +353,8 @@ export default function Studio() {
 
       <footer className="bg-[#0d0d0d] text-white/50 text-sm">
         <div className="max-w-6xl mx-auto px-4 py-8 flex flex-wrap items-center justify-between gap-4">
-          <span>© {new Date().getFullYear()} Heavent Studio · une activité de Heavent People Agency, Rabat</span>
-          <div className="flex gap-5"><Link to="/" className="hover:text-white">heaventagency.com</Link><Link to="/mentions-legales" className="hover:text-white">Mentions légales</Link><Link to="/politique-confidentialite" className="hover:text-white">Confidentialité</Link></div>
+          <span>© {new Date().getFullYear()} Heavent Studio · {x("une activité de Heavent People Agency, Rabat")}</span>
+          <div className="flex gap-5"><Link to="/" className="hover:text-white">heaventagency.com</Link><Link to="/mentions-legales" className="hover:text-white">{x("Mentions légales")}</Link><Link to="/politique-confidentialite" className="hover:text-white">{x("Confidentialité")}</Link></div>
         </div>
       </footer>
     </div>
