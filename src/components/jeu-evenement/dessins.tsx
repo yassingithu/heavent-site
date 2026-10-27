@@ -702,7 +702,7 @@ export function DessinElement({ e, ctx }: { e: Element; ctx: ContexteDessin }) {
           <Boite {...l.r(0.2, 0.1, Lb - 0.4, 0.14)} z={14} ht={14} c={teinte(tissu, 0.1)} />
           <Boite {...l.r(0.2, 0.52, 0.42, 1.3)} ht={14} c={tissu} />
           <Boite {...l.r(Lb - 0.62, 0.52, 0.42, 1.3)} ht={14} c={tissu} />
-          {Array.from({ length: Math.round(Lb * 4 / 3) }, (_, i, t) => 0.5 + i * (Lb - 1.3) / Math.max(1, t.length - 1)).map((u, i) => <Boite key={i} {...l.r(u, 0.3, 0.3, 0.2)} z={14} ht={7} c={i % 2 ? "#FFF3D6" : teinte(palette.fleurs, -0.1)} />)}
+          {(() => { const nb = Math.round(Lb * 4 / 3); return Array.from({ length: nb }, (_, i) => 0.5 + i * (Lb - 1.3) / Math.max(1, nb - 1)); })().map((u, i) => <Boite key={i} {...l.r(u, 0.3, 0.3, 0.2)} z={14} ht={7} c={i % 2 ? "#FFF3D6" : teinte(palette.fleurs, -0.1)} />)}
           <Cylindre cx={tx} cy={ty} r={0.42} ht={10} c="#B08E6A" haut="#E9C46A" />
           <Cylindre cx={tx} cy={ty} r={0.1} z={10} ht={7} c="#D7D7D7" haut="#EEEEEE" />
           {[l.p(Lb / 2 - 0.5, 1.7), l.p(Lb / 2 + 0.5, 1.7)].map(([x, y], i) => <Cylindre key={i} cx={x} cy={y} r={0.2} ht={9} c={i ? "#9C6B3C" : "#B9785A"} />)}

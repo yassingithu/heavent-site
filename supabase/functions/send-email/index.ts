@@ -90,7 +90,12 @@ const handler = async (req: Request): Promise<Response> => {
         const tj = await traduireChamps(data, ["message", "ville"]);
         const mad = (n: unknown) => `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(n) || 0)} MAD`;
         const lignes = (Array.isArray(data.lignes) ? data.lignes : []).slice(0, 40);
-        const tableau = `<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px">${lignes.map((l: any) =>
+        // Prix cachés aux visiteurs : sans « estimation » dans la demande, on liste seulement les éléments choisis
+        const sansPrix = data.estimation == null;
+        const tableau = sansPrix
+          ? `<ul style="margin:10px 0;padding-left:18px;font-size:14px">${lignes.map((l: any) => `<li style="padding:2px 0">${e(l.libelle)}</li>`).join("")}</ul>
+          <p style="margin:6px 0;font-weight:bold;color:#8C6D22">Devis en cours d'étude</p>`
+          : `<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px">${lignes.map((l: any) =>
           `<tr><td style="padding:6px;border-bottom:1px solid #eee">${e(l.libelle)}<br><span style="color:#888;font-size:12px">${e(l.detail)}</span></td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap">${l.surDevis ? '<span style="color:#8C6D22">Sur devis</span>' : e(mad(l.total))}</td></tr>`).join("")}
           <tr><td style="padding:6px;font-weight:bold">Estimation illustrative</td><td style="padding:6px;text-align:right;font-weight:bold">${e(mad(data.estimation))}</td></tr></table>`;
         const options = list(Array.isArray(data.options) ? data.options.slice(0, 40) : data.options);
@@ -143,7 +148,7 @@ const handler = async (req: Request): Promise<Response> => {
                 <b>${e(data.typeEvenement)}</b> · ambiance ${e(String(data.ambiance ?? "").toLowerCase())} · ${e(String(data.lieu ?? "").toLowerCase())}<br>
                 ${e(data.invites)} invités · ${e(dateTxt)} · ${e(cap(data.ville))}<br>Options : ${e(options)}
                 ${tableau}
-                <p style="font-size:12px;color:#777;margin:0">Estimation illustrative des éléments sélectionnés, hors prestations non incluses. Le tarif final sera confirmé sur devis.</p>
+                ${sansPrix ? '<p style="font-size:12px;color:#777;margin:0">Notre équipe étudie votre devis : vous recevrez votre prix final dès sa validation.</p>' : '<p style="font-size:12px;color:#777;margin:0">Estimation illustrative des éléments sélectionnés, hors prestations non incluses. Le tarif final sera confirmé sur devis.</p>'}
               </div>
               <p>À très vite,<br>Imane CHAIGARI — CEO, Heavent People Agency<br>+212 6 10 93 96 55 · ${ADMIN_EMAIL}</p></div>`,
           }).catch((err: unknown) => console.error("Confirmation visiteur non envoyée", err));
