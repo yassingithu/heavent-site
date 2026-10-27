@@ -23,12 +23,17 @@ if (typeof window !== "undefined") {
 export function useAppStaff() {
   useEffect(() => {
     ajouterBalise("link", { rel: "manifest", href: "/staff.webmanifest" });
-    ajouterBalise("link", { rel: "apple-touch-icon", href: "/staff-180.png" });
+    // iPhone : une seule icône d'écran d'accueil possible. On remplace celle d'index.html (sinon Safari prend l'ancienne).
+    const anciennes = [...document.head.querySelectorAll('link[rel="apple-touch-icon"]')] as HTMLLinkElement[];
+    const memoire = anciennes.map((l) => [l, l.getAttribute("href")] as const);
+    if (anciennes.length) anciennes.forEach((l) => l.setAttribute("href", "/staff-180.png"));
+    else ajouterBalise("link", { rel: "apple-touch-icon", href: "/staff-180.png" });
     ajouterBalise("meta", { name: "apple-mobile-web-app-capable", content: "yes" });
     ajouterBalise("meta", { name: "mobile-web-app-capable", content: "yes" });
     ajouterBalise("meta", { name: "apple-mobile-web-app-title", content: "Heavent Staff" });
     ajouterBalise("meta", { name: "apple-mobile-web-app-status-bar-style", content: "default" });
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/staff-sw.js", { scope: "/staff-dashboard" }).catch(() => {});
+    return () => memoire.forEach(([l, h]) => h && l.setAttribute("href", h));
   }, []);
 }
 
