@@ -21,6 +21,7 @@ import RemarquesContrat from "@/components/contrat/RemarquesContrat";
 import { BADGE_SIGNATURE, dateHeureFr, etatSignature, finSignature, limiteSignature } from "@/lib/signature";
 import { telechargerFichesPaie } from "@/components/admin/paie/FichesPaieMensuelles";
 import MesMissions from "@/components/staff/MesMissions";
+import { CarteInstallerStaff, useAppStaff } from "@/components/staff/AppStaff";
 
 interface Contrat {
   id: string;
@@ -66,6 +67,7 @@ interface Disponibilite {
 
 const StaffDashboard = () => {
   const { t } = useTranslation();
+  useAppStaff();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -495,6 +497,8 @@ const StaffDashboard = () => {
             <span className="sm:inline">{t('dashboard.logout')}</span>
           </Button>
         </div>
+
+        <CarteInstallerStaff />
 
         <MesMissions />
 

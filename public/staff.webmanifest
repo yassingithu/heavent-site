@@ -1,0 +1,18 @@
+{
+  "name": "Heavent Staff",
+  "short_name": "Heavent Staff",
+  "description": "L'espace staff de Heavent People Agency : missions, contrats, fiches de paie et disponibilités",
+  "id": "/staff-dashboard",
+  "start_url": "/staff-dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6EBD6",
+  "theme_color": "#141414",
+  "lang": "fr",
+  "icons": [
+    { "src": "/staff-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/staff-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/staff-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
