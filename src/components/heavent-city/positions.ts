@@ -17,7 +17,7 @@ export const GABARITS: Record<TableId, { px: number; py: number; dx: number; dy:
 export const RAYON_TABLE = 0.52;
 
 /** Ce qui est choisi dans la scène (sert à poser les objets sans les superposer) */
-export interface Actifs { options: ReadonlySet<string>; musiques: readonly string[]; accueil: string | null; lumiere: string | null; type: string; tables: TableId }
+export interface Actifs { options: ReadonlySet<string>; musiques: readonly string[]; accueils: readonly string[]; lumiere: string | null; type: string; tables: TableId }
 export interface Rect { id: string; x0: number; y0: number; x1: number; y1: number }
 export type Positions = ReturnType<typeof positions>;
 export interface Salle { n: number; ax: number; tables: [number, number][]; capacite: number; pos: Positions }
@@ -52,11 +52,11 @@ export function positions(n: number, ax: number, A: Actifs) {
   };
 
   // — accueil, près de la porte —
-  const accueilPersonnel = A.accueil === "hotesses" || A.accueil === "maitre_hotel";
+  const accueilPersonnel = A.accueils.includes("hotesses") || A.accueils.includes("maitre_hotel");
   const HOTESSES: [number, number][] = [[ax - 0.6, n - 1.0], [ax + 0.6, n - 1.0]];
   if (accueilPersonnel) HOTESSES.forEach(([x, y], i) => placed.push(centre(`hot${i}`, x, y, 0.3)));
   const MAITRE_HOTEL: [number, number] = [ax + 0.4, n - 2.0], HOTESSE_3: [number, number] = [ax - 0.4, n - 2.0];
-  if (A.accueil === "maitre_hotel") { placed.push(centre("maitre", ...MAITRE_HOTEL, 0.3)); placed.push(centre("hot3", ...HOTESSE_3, 0.3)); }
+  if (A.accueils.includes("maitre_hotel")) { placed.push(centre("maitre", ...MAITRE_HOTEL, 0.3)); placed.push(centre("hot3", ...HOTESSE_3, 0.3)); }
   const BOUQUETS: [number, number][] = ([[ax - 1.6, n - 0.7], [ax + 1.6, n - 0.7]] as [number, number][]).filter(([x]) => x >= 2.1);
   if (o.has("fleurs")) BOUQUETS.forEach(([x, y], i) => placed.push(centre(`bq${i}`, x, y, 0.35)));
   const DEPART_INVITES: [number, number] = [ax, n + 1.9];
@@ -95,7 +95,7 @@ export function positions(n: number, ax: number, A: Actifs) {
   if (o.has("the_bar")) placed.push(boite("the", THE_BAR.gx, THE_BAR.gy, THE_BAR.w, THE_BAR.d));
   const SALON = { gx: n - 3.9, gy: n - 1.45, w: 3.0, d: 1.3 };
   if (o.has("salon")) placed.push(boite("salon", SALON.gx, SALON.gy, SALON.w, SALON.d));
-  const COMPTOIR: [number, number] = poser(!!A.accueil && (A.accueil === "the" || A.accueil === "discret"), [[n - 6.7, n - 0.9], [n - 9.5, n - 0.9], [n - 12, n - 0.9]] as [number, number][], ([x, y]) => centre("comptoir", x + 0.6, y + 0.4, 0.8, 0.5));
+  const COMPTOIR: [number, number] = poser(A.accueils.includes("the") || A.accueils.includes("discret"), [[n - 6.7, n - 0.9], [n - 9.5, n - 0.9], [n - 12, n - 0.9]] as [number, number][], ([x, y]) => centre("comptoir", x + 0.6, y + 0.4, 0.8, 0.5));
   const FONTAINE = poser(o.has("fontaine"), [[n - 5.5, n - 0.9], [n - 9.2, n - 0.9], [n - 11.6, n - 0.9], [n - 0.9, n / 2 + 1.5]] as [number, number][], ([x, y]) => centre("fontaine", x, y, 0.9));
   const LIVRE_DOR = poser(o.has("livre_dor"), [[1.8, n - 1.0], [1.8, n - 2.2], [3.0, n - 1.0]] as [number, number][], ([x, y]) => centre("livre", x, y, 0.5));
   const PHOTOGRAPHE = poser(o.has("photographe"), [[5.2, 3.3], [3.6, 3.3], [5.2, 3.0]] as [number, number][], ([x, y]) => centre("photographe", x, y, 0.5));

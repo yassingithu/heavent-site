@@ -49,7 +49,7 @@ export default function HeaventCity() {
 
   const progression = avancement(choix);
   const nuit = phase === "scene" ? 0.06 + 0.5 * progression : 0.2;
-  const touches = [choix.style, choix.palette, choix.lumiere, choix.musiques.length ? 1 : null, choix.accueil].filter(Boolean).length + (choix.manuels.length ? 1 : 0);
+  const touches = [choix.style, choix.palette, choix.lumiere, choix.musiques.length ? 1 : null, choix.accueils.length ? 1 : null].filter(Boolean).length + (choix.manuels.length ? 1 : 0);
   const missions = missionsDuType(choix.type);
   const repondues = missions.filter((m) => choix.missions[m.id]).length;
   const missionsOuvertes = Math.min(missions.length, Math.max(1 + (touches >= 2 ? 1 : 0) + (touches >= 4 ? 1 : 0), repondues + (repondues < missions.length ? 1 : 0)));
@@ -75,7 +75,7 @@ export default function HeaventCity() {
   const agir = useCallback((a: Action) => {
     dispatch(a);
     if (a.t === "basculer" && !optionsActives(choix).includes(a.option)) montrer(a.option);
-    if (a.t === "choisir") { for (const c of ["lumiere", "accueil"] as const) if (a.patch[c]) montrer(c); if (a.patch.musiques) montrer("musique"); }
+    if (a.t === "choisir") { if (a.patch.lumiere) montrer("lumiere"); if (a.patch.accueils) montrer("accueil"); if (a.patch.musiques) montrer("musique"); }
   }, [choix, montrer]);
 
   const repondre = useCallback((m: string, r: string) => {
@@ -93,10 +93,10 @@ export default function HeaventCity() {
     if (p.lumiere && !exclus.includes("lumiere")) patch.lumiere = p.lumiere;
     const mus = p.musiques.filter((m) => !exclus.includes(`m:${m}`));
     if (mus.length) patch.musiques = [...new Set([...choix.musiques, ...mus])];
-    if (p.accueil && !exclus.includes("accueil")) patch.accueil = p.accueil;
+    if (p.accueil && !exclus.includes("accueil")) { patch.accueils = [...new Set([...choix.accueils, p.accueil])]; patch.retires = (patch.retires ?? choix.retires).filter((o) => (o as string) !== p.accueil); }
     const ajout = p.options.filter((o) => !exclus.includes(`o:${o}`));
     patch.manuels = [...new Set([...choix.manuels, ...ajout])] as OptionId[];
-    patch.retires = choix.retires.filter((o) => !ajout.includes(o));
+    patch.retires = (patch.retires ?? choix.retires).filter((o) => !ajout.includes(o));
     dispatch({ t: "appliquer", patch });
     petitSon("ok");
     montrer("lumiere");
@@ -137,7 +137,7 @@ export default function HeaventCity() {
   }, [choix, missions, missionsOuvertes, phase]);
 
   const r = rendu(choix);
-  const nbEtapes = (choix.style ? 1 : 0) + (choix.palette ? 1 : 0) + (choix.lumiere ? 1 : 0) + (choix.musiques.length ? 1 : 0) + (choix.accueil ? 1 : 0) + (choix.manuels.length ? 1 : 0) + repondues;
+  const nbEtapes = (choix.style ? 1 : 0) + (choix.palette ? 1 : 0) + (choix.lumiere ? 1 : 0) + (choix.musiques.length ? 1 : 0) + (choix.accueils.length ? 1 : 0) + (choix.manuels.length ? 1 : 0) + repondues;
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#17141a] text-[#F0E8D6]" data-testid="heavent-city" data-phase={phase}>

@@ -2,10 +2,10 @@
 import { Check } from "lucide-react";
 import { useMemo, useState, type Dispatch } from "react";
 import {
-  ACCUEILS, DECORS, EXPERIENCES, INVITES, LUMIERES, MUSIQUES, PALETTES, STYLES, TABLES_TYPES, disponiblePour, reservable, type TableId, type InfoOption, type MusiqueId, type OptionId,
+  ACCUEILS, DECORS, EXPERIENCES, INVITES, LUMIERES, MUSIQUES, PALETTES, STYLES, TABLES_TYPES, disponiblePour, reservable, type TableId, type AccueilId, type InfoOption, type MusiqueId, type OptionId,
 } from "./donnees";
 import {
-  accueilEffectif, lumiereEffective, missionsDuType, nbTables, optionsActives, rendu, type Action, type Choix,
+  accueilsEffectifs, lumiereEffective, missionsDuType, nbTables, optionsActives, rendu, type Action, type Choix,
 } from "./etat";
 import { N_MIN } from "./positions";
 import { MissionCarte } from "./Missions";
@@ -84,16 +84,16 @@ export default function Panneau({ choix, dispatch, onglet, onOnglet, onRepondre,
 }) {
   const type = choix.type!;
   const actives = useMemo(() => new Set<OptionId>(optionsActives(choix)), [choix]);
-  const lum = lumiereEffective(choix), mus = choix.musiques, acc = accueilEffectif(choix);
+  const lum = lumiereEffective(choix), mus = choix.musiques, acc = accueilsEffectifs(choix);
   const dispo = <T extends InfoOption>(l: T[]) => l.filter((o) => disponiblePour(o, type, choix.lieu));
   const missions = missionsDuType(type);
   const fait: Record<string, boolean> = {
-    style: !!choix.style, salle: choix.tables !== "rondes" || choix.invites !== INVITES.defaut, couleurs: !!choix.palette, lumiere: !!lum, musique: mus.length > 0, accueil: !!acc,
+    style: !!choix.style, salle: choix.tables !== "rondes" || choix.invites !== INVITES.defaut, couleurs: !!choix.palette, lumiere: !!lum, musique: mus.length > 0, accueil: acc.length > 0,
     decor: DECORS.some((d) => actives.has(d.id)), experiences: EXPERIENCES.some((d) => actives.has(d.id)), missions: missions.every((m) => !!choix.missions[m.id]),
   };
 
   const grille = "grid grid-cols-2 gap-2.5";
-  const unique = <K extends "lumiere" | "accueil">(cle: K, liste: InfoOption[], courant: string | null) => (
+  const unique = <K extends "lumiere">(cle: K, liste: InfoOption[], courant: string | null) => (
     <div className={grille} role="radiogroup">
       {dispo(liste).map((o) => <Carte key={o.id} id={o.id} nom={o.nom} phrase={o.phrase} on={courant === o.id} res={reservable(o)} radio testid={`${cle}-${o.id}`}
         onClick={() => dispatch({ t: "choisir", patch: { [cle]: courant === o.id ? null : o.id } as Partial<Choix> })} />)}
@@ -151,7 +151,20 @@ export default function Panneau({ choix, dispatch, onglet, onOnglet, onRepondre,
             </div>
           </>
         )}
-        {onglet === "accueil" && unique("accueil", ACCUEILS, acc)}
+        {onglet === "accueil" && (
+          <>
+            <p className="mb-2 text-[12.5px] text-[#B9B09C]">Tu peux les cumuler : par exemple un thé de bienvenue avec des hôtesses à l'entrée.</p>
+            <div className={grille}>
+              {dispo(ACCUEILS).map((o) => {
+                const on = acc.includes(o.id as AccueilId);
+                return <Carte key={o.id} id={o.id} nom={o.nom} phrase={o.phrase} on={on} res={reservable(o)} testid={`accueil-${o.id}`}
+                  onClick={() => dispatch({ t: "choisir", patch: on
+                    ? { accueils: choix.accueils.filter((a) => a !== o.id), retires: [...new Set([...choix.retires, o.id as OptionId])] }
+                    : { accueils: [...new Set([...choix.accueils, o.id as AccueilId])], retires: choix.retires.filter((r) => (r as string) !== o.id) } })} />;
+              })}
+            </div>
+          </>
+        )}
         {onglet === "decor" && multiple(DECORS)}
         {onglet === "experiences" && multiple(EXPERIENCES)}
         {onglet === "missions" && (

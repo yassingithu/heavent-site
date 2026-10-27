@@ -469,16 +469,16 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
   if (o.has("fleurs")) P.BOUQUETS.forEach(([gx, gy], i) => add(gx + gy, `bq${i}`, <Bouquet gx={gx} gy={gy} pal={pal} grand />));
 
   // Accueil
-  if (r.accueil === "hotesses" || r.accueil === "maitre_hotel") {
+  if (r.accueils.includes("hotesses") || r.accueils.includes("maitre_hotel")) {
     P.HOTESSES.forEach(([gx, gy], i) => add(gx + gy + 0.2, `h${i}`, <Personne x={X(gx, gy)} y={Y(gx, gy)} robe corps={pal.sombre ? pal.nappe : "#2d2a30"} echarpe={pal.deco} peau={peauDe(i + 1)} cheveux={cheveuxDe(i)} s={1.15} bob={animer} retard={i * 0.5} />));
   }
-  if (r.accueil === "maitre_hotel") {
+  if (r.accueils.includes("maitre_hotel")) {
     const [mx, my] = P.MAITRE_HOTEL, [hx, hy] = P.HOTESSE_3;
     add(mx + my, "maitre", <Personne x={X(mx, my)} y={Y(mx, my)} corps="#1f1d22" echarpe={pal.deco} peau={peauDe(3)} cheveux={cheveuxDe(2)} s={1.18} bob={animer} />);
     add(hx + hy, "h3", <Personne x={X(hx, hy)} y={Y(hx, hy)} robe corps={pal.sombre ? pal.nappe : "#2d2a30"} echarpe={pal.deco} peau={peauDe(0)} s={1.15} bob={animer} retard={0.9} />);
   }
-  if (r.accueil === "the") add(CO[0] + CO[1], "comptoir", <Comptoir gx={CO[0]} gy={CO[1]} pal={pal} the />);
-  if (r.accueil === "discret") add(CO[0] + CO[1], "comptoir", <Comptoir gx={CO[0]} gy={CO[1]} pal={pal} />);
+  if (r.accueils.includes("the")) add(CO[0] + CO[1], "comptoir", <Comptoir gx={CO[0]} gy={CO[1]} pal={pal} the />);
+  if (r.accueils.includes("discret") && !r.accueils.includes("the")) add(CO[0] + CO[1], "comptoir", <Comptoir gx={CO[0]} gy={CO[1]} pal={pal} />);
 
   // Lumière
   if (r.lumiere === "chaleureuse") P.POSTES_LANTERNES.forEach(([gx, gy], i) => { add(gx + gy, `pl${i}`, <PosteLanterne gx={gx} gy={gy} pal={pal} anime={animer} />); halos.push({ x: X(gx, gy), y: Y(gx, gy, 78), r: 62, a: 0.7, c: "chaud" }); });

@@ -1,0 +1,16 @@
+const { chromium } = await import("/opt/npm-tools/node_modules/playwright/index.mjs");
+const b = await chromium.launch(); const ctx = await b.newContext({ locale: "fr-FR", viewport: { width: 1360, height: 820 } });
+await ctx.addInitScript(() => { try { sessionStorage.setItem("heavent-splash-vu", "1"); } catch {} });
+await ctx.route(/fonts\.(googleapis|gstatic)|googletagmanager|supabase\.co/, (r) => r.abort());
+const p = await ctx.newPage(); const err = []; p.on("pageerror", (e) => err.push(e.message)); const t = (i) => p.getByTestId(i);
+await p.goto("http://127.0.0.1:5180/apercu/heavent-city"); await p.waitForTimeout(1000);
+await t("commencer").click(); await t("type-mariage").click(); await t("q-passer").click(); await t("ville-Casablanca").click(); await t("q-passer").click(); await t("q-passer").click();
+await t("liste-lieu-riad").click(); await p.waitForTimeout(2500);
+await t("onglet-accueil").click(); await t("accueil-the").click(); await t("accueil-hotesses").click(); await p.waitForTimeout(600);
+const c = async () => [await t("accueil-the").getAttribute("aria-checked"), await t("accueil-hotesses").getAttribute("aria-checked")];
+console.log("cumul", await c());
+await p.screenshot({ path: "/tmp/claude-0/hc/acc.png" });
+await t("accueil-the").click(); console.log("retrait thé", await c());
+await t("annuler").click(); console.log("annuler", await c());
+await p.reload(); await p.waitForTimeout(1000); console.log(JSON.stringify({ err }));
+await b.close();

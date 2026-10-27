@@ -11,7 +11,7 @@ for (let it = 0; it < 3000; it++) {
   const type = (["rondes", "rectangulaires", "hautes"] as const)[it % 3 === 0 ? (it / 3) % 3 : Math.floor(rnd() * 3)];
   const inv = [30, 80, 120, 200, 300, 400, 500][Math.floor(rnd() * 7)];
   const nb = Math.max(2, Math.ceil(inv / (type === "rondes" ? 10 : 6)));
-  const A = { options, musiques, accueil: accs[Math.floor(rnd() * 5)], lumiere: lums[Math.floor(rnd() * 5)], type: rnd() < 0.2 ? "pro" : "mariage", tables: type };
+  const A = { options, musiques, accueils: [accs[Math.floor(rnd() * 5)], accs[Math.floor(rnd() * 5)]].filter(Boolean) as string[], lumiere: lums[Math.floor(rnd() * 5)], type: rnd() < 0.2 ? "pro" : "mariage", tables: type };
   const s = dimensionner(nb, type, A); total++; maxN = Math.max(maxN, s.n);
   if (s.tables.length < nb) { short++; if (short < 6) console.log("manque", type, inv, nb, s.tables.length, s.n, [...options].length, musiques.length); }
   const ob = s.pos.obstacles;

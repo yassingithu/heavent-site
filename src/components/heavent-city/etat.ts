@@ -25,7 +25,8 @@ export interface Choix {
   lumiere: LumiereId | null;
   /** plusieurs musiques possibles dans la même soirée (ex. orchestre + troupe folklorique) */
   musiques: MusiqueId[];
-  accueil: AccueilId | null;
+  /** plusieurs accueils possibles ensemble (ex. thé de bienvenue + hôtesses) */
+  accueils: AccueilId[];
   /** options ajoutées à la main, et options retirées alors qu'une mission les avait apportées */
   manuels: OptionId[];
   retires: OptionId[];
@@ -41,7 +42,7 @@ export interface Choix {
 
 export const CHOIX_VIDE: Choix = {
   type: null, nomEvt: "", ville: "", invites: INVITES.defaut, date: "", dateInconnue: false, lieu: null,
-  style: null, palette: null, lumiere: null, musiques: [], accueil: null, manuels: [], retires: [], missions: {}, note: "", tables: "rondes", deplacements: {},
+  style: null, palette: null, lumiere: null, musiques: [], accueils: [], manuels: [], retires: [], missions: {}, note: "", tables: "rondes", deplacements: {},
 };
 
 export interface Etat {
@@ -114,7 +115,7 @@ export function reducteur(e: Etat, a: Action): Etat {
       const c = { ...e.choix, missions: { ...e.choix.missions, [a.mission]: rep ? rep.id : "passe" } };
       if (rep) {
         // La dernière décision l'emporte : la réponse remplace un choix manuel contradictoire
-        if (rep.accueil) c.accueil = null;
+        if (rep.accueil) c.retires = c.retires.filter((o) => (o as string) !== rep.accueil);
         if (rep.lumiere) c.lumiere = null;
         if (rep.musique && !c.musiques.includes(rep.musique as MusiqueId)) c.musiques = [...c.musiques, rep.musique as MusiqueId];
         c.retires = c.retires.filter((o) => !rep.ajoute.includes(o));
@@ -142,6 +143,7 @@ function nettoyer(c: Choix): Choix {
   const garde = (id: string) => { const o = infoOption(id); return !!o && disponiblePour(o, type, c.lieu); };
   const invites = Math.min(INVITES.max, Math.max(INVITES.min, Math.round(Number(c.invites) || INVITES.defaut)));
   const musiques = (Array.isArray(c.musiques) ? c.musiques : []).filter(garde);
+  const accueils = (Array.isArray(c.accueils) ? c.accueils : []).filter(garde);
   const tables: TableId = c.tables === "rectangulaires" || c.tables === "hautes" ? c.tables : "rondes";
   const dep: Record<string, [number, number]> = {};
   for (const [k, v] of Object.entries(c.deplacements && typeof c.deplacements === "object" ? c.deplacements : {})) {
@@ -150,7 +152,7 @@ function nettoyer(c: Choix): Choix {
   return {
     ...c, invites, tables, deplacements: dep,
     manuels: c.manuels.filter(garde), retires: c.retires.filter(garde),
-    musiques,
+    musiques, accueils,
     missions: Object.fromEntries(Object.entries(c.missions).filter(([k]) => missionsDuType(type).some((m) => m.id === k))),
   };
 }
@@ -169,7 +171,7 @@ export function optionsActives(c: Choix): OptionId[] {
   return [...set].filter((o) => { const i = infoOption(o); return !!i && !!c.type && disponiblePour(i, c.type, c.lieu); });
 }
 
-function dernierDeMission<K extends "accueil" | "lumiere">(c: Choix, cle: K) {
+function dernierDeMission(c: Choix, cle: "lumiere") {
   let v: string | null = null;
   for (const m of missionsDuType(c.type)) {
     const r = m.reponses.find((x) => x.id === c.missions[m.id]);
@@ -177,12 +179,21 @@ function dernierDeMission<K extends "accueil" | "lumiere">(c: Choix, cle: K) {
   }
   return v;
 }
-export const accueilEffectif = (c: Choix): AccueilId | null => (c.accueil ?? dernierDeMission(c, "accueil")) as AccueilId | null;
+/** Accueils présents : ceux choisis à la main + ceux apportés par les missions − ceux retirés (le thé et les hôtesses se cumulent) */
+export function accueilsEffectifs(c: Choix): AccueilId[] {
+  const set = new Set<AccueilId>(c.accueils);
+  for (const m of missionsDuType(c.type)) {
+    const r = m.reponses.find((x) => x.id === c.missions[m.id]);
+    if (r?.accueil) set.add(r.accueil);
+  }
+  c.retires.forEach((o) => set.delete(o as AccueilId));
+  return [...set];
+}
 export const lumiereEffective = (c: Choix): LumiereId | null => (c.lumiere ?? dernierDeMission(c, "lumiere")) as LumiereId | null;
 
 /** Tout ce que la scène doit dessiner, déduit du choix */
 export interface Rendu {
-  type: TypeEvt; lieu: LieuId; style: StyleId; palette: PaletteId; lumiere: LumiereId | null; musiques: MusiqueId[]; accueil: AccueilId | null;
+  type: TypeEvt; lieu: LieuId; style: StyleId; palette: PaletteId; lumiere: LumiereId | null; musiques: MusiqueId[]; accueils: AccueilId[];
   options: Set<OptionId>; invites: number; tablesTotal: number; tablesVisibles: number; titre: string;
   tables: TableId; salle: Salle; deplacements: Record<string, [number, number]>;
 }
@@ -195,10 +206,10 @@ export function rendu(c: Choix): Rendu | null {
   const palette = c.palette ?? STYLES.find((s) => s.id === style)!.palette;
   const tables = nbTables(c.invites, c.tables);
   const options = new Set(optionsActives(c));
-  const lum = lumiereEffective(c), acc = accueilEffectif(c);
-  const salle = dimensionner(tables, c.tables, { options, musiques: c.musiques, accueil: acc, lumiere: lum, type: c.type, tables: c.tables });
+  const lum = lumiereEffective(c), acc = accueilsEffectifs(c);
+  const salle = dimensionner(tables, c.tables, { options, musiques: c.musiques, accueils: acc, lumiere: lum, type: c.type, tables: c.tables });
   return {
-    type: c.type, lieu: c.lieu ?? "riad", style, palette, lumiere: lumiereEffective(c), musiques: c.musiques, accueil: accueilEffectif(c),
+    type: c.type, lieu: c.lieu ?? "riad", style, palette, lumiere: lumiereEffective(c), musiques: c.musiques, accueils: acc,
     options, invites: c.invites, tablesTotal: tables, tablesVisibles: salle.tables.length, titre: titreEvenement(c),
     tables: c.tables, salle, deplacements: c.deplacements,
   };
@@ -216,16 +227,16 @@ export function titreEvenement(c: Choix): string {
 
 /** Part de la soirée atteinte (0 = coucher de soleil, 1 = pleine soirée) selon l'avancement */
 export function avancement(c: Choix): number {
-  const etapes = [c.style, c.palette, c.lumiere ?? dernierDeMission(c, "lumiere"), c.musiques.length ? 1 : null, c.accueil ?? dernierDeMission(c, "accueil")]
+  const etapes = [c.style, c.palette, c.lumiere ?? dernierDeMission(c, "lumiere"), c.musiques.length ? 1 : null, accueilsEffectifs(c).length ? 1 : null]
     .filter(Boolean).length + Math.min(3, optionsActives(c).length) + Object.keys(c.missions).length;
   return Math.min(1, etapes / 10);
 }
 
 export function badges(c: Choix): { id: string; nom: string }[] {
   const out: { id: string; nom: string }[] = [];
-  const acc = accueilEffectif(c); const mus = c.musiques; const lum = lumiereEffective(c);
+  const acc = accueilsEffectifs(c); const mus = c.musiques; const lum = lumiereEffective(c);
   const opts = optionsActives(c);
-  if (acc && acc !== "discret") out.push(BADGES[0]);
+  if (acc.some((a) => a !== "discret")) out.push(BADGES[0]);
   if (mus.some((m) => m === "dj" || m === "orchestre" || m === "troupe") || lum === "festive" || lum === "etoilee" || opts.includes("piste") || opts.includes("feux_froids")) out.push(BADGES[1]);
   const exp = opts.filter((o) => EXPERIENCES.some((x) => x.id === o)).length;
   if (exp >= 2 || opts.length >= 4) out.push(BADGES[2]);
@@ -245,7 +256,7 @@ const ligne = (id: string): Ligne => { const o = infoOption(id)!; return { nom: 
 
 export function resume(c: Choix): Resume {
   const opts = optionsActives(c);
-  const acc = accueilEffectif(c); const mus = c.musiques; const lum = lumiereEffective(c);
+  const acc = accueilsEffectifs(c); const mus = c.musiques; const lum = lumiereEffective(c);
   const style = STYLES.find((s) => s.id === (c.style ?? "beige_or"))!;
   return {
     type: TYPES.find((t) => t.id === c.type)?.nom ?? "Événement", titre: titreEvenement(c), invites: c.invites, tables: nbTables(c.invites, c.tables), typeTables: infoTable(c.tables).nom.toLowerCase(), deplaces: Object.keys(c.deplacements).length,
@@ -253,7 +264,7 @@ export function resume(c: Choix): Resume {
     palette: PALETTES.find((p) => p.id === (c.palette ?? style.palette))!.nom,
     lumiere: lum ? LUMIERES.find((l) => l.id === lum)!.nom : null,
     musique: mus.length ? mus.map((id) => MUSIQUES.find((m) => m.id === id)!.nom).join(" + ") : null,
-    accueil: acc ? ACCUEILS.find((a) => a.id === acc)!.nom : null,
+    accueil: acc.length ? acc.map((id) => ACCUEILS.find((a) => a.id === id)!.nom).join(" + ") : null,
     decors: opts.filter((o) => DECORS.some((d) => d.id === o)).map(ligne),
     experiences: opts.filter((o) => EXPERIENCES.some((x) => x.id === o)).map(ligne),
     missions: missionsDuType(c.type).filter((m) => c.missions[m.id]).map((m) => ({
@@ -290,7 +301,7 @@ export function configurationAdmin(c: Choix): { elements: Record<string, number>
   const tt = infoTable(c.tables);
   mettre(tt.catalogue, nbTables(c.invites, c.tables)); nom[tt.catalogue] = tt.libelle;
   if (c.type === "mariage" && c.tables !== "hautes") { mettre("honneur", 1); nom.honneur = "Table d'honneur"; }
-  const ids = [...optionsActives(c), lumiereEffective(c), ...c.musiques, accueilEffectif(c)].filter(Boolean) as string[];
+  const ids = [...optionsActives(c), lumiereEffective(c), ...c.musiques, ...accueilsEffectifs(c)].filter(Boolean) as string[];
   for (const id of ids) {
     const o = infoOption(id); if (!o?.catalogue) continue;
     const n = id === "hotesses" ? Math.max(2, Math.ceil(c.invites / 60))
@@ -315,6 +326,7 @@ export function lireSauvegarde(): Etat | null {
     if (!j || j.version !== VERSION || typeof j.choix !== "object") { localStorage.removeItem(CLE_SAUVEGARDE); return null; }
     // anciennes sauvegardes : une seule musique
     if (j.choix.musique && !j.choix.musiques) j.choix.musiques = [j.choix.musique];
+    if (j.choix.accueil && !j.choix.accueils) j.choix.accueils = [j.choix.accueil];
     const choix = nettoyer({ ...CHOIX_VIDE, ...j.choix, note: "" });
     const phase: Phase = ["accueil", "ville", "scene", "final"].includes(j.phase) ? j.phase : "accueil";
     return { ...ETAT_INITIAL, accueilLu: !!j.accueilLu, phase: choix.type ? (phase === "accueil" ? "accueil" : phase) : "accueil", choix, onglet: typeof j.onglet === "string" ? j.onglet : "style" };
