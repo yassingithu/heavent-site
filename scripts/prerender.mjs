@@ -32,6 +32,8 @@ const PRIVEES = ["admin", "admin-auth", "auth", "auth/callback", "staff-dashboar
 const shell = readFileSync("dist/index.html", "utf8");
 const shellPrive = shell.replace("<head>", '<head>\n    <meta name="robots" content="noindex, nofollow" />');
 for (const r of PRIVEES) { mkdirSync(`dist/${r}`, { recursive: true }); writeFileSync(`dist/${r}/index.html`, shellPrive); }
+// Page d'erreur 404 du serveur (ErrorDocument) : l'application affiche « Page non trouvée », jamais indexée
+writeFileSync("dist/404.html", shellPrive);
 
 let chromium;
 try { ({ chromium } = await import("/opt/npm-tools/node_modules/playwright/index.mjs")); }
