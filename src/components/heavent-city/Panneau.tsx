@@ -1,18 +1,19 @@
 /** Panneau de personnalisation : style, couleurs, lumière, musique, accueil, décoration, expériences, missions */
 import { Check } from "lucide-react";
-import { useMemo, type Dispatch } from "react";
+import { useMemo, useState, type Dispatch } from "react";
 import {
-  ACCUEILS, DECORS, EXPERIENCES, LUMIERES, MUSIQUES, PALETTES, STYLES, disponiblePour, reservable, type InfoOption, type MusiqueId, type OptionId,
+  ACCUEILS, DECORS, EXPERIENCES, INVITES, LUMIERES, MUSIQUES, PALETTES, STYLES, TABLES_TYPES, disponiblePour, reservable, type TableId, type InfoOption, type MusiqueId, type OptionId,
 } from "./donnees";
 import {
-  accueilEffectif, lumiereEffective, missionsDuType, optionsActives, type Action, type Choix,
+  accueilEffectif, lumiereEffective, missionsDuType, nbTables, optionsActives, type Action, type Choix,
 } from "./etat";
+import { dimensionner, N_MIN } from "./positions";
 import { MissionCarte } from "./Missions";
 import { Picto, Pastille } from "./ui";
 import { petitSon } from "./son";
 
 export const ONGLETS = [
-  { id: "style", nom: "Style" }, { id: "couleurs", nom: "Couleurs" }, { id: "lumiere", nom: "Lumière" }, { id: "musique", nom: "Musique" },
+  { id: "style", nom: "Style" }, { id: "salle", nom: "Salle" }, { id: "couleurs", nom: "Couleurs" }, { id: "lumiere", nom: "Lumière" }, { id: "musique", nom: "Musique" },
   { id: "accueil", nom: "Accueil" }, { id: "decor", nom: "Décor" }, { id: "experiences", nom: "Expériences" }, { id: "missions", nom: "Missions" },
 ] as const;
 
@@ -31,6 +32,53 @@ function Carte({ id, nom, phrase, on, onClick, res, radio, testid }: { id: strin
   );
 }
 
+/** Invités, tables et déplacement : le nombre de tables suit toujours les invités et la salle s'agrandit toute seule */
+function Salle({ choix, dispatch }: { choix: Choix; dispatch: Dispatch<Action> }) {
+  const [saisie, setSaisie] = useState<number | null>(null);
+  const valeur = saisie ?? choix.invites;
+  const info = TABLES_TYPES.find((t) => t.id === choix.tables)!;
+  const nb = nbTables(valeur, choix.tables), n = dimensionner(nb, choix.tables).n;
+  const fixer = (v: number) => { setSaisie(null); dispatch({ t: "choisir", patch: { invites: Math.min(INVITES.max, Math.max(INVITES.min, Math.round(v) || INVITES.defaut)) } }); };
+  const deplaces = Object.keys(choix.deplacements).length;
+  return (
+    <div className="grid gap-4" data-testid="onglet-salle-contenu">
+      <div>
+        <label htmlFor="salle-invites" className="flex items-baseline justify-between text-[14px] text-[#F6EFDD]"><span>Nombre d'invités</span><b className="font-serif text-xl text-[#E4D49A]" data-testid="salle-valeur">{valeur}</b></label>
+        <input id="salle-invites" type="range" min={INVITES.min} max={INVITES.max} step={5} value={valeur} data-testid="salle-curseur"
+          onChange={(e) => setSaisie(Number(e.target.value))} onPointerUp={() => saisie !== null && fixer(saisie)} onKeyUp={() => saisie !== null && fixer(saisie)} onBlur={() => saisie !== null && fixer(saisie)}
+          className="mt-2 h-8 w-full accent-[#C9A74E]" />
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {[50, 120, 200, 300, 400].map((v) => <button key={v} type="button" onClick={() => fixer(v)} data-testid={`salle-invites-${v}`} className={`min-h-10 rounded-full border px-3 text-[13px] ${choix.invites === v ? "border-[#C9A74E] bg-[#C9A74E] font-semibold text-[#17141a]" : "border-white/15 bg-white/[0.05] text-[#F0E8D6]"}`}>{v}</button>)}
+        </div>
+        <p className="mt-2 text-[13px] leading-snug text-[#D9D0BC]" aria-live="polite" data-testid="salle-bilan">
+          {nb} {info.nom.toLowerCase()} pour {valeur} invités.{n > N_MIN ? " La salle s'est agrandie pour tout accueillir." : ""}
+        </p>
+      </div>
+      <div>
+        <p className="mb-2 text-[14px] text-[#F6EFDD]">Type de tables</p>
+        <div className="grid gap-2" role="radiogroup" aria-label="Type de tables">
+          {TABLES_TYPES.map((t) => {
+            const on = choix.tables === t.id;
+            return (
+              <button key={t.id} type="button" role="radio" aria-checked={on} data-testid={`tables-${t.id}`} onClick={() => { petitSon("clic"); dispatch({ t: "choisir", patch: { tables: t.id as TableId } }); }}
+                className={`flex min-h-[64px] items-start gap-3 rounded-2xl border p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F4D774] ${on ? "border-[#C9A74E] bg-[#C9A74E]/15" : "border-white/12 bg-white/[0.04] hover:bg-white/[0.09]"}`}>
+                <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${on ? "border-[#C9A74E] bg-[#C9A74E] text-[#17141a]" : "border-white/30"}`}>{on && <Check className="h-3.5 w-3.5" />}</span>
+                <span><span className="block text-[14px] font-medium text-[#F6EFDD]">{t.nom}</span><span className="block text-[12px] leading-snug text-[#B9B09C]">{t.phrase}</span></span>
+              </button>
+            );
+          })}
+        </div>
+        {choix.tables === "hautes" && choix.type === "mariage" && <p className="mt-2 text-[12px] leading-snug text-[#B9B09C]">Avec des tables hautes, il n'y a pas de table d'honneur : tout le monde est debout, façon cocktail.</p>}
+      </div>
+      <div className="rounded-2xl border border-white/12 bg-white/[0.04] p-3">
+        <p className="text-[14px] text-[#F6EFDD]">Déplacer des objets</p>
+        <p className="mt-0.5 text-[12px] leading-snug text-[#B9B09C]">Touche « Déplacer » au-dessus de la scène, puis fais glisser une table, la piste, le buffet… Tu peux annuler à tout moment.</p>
+        {deplaces > 0 && <button type="button" onClick={() => dispatch({ t: "remettre" })} data-testid="remettre-panneau" className="mt-2 min-h-10 rounded-full border border-white/20 px-3.5 text-[13px] text-[#F0E8D6] hover:bg-white/10">Tout remettre en place ({deplaces})</button>}
+      </div>
+    </div>
+  );
+}
+
 export default function Panneau({ choix, dispatch, onglet, onOnglet, onRepondre, missionsOuvertes, className = "" }: {
   choix: Choix; dispatch: Dispatch<Action>; onglet: string; onOnglet: (o: string) => void; onRepondre: (m: string, r: string) => void; missionsOuvertes: number; className?: string;
 }) {
@@ -40,7 +88,7 @@ export default function Panneau({ choix, dispatch, onglet, onOnglet, onRepondre,
   const dispo = <T extends InfoOption>(l: T[]) => l.filter((o) => disponiblePour(o, type, choix.lieu));
   const missions = missionsDuType(type);
   const fait: Record<string, boolean> = {
-    style: !!choix.style, couleurs: !!choix.palette, lumiere: !!lum, musique: mus.length > 0, accueil: !!acc,
+    style: !!choix.style, salle: choix.tables !== "rondes" || choix.invites !== INVITES.defaut, couleurs: !!choix.palette, lumiere: !!lum, musique: mus.length > 0, accueil: !!acc,
     decor: DECORS.some((d) => actives.has(d.id)), experiences: EXPERIENCES.some((d) => actives.has(d.id)), missions: missions.every((m) => !!choix.missions[m.id]),
   };
 
@@ -77,6 +125,7 @@ export default function Panneau({ choix, dispatch, onglet, onOnglet, onRepondre,
             {STYLES.map((s) => <Carte key={s.id} id={s.id} nom={s.nom} phrase={s.phrase} on={choix.style === s.id} res={false} radio testid={`style-${s.id}`} onClick={() => dispatch({ t: "choisir", patch: { style: s.id } })} />)}
           </div>
         )}
+        {onglet === "salle" && <Salle choix={choix} dispatch={dispatch} />}
         {onglet === "couleurs" && (
           <div className="grid grid-cols-2 gap-2.5" role="radiogroup" aria-label="Palette de couleurs">
             {PALETTES.map((p) => {

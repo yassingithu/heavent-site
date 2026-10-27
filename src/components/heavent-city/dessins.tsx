@@ -4,7 +4,6 @@
  */
 import type { ReactNode } from "react";
 import { X, Y, poly, pt, rx, ry, assombrir, eclaircir, melanger, hasard } from "./iso";
-import { PORTE } from "./positions";
 
 export interface Pal { nappe: string; fleurs: string; accent: string; deco: string; sombre?: boolean }
 
@@ -109,6 +108,53 @@ export function TableRonde({ gx, gy, r = 0.85, nbChaises = 8, pal, fleurs, bougi
       {chairs.filter((t) => Math.sin(t) >= 0).slice(0, Math.max(0, invites - chairs.filter((t) => Math.sin(t) < 0).length)).map((t, i) => {
         const p = pos(t); return <Personne key={`pf${i}`} x={p.x} y={p.y - 4} corps={i % 2 ? "#3d352e" : pal.accent} peau={peauDe(i + gy * 2)} cheveux={cheveuxDe(i + 5)} assis s={0.86} bob={animer} retard={retard + i * 0.4} robe={i % 2 === 0} />;
       })}
+    </g>
+  );
+}
+
+/** Table rectangulaire (banquet) : centrée en (gx, gy), 3 chaises de chaque côté */
+export function TableRect({ gx, gy, pal, fleurs, bougies, invites = 0, retard = 0, animer, nbChaises = 6 }: { gx: number; gy: number; pal: Pal; fleurs?: boolean; bougies?: boolean; invites?: number; retard?: number; animer?: boolean; nbChaises?: number }) {
+  const w = 1.7, d = 0.78, h = 23;
+  const chaise = melanger(pal.sombre ? pal.deco : "#EFE5D0", pal.accent, 0.18);
+  const parCote = Math.max(1, Math.ceil(nbChaises / 2));
+  const xs = Array.from({ length: parCote }, (_, k) => gx - w / 2 + (w * (k + 0.5)) / parCote);
+  const dos = (k: number) => ({ x: X(xs[k], gy - d / 2 - 0.3), y: Y(xs[k], gy - d / 2 - 0.3) });
+  const face = (k: number) => ({ x: X(xs[k], gy + d / 2 + 0.3), y: Y(xs[k], gy + d / 2 + 0.3) });
+  const nbDos = Math.min(parCote, Math.ceil(nbChaises / 2)), nbFace = Math.min(parCote, Math.floor(nbChaises / 2) || 1);
+  return (
+    <g>
+      <ellipse cx={X(gx, gy)} cy={Y(gx, gy) + 2} rx={rx(1.2)} ry={ry(0.8)} fill="#2b1a10" opacity="0.18" />
+      {xs.slice(0, nbDos).map((_, k) => { const p = dos(k); return <Chaise key={`d${k}`} x={p.x} y={p.y} couleur={chaise} />; })}
+      {xs.slice(0, Math.min(nbDos, invites)).map((_, k) => { const p = dos(k); return <Personne key={`pd${k}`} x={p.x} y={p.y - 4} corps={k % 2 ? pal.accent : "#3d352e"} peau={peauDe(k + gx * 3)} cheveux={cheveuxDe(k + 2)} assis s={0.82} bob={animer} retard={retard + k * 0.3} robe={k % 3 === 1} />; })}
+      <Boite gx={gx - w / 2} gy={gy - d / 2} w={w} d={d} h={h} haut={pal.nappe} gauche={assombrir(pal.nappe, 0.1)} droite={assombrir(pal.nappe, 0.22)} />
+      <polygon points={poly([gx - w / 2, gy + d / 2, 7], [gx + w / 2, gy + d / 2, 7], [gx + w / 2, gy + d / 2, 4], [gx - w / 2, gy + d / 2, 4])} fill={pal.accent} opacity="0.8" />
+      <polygon points={poly([gx - w / 2 + 0.12, gy - d / 2 + 0.12, h], [gx + w / 2 - 0.12, gy - d / 2 + 0.12, h], [gx + w / 2 - 0.12, gy + d / 2 - 0.12, h], [gx - w / 2 + 0.12, gy + d / 2 - 0.12, h])} fill="none" stroke={pal.accent} strokeWidth="0.9" opacity="0.5" />
+      {fleurs && [-0.35, 0.35].map((dx, i) => <g key={i}><circle cx={X(gx + dx, gy)} cy={Y(gx + dx, gy, h + 6)} r="4.4" fill={i ? eclaircir(pal.fleurs, 0.2) : pal.fleurs} /><circle cx={X(gx + dx, gy) + 2.5} cy={Y(gx + dx, gy, h + 9)} r="2.8" fill={pal.fleurs} /></g>)}
+      {bougies && [-0.55, 0.55].map((dx) => <g key={dx}><rect x={X(gx + dx, gy) - 1.5} y={Y(gx + dx, gy, h + 7)} width="3" height="7" rx="1" fill="#F7EEDC" /><ellipse cx={X(gx + dx, gy)} cy={Y(gx + dx, gy, h + 9.5)} rx="1.7" ry="3" fill="#FFD27A" className={animer ? "hc-flamme" : undefined} /></g>)}
+      {xs.slice(0, nbFace).map((_, k) => { const p = face(k); return <Chaise key={`f${k}`} x={p.x} y={p.y} couleur={chaise} devant />; })}
+      {xs.slice(0, Math.max(0, Math.min(nbFace, invites - nbDos))).map((_, k) => { const p = face(k); return <Personne key={`pf${k}`} x={p.x} y={p.y - 4} corps={k % 2 ? "#3d352e" : pal.accent} peau={peauDe(k + gy * 2)} cheveux={cheveuxDe(k + 5)} assis s={0.86} bob={animer} retard={retard + k * 0.4} robe={k % 2 === 0} />; })}
+    </g>
+  );
+}
+
+/** Table haute (mange-debout) nappée : les invités restent debout autour */
+export function TableHaute({ gx, gy, pal, fleurs, bougies, invites = 0, retard = 0, animer }: { gx: number; gy: number; pal: Pal; fleurs?: boolean; bougies?: boolean; invites?: number; retard?: number; animer?: boolean }) {
+  const cx = X(gx, gy), cy = Y(gx, gy), a = rx(0.3), b = ry(0.3), h = 46;
+  const pers = Array.from({ length: Math.min(4, invites) }, (_, i) => (i / Math.max(1, Math.min(4, invites))) * Math.PI * 2 + 0.7);
+  const place = (t: number) => ({ x: cx + Math.cos(t) * (a + 17), y: cy + Math.sin(t) * (b + 9) });
+  const perso = (t: number, i: number) => { const p = place(t); return <Personne key={`p${i}`} x={p.x} y={p.y} corps={i % 2 ? pal.accent : "#3d352e"} peau={peauDe(i + gx * 3)} cheveux={cheveuxDe(i + 2)} s={0.92} bob={animer} retard={retard + i * 0.3} robe={i % 3 === 1} />; };
+  return (
+    <g>
+      <ellipse cx={cx} cy={cy + 2} rx={a + 6} ry={b + 3} fill="#2b1a10" opacity="0.2" />
+      {pers.map((t, i) => (Math.sin(t) < 0 ? perso(t, i) : null))}
+      {/* nappe tendue, plus large en bas qu'en haut */}
+      <path d={`M${cx - a} ${cy - h} L${cx - a - 5} ${cy - 3} Q${cx} ${cy + b + 3} ${cx + a + 5} ${cy - 3} L${cx + a} ${cy - h} Z`} fill={assombrir(pal.nappe, 0.12)} />
+      <path d={`M${cx - a - 5} ${cy - 3} Q${cx} ${cy + b + 3} ${cx + a + 5} ${cy - 3}`} fill="none" stroke={pal.accent} strokeWidth="1.2" opacity="0.8" />
+      <ellipse cx={cx} cy={cy - h} rx={a} ry={b} fill={pal.nappe} />
+      <ellipse cx={cx} cy={cy - h} rx={a * 0.6} ry={b * 0.6} fill="none" stroke={pal.accent} strokeWidth="0.8" opacity="0.55" />
+      {fleurs && <g><rect x={cx - 1.2} y={cy - h - 7} width="2.4" height="6" fill={pal.deco} />{[[-3.5, -10], [3.5, -10], [0, -13]].map(([dx, dy], i) => <circle key={i} cx={cx + dx} cy={cy - h + dy} r="3.4" fill={i % 2 ? eclaircir(pal.fleurs, 0.2) : pal.fleurs} />)}</g>}
+      {bougies && <g><rect x={cx - 1.4} y={cy - h - 6} width="2.8" height="6" rx="1" fill="#F7EEDC" /><ellipse cx={cx} cy={cy - h - 8.5} rx="1.6" ry="2.8" fill="#FFD27A" className={animer ? "hc-flamme" : undefined} /></g>}
+      {pers.map((t, i) => (Math.sin(t) >= 0 ? perso(t, i) : null))}
     </g>
   );
 }
@@ -398,10 +444,10 @@ export function Troupe({ gx, gy, pal, actif }: { gx: number; gy: number; pal: Pa
   );
 }
 
-export function EnceintesAmbiance({ pal, actif }: { pal: Pal; actif?: boolean }) {
+export function EnceintesAmbiance({ pal, actif, pos }: { pal: Pal; actif?: boolean; pos: [number, number][] }) {
   return (
     <g>
-      {[[6.8, 0.5], [11.0, 0.5]].map(([gx, gy], i) => (
+      {pos.map(([gx, gy], i) => (
         <g key={i}>
           <Boite gx={gx} gy={gy} w={0.5} d={0.5} h={46} haut="#2b2b30" />
           <circle cx={X(gx + 0.5, gy + 0.25)} cy={Y(gx + 0.5, gy + 0.25, 30)} r="5" fill="#4a4a52" />
@@ -481,9 +527,9 @@ export function Comptoir({ gx, gy, pal, the }: { gx: number; gy: number; pal: Pa
   );
 }
 
-export function Porte({ pal, nuit, logo }: { pal: Pal; nuit: number; logo?: string }) {
-  const g = (a: number) => X(a, PORTE.gy), gy = (a: number, z = 0) => Y(a, PORTE.gy, z);
-  const x1 = g(PORTE.gauche), y1 = gy(PORTE.gauche), x2 = g(PORTE.droite), y2 = gy(PORTE.droite);
+export function Porte({ pal, nuit, logo, porte }: { pal: Pal; nuit: number; logo?: string; porte: { gauche: number; droite: number; gy: number } }) {
+  const g = (a: number) => X(a, porte.gy), gy = (a: number, z = 0) => Y(a, porte.gy, z);
+  const x1 = g(porte.gauche), y1 = gy(porte.gauche), x2 = g(porte.droite), y2 = gy(porte.droite);
   return (
     <g>
       {[[x1, y1], [x2, y2]].map(([x, y], i) => (

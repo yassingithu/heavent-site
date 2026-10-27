@@ -4,7 +4,7 @@
  * Aucun prix n'existe dans ce jeu. Voir LISEZMOI.md.
  */
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { ArrowLeft, Phone, Redo2, Undo2, DoorOpen } from "lucide-react";
+import { ArrowLeft, Hand, Phone, Redo2, Undo2, DoorOpen } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
 import logoHeavent from "@/assets/logo-heavent-or.png";
 import logoNawar from "@/assets/logo-nawar.png";
@@ -41,6 +41,7 @@ export default function HeaventCity() {
   const [focus, setFocus] = useState<{ cle: string; n: number } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [demande, setDemande] = useState(false);
+  const [deplacer, setDeplacer] = useState(false);
   const { choix, phase } = etat;
 
   // Sauvegarde locale (jamais de coordonnées : voir etat.ts)
@@ -173,10 +174,11 @@ export default function HeaventCity() {
       {phase === "scene" && r && (
         <div className="absolute inset-0 flex flex-col lg:flex-row" data-testid="scene">
           <div className="relative h-[40dvh] shrink-0 overflow-hidden lg:h-auto lg:flex-1">
-            <SceneSvg r={r} nuit={nuit} focus={focus} logos={LOGOS} animer={!reduit} />
+            <SceneSvg r={r} nuit={nuit} focus={focus} logos={LOGOS} animer={!reduit} deplacable={deplacer} onDeplacer={(id, dx, dy) => dispatch({ t: "deplacer", id, dx, dy })} />
             <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 bg-gradient-to-b from-black/55 to-transparent px-3 pb-6 pt-3">
               <button onClick={() => dispatch({ t: "phase", phase: "ville" })} className={`${btnContour} bg-black/35 !px-3`} data-testid="changer-lieu"><ArrowLeft className="h-4 w-4" /><span className="hidden sm:inline">Changer de lieu</span><span className="sm:hidden">Lieu</span></button>
               <div className="flex items-center gap-1.5">
+                <button onClick={() => setDeplacer((v) => !v)} aria-pressed={deplacer} data-testid="deplacer" className={`flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-[13.5px] font-medium ${deplacer ? "bg-[#F4D774] text-[#17141a]" : "bg-black/40 text-[#F0E8D6]"}`}><Hand className="h-4 w-4" />Déplacer</button>
                 <button onClick={() => dispatch({ t: "annuler" })} disabled={!etat.passe.length} aria-label="Annuler le dernier choix" data-testid="annuler" className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-[#F0E8D6] disabled:opacity-35"><Undo2 className="h-5 w-5" /></button>
                 <button onClick={() => dispatch({ t: "refaire" })} disabled={!etat.futur.length} aria-label="Rétablir" data-testid="refaire" className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-[#F0E8D6] disabled:opacity-35"><Redo2 className="h-5 w-5" /></button>
                 <button onClick={() => { setToast(null); setTelOnglet("messages"); setTelOuvert(true); }} aria-label="Ouvrir le téléphone" data-testid="ouvrir-telephone" className="relative flex h-11 w-11 items-center justify-center rounded-full bg-[#C9A74E] text-[#17141a] shadow-lg">
@@ -184,8 +186,17 @@ export default function HeaventCity() {
                 </button>
               </div>
             </div>
-            <div className="pointer-events-none absolute bottom-2 left-3 rounded-full bg-black/45 px-3 py-1 text-[12px] text-[#F0E8D6]" aria-live="polite">{r.tablesTotal > r.tablesVisibles ? `${r.tablesTotal} tables environ · ${r.tablesVisibles} affichées` : `${r.tablesTotal} tables environ`}</div>
-            {toast && (
+            <div className="pointer-events-none absolute bottom-2 left-3 rounded-full bg-black/45 px-3 py-1 text-[12px] text-[#F0E8D6]" aria-live="polite">{r.tablesTotal} {r.tables === "hautes" ? "tables hautes" : r.tables === "rectangulaires" ? "tables rectangulaires" : "tables rondes"} · {r.invites} invités</div>
+            {deplacer && (
+              <div className="absolute inset-x-3 bottom-10 z-10 mx-auto flex max-w-md flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#F4D774]/60 bg-[#17141a]/95 px-3.5 py-2.5 shadow-xl" data-testid="bandeau-deplacer" role="status">
+                <span className="text-[13px] leading-snug text-[#F6EFDD]">Fais glisser un objet pour le déplacer.</span>
+                <span className="flex gap-2">
+                  {Object.keys(choix.deplacements).length > 0 && <button onClick={() => dispatch({ t: "remettre" })} data-testid="remettre" className="min-h-10 rounded-full border border-white/25 px-3 text-[13px] text-[#F0E8D6]">Tout remettre</button>}
+                  <button onClick={() => setDeplacer(false)} data-testid="termine-deplacer" className="min-h-10 rounded-full bg-[#C9A74E] px-4 text-[13px] font-semibold text-[#17141a]">Terminé</button>
+                </span>
+              </div>
+            )}
+            {toast && !deplacer && (
               <button onClick={() => { setToast(null); setTelOnglet("missions"); setTelOuvert(true); }} data-testid="toast-mission" className="hc-fondu absolute inset-x-3 bottom-10 z-10 mx-auto flex max-w-sm items-center gap-3 rounded-2xl border border-[#C9A74E]/60 bg-[#17141a]/95 px-3.5 py-3 text-left shadow-xl">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#C9A74E] text-[#17141a]"><Phone className="h-4 w-4" /></span>
                 <span className="min-w-0"><span className="block text-[11px] uppercase tracking-wider text-[#E4D49A]">Nouveau message</span><span className="block truncate text-[14px] text-[#F6EFDD]">{toast}</span></span>
@@ -202,7 +213,7 @@ export default function HeaventCity() {
             <div className="flex items-center justify-between px-4 pb-1 pt-3"><p className="font-serif text-[18px] text-[#F6EFDD]">Donne vie à ton événement</p><p className="text-[12px] text-[#B9B09C]" data-testid="progression">{nbEtapes} choix · {repondues}/{missions.length} missions</p></div>
             <Panneau choix={choix} dispatch={agir as never} onglet={etat.onglet} onOnglet={(o) => dispatch({ t: "onglet", onglet: o })} onRepondre={repondre} missionsOuvertes={missionsOuvertes} className="min-h-0 flex-1" />
             <div className="border-t border-white/10 bg-[#141116] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-              <button onClick={() => dispatch({ t: "phase", phase: "final" })} className={`${btnOr} w-full min-h-12 text-base`} data-testid="ouvrir-portes"><DoorOpen className="h-5 w-5" />Ouvrir les portes</button>
+              <button onClick={() => { setDeplacer(false); dispatch({ t: "phase", phase: "final" }); }} className={`${btnOr} w-full min-h-12 text-base`} data-testid="ouvrir-portes"><DoorOpen className="h-5 w-5" />Ouvrir les portes</button>
             </div>
           </aside>
         </div>

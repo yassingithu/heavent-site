@@ -197,3 +197,13 @@ export const BADGES: { id: string; nom: string; test: string }[] = [
 
 export const MESSAGE_BIENVENUE = "Un événement exceptionnel se prépare. Et c'est toi qui prends les commandes.";
 export const PROMESSE = "Tu as les clés. Crée l'événement dont tout le monde parlera.";
+
+// ── Tables (types réellement proposés par Heavent : table ronde, table rectangulaire, table haute) ─────────
+export type TableId = "rondes" | "rectangulaires" | "hautes";
+export interface InfoTable { id: TableId; nom: string; phrase: string; places: number; catalogue: "table_ronde" | "table_rect" | "table_haute"; libelle: string }
+export const TABLES_TYPES: InfoTable[] = [
+  { id: "rondes", nom: "Tables rondes", phrase: "10 convives, chaises et nappe : le classique des mariages", places: 10, catalogue: "table_ronde", libelle: "Tables rondes" },
+  { id: "rectangulaires", nom: "Tables rectangulaires", phrase: "6 places, façon banquet : une allure plus sobre", places: 6, catalogue: "table_rect", libelle: "Tables rectangulaires" },
+  { id: "hautes", nom: "Tables hautes", phrase: "Mange-debout nappés, invités debout : idéal pour un cocktail", places: 6, catalogue: "table_haute", libelle: "Tables hautes (mange-debout)" },
+];
+export const infoTable = (id: TableId) => TABLES_TYPES.find((t) => t.id === id)!;

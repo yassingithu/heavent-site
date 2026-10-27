@@ -3,9 +3,10 @@
  * Le rendu (Scene.tsx) ne fait que LIRE ce qui est calculé ici ; il ne contient aucune règle.
  * Aucun montant n'existe dans cet état.
  */
+import { dimensionner, type Salle } from "./positions";
 import {
-  ACCUEILS, BADGES, DECORS, EXPERIENCES, INVITES, LIEUX, LUMIERES, MISSIONS, MUSIQUES, PALETTES, STYLES, TYPES, disponiblePour, infoOption, reservable,
-  type AccueilId, type LieuId, type LumiereId, type MusiqueId, type OptionId, type PaletteId, type StyleId, type TypeEvt,
+  ACCUEILS, BADGES, DECORS, EXPERIENCES, INVITES, LIEUX, LUMIERES, MISSIONS, MUSIQUES, PALETTES, STYLES, TYPES, disponiblePour, infoOption, infoTable, reservable,
+  type AccueilId, type LieuId, type LumiereId, type MusiqueId, type OptionId, type PaletteId, type StyleId, type TableId, type TypeEvt,
 } from "./donnees";
 
 export type Phase = "accueil" | "ville" | "scene" | "final";
@@ -32,11 +33,15 @@ export interface Choix {
   missions: Record<string, string>;
   /** note validée par le visiteur, transmise à l'équipe (jamais la conversation avec l'assistant) */
   note: string;
+  /** type de tables voulu (rondes par défaut) */
+  tables: TableId;
+  /** objets déplacés par le visiteur : identifiant → décalage en cases (jamais de prix) */
+  deplacements: Record<string, [number, number]>;
 }
 
 export const CHOIX_VIDE: Choix = {
   type: null, nomEvt: "", ville: "", invites: INVITES.defaut, date: "", dateInconnue: false, lieu: null,
-  style: null, palette: null, lumiere: null, musiques: [], accueil: null, manuels: [], retires: [], missions: {}, note: "",
+  style: null, palette: null, lumiere: null, musiques: [], accueil: null, manuels: [], retires: [], missions: {}, note: "", tables: "rondes", deplacements: {},
 };
 
 export interface Etat {
@@ -57,6 +62,8 @@ export type Action =
   | { t: "choisir"; patch: Partial<Choix> }
   | { t: "basculer"; option: OptionId }
   | { t: "mission"; mission: string; reponse: string }
+  | { t: "deplacer"; id: string; dx: number; dy: number }
+  | { t: "remettre" }
   | { t: "appliquer"; patch: Partial<Choix> }
   | { t: "annuler" }
   | { t: "refaire" }
@@ -77,7 +84,14 @@ export function reducteur(e: Etat, a: Action): Etat {
     case "phase": return { ...e, phase: a.phase };
     case "onglet": return { ...e, onglet: a.onglet };
     case "accueil_lu": return { ...e, accueilLu: true };
-    case "choisir": return avecChoix(e, nettoyer({ ...e.choix, ...a.patch }));
+    case "choisir": {
+      let suivant = { ...e.choix, ...a.patch };
+      // les tables changent de nombre ou de forme : leurs déplacements n'ont plus de sens
+      if ((a.patch.invites !== undefined && a.patch.invites !== e.choix.invites) || (a.patch.tables !== undefined && a.patch.tables !== e.choix.tables)) {
+        suivant = { ...suivant, deplacements: Object.fromEntries(Object.entries(suivant.deplacements).filter(([k]) => !/^t\d+$/.test(k))) };
+      }
+      return avecChoix(e, nettoyer(suivant));
+    }
     case "appliquer": return avecChoix(e, nettoyer({ ...e.choix, ...a.patch }));
     case "basculer": {
       const c = e.choix;
@@ -86,6 +100,13 @@ export function reducteur(e: Etat, a: Action): Etat {
       if (actives.has(a.option)) { m.delete(a.option); r.add(a.option); } else { r.delete(a.option); m.add(a.option); }
       return avecChoix(e, { ...c, manuels: [...m], retires: [...r] });
     }
+    case "deplacer": {
+      const dep = { ...e.choix.deplacements };
+      const dx = Math.round(a.dx * 20) / 20, dy = Math.round(a.dy * 20) / 20;
+      if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01) delete dep[a.id]; else dep[a.id] = [dx, dy];
+      return avecChoix(e, { ...e.choix, deplacements: dep });
+    }
+    case "remettre": return avecChoix(e, { ...e.choix, deplacements: {} });
     case "mission": {
       const mission = missionsDuType(e.choix.type).find((x) => x.id === a.mission);
       if (!mission) return e;
@@ -121,8 +142,13 @@ function nettoyer(c: Choix): Choix {
   const garde = (id: string) => { const o = infoOption(id); return !!o && disponiblePour(o, type, c.lieu); };
   const invites = Math.min(INVITES.max, Math.max(INVITES.min, Math.round(Number(c.invites) || INVITES.defaut)));
   const musiques = (Array.isArray(c.musiques) ? c.musiques : []).filter(garde);
+  const tables: TableId = c.tables === "rectangulaires" || c.tables === "hautes" ? c.tables : "rondes";
+  const dep: Record<string, [number, number]> = {};
+  for (const [k, v] of Object.entries(c.deplacements && typeof c.deplacements === "object" ? c.deplacements : {})) {
+    if (/^[a-z0-9_]{1,24}$/.test(k) && Array.isArray(v) && Number.isFinite(v[0]) && Number.isFinite(v[1])) dep[k] = [Math.max(-30, Math.min(30, v[0])), Math.max(-30, Math.min(30, v[1]))];
+  }
   return {
-    ...c, invites,
+    ...c, invites, tables, deplacements: dep,
     manuels: c.manuels.filter(garde), retires: c.retires.filter(garde),
     musiques,
     missions: Object.fromEntries(Object.entries(c.missions).filter(([k]) => missionsDuType(type).some((m) => m.id === k))),
@@ -158,17 +184,21 @@ export const lumiereEffective = (c: Choix): LumiereId | null => (c.lumiere ?? de
 export interface Rendu {
   type: TypeEvt; lieu: LieuId; style: StyleId; palette: PaletteId; lumiere: LumiereId | null; musiques: MusiqueId[]; accueil: AccueilId | null;
   options: Set<OptionId>; invites: number; tablesTotal: number; tablesVisibles: number; titre: string;
+  tables: TableId; salle: Salle; deplacements: Record<string, [number, number]>;
 }
-export const nbTables = (invites: number) => Math.max(2, Math.ceil(invites / 10));
+/** Nombre de tables : automatique (120 invités → 12 tables de 10, 400 invités → 40 tables) */
+export const nbTables = (invites: number, tables: TableId = "rondes") => Math.max(2, Math.ceil(invites / infoTable(tables).places));
 
 export function rendu(c: Choix): Rendu | null {
   if (!c.type) return null;
   const style = c.style ?? "beige_or";
   const palette = c.palette ?? STYLES.find((s) => s.id === style)!.palette;
-  const tables = nbTables(c.invites);
+  const tables = nbTables(c.invites, c.tables);
+  const salle = dimensionner(tables, c.tables);
   return {
     type: c.type, lieu: c.lieu ?? "riad", style, palette, lumiere: lumiereEffective(c), musiques: c.musiques, accueil: accueilEffectif(c),
-    options: new Set(optionsActives(c)), invites: c.invites, tablesTotal: tables, tablesVisibles: Math.min(12, tables), titre: titreEvenement(c),
+    options: new Set(optionsActives(c)), invites: c.invites, tablesTotal: tables, tablesVisibles: salle.tables.length, titre: titreEvenement(c),
+    tables: c.tables, salle, deplacements: c.deplacements,
   };
 }
 
@@ -205,7 +235,7 @@ export const missionsFaites = (c: Choix) => missionsDuType(c.type).filter((m) =>
 // ── Résumé (affichage, carte, demande à l'équipe) ───────────────────────────
 export interface Ligne { nom: string; reservable: boolean }
 export interface Resume {
-  type: string; titre: string; invites: number; tables: number; lieu: string; style: string; palette: string;
+  type: string; titre: string; invites: number; tables: number; typeTables: string; deplaces: number; lieu: string; style: string; palette: string;
   lumiere: string | null; musique: string | null; accueil: string | null;
   decors: Ligne[]; experiences: Ligne[]; missions: { titre: string; reponse: string }[]; badges: string[];
 }
@@ -216,7 +246,7 @@ export function resume(c: Choix): Resume {
   const acc = accueilEffectif(c); const mus = c.musiques; const lum = lumiereEffective(c);
   const style = STYLES.find((s) => s.id === (c.style ?? "beige_or"))!;
   return {
-    type: TYPES.find((t) => t.id === c.type)?.nom ?? "Événement", titre: titreEvenement(c), invites: c.invites, tables: nbTables(c.invites),
+    type: TYPES.find((t) => t.id === c.type)?.nom ?? "Événement", titre: titreEvenement(c), invites: c.invites, tables: nbTables(c.invites, c.tables), typeTables: infoTable(c.tables).nom.toLowerCase(), deplaces: Object.keys(c.deplacements).length,
     lieu: LIEUX.find((l) => l.id === c.lieu)?.nom ?? "Non choisi", style: style.nom,
     palette: PALETTES.find((p) => p.id === (c.palette ?? style.palette))!.nom,
     lumiere: lum ? LUMIERES.find((l) => l.id === lum)!.nom : null,
@@ -238,13 +268,14 @@ export function texteDemande(c: Choix): string {
   const dateTxt = c.dateInconnue || !c.date ? "Pas encore fixée" : c.date;
   return [
     `PROJET « HEAVENT CITY » — ${r.titre}`,
-    `Type : ${r.type} · ${r.invites} invités (environ ${r.tables} tables) · Date : ${dateTxt}`,
+    `Type : ${r.type} · ${r.invites} invités (environ ${r.tables} ${r.typeTables}) · Date : ${dateTxt}`,
     `Lieu d'inspiration : ${r.lieu} (ambiance conceptuelle, pas un lieu réservé)`,
     `Style : ${r.style} · Couleurs : ${r.palette}`,
     `Lumière : ${r.lumiere ?? "non précisée"} · Musique : ${r.musique ?? "non précisée"} · Accueil : ${r.accueil ?? "non précisé"}`,
     `Décoration : ${r.decors.map(l).join(", ") || "aucune choisie"}`,
     `Expériences : ${r.experiences.map(l).join(", ") || "aucune choisie"}`,
     `Missions : ${r.missions.map((m) => `${m.titre} → ${m.reponse}`).join(" ; ") || "aucune"}`,
+    r.deplaces ? `Disposition : ${r.deplaces} élément(s) déplacé(s) par le visiteur dans la scène (à confirmer sur place)` : "",
     c.note.trim() ? `Note du visiteur : ${c.note.trim()}` : "",
   ].filter(Boolean).join("\n");
 }
@@ -254,8 +285,9 @@ export function configurationAdmin(c: Choix): { elements: Record<string, number>
   const el: Record<string, number> = {};
   const mettre = (k: string, n: number) => { el[k] = Math.max(el[k] ?? 0, Math.min(500, Math.max(1, Math.round(n)))); };
   const nom: Record<string, string> = {};
-  mettre("table_ronde", nbTables(c.invites)); nom.table_ronde = "Tables rondes";
-  if (c.type === "mariage") { mettre("honneur", 1); nom.honneur = "Table d'honneur"; }
+  const tt = infoTable(c.tables);
+  mettre(tt.catalogue, nbTables(c.invites, c.tables)); nom[tt.catalogue] = tt.libelle;
+  if (c.type === "mariage" && c.tables !== "hautes") { mettre("honneur", 1); nom.honneur = "Table d'honneur"; }
   const ids = [...optionsActives(c), lumiereEffective(c), ...c.musiques, accueilEffectif(c)].filter(Boolean) as string[];
   for (const id of ids) {
     const o = infoOption(id); if (!o?.catalogue) continue;

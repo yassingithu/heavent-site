@@ -5,7 +5,7 @@
  */
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
 import { suivre } from "@/lib/suivi";
-import { infoOption } from "./donnees";
+import { infoOption, infoTable } from "./donnees";
 import { configurationAdmin, nbTables, resume, texteDemande, optionsActives, type Choix } from "./etat";
 
 export interface Coordonnees { nom: string; email: string; telephone: string; ville: string; date: string; dateInconnue: boolean; message: string }
@@ -44,7 +44,7 @@ export async function envoyerDemande(c: Choix, k: Coordonnees): Promise<{ envoye
       prenom: k.nom.trim(), email: k.email.trim(), telephone: k.telephone.trim(), ville: k.ville.trim(), message: k.message.trim(),
       date: k.dateInconnue ? null : k.date || null,
       typeEvenement: r.type, ambiance: `${r.style} — ${r.palette}`, lieu: `${r.lieu} (ambiance d'inspiration)`,
-      invites: c.invites, places: nbTables(c.invites) * 10, options,
+      invites: c.invites, places: nbTables(c.invites, c.tables) * infoTable(c.tables).places, options,
       services: Object.values(conf.libelles).join(", "),
       lignes, centres: null, honneur: "",
       texte: texteDemande({ ...c, note }), langue_visiteur: "fr",

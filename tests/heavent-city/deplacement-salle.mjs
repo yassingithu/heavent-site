@@ -1,0 +1,36 @@
+const { chromium } = await import("/opt/npm-tools/node_modules/playwright/index.mjs");
+const b = await chromium.launch(); const ctx = await b.newContext({ locale: "fr-FR", viewport: { width: 1360, height: 820 } });
+await ctx.addInitScript(() => { try { sessionStorage.setItem("heavent-splash-vu", "1"); } catch {} });
+await ctx.route(/fonts\.(googleapis|gstatic)|googletagmanager|supabase\.co/, (r) => r.abort());
+const p = await ctx.newPage(); const err = []; p.on("pageerror", (e) => err.push(e.message)); const t = (i) => p.getByTestId(i);
+await p.goto("http://127.0.0.1:5180/apercu/heavent-city"); await p.waitForTimeout(1000);
+await t("commencer").click(); await t("type-mariage").click(); await t("q-passer").click(); await t("ville-Casablanca").click(); await t("q-passer").click(); await t("q-passer").click();
+await t("liste-lieu-salle").click(); await p.waitForTimeout(2500);
+await t("onglet-salle").click(); await t("tables-rectangulaires").click();
+await t("onglet-experiences").click(); await t("option-piste").click(); await t("option-buffet").click();
+await p.waitForTimeout(500);
+await p.screenshot({ path: "/tmp/claude-0/hc/d-rect.png" });
+await t("deplacer").click();
+const cible = p.locator('[data-objet="piste"]');
+const bb = await cible.boundingBox(); console.log("piste bbox", bb);
+const x = bb.x + bb.width / 2, y = bb.y + bb.height / 2;
+const avant = await cible.getAttribute("transform");
+await p.mouse.move(x, y); await p.mouse.down(); await p.mouse.move(x - 120, y + 60, { steps: 8 }); await p.mouse.up();
+const apres = await cible.getAttribute("transform");
+console.log("transform", avant, "->", apres);
+await p.screenshot({ path: "/tmp/claude-0/hc/d-apres.png" });
+await t("annuler").click(); await p.waitForTimeout(200);
+console.log("après annuler", await cible.getAttribute("transform"));
+await t("refaire").click(); await p.waitForTimeout(200);
+console.log("après refaire", await cible.getAttribute("transform"));
+// une table
+const tb = p.locator('[data-objet="t0"]'); const b0 = await tb.boundingBox();
+await p.mouse.move(b0.x + b0.width / 2, b0.y + b0.height / 2); await p.mouse.down(); await p.mouse.move(b0.x + 500, b0.y + 500, { steps: 6 }); await p.mouse.up();
+console.log("t0", await tb.getAttribute("transform"));
+await t("termine-deplacer").click();
+console.log("anneau visible après terminé", await p.locator('[data-objet] ellipse[stroke-dasharray]').count());
+// rechargement : la disposition est conservée
+await p.reload(); await p.waitForTimeout(1200);
+console.log("reprendre dispo", await t("reprendre").count());
+console.log(JSON.stringify({ err }));
+await b.close();

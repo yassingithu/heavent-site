@@ -32,3 +32,10 @@ Revenir en arrière : remettre l'ancienne ligne de route ; rien d'autre n'est mo
 `/cree-ton-evenement` affiche maintenant Heavent City. L'ancien jeu reste sur `/cree-ton-evenement-ancien` (non indexé).
 Retour en arrière : dans `src/App.tsx`, remettre `<CreeTonEvenement />` sur la route `/cree-ton-evenement` (et `Seo page="jeu"` dans `CreeTonEvenement.tsx`), reconstruire, renvoyer chez one.com.
 Assistant IA : la fonction `heavent-city-ia` répond « indisponible » tant que le secret `ANTHROPIC_API_KEY` n'existe pas ; le site utilise alors les suggestions automatiques.
+
+## Salle, tables et déplacements
+- Le nombre de tables est automatique : une table ronde pour 10 invités (120 → 12 tables, 400 → 40 tables), 6 places pour les tables rectangulaires et hautes.
+- La salle s'agrandit seule (de 12 × 12 à 26 × 26 cases) pour contenir toutes les tables : voir `dimensionner()` et `positions(n, ax)` dans `positions.ts`.
+- Onglet « Salle » : nombre d'invités et type de tables (rondes, rectangulaires, hautes = mange-debout, sans table d'honneur). Les types correspondent au catalogue interne (`table_ronde`, `table_rect`, `table_haute`) ; aucun prix n'est utilisé.
+- Bouton « Déplacer » : on fait glisser les objets (annulable, mémorisé, « Tout remettre en place »). Les déplacements sont signalés à l'équipe dans le texte de la demande.
+- Tests : `tests/heavent-city/taille-salle.mjs <lieu> <invités> <tables>` et `deplacement-salle.mjs`.

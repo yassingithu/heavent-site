@@ -2,24 +2,23 @@
  * La scène : un petit diorama isométrique dessiné en calques SVG.
  * Elle ne contient AUCUNE règle de jeu : elle dessine ce que l'état lui donne (voir etat.ts → rendu()).
  */
-import { useId, useMemo, type ReactNode } from "react";
+import { useId, useMemo, useRef, useState, type PointerEvent as PE, type ReactNode } from "react";
 import { PALETTES, STYLES, type LieuId } from "./donnees";
 import type { Rendu } from "./etat";
-import { N, VB, X, Y, poly, melanger, assombrir, eclaircir, hasard } from "./iso";
+import { VB, X, Y, poly, melanger, assombrir, eclaircir, hasard } from "./iso";
 import {
   Acoustique, Allee, Arche, Bar, BarParfums, BarreThe, Boite, Bouquet, Brume, Buffet, Candelabre, CielLanternes, Comptoir, Dj, EnceintesAmbiance, FeuxFroids, Fontaine,
-  LivreDor, MurFleurs, Orchestre, Personne, Petales, Photobooth, Photographe, PisteDanse, Plan, PosteLanterne, Porte, SalonMarocain, STYLE_CSS, TableHonneur, TableRonde,
+  LivreDor, MurFleurs, Orchestre, Personne, Petales, Photobooth, Photographe, PisteDanse, Plan, PosteLanterne, Porte, SalonMarocain, STYLE_CSS, TableHonneur, TableHaute, TableRect, TableRonde,
   Troupe, cheveuxDe, cintre, peauDe, type Pal,
 } from "./dessins";
-import {
-  ALLEE, ANCRES, ARCHE, BOUQUETS, BUFFET, CANDELABRES, CANDY, COMPTOIR, DEPART_INVITES, DJ, FEUX, FONTAINE, HONNEUR, HOTESSES, LIVRE_DOR, MUR_FLEURS, NAWAR,
-  PHOTOBOOTH, PHOTOGRAPHE, PISTE, RAYON_TABLE, DJ_AVEC_ORCHESTRE, POSTES_LANTERNES, SALON, SCENE_ORCHESTRE, TABLES, THE_BAR,
-} from "./positions";
+import { RAYON_TABLE, positions } from "./positions";
 
 export type EtapeFinal = null | "avant" | "arrive" | "assis";
 export interface SceneProps {
   r: Rendu; nuit: number; animer?: boolean; final?: EtapeFinal; logos?: { nawar?: string; heavent?: string };
   focus?: { cle: string; n: number } | null; compact?: boolean; className?: string; cadrage?: "meet" | "slice";
+  /** mode « déplacer » : le visiteur peut faire glisser les objets (onDeplacer est appelé au relâchement) */
+  deplacable?: boolean; onDeplacer?: (id: string, dx: number, dy: number) => void;
 }
 
 const H_MUR = 128;
@@ -91,7 +90,7 @@ function Lointain({ lieu, nuit }: { lieu: LieuId; nuit: number }) {
 
 
 // ── Terrain autour du plateau et épaisseur de la dalle ──────────────────────
-function Terrain({ lieu, nuit }: { lieu: LieuId; nuit: number }) {
+function Terrain({ lieu, nuit, N }: { lieu: LieuId; nuit: number; N: number }) {
   const base: Record<LieuId, [string, string, string, string]> = {
     riad: ["#D8B98B", "#B08A58", "#C6A474", "#A98550"],
     villa: ["#C8C2B2", "#9C9586", "#D9D3C4", "#B3AC9B"],
@@ -104,15 +103,15 @@ function Terrain({ lieu, nuit }: { lieu: LieuId; nuit: number }) {
   const sombre = "#0d1230";
   return (
     <g>
-      <defs><linearGradient id={`hc-terre-${lieu}`} gradientUnits="userSpaceOnUse" x1="0" y1="322" x2="0" y2="640"><stop offset="0" stopColor={melanger(a, sombre, nuit * 0.55)} /><stop offset="1" stopColor={melanger(b, sombre, nuit * 0.6)} /></linearGradient></defs>
+      <defs><linearGradient id={`hc-terre-${lieu}`} gradientUnits="userSpaceOnUse" x1="0" y1="322" x2="0" y2={Y(N, N, 0) + 80}><stop offset="0" stopColor={melanger(a, sombre, nuit * 0.55)} /><stop offset="1" stopColor={melanger(b, sombre, nuit * 0.6)} /></linearGradient></defs>
       <path d={`M-2000 322 L0 330 Q200 308 400 322 T800 318 L2600 322 L2600 2400 L-2000 2400 Z`} fill={`url(#hc-terre-${lieu})`} />
-      {lieu === "rooftop" && Array.from({ length: 120 }, (_, i) => <circle key={i} cx={-500 + g() * 1800} cy={420 + g() * 300} r={1 + g() * 2.4} fill={["#FFD98A", "#FFB86B", "#9FD2FF"][i % 3]} opacity={0.35 + nuit * 0.5} />)}
-      {lieu !== "rooftop" && Array.from({ length: 50 }, (_, i) => <ellipse key={i} cx={-500 + g() * 1800} cy={430 + g() * 300} rx={10 + g() * 28} ry={3 + g() * 7} fill={melanger(a, sombre, 0.18)} opacity="0.35" />)}
+      {lieu === "rooftop" && Array.from({ length: 120 }, (_, i) => <circle key={i} cx={-500 + g() * 1800} cy={420 + g() * (300 + (N - 12) * 40)} r={1 + g() * 2.4} fill={["#FFD98A", "#FFB86B", "#9FD2FF"][i % 3]} opacity={0.35 + nuit * 0.5} />)}
+      {lieu !== "rooftop" && Array.from({ length: 50 }, (_, i) => <ellipse key={i} cx={-500 + g() * 1800} cy={430 + g() * (300 + (N - 12) * 40)} rx={10 + g() * 28} ry={3 + g() * 7} fill={melanger(a, sombre, 0.18)} opacity="0.35" />)}
       <polygon points={poly([0, N, 0], [N, N, 0], [N, N, -20], [0, N, -20])} fill={melanger(gau, sombre, nuit * 0.5)} />
       <polygon points={poly([N, 0, 0], [N, N, 0], [N, N, -20], [N, 0, -20])} fill={melanger(dro, sombre, nuit * 0.55)} />
       <polygon points={poly([0, N, -17], [N, N, -17], [N, N, -20], [0, N, -20])} fill="#00000030" />
       <polygon points={poly([N, 0, -17], [N, N, -17], [N, N, -20], [N, 0, -20])} fill="#00000040" />
-      <ellipse cx="400" cy={Y(N, N, -20) + 18} rx="340" ry="16" fill="#2b1a10" opacity="0.18" />
+      <ellipse cx="400" cy={Y(N, N, -20) + 18} rx={28 * N + 4} ry="16" fill="#2b1a10" opacity="0.18" />
     </g>
   );
 }
@@ -120,7 +119,7 @@ function Terrain({ lieu, nuit }: { lieu: LieuId; nuit: number }) {
 // ── Sols ────────────────────────────────────────────────────────────────────
 const dalle = (i: number, j: number, z = 0) => poly([i, j, z], [i + 1, j, z], [i + 1, j + 1, z], [i, j + 1, z]);
 
-function Sol({ lieu, pal, style }: { lieu: LieuId; pal: Pal; style: string }) {
+function Sol({ lieu, pal, style, N, ax }: { lieu: LieuId; pal: Pal; style: string; N: number; ax: number }) {
   const cases = Array.from({ length: N * N }, (_, k) => ({ i: k % N, j: Math.floor(k / N) }));
   const g = hasard(14);
   if (lieu === "riad") {
@@ -141,7 +140,7 @@ function Sol({ lieu, pal, style }: { lieu: LieuId; pal: Pal; style: string }) {
     return (
       <g>
         {Array.from({ length: N * 2 }, (_, k) => <polygon key={k} points={poly([k / 2, 0], [(k + 1) / 2, 0], [(k + 1) / 2, N], [k / 2, N])} fill={k % 2 ? "#B98E65" : "#AA7F58"} stroke="#00000012" strokeWidth="0.5" />)}
-        {Array.from({ length: 6 }, (_, k) => <polygon key={`j${k}`} points={poly([0, k * 2 + 1.2], [N, k * 2 + 1.2], [N, k * 2 + 1.25], [0, k * 2 + 1.25])} fill="#00000018" />)}
+        {Array.from({ length: Math.floor(N / 2) }, (_, k) => <polygon key={`j${k}`} points={poly([0, k * 2 + 1.2], [N, k * 2 + 1.2], [N, k * 2 + 1.25], [0, k * 2 + 1.25])} fill="#00000018" />)}
       </g>
     );
   }
@@ -150,7 +149,7 @@ function Sol({ lieu, pal, style }: { lieu: LieuId; pal: Pal; style: string }) {
       <g>
         {cases.map(({ i, j }) => <polygon key={`${i}-${j}`} points={dalle(i, j)} fill={(i + j) % 2 ? "#E8E1D6" : "#DDD4C6"} stroke="#00000014" strokeWidth="0.6" />)}
         <polygon points={poly([0, N - 1.2], [N, N - 1.2], [N, N], [0, N])} fill="#9A7650" opacity="0.9" />
-        {Array.from({ length: 15 }, (_, k) => <polygon key={k} points={poly([k * 0.84, N - 1.2], [k * 0.84 + 0.04, N - 1.2], [k * 0.84 + 0.04, N], [k * 0.84, N])} fill="#00000025" />)}
+        {Array.from({ length: Math.ceil(N / 0.84) }, (_, k) => <polygon key={k} points={poly([k * 0.84, N - 1.2], [k * 0.84 + 0.04, N - 1.2], [k * 0.84 + 0.04, N], [k * 0.84, N])} fill="#00000025" />)}
       </g>
     );
   }
@@ -159,9 +158,9 @@ function Sol({ lieu, pal, style }: { lieu: LieuId; pal: Pal; style: string }) {
       <g>
         <polygon points={poly([0, 0], [N, 0], [N, N], [0, N])} fill="#BBCB8B" />
         {cases.map(({ i, j }) => <polygon key={`${i}-${j}`} points={dalle(i, j)} fill={(i + j) % 2 ? "#B3C583" : "#C0D091"} />)}
-        {Array.from({ length: 34 }, (_, k) => { const gx = g() * (N - 0.4), gy = g() * (N - 0.4); return <ellipse key={k} cx={X(gx, gy)} cy={Y(gx, gy)} rx={5 + g() * 12} ry={2 + g() * 5} fill="#9DB373" opacity="0.4" />; })}
-        {Array.from({ length: 16 }, (_, k) => <ellipse key={`p${k}`} cx={X(3.1 + (k % 2 ? 0.3 : -0.3), 10 - k * 0.38)} cy={Y(3.1 + (k % 2 ? 0.3 : -0.3), 10 - k * 0.38)} rx="11" ry="5" fill="#E7DCC0" opacity="0.8" />)}
-        {Array.from({ length: 50 }, (_, k) => { const gx = g() * (N - 0.4), gy = g() * (N - 0.4); return <circle key={`f${k}`} cx={X(gx, gy)} cy={Y(gx, gy)} r="1.5" fill={["#FFFFFF", "#F4D774", "#E8A6B0"][k % 3]} opacity="0.85" />; })}
+        {Array.from({ length: Math.round((34 * N * N) / 144) }, (_, k) => { const gx = g() * (N - 0.4), gy = g() * (N - 0.4); return <ellipse key={k} cx={X(gx, gy)} cy={Y(gx, gy)} rx={5 + g() * 12} ry={2 + g() * 5} fill="#9DB373" opacity="0.4" />; })}
+        {Array.from({ length: Math.round((N - 2) / 0.38) - 2 }, (_, k) => <ellipse key={`p${k}`} cx={X(ax - 0.8 + (k % 2 ? 0.3 : -0.3), N - 2 - k * 0.38)} cy={Y(ax - 0.8 + (k % 2 ? 0.3 : -0.3), N - 2 - k * 0.38)} rx="11" ry="5" fill="#E7DCC0" opacity="0.8" />)}
+        {Array.from({ length: Math.round((50 * N * N) / 144) }, (_, k) => { const gx = g() * (N - 0.4), gy = g() * (N - 0.4); return <circle key={`f${k}`} cx={X(gx, gy)} cy={Y(gx, gy)} r="1.5" fill={["#FFFFFF", "#F4D774", "#E8A6B0"][k % 3]} opacity="0.85" />; })}
       </g>
     );
   }
@@ -176,11 +175,17 @@ function Sol({ lieu, pal, style }: { lieu: LieuId; pal: Pal; style: string }) {
 }
 
 // ── Murs ────────────────────────────────────────────────────────────────────
-function Mur({ lieu, cote, pal, nuit, style }: { lieu: LieuId; cote: "g" | "d"; pal: Pal; nuit: number; style: string }) {
+function Mur({ lieu, cote, pal, nuit, style, N }: { lieu: LieuId; cote: "g" | "d"; pal: Pal; nuit: number; style: string; N: number }) {
   const sens = cote === "g" ? "u" : "d";
   const L = 320, teinte = cote === "g" ? 0.07 : 0;
   const lampe = "#FFD98A";
-  const Corps = ({ children }: { children: ReactNode }) => <Plan sens={sens} c={0} u={cote === "g" ? N : 0}><g transform={`scale(${N / 10} 1)`}>{children}</g></Plan>;
+  // le décor du mur est répété quand la salle s'agrandit (un motif couvre 10 cases)
+  const copies = Math.max(1, Math.round(N / 10));
+  const Corps = ({ children }: { children: ReactNode }) => (
+    <Plan sens={sens} c={0} u={cote === "g" ? N : 0}>
+      <g transform={`scale(${N / copies / 10} 1)`}>{Array.from({ length: copies }, (_, i) => <g key={i} transform={`translate(${i * L} 0)`}>{children}</g>)}</g>
+    </Plan>
+  );
   const ciel = melanger("#F2B58A", "#252a5a", nuit);
 
   if (lieu === "riad") {
@@ -276,7 +281,7 @@ function Mur({ lieu, cote, pal, nuit, style }: { lieu: LieuId; cote: "g" | "d"; 
 }
 
 // ── Éléments propres au lieu, devant les murs ───────────────────────────────
-function DecorLieu({ lieu, nuit, pal }: { lieu: LieuId; nuit: number; pal: Pal }) {
+function DecorLieu({ lieu, nuit, pal, N }: { lieu: LieuId; nuit: number; pal: Pal; N: number }) {
   if (lieu === "villa") {
     // Bassin derrière la balustrade (côté mur de droite)
     const eau = melanger("#79C2D3", "#1c3a66", nuit);
@@ -284,8 +289,8 @@ function DecorLieu({ lieu, nuit, pal }: { lieu: LieuId; nuit: number; pal: Pal }
       <g>
         <polygon points={poly([-0.2, -0.3], [N + 0.2, -0.3], [N + 0.2, -4.6], [-0.2, -4.6])} fill="#EFEADF" />
         <polygon points={poly([0.1, -0.7], [N - 0.1, -0.7], [N - 0.1, -4.2], [0.1, -4.2])} fill={eau} />
-        {Array.from({ length: 7 }, (_, k) => <polygon key={k} points={poly([0.5 + k * 1.4, -1.2 - (k % 3) * 0.9], [1.4 + k * 1.4, -1.2 - (k % 3) * 0.9], [1.5 + k * 1.4, -1.28 - (k % 3) * 0.9], [0.6 + k * 1.4, -1.28 - (k % 3) * 0.9])} fill="#fff" opacity="0.28" />)}
-        {[1.5, 4.4, 7.8].map((u, i) => (
+        {Array.from({ length: Math.round(N / 1.7) }, (_, k) => <polygon key={k} points={poly([0.5 + k * 1.4, -1.2 - (k % 3) * 0.9], [1.4 + k * 1.4, -1.2 - (k % 3) * 0.9], [1.5 + k * 1.4, -1.28 - (k % 3) * 0.9], [0.6 + k * 1.4, -1.28 - (k % 3) * 0.9])} fill="#fff" opacity="0.28" />)}
+        {[N * 0.12, N * 0.37, N * 0.65].map((u, i) => (
           <g key={i} transform={`translate(${X(u, -3.2)} ${Y(u, -3.2)})`}>
             <path d="M0 0 q4 -30 1 -70" stroke={melanger("#5c4630", "#15131c", nuit)} strokeWidth="4.5" fill="none" />
             {[-120, -80, -40, 0, 40, 80, 120].map((a) => <path key={a} d={`M1 -70 q${Math.sin((a * Math.PI) / 180) * 24} ${-14 - Math.abs(a) / 12} ${Math.sin((a * Math.PI) / 180) * 40} ${Math.abs(a) / 5 + 4}`} stroke={melanger("#4F7A4A", "#10231a", nuit)} strokeWidth="4" strokeLinecap="round" fill="none" />)}
@@ -298,7 +303,7 @@ function DecorLieu({ lieu, nuit, pal }: { lieu: LieuId; nuit: number; pal: Pal }
     const tronc = "#6B4A33";
     return (
       <g>
-        {[[1.2, -0.8, 1.0], [8.6, -1.1, 0.9], [-0.9, 5.6, 0.95]].map(([gx, gy, s], i) => (
+        {[[1.2, -0.8, 1.0], [N - 3.4, -1.1, 0.9], [-0.9, N * 0.47, 0.95], [N * 0.6, -1.0, 0.95], [-1.0, N - 2.5, 1.0]].map(([gx, gy, s], i) => (
           <g key={i} transform={`translate(${X(gx, gy)} ${Y(gx, gy)}) scale(${s})`}>
             <rect x="-5" y="-60" width="10" height="60" fill={tronc} />
             {[[-26, -92, 34], [20, -98, 36], [0, -120, 40], [-6, -84, 38]].map(([x, y, r], k) => <circle key={k} cx={x} cy={y} r={r} fill={k % 2 ? "#6E9254" : "#5F8647"} />)}
@@ -326,7 +331,9 @@ function DecorLieu({ lieu, nuit, pal }: { lieu: LieuId; nuit: number; pal: Pal }
 interface Halo { x: number; y: number; r: number; a: number; c: "chaud" | "froid" | "rose" | "vert" | "violet" }
 interface Entite { z: number; k: string; n: ReactNode }
 
-export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, className, cadrage = "meet" }: SceneProps) {
+interface Mobile { id: string; a: [number, number] }
+
+export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, className, cadrage = "meet", deplacable = false, onDeplacer }: SceneProps) {
   const uid = useId().replace(/:/g, "");
   const pal: Pal = useMemo(() => {
     const p = PALETTES.find((x) => x.id === r.palette) ?? PALETTES[0];
@@ -336,22 +343,93 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
   const actif = final !== "avant";
   const n = final ? 1 : nuit;
   const assis = final === "assis";
+  const N = r.salle.n, ax = r.salle.ax;
+  const P = positions(N, ax);
   const halos: Halo[] = [];
   const E: Entite[] = [];
-  const add = (z: number, k: string, node: ReactNode) => E.push({ z, k, n: node });
 
-  // Tables
-  const tbl = TABLES.slice(0, r.tablesVisibles);
-  // autant de chaises que d'invités par table (120 invités / 12 tables = 10), entre 4 et 10
-  const parChaises = Math.max(4, Math.min(10, Math.round(r.invites / r.tablesTotal)));
+  // ── Déplacement des objets : décalage en cases, appliqué à tout le dessin de l'objet ──
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [vif, setVif] = useState<{ id: string; off: [number, number] } | null>(null);
+  const prise = useRef<{ id: string; a: [number, number]; depart: [number, number]; p0: [number, number]; dernier: [number, number] } | null>(null);
+  const dep = (id: string): [number, number] => (vif && vif.id === id ? vif.off : r.deplacements[id] ?? [0, 0]);
+  const enveloppe = (id: string, a: [number, number], node: ReactNode) => {
+    const [dx, dy] = dep(id);
+    return (
+      <g data-objet={id} transform={dx || dy ? `translate(${(dx - dy) * 32} ${(dx + dy) * 16})` : undefined} style={deplacable ? { cursor: vif?.id === id ? "grabbing" : "grab" } : undefined}>
+        {node}
+        {deplacable && <ellipse cx={X(a[0], a[1])} cy={Y(a[0], a[1])} rx="24" ry="12" fill="#F4D774" fillOpacity="0.22" stroke="#F4D774" strokeWidth="1.6" strokeDasharray="5 4" />}
+      </g>
+    );
+  };
+  const add = (z: number, k: string, node: ReactNode, mv?: Mobile) => {
+    if (!mv) { E.push({ z, k, n: node }); return; }
+    const [dx, dy] = dep(mv.id);
+    E.push({ z: z + dx + dy, k, n: enveloppe(mv.id, mv.a, node) });
+  };
+  const decale = (id: string, gx: number, gy: number): [number, number] => { const [dx, dy] = dep(id); return [gx + dx, gy + dy]; };
+
+  const point = (e: PE<SVGSVGElement>): [number, number] | null => {
+    const svg = svgRef.current, m = svg?.getScreenCTM();
+    if (!svg || !m) return null;
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    const q = p.matrixTransform(m.inverse());
+    return [q.x, q.y];
+  };
+  const bas = (e: PE<SVGSVGElement>) => {
+    if (!deplacable) return;
+    const cible = (e.target as Element).closest?.("[data-objet]") as SVGGElement | null;
+    const id = cible?.getAttribute("data-objet");
+    const p = point(e);
+    if (!id || !p) return;
+    const mv = ancres.get(id);
+    if (!mv) return;
+    e.preventDefault();
+    svgRef.current?.setPointerCapture(e.pointerId);
+    const depart = dep(id);
+    prise.current = { id, a: mv, depart, p0: p, dernier: depart };
+    setVif({ id, off: depart });
+  };
+  const bouge = (e: PE<SVGSVGElement>) => {
+    const t = prise.current, p = point(e);
+    if (!t || !p) return;
+    const sx = p[0] - t.p0[0], sy = p[1] - t.p0[1];
+    // projection inverse de l'isométrique 2:1
+    let dgx = t.depart[0] + (sx / 32 + sy / 16) / 2, dgy = t.depart[1] + (sy / 16 - sx / 32) / 2;
+    dgx = Math.round(dgx * 4) / 4; dgy = Math.round(dgy * 4) / 4;
+    // l'objet reste dans la salle
+    dgx = Math.max(0.6 - t.a[0], Math.min(N - 0.6 - t.a[0], dgx)); dgy = Math.max(0.6 - t.a[1], Math.min(N - 0.6 - t.a[1], dgy));
+    if (dgx !== t.dernier[0] || dgy !== t.dernier[1]) { t.dernier = [dgx, dgy]; setVif({ id: t.id, off: [dgx, dgy] }); }
+  };
+  const haut = (e: PE<SVGSVGElement>) => {
+    const t = prise.current;
+    prise.current = null;
+    if (!t) return;
+    try { svgRef.current?.releasePointerCapture(e.pointerId); } catch { /* déjà relâché */ }
+    setVif(null);
+    if (t.dernier[0] !== t.depart[0] || t.dernier[1] !== t.depart[1]) onDeplacer?.(t.id, t.dernier[0], t.dernier[1]);
+  };
+  const ancres = new Map<string, [number, number]>();
+  const mob = (id: string, gx: number, gy: number): Mobile => { ancres.set(id, [gx, gy]); return { id, a: [gx, gy] }; };
+
+  // Tables : autant que nécessaire (une pour 10 invités en rondes), la salle s'agrandit pour toutes les contenir
+  const tbl = r.salle.tables;
+  const nb = Math.max(1, r.tablesTotal);
+  const parChaises = r.tables === "rondes" ? Math.max(4, Math.min(10, Math.round(r.invites / nb))) : r.tables === "rectangulaires" ? Math.max(2, Math.min(6, Math.round(r.invites / nb))) : Math.max(2, Math.min(4, Math.round(r.invites / nb)));
+  const fleursTable = o.has("fleurs") || style === "romantique";
   tbl.forEach(([gx, gy], i) => {
-    add(gx + gy, `t${i}`, <TableRonde gx={gx} gy={gy} r={RAYON_TABLE} nbChaises={parChaises} pal={pal} fleurs={o.has("fleurs") || style === "romantique"} bougies={r.lumiere === "bougies"} invites={assis ? parChaises : 0} retard={i * 0.4} animer={animer} />);
-    if (r.lumiere === "bougies") halos.push({ x: X(gx, gy), y: Y(gx, gy, 30), r: 34, a: 0.55, c: "chaud" });
+    const c = { pal, fleurs: fleursTable, bougies: r.lumiere === "bougies", retard: i * 0.4, animer };
+    const node = r.tables === "rondes" ? <TableRonde gx={gx} gy={gy} r={RAYON_TABLE} nbChaises={parChaises} invites={assis ? parChaises : 0} {...c} />
+      : r.tables === "rectangulaires" ? <TableRect gx={gx} gy={gy} nbChaises={parChaises} invites={assis ? parChaises : 0} {...c} />
+      : <TableHaute gx={gx} gy={gy} invites={assis ? parChaises : 0} {...c} />;
+    add(gx + gy, `t${i}`, node, mob(`t${i}`, gx, gy));
+    if (r.lumiere === "bougies") { const [hx, hy] = decale(`t${i}`, gx, gy); halos.push({ x: X(hx, hy), y: Y(hx, hy, r.tables === "hautes" ? 54 : 30), r: 34, a: 0.55, c: "chaud" }); }
   });
 
-  // Honneur / écran / arche
-  if (r.type !== "pro") add(HONNEUR.gx + HONNEUR.gy + 2, "honneur", <TableHonneur gx={HONNEUR.gx} gy={HONNEUR.gy} w={HONNEUR.w} d={HONNEUR.d} pal={pal} fleurs={o.has("fleurs") || style === "romantique"} couple={assis && r.type === "mariage"} type={r.type} animer={animer} />);
-  else {
+  // Honneur / écran / arche (pas de table d'honneur quand tout le monde est autour de tables hautes)
+  if (r.type !== "pro") {
+    if (r.tables !== "hautes") { const H = P.HONNEUR; add(H.gx + H.gy + 2, "honneur", <TableHonneur gx={H.gx} gy={H.gy} w={H.w} d={H.d} pal={pal} fleurs={fleursTable} couple={assis && r.type === "mariage"} type={r.type} animer={animer} />, mob("honneur", H.gx + H.w / 2, H.gy + H.d / 2)); }
+  } else {
     add(2.4, "ecran", (
       <Plan sens="d" c={0.1} u={1.3} z0={14}>
         <rect width="150" height="82" rx="4" fill="#1d1b22" stroke={pal.deco} strokeWidth="3" />
@@ -360,77 +438,92 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
       </Plan>
     ));
   }
-  if (o.has("arche")) add(ARCHE.gx + ARCHE.gy + 0.8, "arche", <Arche gx={ARCHE.gx} gy={ARCHE.gy} largeur={ARCHE.largeur} pal={pal} />);
-  if (o.has("mur_fleurs")) add(MUR_FLEURS.u0 + 0.3, "mur", <MurFleurs u0={MUR_FLEURS.u0} u1={MUR_FLEURS.u1} gy={MUR_FLEURS.gy} pal={pal} />);
+  const AR = P.ARCHE, MF = P.MUR_FLEURS;
+  if (o.has("arche")) add(AR.gx + AR.gy + 0.8, "arche", <Arche gx={AR.gx} gy={AR.gy} largeur={AR.largeur} pal={pal} />, mob("arche", AR.gx + AR.largeur / 2, AR.gy + 0.5));
+  if (o.has("mur_fleurs")) add(MF.u0 + 0.3, "mur", <MurFleurs u0={MF.u0} u1={MF.u1} gy={MF.gy} pal={pal} />);
 
   // Musique
   const musiqueActive = actif && (final ? true : animer);
-  if (r.musiques.includes("dj")) { const dj = r.musiques.includes("orchestre") ? DJ_AVEC_ORCHESTRE : DJ; add(dj.gx + dj.gy + 1, "dj", <Dj gx={dj.gx} gy={dj.gy} w={dj.w} d={dj.d} pal={pal} actif={musiqueActive} />); }
-  if (r.musiques.includes("orchestre")) add(SCENE_ORCHESTRE.gx + SCENE_ORCHESTRE.gy + 1, "orch", <Orchestre gx={SCENE_ORCHESTRE.gx} gy={SCENE_ORCHESTRE.gy} w={SCENE_ORCHESTRE.w} d={SCENE_ORCHESTRE.d} pal={pal} actif={musiqueActive} />);
-  if (r.musiques.includes("troupe")) add(7.4 + 3.4, "troupe", <Troupe gx={7.4} gy={3.4} pal={pal} actif={musiqueActive} />);
-  if (r.musiques.includes("playlist")) add(6, "enceintes", <EnceintesAmbiance pal={pal} actif={musiqueActive} />);
-  if (r.musiques.includes("acoustique")) add(8.8, "acoustique", <Acoustique gx={7.6} gy={1.3} pal={pal} actif={musiqueActive} />);
+  if (r.musiques.includes("dj")) { const dj = r.musiques.includes("orchestre") ? P.DJ_AVEC_ORCHESTRE : P.DJ; add(dj.gx + dj.gy + 1, "dj", <Dj gx={dj.gx} gy={dj.gy} w={dj.w} d={dj.d} pal={pal} actif={musiqueActive} />, mob("dj", dj.gx + dj.w / 2, dj.gy + dj.d / 2)); }
+  if (r.musiques.includes("orchestre")) { const so = P.SCENE_ORCHESTRE; add(so.gx + so.gy + 1, "orch", <Orchestre gx={so.gx} gy={so.gy} w={so.w} d={so.d} pal={pal} actif={musiqueActive} />, mob("orch", so.gx + so.w / 2, so.gy + so.d / 2)); }
+  if (r.musiques.includes("troupe")) { const [tx, ty] = P.TROUPE; add(tx + ty, "troupe", <Troupe gx={tx} gy={ty} pal={pal} actif={musiqueActive} />, mob("troupe", tx + 0.5, ty + 0.5)); }
+  if (r.musiques.includes("playlist")) add(6, "enceintes", <EnceintesAmbiance pal={pal} actif={musiqueActive} pos={P.ENCEINTES} />, mob("enceintes", (P.ENCEINTES[0][0] + P.ENCEINTES[1][0]) / 2, 0.75));
+  if (r.musiques.includes("acoustique")) { const [qx, qy] = P.ACOUSTIQUE; add(qx + qy, "acoustique", <Acoustique gx={qx} gy={qy} pal={pal} actif={musiqueActive} />, mob("acoustique", qx + 0.5, qy + 0.5)); }
 
   // Expériences
-  if (o.has("photobooth")) add(PHOTOBOOTH.gx + PHOTOBOOTH.gy + 1, "photobooth", <Photobooth gx={PHOTOBOOTH.gx} gy={PHOTOBOOTH.gy} w={PHOTOBOOTH.w} d={PHOTOBOOTH.d} pal={pal} flash={animer && actif} />);
+  const PB = P.PHOTOBOOTH, NA = P.NAWAR, BU = P.BUFFET, CA = P.CANDY, TH = P.THE_BAR, SA = P.SALON, CO = P.COMPTOIR;
+  if (o.has("photobooth")) add(PB.gx + PB.gy + 1, "photobooth", <Photobooth gx={PB.gx} gy={PB.gy} w={PB.w} d={PB.d} pal={pal} flash={animer && actif} />, mob("photobooth", PB.gx + PB.w / 2, PB.gy + PB.d / 2));
   if (o.has("nawar")) {
-    add(NAWAR.gx + NAWAR.gy + 1, "nawar", <BarParfums gx={NAWAR.gx} gy={NAWAR.gy} w={NAWAR.w} d={NAWAR.d} pal={pal} logo={logos?.nawar} brume={o.has("brume")} />);
-    halos.push({ x: X(NAWAR.gx + 0.6, NAWAR.gy + 1.1), y: Y(NAWAR.gx + 0.6, NAWAR.gy + 1.1, 40), r: 46, a: 0.45, c: "chaud" });
+    add(NA.gx + NA.gy + 1, "nawar", <BarParfums gx={NA.gx} gy={NA.gy} w={NA.w} d={NA.d} pal={pal} logo={logos?.nawar} brume={o.has("brume")} />, mob("nawar", NA.gx + NA.w / 2, NA.gy + NA.d / 2));
+    const [hx, hy] = decale("nawar", NA.gx + 0.6, NA.gy + 1.1);
+    halos.push({ x: X(hx, hy), y: Y(hx, hy, 40), r: 46, a: 0.45, c: "chaud" });
   }
-  if (o.has("buffet")) add(BUFFET.gx + BUFFET.gy + 1, "buffet", <Buffet gx={BUFFET.gx} gy={BUFFET.gy} w={BUFFET.w} d={BUFFET.d} pal={pal} />);
-  if (o.has("candy_bar")) add(CANDY.gx + CANDY.gy + 0.5, "candy", <Bar gx={CANDY.gx} gy={CANDY.gy} w={CANDY.w} d={CANDY.d} pal={pal} couleurs={["#E8A6B0", "#F4D774", "#9DD3C8", "#C9A0DC"]} />);
-  if (o.has("the_bar")) add(THE_BAR.gx + THE_BAR.gy + 1, "the", <BarreThe gx={THE_BAR.gx} gy={THE_BAR.gy} w={THE_BAR.w} d={THE_BAR.d} pal={pal} animer={animer} />);
-  if (o.has("livre_dor")) add(LIVRE_DOR[0] + LIVRE_DOR[1], "livre", <LivreDor gx={LIVRE_DOR[0]} gy={LIVRE_DOR[1]} pal={pal} />);
-  if (o.has("salon")) add(SALON.gx + SALON.gy + 1, "salon", <SalonMarocain gx={SALON.gx} gy={SALON.gy} w={SALON.w} d={SALON.d} pal={pal} />);
-  if (o.has("fontaine")) add(FONTAINE[0] + FONTAINE[1], "fontaine", <Fontaine gx={FONTAINE[0]} gy={FONTAINE[1]} pal={pal} animer={animer} />);
-  if (o.has("photographe")) add(PHOTOGRAPHE[0] + PHOTOGRAPHE[1], "photographe", <Photographe gx={PHOTOGRAPHE[0]} gy={PHOTOGRAPHE[1]} />);
-  if (o.has("feux_froids")) FEUX.forEach(([gx, gy], i) => add(gx + gy, `feu${i}`, <FeuxFroids gx={gx} gy={gy} actif={animer && actif} />));
-  if (o.has("fleurs")) BOUQUETS.forEach(([gx, gy], i) => add(gx + gy, `bq${i}`, <Bouquet gx={gx} gy={gy} pal={pal} grand />));
+  if (o.has("buffet")) add(BU.gx + BU.gy + 1, "buffet", <Buffet gx={BU.gx} gy={BU.gy} w={BU.w} d={BU.d} pal={pal} />, mob("buffet", BU.gx + BU.w / 2, BU.gy + BU.d / 2));
+  if (o.has("candy_bar")) add(CA.gx + CA.gy + 0.5, "candy", <Bar gx={CA.gx} gy={CA.gy} w={CA.w} d={CA.d} pal={pal} couleurs={["#E8A6B0", "#F4D774", "#9DD3C8", "#C9A0DC"]} />, mob("candy", CA.gx + CA.w / 2, CA.gy + CA.d / 2));
+  if (o.has("the_bar")) add(TH.gx + TH.gy + 1, "the", <BarreThe gx={TH.gx} gy={TH.gy} w={TH.w} d={TH.d} pal={pal} animer={animer} />, mob("the", TH.gx + TH.w / 2, TH.gy + TH.d / 2));
+  if (o.has("livre_dor")) add(P.LIVRE_DOR[0] + P.LIVRE_DOR[1], "livre", <LivreDor gx={P.LIVRE_DOR[0]} gy={P.LIVRE_DOR[1]} pal={pal} />, mob("livre", P.LIVRE_DOR[0], P.LIVRE_DOR[1]));
+  if (o.has("salon")) add(SA.gx + SA.gy + 1, "salon", <SalonMarocain gx={SA.gx} gy={SA.gy} w={SA.w} d={SA.d} pal={pal} />, mob("salon", SA.gx + SA.w / 2, SA.gy + SA.d / 2));
+  if (o.has("fontaine")) add(P.FONTAINE[0] + P.FONTAINE[1], "fontaine", <Fontaine gx={P.FONTAINE[0]} gy={P.FONTAINE[1]} pal={pal} animer={animer} />, mob("fontaine", P.FONTAINE[0], P.FONTAINE[1]));
+  if (o.has("photographe")) add(P.PHOTOGRAPHE[0] + P.PHOTOGRAPHE[1], "photographe", <Photographe gx={P.PHOTOGRAPHE[0]} gy={P.PHOTOGRAPHE[1]} />, mob("photographe", P.PHOTOGRAPHE[0], P.PHOTOGRAPHE[1]));
+  if (o.has("feux_froids")) P.FEUX.forEach(([gx, gy], i) => add(gx + gy, `feu${i}`, <FeuxFroids gx={gx} gy={gy} actif={animer && actif} />));
+  if (o.has("fleurs")) P.BOUQUETS.forEach(([gx, gy], i) => add(gx + gy, `bq${i}`, <Bouquet gx={gx} gy={gy} pal={pal} grand />));
 
   // Accueil
   if (r.accueil === "hotesses" || r.accueil === "maitre_hotel") {
-    HOTESSES.forEach(([gx, gy], i) => add(gx + gy + 0.2, `h${i}`, <Personne x={X(gx, gy)} y={Y(gx, gy)} robe corps={pal.sombre ? pal.nappe : "#2d2a30"} echarpe={pal.deco} peau={peauDe(i + 1)} cheveux={cheveuxDe(i)} s={1.15} bob={animer} retard={i * 0.5} />));
+    P.HOTESSES.forEach(([gx, gy], i) => add(gx + gy + 0.2, `h${i}`, <Personne x={X(gx, gy)} y={Y(gx, gy)} robe corps={pal.sombre ? pal.nappe : "#2d2a30"} echarpe={pal.deco} peau={peauDe(i + 1)} cheveux={cheveuxDe(i)} s={1.15} bob={animer} retard={i * 0.5} />));
   }
   if (r.accueil === "maitre_hotel") {
-    add(4.4 + 8.6, "maitre", <Personne x={X(4.0, 8.6)} y={Y(4.0, 8.6)} corps="#1f1d22" echarpe={pal.deco} peau={peauDe(3)} cheveux={cheveuxDe(2)} s={1.18} bob={animer} />);
-    add(2.0 + 8.6, "h3", <Personne x={X(2.3, 8.6)} y={Y(2.3, 8.6)} robe corps={pal.sombre ? pal.nappe : "#2d2a30"} echarpe={pal.deco} peau={peauDe(0)} s={1.15} bob={animer} retard={0.9} />);
+    const [mx, my] = P.MAITRE_HOTEL, [hx, hy] = P.HOTESSE_3;
+    add(mx + my, "maitre", <Personne x={X(mx, my)} y={Y(mx, my)} corps="#1f1d22" echarpe={pal.deco} peau={peauDe(3)} cheveux={cheveuxDe(2)} s={1.18} bob={animer} />);
+    add(hx + hy, "h3", <Personne x={X(hx, hy)} y={Y(hx, hy)} robe corps={pal.sombre ? pal.nappe : "#2d2a30"} echarpe={pal.deco} peau={peauDe(0)} s={1.15} bob={animer} retard={0.9} />);
   }
-  if (r.accueil === "the") add(COMPTOIR[0] + COMPTOIR[1], "comptoir", <Comptoir gx={COMPTOIR[0]} gy={COMPTOIR[1]} pal={pal} the />);
-  if (r.accueil === "discret") add(COMPTOIR[0] + COMPTOIR[1], "comptoir", <Comptoir gx={COMPTOIR[0]} gy={COMPTOIR[1]} pal={pal} />);
+  if (r.accueil === "the") add(CO[0] + CO[1], "comptoir", <Comptoir gx={CO[0]} gy={CO[1]} pal={pal} the />);
+  if (r.accueil === "discret") add(CO[0] + CO[1], "comptoir", <Comptoir gx={CO[0]} gy={CO[1]} pal={pal} />);
 
   // Lumière
-  if (r.lumiere === "chaleureuse") POSTES_LANTERNES.forEach(([gx, gy], i) => { add(gx + gy, `pl${i}`, <PosteLanterne gx={gx} gy={gy} pal={pal} anime={animer} />); halos.push({ x: X(gx, gy), y: Y(gx, gy, 78), r: 62, a: 0.7, c: "chaud" }); });
-  if (r.lumiere === "bougies") CANDELABRES.forEach(([gx, gy], i) => { add(gx + gy, `cd${i}`, <Candelabre gx={gx} gy={gy} pal={pal} anime={animer} />); halos.push({ x: X(gx, gy), y: Y(gx, gy, 62), r: 50, a: 0.6, c: "chaud" }); });
-  if (o.has("allee")) add(ALLEE.gx + ALLEE.gy - 0.2, "allee", <Allee gx={ALLEE.gx} gy={ALLEE.gy} w={ALLEE.w} d={ALLEE.d} pal={pal} />);
+  if (r.lumiere === "chaleureuse") P.POSTES_LANTERNES.forEach(([gx, gy], i) => { add(gx + gy, `pl${i}`, <PosteLanterne gx={gx} gy={gy} pal={pal} anime={animer} />); halos.push({ x: X(gx, gy), y: Y(gx, gy, 78), r: 62, a: 0.7, c: "chaud" }); });
+  if (r.lumiere === "bougies") P.CANDELABRES.forEach(([gx, gy], i) => { add(gx + gy, `cd${i}`, <Candelabre gx={gx} gy={gy} pal={pal} anime={animer} />); halos.push({ x: X(gx, gy), y: Y(gx, gy, 62), r: 50, a: 0.6, c: "chaud" }); });
+  if (o.has("allee")) add(P.ALLEE.gx + P.ALLEE.gy - 0.2, "allee", <Allee gx={P.ALLEE.gx} gy={P.ALLEE.gy} w={P.ALLEE.w} d={P.ALLEE.d} pal={pal} />);
 
-  // Invités qui arrivent
-  const invites: ReactNode[] = [];
+  // Invités qui arrivent (on en montre une vingtaine : assez pour l'ambiance, sans alourdir l'image)
   if (final) {
-    const g = hasard(31), cibles = tbl.length ? tbl : TABLES.slice(0, 4);
-    for (let i = 0; i < 22; i++) {
+    const g = hasard(31), cibles = tbl.length ? tbl : [[ax, N / 2] as [number, number]];
+    const total = Math.min(40, 14 + Math.round(tbl.length / 2));
+    for (let i = 0; i < total; i++) {
       const [tx, ty] = cibles[i % cibles.length];
       const a = g() * Math.PI * 2, cx = tx + Math.cos(a) * 1.5, cy = ty + Math.sin(a) * 1.3 + 0.2;
       const px = Math.min(N - 0.6, Math.max(0.8, cx)), py = Math.min(N - 0.5, Math.max(1.2, cy));
-      const dx = X(DEPART_INVITES[0], DEPART_INVITES[1]) - X(px, py), dy = Y(DEPART_INVITES[0], DEPART_INVITES[1]) - Y(px, py);
+      const dx = X(P.DEPART_INVITES[0], P.DEPART_INVITES[1]) - X(px, py), dy = Y(P.DEPART_INVITES[0], P.DEPART_INVITES[1]) - Y(px, py);
       const dehors = final === "avant";
-      invites.push(
-        <g key={i} className="hc-arrive" style={{ transform: dehors ? `translate(${dx}px ${dy}px)` : "translate(0px 0px)", opacity: dehors ? 0 : 1, transitionDelay: `${(i % 11) * 0.22}s`, ["--duree" as string]: `${2.3 + (i % 5) * 0.3}s` }}>
-          <Personne x={X(px, py)} y={Y(px, py)} robe={i % 2 === 0} corps={i % 3 === 0 ? pal.accent : i % 3 === 1 ? "#3d352e" : pal.deco} peau={peauDe(i)} cheveux={cheveuxDe(i)} s={1.05} bob={animer && !dehors} retard={(i % 7) * 0.3} />
-        </g>,
-      );
-      E.push({ z: px + py + 0.3, k: `inv${i}`, n: invites[i] });
+      E.push({
+        z: px + py + 0.3, k: `inv${i}`,
+        n: (
+          <g className="hc-arrive" style={{ transform: dehors ? `translate(${dx}px ${dy}px)` : "translate(0px 0px)", opacity: dehors ? 0 : 1, transitionDelay: `${(i % 11) * 0.22}s`, ["--duree" as string]: `${2.3 + (i % 5) * 0.3}s` }}>
+            <Personne x={X(px, py)} y={Y(px, py)} robe={i % 2 === 0} corps={i % 3 === 0 ? pal.accent : i % 3 === 1 ? "#3d352e" : pal.deco} peau={peauDe(i)} cheveux={cheveuxDe(i)} s={1.05} bob={animer && !dehors} retard={(i % 7) * 0.3} />
+          </g>
+        ),
+      });
     }
   }
 
   const trie = E.sort((a, b) => a.z - b.z);
-  const f = focus ? ANCRES[focus.cle as keyof typeof ANCRES] : null;
+  const f = focus ? P.ANCRES[focus.cle as keyof typeof P.ANCRES] : null;
   const festif = r.lumiere === "festive";
   const couleurHalo = { chaud: "url(#hc-h-chaud-" + uid + ")", froid: "url(#hc-h-froid-" + uid + ")", rose: "url(#hc-h-rose-" + uid + ")", vert: "url(#hc-h-vert-" + uid + ")", violet: "url(#hc-h-violet-" + uid + ")" };
   const intensite = 0.25 + 0.75 * n;
   const aria = `Scène « ${r.titre} » : ${r.tablesTotal} tables environ pour ${r.invites} invités, ambiance ${STYLES.find((s) => s.id === style)?.nom.toLowerCase()}.`;
+  const larg = 64 * N + 12, haute = 32 * N + 206;
+  const PI = P.PISTE;
+  const cordes: [[number, number], [number, number]][] = [[[0.3, N - 0.5], [0.3, 0.3]], [[0.3, 0.3], [N - 0.4, 0.3]], [[0.3, N / 2 + 0.1], [N - 0.4, N / 2 + 0.1]], [[ax - 0.9, N - 0.2], [N - 0.4, N / 2 + 0.1]]];
+  const poteaux: [number, number][] = [[0.3, N - 0.5], [0.3, 0.3], [N - 0.4, 0.3], [0.3, N / 2 + 0.1], [N - 0.4, N / 2 + 0.1]];
 
   return (
-    <svg viewBox="10 20 780 590" role="img" aria-label={aria} className={className} preserveAspectRatio={cadrage === "slice" ? "xMidYMid slice" : "xMidYMid meet"} style={{ display: "block", width: "100%", height: "100%", overflow: "visible" }}>
+    <svg
+      ref={svgRef} viewBox={`${400 - larg / 2} 20 ${larg} ${haute}`} role="img" aria-label={aria} className={className}
+      onPointerDown={bas} onPointerMove={bouge} onPointerUp={haut} onPointerCancel={haut}
+      preserveAspectRatio={cadrage === "slice" ? "xMidYMid slice" : "xMidYMid meet"}
+      style={{ display: "block", width: "100%", height: "100%", overflow: "visible", touchAction: deplacable ? "none" : undefined, userSelect: deplacable ? "none" : undefined }}
+    >
       {animer && <style>{STYLE_CSS}</style>}
       <defs>
         {([["chaud", "#FFD58A"], ["froid", "#BFE3FF"], ["rose", "#FF9FC4"], ["vert", "#9FFFD0"], ["violet", "#C8A6FF"]] as const).map(([k, c]) => (
@@ -438,28 +531,33 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
         ))}
       </defs>
       <Ciel nuit={n} lieu={lieu} animer={animer} />
-      <Terrain lieu={lieu} nuit={n} />
-      <DecorLieu lieu={lieu} nuit={n} pal={pal} />
-      <Mur lieu={lieu} cote="g" pal={pal} nuit={n} style={style} />
-      <Mur lieu={lieu} cote="d" pal={pal} nuit={n} style={style} />
-      <Sol lieu={lieu} pal={pal} style={style} />
+      <Terrain lieu={lieu} nuit={n} N={N} />
+      <DecorLieu lieu={lieu} nuit={n} pal={pal} N={N} />
+      <Mur lieu={lieu} cote="g" pal={pal} nuit={n} style={style} N={N} />
+      <Mur lieu={lieu} cote="d" pal={pal} nuit={n} style={style} N={N} />
+      <Sol lieu={lieu} pal={pal} style={style} N={N} ax={ax} />
       {style === "maroc" && lieu !== "riad" && <polygon points={poly([0, 0], [N, 0], [N, 0.25], [0, 0.25])} fill="#2F6277" opacity="0.5" />}
-      {o.has("piste") && <PisteDanse gx={PISTE.gx} gy={PISTE.gy} w={PISTE.w} d={PISTE.d} pal={pal} actif={animer && actif} festif={festif} />}
+      {o.has("piste") && enveloppe("piste", mob("piste", PI.gx + PI.w / 2, PI.gy + PI.d / 2).a, <PisteDanse gx={PI.gx} gy={PI.gy} w={PI.w} d={PI.d} pal={pal} actif={animer && actif} festif={festif} />)}
       <g>{trie.map((e) => <g key={e.k}>{e.n}</g>)}</g>
-      <Porte pal={pal} nuit={n} logo={logos?.heavent} />
-      {lieu === "salle" && [3.3, 6.8].map((gx, i) => (
-        <g key={i} transform={`translate(${X(gx, 4.6)} ${Y(gx, 4.6, 150)})`}>
-          <line x1="0" y1="-50" x2="0" y2="0" stroke="#C9A74E" strokeWidth="1.4" />
-          {[-22, -11, 0, 11, 22].map((dx, k) => <g key={k}><path d={`M${dx - 4} 0 L${dx + 4} 0 L${dx + 2} 10 L${dx - 2} 10 Z`} fill="#E8D49A" /><circle cx={dx} cy="-2" r="2.2" fill="#FFE9A8" opacity={0.5 + n * 0.5} /></g>)}
-          <ellipse cx="0" cy="0" rx="28" ry="6" fill="none" stroke="#C9A74E" strokeWidth="2" />
+      <g pointerEvents="none"><Porte pal={pal} nuit={n} logo={logos?.heavent} porte={P.PORTE} /></g>
+      {lieu === "salle" && (
+        <g pointerEvents="none">
+          {[ax - 0.6, N - 5.2].flatMap((gx) => (N >= 18 ? [4.6, N / 2 + 3.2] : [4.6]).map((gy) => [gx, gy] as [number, number])).map(([gx, gy], i) => (
+            <g key={i} transform={`translate(${X(gx, gy)} ${Y(gx, gy, 150)})`}>
+              <line x1="0" y1="-50" x2="0" y2="0" stroke="#C9A74E" strokeWidth="1.4" />
+              {[-22, -11, 0, 11, 22].map((dx, k) => <g key={k}><path d={`M${dx - 4} 0 L${dx + 4} 0 L${dx + 2} 10 L${dx - 2} 10 Z`} fill="#E8D49A" /><circle cx={dx} cy="-2" r="2.2" fill="#FFE9A8" opacity={0.5 + n * 0.5} /></g>)}
+              <ellipse cx="0" cy="0" rx="28" ry="6" fill="none" stroke="#C9A74E" strokeWidth="2" />
+            </g>
+          ))}
         </g>
-      ))}
+      )}
       {/* Guirlandes étoilées */}
       {r.lumiere === "etoilee" && (
-        <g>
-          {([[[0.3, 11.5], [0.3, 0.3]], [[0.3, 0.3], [11.6, 0.3]], [[0.3, 6.1], [11.6, 6.1]], [[3.0, 11.8], [11.6, 6.1]]] as [[number, number], [number, number]][]).map(([[ax, ay], [bx, by]], i) => {
-            const x1 = X(ax, ay), y1 = Y(ax, ay, 116), x2 = X(bx, by), y2 = Y(bx, by, 116), cx = (x1 + x2) / 2, cy = (y1 + y2) / 2 + 26;
-            const pts = Array.from({ length: 14 }, (_, k) => { const t = (k + 0.5) / 14; return { x: (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2, y: (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2 }; });
+        <g pointerEvents="none">
+          {cordes.map(([[ax2, ay], [bx, by]], i) => {
+            const x1 = X(ax2, ay), y1 = Y(ax2, ay, 116), x2 = X(bx, by), y2 = Y(bx, by, 116), cx = (x1 + x2) / 2, cy = (y1 + y2) / 2 + 26;
+            const nbp = Math.round(1.2 * N + 0.4);
+            const pts = Array.from({ length: nbp }, (_, k) => { const t = (k + 0.5) / nbp; return { x: (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2, y: (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2 }; });
             return (
               <g key={i}>
                 <path d={`M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}`} stroke="#3a3128" strokeWidth="1" fill="none" opacity="0.7" />
@@ -467,16 +565,16 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
               </g>
             );
           })}
-          {[[0.3, 11.5], [0.3, 0.3], [11.6, 0.3], [0.3, 6.1], [11.6, 6.1]].map(([gx, gy], i) => <rect key={i} x={X(gx, gy) - 1.6} y={Y(gx, gy, 116)} width="3.2" height="116" fill="#3a3128" opacity="0.8" />)}
+          {poteaux.map(([gx, gy], i) => <rect key={i} x={X(gx, gy) - 1.6} y={Y(gx, gy, 116)} width="3.2" height="116" fill="#3a3128" opacity="0.8" />)}
         </g>
       )}
-      <rect x={-2400} y={-2400} width={VB.w + 4800} height={VB.h + 5000} fill="#10163f" opacity={0.4 * n} style={{ transition: "opacity 1.8s ease" }} />
+      <rect x={-2400} y={-2400} width={VB.w + 4800 + larg} height={VB.h + 5000 + haute} fill="#10163f" opacity={0.4 * n} style={{ transition: "opacity 1.8s ease" }} pointerEvents="none" />
       {/* Halos de lumière (au-dessus de la pénombre) */}
-      <g opacity={intensite} style={{ transition: "opacity 1.8s ease" }}>
+      <g opacity={intensite} style={{ transition: "opacity 1.8s ease" }} pointerEvents="none">
         {halos.map((h, i) => <circle key={i} cx={h.x} cy={h.y} r={h.r * 1.5} fill={couleurHalo[h.c]} opacity={h.a} className={animer ? "hc-scintille" : undefined} style={{ animationDelay: `${(i % 5) * 0.5}s` }} />)}
-        {r.lumiere === "chaleureuse" && <rect width={VB.w} height={VB.h} fill="#FFB357" opacity={0.06 + 0.1 * n} />}
+        {r.lumiere === "chaleureuse" && <rect x={-2400} y={-2400} width={VB.w + 4800 + larg} height={VB.h + 5000 + haute} fill="#FFB357" opacity={0.06 + 0.1 * n} />}
         {festif && [["rose", 300, 230], ["violet", 500, 210], ["vert", 400, 280], ["froid", 580, 300]].map(([c, x, y], i) => {
-          const px = Number(x), py = Number(y);
+          const px = Number(x) + (i % 2 ? 1 : -1) * (N - 12) * 20, py = Number(y) + (N - 12) * 12;
           return (
             <g key={i} className={animer ? "hc-onde" : undefined} style={{ animationDelay: `${i * 0.6}s` }}>
               <polygon points={`${px - 6},40 ${px + 6},40 ${px + 70},${py + 70} ${px - 70},${py + 70}`} fill={couleurHalo[c as "rose"]} opacity="0.35" />
@@ -485,16 +583,17 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
           );
         })}
       </g>
-      {o.has("brume") && <Brume />}
-      {o.has("ciel_lanternes") && <CielLanternes />}
-      {o.has("petales") && <Petales pal={pal} />}
-      {f && focus && (
-        <g key={focus.n} className="hc-halo" style={{ transformBox: "fill-box", transformOrigin: "center" }}>
-          <ellipse cx={X(f[0], f[1])} cy={Y(f[0], f[1], 18)} rx="74" ry="46" fill="none" stroke="#F4D774" strokeWidth="3" />
-          <ellipse cx={X(f[0], f[1])} cy={Y(f[0], f[1], 18)} rx="52" ry="30" fill="#F4D774" opacity="0.22" />
-        </g>
-      )}
+      <g pointerEvents="none">
+        {o.has("brume") && <Brume />}
+        {o.has("ciel_lanternes") && <CielLanternes />}
+        {o.has("petales") && <Petales pal={pal} />}
+        {f && focus && (
+          <g key={focus.n} className="hc-halo" style={{ transformBox: "fill-box", transformOrigin: "center" }}>
+            <ellipse cx={X(f[0], f[1])} cy={Y(f[0], f[1], 18)} rx="74" ry="46" fill="none" stroke="#F4D774" strokeWidth="3" />
+            <ellipse cx={X(f[0], f[1])} cy={Y(f[0], f[1], 18)} rx="52" ry="30" fill="#F4D774" opacity="0.22" />
+          </g>
+        )}
+      </g>
     </svg>
   );
 }
-
