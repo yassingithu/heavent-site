@@ -843,10 +843,10 @@ const Admin = () => {
       return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
+    if (passwordForm.newPassword.length < 8) {
       toast({
         title: "Erreur",
-        description: "Le mot de passe doit faire au moins 6 caractères",
+        description: "Le mot de passe doit faire au moins 8 caractères",
         variant: "destructive",
       });
       return;

@@ -29,11 +29,16 @@ const handler = async (req: Request): Promise<Response> => {
     const email = String(d.email ?? "").trim().toLowerCase();
     const password = String(d.password ?? "");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "L'adresse email n'est pas valide." }, 400);
-    if (password.length < 6) return json({ error: "Le mot de passe doit contenir au moins 6 caractères." }, 400);
+    if (password.length < 8) return json({ error: "Le mot de passe doit contenir au moins 8 caractères." }, 400);
     if (!txt(d.nom) || !txt(d.prenom)) return json({ error: "Nom et prénom requis." }, 400);
 
     const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { autoRefreshToken: false, persistSession: false } });
+
+    // Anti-abus : 15 inscriptions maximum toutes les 10 minutes pour tout le site
+    const depuis = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { count: recentes } = await admin.from("staff").select("id", { count: "exact", head: true }).gte("created_at", depuis);
+    if ((recentes ?? 0) >= 15) return json({ error: "Beaucoup d'inscriptions en ce moment : réessayez dans quelques minutes." }, 429);
 
     const { data: existe } = await admin.from("staff").select("id").ilike("email", email).maybeSingle();
     if (existe) return json({ error: "Un compte avec cet email existe déjà. Connectez-vous, ou utilisez « Mot de passe oublié »." }, 409);

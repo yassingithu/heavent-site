@@ -26,7 +26,7 @@ const formSchema = z.object({
   nom: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   prenom: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
   email: z.string().email("Email invalide"),
-  password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
+  password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
   confirmPassword: z.string(),
   telephone: z.string().regex(/^(\+\d{1,4}\d{8,15}|00\d{1,4}\d{8,15})$/, "Le téléphone doit commencer par un indicatif pays (ex: +212, +32, +33, 00212, 0032)"),
   age: z.string().min(1, "L'âge est requis"),
@@ -184,7 +184,7 @@ const StaffRegistration = () => {
       if (error.message.includes("already registered") || error.message.includes("existe déjà")) {
         errorMessage = x("Un compte avec cet email existe déjà. Essayez de vous connecter ou utilisez un autre email.");
       } else if (error.message.includes("Password")) {
-        errorMessage = x("Le mot de passe doit contenir au moins 6 caractères avec des lettres et des chiffres.");
+        errorMessage = x("Le mot de passe doit contenir au moins 8 caractères avec des lettres et des chiffres.");
       } else if (error.message.includes("Email")) {
         errorMessage = x("L'adresse email n'est pas valide. Vérifiez le format.");
       } else if (error.message.includes("Network")) {
@@ -264,7 +264,7 @@ const StaffRegistration = () => {
       // Validation spéciale pour confirmPassword
       if (field === 'confirmPassword') {
         const password = formData.password;
-        if (!value || value !== password || value.length < 6) {
+        if (!value || value !== password || value.length < 8) {
           missingFields.push('confirmation du mot de passe');
         }
         continue;

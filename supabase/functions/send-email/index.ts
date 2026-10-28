@@ -32,6 +32,16 @@ const SERVICES_MARIAGE: Record<string, string> = {
   transport: "Transport", ceremony: "Officiant de cérémonie", hostess: "Hôtes/Hôtesses d'accueil", planning: "Wedding planner",
 };
 
+// Anti-spam des formulaires sans enregistrement en base (contact, candidature) : 5 envois par adresse IP et par 10 minutes
+const envoisParIp = new Map<string, number[]>();
+const autorise = (ip: string) => {
+  const maintenant = Date.now(), recents = (envoisParIp.get(ip) ?? []).filter((t) => maintenant - t < 10 * 60 * 1000);
+  if (recents.length >= 5) return false;
+  recents.push(maintenant); envoisParIp.set(ip, recents);
+  if (envoisParIp.size > 5000) envoisParIp.clear();
+  return true;
+};
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...corsHeaders } });
 
@@ -40,6 +50,10 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { type, data } = await req.json();
+    if (type === "contact" || type === "staff") {
+      const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "inconnue";
+      if (!autorise(ip)) return json({ error: "Trop d'envois en peu de temps. Réessayez dans quelques minutes." }, 429);
+    }
     let subject = "";
     let html = "";
     let to = ADMIN_EMAIL;
