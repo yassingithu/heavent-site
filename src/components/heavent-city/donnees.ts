@@ -127,7 +127,7 @@ export const DECORS: (InfoOption & { id: DecorId })[] = traduit([
 export const EXPERIENCES: (InfoOption & { id: ExperienceId })[] = traduit([
   { id: "piste", nom: "Piste de danse", phrase: "Posée et éclairée", catalogue: "piste" },
   { id: "photobooth", nom: "Photobooth", phrase: "Fond décoré et tirages instantanés", catalogue: "photobooth" },
-  { id: "nawar", nom: "Bar à parfums Nawar", phrase: "Chacun compose son parfum et repart avec", catalogue: "nawar" },
+  { id: "nawar", nom: "Bar à parfums Nawar", phrase: "Des parfums choisis par les hôtes, offerts aux invités", catalogue: "nawar" },
   { id: "buffet", nom: "Buffet", phrase: "Dressé et servi", catalogue: "buffet" },
   { id: "the_bar", nom: "Service à thé", phrase: "Thé marocain et pâtisseries", catalogue: "the" },
   { id: "candy_bar", nom: "Candy bar", phrase: "Bonbons et friandises à emporter", catalogue: "candy_bar", types: ["mariage", "fete"] },
@@ -183,7 +183,7 @@ export const MISSIONS: Record<TypeEvt, Mission[]> = traduit({
       id: "surprise", titre: "La surprise dont on se souviendra", message: "Il manque le moment dont on se souviendra : choisis ta surprise.",
       reponses: [
         { id: "feux", nom: "Des feux froids", phrase: "Pour l'entrée des mariés", ajoute: ["feux_froids"], effet: "Des étincelles jaillissent près de la piste." },
-        { id: "nawar", nom: "Un parfum à soi", phrase: "Chaque invité compose le sien", ajoute: ["nawar"], effet: "Le bar à parfums Nawar s'installe." },
+        { id: "nawar", nom: "Un parfum en cadeau", phrase: "Des parfums choisis par les mariés pour leurs invités", ajoute: ["nawar"], effet: "Le bar à parfums Nawar s'installe." },
         { id: "petales", nom: "Une pluie de pétales", phrase: "Un instant suspendu", ajoute: ["petales"], effet: "Des pétales tombent doucement sur la scène." },
       ],
     },

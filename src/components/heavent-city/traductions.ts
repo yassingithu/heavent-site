@@ -480,4 +480,7 @@ export const TRADUCTIONS: Record<string, { en: string; ar: string }> = {
   "Deux objets ne peuvent pas se superposer : si la place est prise, l'objet revient à sa place.": { en: "Two items cannot overlap: if the spot is taken, the item goes back to its place.", ar: "لا يمكن وضع عنصرين في المكان نفسه: إذا كان المكان مشغولًا يعود العنصر إلى مكانه." },
   "Quel folklore ?": { en: "Which folk style?", ar: "أي فولكلور؟" },
   "Choisis un ou plusieurs styles de troupe : on les ajoute à ta troupe folklorique.": { en: "Choose one or more troupe styles: we add them to your folk troupe.", ar: "اختر نمطًا أو أكثر من الفرق: نضيفها إلى فرقتك الفولكلورية." },
+  "Des parfums choisis par les hôtes, offerts aux invités": { en: "Perfumes chosen by the hosts, offered to guests", ar: "عطور يختارها المضيفون ويقدمونها هدية للضيوف" },
+  "Un parfum en cadeau": { en: "A perfume as a gift", ar: "عطر هدية" },
+  "Des parfums choisis par les mariés pour leurs invités": { en: "Perfumes chosen by the couple for their guests", ar: "عطور يختارها العروسان لضيوفهما" },
 };
