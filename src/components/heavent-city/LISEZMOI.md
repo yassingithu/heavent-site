@@ -39,3 +39,15 @@ Assistant IA : la fonction `heavent-city-ia` répond « indisponible » tant que
 - Onglet « Salle » : nombre d'invités et type de tables (rondes, rectangulaires, hautes = mange-debout, sans table d'honneur). Les types correspondent au catalogue interne (`table_ronde`, `table_rect`, `table_haute`) ; aucun prix n'est utilisé.
 - Bouton « Déplacer » : on fait glisser les objets (annulable, mémorisé, « Tout remettre en place »). Les déplacements sont signalés à l'équipe dans le texte de la demande.
 - Tests : `tests/heavent-city/taille-salle.mjs <lieu> <invités> <tables>` et `deplacement-salle.mjs`.
+
+## Modifications du 29/10/2026
+- **Nombre d'invités** : le champ se tape librement (effacer puis taper 15 ne donne plus 500) et n'est validé qu'en quittant le champ ou avec Entrée (`ChampNombre` dans `ui.tsx`). Minimum 2 invités.
+- **Remplissage des tables** : chaque table garde toutes ses chaises et les invités sont répartis au plus juste (`repartition()` dans `etat.ts`) : 15 invités en tables rondes = 2 tables de 8 et 7, 5 places libres (affiché dans l'onglet Salle).
+- **Tables hautes en plus des tables assises** : onglet Salle, « Ajouter des tables hautes » (`hautesEnPlus`). Elles sont posées par `dimensionner(…, nbHautes)` sur les cases libres, vers l'entrée, sans toucher l'allée. Admin : ligne `table_haute`. Test : `tests/heavent-city/tables-hautes-en-plus.ts`.
+- **Déplacement** : un objet lâché sur une place déjà occupée (table, piste, buffet, accueil…) est refusé et revient à sa place (zone rouge pendant le glisser, message dans le bandeau). Seuls la piste avec la troupe et les feux froids peuvent se toucher.
+- **Folklore** : onglet Musique, « Quel folklore ? » (`FOLKLORES` dans `donnees.ts`) : Dakka marrakchia, Issawa, Hmadcha, Gnaoua, Ahidous, Ahwach, Taskiwin, Houara, Reggada, Aïta, Abidat Rma, Guedra. Chaque style a sa ligne du catalogue (`folk_…`, prix 0 à fixer).
+- **Palette « Noir et or »** (`noir_or`).
+- **Arche florale d'accueil** : placée à l'entrée, au-dessus de l'allée ; plus aucune mention « photos ».
+- **Villa avec piscine** : décor du bassin (fleurs flottantes, bougies flottantes, piscine illuminée), lignes `deco_piscine_…` à prix 0.
+- **Espace enfants** pour tous les types d'événement (ligne existante `espace_enfants`).
+- Migration : `supabase/migrations/20261029200000_catalogue_jeu_piscine_folklore.sql` (appliquée le 29/10).

@@ -2,14 +2,14 @@
 import { Check } from "lucide-react";
 import { useMemo, useState, type Dispatch } from "react";
 import {
-  ACCUEILS, DECORS, EXPERIENCES, INVITES, LUMIERES, MUSIQUES, PALETTES, STYLES, TABLES_TYPES, disponiblePour, reservable, type TableId, type AccueilId, type InfoOption, type MusiqueId, type OptionId,
+  ACCUEILS, DECORS, EXPERIENCES, FOLKLORES, INVITES, LUMIERES, MUSIQUES, PALETTES, STYLES, TABLES_TYPES, disponiblePour, reservable, type TableId, type AccueilId, type InfoOption, type MusiqueId, type OptionId,
 } from "./donnees";
 import {
-  accueilsEffectifs, lumiereEffective, missionsDuType, nbTables, optionsActives, rendu, type Action, type Choix,
+  accueilsEffectifs, lumiereEffective, missionsDuType, nbTables, optionsActives, rendu, repartition, type Action, type Choix,
 } from "./etat";
 import { N_MIN } from "./positions";
 import { MissionCarte } from "./Missions";
-import { Picto, Pastille } from "./ui";
+import { ChampNombre, Picto, Pastille } from "./ui";
 import { petitSon } from "./son";
 import { tr } from "./langue";
 
@@ -41,18 +41,30 @@ function Salle({ choix, dispatch }: { choix: Choix; dispatch: Dispatch<Action> }
   const nb = nbTables(valeur, choix.tables), n = rendu({ ...choix, invites: valeur })?.salle.n ?? N_MIN;
   const fixer = (v: number) => { setSaisie(null); dispatch({ t: "choisir", patch: { invites: Math.min(INVITES.max, Math.max(INVITES.min, Math.round(v) || INVITES.defaut)) } }); };
   const deplaces = Object.keys(choix.deplacements).length;
+  const rep = repartition(valeur, choix.tables), libres = nb * info.places - valeur;
+  const parTable = rep.length > 1 && rep[0] !== rep[rep.length - 1] ? `${rep[rep.length - 1]}–${rep[0]}` : String(rep[0] ?? 0);
+  const assises = choix.tables === "rondes" || choix.tables === "rectangulaires";
+  const conseil = Math.max(2, Math.round(valeur / 25));
+  const fixerHautes = (v: number) => dispatch({ t: "choisir", patch: { hautesEnPlus: Math.max(0, Math.min(60, v)) } });
   return (
     <div className="grid gap-4" data-testid="onglet-salle-contenu">
       <div>
-        <label htmlFor="salle-invites" className="flex items-baseline justify-between text-[14px] text-[#F6EFDD]"><span>{choix.tables === "conference" ? tr("Nombre de participants") : tr("Nombre d'invités")}</span><b className="font-serif text-xl text-[#E4D49A]" data-testid="salle-valeur">{valeur}</b></label>
-        <input id="salle-invites" type="range" min={INVITES.min} max={INVITES.max} step={5} value={valeur} data-testid="salle-curseur"
+        <div className="flex items-center justify-between gap-3 text-[14px] text-[#F6EFDD]">
+          <label htmlFor="salle-invites-saisie">{choix.tables === "conference" ? tr("Nombre de participants") : tr("Nombre d'invités")}</label>
+          <ChampNombre id="salle-invites-saisie" valeur={valeur} min={INVITES.min} max={INVITES.max} onValider={fixer} testid="salle-saisie"
+            className="w-20 rounded-xl border border-white/15 bg-white/[0.06] px-2 min-h-10 text-center font-serif text-xl text-[#E4D49A] focus:outline-none focus:ring-2 focus:ring-[#C9A74E]" />
+          <b className="sr-only" data-testid="salle-valeur">{valeur}</b>
+        </div>
+        <input id="salle-invites" aria-label={tr("Nombre d'invités")} type="range" min={INVITES.min} max={INVITES.max} step={1} value={valeur} data-testid="salle-curseur"
           onChange={(e) => setSaisie(Number(e.target.value))} onPointerUp={() => saisie !== null && fixer(saisie)} onKeyUp={() => saisie !== null && fixer(saisie)} onBlur={() => saisie !== null && fixer(saisie)}
           className="mt-2 h-8 w-full accent-[#C9A74E]" />
         <div className="mt-1 flex flex-wrap gap-1.5">
           {[50, 120, 200, 300, 400].map((v) => <button key={v} type="button" onClick={() => fixer(v)} data-testid={`salle-invites-${v}`} className={`min-h-10 rounded-full border px-3 text-[13px] ${choix.invites === v ? "border-[#C9A74E] bg-[#C9A74E] font-semibold text-[#17141a]" : "border-white/15 bg-white/[0.05] text-[#F0E8D6]"}`}>{v}</button>)}
         </div>
         <p className="mt-2 text-[13px] leading-snug text-[#D9D0BC]" aria-live="polite" data-testid="salle-bilan">
-          {choix.tables === "conference" ? tr("{n} chaises : une par participant, en rangées face à l'estrade.", { n: valeur }) : tr("{nb} {type} pour {n} invités.", { nb, type: info.compte, n: valeur })}{n > N_MIN ? " " + tr("La salle s'est agrandie pour tout accueillir.") : ""}
+          {choix.tables === "conference" ? tr("{n} chaises : une par participant, en rangées face à l'estrade.", { n: valeur }) : tr("{nb} {type} pour {n} invités.", { nb, type: info.compte, n: valeur })}
+          {choix.tables !== "conference" && libres > 0 ? " " + tr("{p} invités par table, {l} places restent libres.", { p: parTable, l: libres }) : ""}
+          {n > N_MIN ? " " + tr("La salle s'est agrandie pour tout accueillir.") : ""}
         </p>
       </div>
       <div>
@@ -73,9 +85,21 @@ function Salle({ choix, dispatch }: { choix: Choix; dispatch: Dispatch<Action> }
         </div>
         {choix.tables === "hautes" && choix.type === "mariage" && <p className="mt-2 text-[12px] leading-snug text-[#B9B09C]">{tr("Avec des tables hautes, il n'y a pas de table d'honneur : tout le monde est debout, façon cocktail.")}</p>}
       </div>
+      {assises && (
+        <div className="rounded-2xl border border-white/12 bg-white/[0.04] p-3" data-testid="hautes-en-plus">
+          <p className="text-[14px] text-[#F6EFDD]">{tr("Ajouter des tables hautes")}</p>
+          <p className="mt-0.5 text-[12px] leading-snug text-[#B9B09C]">{tr("Des mange-debout en plus des tables assises, pour un espace cocktail.")}</p>
+          <div className="mt-2 flex items-center gap-2">
+            <button type="button" aria-label={tr("Moins de tables hautes")} onClick={() => fixerHautes(choix.hautesEnPlus - 1)} disabled={choix.hautesEnPlus <= 0} data-testid="hautes-moins" className="h-10 w-10 rounded-full border border-white/20 text-lg text-[#F0E8D6] disabled:opacity-30">−</button>
+            <b className="min-w-[2.5rem] text-center font-serif text-xl text-[#E4D49A]" data-testid="hautes-valeur" aria-live="polite">{choix.hautesEnPlus}</b>
+            <button type="button" aria-label={tr("Plus de tables hautes")} onClick={() => fixerHautes(choix.hautesEnPlus + 1)} data-testid="hautes-plus" className="h-10 w-10 rounded-full border border-white/20 text-lg text-[#F0E8D6]">+</button>
+            {choix.hautesEnPlus === 0 && <button type="button" onClick={() => fixerHautes(conseil)} data-testid="hautes-conseil" className="ms-1 min-h-10 rounded-full border border-[#C9A74E]/60 px-3 text-[12.5px] text-[#E4D49A]">{tr("Ajouter {n} tables hautes", { n: conseil })}</button>}
+          </div>
+        </div>
+      )}
       <div className="rounded-2xl border border-white/12 bg-white/[0.04] p-3">
         <p className="text-[14px] text-[#F6EFDD]">{tr("Déplacer des objets")}</p>
-        <p className="mt-0.5 text-[12px] leading-snug text-[#B9B09C]">{tr("Touche « Déplacer » au-dessus de la scène, puis fais glisser une table, la piste, le buffet… Tu peux annuler à tout moment.")}</p>
+        <p className="mt-0.5 text-[12px] leading-snug text-[#B9B09C]">{tr("Touche « Déplacer » au-dessus de la scène, puis fais glisser une table, la piste, le buffet… Tu peux annuler à tout moment.")} {tr("Deux objets ne peuvent pas se superposer : si la place est prise, l'objet revient à sa place.")}</p>
         {deplaces > 0 && <button type="button" onClick={() => dispatch({ t: "remettre" })} data-testid="remettre-panneau" className="mt-2 min-h-10 rounded-full border border-white/20 px-3.5 text-[13px] text-[#F0E8D6] hover:bg-white/10">{tr("Tout remettre en place")} ({deplaces})</button>}
       </div>
     </div>
@@ -152,6 +176,25 @@ export default function Panneau({ choix, dispatch, onglet, onOnglet, onRepondre,
               {dispo(MUSIQUES).map((o) => <Carte key={o.id} id={o.id} nom={o.nom} phrase={o.phrase} on={mus.includes(o.id as MusiqueId)} res={reservable(o)} testid={`musique-${o.id}`}
                 onClick={() => dispatch({ t: "choisir", patch: { musiques: mus.includes(o.id as MusiqueId) ? mus.filter((m) => m !== o.id) : [...mus, o.id as MusiqueId] } })} />)}
             </div>
+            {dispo(MUSIQUES).some((o) => o.id === "troupe") && (
+              <div className="mt-3 rounded-2xl border border-white/12 bg-white/[0.04] p-3" data-testid="folklores">
+                <p className="text-[14px] text-[#F6EFDD]">{tr("Quel folklore ?")}</p>
+                <p className="mt-0.5 text-[12px] leading-snug text-[#B9B09C]">{tr("Choisis un ou plusieurs styles de troupe : on les ajoute à ta troupe folklorique.")}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {FOLKLORES.map((f) => {
+                    const on = mus.includes("troupe") && choix.folklores.includes(f.id);
+                    return (
+                      <button key={f.id} type="button" aria-pressed={on} title={f.phrase} data-testid={`folklore-${f.id}`}
+                        onClick={() => { petitSon("clic"); const liste = on ? choix.folklores.filter((x) => x !== f.id) : [...choix.folklores, f.id]; dispatch({ t: "choisir", patch: { folklores: liste, musiques: liste.length && !mus.includes("troupe") ? [...mus, "troupe"] : mus } }); }}
+                        className={`min-h-10 rounded-full border px-3 text-[13px] transition ${on ? "border-[#C9A74E] bg-[#C9A74E] font-semibold text-[#17141a]" : "border-white/15 bg-white/[0.05] text-[#F0E8D6] hover:bg-white/10"}`}>
+                        {on && <Check className="me-1 inline h-3.5 w-3.5" />}{f.nom}
+                      </button>
+                    );
+                  })}
+                </div>
+                {mus.includes("troupe") && choix.folklores.length > 0 && <p className="mt-2 text-[12px] leading-snug text-[#D9D0BC]">{choix.folklores.map((x) => FOLKLORES.find((f) => f.id === x)?.phrase).filter(Boolean).join(" · ")}</p>}
+              </div>
+            )}
           </>
         )}
         {onglet === "accueil" && (

@@ -4,14 +4,14 @@
  */
 import { useId, useMemo, useRef, useState, type PointerEvent as PE, type ReactNode } from "react";
 import { PALETTES, STYLES, type LieuId } from "./donnees";
-import type { Rendu } from "./etat";
+import { repartition, type Rendu } from "./etat";
 import { VB, X, Y, poly, melanger, assombrir, eclaircir, hasard } from "./iso";
 import {
-  Acoustique, Allee, Amariya, Arche, EspaceHenne, FauteuilsMaries, Neggafa, PieceMontee, Bar, BarParfums, BarreThe, Boite, Bouquet, Brume, Buffet, Candelabre, CielLanternes, Comptoir, Dj, EnceintesAmbiance, FeuxFroids, Fontaine,
+  Acoustique, Allee, Amariya, Arche, DecorPiscine, EspaceEnfants, EspaceHenne, FauteuilsMaries, Neggafa, PieceMontee, Bar, BarParfums, BarreThe, Boite, Bouquet, Brume, Buffet, Candelabre, CielLanternes, Comptoir, Dj, EnceintesAmbiance, FeuxFroids, Fontaine,
   BuffetSandwichs, ChaiseConf, EcranProjection, Estrade, LivreDor, MicroPied, MurFleurs, Regie, TableIntervenants, Orchestre, Personne, Petales, Photobooth, Photographe, PisteDanse, Plan, PosteLanterne, Porte, SalonMarocain, STYLE_CSS, TableHonneur, TableHaute, TableRect, TableRonde,
   Troupe, cheveuxDe, cintre, peauDe, type Pal,
 } from "./dessins";
-import { RAYON_TABLE } from "./positions";
+import { GABARITS, RAYON_TABLE, type Rect } from "./positions";
 import { tr } from "./langue";
 
 export type EtapeFinal = null | "avant" | "arrive" | "assis";
@@ -20,6 +20,8 @@ export interface SceneProps {
   focus?: { cle: string; n: number } | null; compact?: boolean; className?: string; cadrage?: "meet" | "slice";
   /** mode « déplacer » : le visiteur peut faire glisser les objets (onDeplacer est appelé au relâchement) */
   deplacable?: boolean; onDeplacer?: (id: string, dx: number, dy: number) => void;
+  /** appelé quand le visiteur lâche un objet sur une place déjà occupée (l'objet revient à sa place) */
+  onRefus?: () => void;
 }
 
 const H_MUR = 128;
@@ -282,7 +284,7 @@ function Mur({ lieu, cote, pal, nuit, style, N }: { lieu: LieuId; cote: "g" | "d
 }
 
 // ── Éléments propres au lieu, devant les murs ───────────────────────────────
-function DecorLieu({ lieu, nuit, pal, N }: { lieu: LieuId; nuit: number; pal: Pal; N: number }) {
+function DecorLieu({ lieu, nuit, pal, N, options, animer }: { lieu: LieuId; nuit: number; pal: Pal; N: number; options: ReadonlySet<string>; animer?: boolean }) {
   if (lieu === "villa") {
     // Bassin derrière la balustrade (côté mur de droite)
     const eau = melanger("#79C2D3", "#1c3a66", nuit);
@@ -291,6 +293,7 @@ function DecorLieu({ lieu, nuit, pal, N }: { lieu: LieuId; nuit: number; pal: Pa
         <polygon points={poly([-0.2, -0.3], [N + 0.2, -0.3], [N + 0.2, -4.6], [-0.2, -4.6])} fill="#EFEADF" />
         <polygon points={poly([0.1, -0.7], [N - 0.1, -0.7], [N - 0.1, -4.2], [0.1, -4.2])} fill={eau} />
         {Array.from({ length: Math.round(N / 1.7) }, (_, k) => <polygon key={k} points={poly([0.5 + k * 1.4, -1.2 - (k % 3) * 0.9], [1.4 + k * 1.4, -1.2 - (k % 3) * 0.9], [1.5 + k * 1.4, -1.28 - (k % 3) * 0.9], [0.6 + k * 1.4, -1.28 - (k % 3) * 0.9])} fill="#fff" opacity="0.28" />)}
+        <DecorPiscine N={N} pal={pal} nuit={nuit} fleurs={options.has("piscine_fleurs")} bougies={options.has("piscine_bougies")} lumiere={options.has("piscine_lumiere")} animer={animer} />
         {[N * 0.12, N * 0.37, N * 0.65].map((u, i) => (
           <g key={i} transform={`translate(${X(u, -3.2)} ${Y(u, -3.2)})`}>
             <path d="M0 0 q4 -30 1 -70" stroke={melanger("#5c4630", "#15131c", nuit)} strokeWidth="4.5" fill="none" />
@@ -334,7 +337,7 @@ interface Entite { z: number; k: string; n: ReactNode }
 
 interface Mobile { id: string; a: [number, number] }
 
-export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, className, cadrage = "meet", deplacable = false, onDeplacer }: SceneProps) {
+export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, className, cadrage = "meet", deplacable = false, onDeplacer, onRefus }: SceneProps) {
   const uid = useId().replace(/:/g, "");
   const pal: Pal = useMemo(() => {
     const p = PALETTES.find((x) => x.id === r.palette) ?? PALETTES[0];
@@ -351,15 +354,16 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
 
   // ── Déplacement des objets : décalage en cases, appliqué à tout le dessin de l'objet ──
   const svgRef = useRef<SVGSVGElement>(null);
-  const [vif, setVif] = useState<{ id: string; off: [number, number] } | null>(null);
-  const prise = useRef<{ id: string; a: [number, number]; depart: [number, number]; p0: [number, number]; dernier: [number, number] } | null>(null);
+  const [vif, setVif] = useState<{ id: string; off: [number, number]; bloque?: boolean } | null>(null);
+  const prise = useRef<{ id: string; a: [number, number]; depart: [number, number]; p0: [number, number]; dernier: [number, number]; bloque: boolean } | null>(null);
   const dep = (id: string): [number, number] => (vif && vif.id === id ? vif.off : r.deplacements[id] ?? [0, 0]);
   const enveloppe = (id: string, a: [number, number], node: ReactNode) => {
     const [dx, dy] = dep(id);
     return (
       <g data-objet={id} transform={dx || dy ? `translate(${(dx - dy) * 32} ${(dx + dy) * 16})` : undefined} style={deplacable ? { cursor: vif?.id === id ? "grabbing" : "grab" } : undefined}>
         {node}
-        {deplacable && <ellipse cx={X(a[0], a[1])} cy={Y(a[0], a[1])} rx="24" ry="12" fill="#F4D774" fillOpacity="0.22" stroke="#F4D774" strokeWidth="1.6" strokeDasharray="5 4" />}
+        {vif?.id === id && vif.bloque && (() => { const e = emprises.get(id); return e ? <polygon points={poly([e.x0, e.y0], [e.x1, e.y0], [e.x1, e.y1], [e.x0, e.y1])} fill="#E24E4E" fillOpacity="0.45" stroke="#E24E4E" strokeWidth="2" /> : null; })()}
+        {deplacable && (() => { const rouge = vif?.id === id && vif.bloque; return <ellipse cx={X(a[0], a[1])} cy={Y(a[0], a[1])} rx="24" ry="12" fill={rouge ? "#E24E4E" : "#F4D774"} fillOpacity={rouge ? 0.35 : 0.22} stroke={rouge ? "#E24E4E" : "#F4D774"} strokeWidth="1.6" strokeDasharray="5 4" />; })()}
       </g>
     );
   };
@@ -388,7 +392,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
     e.preventDefault();
     svgRef.current?.setPointerCapture(e.pointerId);
     const depart = dep(id);
-    prise.current = { id, a: mv, depart, p0: p, dernier: depart };
+    prise.current = { id, a: mv, depart, p0: p, dernier: depart, bloque: false };
     setVif({ id, off: depart });
   };
   const bouge = (e: PE<SVGSVGElement>) => {
@@ -400,7 +404,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
     dgx = Math.round(dgx * 4) / 4; dgy = Math.round(dgy * 4) / 4;
     // l'objet reste dans la salle
     dgx = Math.max(0.6 - t.a[0], Math.min(N - 0.6 - t.a[0], dgx)); dgy = Math.max(0.6 - t.a[1], Math.min(N - 0.6 - t.a[1], dgy));
-    if (dgx !== t.dernier[0] || dgy !== t.dernier[1]) { t.dernier = [dgx, dgy]; setVif({ id: t.id, off: [dgx, dgy] }); }
+    if (dgx !== t.dernier[0] || dgy !== t.dernier[1]) { t.dernier = [dgx, dgy]; t.bloque = chevauche(t.id, dgx, dgy); setVif({ id: t.id, off: [dgx, dgy], bloque: t.bloque }); }
   };
   const haut = (e: PE<SVGSVGElement>) => {
     const t = prise.current;
@@ -408,30 +412,68 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
     if (!t) return;
     try { svgRef.current?.releasePointerCapture(e.pointerId); } catch { /* déjà relâché */ }
     setVif(null);
+    // une place déjà prise est refusée : l'objet revient où il était
+    if (t.bloque) { onRefus?.(); return; }
     if (t.dernier[0] !== t.depart[0] || t.dernier[1] !== t.depart[1]) onDeplacer?.(t.id, t.dernier[0], t.dernier[1]);
   };
   const ancres = new Map<string, [number, number]>();
-  const mob = (id: string, gx: number, gy: number): Mobile => { ancres.set(id, [gx, gy]); return { id, a: [gx, gy] }; };
+  /** emprise au sol de chaque objet déplaçable (avant décalage), pour refuser les superpositions */
+  const emprises = new Map<string, Rect>();
+  const mob = (id: string, gx: number, gy: number, hw = 0.4, hd = hw): Mobile => {
+    ancres.set(id, [gx, gy]); emprises.set(id, { id, x0: gx - hw, y0: gy - hd, x1: gx + hw, y1: gy + hd });
+    return { id, a: [gx, gy] };
+  };
+  // ces objets peuvent se toucher (la troupe danse sur la piste, les feux froids l'encadrent)
+  const compatibles = (a: string, b: string) => [a, b].includes("piste") && [a, b].some((x) => x === "troupe" || x.startsWith("feu"));
+  /** l'objet `id`, décalé de (dx, dy) cases, toucherait-il un autre objet ? */
+  function chevauche(id: string, dx: number, dy: number): boolean {
+    const base = emprises.get(id); if (!base) return false;
+    const m = 0.04;
+    const a = { x0: base.x0 + dx, y0: base.y0 + dy, x1: base.x1 + dx, y1: base.y1 + dy };
+    const touche = (b: { x0: number; y0: number; x1: number; y1: number }) => a.x0 < b.x1 - m && b.x0 < a.x1 - m && a.y0 < b.y1 - m && b.y0 < a.y1 - m;
+    for (const [autre, e] of emprises) {
+      if (autre === id || compatibles(id, autre)) continue;
+      const [ox, oy] = r.deplacements[autre] ?? [0, 0];
+      if (touche({ x0: e.x0 + ox, y0: e.y0 + oy, x1: e.x1 + ox, y1: e.y1 + oy })) return true;
+    }
+    // objets fixes (accueil, bouquets, comptoir…) : ceux qui ne se déplacent pas
+    const mobiles = new Set([...emprises.keys()]);
+    for (const p of P.obstacles) {
+      if (/^(pl|cd|enc|feu)\d/.test(p.id) || mobiles.has(p.id) || compatibles(id, p.id)) continue;
+      if (touche(p)) return true;
+    }
+    return false;
+  }
 
   // Tables : autant que nécessaire (une pour 10 invités en rondes), la salle s'agrandit pour toutes les contenir
   const tbl = r.salle.tables;
   const nb = Math.max(1, r.tablesTotal);
-  const parChaises = r.tables === "rondes" ? Math.max(4, Math.min(10, Math.round(r.invites / nb))) : r.tables === "rectangulaires" ? Math.max(2, Math.min(6, Math.round(r.invites / nb))) : Math.max(2, Math.min(4, Math.round(r.invites / nb)));
+  // chaque table garde toutes ses chaises ; les invités sont répartis au plus juste (15 en tables de 10 → 8 et 7)
+  const places = r.tables === "rondes" ? 10 : r.tables === "rectangulaires" ? 6 : 4;
+  const assisPar = repartition(r.invites, r.tables);
+  void nb;
+  const gab = GABARITS[r.tables];
   const fleursTable = o.has("fleurs") || style === "romantique";
   const conference = r.tables === "conference";
   if (conference) tbl.forEach(([gx, gy], i) => add(gx + gy, `ch${i}`, <ChaiseConf gx={gx} gy={gy} i={i} pal={pal} assis={assis} />));
   else tbl.forEach(([gx, gy], i) => {
     const c = { pal, fleurs: fleursTable, bougies: r.lumiere === "bougies", retard: i * 0.4, animer };
-    const node = r.tables === "rondes" ? <TableRonde gx={gx} gy={gy} r={RAYON_TABLE} nbChaises={parChaises} invites={assis ? parChaises : 0} {...c} />
-      : r.tables === "rectangulaires" ? <TableRect gx={gx} gy={gy} nbChaises={parChaises} invites={assis ? parChaises : 0} {...c} />
-      : <TableHaute gx={gx} gy={gy} invites={assis ? parChaises : 0} {...c} />;
-    add(gx + gy, `t${i}`, node, mob(`t${i}`, gx, gy));
+    const qui = assis ? Math.min(places, r.tables === "hautes" ? Math.min(4, assisPar[i] ?? 0) : assisPar[i] ?? 0) : 0;
+    const node = r.tables === "rondes" ? <TableRonde gx={gx} gy={gy} r={RAYON_TABLE} nbChaises={places} invites={qui} {...c} />
+      : r.tables === "rectangulaires" ? <TableRect gx={gx} gy={gy} nbChaises={places} invites={qui} {...c} />
+      : <TableHaute gx={gx} gy={gy} invites={qui} {...c} />;
+    add(gx + gy, `t${i}`, node, mob(`t${i}`, gx, gy, gab.dx, gab.dy));
     if (r.lumiere === "bougies") { const [hx, hy] = decale(`t${i}`, gx, gy); halos.push({ x: X(hx, hy), y: Y(hx, hy, r.tables === "hautes" ? 54 : 30), r: 34, a: 0.55, c: "chaud" }); }
+  });
+
+  // Tables hautes ajoutées en plus des tables assises (espace cocktail)
+  r.salle.hautes.forEach(([gx, gy], i) => {
+    add(gx + gy, `th${i}`, <TableHaute gx={gx} gy={gy} invites={assis ? 3 : 0} pal={pal} fleurs={fleursTable} bougies={r.lumiere === "bougies"} retard={i * 0.3} animer={animer} />, mob(`th${i}`, gx, gy, GABARITS.hautes.dx, GABARITS.hautes.dy));
   });
 
   // Honneur / écran / arche (pas de table d'honneur quand tout le monde est autour de tables hautes)
   if (r.type !== "pro" && r.type !== "conference") {
-    if (r.tables !== "hautes") { const H = P.HONNEUR; add(H.gx + H.gy + 2, "honneur", <TableHonneur gx={H.gx} gy={H.gy} w={H.w} d={H.d} pal={pal} fleurs={fleursTable} couple={assis && r.type === "mariage"} type={r.type} animer={animer} />, mob("honneur", H.gx + H.w / 2, H.gy + H.d / 2)); }
+    if (r.tables !== "hautes") { const H = P.HONNEUR; add(H.gx + H.gy + 2, "honneur", <TableHonneur gx={H.gx} gy={H.gy} w={H.w} d={H.d} pal={pal} fleurs={fleursTable} couple={assis && r.type === "mariage"} type={r.type} animer={animer} />, mob("honneur", H.gx + H.w / 2, H.gy + H.d / 2, H.w / 2, H.d / 2)); }
   } else if (!o.has("ecran") && !conference) {
     add(2.4, "ecran", (
       <Plan sens="d" c={0.1} u={1.3} z0={14}>
@@ -442,44 +484,45 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
     ));
   }
   const AR = P.ARCHE, MF = P.MUR_FLEURS;
-  if (o.has("arche")) add(AR.gx + AR.gy + 0.8, "arche", <Arche gx={AR.gx} gy={AR.gy} largeur={AR.largeur} pal={pal} />, mob("arche", AR.gx + AR.largeur / 2, AR.gy + 0.5));
-  if (o.has("amariya")) { const [x, y] = P.AMARIYA; add(x + y + 1.2, "amariya", <Amariya gx={x} gy={y} pal={pal} animer={animer} />, mob("amariya", x + 1.15, y + 0.7)); }
-  if (o.has("fauteuils")) { const [x, y] = P.FAUTEUILS; add(x + y + 1, "fauteuils", <FauteuilsMaries gx={x} gy={y} pal={pal} couple={assis && r.type === "mariage"} animer={animer} />, mob("fauteuils", x + 1, y + 0.6)); }
-  if (o.has("neggafa")) { const [x, y] = P.NEGGAFA; add(x + y + 0.3, "neggafa", <Neggafa gx={x} gy={y} pal={pal} animer={animer} />, mob("neggafa", x, y)); }
-  if (o.has("gateau")) { const [x, y] = P.GATEAU; add(x + y + 0.3, "gateau", <PieceMontee gx={x} gy={y} pal={pal} />, mob("gateau", x, y)); }
-  if (o.has("henne")) { const [x, y] = P.HENNE; add(x + y + 1, "henne", <EspaceHenne gx={x} gy={y} pal={pal} />, mob("henne", x + 1.1, y + 1.1)); }
-  if (o.has("podium")) { const E = P.ESTRADE; add(E.gx + E.gy + 1, "estrade", <Estrade gx={E.gx} gy={E.gy} w={E.w} d={E.d} pal={pal} orateur={assis} />, mob("estrade", E.gx + E.w / 2, E.gy + E.d / 2)); }
+  if (o.has("arche")) add(AR.gx + AR.gy + 0.8, "arche", <Arche gx={AR.gx} gy={AR.gy} largeur={AR.largeur} pal={pal} />, mob("arche", AR.gx + AR.largeur / 2, AR.gy + 0.4, AR.largeur / 2, 0.4));
+  if (o.has("amariya")) { const [x, y] = P.AMARIYA; add(x + y + 1.2, "amariya", <Amariya gx={x} gy={y} pal={pal} animer={animer} />, mob("amariya", x + 1.15, y + 0.7, 1.15, 0.7)); }
+  if (o.has("fauteuils")) { const [x, y] = P.FAUTEUILS; add(x + y + 1, "fauteuils", <FauteuilsMaries gx={x} gy={y} pal={pal} couple={assis && r.type === "mariage"} animer={animer} />, mob("fauteuils", x + 1, y + 0.6, 1, 0.6)); }
+  if (o.has("neggafa")) { const [x, y] = P.NEGGAFA; add(x + y + 0.3, "neggafa", <Neggafa gx={x} gy={y} pal={pal} animer={animer} />, mob("neggafa", x, y, 0.45)); }
+  if (o.has("gateau")) { const [x, y] = P.GATEAU; add(x + y + 0.3, "gateau", <PieceMontee gx={x} gy={y} pal={pal} />, mob("gateau", x, y, 0.5)); }
+  if (o.has("enfants")) { const [x, y] = P.ENFANTS; add(x + y + 1, "enfants", <EspaceEnfants gx={x} gy={y} pal={pal} animer={animer} />, mob("enfants", x + 1.2, y + 1.0, 1.2, 1.0)); }
+  if (o.has("henne")) { const [x, y] = P.HENNE; add(x + y + 1, "henne", <EspaceHenne gx={x} gy={y} pal={pal} />, mob("henne", x + 1.1, y + 1.1, 1.1)); }
+  if (o.has("podium")) { const E = P.ESTRADE; add(E.gx + E.gy + 1, "estrade", <Estrade gx={E.gx} gy={E.gy} w={E.w} d={E.d} pal={pal} orateur={assis} />, mob("estrade", E.gx + E.w / 2, E.gy + E.d / 2, E.w / 2, E.d / 2)); }
   const ecranU = P.ESTRADE.gx + P.ESTRADE.w / 2 - 2.35;
   if (o.has("ecran")) add(ecranU + 0.1, "ecran-conf", <EcranProjection u0={ecranU} pal={pal} anime={animer} />);
-  if (o.has("table_intervenants")) { const T = P.INTERVENANTS; add(T.gx + T.gy + 0.8, "interv", <TableIntervenants gx={T.gx} gy={T.gy} w={T.w} d={T.d} pal={pal} assis={assis} />, mob("interv", T.gx + T.w / 2, T.gy + T.d / 2)); }
-  if (o.has("micros")) P.MICROS.forEach(([gx, gy], i) => add(gx + gy, `mic${i}`, <MicroPied gx={gx} gy={gy} />, mob(`mic${i}`, gx, gy)));
-  if (o.has("regie")) { const [qx, qy] = P.REGIE; add(qx + qy + 0.8, "regie", <Regie gx={qx} gy={qy} w={1.8} d={0.8} pal={pal} assis={assis} />, mob("regie", qx + 0.9, qy + 0.4)); }
-  if (o.has("buffet_sandwichs")) { const B = P.SANDWICHS, long = B[0] <= N - 2, w = long ? 2.6 : 0.9, d = long ? 0.9 : 2.6; add(B[0] + B[1] + 1, "sandw", <BuffetSandwichs gx={B[0]} gy={B[1]} w={w} d={d} pal={pal} />, mob("sandw", B[0] + w / 2, B[1] + d / 2)); }
+  if (o.has("table_intervenants")) { const T = P.INTERVENANTS; add(T.gx + T.gy + 0.8, "interv", <TableIntervenants gx={T.gx} gy={T.gy} w={T.w} d={T.d} pal={pal} assis={assis} />, mob("interv", T.gx + T.w / 2, T.gy + T.d / 2, T.w / 2, T.d / 2)); }
+  if (o.has("micros")) P.MICROS.forEach(([gx, gy], i) => add(gx + gy, `mic${i}`, <MicroPied gx={gx} gy={gy} />, mob(`mic${i}`, gx, gy, 0.3)));
+  if (o.has("regie")) { const [qx, qy] = P.REGIE; add(qx + qy + 0.8, "regie", <Regie gx={qx} gy={qy} w={1.8} d={0.8} pal={pal} assis={assis} />, mob("regie", qx + 0.9, qy + 0.4, 0.9, 0.4)); }
+  if (o.has("buffet_sandwichs")) { const B = P.SANDWICHS, long = B[0] <= N - 2, w = long ? 2.6 : 0.9, d = long ? 0.9 : 2.6; add(B[0] + B[1] + 1, "sandw", <BuffetSandwichs gx={B[0]} gy={B[1]} w={w} d={d} pal={pal} />, mob("sandw", B[0] + w / 2, B[1] + d / 2, w / 2, d / 2)); }
   if (o.has("mur_fleurs") && !(o.has("ecran") && ecranU < MF.u1 && ecranU + 4.7 > MF.u0)) add(MF.u0 + 0.3, "mur", <MurFleurs u0={MF.u0} u1={MF.u1} gy={MF.gy} pal={pal} />);
 
   // Musique
   const musiqueActive = actif && (final ? true : animer);
-  if (r.musiques.includes("dj")) { const dj = P.DJ; add(dj.gx + dj.gy + 1, "dj", <Dj gx={dj.gx} gy={dj.gy} w={dj.w} d={dj.d} pal={pal} actif={musiqueActive} />, mob("dj", dj.gx + dj.w / 2, dj.gy + dj.d / 2)); }
-  if (r.musiques.includes("orchestre")) { const so = P.SCENE_ORCHESTRE; add(so.gx + so.gy + 1, "orch", <Orchestre gx={so.gx} gy={so.gy} w={so.w} d={so.d} pal={pal} actif={musiqueActive} />, mob("orch", so.gx + so.w / 2, so.gy + so.d / 2)); }
-  if (r.musiques.includes("troupe")) { const [tx, ty] = P.TROUPE; add(tx + ty, "troupe", <Troupe gx={tx} gy={ty} pal={pal} actif={musiqueActive} />, mob("troupe", tx + 0.5, ty + 0.5)); }
-  if (r.musiques.includes("playlist")) add(6, "enceintes", <EnceintesAmbiance pal={pal} actif={musiqueActive} pos={P.ENCEINTES} />, mob("enceintes", (P.ENCEINTES[0][0] + P.ENCEINTES[1][0]) / 2, 0.75));
-  if (r.musiques.includes("acoustique")) { const [qx, qy] = P.ACOUSTIQUE; add(qx + qy, "acoustique", <Acoustique gx={qx} gy={qy} pal={pal} actif={musiqueActive} />, mob("acoustique", qx + 0.5, qy + 0.5)); }
+  if (r.musiques.includes("dj")) { const dj = P.DJ; add(dj.gx + dj.gy + 1, "dj", <Dj gx={dj.gx} gy={dj.gy} w={dj.w} d={dj.d} pal={pal} actif={musiqueActive} />, mob("dj", dj.gx + dj.w / 2, dj.gy + dj.d / 2, dj.w / 2, dj.d / 2)); }
+  if (r.musiques.includes("orchestre")) { const so = P.SCENE_ORCHESTRE; add(so.gx + so.gy + 1, "orch", <Orchestre gx={so.gx} gy={so.gy} w={so.w} d={so.d} pal={pal} actif={musiqueActive} />, mob("orch", so.gx + so.w / 2, so.gy + so.d / 2, so.w / 2, so.d / 2)); }
+  if (r.musiques.includes("troupe")) { const [tx, ty] = P.TROUPE; add(tx + ty, "troupe", <Troupe gx={tx} gy={ty} pal={pal} actif={musiqueActive} />, mob("troupe", tx + 0.5, ty + 0.5, 0.6, 0.5)); }
+  if (r.musiques.includes("playlist")) add(6, "enceintes", <EnceintesAmbiance pal={pal} actif={musiqueActive} pos={P.ENCEINTES} />, mob("enceintes", (P.ENCEINTES[0][0] + P.ENCEINTES[1][0]) / 2, 0.75, 0.25));
+  if (r.musiques.includes("acoustique")) { const [qx, qy] = P.ACOUSTIQUE; add(qx + qy, "acoustique", <Acoustique gx={qx} gy={qy} pal={pal} actif={musiqueActive} />, mob("acoustique", qx + 0.5, qy + 0.5, 0.5)); }
 
   // Expériences
   const PB = P.PHOTOBOOTH, NA = P.NAWAR, BU = P.BUFFET, CA = P.CANDY, TH = P.THE_BAR, SA = P.SALON, CO = P.COMPTOIR;
-  if (o.has("photobooth")) add(PB.gx + PB.gy + 1, "photobooth", <Photobooth gx={PB.gx} gy={PB.gy} w={PB.w} d={PB.d} pal={pal} flash={animer && actif} />, mob("photobooth", PB.gx + PB.w / 2, PB.gy + PB.d / 2));
+  if (o.has("photobooth")) add(PB.gx + PB.gy + 1, "photobooth", <Photobooth gx={PB.gx} gy={PB.gy} w={PB.w} d={PB.d} pal={pal} flash={animer && actif} />, mob("photobooth", PB.gx + PB.w / 2, PB.gy + PB.d / 2, PB.w / 2, PB.d / 2));
   if (o.has("nawar")) {
-    add(NA.gx + NA.gy + 1, "nawar", <BarParfums gx={NA.gx} gy={NA.gy} w={NA.w} d={NA.d} pal={pal} logo={logos?.nawar} brume={o.has("brume")} />, mob("nawar", NA.gx + NA.w / 2, NA.gy + NA.d / 2));
+    add(NA.gx + NA.gy + 1, "nawar", <BarParfums gx={NA.gx} gy={NA.gy} w={NA.w} d={NA.d} pal={pal} logo={logos?.nawar} brume={o.has("brume")} />, mob("nawar", NA.gx + NA.w / 2, NA.gy + NA.d / 2, NA.w / 2, NA.d / 2));
     const [hx, hy] = decale("nawar", NA.gx + 0.6, NA.gy + 1.1);
     halos.push({ x: X(hx, hy), y: Y(hx, hy, 40), r: 46, a: 0.45, c: "chaud" });
   }
-  if (o.has("buffet")) add(BU.gx + BU.gy + 1, "buffet", <Buffet gx={BU.gx} gy={BU.gy} w={BU.w} d={BU.d} pal={pal} />, mob("buffet", BU.gx + BU.w / 2, BU.gy + BU.d / 2));
-  if (o.has("candy_bar")) add(CA.gx + CA.gy + 0.5, "candy", <Bar gx={CA.gx} gy={CA.gy} w={CA.w} d={CA.d} pal={pal} couleurs={["#E8A6B0", "#F4D774", "#9DD3C8", "#C9A0DC"]} />, mob("candy", CA.gx + CA.w / 2, CA.gy + CA.d / 2));
-  if (o.has("the_bar")) add(TH.gx + TH.gy + 1, "the", <BarreThe gx={TH.gx} gy={TH.gy} w={TH.w} d={TH.d} pal={pal} animer={animer} />, mob("the", TH.gx + TH.w / 2, TH.gy + TH.d / 2));
-  if (o.has("livre_dor")) add(P.LIVRE_DOR[0] + P.LIVRE_DOR[1], "livre", <LivreDor gx={P.LIVRE_DOR[0]} gy={P.LIVRE_DOR[1]} pal={pal} />, mob("livre", P.LIVRE_DOR[0], P.LIVRE_DOR[1]));
-  if (o.has("salon")) add(SA.gx + SA.gy + 1, "salon", <SalonMarocain gx={SA.gx} gy={SA.gy} w={SA.w} d={SA.d} pal={pal} />, mob("salon", SA.gx + SA.w / 2, SA.gy + SA.d / 2));
-  if (o.has("fontaine")) add(P.FONTAINE[0] + P.FONTAINE[1], "fontaine", <Fontaine gx={P.FONTAINE[0]} gy={P.FONTAINE[1]} pal={pal} animer={animer} />, mob("fontaine", P.FONTAINE[0], P.FONTAINE[1]));
-  if (o.has("photographe")) add(P.PHOTOGRAPHE[0] + P.PHOTOGRAPHE[1], "photographe", <Photographe gx={P.PHOTOGRAPHE[0]} gy={P.PHOTOGRAPHE[1]} />, mob("photographe", P.PHOTOGRAPHE[0], P.PHOTOGRAPHE[1]));
+  if (o.has("buffet")) add(BU.gx + BU.gy + 1, "buffet", <Buffet gx={BU.gx} gy={BU.gy} w={BU.w} d={BU.d} pal={pal} />, mob("buffet", BU.gx + BU.w / 2, BU.gy + BU.d / 2, BU.w / 2, BU.d / 2));
+  if (o.has("candy_bar")) add(CA.gx + CA.gy + 0.5, "candy", <Bar gx={CA.gx} gy={CA.gy} w={CA.w} d={CA.d} pal={pal} couleurs={["#E8A6B0", "#F4D774", "#9DD3C8", "#C9A0DC"]} />, mob("candy", CA.gx + CA.w / 2, CA.gy + CA.d / 2, CA.w / 2, CA.d / 2));
+  if (o.has("the_bar")) add(TH.gx + TH.gy + 1, "the", <BarreThe gx={TH.gx} gy={TH.gy} w={TH.w} d={TH.d} pal={pal} animer={animer} />, mob("the", TH.gx + TH.w / 2, TH.gy + TH.d / 2, TH.w / 2, TH.d / 2));
+  if (o.has("livre_dor")) add(P.LIVRE_DOR[0] + P.LIVRE_DOR[1], "livre", <LivreDor gx={P.LIVRE_DOR[0]} gy={P.LIVRE_DOR[1]} pal={pal} />, mob("livre", P.LIVRE_DOR[0], P.LIVRE_DOR[1], 0.5));
+  if (o.has("salon")) add(SA.gx + SA.gy + 1, "salon", <SalonMarocain gx={SA.gx} gy={SA.gy} w={SA.w} d={SA.d} pal={pal} />, mob("salon", SA.gx + SA.w / 2, SA.gy + SA.d / 2, SA.w / 2, SA.d / 2));
+  if (o.has("fontaine")) add(P.FONTAINE[0] + P.FONTAINE[1], "fontaine", <Fontaine gx={P.FONTAINE[0]} gy={P.FONTAINE[1]} pal={pal} animer={animer} />, mob("fontaine", P.FONTAINE[0], P.FONTAINE[1], 0.9));
+  if (o.has("photographe")) add(P.PHOTOGRAPHE[0] + P.PHOTOGRAPHE[1], "photographe", <Photographe gx={P.PHOTOGRAPHE[0]} gy={P.PHOTOGRAPHE[1]} />, mob("photographe", P.PHOTOGRAPHE[0], P.PHOTOGRAPHE[1], 0.5));
   if (o.has("feux_froids")) P.FEUX.forEach(([gx, gy], i) => add(gx + gy, `feu${i}`, <FeuxFroids gx={gx} gy={gy} actif={animer && actif} />));
   if (o.has("fleurs")) P.BOUQUETS.forEach(([gx, gy], i) => add(gx + gy, `bq${i}`, <Bouquet gx={gx} gy={gy} pal={pal} grand />));
 
@@ -547,12 +590,12 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
       </defs>
       <Ciel nuit={n} lieu={lieu} animer={animer} />
       <Terrain lieu={lieu} nuit={n} N={N} />
-      <DecorLieu lieu={lieu} nuit={n} pal={pal} N={N} />
+      <DecorLieu lieu={lieu} nuit={n} pal={pal} N={N} options={o} animer={animer} />
       <Mur lieu={lieu} cote="g" pal={pal} nuit={n} style={style} N={N} />
       <Mur lieu={lieu} cote="d" pal={pal} nuit={n} style={style} N={N} />
       <Sol lieu={lieu} pal={pal} style={style} N={N} ax={ax} />
       {style === "maroc" && lieu !== "riad" && <polygon points={poly([0, 0], [N, 0], [N, 0.25], [0, 0.25])} fill="#2F6277" opacity="0.5" />}
-      {o.has("piste") && enveloppe("piste", mob("piste", PI.gx + PI.w / 2, PI.gy + PI.d / 2).a, <PisteDanse gx={PI.gx} gy={PI.gy} w={PI.w} d={PI.d} pal={pal} actif={animer && actif} festif={festif} />)}
+      {o.has("piste") && enveloppe("piste", mob("piste", PI.gx + PI.w / 2, PI.gy + PI.d / 2, PI.w / 2, PI.d / 2).a, <PisteDanse gx={PI.gx} gy={PI.gy} w={PI.w} d={PI.d} pal={pal} actif={animer && actif} festif={festif} />)}
       <g>{trie.map((e) => <g key={e.k}>{e.n}</g>)}</g>
       <g pointerEvents="none"><Porte pal={pal} nuit={n} logo={logos?.heavent} porte={P.PORTE} /></g>
       {lieu === "salle" && (

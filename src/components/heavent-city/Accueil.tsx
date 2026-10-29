@@ -3,7 +3,7 @@ import { ChevronLeft, ConciergeBell } from "lucide-react";
 import type { Dispatch } from "react";
 import { INVITES, MESSAGE_BIENVENUE, PROMESSE, TYPES, VILLES, type TypeEvt } from "./donnees";
 import type { Action, Choix } from "./etat";
-import { btnContour, btnOr, champ } from "./ui";
+import { ChampNombre, btnContour, btnOr, champ } from "./ui";
 import { localeDates, tr } from "./langue";
 
 /** Écran de titre : la ville animée derrière, le nom du jeu et le bouton de départ */
@@ -118,7 +118,7 @@ export function Questions({ choix, dispatch, onTermine }: { choix: Choix; dispat
               <div className="flex items-center gap-3">
                 <button aria-label={tr("Moins d'invités")} className={`${btnContour} !px-0 w-11`} onClick={() => choisir({ invites: Math.max(INVITES.min, choix.invites - 10) })}>−</button>
                 <label htmlFor="q-invites" className="sr-only">{tr("Nombre d'invités")}</label>
-                <input id="q-invites" type="number" inputMode="numeric" min={INVITES.min} max={INVITES.max} value={choix.invites} onChange={(e) => choisir({ invites: Number(e.target.value) || INVITES.defaut })} className={`${champ} text-center`} data-testid="q-invites" />
+                <ChampNombre id="q-invites" valeur={choix.invites} min={INVITES.min} max={INVITES.max} onValider={(v) => choisir({ invites: v })} className={`${champ} text-center`} testid="q-invites" />
                 <button aria-label={tr("Plus d'invités")} className={`${btnContour} !px-0 w-11`} onClick={() => choisir({ invites: Math.min(INVITES.max, choix.invites + 10) })}>+</button>
               </div>
               <div className="flex flex-wrap justify-center gap-2">{[30, 60, 100, 150, 250, 400].map((n) => <button key={n} onClick={() => choisir({ invites: n })} className={`min-h-9 rounded-full border px-3 text-[13px] ${choix.invites === n ? "border-[#C9A74E] bg-[#C9A74E]/20 text-[#F6EFDD]" : "border-white/15 text-[#D9D0BC]"}`}>{n}</button>)}</div>

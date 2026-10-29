@@ -6,7 +6,7 @@
 import { dimensionner, type Salle } from "./positions";
 import { tr } from "./langue";
 import {
-  ACCUEILS, BADGES, DECORS, EXPERIENCES, INVITES, LIEUX, LUMIERES, MISSIONS, MUSIQUES, PALETTES, STYLES, TYPES, disponiblePour, infoOption, infoTable, reservable,
+  ACCUEILS, BADGES, DECORS, EXPERIENCES, FOLKLORES, INVITES, LIEUX, LUMIERES, MISSIONS, MUSIQUES, PALETTES, STYLES, TYPES, disponiblePour, infoOption, infoTable, reservable,
   type AccueilId, type LieuId, type LumiereId, type MusiqueId, type OptionId, type PaletteId, type StyleId, type TableId, type TypeEvt,
 } from "./donnees";
 
@@ -39,11 +39,15 @@ export interface Choix {
   tables: TableId;
   /** objets déplacés par le visiteur : identifiant → décalage en cases (jamais de prix) */
   deplacements: Record<string, [number, number]>;
+  /** tables hautes (mange-debout) ajoutées EN PLUS des tables assises, pour un espace cocktail */
+  hautesEnPlus: number;
+  /** styles de troupe folklorique choisis (Dakka marrakchia, Issawa…) quand la troupe est sélectionnée */
+  folklores: string[];
 }
 
 export const CHOIX_VIDE: Choix = {
   type: null, nomEvt: "", ville: "", invites: INVITES.defaut, date: "", dateInconnue: false, lieu: null,
-  style: null, palette: null, lumiere: null, musiques: [], accueils: [], manuels: [], retires: [], missions: {}, note: "", tables: "rondes", deplacements: {},
+  style: null, palette: null, lumiere: null, musiques: [], accueils: [], manuels: [], retires: [], missions: {}, note: "", tables: "rondes", deplacements: {}, hautesEnPlus: 0, folklores: [],
 };
 
 export interface Etat {
@@ -93,7 +97,10 @@ export function reducteur(e: Etat, a: Action): Etat {
       }
       // les tables changent de nombre ou de forme : leurs déplacements n'ont plus de sens
       if ((a.patch.invites !== undefined && a.patch.invites !== e.choix.invites) || (a.patch.tables !== undefined && a.patch.tables !== e.choix.tables)) {
-        suivant = { ...suivant, deplacements: Object.fromEntries(Object.entries(suivant.deplacements).filter(([k]) => !/^t\d+$/.test(k))) };
+        suivant = { ...suivant, deplacements: Object.fromEntries(Object.entries(suivant.deplacements).filter(([k]) => !/^th?\d+$/.test(k))) };
+      }
+      if (a.patch.hautesEnPlus !== undefined && a.patch.hautesEnPlus !== e.choix.hautesEnPlus) {
+        suivant = { ...suivant, deplacements: Object.fromEntries(Object.entries(suivant.deplacements).filter(([k]) => !/^th\d+$/.test(k))) };
       }
       return avecChoix(e, nettoyer(suivant));
     }
@@ -149,12 +156,14 @@ function nettoyer(c: Choix): Choix {
   const musiques = (Array.isArray(c.musiques) ? c.musiques : []).filter(garde);
   const accueils = (Array.isArray(c.accueils) ? c.accueils : []).filter(garde);
   const tables: TableId = c.tables === "rectangulaires" || c.tables === "hautes" || (c.tables === "conference" && (type === "pro" || type === "conference")) ? c.tables : "rondes";
+  const hautesEnPlus = tables === "hautes" || tables === "conference" ? 0 : Math.max(0, Math.min(60, Math.round(Number(c.hautesEnPlus) || 0)));
+  const folklores = (Array.isArray(c.folklores) ? c.folklores : []).filter((f, i, l) => FOLKLORES.some((x) => x.id === f) && l.indexOf(f) === i);
   const dep: Record<string, [number, number]> = {};
   for (const [k, v] of Object.entries(c.deplacements && typeof c.deplacements === "object" ? c.deplacements : {})) {
     if (/^[a-z0-9_]{1,24}$/.test(k) && Array.isArray(v) && Number.isFinite(v[0]) && Number.isFinite(v[1])) dep[k] = [Math.max(-30, Math.min(30, v[0])), Math.max(-30, Math.min(30, v[1]))];
   }
   return {
-    ...c, invites, tables, deplacements: dep,
+    ...c, invites, tables, deplacements: dep, hautesEnPlus, folklores: musiques.includes("troupe") ? folklores : [],
     manuels: c.manuels.filter(garde), retires: c.retires.filter(garde),
     musiques, accueils,
     missions: Object.fromEntries(Object.entries(c.missions).filter(([k]) => missionsDuType(type).some((m) => m.id === k))),
@@ -202,7 +211,12 @@ export interface Rendu {
   tables: TableId; salle: Salle; deplacements: Record<string, [number, number]>;
 }
 /** Nombre de tables : automatique (120 invités → 12 tables de 10, 400 invités → 40 tables) */
-export const nbTables = (invites: number, tables: TableId = "rondes") => (tables === "conference" ? Math.max(1, invites) : Math.max(2, Math.ceil(invites / infoTable(tables).places)));
+export const nbTables = (invites: number, tables: TableId = "rondes") => (tables === "conference" ? Math.max(1, invites) : Math.max(1, Math.ceil(invites / infoTable(tables).places)));
+/** Invités assis à chaque table : répartis au plus juste (15 invités en tables de 10 → 8 et 7, des places restent libres) */
+export const repartition = (invites: number, tables: TableId = "rondes"): number[] => {
+  const nb = nbTables(invites, tables), base = Math.floor(invites / nb), reste = invites % nb;
+  return Array.from({ length: nb }, (_, i) => base + (i < reste ? 1 : 0));
+};
 
 export function rendu(c: Choix): Rendu | null {
   if (!c.type) return null;
@@ -211,7 +225,7 @@ export function rendu(c: Choix): Rendu | null {
   const tables = nbTables(c.invites, c.tables);
   const options = new Set(optionsActives(c));
   const lum = lumiereEffective(c), acc = accueilsEffectifs(c);
-  const salle = dimensionner(tables, c.tables, { options, musiques: c.musiques, accueils: acc, lumiere: lum, type: c.type, tables: c.tables });
+  const salle = dimensionner(tables, c.tables, { options, musiques: c.musiques, accueils: acc, lumiere: lum, type: c.type, tables: c.tables }, c.hautesEnPlus);
   return {
     type: c.type, lieu: c.lieu ?? "riad", style, palette, lumiere: lumiereEffective(c), musiques: c.musiques, accueils: acc,
     options, invites: c.invites, tablesTotal: tables, tablesVisibles: salle.tables.length, titre: titreEvenement(c),
@@ -252,7 +266,7 @@ export const missionsFaites = (c: Choix) => missionsDuType(c.type).filter((m) =>
 // ── Résumé (affichage, carte, demande à l'équipe) ───────────────────────────
 export interface Ligne { nom: string; reservable: boolean }
 export interface Resume {
-  type: string; titre: string; invites: number; tables: number; typeTables: string; deplaces: number; lieu: string; style: string; palette: string;
+  type: string; titre: string; invites: number; tables: number; typeTables: string; hautesEnPlus: number; deplaces: number; lieu: string; style: string; palette: string;
   lumiere: string | null; musique: string | null; accueil: string | null;
   decors: Ligne[]; experiences: Ligne[]; missions: { titre: string; reponse: string }[]; badges: string[];
 }
@@ -263,11 +277,14 @@ export function resume(c: Choix): Resume {
   const acc = accueilsEffectifs(c); const mus = c.musiques; const lum = lumiereEffective(c);
   const style = STYLES.find((s) => s.id === (c.style ?? "beige_or"))!;
   return {
-    type: TYPES.find((t) => t.id === c.type)?.nom ?? tr("Événement"), titre: titreEvenement(c), invites: c.invites, tables: nbTables(c.invites, c.tables), typeTables: infoTable(c.tables).compte, deplaces: Object.keys(c.deplacements).length,
+    type: TYPES.find((t) => t.id === c.type)?.nom ?? tr("Événement"), titre: titreEvenement(c), invites: c.invites, tables: nbTables(c.invites, c.tables), typeTables: infoTable(c.tables).compte, hautesEnPlus: c.hautesEnPlus, deplaces: Object.keys(c.deplacements).length,
     lieu: LIEUX.find((l) => l.id === c.lieu)?.nom ?? tr("Non choisi"), style: style.nom,
     palette: PALETTES.find((p) => p.id === (c.palette ?? style.palette))!.nom,
     lumiere: lum ? LUMIERES.find((l) => l.id === lum)!.nom : null,
-    musique: mus.length ? mus.map((id) => MUSIQUES.find((m) => m.id === id)!.nom).join(" + ") : null,
+    musique: mus.length ? mus.map((id) => {
+      const nom = MUSIQUES.find((m) => m.id === id)!.nom;
+      return id === "troupe" && c.folklores.length ? `${nom} (${c.folklores.map((f) => FOLKLORES.find((x) => x.id === f)!.nom).join(", ")})` : nom;
+    }).join(" + ") : null,
     accueil: acc.length ? acc.map((id) => ACCUEILS.find((a) => a.id === id)!.nom).join(" + ") : null,
     decors: opts.filter((o) => DECORS.some((d) => d.id === o)).map(ligne),
     experiences: opts.filter((o) => EXPERIENCES.some((x) => x.id === o)).map(ligne),
@@ -285,7 +302,7 @@ export function texteDemande(c: Choix): string {
   const dateTxt = c.dateInconnue || !c.date ? "Pas encore fixée" : c.date;
   return [
     `PROJET « HEAVENT CITY » — ${r.titre}`,
-    `Type : ${r.type} · ${r.invites} invités (environ ${r.tables} ${r.typeTables}) · Date : ${dateTxt}`,
+    `Type : ${r.type} · ${r.invites} invités (environ ${r.tables} ${r.typeTables}${r.hautesEnPlus ? ` + ${r.hautesEnPlus} tables hautes (mange-debout)` : ""}) · Date : ${dateTxt}`,
     `Lieu d'inspiration : ${r.lieu} (ambiance conceptuelle, pas un lieu réservé)`,
     `Style : ${r.style} · Couleurs : ${r.palette}`,
     `Lumière : ${r.lumiere ?? "non précisée"} · Musique : ${r.musique ?? "non précisée"} · Accueil : ${r.accueil ?? "non précisé"}`,
@@ -305,10 +322,14 @@ export function configurationAdmin(c: Choix): { elements: Record<string, number>
   const tt = infoTable(c.tables);
   if (tt.catalogue) { mettre(tt.catalogue, nbTables(c.invites, c.tables)); nom[tt.catalogue] = tt.libelle; }
   if (c.tables === "conference") { mettre("chaise_conf", c.invites); nom.chaise_conf = tt.libelle; } // une chaise par participant
+  if (c.hautesEnPlus > 0) { el.table_haute = (el.table_haute ?? 0) + c.hautesEnPlus; nom.table_haute = "Tables hautes (mange-debout)"; }
+  // styles de troupe choisis : chacun sa ligne du catalogue (la troupe générique n'est alors pas ajoutée)
+  for (const f of c.folklores) { const x = FOLKLORES.find((y) => y.id === f); if (x) { mettre(x.catalogue, 1); nom[x.catalogue] = `Troupe ${x.nom}`; } }
   if (c.type === "mariage" && c.tables !== "hautes") { mettre("honneur", 1); nom.honneur = "Table d'honneur"; }
   const ids = [...optionsActives(c), lumiereEffective(c), ...c.musiques, ...accueilsEffectifs(c)].filter(Boolean) as string[];
   for (const id of ids) {
     const o = infoOption(id); if (!o?.catalogue) continue;
+    if (id === "troupe" && c.folklores.length) continue;
     const n = id === "hotesses" ? Math.max(2, Math.ceil(c.invites / 60))
       : id === "maitre_hotel" ? Math.max(2, Math.ceil(c.invites / 60)) : id === "micros" || id === "lanternes" || id === "chaleureuse" || id === "guirlandes" || id === "etoilee" || id === "bougies" || id === "candelabres" ? 2 : 1;
     mettre(o.catalogue, n); nom[o.catalogue] = o.nom;

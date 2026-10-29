@@ -24,7 +24,7 @@ const PART_OBJETS = 0.17;
 export interface Actifs { options: ReadonlySet<string>; musiques: readonly string[]; accueils: readonly string[]; lumiere: string | null; type: string; tables: TableId }
 export interface Rect { id: string; x0: number; y0: number; x1: number; y1: number }
 export type Positions = ReturnType<typeof positions>;
-export interface Salle { n: number; ax: number; tables: [number, number][]; capacite: number; pos: Positions }
+export interface Salle { n: number; ax: number; tables: [number, number][]; capacite: number; pos: Positions; /** tables hautes ajoutées en plus des tables assises (mange-debout) */ hautes: [number, number][] }
 
 const boite = (id: string, gx: number, gy: number, w: number, d: number): Rect => ({ id, x0: gx, y0: gy, x1: gx + w, y1: gy + d });
 const centre = (id: string, x: number, y: number, hw: number, hd = hw): Rect => ({ id, x0: x - hw, y0: y - hd, x1: x + hw, y1: y + hd });
@@ -68,7 +68,8 @@ export function positions(n: number, ax: number, A: Actifs) {
   // — côté du fond : honneur, arche —
   const HONNEUR = { gx: 1.3, gy: 1.8, w: 3.4, d: 1.1 };
   if (A.type !== "pro" && A.type !== "conference" && A.tables !== "hautes" && A.tables !== "conference") placed.push(boite("honneur", HONNEUR.gx, HONNEUR.gy - 0.2, HONNEUR.w, HONNEUR.d + 0.2));
-  const ARCHE = { gx: 1.9, gy: 0.5, largeur: 2.2 };
+  // arche florale d'accueil : juste après la porte, au-dessus de l'allée d'entrée
+  const ARCHE = { gx: ax - 1.1, gy: n - 3.2, largeur: 2.2 };
   if (o.has("arche")) placed.push(boite("arche", ARCHE.gx, ARCHE.gy, ARCHE.largeur, 0.8));
   const MUR_FLEURS = { u0: 5.2, u1: 7.1, gy: 0.15 };
 
@@ -107,6 +108,7 @@ export function positions(n: number, ax: number, A: Actifs) {
   const REGIE = poser(o.has("regie"), [[n - 3.2, n - 1.4], [1.4, n - 1.4], [n - 3.2, n - 2.6]] as [number, number][], ([x, y]) => boite("regie", x, y, 1.8, 0.8));
   const SANDWICHS = poser(o.has("buffet_sandwichs"), [[n - 1.2, 5.0], [n - 1.2, 8.0], [1.4, n - 1.4], [n - 6.0, n - 1.4]] as [number, number][], ([x, y]) => (x > n - 2 ? boite("sandw", x, y, 0.9, 2.6) : boite("sandw", x, y, 2.6, 0.9)));
 
+  const ENFANTS = poser(o.has("enfants"), [[n - 3.4, n - 4.4], [0.4, n - 4.2], [n - 3.4, 6.2], [0.4, 3.3], [n - 3.4, 9.0]] as [number, number][], ([x, y]) => boite("enfants", x, y, 2.4, 2.0));
   const HENNE = poser(o.has("henne"), [[n - 3.4, 6.2], [n - 3.4, 8.6], [0.4, 11.4]] as [number, number][], ([x, y]) => boite("henne", x, y, 2.2, 2.2));
 
   // — piste (au sol) et musique —
@@ -135,15 +137,16 @@ export function positions(n: number, ax: number, A: Actifs) {
   /** Centre de chaque option (halo de mise en avant quand un choix change la scène) */
   const ANCRES: Partial<Record<OptionId | "accueil" | "musique" | "lumiere", [number, number]>> = {
     podium: [ESTRADE.gx + ESTRADE.w / 2, ESTRADE.gy + 1], ecran: [ESTRADE.gx + ESTRADE.w / 2, 0.6], table_intervenants: [INTERVENANTS.gx + 2, INTERVENANTS.gy + 0.4], micros: MICROS[0], regie: [REGIE[0] + 0.9, REGIE[1] + 0.4], buffet_sandwichs: [SANDWICHS[0] + 0.5, SANDWICHS[1] + 0.5],
+    enfants: [ENFANTS[0] + 1.2, ENFANTS[1] + 1.0], piscine_fleurs: [n / 2, -2.4], piscine_bougies: [n / 2, -2.4], piscine_lumiere: [n / 2, -2.4],
     amariya: [AMARIYA[0] + 1.1, AMARIYA[1] + 0.7], fauteuils: [FAUTEUILS[0] + 1, FAUTEUILS[1] + 0.6], neggafa: NEGGAFA, gateau: GATEAU, henne: [HENNE[0] + 1.1, HENNE[1] + 1.1],
-    arche: [3.0, 1.0], fleurs: [ax, n - 0.7], mur_fleurs: [6.1, 0.5],
+    arche: [ax, n - 2.8], fleurs: [ax, n - 0.7], mur_fleurs: [6.1, 0.5],
     allee: [ax, n / 2 + 2], fontaine: FONTAINE, petales: [n / 2, n / 2 - 1], ciel_lanternes: [n / 2, n / 2 - 2],
     piste: [PISTE.gx + PISTE.w / 2, 3.1], photobooth: [0.7, 4.3], nawar: [0.7, 7.0], buffet: [0.7, 9.9], candy_bar: [CANDY[0] + CANDY[2] / 2, CANDY[1] + CANDY[3] / 2], livre_dor: LIVRE_DOR,
     feux_froids: [PISTE.gx + PISTE.w / 2, 3.1], photographe: PHOTOGRAPHE, salon: [SALON.gx + 1.5, SALON.gy + 0.6], the_bar: [n - 0.7, 3.5], brume: [n / 2, n / 2],
     accueil: [ax, n - 1.0], musique: [n - 3.1, 1.2], lumiere: [n / 2, n / 2 - 1],
   };
   return {
-    ESTRADE, INTERVENANTS, MICROS, REGIE, SANDWICHS, AMARIYA, FAUTEUILS, NEGGAFA, GATEAU, HENNE, PISTE, FONTAINE, LIVRE_DOR, COMPTOIR, PHOTOGRAPHE, SALON, HONNEUR, ARCHE, MUR_FLEURS, DJ, SCENE_ORCHESTRE, PHOTOBOOTH, NAWAR, BUFFET,
+    ESTRADE, INTERVENANTS, MICROS, REGIE, SANDWICHS, ENFANTS, AMARIYA, FAUTEUILS, NEGGAFA, GATEAU, HENNE, PISTE, FONTAINE, LIVRE_DOR, COMPTOIR, PHOTOGRAPHE, SALON, HONNEUR, ARCHE, MUR_FLEURS, DJ, SCENE_ORCHESTRE, PHOTOBOOTH, NAWAR, BUFFET,
     CANDY: { gx: CANDY[0], gy: CANDY[1], w: CANDY[2], d: CANDY[3] }, THE_BAR, TROUPE, ACOUSTIQUE, ENCEINTES, ALLEE, PORTE, POSTES_LANTERNES, CANDELABRES, BOUQUETS, FEUX,
     HOTESSES, MAITRE_HOTEL, HOTESSE_3, DEPART_INVITES, ANCRES, obstacles: placed as readonly Rect[],
   };
@@ -169,8 +172,8 @@ function grille(n: number, type: TableId) {
 }
 
 /** Taille de la salle et emplacement des `nb` tables : seulement sur les cases libres, les premières posées sont celles du centre */
-export function dimensionner(nb: number, type: TableId, A: Actifs): Salle {
-  const g = GABARITS[type];
+export function dimensionner(nb: number, type: TableId, A: Actifs, nbHautes = 0): Salle {
+  const g = GABARITS[type], gh = GABARITS.hautes;
   let dernier: Salle | null = null;
   for (let n = N_MIN; n <= N_MAX; n++) {
     const gr = grille(n, type), pos = positions(n, gr.ax, A);
@@ -188,10 +191,27 @@ export function dimensionner(nb: number, type: TableId, A: Actifs): Salle {
     const gene = ([x, y]: [number, number]) => tables.some(([tx, ty]) => Math.abs(x - tx) < g.dx + 0.35 && Math.abs(y - ty) < g.dy + 0.35);
     pos.POSTES_LANTERNES.splice(0, pos.POSTES_LANTERNES.length, ...pos.POSTES_LANTERNES.filter((q) => !gene(q)));
     pos.CANDELABRES.splice(0, pos.CANDELABRES.length, ...pos.CANDELABRES.filter((q) => !gene(q)));
-    dernier = { n, ax: gr.ax, tables, capacite: cases.length, pos };
+    // tables hautes en plus (cocktail) : sur la grille des mange-debout, là où il ne reste ni objet ni table assise
+    const hautes: [number, number][] = [];
+    if (nbHautes > 0 && type !== "hautes" && type !== "conference") {
+      const libreH = (x: number, y: number) => x - gh.dx >= 0.3 && y - gh.dy >= 4.0 && x + gh.dx <= n - 0.3 && y + gh.dy <= n - 1.9
+        && !pos.obstacles.some((p) => !/^(pl|cd)\d/.test(p.id) && x - gh.dx < p.x1 + 0.1 && p.x0 < x + gh.dx + 0.1 && y - gh.dy < p.y1 + 0.1 && p.y0 < y + gh.dy + 0.1)
+        && !tables.some(([tx, ty]) => Math.abs(x - tx) < g.dx + gh.dx + 0.25 && Math.abs(y - ty) < g.dy + gh.dy + 0.25)
+        && !hautes.some(([hx, hy]) => Math.abs(x - hx) < gh.px - 0.05 && Math.abs(y - hy) < gh.py - 0.05)
+        && Math.abs(x - gr.ax) > gh.dx + 0.35; // l'allée de l'entrée reste dégagée
+      const essais: { x: number; y: number }[] = [];
+      for (let y = 4.0 + gh.dy; y <= n - 1.9 - gh.dy + 0.001; y += 0.35) for (let x = 0.3 + gh.dx; x <= n - 0.3 - gh.dx + 0.001; x += 0.35) essais.push({ x, y });
+      // les mange-debout se regroupent d'abord vers l'entrée (espace cocktail), puis remontent
+      essais.sort((a, b) => b.y - a.y || Math.abs(a.x - gr.ax) - Math.abs(b.x - gr.ax));
+      for (const e of essais) { if (hautes.length >= nbHautes) break; if (libreH(e.x, e.y)) hautes.push([e.x, e.y]); }
+      const gene2 = ([x, y]: [number, number]) => hautes.some(([tx, ty]) => Math.abs(x - tx) < gh.dx + 0.35 && Math.abs(y - ty) < gh.dy + 0.35);
+      pos.POSTES_LANTERNES.splice(0, pos.POSTES_LANTERNES.length, ...pos.POSTES_LANTERNES.filter((q) => !gene2(q)));
+      pos.CANDELABRES.splice(0, pos.CANDELABRES.length, ...pos.CANDELABRES.filter((q) => !gene2(q)));
+    }
+    dernier = { n, ax: gr.ax, tables, capacite: cases.length, pos, hautes };
     // la salle doit aussi rester aérée : les objets ne prennent qu'une part limitée du sol
     const aire = pos.obstacles.filter((r) => !/^(pl|cd)\d/.test(r.id)).reduce((t, r) => t + (r.x1 - r.x0) * (r.y1 - r.y0), 0);
-    if (cases.length >= nb && aire <= PART_OBJETS * n * n) return dernier;
+    if (cases.length >= nb && hautes.length >= (type === "hautes" || type === "conference" ? 0 : nbHautes) && aire <= PART_OBJETS * n * n) return dernier;
   }
   return dernier!;
 }

@@ -84,6 +84,7 @@ export function suggestionAutomatique(texte: string, type: TypeEvt, lieuCourant:
   else if (a(t, "terracotta", "ocre", "orange", "brique")) palette = "terracotta";
   else if (a(t, "rose", "poudr", "pastel")) palette = "poudre";
   else if (a(t, "vert", "emeraude")) palette = "emeraude";
+  else if (a(t, "noir") && (/\bor\b/.test(t) || a(t, "dore", "gold"))) palette = "noir_or";
   else if (a(t, "noir", "ivoire", "blanc")) palette = "ivoire_noir";
   else if (a(t, "bleu", "nuit", "marine")) palette = "nuit_or";
 

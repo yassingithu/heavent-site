@@ -1,20 +1,20 @@
-import type { ComponentType, ReactNode } from "react";
+import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import type { LucideProps } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { tr } from "./langue";
 import {
   Camera, Sparkles, Flower2, Music, Drum, Mic2, Coffee, CandyCane, Sofa, Flame, Wind, Lamp, Utensils, PartyPopper, Users, BookHeart, Moon, Heart, Droplets, DoorOpen, Disc3, Music2,
-  Speaker, ConciergeBell, Leaf, Crown, Check, Star, Guitar, Gem, Radio, SprayCan, Footprints, Store, Lightbulb, Wand2, Palette, Cake, Presentation, Projector, SlidersHorizontal,
+  Speaker, ConciergeBell, Leaf, Crown, Check, Star, Guitar, Gem, Radio, SprayCan, Footprints, Store, Lightbulb, Wand2, Palette, Cake, Presentation, Projector, SlidersHorizontal, Baby, Waves,
 } from "lucide-react";
 
 type Icone = ComponentType<LucideProps>;
 const ICONES: Record<string, Icone> = {
   // décor
-  arche: Flower2, fleurs: Flower2, mur_fleurs: Leaf, allee: Footprints, fontaine: Droplets, petales: Sparkles, ciel_lanternes: Lamp, amariya: Crown, fauteuils: Sofa, neggafa: Gem, henne: Flower2, gateau: Cake,
+  arche: Flower2, fleurs: Flower2, mur_fleurs: Leaf, allee: Footprints, fontaine: Droplets, petales: Sparkles, ciel_lanternes: Lamp, amariya: Crown, fauteuils: Sofa, neggafa: Gem, henne: Flower2, gateau: Cake, piscine_fleurs: Waves, piscine_bougies: Flame, piscine_lumiere: Waves,
   // conférence
   podium: Presentation, ecran: Projector, table_intervenants: Users, micros: Mic2, regie: SlidersHorizontal, buffet_sandwichs: Utensils,
   // expériences
-  piste: Disc3, photobooth: Camera, nawar: SprayCan, buffet: Utensils, the_bar: Coffee, candy_bar: CandyCane, livre_dor: BookHeart, feux_froids: Flame, photographe: Camera, salon: Sofa, brume: Wind,
+  piste: Disc3, photobooth: Camera, nawar: SprayCan, buffet: Utensils, the_bar: Coffee, candy_bar: CandyCane, livre_dor: BookHeart, feux_froids: Flame, photographe: Camera, salon: Sofa, brume: Wind, enfants: Baby,
   // lumière
   chaleureuse: Lamp, etoilee: Star, bougies: Flame, festive: PartyPopper,
   // musique
@@ -61,5 +61,28 @@ export function SelecteurLangue({ className = "" }: { className?: string }) {
           className={`min-h-9 min-w-10 px-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F4D774] ${cur === c ? "bg-[#C9A74E] font-semibold text-[#17141a]" : "text-[#F0E8D6] hover:bg-white/10"}`}>{n}</button>
       ))}
     </div>
+  );
+}
+
+/**
+ * Champ numérique qui laisse taper librement (on peut effacer puis écrire « 15 ») :
+ * la valeur n'est validée qu'en quittant le champ ou avec Entrée, puis ramenée entre min et max.
+ */
+export function ChampNombre({ id, valeur, min, max, onValider, className = "", testid, label }: { id: string; valeur: number; min: number; max: number; onValider: (v: number) => void; className?: string; testid?: string; label?: string }) {
+  const [texte, setTexte] = useState(String(valeur));
+  useEffect(() => { setTexte(String(valeur)); }, [valeur]);
+  const valider = () => {
+    const v = parseInt(texte, 10);
+    if (!Number.isFinite(v)) { setTexte(String(valeur)); return; }
+    const borne = Math.min(max, Math.max(min, v));
+    setTexte(String(borne));
+    if (borne !== valeur) onValider(borne);
+  };
+  return (
+    <input id={id} type="text" inputMode="numeric" pattern="[0-9]*" aria-label={label} value={texte} data-testid={testid}
+      onChange={(e) => setTexte(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
+      onBlur={valider} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); valider(); (e.target as HTMLInputElement).blur(); } }}
+      onFocus={(e) => e.target.select()}
+      className={className} />
   );
 }

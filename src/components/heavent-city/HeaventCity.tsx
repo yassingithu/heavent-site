@@ -47,6 +47,7 @@ export default function HeaventCity() {
   const [toast, setToast] = useState<number | null>(null);
   const [demande, setDemande] = useState(false);
   const [deplacer, setDeplacer] = useState(false);
+  const [refus, setRefus] = useState(0);
   const { choix, phase } = etat;
 
   // Sauvegarde locale (jamais de coordonnées : voir etat.ts)
@@ -180,7 +181,7 @@ export default function HeaventCity() {
       {phase === "scene" && r && (
         <div className="absolute inset-0 flex flex-col lg:flex-row" data-testid="scene">
           <div className="relative h-[40dvh] shrink-0 overflow-hidden lg:h-auto lg:flex-1">
-            <SceneSvg r={r} nuit={nuit} focus={focus} logos={LOGOS} animer={!reduit} deplacable={deplacer} onDeplacer={(id, dx, dy) => dispatch({ t: "deplacer", id, dx, dy })} />
+            <SceneSvg r={r} nuit={nuit} focus={focus} logos={LOGOS} animer={!reduit} deplacable={deplacer} onDeplacer={(id, dx, dy) => { setRefus(0); dispatch({ t: "deplacer", id, dx, dy }); }} onRefus={() => setRefus(Date.now())} />
             <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 bg-gradient-to-b from-black/55 to-transparent px-3 pb-6 pt-3">
               <button onClick={() => dispatch({ t: "phase", phase: "ville" })} className={`${btnContour} bg-black/35 !px-3`} data-testid="changer-lieu"><ArrowLeft className="h-4 w-4 rtl:rotate-180" /><span className="hidden sm:inline">{tr("Changer de lieu")}</span><span className="sm:hidden">{tr("Lieu")}</span></button>
               <div className="flex items-center gap-1.5">
@@ -195,7 +196,7 @@ export default function HeaventCity() {
             <div className="pointer-events-none absolute bottom-2 start-3 rounded-full bg-black/45 px-3 py-1 text-[12px] text-[#F0E8D6]" aria-live="polite">{r.tables === "conference" ? tr("{n} chaises · {n} participants", { n: r.invites }) : tr("{nb} {type} · {n} invités", { nb: r.tablesTotal, type: infoTable(r.tables).compte, n: r.invites })}</div>
             {deplacer && (
               <div className="absolute inset-x-3 bottom-10 z-10 mx-auto flex max-w-md flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#F4D774]/60 bg-[#17141a]/95 px-3.5 py-2.5 shadow-xl" data-testid="bandeau-deplacer" role="status">
-                <span className="text-[13px] leading-snug text-[#F6EFDD]">{tr("Fais glisser un objet pour le déplacer.")}</span>
+                <span className={`text-[13px] leading-snug ${refus ? "text-[#FFB4A8]" : "text-[#F6EFDD]"}`} data-testid="message-deplacer">{refus ? tr("Cette place est déjà occupée : l'objet est revenu à sa place.") : tr("Fais glisser un objet pour le déplacer.")}</span>
                 <span className="flex gap-2">
                   {Object.keys(choix.deplacements).length > 0 && <button onClick={() => dispatch({ t: "remettre" })} data-testid="remettre" className="min-h-10 rounded-full border border-white/25 px-3 text-[13px] text-[#F0E8D6]">{tr("Tout remettre")}</button>}
                   <button onClick={() => setDeplacer(false)} data-testid="termine-deplacer" className="min-h-10 rounded-full bg-[#C9A74E] px-4 text-[13px] font-semibold text-[#17141a]">{tr("Terminé")}</button>

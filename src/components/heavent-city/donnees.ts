@@ -17,12 +17,12 @@ import { traduit } from "./langue";
 export type TypeEvt = "mariage" | "fete" | "pro" | "conference";
 export type LieuId = "riad" | "villa" | "rooftop" | "jardin" | "salle";
 export type StyleId = "maroc" | "beige_or" | "romantique" | "festif" | "minimal";
-export type PaletteId = "sable_or" | "terracotta" | "poudre" | "emeraude" | "ivoire_noir" | "nuit_or";
+export type PaletteId = "sable_or" | "terracotta" | "poudre" | "emeraude" | "ivoire_noir" | "nuit_or" | "noir_or";
 export type LumiereId = "chaleureuse" | "etoilee" | "bougies" | "festive";
 export type MusiqueId = "dj" | "orchestre" | "troupe" | "playlist" | "acoustique";
 export type AccueilId = "discret" | "hotesses" | "maitre_hotel" | "the";
-export type DecorId = "arche" | "fleurs" | "mur_fleurs" | "allee" | "fontaine" | "petales" | "ciel_lanternes" | "amariya" | "fauteuils";
-export type ExperienceId = "piste" | "photobooth" | "nawar" | "buffet" | "candy_bar" | "livre_dor" | "feux_froids" | "photographe" | "salon" | "the_bar" | "brume" | "henne" | "neggafa" | "gateau" | "podium" | "ecran" | "table_intervenants" | "micros" | "regie" | "buffet_sandwichs";
+export type DecorId = "arche" | "fleurs" | "mur_fleurs" | "allee" | "fontaine" | "petales" | "ciel_lanternes" | "amariya" | "fauteuils" | "piscine_fleurs" | "piscine_bougies" | "piscine_lumiere";
+export type ExperienceId = "piste" | "photobooth" | "nawar" | "buffet" | "candy_bar" | "livre_dor" | "feux_froids" | "photographe" | "salon" | "the_bar" | "brume" | "henne" | "neggafa" | "gateau" | "podium" | "ecran" | "table_intervenants" | "micros" | "regie" | "buffet_sandwichs" | "enfants";
 export type OptionId = DecorId | ExperienceId;
 
 export interface InfoType { id: TypeEvt; nom: string; court: string; emoji: string; nomPlaceholder: string; article: string }
@@ -34,7 +34,7 @@ export const TYPES: InfoType[] = traduit([
 ]);
 
 export const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Fès", "Agadir", "Autre ville"];
-export const INVITES = { min: 10, max: 500, defaut: 120 };
+export const INVITES = { min: 2, max: 500, defaut: 120 };
 
 export interface InfoLieu { id: LieuId; nom: string; phrase: string; types?: TypeEvt[] }
 export const LIEUX: InfoLieu[] = traduit([
@@ -63,6 +63,7 @@ export const PALETTES: InfoPalette[] = traduit([
   { id: "emeraude", nom: "Émeraude et or", nappe: "#1F5E4F", fleurs: "#D9C27A", accent: "#2E7D68", deco: "#C9A227", sombre: true },
   { id: "ivoire_noir", nom: "Ivoire et noir", nappe: "#F8F6F1", fleurs: "#E6EDE2", accent: "#2B2B2B", deco: "#3A3A3A" },
   { id: "nuit_or", nom: "Bleu nuit et or", nappe: "#26365A", fleurs: "#E8C97E", accent: "#C9A74E", deco: "#E8C97E", sombre: true },
+  { id: "noir_or", nom: "Noir et or", nappe: "#1C1A1E", fleurs: "#EAD9A8", accent: "#C9A74E", deco: "#D4AF37", sombre: true },
 ]);
 
 export interface InfoOption { id: string; nom: string; phrase: string; catalogue?: string; types?: TypeEvt[]; lieux?: LieuId[] }
@@ -82,6 +83,24 @@ export const MUSIQUES: (InfoOption & { id: MusiqueId })[] = traduit([
   { id: "acoustique", nom: "Duo acoustique", phrase: "Guitare et voix, côté inspiration" },
 ]);
 
+/** Styles de troupe folklorique : on peut en choisir un ou plusieurs (chacun a sa ligne dans le catalogue, prix fixé par l'agence) */
+export interface InfoFolklore { id: string; nom: string; phrase: string; catalogue: string }
+export const FOLKLORES: InfoFolklore[] = traduit([
+  { id: "dakka", nom: "Dakka marrakchia", phrase: "Tambours, taarija et chants de Marrakech", catalogue: "folk_dakka" },
+  { id: "issawa", nom: "Issawa", phrase: "Confrérie soufie : ghaïta, tambours et chants", catalogue: "folk_issawa" },
+  { id: "hmadcha", nom: "Hmadcha", phrase: "Chants soufis et percussions", catalogue: "folk_hmadcha" },
+  { id: "gnaoua", nom: "Gnaoua", phrase: "Crotales, guembri et danses envoûtantes", catalogue: "folk_gnaoua" },
+  { id: "ahidous", nom: "Ahidous", phrase: "Danse amazighe en cercle du Moyen Atlas", catalogue: "folk_ahidous" },
+  { id: "ahwach", nom: "Ahwach", phrase: "Chants et danses amazighs du Souss et du Haut Atlas", catalogue: "folk_ahwach" },
+  { id: "taskiwin", nom: "Taskiwin", phrase: "Danse guerrière du Haut Atlas", catalogue: "folk_taskiwin" },
+  { id: "houara", nom: "Houara", phrase: "Danse rythmée du Souss, frappes de mains et de pieds", catalogue: "folk_houara" },
+  { id: "reggada", nom: "Reggada", phrase: "Danse énergique de l'Oriental", catalogue: "folk_reggada" },
+  { id: "aita", nom: "Aïta (chikhates)", phrase: "Chant populaire des plaines atlantiques", catalogue: "folk_aita" },
+  { id: "abidat_rma", nom: "Abidat Rma", phrase: "Percussions et chants de la région de Khouribga", catalogue: "folk_abidat_rma" },
+  { id: "guedra", nom: "Guedra", phrase: "Danse sahraouie au rythme du tambour", catalogue: "folk_guedra" },
+]);
+export const infoFolklore = (id: string) => FOLKLORES.find((f) => f.id === id);
+
 export const ACCUEILS: (InfoOption & { id: AccueilId })[] = traduit([
   { id: "discret", nom: "Accueil simple", phrase: "Un comptoir de bienvenue, sans équipe dédiée" },
   { id: "hotesses", nom: "Hôtesses d'accueil", phrase: "Accueil, placement et orientation", catalogue: "hotesse" },
@@ -90,7 +109,7 @@ export const ACCUEILS: (InfoOption & { id: AccueilId })[] = traduit([
 ]);
 
 export const DECORS: (InfoOption & { id: DecorId })[] = traduit([
-  { id: "arche", nom: "Arche fleurie", phrase: "Pour la cérémonie ou les photos", catalogue: "arche" },
+  { id: "arche", nom: "Arche florale d'accueil", phrase: "Pour accueillir les invités et marquer l'entrée", catalogue: "arche" },
   { id: "fleurs", nom: "Compositions florales", phrase: "Des bouquets pour habiller l'espace", catalogue: "fleurs" },
   { id: "mur_fleurs", nom: "Mur de fleurs", phrase: "Un fond spectaculaire", catalogue: "mur_fleurs" },
   { id: "allee", nom: "Allée d'entrée", phrase: "Tapis, bougies et fleurs", catalogue: "allee" },
@@ -99,6 +118,10 @@ export const DECORS: (InfoOption & { id: DecorId })[] = traduit([
   { id: "fauteuils", nom: "Fauteuils des mariés", phrase: "Deux fauteuils d'apparat sur une petite estrade fleurie", catalogue: "fauteuils", types: ["mariage"] },
   { id: "petales", nom: "Pluie de pétales", phrase: "Un instant poétique — à discuter" },
   { id: "ciel_lanternes", nom: "Ciel de lanternes", phrase: "Des lumières suspendues — à discuter" },
+  // la villa avec piscine : décorer le bassin
+  { id: "piscine_fleurs", nom: "Fleurs flottantes", phrase: "Fleurs et pétales posés sur l'eau de la piscine", catalogue: "deco_piscine_fleurs", lieux: ["villa"] },
+  { id: "piscine_bougies", nom: "Bougies flottantes", phrase: "Des bougies qui scintillent sur l'eau", catalogue: "deco_piscine_bougies", lieux: ["villa"] },
+  { id: "piscine_lumiere", nom: "Piscine illuminée", phrase: "Le bassin éclairé aux couleurs de la soirée", catalogue: "deco_piscine_lumiere", lieux: ["villa"] },
 ]);
 
 export const EXPERIENCES: (InfoOption & { id: ExperienceId })[] = traduit([
@@ -116,6 +139,7 @@ export const EXPERIENCES: (InfoOption & { id: ExperienceId })[] = traduit([
   { id: "henne", nom: "Espace henné", phrase: "Coussins au sol, table basse, cônes de henné et bougies", catalogue: "espace_henne", types: ["mariage", "fete"] },
   { id: "gateau", nom: "Pièce montée", phrase: "Le gâteau des mariés, dressé sur sa table", catalogue: "gateau", types: ["mariage", "fete"] },
   { id: "brume", nom: "Brume d'ambiance", phrase: "Une légère brume lumineuse — à discuter" },
+  { id: "enfants", nom: "Espace enfants", phrase: "Jeux, coloriage et une animatrice pour occuper les petits", catalogue: "espace_enfants" },
   // conférences et événements professionnels
   { id: "podium", nom: "Estrade, pupitre et micro", phrase: "Scène surélevée pour les orateurs, avec pupitre et micro", catalogue: "estrade", types: ["pro", "conference"] },
   { id: "ecran", nom: "Écran de projection", phrase: "Grand écran derrière l'estrade pour les présentations", catalogue: "ecran_projection", types: ["pro", "conference"] },

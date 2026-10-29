@@ -773,6 +773,75 @@ export function EspaceHenne({ gx, gy, w = 2.2, d = 2.2, pal }: { gx: number; gy:
   );
 }
 
+/** Espace enfants : tapis de jeu, petite barrière, toboggan, cubes et ballons (aucun visage réaliste) */
+export function EspaceEnfants({ gx, gy, w = 2.4, d = 2.0, pal, animer }: { gx: number; gy: number; w?: number; d?: number; pal: Pal; animer?: boolean }) {
+  const couleurs = ["#F28C8C", "#F4D774", "#8CC9E8", "#9DD3A0", "#C9A0DC"];
+  const cases: [number, number][] = [];
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) cases.push([i, j]);
+  const cw = (w - 0.3) / 4, cd = (d - 0.3) / 3;
+  const barriere: [number, number][] = [];
+  for (let k = 0; k <= 8; k++) barriere.push([gx + 0.05 + (k * (w - 0.1)) / 8, gy + d - 0.05]);
+  for (let k = 0; k <= 6; k++) barriere.push([gx + w - 0.05, gy + 0.05 + (k * (d - 0.1)) / 6]);
+  return (
+    <g>
+      <polygon points={poly([gx, gy], [gx + w, gy], [gx + w, gy + d], [gx, gy + d])} fill="#FFF6E8" opacity="0.95" />
+      {cases.map(([i, j]) => <polygon key={`${i}${j}`} points={poly([gx + 0.15 + i * cw, gy + 0.15 + j * cd], [gx + 0.15 + (i + 1) * cw, gy + 0.15 + j * cd], [gx + 0.15 + (i + 1) * cw, gy + 0.15 + (j + 1) * cd], [gx + 0.15 + i * cw, gy + 0.15 + (j + 1) * cd])} fill={couleurs[(i + j * 2) % couleurs.length]} opacity="0.85" stroke="#ffffff" strokeWidth="0.8" />)}
+      {/* toboggan */}
+      <Boite gx={gx + 0.25} gy={gy + 0.2} w={0.45} d={0.45} h={30} haut="#8CC9E8" />
+      <polygon points={poly([gx + 0.7, gy + 0.25, 30], [gx + 1.45, gy + 0.25, 3], [gx + 1.45, gy + 0.6, 3], [gx + 0.7, gy + 0.6, 30])} fill="#F28C8C" />
+      {/* cubes de jeu */}
+      {([[1.6, 1.2, "#F4D774"], [1.85, 1.35, "#9DD3A0"], [1.7, 1.25, "#C9A0DC"]] as [number, number, string][]).map(([x, y, c], i) => <Boite key={i} gx={gx + x} gy={gy + y} w={0.22} d={0.22} h={9} z0={i === 2 ? 9 : 0} haut={c} />)}
+      {/* petite table à colorier */}
+      <Boite gx={gx + 0.35} gy={gy + 1.1} w={0.7} d={0.45} h={12} haut={eclaircir(pal.deco, 0.4)} />
+      <rect x={X(gx + 0.6, gy + 1.3) - 5} y={Y(gx + 0.6, gy + 1.3, 13)} width="10" height="3" fill="#ffffff" />
+      {/* deux enfants (petits personnages) */}
+      <Personne x={X(gx + 1.3, gy + 0.9)} y={Y(gx + 1.3, gy + 0.9)} corps="#F28C8C" peau={peauDe(1)} cheveux={cheveuxDe(1)} s={0.62} bob={animer} />
+      <Personne x={X(gx + 0.5, gy + 1.75)} y={Y(gx + 0.5, gy + 1.75)} corps="#8CC9E8" peau={peauDe(3)} cheveux={cheveuxDe(3)} s={0.6} robe bob={animer} retard={0.6} />
+      {/* barrière basse */}
+      {barriere.map(([x, y], i) => <rect key={i} x={X(x, y) - 1} y={Y(x, y, 10)} width="2" height="10" fill="#FFFFFF" stroke="#d8cbb4" strokeWidth="0.4" />)}
+      <polyline points={barriere.slice(0, 9).map(([x, y]) => pt(x, y, 9)).join(" ")} fill="none" stroke="#FFFFFF" strokeWidth="2" />
+      <polyline points={barriere.slice(9).map(([x, y]) => pt(x, y, 9)).join(" ")} fill="none" stroke="#FFFFFF" strokeWidth="2" />
+      {/* ballons */}
+      {([["#F28C8C", 0], ["#F4D774", 1], ["#8CC9E8", 2]] as [string, number][]).map(([c, i]) => {
+        const bx = X(gx + w - 0.2, gy + 0.3) + i * 7 - 7, by = Y(gx + w - 0.2, gy + 0.3, 62 + (i % 2) * 8);
+        return <g key={i} className={animer ? "hc-flotte" : undefined} style={{ animationDelay: `${i * 0.5}s` }}><line x1={bx} y1={by + 8} x2={X(gx + w - 0.2, gy + 0.3)} y2={Y(gx + w - 0.2, gy + 0.3, 10)} stroke="#ffffff" strokeWidth="0.6" /><ellipse cx={bx} cy={by} rx="6" ry="7.5" fill={c} /><ellipse cx={bx - 2} cy={by - 3} rx="1.6" ry="2.2" fill="#ffffff" opacity="0.6" /></g>;
+      })}
+    </g>
+  );
+}
+
+/** Décor de la piscine de la villa : fleurs flottantes, bougies flottantes, éclairage du bassin. Le bassin va de gy -0.7 à -4.2. */
+export function DecorPiscine({ N, pal, nuit, fleurs, bougies, lumiere, animer }: { N: number; pal: Pal; nuit: number; fleurs?: boolean; bougies?: boolean; lumiere?: boolean; animer?: boolean }) {
+  const g = hasard(41);
+  const pts = (k: number) => Array.from({ length: k }, () => [0.4 + g() * (N - 0.8), -0.95 - g() * 3.0] as [number, number]);
+  const pf = fleurs ? pts(Math.round(N * 2.4)) : [], pb = bougies ? pts(Math.round(N * 1.5)) : [];
+  return (
+    <g>
+      {lumiere && (
+        <g>
+          <polygon points={poly([0.1, -0.7], [N - 0.1, -0.7], [N - 0.1, -4.2], [0.1, -4.2])} fill={pal.sombre ? pal.deco : "#5FE3F0"} opacity={0.18 + 0.45 * nuit} />
+          {Array.from({ length: Math.round(N / 2) }, (_, k) => <ellipse key={k} cx={X(0.8 + k * 2, -0.85)} cy={Y(0.8 + k * 2, -0.85)} rx="14" ry="6" fill="#FFFFFF" opacity={0.25 + 0.5 * nuit} className={animer ? "hc-scintille" : undefined} style={{ animationDelay: `${(k % 4) * 0.5}s` }} />)}
+        </g>
+      )}
+      {pf.map(([x, y], i) => (
+        <g key={`f${i}`}>
+          <ellipse cx={X(x, y)} cy={Y(x, y)} rx="7" ry="3.4" fill="#4F7A4A" opacity="0.85" />
+          {[[-2.5, -1], [2.5, -1], [0, -2.6], [0, 0.4]].map(([dx, dy], k) => <circle key={k} cx={X(x, y) + dx} cy={Y(x, y) + dy - 1} r="2.6" fill={k % 2 ? eclaircir(pal.fleurs, 0.25) : pal.fleurs} />)}
+          <circle cx={X(x, y)} cy={Y(x, y) - 1.4} r="1.2" fill="#E7C65A" />
+        </g>
+      ))}
+      {pb.map(([x, y], i) => (
+        <g key={`b${i}`}>
+          <ellipse cx={X(x, y)} cy={Y(x, y) - 2} rx="12" ry="6" fill="#FFD58A" opacity={0.15 + 0.35 * nuit} />
+          <ellipse cx={X(x, y)} cy={Y(x, y)} rx="4.4" ry="2" fill="#F7EEDC" />
+          <rect x={X(x, y) - 3} y={Y(x, y) - 4} width="6" height="4" rx="1" fill="#F7EEDC" />
+          <ellipse cx={X(x, y)} cy={Y(x, y) - 6.5} rx="1.4" ry="2.6" fill="#FFD27A" className={animer ? "hc-flamme" : undefined} />
+        </g>
+      ))}
+    </g>
+  );
+}
+
 export function Photographe({ gx, gy }: { gx: number; gy: number }) {
   const x = X(gx, gy), y = Y(gx, gy);
   return <g><Personne x={x} y={y} corps="#2c2a2f" peau={peauDe(2)} s={1.1} bob /><rect x={x + 2} y={y - 22} width="9" height="6.4" rx="1.4" fill="#222" /><circle cx={x + 6.5} cy={y - 19} r="2" fill="#7da0be" /></g>;
