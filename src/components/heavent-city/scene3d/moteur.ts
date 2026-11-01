@@ -10,7 +10,7 @@ import { chevauche, objetsDeplacables, RAYON_TABLE, type Objet3D } from "./objet
 
 export interface Entree { r: Rendu; nuit: number; deplacable: boolean; reduit: boolean; focus?: { cle: string; n: number } | null }
 export interface Rappels { onDeplacer: (id: string, dx: number, dy: number) => void; onRefus: () => void }
-export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number } }
+export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[] } }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const couleur = (a: string, b: string, t: number) => new THREE.Color(a).lerp(new THREE.Color(b), t);
@@ -243,9 +243,18 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     cam.left = -demiL / vue.zoom; cam.right = demiL / vue.zoom; cam.top = demiH / vue.zoom; cam.bottom = -demiH / vue.zoom;
     cam.position.copy(vue.cible).addScaledVector(DIR, 80); cam.lookAt(vue.cible); cam.updateProjectionMatrix();
   }
+  /** zoom de la vue d'ensemble : un peu plus serré sur un écran peu large (mobile), la scène occupe mieux la hauteur disponible */
+  const zoomBase = () => { const asp = (conteneur.clientWidth || 1) / (conteneur.clientHeight || 1); return asp < 1.5 ? Math.min(1.45, 1 + (1.5 - asp) * 0.55) : 1; };
   function recadrer(immediat = false) {
     const N = vue.N = courant?.r.salle.n ?? 12;
-    cibleVoulue = new THREE.Vector3(N / 2, 0.8, N / 2); zoomVoulu = 1; transition = immediat || courant?.reduit ? 1 : 0; if (immediat) { vue.cible.copy(cibleVoulue); vue.zoom = 1; placerCamera(); }
+    cibleVoulue = new THREE.Vector3(N / 2, 0.8, N / 2 + (zoomBase() > 1 ? 0.4 : 0)); zoomVoulu = zoomBase(); transition = immediat || courant?.reduit ? 1 : 0; if (immediat) { vue.cible.copy(cibleVoulue); vue.zoom = zoomVoulu; placerCamera(); }
+    demander();
+  }
+/** recentrage sur l'élément mis en avant par le jeu (focus) */
+  function centrer(e: Entree) {
+    const a = e.focus ? (e.r.salle.pos.ANCRES as Record<string, [number, number] | undefined>)[e.focus.cle] : null; if (!a) return;
+    cibleVoulue = new THREE.Vector3(a[0], 0.5, a[1]); zoomVoulu = Math.max(zoomBase(), 1.6); transition = e.reduit ? 1 : 0;
+    if (e.reduit) { vue.cible.copy(cibleVoulue); vue.zoom = zoomVoulu; placerCamera(); }
     demander();
   }
   function redim() {
@@ -291,16 +300,38 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     }
     return meilleur;
   }
+  // Doigts : un doigt sur un objet (mode « déplacer ») le fait glisser ; un doigt ailleurs déplace la vue ; deux doigts zooment.
+  const doigts = new Map<number, { x: number; y: number }>();
+  let pince: { d0: number; z0: number } | null = null, pan: { p: any } | null = null;
+  const dist = () => { const [a, b] = [...doigts.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
+  function annulerPrise() {
+    const t = prise; prise = null; if (!t) return;
+    const o = objets.find((x) => x.id === t.id)!;
+    t.grp.userData.zone.visible = false; t.grp.position.set(o.a[0] + t.depart[0], 0, o.a[1] + t.depart[1]); renderer.shadowMap.needsUpdate = true;
+  }
+  const borneCible = () => { const N = vue.N; vue.cible.x = Math.max(0, Math.min(N, vue.cible.x)); vue.cible.z = Math.max(0, Math.min(N, vue.cible.z)); };
   canvas.addEventListener("pointerdown", (ev) => {
-    if (!courant?.deplacable) return;
-    const id = objetSous(ev.clientX, ev.clientY), grp = id ? groupes.get(id) : null, p = versSol(ev.clientX, ev.clientY);
-    if (!id || !grp || !p) return;
-    ev.preventDefault(); canvas.setPointerCapture(ev.pointerId);
+    if (!courant) return;
+    doigts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    try { canvas.setPointerCapture(ev.pointerId); } catch { /* ignoré */ }
+    cibleVoulue = null; transition = 1; // le doigt reprend la main sur une transition en cours
+    if (doigts.size === 2) { annulerPrise(); pan = null; pince = { d0: dist(), z0: vue.zoom }; return; }
+    if (doigts.size > 2) return;
+    const id = courant.deplacable ? objetSous(ev.clientX, ev.clientY) : null, grp = id ? groupes.get(id) : null, p = versSol(ev.clientX, ev.clientY);
+    if (!p) return;
+    ev.preventDefault();
+    if (!id || !grp) { pan = { p }; return; }
     const o = objets.find((x) => x.id === id)!, dep = courant.r.deplacements[id] ?? [0, 0];
     prise = { id, grp, depart: dep, decal: new THREE.Vector3(p.x - (o.a[0] + dep[0]), 0, p.z - (o.a[1] + dep[1])), dernier: dep, bloque: false, pointeur: ev.pointerId };
     grp.position.y = 0.18; grp.userData.zone.visible = true; grp.userData.zone.material = mat.libre; renderer.shadowMap.needsUpdate = true; demander();
   });
   canvas.addEventListener("pointermove", (ev) => {
+    if (doigts.has(ev.pointerId)) doigts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    if (pince && doigts.size >= 2) { vue.zoom = Math.max(0.7, Math.min(3.2, pince.z0 * dist() / pince.d0)); placerCamera(); demander(); return; }
+    if (pan) {
+      const p = versSol(ev.clientX, ev.clientY); if (!p) return;
+      vue.cible.x += pan.p.x - p.x; vue.cible.z += pan.p.z - p.z; borneCible(); placerCamera(); demander(); return;
+    }
     const t = prise; if (!t || !courant) return;
     const p = versSol(ev.clientX, ev.clientY), o = objets.find((x) => x.id === t.id)!, N = courant.r.salle.n; if (!p) return;
     let dgx = p.x - t.decal.x - o.a[0], dgy = p.z - t.decal.z - o.a[1];
@@ -314,8 +345,11 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     demander();
   });
   function relacher(ev: PointerEvent) {
-    const t = prise; prise = null; if (!t || !courant) return;
+    doigts.delete(ev.pointerId);
     try { canvas.releasePointerCapture(ev.pointerId); } catch { /* déjà relâché */ }
+    if (pince) { if (doigts.size < 2) pince = null; return; }
+    pan = null;
+    const t = prise; prise = null; if (!t || !courant) return;
     t.grp.userData.zone.visible = false;
     const o = objets.find((x) => x.id === t.id)!;
     if (t.bloque) { t.grp.position.set(o.a[0] + t.depart[0], 0, o.a[1] + t.depart[1]); rap.onRefus(); }
@@ -326,7 +360,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   }
   canvas.addEventListener("pointerup", relacher); canvas.addEventListener("pointercancel", relacher);
   // zoom molette / pincement (jalon : molette seule + double clic = vue d'ensemble)
-  canvas.addEventListener("wheel", (ev) => { ev.preventDefault(); zoomVoulu = Math.max(0.8, Math.min(2.6, vue.zoom * (ev.deltaY < 0 ? 1.12 : 0.9))); vue.zoom = zoomVoulu; transition = 1; placerCamera(); demander(); }, { passive: false });
+  canvas.addEventListener("wheel", (ev) => { ev.preventDefault(); zoomVoulu = Math.max(0.7, Math.min(3.2, vue.zoom * (ev.deltaY < 0 ? 1.12 : 0.9))); vue.zoom = zoomVoulu; cibleVoulue = null; transition = 1; placerCamera(); demander(); }, { passive: false });
   canvas.addEventListener("dblclick", () => recadrer());
 
   return {
@@ -334,14 +368,15 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
       const avant = courant; courant = e;
       if (!avant || avant.r !== e.r) { reconstruire(e); }
       if (!avant || avant.nuit !== e.nuit || avant.r !== e.r) lumiere(e.nuit);
-      canvas.style.touchAction = e.deplacable ? "none" : "pan-y";
+      canvas.style.touchAction = "none";
+      if (e.focus && avant && avant.focus?.n !== e.focus.n) centrer(e);
       canvas.style.cursor = e.deplacable ? "grab" : "default";
       if (!pret) { pret = true; redim(); }
       demander();
     },
     vueEnsemble: () => recadrer(),
     sous: (x, y) => objetSous(x, y),
-    stats: () => ({ appels, triangles: tris, objets: objets.length }),
+    stats: () => ({ appels, triangles: tris, objets: objets.length, zoom: +vue.zoom.toFixed(3), cible: [+vue.cible.x.toFixed(2), +vue.cible.z.toFixed(2)] }),
     detruire() { ro.disconnect(); renderer.dispose(); renderer.forceContextLoss(); },
   };
 }
