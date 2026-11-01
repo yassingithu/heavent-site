@@ -18,6 +18,8 @@ const CLASSE_ST: Record<string, string> = { en_attente: "a-st vide", envoye: "a-
 const jours = (iso?: string) => (iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 864e5) : null);
 const recu = (iso?: string) => { const n = jours(iso); return n === null ? "" : n <= 0 ? "reçue aujourd'hui" : n === 1 ? "reçue hier" : `reçue il y a ${n} j`; };
 const dateCourte = (iso?: string) => (iso ? new Date(iso.length === 10 ? iso + "T12:00:00" : iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }).replace(".", "") : null);
+const jourNum = (iso: string) => new Date(iso.slice(0, 10) + "T12:00:00").getDate();
+const moisAn = (iso: string) => new Date(iso.slice(0, 10) + "T12:00:00").toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
 const nombreFr = (n?: number) => (n ? new Intl.NumberFormat("fr-FR").format(n) : null);
 
 function ChoixStatut({ valeur, onChange, avecAttente = true }: { valeur?: string; onChange: (s: Statut) => void; avecAttente?: boolean }) {
@@ -58,11 +60,11 @@ export function CartesDemandes({ type, demandes, onChiffrer, onOuvrirDevis, onSt
             <h2 className="font-serif text-[28px] leading-[1.08] tracking-[-0.015em] mt-3.5 break-words">{titre}</h2>
             {qui && <p className="text-[13.5px] text-[#5A5146] mt-1 break-all">{qui}</p>}
             <div className="grid grid-cols-[auto_1px_auto_1px_minmax(0,1fr)] gap-3.5 items-end mt-4 py-3.5 border-y border-[#DCCDAA]">
-              <div><b className="block font-serif font-normal text-[30px] leading-[.9] tracking-[-0.03em] tabular-nums">{dateCourte(date) ?? "—"}</b><small className="block mt-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#7A5F1F] whitespace-nowrap">Date</small></div>
+              <div><b className="block font-serif font-normal text-[34px] leading-[.9] tracking-[-0.03em] tabular-nums">{date ? jourNum(date) : "—"}</b><small className="block mt-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#7A5F1F] whitespace-nowrap">{date ? moisAn(date) : "Date"}</small></div>
               <i className="self-stretch bg-[#DCCDAA]" aria-hidden />
-              <div><b className="block font-serif font-normal text-[30px] leading-[.9] tracking-[-0.03em] tabular-nums">{nombreFr(nb) ?? "—"}</b><small className="block mt-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#7A5F1F] whitespace-nowrap">{type === "entreprise" ? "Personnes" : "Invités"}</small></div>
+              <div><b className="block font-serif font-normal text-[34px] leading-[.9] tracking-[-0.03em] tabular-nums">{nombreFr(nb) ?? "—"}</b><small className="block mt-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#7A5F1F] whitespace-nowrap">{type === "entreprise" ? "Personnes" : "Invités"}</small></div>
               <i className="self-stretch bg-[#DCCDAA]" aria-hidden />
-              <div className="min-w-0"><b className="block font-serif font-normal text-[19px] leading-[1.05] break-words">{d.lieu || "—"}</b><small className="block mt-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#7A5F1F] whitespace-nowrap">Lieu</small></div>
+              <div className="min-w-0"><b className="block font-serif font-normal text-[19px] leading-[1.05] [overflow-wrap:anywhere] [hyphens:auto]" lang="fr">{d.lieu || "—"}</b><small className="block mt-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#7A5F1F] whitespace-nowrap">Lieu</small></div>
             </div>
             {type === "entreprise" && !!d.nb_staff && <p className="text-[13.5px] mt-3">{d.nb_staff} personne{d.nb_staff > 1 ? "s" : ""} de staff demandée{d.nb_staff > 1 ? "s" : ""}</p>}
             {d.configuration?.elements && <p className="a-st vide !text-[#1F5A4C] mt-2.5">Créé avec le jeu · devis prérempli</p>}

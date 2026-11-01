@@ -60,10 +60,10 @@ export default function BilanMois() {
   return (
     <>
       <button onClick={() => setOuvert(true)} data-testid="ouvrir-bilan-mois"
-        className={`w-full text-left rounded-3xl p-5 border transition hover:shadow-md ${debutDeMois ? "bg-gradient-to-r from-[#141414] to-[#2a2418] text-white border-transparent" : "bg-white border-[#EADFC8]"}`}>
+        className={`a-ligne w-full text-left p-5 border transition hover:shadow-md ${debutDeMois ? "a-grain-nuit text-[#F3ECDD] border-transparent" : "bg-[#FAF6EC] border-[#DCCDAA]"}`}>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className={`text-[11px] uppercase tracking-[0.2em] font-semibold ${debutDeMois ? "text-[#E4D49A]" : "text-[#8C6D22]"}`}>✨ Ton mois en chiffres</div>
+            <div className={`text-[11px] uppercase tracking-[0.2em] font-medium ${debutDeMois ? "text-[#E4D49A]" : "text-[#7A5F1F]"}`}>Ton mois en chiffres</div>
             <div className="font-serif text-xl mt-0.5 first-letter:uppercase">{libelleMois(mois)}{enCours ? " (en cours)" : ""}</div>
             <div className={`text-sm ${debutDeMois ? "text-white/70" : "text-muted-foreground"}`}>{resume ?? "Calcul…"}</div>
           </div>

@@ -52,7 +52,7 @@ function Barres({ titre, donnees, format, testId }: { titre: string; donnees: { 
 function Tuile({ titre, valeur, detail, testId, grand }: { titre: string; valeur: string; detail?: string; testId?: string; grand?: boolean }) {
   return (
     <div data-testid={testId} className="min-w-0">
-      <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#7A5F1F] leading-snug">{titre}</div>
+      <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#7A5F1F] leading-snug">{titre}</div>
       <div className={`font-serif tracking-[-0.025em] tabular-nums text-[#141414] mt-1.5 leading-[.95] ${grand ? "text-[52px] sm:text-[60px]" : "text-[36px] sm:text-[40px]"}`}>{valeur}</div>
       {detail && <div className="text-[12.5px] text-[#5A5146] mt-1.5 leading-snug">{detail}</div>}
     </div>

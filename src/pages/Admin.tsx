@@ -1764,11 +1764,11 @@ const Admin = () => {
         {/* Devis Entreprise Tab */}
         <TabsContent value="entreprise" className="space-y-4">
           <DevisParStatut titre="Devis entreprise" types={["entreprise"]} vide="Aucun devis de type Entreprise." />
-          <Card>
-            <CardHeader>
+          <Card className="max-sm:!border-0 max-sm:!bg-transparent max-sm:!shadow-none">
+            <CardHeader className="max-sm:px-0">
               <CardTitle>Demandes de Devis Entreprise</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="max-sm:px-0">
               <CartesDemandes type="entreprise" demandes={devisEntreprise} onChiffrer={(d) => chiffrerDemande("entreprise", d.id)} onOuvrirDevis={versDevis}
                 onStatut={(id, st) => updateDevisStatus(id, "entreprise", st)} />
               <div className="hidden sm:block overflow-x-auto">
@@ -1810,11 +1810,11 @@ const Admin = () => {
         {/* Devis Événement Tab */}
         <TabsContent value="mariage" className="space-y-4">
           <DevisParStatut titre="Devis événements et mariages" types={["mariage", "evenement"]} vide="Aucun devis de type Mariage ou Événement." />
-          <Card>
-            <CardHeader>
+          <Card className="max-sm:!border-0 max-sm:!bg-transparent max-sm:!shadow-none">
+            <CardHeader className="max-sm:px-0">
               <CardTitle>Demandes de Devis Événement</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="max-sm:px-0">
               <CartesDemandes type="mariage" demandes={devisMariage as any} onChiffrer={(d) => chiffrerDemande("mariage", d.id)} onOuvrirDevis={versDevis}
                 onStatut={(id, st) => updateDevisStatus(id, "mariage", st)} />
               <div className="hidden sm:block overflow-x-auto">
@@ -1889,11 +1889,11 @@ const Admin = () => {
           <div className="grid grid-cols-1 gap-6">
             
             {/* Devis Entreprise Envoyés */}
-            <Card>
-              <CardHeader>
+            <Card className="max-sm:!border-0 max-sm:!bg-transparent max-sm:!shadow-none">
+              <CardHeader className="max-sm:px-0">
                 <CardTitle>Devis Entreprise Envoyés</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="max-sm:px-0">
                 <CartesDevisSuivis type="entreprise" demandes={devisEntreprise.filter((d) => d.statut === 'envoye' || d.statut === 'accepte' || d.statut === 'refuse')}
                   onFacture={(id) => generateInvoicePDF(id, 'entreprise')} onStatut={(id, st) => updateDevisStatus(id, 'entreprise', st)} />
                 <div className="hidden sm:block overflow-x-auto">
@@ -1965,11 +1965,11 @@ const Admin = () => {
             </Card>
 
             {/* Devis Événement Envoyés */}
-            <Card>
-              <CardHeader>
+            <Card className="max-sm:!border-0 max-sm:!bg-transparent max-sm:!shadow-none">
+              <CardHeader className="max-sm:px-0">
                 <CardTitle>Devis Événement Envoyés</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="max-sm:px-0">
                 <CartesDevisSuivis type="mariage" demandes={devisMariage.filter((d) => d.statut === 'envoye' || d.statut === 'accepte' || d.statut === 'refuse') as any}
                   onFacture={(id) => generateInvoicePDF(id, 'mariage')} onStatut={(id, st) => updateDevisStatus(id, 'mariage', st)} />
                 <div className="hidden sm:block overflow-x-auto">

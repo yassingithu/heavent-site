@@ -63,6 +63,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   const [devisList, setDevisList] = useState<DevisRow[]>([]);
   const [catalogue, setCatalogue] = useState<Prestation[]>([]);
   const [params, setParams] = useState<Parametres | null>(null);
+  const [charge, setCharge] = useState(false);
   const [form, setForm] = useState<DevisForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [recherche, setRecherche] = useState("");
@@ -84,6 +85,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     })) as DevisRow[]);
     setCatalogue((c.data ?? []) as Prestation[]);
     setParams(p.data as Parametres | null);
+    setCharge(true);
   };
 
   useEffect(() => {
@@ -265,7 +267,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   // Demande choisie depuis une carte de l'onglet Demandes (téléphone) : même action que « Faire le devis » ici
   useEffect(() => {
     const chiffrer = (q: { kind: "entreprise" | "mariage"; id: string } | null) => {
-      if (!q) return;
+      // attendre le catalogue et les paramètres (sinon le devis prérempli serait incomplet)
+      if (!q || !charge) return;
       (window as any).__heaventDemandeAChiffrer = null;
       if (q.kind === "entreprise") { const d = demandesEntreprise.find((x) => x.id === q.id); if (d) depuisDemandeEntreprise(d); }
       else { const d = demandesMariage.find((x) => x.id === q.id); if (d) depuisDemandeMariage(d); }
