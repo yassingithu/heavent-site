@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Check, Copy, Download, ExternalLink, ImagePlus, Instagram, KeyRound, Loader2, Search, Sparkles, Wand2 } from "lucide-react";
+import { CalendarPlus, Check, Copy, Download, ExternalLink, ImagePlus, Instagram, KeyRound, Loader2, Search, Sparkles, Wand2 } from "lucide-react";
 import { composerVisuel, enJpeg } from "./visuel";
 import { guidePourTheme } from "@/data/guides";
 import CommentezGuide from "./CommentezGuide";
+import AjouterPost from "./AjouterPost";
 import { genererMois, type Compte } from "@/data/instagramIdees";
 
 /** Onglet Instagram : posts conseils préparés (photo Pixabay + texte Heavent), à télécharger ou publier. */
@@ -62,6 +63,7 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
   const [auto, setAuto] = useState<{ fait: number; total: number } | null>(null);
   const [compte, setCompte] = useState<Compte>("heavent");
   const [generation, setGeneration] = useState(false);
+  const [ajout, setAjout] = useState(false);
 
   const charger = useCallback(async () => {
     const [{ data }, r] = await Promise.all([
@@ -202,6 +204,10 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">{posts.length} posts · {posts.filter((p) => p.statut === "pret").length} prêts · {posts.filter((p) => p.statut === "publie").length} publiés</p>
         <div className="flex flex-wrap gap-2">
+        <button onClick={() => setAjout(true)} disabled={!!auto} data-testid="ajouter-publication"
+          className="inline-flex items-center gap-2 rounded-full border border-[#141414] px-5 min-h-10 text-sm disabled:opacity-60">
+          <CalendarPlus className="h-4 w-4 text-[#A8933F]" /> Ajouter une publication (fête…)
+        </button>
         {!famille && (
           <button onClick={genererUnMois} disabled={generation || !!auto} data-testid="generer-mois"
             className="inline-flex items-center gap-2 rounded-full border border-[#141414] px-5 min-h-10 text-sm disabled:opacity-60">
@@ -234,6 +240,12 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
         ))}
       </div>
 
+      {ajout && <AjouterPost compte={compte} posts={posts} onFermer={() => setAjout(false)} onCree={async (id) => {
+        setAjout(false);
+        const { data } = await (supabase as any).from("posts_instagram").select("*").eq("id", id).single();
+        await charger();
+        if (data) setOuvert(data as Post);
+      }} />}
       {ouvert && <EditeurPost post={ouvert} pixabay={reglages.pixabay} instagram={!famille && reglages.instagram} famille={famille} onFermer={() => { setOuvert(null); charger(); }} />}
     </div>
   );

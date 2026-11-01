@@ -1265,6 +1265,33 @@ await scenario("Affichage smartphone (pages publiques et admin)", async (notes) 
   await ctx.close();
 });
 
+// Instagram : ajouter une publication pour une fête oubliée, intercalée (les suivantes reculent d'un créneau) ou en plus
+await scenario("Instagram : intercaler une publication de fête oubliée", async (notes) => {
+  const base = nouvelleBase();
+  const mk = (id, date, statut = "pret") => ({ id, compte: "nawar", date_prevue: date, theme: "parfum", accroche: "x", titre: "T" + id, legende: "", recherche: "x", style: "sombre", statut, visuel_url: "x", photo_url: "x" });
+  base.posts_instagram = [mk("a", "2026-11-05T19:30:00.000Z", "publie"), mk("b", "2026-11-06T10:30:00.000Z"), mk("c", "2026-11-06T19:30:00.000Z"), mk("d", "2026-11-07T10:30:00.000Z"),
+    { ...mk("h", "2026-11-06T10:30:00.000Z"), compte: "heavent" }];
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await connecter(page, BASE, ADMIN, "/admin");
+  await clicOnglet(page, /Instagram$/); await page.waitForTimeout(1000);
+  await page.getByTestId("compte-nawar").click(); await page.waitForTimeout(1000);
+  await page.getByTestId("ajouter-publication").click();
+  await page.getByTestId("choix-fete").selectOption("marche_verte");
+  verifier(await page.getByTestId("jour-post").inputValue() === "2026-11-06", "date de la Marche verte non proposée");
+  verifier(/Marche verte/.test(await page.getByTestId("titre-fete").inputValue()), "texte de la fête non prérempli");
+  await page.getByTestId("mode-intercaler").click();
+  await page.getByTestId("creer-post-fete").click(); await page.waitForTimeout(1500);
+  const par = (id) => base.posts_instagram.find((p) => p.id === id).date_prevue;
+  const nouveau = base.posts_instagram.find((p) => p.theme === "fete");
+  verifier(nouveau && nouveau.compte === "nawar" && nouveau.date_prevue === "2026-11-06T10:30:00.000Z" && /Nawar/.test(nouveau.legende), "post de fête mal créé : " + JSON.stringify(nouveau));
+  verifier(par("b") === "2026-11-06T19:30:00.000Z" && par("c") === "2026-11-07T10:30:00.000Z" && par("d") === "2026-11-07T19:30:00.000Z", "décalage incorrect : " + [par("b"), par("c"), par("d")]);
+  verifier(par("a") === "2026-11-05T19:30:00.000Z" && par("h") === "2026-11-06T10:30:00.000Z", "un post publié ou de l'autre compte a bougé");
+  verifier(await page.getByTestId("editeur-post").isVisible(), "l'éditeur ne s'ouvre pas pour choisir la photo");
+  notes.push("Marche verte intercalée le 6/11 à 11h30 ; les 3 posts Nawar suivants reculent d'un créneau ; Heavent et le post publié ne bougent pas");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
 // Instagram : un mois de posts (2 par jour) en un clic, pour Heavent et pour Nawar (bar à parfums)
 await scenario("Instagram : générer 1 mois de posts (2/jour) pour Heavent et Nawar, visuels Nawar", async (notes) => {
   const base = nouvelleBase();
