@@ -138,7 +138,7 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
       const expire = !!v.date_validite && v.date_validite < aujourdhui;
       const urg = age > 7 || bientot;
       const morceaux = [x("Devis {numero} envoyé le {date}", { numero: v.numero ?? "", date: dateCourte(v.date_envoi) })];
-      if (v.relances) morceaux.push(x("relancé le {date}", { date: dateCourte(v.derniere_relance_le) }));
+      if (v.relances || v.derniere_relance_le) morceaux.push(x("relancé le {date}", { date: dateCourte(v.derniere_relance_le) }));
       morceaux.push(money(Number(v.total_ttc || 0), v.devise));
       if (expire) morceaux.push(x("validité dépassée"));
       else if (v.date_evenement) morceaux.push(x("événement le {date}", { date: dateCourte(v.date_evenement) }));
