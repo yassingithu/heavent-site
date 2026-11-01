@@ -22,7 +22,7 @@ async function ouvrir(browser, url, tactile = false, reduit = false) {
 const b = await chromium.launch({ args: GL });
 
 // 1. Sans le paramètre : le SVG, pas de canvas
-{ const { ctx, p } = await ouvrir(b, ""); ok((await p.locator("canvas").count()) === 0 && (await p.locator("svg[role=img]").count()) > 0, "sans ?3d=1 : scène SVG, aucun canvas"); await ctx.close(); }
+{ const { ctx, p } = await ouvrir(b, "?3d=0"); ok((await p.locator("canvas").count()) === 0 && (await p.locator("svg[role=img]").count()) > 0, "?3d=0 : scène SVG, aucun canvas"); await ctx.close(); }
 
 // 2. 3D : chargement, chaises, déplacement, refus, annulation
 {

@@ -1,5 +1,5 @@
 /**
- * Choisit le rendu de la scène : SVG (par défaut, pour tous les joueurs) ou 3D (paramètre d'URL ?3d=1).
+ * Choisit le rendu de la scène : 3D par défaut, ou SVG avec ?3d=0.
  * Repli automatique sur le SVG : pas de WebGL, appareil faible, tables « conférence », chargement ou rendu en échec.
  */
 import { lazy, Suspense, useState } from "react";
@@ -9,7 +9,7 @@ const Scene3D = lazy(() => import("./Scene3D"));
 
 function veut3D(p: SceneProps): boolean {
   try {
-    if (new URLSearchParams(location.search).get("3d") !== "1") return false;
+    if (new URLSearchParams(location.search).get("3d") === "0") return false; // ?3d=0 force l'ancien rendu SVG
     if (p.r.tables === "conference" || p.final) return false; // pas encore en 3D : on garde le SVG
     const nav = navigator as Navigator & { deviceMemory?: number };
     if ((nav.deviceMemory ?? 4) < 2 || (navigator.hardwareConcurrency ?? 4) < 2) return false;

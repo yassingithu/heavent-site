@@ -3,7 +3,7 @@ const b = await chromium.launch(); const ctx = await b.newContext({ locale: "fr-
 await ctx.addInitScript(() => { try { sessionStorage.setItem("heavent-splash-vu", "1"); } catch {} });
 await ctx.route(/fonts\.(googleapis|gstatic)|googletagmanager|supabase\.co/, (r) => r.abort());
 const p = await ctx.newPage(); const err = []; p.on("pageerror", (e) => err.push(e.message)); const t = (i) => p.getByTestId(i);
-await p.goto("http://127.0.0.1:5180/apercu/heavent-city"); await p.waitForTimeout(1000);
+await p.goto("http://127.0.0.1:5180/apercu/heavent-city?3d=0"); await p.waitForTimeout(1000);
 await t("commencer").click(); await t("type-mariage").click(); await t("q-passer").click(); await t("ville-Casablanca").click(); await t("q-passer").click(); await t("q-passer").click();
 await t("liste-lieu-salle").click(); await p.waitForTimeout(2500);
 await t("onglet-salle").click(); await t("tables-rectangulaires").click();
