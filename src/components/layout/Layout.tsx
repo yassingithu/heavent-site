@@ -37,6 +37,13 @@ const Layout = ({ children }: LayoutProps) => {
   const seuil = estPageSeuil(pathname) && !(dansApplication && !vueSite);
   useEffect(() => {
     document.body.classList.toggle("seuil", seuil);
+    // Les pages publiques « Seuil » utilisent leurs polices hébergées ; Inter et Playfair (Google) ne servent qu'ailleurs (admin, espaces)
+    if (!seuil && !document.getElementById("polices-google")) {
+      const l = document.createElement("link");
+      l.id = "polices-google"; l.rel = "stylesheet";
+      l.href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap";
+      document.head.appendChild(l);
+    }
   }, [seuil]);
 
   useEffect(() => {
