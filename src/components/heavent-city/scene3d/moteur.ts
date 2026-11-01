@@ -10,7 +10,7 @@ import { chevauche, objetsDeplacables, RAYON_TABLE, type Objet3D } from "./objet
 
 export interface Entree { r: Rendu; nuit: number; deplacable: boolean; reduit: boolean; focus?: { cle: string; n: number } | null }
 export interface Rappels { onDeplacer: (id: string, dx: number, dy: number) => void; onRefus: () => void }
-export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[] } }
+export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** cadre un objet de près (tests, captures) */ vers(id: string, zoom: number): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[] } }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const couleur = (a: string, b: string, t: number) => new THREE.Color(a).lerp(new THREE.Color(b), t);
@@ -144,19 +144,23 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
       if (bougies) grp.add(mesh(g.cyl8, mat.bougie, 0.2, 0.5, 0.1, 0.012, 0.1, 0.012, false));
       grp.add(chaises(10, RAYON_TABLE + 0.22, 0, chaiseMat));
     } else if (o.genre === "rect") {
-      grp.add(mesh(g.box, nappe, 0, 0.21, 0, 1.6, 0.42, 0.7)); grp.add(mesh(g.sph, fleurs, 0, 0.55, 0, 0.12, 0.1, 0.12));
+      grp.add(mesh(g.box, nappe, 0, 0.21, 0, 1.7, 0.42, 0.78)); grp.add(mesh(g.sph, fleurs, 0, 0.55, 0, 0.12, 0.1, 0.12));
+      // chaises sur les deux GRANDS côtés (comme le SVG), face à la table, dossier vers l'extérieur ; rien sur les bouts
       const im = ombre(new THREE.InstancedMesh(chaiseGeo, chaiseMat, 6)); const m = new THREE.Matrix4();
-      for (let i = 0; i < 6; i++) { const lado = i < 3 ? -1 : 1, x = ((i % 3) - 1) * 0.5; m.compose(new THREE.Vector3(x, 0, lado * 0.52), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, lado > 0 ? 0 : Math.PI, 0)), new THREE.Vector3(1, 1, 1)); im.setMatrixAt(i, m); }
+      for (let i = 0; i < 6; i++) { const lado = i < 3 ? -1 : 1, x = ((i % 3) - 1) * 0.567; m.compose(new THREE.Vector3(x, 0, lado * 0.64), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, lado > 0 ? Math.PI : 0, 0)), new THREE.Vector3(1, 1, 1)); im.setMatrixAt(i, m); }
       grp.add(im);
     } else if (o.genre === "haute") {
       grp.add(mesh(g.cyl8, mat.laiton, 0, 0.3, 0, 0.04, 0.6), mesh(g.cyl, mat.laiton, 0, 0.02, 0, 0.2, 0.04, 0.2), mesh(g.cyl, nappe, 0, 0.62, 0, 0.3, 0.04, 0.3));
       if (bougies) grp.add(mesh(g.cyl8, mat.bougie, 0, 0.7, 0, 0.012, 0.1, 0.012, false));
     } else if (o.genre === "honneur") {
       const w = o.hw * 2, d = o.hd * 2;
-      grp.add(mesh(g.box, nappe, 0, 0.21, 0, w, 0.42, d * 0.7), mesh(g.box, mat.laiton, 0, 0.44, 0, w, 0.025, d * 0.12));
-      const im = ombre(new THREE.InstancedMesh(chaiseGeo, chaiseMat, 5)); const m = new THREE.Matrix4();
-      for (let i = 0; i < 5; i++) { m.compose(new THREE.Vector3((i - 2) * (w / 5.4), 0, d * 0.62), new THREE.Quaternion(), new THREE.Vector3(1, 1, 1)); im.setMatrixAt(i, m); }
-      grp.add(im);
+      grp.add(mesh(g.box, nappe, 0, 0.21, 0, w, 0.42, d), mesh(g.box, mat.laiton, 0, 0.44, 0, w, 0.025, d * 0.12));
+      // comme le SVG : seuls les mariés sont assis, côté mur (au nord de la table), dos au mur, face à la salle
+      if (r.type === "mariage") {
+        const im = ombre(new THREE.InstancedMesh(chaiseGeo, chaiseMat, 2)); const m = new THREE.Matrix4();
+        [-0.9, 0.9].forEach((x, i) => { m.compose(new THREE.Vector3(x, 0, -(d / 2 + 0.3)), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0)), new THREE.Vector3(1.25, 1.25, 1.25)); im.setMatrixAt(i, m); });
+        grp.add(im);
+      }
       // gypsophile suspendue : barre en laiton + nuage de petites fleurs
       grp.add(mesh(g.box, mat.laiton, 0, 2.3, -d * 0.1, w * 1.05, 0.03, 0.03, false));
       const gy = new THREE.Mesh(gypsoGeo, mat.blanc); gy.scale.set(w / 3, 1, 1.2); gy.position.set(0, 2.25, -d * 0.1); gy.castShadow = true; grp.add(gy);
@@ -375,6 +379,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
       demander();
     },
     vueEnsemble: () => recadrer(),
+    vers(id, zoom) { const g2 = groupes.get(id); if (!g2) return; cibleVoulue = null; transition = 1; vue.cible.set(g2.position.x, 0.4, g2.position.z); vue.zoom = zoom; placerCamera(); demander(); },
     sous: (x, y) => objetSous(x, y),
     stats: () => ({ appels, triangles: tris, objets: objets.length, zoom: +vue.zoom.toFixed(3), cible: [+vue.cible.x.toFixed(2), +vue.cible.z.toFixed(2)] }),
     detruire() { ro.disconnect(); renderer.dispose(); renderer.forceContextLoss(); },

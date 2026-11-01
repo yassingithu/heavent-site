@@ -277,7 +277,7 @@ export function TableHonneur({ gx, gy, w, d, pal, fleurs, couple, type, animer }
   return (
     <g>
       <Ombre gx={gx + w / 2} gy={gy + d / 2} r={1.9} o={0.16} />
-      {type === "mariage" && [0.6, 2.4].map((dx, i) => (
+      {type === "mariage" && [0.8, 2.6].map((dx, i) => (
         <g key={i}>
           <Boite gx={gx + dx - 0.35} gy={gy - 0.75} w={0.7} d={0.55} h={20} haut={eclaircir(pal.deco, 0.45)} />
           <Boite gx={gx + dx - 0.35} gy={gy - 0.95} w={0.7} d={0.14} h={46} haut={eclaircir(pal.deco, 0.35)} />
