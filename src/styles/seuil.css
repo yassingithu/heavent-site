@@ -218,7 +218,7 @@ html.ouverture-finie .s-ouverture, html.ouverture-finie .s-passer { display: non
 .s-meta .long { display: none; }
 .s-heros > .s-filet { margin-top: 12px; }
 html.s-anime .s-heros > .s-filet { animation: s-trace 1.1s var(--s-courbe) calc(var(--d) + .1s) both; }
-.s-titre-heros { margin-top: 26px; font-family: var(--s-titre); font-weight: 400; color: var(--s-papier); }
+.s-titre-heros { margin-top: 26px; font-family: var(--s-titre); font-weight: 400; color: var(--s-papier);  container-type: inline-size; }
 .s-ligne { display: block; overflow: hidden; padding-bottom: .06em; }
 .s-ligne > span { display: block; animation: s-monte .9s var(--s-courbe) both; }
 @keyframes s-monte { from { transform: translateY(110%); } to { transform: none; } }
@@ -491,3 +491,8 @@ html.s-anime .s-deroule.vu .s-etape::after { transition: transform .5s var(--s-c
 }
 .s-marque { flex: none; }
 @media (max-width: 1319px) { .s-nav a.s-nav-sec[href="/inscription-staff"] { display: none; } }
+
+/* Le grand mot du titre ne déborde jamais, quelle que soit la langue (« Hospitality, » est plus long que « L'accueil, ») */
+.s-l1 { font-size: min(clamp(60px, 17vw, 176px), calc(100cqi / (var(--n, 10) * var(--f, .42)))); }
+@media (min-width: 1180px) { .s-l1 { font-size: min(clamp(96px, 12.5vw, 176px), calc(100cqi / (var(--n, 10) * var(--f, .42)))); } }
+@media (min-width: 1180px) { .s-sommaire h2 { font-size: clamp(48px, 4.4vw, 66px); } }

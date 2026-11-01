@@ -59,7 +59,7 @@ const Home = () => {
           <div className="s-meta"><span>{x("Agence d'hôtesses & d'événementiel")}</span><span className="long">{x("Rabat · partout au Maroc")}</span></div>
           <span className="s-filet" aria-hidden="true" />
           <h1 className="s-titre-heros" id="t-heros">
-            <span className="s-ligne s-l1"><span>{x("L'accueil,")}</span></span>
+            <span className="s-ligne s-l1" style={{ "--n": x("L'accueil,").length, "--f": /[\u0600-\u06FF]/.test(x("L'accueil,")) ? .5 : .42 } as CSSProperties}><span>{x("L'accueil,")}</span></span>
             <span className="s-ligne s-l2"><span>{x("c'est le premier")}</span></span>
             <span className="s-ligne s-l2 s-l3"><span>{x("souvenir.")}</span></span>
           </h1>
