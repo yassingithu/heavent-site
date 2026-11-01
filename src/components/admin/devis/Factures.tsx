@@ -23,7 +23,7 @@ async function messageErreur(error: any, data: any) {
 }
 
 /** Actions communes sur une facture : PDF, envoi au client, paiement, annulation. */
-function useActionsFacture(params: Parametres | null, apres: () => void) {
+export function useActionsFacture(params: Parametres | null, apres: () => void) {
   const { toast } = useToast();
   const [occupe, setOccupe] = useState<string | null>(null);
   const [paiement, setPaiement] = useState<{ f: Facture; mode: string; date: string } | null>(null);
@@ -90,7 +90,8 @@ function useActionsFacture(params: Parametres | null, apres: () => void) {
       {f.statut !== "annulee" && <Button size="icon" variant="ghost" title="Annuler la facture" onClick={() => annuler(f)}><Ban className="h-4 w-4 text-red-600" /></Button>}
     </div>
   );
-  return { dialogue, boutons };
+  const demanderPaiement = (f: Facture) => setPaiement({ f, mode: "Virement", date: today() });
+  return { dialogue, boutons, envoyer, demanderPaiement };
 }
 
 const ligneStatut = (f: Facture) => (
