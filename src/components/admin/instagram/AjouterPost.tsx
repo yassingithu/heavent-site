@@ -73,11 +73,11 @@ export default function AjouterPost({ compte, posts, famille = false, onFermer, 
     setOccupe(false);
   };
 
-  const champ = "w-full min-w-0 rounded-md border px-3 h-10 text-sm";
+  const champ = "w-full min-w-0 border border-[#DCCDAA] px-3 h-11 text-sm";
   return (
     <Dialog open onOpenChange={(o) => !o && onFermer()}>
       <DialogContent className="max-w-2xl max-h-[94vh] overflow-y-auto" data-testid="ajouter-post" onOpenAutoFocus={(e) => e.preventDefault()}>
-        <DialogTitle className="font-serif text-2xl">Ajouter une publication</DialogTitle>
+        <DialogTitle className="font-serif text-2xl font-normal" style={{ fontFamily: "var(--s-titre)" }}>Ajouter une publication</DialogTitle>
         <div className="space-y-4">
           <label className="text-sm space-y-1 block"><span className="text-muted-foreground">Occasion</span>
             <select value={feteId} onChange={(e) => choisirFete(e.target.value)} className={champ} data-testid="choix-fete">
@@ -92,7 +92,7 @@ export default function AjouterPost({ compte, posts, famille = false, onFermer, 
             <div className="text-sm space-y-1"><span className="text-muted-foreground">Heure (Maroc)</span>
               <div className="flex gap-2">
                 {CRENEAUX.map((c, i) => (
-                  <button key={c.label} onClick={() => setCreneau(i)} className={`flex-1 rounded-md border h-10 ${creneau === i ? "bg-[#141414] text-white border-[#141414]" : "bg-white"}`}>{c.label}</button>
+                  <button key={c.label} onClick={() => setCreneau(i)} className={`flex-1 border h-11 ${creneau === i ? "bg-[#141414] text-[#FAF6EC] border-[#141414]" : "bg-white border-[#DCCDAA]"}`}>{c.label}</button>
                 ))}
               </div>
             </div>
@@ -127,7 +127,7 @@ export default function AjouterPost({ compte, posts, famille = false, onFermer, 
             <textarea value={textes.legende} onChange={(e) => setTextes({ ...textes, legende: e.target.value })} rows={7} className="w-full rounded-md border p-3 text-sm leading-relaxed" /></label>
 
           <div className="flex flex-wrap gap-2">
-            <button onClick={creer} disabled={occupe} className="inline-flex items-center gap-1.5 rounded-full bg-[#141414] text-white px-5 h-10 text-sm disabled:opacity-60" data-testid="creer-post-fete">
+            <button onClick={creer} disabled={occupe} className="s-btn s-btn-plein s-sombre !min-h-[46px] !px-5 !text-[13px]" data-testid="creer-post-fete">
               {occupe ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Ajouter et choisir la photo
             </button>
             <button onClick={onFermer} className="rounded-full px-4 h-10 text-sm text-muted-foreground">Annuler</button>

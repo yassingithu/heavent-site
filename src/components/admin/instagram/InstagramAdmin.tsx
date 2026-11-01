@@ -7,6 +7,7 @@ import { composerVisuel, enJpeg } from "./visuel";
 import { guidePourTheme } from "@/data/guides";
 import CommentezGuide from "./CommentezGuide";
 import AjouterPost from "./AjouterPost";
+import "@/styles/admin-seuil.css";
 import { genererMois, type Compte } from "@/data/instagramIdees";
 
 /** Onglet Instagram : posts conseils préparés (photo Pixabay + texte Heavent), à télécharger ou publier. */
@@ -169,35 +170,70 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
     charger();
   };
 
+  // Prochaine publication : le premier post non publié dont l'heure n'est pas passée
+  const prochain = posts.find((p) => p.statut !== "publie" && !!p.date_prevue && new Date(p.date_prevue).getTime() >= Date.now());
+  const etiquette = (p: Post) => estEnRetard(p) ? null : <span className={`ig-etiq ${p.statut}`}>{STATUTS[p.statut][0]}</span>;
+
   return (
-    <div className="space-y-5" data-testid="instagram-admin">
-      {/* Choix du compte Instagram (la famille ne voit que Nawar) */}
-      {!famille && <div className="inline-flex rounded-full border border-[#EADFC8] bg-white p-1" data-testid="choix-compte">
-        {(Object.keys(COMPTES) as Compte[]).map((c) => (
-          <button key={c} onClick={() => { setCompte(c); setPosts(null); }} className={`rounded-full px-4 h-9 text-sm ${compte === c ? "bg-[#141414] text-white" : "text-[#5E554A]"}`} data-testid={`compte-${c}`}>
-            {c === "nawar" && <img src="/marque-nawar.png" alt="" className="inline h-4 w-4 mr-1.5 -mt-0.5" />}{COMPTES[c]}
-          </button>
-        ))}
+    <div className={`ig space-y-5 ${famille ? "ig-famille" : ""}`} data-testid="instagram-admin">
+      {/* En-tête noir + bascule de compte à biseau (la famille ne voit que Nawar) */}
+      {!famille && <div className="ig-tete">
+        <div><small>Compte publié</small><h2>{compte === "nawar" ? "Nawar" : "Heavent"}</h2></div>
+        <div className="ig-comptes" data-compte={compte} role="group" aria-label="Compte Instagram" data-testid="choix-compte">
+          <span className="biseau" aria-hidden="true" />
+          {(Object.keys(COMPTES) as Compte[]).map((c) => (
+            <button key={c} aria-pressed={compte === c} onClick={() => { if (c !== compte) { setCompte(c); setPosts(null); } }} data-testid={`compte-${c}`} title={COMPTES[c]}>
+              {c === "nawar" && <img src="/marque-nawar.png" alt="" />}{c === "nawar" ? "Nawar" : "Heavent"}
+            </button>
+          ))}
+        </div>
       </div>}
+
+      {/* Prochaine publication, en tête */}
+      {prochain && (
+        <section className="ig-prochain" aria-labelledby="ig-t-prochain" data-testid="prochaine-publication">
+          <div className="ig-vis">
+            {prochain.visuel_url || prochain.photo_url ? <img src={prochain.visuel_url ?? prochain.photo_url!} alt="" />
+              : <div className="ig-couv">{prochain.titre}</div>}
+          </div>
+          <div className="ig-quand">
+            <h2 className="a-surtitre" id="ig-t-prochain">Prochaine</h2>
+            {(() => { const d = new Date(prochain.date_prevue!); return (
+              <div className="ig-date">
+                <span className="j">{d.getDate()}</span>
+                <span className="m">{d.toLocaleDateString("fr-FR", { weekday: "long" })}<br />{d.toLocaleDateString("fr-FR", { month: "long" })} · {d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
+              </div>
+            ); })()}
+            <h3>{prochain.titre}</h3>
+          </div>
+          <div className="ig-etat">
+            <span className={`a-st ${prochain.statut === "pret" ? "vert" : prochain.statut === "erreur" ? "terre" : "vide"}`}>
+              {prochain.statut === "pret" ? (reglages.instagram && !famille ? "Prête, partira toute seule" : "Prête à publier") : prochain.statut === "erreur" ? "Erreur à revoir" : "Visuel à préparer"}
+            </span>
+            <button onClick={() => setOuvert(prochain)} className="s-btn s-btn-filet">Ouvrir</button>
+          </div>
+        </section>
+      )}
+
       {/* Réglages (réservés à l'administration) */}
       {!famille && <div className="grid md:grid-cols-2 gap-3">
-        <section className="rounded-2xl border border-[#EADFC8] bg-white p-4">
-          <h3 className="font-medium flex items-center gap-2"><KeyRound className="h-4 w-4 text-[#A8933F]" /> Photos gratuites (Pixabay)</h3>
+        <section className="ig-encart">
+          <h3><KeyRound className="h-4 w-4 text-[#A8933F]" /> Photos gratuites (Pixabay)</h3>
           {reglages.pixabay ? (
-            <p className="text-sm text-emerald-700 mt-1 flex items-center gap-1.5" data-testid="pixabay-ok"><Check className="h-4 w-4" /> Clé enregistrée</p>
+            <p className="a-st vert mt-2" data-testid="pixabay-ok">Clé enregistrée</p>
           ) : (
             <div className="mt-2 flex gap-2">
               <input type="password" autoComplete="off" value={cle} onChange={(e) => setCle(e.target.value)} placeholder="Colle ta clé Pixabay ici"
-                className="flex-1 min-w-0 rounded-md border px-3 h-10 text-sm" data-testid="cle-pixabay" />
-              <button onClick={enregistrerCle} disabled={!cle.trim()} className="rounded-md bg-[#141414] text-white px-4 h-10 text-sm disabled:opacity-50">Enregistrer</button>
+                className="flex-1 min-w-0 border px-3 h-11 text-sm" data-testid="cle-pixabay" />
+              <button onClick={enregistrerCle} disabled={!cle.trim()} className="s-btn s-btn-plein s-sombre">Enregistrer</button>
             </div>
           )}
         </section>
-        <section className="rounded-2xl border border-[#EADFC8] bg-white p-4">
-          <h3 className="font-medium flex items-center gap-2"><Instagram className="h-4 w-4 text-[#A8933F]" /> Publication automatique</h3>
+        <section className="ig-encart">
+          <h3><Instagram className="h-4 w-4 text-[#A8933F]" /> Publication automatique</h3>
           {reglages.instagram && !changerJeton ? (
             <>
-              <p className="text-sm text-emerald-700 mt-1 flex items-center gap-1.5" data-testid="instagram-connecte"><Check className="h-4 w-4" /> @{reglages.instagram_nom} connecté : les posts « Prêts » partent tout seuls à leur date.</p>
+              <p className="a-st vert mt-2" data-testid="instagram-connecte">@{reglages.instagram_nom} connecté : les posts « Prêts » partent tout seuls à leur date.</p>
               <button onClick={() => setChangerJeton(true)} className="mt-1 text-xs underline underline-offset-2 text-muted-foreground hover:text-foreground" data-testid="changer-jeton">Mettre à jour le jeton</button>
             </>
           ) : (
@@ -205,8 +241,8 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
               <p className="text-sm text-muted-foreground mt-1">En attendant, télécharge le visuel et copie la légende pour publier à la main.</p>
               <div className="mt-2 flex gap-2">
                 <input type="password" autoComplete="off" value={jeton} onChange={(e) => setJeton(e.target.value)} placeholder="Colle le jeton Instagram ici"
-                  className="flex-1 min-w-0 rounded-md border px-3 h-10 text-sm" data-testid="jeton-instagram" />
-                <button onClick={connecterInstagram} disabled={jeton.trim().length < 20 || connexion || (methodeFacebook && (!appId.trim() || (!reglages.secret_app && !secretApp.trim())))} className="rounded-md bg-[#141414] text-white px-4 h-10 text-sm disabled:opacity-50">{connexion ? "…" : "Connecter"}</button>
+                  className="flex-1 min-w-0 border px-3 h-11 text-sm" data-testid="jeton-instagram" />
+                <button onClick={connecterInstagram} disabled={jeton.trim().length < 20 || connexion || (methodeFacebook && (!appId.trim() || (!reglages.secret_app && !secretApp.trim())))} className="s-btn s-btn-plein s-sombre">{connexion ? "…" : "Connecter"}</button>
               </div>
               {methodeFacebook && (
                 <div className="mt-2 grid sm:grid-cols-2 gap-2" data-testid="methode-facebook">
@@ -221,7 +257,7 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
       </div>}
       {!famille && compte === "heavent" && <CommentezGuide reglages={reglages} onChange={charger} />}
       {!famille && compte === "nawar" && !reglages.instagram && (
-        <p className="text-sm rounded-xl bg-[#FBF6E9] border border-[#EADFC8] px-4 py-3 text-[#5E554A]">
+        <p className="ig-encart text-sm text-[#5A5146]">
           Pour publier automatiquement sur le compte Nawar : le compte Instagram Nawar doit être professionnel et relié à une Page Facebook Nawar.
           Génère ensuite un jeton dans l'explorateur Graph API (même app « Heavent Publication »), en cochant la Page Nawar, puis colle-le ci-dessus.
           En attendant, les visuels se préparent et se téléchargent normalement.
@@ -229,48 +265,49 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
       )}
 
       {enRetard.length > 0 && (
-        <div className="rounded-xl border border-[#E7C9B9] bg-[#FBF1EC] px-4 py-3 flex flex-wrap items-center justify-between gap-3" data-testid="bandeau-retard">
-          <p className="text-sm text-[#7A3A22]"><b>{enRetard.length} publication{enRetard.length > 1 ? "s" : ""} en retard</b> : {enRetard.length > 1 ? "elles ne partiront pas" : "elle ne partira pas"} toute{enRetard.length > 1 ? "s" : ""} seule{enRetard.length > 1 ? "s" : ""}.</p>
-          <button onClick={replanifier} disabled={replanif} className="rounded-full bg-[#141414] text-white px-4 min-h-10 text-sm disabled:opacity-60" data-testid="replanifier">{replanif ? "…" : "Les replanifier aux prochains créneaux"}</button>
+        <div className="ig-retard" data-testid="bandeau-retard">
+          <p><b>{enRetard.length} publication{enRetard.length > 1 ? "s" : ""} en retard</b> : {enRetard.length > 1 ? "elles ne partiront pas" : "elle ne partira pas"} toute{enRetard.length > 1 ? "s" : ""} seule{enRetard.length > 1 ? "s" : ""}.</p>
+          <button onClick={replanifier} disabled={replanif} data-testid="replanifier">{replanif ? "…" : "Les replanifier aux prochains créneaux"}</button>
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{posts.length} posts · {posts.filter((p) => p.statut === "pret").length} prêts · {posts.filter((p) => p.statut === "publie").length} publiés</p>
-        <div className="flex flex-wrap gap-2">
-        <button onClick={() => setAjout(true)} disabled={!!auto} data-testid="ajouter-publication"
-          className="inline-flex items-center gap-2 rounded-full border border-[#141414] px-5 min-h-10 text-sm disabled:opacity-60">
-          <CalendarPlus className="h-4 w-4 text-[#A8933F]" /> Ajouter une publication (fête…)
-        </button>
-        {!famille && (
-          <button onClick={genererUnMois} disabled={generation || !!auto} data-testid="generer-mois"
-            className="inline-flex items-center gap-2 rounded-full border border-[#141414] px-5 min-h-10 text-sm disabled:opacity-60">
-            {generation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-[#A8933F]" />} Générer 1 mois (2 posts/jour)
-          </button>
-        )}
+      {/* Bilan */}
+      <div className="ig-bilan">
+        <span><b>{posts.length}</b>posts</span>
+        <span><b>{posts.filter((p) => p.statut === "pret").length}</b>prêts</span>
+        <span><b>{posts.filter((p) => p.statut === "publie").length}</b>publiés</span>
+      </div>
+
+      {/* Actions : un plein (l'action utile), des filets */}
+      <div className="ig-outils">
         {reglages.pixabay && manquants > 0 && (
-          <button onClick={preparerTout} disabled={!!auto} data-testid="preparer-visuels"
-            className="inline-flex items-center gap-2 rounded-full bg-[#141414] text-white px-5 min-h-10 text-sm disabled:opacity-60">
+          <button onClick={preparerTout} disabled={!!auto} data-testid="preparer-visuels" className="s-btn s-btn-plein s-sombre">
             {auto ? <><Loader2 className="h-4 w-4 animate-spin" /> {auto.fait}/{auto.total} visuels…</> : <><Wand2 className="h-4 w-4 text-[#E4D49A]" /> Préparer les {manquants} visuels automatiquement</>}
           </button>
         )}
-        </div>
+        <button onClick={() => setAjout(true)} disabled={!!auto} data-testid="ajouter-publication" className="s-btn s-btn-filet">
+          <CalendarPlus className="h-4 w-4 text-[#7A5F1F]" /> Ajouter une publication (fête…)
+        </button>
+        {!famille && (
+          <button onClick={genererUnMois} disabled={generation || !!auto} data-testid="generer-mois" className="s-btn s-btn-filet">
+            {generation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-[#7A5F1F]" />} Générer 1 mois (2 posts/jour)
+          </button>
+        )}
       </div>
 
       {/* Calendrier des posts */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <h2 className="a-surtitre">Le planning</h2>
+      <div className="ig-grille">
         {posts.map((p) => (
-          <button key={p.id} onClick={() => setOuvert(p)} className="text-left rounded-2xl border border-[#EADFC8] bg-white overflow-hidden hover:shadow-md transition" data-testid="carte-post">
-            <div className="aspect-[4/5] bg-[#F4EFE3] relative">
-              {p.visuel_url || p.photo_url ? <img src={p.visuel_url ?? p.photo_url!} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
-                : <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center"><ImagePlus className="h-6 w-6 text-[#A8933F]" /><span className="font-serif text-sm text-[#5E554A] line-clamp-4">{p.titre}</span></div>}
-              {estEnRetard(p) ? <span className="absolute top-2 left-2 rounded-full px-2 py-0.5 text-[11px] font-medium bg-[#9C4A2C] text-white" data-testid="pastille-retard">En retard</span>
-                : <span className={`absolute top-2 left-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUTS[p.statut][1]}`}>{STATUTS[p.statut][0]}</span>}
+          <button key={p.id} onClick={() => setOuvert(p)} className="ig-carte" data-testid="carte-post">
+            <div className="ig-vis">
+              {p.visuel_url || p.photo_url ? <img src={p.visuel_url ?? p.photo_url!} alt="" loading="lazy" />
+                : <div className="ig-couv"><ImagePlus className="h-5 w-5 text-[#A8933F]" /><span className="line-clamp-4">{p.titre}</span></div>}
+              {estEnRetard(p) ? <span className="ig-etiq retard" data-testid="pastille-retard">En retard</span> : etiquette(p)}
             </div>
-            <div className="px-3 py-2">
-              <div className="text-[11px] uppercase tracking-wider text-[#8C6D22]">{THEMES[p.theme] ?? p.theme}</div>
-              <div className="text-xs text-muted-foreground first-letter:uppercase">{quand(p.date_prevue)}</div>
+            <div className="bas">
+              <div className="theme">{THEMES[p.theme] ?? p.theme}</div>
+              <div className="quand first-letter:uppercase">{quand(p.date_prevue)}</div>
             </div>
           </button>
         ))}
@@ -426,7 +463,7 @@ function EditeurPost({ post: initial, pixabay, instagram, famille, onFermer }: {
             </div>
 
             <div className="flex flex-wrap gap-2 pt-1">
-              <button onClick={enregistrer} disabled={!!occupe} className="inline-flex items-center gap-1.5 rounded-full bg-[#141414] text-white px-5 h-10 text-sm disabled:opacity-60" data-testid="enregistrer-post">
+              <button onClick={enregistrer} disabled={!!occupe} className="s-btn s-btn-plein s-sombre !min-h-[44px] !px-5 !text-[13px]" data-testid="enregistrer-post">
                 {occupe === "enregistrer" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Enregistrer
               </button>
               {instagram && p.statut !== "publie" && p.visuel_url && (

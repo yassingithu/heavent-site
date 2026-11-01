@@ -22,6 +22,7 @@ import { BADGE_SIGNATURE, dateHeureFr, etatSignature, finSignature, limiteSignat
 import { telechargerFichesPaie } from "@/components/admin/paie/FichesPaieMensuelles";
 import MesMissions from "@/components/staff/MesMissions";
 import { CarteInstallerStaff, useAppStaff } from "@/components/staff/AppStaff";
+import "@/styles/admin-seuil.css";
 
 interface Contrat {
   id: string;
@@ -478,32 +479,29 @@ const StaffDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5">
+    <div className="st-espace">
       <Seo noindex />
-      <div className="container mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white rounded-lg p-3 sm:p-4 shadow-sm space-y-3 sm:space-y-0">
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            <UserIcon className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-            <div>
-              <h1 className="text-lg sm:text-2xl font-bold">{t('dashboard.staff_space')}</h1>
-              <p className="text-sm sm:text-base text-muted-foreground truncate max-w-[200px] sm:max-w-none">
-                {staffInfo ? `${staffInfo.prenom} ${staffInfo.nom}` : user.email}
-              </p>
-            </div>
+      {/* En-tête noir : bonjour, déconnexion discrète */}
+      <header className="st-tete">
+        <div className="in">
+          <div className="l1">
+            <img src="/seuil/mono-or.png" alt="Heavent" />
+            <button onClick={handleSignOut} className="st-sortir">
+              <LogOut className="h-4 w-4" /> {t('dashboard.logout')}
+            </button>
           </div>
-          <Button variant="outline" onClick={handleSignOut} className="w-full sm:w-auto text-sm">
-            <LogOut className="h-4 w-4 mr-2" />
-            <span className="sm:inline">{t('dashboard.logout')}</span>
-          </Button>
+          <h1>Bonjour {staffInfo?.prenom ?? ""}.</h1>
+          <p>{t('dashboard.staff_space')} · {staffInfo ? `${staffInfo.prenom} ${staffInfo.nom}` : user.email}</p>
         </div>
+      </header>
+      <div className="st-corps space-y-5">
+        {/* Prochaine mission en tête */}
+        <MesMissions />
 
         <CarteInstallerStaff />
 
-        <MesMissions />
-
-        <Tabs defaultValue="contrats" className="space-y-3 sm:space-y-4">
-          <TabsList className="grid w-full grid-cols-3 h-auto p-1">
+        <Tabs defaultValue="contrats" className="space-y-4">
+          <TabsList className="st-onglets">
             <TabsTrigger value="contrats" className="text-xs sm:text-sm py-2">{t('dashboard.contracts_tab')}</TabsTrigger>
             <TabsTrigger value="paie" className="text-xs sm:text-sm py-2">{t('dashboard.payslips_tab')}</TabsTrigger>
             <TabsTrigger value="disponibilites" className="text-xs sm:text-sm py-2">{t('dashboard.availability_tab')}</TabsTrigger>
@@ -563,9 +561,9 @@ const StaffDashboard = () => {
                             )}
                           </div>
                           {etatSignature(contrat) === "a_signer" && (
-                            <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm">
-                              <div className="font-medium text-amber-900">✍️ Ce contrat attend ta signature</div>
-                              <div className="text-amber-800 text-xs mb-2">Merci de le signer avant le {dateHeureFr(limiteSignature(contrat))} (24 h avant la mission). Dernier délai : {dateHeureFr(finSignature(contrat))}.</div>
+                            <div className="mt-3 border border-[#9C4A2C]/40 border-l-[3px] border-l-[#9C4A2C] bg-[#9C4A2C]/5 p-3 text-sm">
+                              <div className="font-medium text-[#9C4A2C]">Ce contrat attend ta signature</div>
+                              <div className="text-[#5A5146] text-xs mb-2">Merci de le signer avant le {dateHeureFr(limiteSignature(contrat))} (24 h avant la mission). Dernier délai : {dateHeureFr(finSignature(contrat))}.</div>
                               <Button size="sm" onClick={() => setASigner(contrat)}>Lire et signer mon contrat</Button>
                             </div>
                           )}
@@ -580,7 +578,7 @@ const StaffDashboard = () => {
                             <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-800">Le délai de signature (fin du mois de la mission) est dépassé. Contacte l'agence.</div>
                           )}
                           {contrat.signe_le && (
-                            <div className="mt-3 text-xs text-emerald-800">Signé le {dateHeureFr(contrat.signe_le)}{contrat.signature_nom ? ` par ${contrat.signature_nom}` : ""}.</div>
+                            <div className="mt-3 a-st vert">Signé le {dateHeureFr(contrat.signe_le)}{contrat.signature_nom ? ` par ${contrat.signature_nom}` : ""}.</div>
                           )}
                           <div className="mt-3">
                             <Button variant="outline" size="sm" onClick={() => downloadContractPDF(contrat.id)} disabled={telechargement === contrat.id} className="text-xs sm:text-sm">
@@ -676,10 +674,14 @@ const StaffDashboard = () => {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Sélection multiple de dates */}
+                {/* Le calendrier des disponibilités : en français, la semaine commence le lundi.
+                    Un losange vert marque les jours où une disponibilité est déjà donnée. */}
                 <Card>
                   <CardHeader>
-                     <CardTitle>{t('dashboard.availability.multiple_selection')}</CardTitle>
+                     <CardTitle className="flex items-center">
+                       <CalendarIcon className="h-5 w-5 mr-2" />
+                       {t('dashboard.availability.title')}
+                     </CardTitle>
                      <CardDescription>
                        {t('dashboard.availability.multiple_description')}
                      </CardDescription>
@@ -688,10 +690,19 @@ const StaffDashboard = () => {
                     <div className="space-y-4">
                       <Calendar
                         mode="multiple"
+                        locale={fr}
+                        weekStartsOn={1}
                         selected={selectedDatesForSlots}
                         onSelect={(dates) => setSelectedDatesForSlots(dates || [])}
-                        className="rounded-md border pointer-events-auto"
+                        modifiers={{ dispo: (d: Date) => hasAnySlotForDate(d) }}
+                        modifiersClassNames={{ dispo: "st-jour-dispo" }}
+                        className="st-cal border pointer-events-auto flex justify-center"
+                        data-testid="calendrier-dispos"
                       />
+                      <div className="st-legende">
+                        <span><i style={{ background: "var(--s-zellige)" }} />Disponibilité déjà donnée</span>
+                        <span><i style={{ background: "var(--s-nuit)" }} />Jour choisi</span>
+                      </div>
                       
                       {selectedDatesForSlots.length > 0 && (
                         <div className="mt-4 p-3 bg-muted rounded-md">
@@ -715,13 +726,13 @@ const StaffDashboard = () => {
                   </CardContent>
                 </Card>
 
-                {/* Calendrier mensuel existant */}
-                <Card>
+                {/* Vue détaillée du mois (matin / après-midi / soir) : repliée, pour ne montrer qu'un calendrier */}
+                <details className="group">
+                <summary className="cursor-pointer list-none min-h-[44px] flex items-center gap-2 text-sm font-medium text-[#7A5F1F] underline underline-offset-4">
+                  Voir le détail du mois (matin, après-midi, soir)
+                </summary>
+                <Card className="mt-2">
                   <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <CalendarIcon className="h-5 w-5 mr-2" />
-                       {t('dashboard.availability.title')}
-                     </CardTitle>
                      <CardDescription>
                        {t('dashboard.availability.description')}
                      </CardDescription>
@@ -738,7 +749,7 @@ const StaffDashboard = () => {
                           <ChevronLeft className="h-4 w-4 mr-2" />
                           {t('dashboard.availability.previous')}
                         </Button>
-                        <h3 className="text-xl font-semibold">
+                        <h3 className="text-base font-medium capitalize text-center">
                           {format(selectedDate, "MMMM yyyy", { locale: fr })}
                         </h3>
                         <Button
@@ -835,6 +846,7 @@ const StaffDashboard = () => {
                     </div>
                   </CardContent>
                 </Card>
+                </details>
               </div>
             )}
           </TabsContent>

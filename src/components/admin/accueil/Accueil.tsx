@@ -250,22 +250,20 @@ export function CarteMotPapa({ infos }: { infos: InfosAccueil }) {
   const salut = h < 5 ? "Douce nuit" : h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : "Bonsoir";
   const dateLongue = dateLongueMaroc();
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-[#141414] text-white p-7 sm:p-10" data-testid="carte-mot-papa">
-      <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_0%_0%,#C8B560_0,transparent_45%),radial-gradient(circle_at_100%_100%,#A8933F_0,transparent_40%)]" />
-      <div className="relative space-y-5 max-w-2xl">
-        <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-[#E4D49A] first-letter:uppercase">{dateLongue}</p>
-          <h2 className="font-serif text-3xl sm:text-5xl mt-1">{salut} {infos.prenom} 💛</h2>
-        </div>
+    <section data-testid="carte-mot-papa">
+      {/* Le mot de papa, dans une carte de verre en arche (styles .n-flacon, admin-seuil.css) */}
+      <article className="n-flacon">
+        <span className="reflet" aria-hidden="true" />
+        <p className="date first-letter:uppercase">{dateLongue}</p>
+        <h2>{salut}, {infos.prenom}</h2>
         {infos.mot && (
-          <figure className="rounded-2xl bg-white/[0.07] border border-white/10 p-6" data-testid="mot-du-jour">
-            <Heart className="h-5 w-5 text-[#E4D49A] fill-[#E4D49A] mb-3" />
-            <blockquote className="font-serif text-xl sm:text-2xl leading-snug text-[#FAF7EE]">{infos.mot}</blockquote>
-            <figcaption className="text-right text-3xl text-[#E4D49A] mt-3" style={{ fontFamily: "'Great Vibes', cursive" }}>Papa</figcaption>
+          <figure data-testid="mot-du-jour">
+            <blockquote>{infos.mot}</blockquote>
+            <figcaption className="sig" style={{ fontFamily: "'Great Vibes', cursive" }}>Papa</figcaption>
           </figure>
         )}
-        <p className="text-sm text-white/60">Reviens demain : un nouveau mot t'attendra. 🌙</p>
-      </div>
+      </article>
+      <p className="n-demain">Reviens demain : un nouveau mot t'attendra.</p>
     </section>
   );
 }
