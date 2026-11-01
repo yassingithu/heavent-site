@@ -134,7 +134,7 @@ export const TRADUCTIONS: Record<string, { en: string; ar: string }> = {
   "Cette place est occupée ou hors de la scène.": { en: "This spot is taken or outside the scene.", ar: "هذا المكان مشغول أو خارج المشهد." },
   "Cette zone est occupée ou trop petite : choisissez une zone en vert.": { en: "This area is taken or too small: choose a green area.", ar: "هذه المنطقة مشغولة أو صغيرة جدًا: اختاروا منطقة باللون الأخضر." },
   "Champagne": { en: "Champagne", ar: "شمبانيا" },
-  "Chaque invité compose son parfum avec notre parfumeur, et repart avec son flacon. 50 parfums minimum.": { en: "Each guest creates their own perfume with our perfumer and leaves with their bottle. 50 perfumes minimum.", ar: "يصنع كل ضيف عطره مع خبير العطور لدينا ويغادر بقارورته. 50 عطرًا كحدّ أدنى." },
+  "Les mariés choisissent les parfums, chaque invité repart avec son flacon. 50 parfums minimum.": { en: "The couple chooses the perfumes; each guest leaves with their bottle. 50 perfumes minimum.", ar: "يختار العروسان العطور، ويغادر كل ضيف بقارورته. 50 عطرًا كحدّ أدنى." },
   "Chic et élégante": { en: "Chic and elegant", ar: "راقية وأنيقة" },
   "Choisir une nouvelle place": { en: "Choose a new spot", ar: "اختيار مكان جديد" },
   "Choisissez le format et ce que vous voulez garder. Aucune coordonnée n'est demandée.": { en: "Choose the format and what you want to keep. No contact details needed.", ar: "اختاروا الصيغة وما تريدون الاحتفاظ به. لا حاجة لأي معلومات شخصية." },

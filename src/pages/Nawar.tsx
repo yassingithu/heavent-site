@@ -80,14 +80,14 @@ export default function Nawar() {
   return (
     <div className="min-h-screen bg-[#141414] text-[#FAF7EE]">
       <Seo perso={{ chemin: "/nawar", titre: "Nawar — bar à parfums pour mariages et événements au Maroc",
-        description: "Nawar, le bar à parfums : vos invités créent leur propre parfum pendant votre mariage, vos fiançailles ou votre événement d'entreprise. Rabat, Casablanca, Marrakech et partout au Maroc." }} />
+        description: "Nawar, le bar à parfums : des parfums choisis par les mariés ou les hôtes et offerts à leurs invités, pour votre mariage, vos fiançailles ou votre événement d'entreprise. Rabat, Casablanca, Marrakech et partout au Maroc." }} />
       <section className="relative overflow-hidden">
         <div aria-hidden className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(200,181,96,0.28),transparent_45%),radial-gradient(circle_at_90%_95%,rgba(168,147,63,0.22),transparent_42%)]" />
         <div className="relative max-w-4xl mx-auto px-4 pt-14 pb-20 text-center">
           <img src="/logo-nawar-clair.png" alt="Nawar — bar à parfums" className="h-44 sm:h-56 mx-auto" />
           <p className="text-[11px] uppercase tracking-[0.35em] text-[#E4D49A] mt-10">Le bar à parfums de vos événements</p>
-          <h1 className="font-serif text-4xl sm:text-6xl leading-[1.1] mt-5">Chaque invité repart avec son propre parfum.</h1>
-          <p className="text-white/70 text-lg mt-6 max-w-2xl mx-auto leading-relaxed">Nos parfumeurs installent un bar élégant au cœur de votre événement. Vos invités sentent, composent et emportent un flacon créé pour eux : le souvenir le plus personnel qui soit.</p>
+          <h1 className="font-serif text-4xl sm:text-6xl leading-[1.1] mt-5">Vous choisissez les parfums, vos invités repartent avec.</h1>
+          <p className="text-white/70 text-lg mt-6 max-w-2xl mx-auto leading-relaxed">Vous choisissez à l'avance les parfums que vous offrez. Le jour J, notre équipe installe un bar élégant au cœur de votre événement, fait découvrir vos senteurs et remet à chaque invité son flacon : un souvenir qu'on sent encore le lendemain.</p>
           <div className="flex flex-wrap justify-center gap-3 mt-9">
             <a href="#devis" className="inline-flex items-center gap-2 rounded-full bg-[#C8B560] text-[#141414] font-medium px-7 h-12">Demander un devis <ArrowRight className="h-4 w-4" /></a>
             <a href={WHATSAPP} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/20 px-7 h-12"><MessageCircle className="h-4 w-4" /> WhatsApp</a>
@@ -100,7 +100,7 @@ export default function Nawar() {
           <Ornement />
           <h2 className="font-serif text-3xl sm:text-4xl text-center text-[#141414] mt-6">Comment ça se passe ?</h2>
           <div className="grid sm:grid-cols-3 gap-5 mt-12">
-            {[["Ils découvrent", "Nos parfumeurs présentent les essences et guident chaque invité selon ses goûts."], ["Ils composent", "Chacun assemble ses notes préférées : fleuries, boisées, orientales ou fraîches."], ["Ils emportent", "Le parfum est mis en flacon, étiqueté, et devient un souvenir qui dure des semaines."]].map(([t, d], i) => (
+            {[["Vous choisissez", "Avec nous, vous sélectionnez les parfums offerts à vos invités : fleuris, boisés, orientaux ou frais."], ["Ils découvrent", "Le jour J, notre équipe accueille vos invités au bar et leur fait sentir les parfums que vous avez choisis."], ["Ils emportent", "Chaque invité repart avec son flacon étiqueté à votre nom : un souvenir qui dure des semaines."]].map(([t, d], i) => (
               <div key={t} className="rounded-3xl bg-white border border-[#EADFC8] p-7 text-center">
                 <div className="font-serif text-5xl text-[#C8B560]">{String(i + 1).padStart(2, "0")}</div>
                 <h3 className="font-serif text-2xl text-[#141414] mt-3">{t}</h3>

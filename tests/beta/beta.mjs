@@ -1155,7 +1155,9 @@ await scenario("Espace de Nawar : lettre de papa, mot du jour signé Papa, Insta
   base.admin_profils = [{ email: NAWAR, prenom: "Nawar", recoit_mots: true, espace: "nawar", surprise_vue_le: null, signatures_vues_jusqu_au: new Date().toISOString(), records_vus: [] }];
   base.mot_nawar = "Je t'aime plus que les frites. Et tu sais à quel point j'aime les frites. 🍟";
   base.surprise_nawar = { titre: "Pour toi, mon bébé d'amour", texte: "Ma Nawar,\n\nC'est ton espace à toi.", signature: "Papa" };
-  base.posts_instagram = [{ id: "p1", date_prevue: "2026-10-21T18:30:00Z", theme: "mariage", accroche: "Conseil", titre: "Titre", legende: "L", recherche: "cake", style: "sombre", photo_url: null, visuel_url: null, statut: "brouillon" }];
+  // l'espace famille n'affiche que le compte Nawar (le post Heavent ne doit pas apparaître)
+  base.posts_instagram = [{ id: "p1", compte: "nawar", date_prevue: "2026-10-21T18:30:00Z", theme: "parfum", accroche: "Conseil", titre: "Titre", legende: "L", recherche: "cake", style: "sombre", photo_url: null, visuel_url: null, statut: "brouillon" },
+    { id: "p2", compte: "heavent", date_prevue: "2026-10-21T18:30:00Z", theme: "mariage", accroche: "Conseil", titre: "Titre H", legende: "L", recherche: "cake", style: "sombre", photo_url: null, visuel_url: null, statut: "brouillon" }];
   const { page, ctx, erreurs } = await contexte(navigateur, base, NAWAR, { mobile: true });
   await connecter(page, BASE, NAWAR, "/admin");
   verifier(await page.getByTestId("espace-nawar").count(), "l'espace de Nawar ne s'affiche pas (redirection ?) : " + page.url());
@@ -1168,6 +1170,16 @@ await scenario("Espace de Nawar : lettre de papa, mot du jour signé Papa, Insta
   verifier(!(await page.getByRole("tab", { name: /Devis|Personnel|Paie|Contrats/ }).count()), "Nawar ne doit pas voir les onglets de l'agence");
   await clicOnglet(page, /Instagram/); await page.waitForTimeout(800);
   verifier(await page.getByTestId("carte-post").count() === 1 && !(await page.getByTestId("cle-pixabay").count()) && !(await page.getByTestId("jeton-instagram").count()), "onglet Instagram incorrect pour Nawar");
+  verifier(!(await page.getByTestId("choix-compte").count()), "la famille ne doit voir que le compte Nawar");
+  verifier(await page.getByTestId("pastille-retard").count() === 1 && await page.getByTestId("bandeau-retard").count() === 1, "le post en retard n'est pas signalé");
+  await page.getByTestId("ajouter-publication").click(); await page.waitForTimeout(500);
+  const larg = await page.getByTestId("ajouter-post").evaluate((e) => [e.getBoundingClientRect().width, innerWidth]);
+  verifier(larg[0] <= larg[1], "la fenêtre « Ajouter une publication » dépasse l'écran : " + larg);
+  verifier(!(await page.getByTestId("mode-intercaler").count()), "la famille ne doit pas pouvoir intercaler (décaler le planning)");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400);
+  await page.getByTestId("replanifier").click(); await page.waitForTimeout(1200);
+  const nd = base.posts_instagram.find((p) => p.id === "p1").date_prevue;
+  verifier(new Date(nd) > new Date() && /T(10|19):30/.test(nd), "le post en retard n'a pas été replanifié sur un créneau à venir : " + nd);
   await clicOnglet(page, /Le site/); await page.waitForTimeout(1200);
   verifier(await page.getByTestId("stat-visites").count(), "statistiques non visibles");
   notes.push("lettre « Pour toi, mon bébé d'amour » → « Merci papa » ; mot du jour signé Papa ; onglets Mot de papa, Instagram (sans clés), Le site ; aucun onglet client/crew/paie");

@@ -23,6 +23,8 @@ const STATUTS: Record<Post["statut"], [string, string]> = {
   brouillon: ["À préparer", "bg-[#F1ECDD] text-[#7A5F1E]"], pret: ["Prêt", "bg-emerald-50 text-emerald-700"],
   publie: ["Publié", "bg-[#141414] text-white"], erreur: ["Erreur", "bg-red-50 text-red-700"],
 };
+/** Pas encore publié alors que son heure est passée de plus de 2 h (au-delà, la publication automatique ne l'envoie plus) */
+const estEnRetard = (p: { statut: string; date_prevue: string | null }) => p.statut !== "publie" && !!p.date_prevue && new Date(p.date_prevue).getTime() < Date.now() - 2 * 3600e3;
 const quand = (d: string | null) => d ? new Date(d).toLocaleString("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Sans date";
 
 async function fonction(body: Record<string, unknown>) {
@@ -61,7 +63,8 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
   const [cle, setCle] = useState("");
   const [ouvert, setOuvert] = useState<Post | null>(null);
   const [auto, setAuto] = useState<{ fait: number; total: number } | null>(null);
-  const [compte, setCompte] = useState<Compte>("heavent");
+  const [compte, setCompte] = useState<Compte>(famille ? "nawar" : "heavent");
+  const [replanif, setReplanif] = useState(false);
   const [generation, setGeneration] = useState(false);
   const [ajout, setAjout] = useState(false);
 
@@ -140,17 +143,42 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
 
   if (!posts || !reglages) return <p className="text-sm text-muted-foreground py-8 text-center">Chargement…</p>;
   const manquants = posts.filter((p) => p.statut !== "publie" && !p.visuel_url).length;
+  const enRetard = posts.filter(estEnRetard);
+
+  /** Les posts en retard prennent les prochains créneaux libres (11h30 / 20h30, heure du Maroc) */
+  const replanifier = async () => {
+    setReplanif(true);
+    const pris = new Set(posts.filter((p) => p.statut !== "publie" && p.date_prevue && !estEnRetard(p)).map((p) => new Date(p.date_prevue!).toISOString()));
+    const d = new Date(Date.now() + 30 * 60000); let erreur = null;
+    for (const p of [...enRetard].sort((a, b) => a.date_prevue!.localeCompare(b.date_prevue!))) {
+      let creneau: string;
+      do {
+        const h = d.getUTCHours() * 60 + d.getUTCMinutes();
+        if (h < 10 * 60 + 30) d.setUTCHours(10, 30, 0, 0);
+        else if (h < 19 * 60 + 30) d.setUTCHours(19, 30, 0, 0);
+        else { d.setUTCDate(d.getUTCDate() + 1); d.setUTCHours(10, 30, 0, 0); }
+        creneau = d.toISOString(); d.setUTCMinutes(d.getUTCMinutes() + 1);
+      } while (pris.has(creneau));
+      pris.add(creneau);
+      const { error } = await (supabase as any).from("posts_instagram").update({ date_prevue: creneau }).eq("id", p.id);
+      if (error) { erreur = error; break; }
+    }
+    setReplanif(false);
+    if (erreur) toast({ title: "Replanification impossible", description: erreur.message, variant: "destructive" });
+    else toast({ title: `${enRetard.length} publication${enRetard.length > 1 ? "s" : ""} replanifiée${enRetard.length > 1 ? "s" : ""} ✓`, description: "Elles prennent les prochains créneaux libres." });
+    charger();
+  };
 
   return (
     <div className="space-y-5" data-testid="instagram-admin">
-      {/* Choix du compte Instagram */}
-      <div className="inline-flex rounded-full border border-[#EADFC8] bg-white p-1" data-testid="choix-compte">
+      {/* Choix du compte Instagram (la famille ne voit que Nawar) */}
+      {!famille && <div className="inline-flex rounded-full border border-[#EADFC8] bg-white p-1" data-testid="choix-compte">
         {(Object.keys(COMPTES) as Compte[]).map((c) => (
           <button key={c} onClick={() => { setCompte(c); setPosts(null); }} className={`rounded-full px-4 h-9 text-sm ${compte === c ? "bg-[#141414] text-white" : "text-[#5E554A]"}`} data-testid={`compte-${c}`}>
             {c === "nawar" && <img src="/marque-nawar.png" alt="" className="inline h-4 w-4 mr-1.5 -mt-0.5" />}{COMPTES[c]}
           </button>
         ))}
-      </div>
+      </div>}
       {/* Réglages (réservés à l'administration) */}
       {!famille && <div className="grid md:grid-cols-2 gap-3">
         <section className="rounded-2xl border border-[#EADFC8] bg-white p-4">
@@ -200,6 +228,13 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
         </p>
       )}
 
+      {enRetard.length > 0 && (
+        <div className="rounded-xl border border-[#E7C9B9] bg-[#FBF1EC] px-4 py-3 flex flex-wrap items-center justify-between gap-3" data-testid="bandeau-retard">
+          <p className="text-sm text-[#7A3A22]"><b>{enRetard.length} publication{enRetard.length > 1 ? "s" : ""} en retard</b> : {enRetard.length > 1 ? "elles ne partiront pas" : "elle ne partira pas"} toute{enRetard.length > 1 ? "s" : ""} seule{enRetard.length > 1 ? "s" : ""}.</p>
+          <button onClick={replanifier} disabled={replanif} className="rounded-full bg-[#141414] text-white px-4 min-h-10 text-sm disabled:opacity-60" data-testid="replanifier">{replanif ? "…" : "Les replanifier aux prochains créneaux"}</button>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">{posts.length} posts · {posts.filter((p) => p.statut === "pret").length} prêts · {posts.filter((p) => p.statut === "publie").length} publiés</p>
@@ -230,7 +265,8 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
             <div className="aspect-[4/5] bg-[#F4EFE3] relative">
               {p.visuel_url || p.photo_url ? <img src={p.visuel_url ?? p.photo_url!} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                 : <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center"><ImagePlus className="h-6 w-6 text-[#A8933F]" /><span className="font-serif text-sm text-[#5E554A] line-clamp-4">{p.titre}</span></div>}
-              <span className={`absolute top-2 left-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUTS[p.statut][1]}`}>{STATUTS[p.statut][0]}</span>
+              {estEnRetard(p) ? <span className="absolute top-2 left-2 rounded-full px-2 py-0.5 text-[11px] font-medium bg-[#9C4A2C] text-white" data-testid="pastille-retard">En retard</span>
+                : <span className={`absolute top-2 left-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUTS[p.statut][1]}`}>{STATUTS[p.statut][0]}</span>}
             </div>
             <div className="px-3 py-2">
               <div className="text-[11px] uppercase tracking-wider text-[#8C6D22]">{THEMES[p.theme] ?? p.theme}</div>
@@ -240,7 +276,7 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
         ))}
       </div>
 
-      {ajout && <AjouterPost compte={compte} posts={posts} onFermer={() => setAjout(false)} onCree={async (id) => {
+      {ajout && <AjouterPost compte={compte} posts={posts} famille={famille} onFermer={() => setAjout(false)} onCree={async (id) => {
         setAjout(false);
         const { data } = await (supabase as any).from("posts_instagram").select("*").eq("id", id).single();
         await charger();
@@ -327,7 +363,7 @@ function EditeurPost({ post: initial, pixabay, instagram, famille, onFermer }: {
 
   return (
     <Dialog open onOpenChange={(o) => !o && onFermer()}>
-      <DialogContent className="max-w-5xl max-h-[94vh] overflow-y-auto" data-testid="editeur-post">
+      <DialogContent className="max-w-5xl max-h-[94vh] overflow-y-auto" data-testid="editeur-post" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogTitle className="font-serif text-2xl">Post Instagram · {THEMES[p.theme] ?? p.theme}</DialogTitle>
         {p.statut === "erreur" && p.erreur && <p className="text-sm rounded-md bg-red-50 text-red-700 px-3 py-2">La publication a échoué : {p.erreur}</p>}
         <div className="grid md:grid-cols-[minmax(0,380px)_1fr] gap-6">

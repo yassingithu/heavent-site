@@ -79,7 +79,9 @@ Deno.serve(async (req) => {
         } catch { /* on réessaiera au prochain passage */ }
       }
       const { data: posts } = await db.from("posts_instagram").select("*").eq("compte", nomCompte).eq("statut", "pret").not("visuel_url", "is", null)
-        .lte("date_prevue", new Date().toISOString()).order("date_prevue").limit(2);
+        // Un post en retard de plus de 2 h ne part pas tout seul : l'admin le replanifie ou le publie à la main
+        .lte("date_prevue", new Date().toISOString()).gte("date_prevue", new Date(Date.now() - 2 * 3600e3).toISOString())
+        .order("date_prevue").limit(2);
       for (const p of posts ?? []) {
         try { resultats.push({ compte: nomCompte, id: p.id, media: await publier(p, jeton, r.compte, r.mode) }); }
         catch (e) { await db.from("posts_instagram").update({ statut: "erreur", erreur: String((e as Error).message) }).eq("id", p.id); resultats.push({ compte: nomCompte, id: p.id, erreur: String(e) }); }

@@ -24,7 +24,7 @@ function creneauSuivant(iso: string) {
 }
 const demain = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); };
 
-export default function AjouterPost({ compte, posts, onFermer, onCree }: { compte: Compte; posts: PostMin[]; onFermer: () => void; onCree: (id: string) => void }) {
+export default function AjouterPost({ compte, posts, famille = false, onFermer, onCree }: { compte: Compte; posts: PostMin[]; famille?: boolean; onFermer: () => void; onCree: (id: string) => void }) {
   const { toast } = useToast();
   // Par défaut : la prochaine fête à date fixe
   const [feteId, setFeteId] = useState(() => FETES.filter((f) => f.date).sort((a, b) => prochaineDate(a)!.localeCompare(prochaineDate(b)!))[0].id);
@@ -32,7 +32,7 @@ export default function AjouterPost({ compte, posts, onFermer, onCree }: { compt
   const [textes, setTextes] = useState(() => textesFete(fete, compte));
   const [jour, setJour] = useState(() => prochaineDate(fete) ?? demain());
   const [creneau, setCreneau] = useState(0);
-  const [mode, setMode] = useState<"plus" | "intercaler">("intercaler");
+  const [mode, setMode] = useState<"plus" | "intercaler">(famille ? "plus" : "intercaler");
   const [occupe, setOccupe] = useState(false);
 
   const choisirFete = (id: string) => {
@@ -73,10 +73,10 @@ export default function AjouterPost({ compte, posts, onFermer, onCree }: { compt
     setOccupe(false);
   };
 
-  const champ = "w-full rounded-md border px-3 h-10 text-sm";
+  const champ = "w-full min-w-0 rounded-md border px-3 h-10 text-sm";
   return (
     <Dialog open onOpenChange={(o) => !o && onFermer()}>
-      <DialogContent className="max-w-2xl max-h-[94vh] overflow-y-auto" data-testid="ajouter-post">
+      <DialogContent className="max-w-2xl max-h-[94vh] overflow-y-auto" data-testid="ajouter-post" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogTitle className="font-serif text-2xl">Ajouter une publication</DialogTitle>
         <div className="space-y-4">
           <label className="text-sm space-y-1 block"><span className="text-muted-foreground">Occasion</span>
@@ -99,7 +99,7 @@ export default function AjouterPost({ compte, posts, onFermer, onCree }: { compt
           </div>
           {passe && <p className="text-xs rounded-md bg-amber-50 text-amber-800 px-3 py-2">Cette date est déjà passée : la publication partira dès qu'elle sera prête (au prochain passage, sous 15 min).</p>}
 
-          <div className="text-sm space-y-2">
+          {!famille && <div className="text-sm space-y-2">
             <span className="text-muted-foreground">Dans le planning</span>
             <div className="grid sm:grid-cols-2 gap-2">
               <button onClick={() => setMode("intercaler")} data-testid="mode-intercaler"
@@ -113,7 +113,7 @@ export default function AjouterPost({ compte, posts, onFermer, onCree }: { compt
                 <div className="text-xs text-muted-foreground">Rien ne bouge{suivants[0]?.date_prevue === date ? " (deux posts partiront au même créneau)" : ""}.</div>
               </button>
             </div>
-          </div>
+          </div>}
 
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="text-sm space-y-1 block"><span className="text-muted-foreground">Petit texte au-dessus</span>
