@@ -9,9 +9,9 @@ import type { Rendu } from "../etat";
 import { construireFixes, estPartagee, formeParId, libererCache, mt } from "./formes";
 import { chevauche, objetsDeplacables, RAYON_TABLE, type Objet3D } from "./objets";
 
-export interface Entree { r: Rendu; nuit: number; deplacable: boolean; reduit: boolean; focus?: { cle: string; n: number } | null }
+export interface Entree { final?: null | "avant" | "arrive" | "assis"; r: Rendu; nuit: number; deplacable: boolean; reduit: boolean; focus?: { cle: string; n: number } | null }
 export interface Rappels { onDeplacer: (id: string, dx: number, dy: number) => void; onRefus: () => void; /** la vue n'est plus celle d'ensemble (zoom ou déplacement) */ onDecalee?: (decalee: boolean) => void; /** contexte WebGL perdu : repli sur le SVG */ onPerdu?: () => void }
-export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** objets restés en pavé générique (doit être vide) */ generiques(): string[]; /** position monde (cases) d'un objet, pour les tests */ position(id: string): [number, number] | null; /** position écran (px client) d'un point du sol ou d'un objet, pour les tests */ ecran(x: number, z: number): [number, number]; ecranObjet(id: string): [number, number] | null; /** chaises d'un objet (position locale, direction du dossier), pour les tests */ chaises(id: string): { x: number; z: number; dos: [number, number] }[]; dims(id: string): { w: number; d: number } | null; /** cadre un objet de près (tests, captures) */ vers(id: string, zoom: number): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[] } }
+export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** objets restés en pavé générique (doit être vide) */ generiques(): string[]; /** position monde (cases) d'un objet, pour les tests */ position(id: string): [number, number] | null; /** position écran (px client) d'un point du sol ou d'un objet, pour les tests */ ecran(x: number, z: number): [number, number]; ecranObjet(id: string): [number, number] | null; /** chaises d'un objet (position locale, direction du dossier), pour les tests */ chaises(id: string): { x: number; z: number; dos: [number, number] }[]; dims(id: string): { w: number; d: number } | null; /** cadre un objet de près (tests, captures) */ vers(id: string, zoom: number): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[]; invites: number } }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const couleur = (a: string, b: string, t: number) => new THREE.Color(a).lerp(new THREE.Color(b), t);
@@ -246,6 +246,51 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
 
   /** halo doré léger sur les objets déplaçables (mode Déplacer) */
   function majHalos() { for (const g2 of groupes.values()) { const z = g2.userData.zone; if (prise && prise.grp === g2) continue; z.material = mat.halo; z.visible = !!courant?.deplacable; } }
+  // ── Étape finale : invités qui entrent par l'accueil jusqu'aux tables (instanciés, animation courte) ─────────
+  let invites: { corps: any; tete: any; dep: [number, number]; cibles: [number, number][]; delai: number[]; duree: number[]; etat: string; t0: number; fini: boolean } | null = null;
+  function construireInvites(e: Entree) {
+    if (invites) { scene.remove(invites.corps, invites.tete); invites.corps.dispose(); invites.tete.dispose(); invites = null; }
+    if (!e.final || e.r.tables === "conference") return;
+    const { r } = e, N = r.salle.n, P = r.salle.pos, tbl = r.salle.tables, q = hasard(31), cib = tbl.length ? tbl : [[r.salle.ax, N / 2] as [number, number]];
+    const total = Math.min(40, 14 + Math.round(tbl.length / 2)), pal = PALETTES.find((p) => p.id === r.palette) ?? PALETTES[0];
+    const corps = new THREE.InstancedMesh(g.cyl8, mt("#ffffff", 0.85), total), tete = new THREE.InstancedMesh(g.sph, mt("#ffffff", 0.8), total);
+    corps.castShadow = tete.castShadow = true;
+    const cs = [pal.accent, "#3d352e", pal.deco, "#F6EFDD"], peaux = ["#E8C3A0", "#C99A72", "#9A6B4A", "#F0CFB0"];
+    const cibles: [number, number][] = [], delai: number[] = [], duree: number[] = [];
+    for (let i = 0; i < total; i++) {
+      const [tx, ty] = cib[i % cib.length], a = q() * Math.PI * 2;
+      cibles.push([Math.min(N - 0.6, Math.max(0.8, tx + Math.cos(a) * 1.5)), Math.min(N - 0.5, Math.max(1.2, ty + Math.sin(a) * 1.3 + 0.2))]);
+      delai.push((i % 11) * 0.22); duree.push(2.3 + (i % 5) * 0.3);
+      corps.setColorAt(i, new THREE.Color(cs[i % 4])); tete.setColorAt(i, new THREE.Color(peaux[i % 4]));
+    }
+    invites = { corps, tete, dep: [P.DEPART_INVITES[0], P.DEPART_INVITES[1]], cibles, delai, duree, etat: e.final, t0: performance.now(), fini: false };
+    scene.add(corps, tete); poserInvites(performance.now());
+  }
+  const M = new THREE.Matrix4(), Q0 = new THREE.Quaternion();
+  /** place les invités ; renvoie vrai tant que l'animation continue */
+  function poserInvites(now: number): boolean {
+    const v = invites; if (!v) return false;
+    let encore = false; const s = (now - v.t0) / 1000;
+    for (let i = 0; i < v.cibles.length; i++) {
+      let p = v.etat === "assis" || courant?.reduit ? (v.etat === "avant" ? 0 : 1) : v.etat === "arrive" ? Math.max(0, Math.min(1, (s - v.delai[i]) / v.duree[i])) : 0;
+      if (p > 0 && p < 1) encore = true;
+      const k = 1 - Math.pow(1 - p, 2), x = lerp(v.dep[0], v.cibles[i][0], k), z = lerp(v.dep[1], v.cibles[i][1], k), pas = p > 0 && p < 1 ? Math.abs(Math.sin(s * 9 + i)) * 0.035 : 0, e0 = p === 0 ? 0 : 1;
+      M.compose(new THREE.Vector3(x, 0.3 + pas, z), Q0, new THREE.Vector3(0.15 * e0, 0.3 * e0, 0.15 * e0)); v.corps.setMatrixAt(i, M);
+      M.compose(new THREE.Vector3(x, 0.72 + pas, z), Q0, new THREE.Vector3(0.1 * e0, 0.1 * e0, 0.1 * e0)); v.tete.setMatrixAt(i, M);
+    }
+    v.corps.instanceMatrix.needsUpdate = v.tete.instanceMatrix.needsUpdate = true;
+    if (v.corps.instanceColor) v.corps.instanceColor.needsUpdate = v.tete.instanceColor.needsUpdate = true;
+    renderer.shadowMap.needsUpdate = true; return encore;
+  }
+  /** changement d'étape : caméra qui revient en vue d'ensemble en douceur, invités qui entrent */
+  function etapeFinale(e: Entree, avant: Entree | null) {
+    if (!e.final) { if (invites) construireInvites({ ...e, final: null }); return; }
+    if (!invites) construireInvites(e);
+    if (invites) { invites.etat = e.final; invites.t0 = performance.now(); }
+    if (!avant && e.final === "avant") { const d = e.r.salle.pos.DEPART_INVITES; vue.cible.set(d[0], 0.6, Math.min(d[1], e.r.salle.n)); vue.zoom = 1.5; cibleVoulue = null; transition = 1; placerCamera(); }
+    else if (e.final === "arrive") recadrer();
+    demander();
+  }
   // ── Mise à jour depuis le jeu ─────────────────────────────────────────────
   let objetsGroupe = new THREE.Group(); scene.add(objetsGroupe);
   let pret = false; let fixes: any = null;
@@ -360,6 +405,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
       } else refusAnim = null;
       if (refusAnim) anime = true;
     }
+    if (invites && poserInvites(performance.now())) anime = true;
     if (prise) anime = true;
     renderer.render(scene, cam);
     appels = renderer.info.render.calls; tris = renderer.info.render.triangles;
@@ -455,7 +501,8 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   return {
     maj(e) {
       const avant = courant; courant = e;
-      if (!avant || avant.r !== e.r) { reconstruire(e); }
+      if (!avant || avant.r !== e.r) { reconstruire(e); construireInvites(e); }
+      if (!avant || avant.final !== e.final) etapeFinale(e, avant);
       if (avant && avant.nuit !== e.nuit) { if (e.reduit) { nuitAff = e.nuit; lumAnim = null; } else lumAnim = { t0: performance.now(), de: nuitAff, vers: e.nuit }; }
       if (!avant) nuitAff = e.nuit;
       if (!avant || avant.nuit !== e.nuit || avant.r !== e.r) { lumiere(nuitAff); if (!avant || avant.r !== e.r || (avant.nuit > 0.5) !== (e.nuit > 0.5)) refaireFixes(e); }
@@ -475,10 +522,11 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     dims: (id) => { const u = groupes.get(id)?.userData; return u ? { w: u.w, d: u.d } : null; },
     vers(id, zoom) { const g2 = groupes.get(id); if (!g2) return; cibleVoulue = null; transition = 1; vue.cible.set(g2.position.x, 0.4, g2.position.z); vue.zoom = zoom; placerCamera(); demander(); },
     sous: (x, y) => objetSous(x, y),
-    stats: () => ({ appels, triangles: tris, objets: objets.length, zoom: +vue.zoom.toFixed(3), cible: [+vue.cible.x.toFixed(2), +vue.cible.z.toFixed(2)] }),
+    stats: () => ({ appels, triangles: tris, objets: objets.length, zoom: +vue.zoom.toFixed(3), cible: [+vue.cible.x.toFixed(2), +vue.cible.z.toFixed(2)], invites: invites?.cibles.length ?? 0 }),
     detruire() {
       ro.disconnect(); canvas.removeEventListener("webglcontextlost", perdu); canvas.removeEventListener("webglcontextrestored", demander);
       for (const r2 of [decor, fixes, objetsGroupe]) if (r2) liberer(r2);
+      if (invites) { invites.corps.dispose(); invites.tete.dispose(); }
       libererCache(); for (const m of Object.values(mat)) (m as any).dispose(); for (const gg of Object.values(g)) (gg as any).dispose(); chaiseGeo.dispose(); gypsoGeo.dispose();
       renderer.dispose(); renderer.forceContextLoss();
     },

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, Pencil, RotateCcw, Share2, Sparkles, Send, Loader2 } from "lucide-react";
 import { resume, rendu, type Choix } from "./etat";
-import { SceneSvg, type EtapeFinal } from "./Scene";
+import type { EtapeFinal } from "./Scene";
+import { SceneChoix } from "./SceneChoix";
 import { creerCarte, partagerOuTelecharger } from "./carte";
 import { Pastille, btnContour, btnOr } from "./ui";
 import { useReducedMotion } from "framer-motion";
@@ -57,7 +58,7 @@ export default function Final({ choix, logos, onModifier, onDemande, onRecommenc
   return (
     <div className="absolute inset-0 overflow-hidden bg-black" data-testid="final">
       <div className={`absolute inset-0 overflow-hidden ${bilan ? "lg:end-[420px]" : ""}`}>
-        <SceneSvg r={r} nuit={1} final={etape} logos={logos} animer={!reduit} />
+        <SceneChoix r={r} nuit={1} final={etape} logos={logos} animer={!reduit} reduit={reduit} />
       </div>
       {/* bandes de cinéma */}
       <div className={`pointer-events-none absolute inset-x-0 top-0 bg-black transition-all duration-1000 ${bilan ? "h-0" : "h-[9vh]"}`} />

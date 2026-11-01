@@ -91,6 +91,18 @@ const b = await chromium.launch({ args: GL });
   await ctx.close();
 }
 
+// 3 ter. Étape finale : la 3D reste (canvas, pas de SVG de scène), nuit pleine, invités qui arrivent
+{
+  const { ctx, p, t } = await ouvrir(b, "?3d=1");
+  await t("ouvrir-portes").click(); await p.waitForTimeout(1500);
+  ok((await p.locator("[data-testid=final] canvas").count()) === 1, "étape finale : un canvas 3D");
+  ok((await p.locator("[data-testid=final] svg[role=img]").count()) === 0, "étape finale : aucun SVG de scène");
+  await p.waitForTimeout(5500);
+  const st = await p.evaluate(() => window.__hc3d.stats()); ok(st.invites > 0, "étape finale : invités présents (" + st.invites + ")");
+  ok((await p.locator("[data-testid=final-titre]").count()) === 1, "titre final affiché");
+  await ctx.close();
+}
+
 // 4. Sans WebGL : repli automatique sur le SVG
 {
   const nb = await chromium.launch({ args: ["--disable-gpu", "--disable-3d-apis", "--disable-webgl", "--disable-webgl2"] });
