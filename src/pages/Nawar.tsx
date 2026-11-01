@@ -86,7 +86,7 @@ export default function Nawar() {
           <div className="s-txt">
             <img className="s-logo-nawar s-entree-heros" src="/logo-nawar-clair.png" alt="Nawar — bar à parfums" width={463} height={488} style={{ width: 132 }} />
             <p className="s-surtitre s-entree-heros" style={{ marginTop: 26, color: "#F0D6A0" }}>Le bar à parfums de vos événements</p>
-            <h1 className="s-h2 s-entree-heros" style={{ marginTop: 18, color: "var(--s-papier)", maxWidth: "13ch", animationDelay: ".08s" }}>Vous choisissez les parfums, vos invités repartent avec.</h1>
+            <h1 className="s-h2 s-entree-heros" style={{ marginTop: 18, color: "var(--s-papier)", maxWidth: "15ch", fontSize: "clamp(36px, 9.4vw, 60px)", animationDelay: ".08s" }}>Vous choisissez les parfums, vos invités repartent avec.</h1>
             <p className="s-chapo s-entree-heros" style={{ animationDelay: ".16s" }}>Vous choisissez à l'avance les parfums que vous offrez. Le jour J, notre équipe installe un bar élégant au cœur de votre événement, fait découvrir vos senteurs et remet à chaque invité son flacon : un souvenir qu'on sent encore le lendemain.</p>
             <div className="s-actions s-entree-heros" style={{ animationDelay: ".24s" }}>
               <a href="#devis" className="s-btn s-btn-plein">Demander un devis <span className="fl" aria-hidden="true">→</span></a>
@@ -107,7 +107,7 @@ export default function Nawar() {
         <div className="s-section s-wrap s-colonnes">
           <div className="s-col-q" data-revele="">
             <Surtitre>Le jour J</Surtitre>
-            <h2 className="s-h2" style={{ marginTop: 20 }}>Comment ça se passe ?</h2>
+            <h2 className="s-h2" style={{ marginTop: 20 }}>{"Comment ça se passe\u00a0?"}</h2>
           </div>
           <ol className="s-liste s-col-r">
             {[["Vous choisissez", "Avec nous, vous sélectionnez les parfums offerts à vos invités : fleuris, boisés, orientaux ou frais."], ["Ils découvrent", "Le jour J, notre équipe accueille vos invités au bar et leur fait sentir les parfums que vous avez choisis."], ["Ils emportent", "Chaque invité repart avec son flacon étiqueté à votre nom : un souvenir qui dure des semaines."]].map(([t, d], i) => (

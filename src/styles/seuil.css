@@ -82,6 +82,8 @@ html.s-anime [data-revele].vu { transition: opacity .7s var(--s-courbe), transfo
 .s-platre .s-surtitre, .s-papier .s-surtitre { color: var(--s-laiton-texte); }
 .s-platre .s-nuit h1, .s-platre .s-nuit h2, .s-papier .s-nuit h2 { color: var(--s-papier); }
 .s-platre .s-nuit .s-surtitre, .s-papier .s-nuit .s-surtitre { color: var(--s-laiton-clair); }
+.s-platre .s-nuit .s-chapo, .s-papier .s-nuit .s-chapo { color: #E6DDCB; }
+.s-platre .s-nuit .s-texte, .s-papier .s-nuit .s-texte, .s-platre .s-nuit .s-note, .s-papier .s-nuit .s-note { color: var(--s-gris-nuit); }
 
 /* ———————— Photos réelles : liseré or comme une assiette de la maison, format d'origine ———————— */
 .s-photo { position: relative; margin: 0; }
@@ -123,6 +125,10 @@ html.s-anime .vu .s-ruban { transition: clip-path .6s var(--s-courbe) .25s; }
 .s-nuit .s-liste .num { color: var(--s-laiton-clair); }
 .s-nuit .s-liste b { color: var(--s-papier); }
 .s-nuit .s-liste p { color: var(--s-gris-nuit); }
+.s-platre .s-liste, .s-papier .s-liste, .s-platre .s-liste > li, .s-papier .s-liste > li { border-color: var(--s-filet); }
+.s-platre .s-liste .num, .s-papier .s-liste .num { color: var(--s-laiton-texte); }
+.s-platre .s-liste b, .s-papier .s-liste b { color: var(--s-nuit); }
+.s-platre .s-liste p, .s-papier .s-liste p { color: var(--s-texte-2); }
 
 /* carte « papier » à double filet (faire-part, encadrés) */
 .s-fairepart { position: relative; background: var(--s-papier); color: var(--s-nuit); padding: 46px 26px 44px; box-shadow: 0 30px 60px -44px rgba(60,40,10,.5); }
