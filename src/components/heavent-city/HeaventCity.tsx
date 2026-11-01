@@ -13,7 +13,7 @@ import {
   ETAT_INITIAL, aUneSauvegarde, avancement, ecrireSauvegarde, effacerSauvegarde, lireSauvegarde, missionsDuType, optionsActives, reducteur, rendu, resume,
   type Action, type Choix, type Etat,
 } from "./etat";
-import { SceneSvg } from "./Scene";
+import { SceneChoix } from "./SceneChoix";
 import Ville from "./Ville";
 import { Questions, Titre } from "./Accueil";
 import Panneau from "./Panneau";
@@ -181,7 +181,7 @@ export default function HeaventCity() {
       {phase === "scene" && r && (
         <div className="absolute inset-0 flex flex-col lg:flex-row" data-testid="scene">
           <div className="relative h-[40dvh] shrink-0 overflow-hidden lg:h-auto lg:flex-1">
-            <SceneSvg r={r} nuit={nuit} focus={focus} logos={LOGOS} animer={!reduit} deplacable={deplacer} onDeplacer={(id, dx, dy) => { setRefus(0); dispatch({ t: "deplacer", id, dx, dy }); }} onRefus={() => setRefus(Date.now())} />
+            <SceneChoix reduit={reduit} r={r} nuit={nuit} focus={focus} logos={LOGOS} animer={!reduit} deplacable={deplacer} onDeplacer={(id, dx, dy) => { setRefus(0); dispatch({ t: "deplacer", id, dx, dy }); }} onRefus={() => setRefus(Date.now())} />
             <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 bg-gradient-to-b from-black/55 to-transparent px-3 pb-6 pt-3">
               <button onClick={() => dispatch({ t: "phase", phase: "ville" })} className={`${btnContour} bg-black/35 !px-3`} data-testid="changer-lieu"><ArrowLeft className="h-4 w-4 rtl:rotate-180" /><span className="hidden sm:inline">{tr("Changer de lieu")}</span><span className="sm:hidden">{tr("Lieu")}</span></button>
               <div className="flex items-center gap-1.5">
