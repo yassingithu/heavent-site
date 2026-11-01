@@ -134,7 +134,7 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
     for (const f of donnees.factures) {
       const envoyee = !!f.envoyee_le;
       const age = joursDepuis(f.envoyee_le ?? f.date_emission);
-      const type = f.type === "acompte" ? x("Acompte") : f.type === "solde" ? x("Solde") : x("Facture");
+      const type = f.type === "acompte" ? x("Acompte à encaisser") : f.type === "solde" ? x("Solde à encaisser") : x("Facture à encaisser");
       const montant = money(Number(f.net_a_payer || 0), f.devise);
       const ctx = { telephone: f.client_telephone, prenom: premierMot(f.client_nom), evenement: "votre événement", dateIso: f.date_evenement, facture: f.numero, montant };
       L.push({ cle: "f" + f.id, genre: "paiement", urgent: envoyee ? age >= 7 : age >= 2, score: age + 2, ...stampAttente(age),
@@ -154,7 +154,7 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
       if (finale) continue;
       if (fin && fin <= ilYa2j && joursJusque(fin) >= -60) {
         const n = -joursJusque(fin);
-        L.push({ cle: "fs" + v.id, genre: "paiement", urgent: true, score: n + 6, chiffre: String(n), unite: n === 1 ? x("jour depuis l'événement") : x("jours depuis l'événement"),
+        L.push({ cle: "fs" + v.id, genre: "paiement", urgent: true, score: n + 6, chiffre: String(n), unite: n === 1 ? x("jour passé") : x("jours passés"),
           ruban: x("Solde à facturer"), titre: nom(v), detail: x("Devis {numero} · événement terminé le {date}", { numero: v.numero ?? "", date: dateCourte(fin) }),
           actions: <>{btn("c" + v.id, x("Créer la facture de solde"), () => creerFacture(v, "solde"), true, "creer-facture")}{lienOuvrir(v.id)}</> });
       } else if (Number(v.acompte_pct) > 0 && actives.length === 0 && v.date_evenement && v.date_evenement >= aujourdhui) {
@@ -177,7 +177,7 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
       if (prevus <= 0 || affectes >= prevus) continue;
       L.push({ cle: "e" + v.id, genre: "equipe", urgent: d <= 7, score: 30 - d + (affectes === 0 ? 3 : 0), ...stampRestant(d),
         ruban: x("Équipe incomplète"), titre: v.titre || nom(v),
-        detail: [affectes === 0 ? x("Personne d'affecté sur {prevus} prévues", { prevus }) : x("{affectes} affectées sur {prevus} prévues", { affectes, prevus }), nom(v), dateCourte(v.date_evenement)].join(" · "),
+        detail: [affectes === 0 ? x("Personne d'affecté sur {prevus} prévues", { prevus }) : x("{affectes} sur {prevus} personnes affectées", { affectes, prevus }), nom(v), dateCourte(v.date_evenement)].join(" · "),
         actions: <>{btn("eq" + v.id, x("Composer l'équipe"), () => onOuvrirDevis(v.id), true, "composer-equipe")}</> });
     }
 
@@ -195,7 +195,7 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
       const detail = [cs.length === 1 ? x("1 contrat non signé") : x("{n} contrats non signés", { n: cs.length })];
       if (retard) detail.push(retard === 1 ? x("1 en retard") : x("{n} en retard", { n: retard }));
       detail.push(x("mission le {date}", { date: dateCourte(debut) }));
-      L.push({ cle: "k" + k, genre: "contrat", urgent: retard > 0, score: retard ? 25 : 8, ...(d < 0 ? { chiffre: String(-d), unite: -d === 1 ? x("jour depuis le début") : x("jours depuis le début") } : stampRestant(d)),
+      L.push({ cle: "k" + k, genre: "contrat", urgent: retard > 0, score: retard ? 25 : 8, ...(d < 0 ? { chiffre: String(-d), unite: -d === 1 ? x("jour passé") : x("jours passés") } : stampRestant(d)),
         ruban: x("Contrats à signer"), titre: cs[0].evenement || cs[0].titre, detail: detail.join(" · "),
         actions: <>{btn("ct" + k, x("Voir les signatures"), () => onAller("contrats"), true, "voir-signatures")}</> });
     }
@@ -223,7 +223,7 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
   const visibles = filtre ? lignes.filter((l) => l.genre === filtre) : lignes;
   const urgentes = visibles.filter((l) => l.urgent), suite = visibles.filter((l) => !l.urgent);
   const charge = donnees !== null;
-  const NOMS: Record<Genre, string> = { relance: x("Relances"), paiement: x("Paiements"), equipe: x("Équipes"), contrat: x("Signatures"), demande: x("Demandes") };
+  const NOMS: Record<Genre, string> = { relance: x("Relances"), paiement: x("Paiements"), equipe: x("Équipes"), contrat: x("Contrats"), demande: x("Demandes") };
 
   const titre = !charge ? "…" : lignes.length === 0 ? x("Rien d'urgent aujourd'hui") : lignes.length === 1 ? x("1 chose à faire") : x("{n} choses à faire", { n: lignes.length });
   const sousTitre = charge && lignes.length > 0

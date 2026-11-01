@@ -1041,4 +1041,11 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "À suivre": { en: "Coming up", ar: "للمتابعة" },
   "Équipe incomplète": { en: "Team incomplete", ar: "فريق غير مكتمل" },
   "événement le {date}": { en: "event on {date}", ar: "المناسبة في {date}" },
+  "Contrats": { en: "Contracts", ar: "العقود" },
+  "jour passé": { en: "day ago", ar: "يوم مضى" },
+  "jours passés": { en: "days ago", ar: "أيام مضت" },
+  "{affectes} sur {prevus} personnes affectées": { en: "{affectes} of {prevus} people assigned", ar: "تم تعيين {affectes} من أصل {prevus} أشخاص" },
+  "Acompte à encaisser": { en: "Deposit to collect", ar: "عربون في انتظار الاستلام" },
+  "Solde à encaisser": { en: "Balance to collect", ar: "رصيد في انتظار الاستلام" },
+  "Facture à encaisser": { en: "Invoice to collect", ar: "فاتورة في انتظار الأداء" },
 };

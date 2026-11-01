@@ -235,3 +235,7 @@
 @media (min-width: 640px) { .aj-ligne { grid-template-columns: 78px minmax(0, 1fr); gap: 4px 20px; } .aj-stamp b { font-size: 48px; } .aj-actions { grid-column: 2; grid-template-columns: repeat(auto-fit, minmax(170px, max-content)); } }
 .aj-pied { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 56px; margin-top: 4px; border-top: 1px solid var(--s-filet); font-size: 14.5px; text-align: left; }
 @media (prefers-reduced-motion: reduce) { .aj-ligne.a-entre { animation: none; } }
+
+.aj-actions > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+@media (min-width: 640px) { .aj-actions > :last-child:nth-child(odd) { grid-column: auto; } }
+.aj-compteurs span { overflow-wrap: normal; hyphens: none; }
