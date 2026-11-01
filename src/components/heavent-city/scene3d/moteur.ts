@@ -10,7 +10,7 @@ import { construireFixes, formeParId } from "./formes";
 import { chevauche, objetsDeplacables, RAYON_TABLE, type Objet3D } from "./objets";
 
 export interface Entree { r: Rendu; nuit: number; deplacable: boolean; reduit: boolean; focus?: { cle: string; n: number } | null }
-export interface Rappels { onDeplacer: (id: string, dx: number, dy: number) => void; onRefus: () => void }
+export interface Rappels { onDeplacer: (id: string, dx: number, dy: number) => void; onRefus: () => void; /** la vue n'est plus celle d'ensemble (zoom ou déplacement) */ onDecalee?: (decalee: boolean) => void }
 export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** position monde (cases) d'un objet, pour les tests */ position(id: string): [number, number] | null; /** position écran (px client) d'un point du sol ou d'un objet, pour les tests */ ecran(x: number, z: number): [number, number]; ecranObjet(id: string): [number, number] | null; /** chaises d'un objet (position locale, direction du dossier), pour les tests */ chaises(id: string): { x: number; z: number; dos: [number, number] }[]; dims(id: string): { w: number; d: number } | null; /** cadre un objet de près (tests, captures) */ vers(id: string, zoom: number): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[] } }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -71,6 +71,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     verre: new THREE.MeshStandardMaterial({ color: 0xd88a3a, roughness: 0.15, metalness: 0.1, transparent: true, opacity: 0.85 }),
     bougie: new THREE.MeshBasicMaterial({ color: 0xffd98a }),
     refus: new THREE.MeshBasicMaterial({ color: 0xe24e4e, transparent: true, opacity: 0.45, depthWrite: false }),
+    halo: new THREE.MeshBasicMaterial({ color: 0xf4d774, transparent: true, opacity: 0.14, depthWrite: false }),
     libre: new THREE.MeshBasicMaterial({ color: 0xf4d774, transparent: true, opacity: 0.35, depthWrite: false }),
   };
   const g = {
@@ -206,6 +207,8 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     return grp;
   }
 
+  /** halo doré léger sur les objets déplaçables (mode Déplacer) */
+  function majHalos() { for (const g2 of groupes.values()) { const z = g2.userData.zone; if (prise && prise.grp === g2) continue; z.material = mat.halo; z.visible = !!courant?.deplacable; } }
   // ── Mise à jour depuis le jeu ─────────────────────────────────────────────
   let objetsGroupe = new THREE.Group(); scene.add(objetsGroupe);
   let pret = false; let fixes: any = null;
@@ -232,6 +235,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
       grp.position.set(o.a[0] + dx, 0, o.a[1] + dy); groupes.set(o.id, grp); objetsGroupe.add(grp);
       // sens des chaises du honneur : la face « salle » est du côté +gy
     }
+    majHalos();
     // lampes chaudes de la nuit : près de la table d'honneur / du bar / de la piste, sinon des premières tables
     const pts = ["honneur", "nawar", "piste", "t0"].map((id) => groupes.get(id)).filter(Boolean).slice(0, 3);
     lampes.forEach((l, i) => { const p = pts[i]; if (p) { l.position.set(p.position.x, 1.5, p.position.z); l.userData.actif = true; } else l.userData.actif = false; });
@@ -253,9 +257,13 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   function placerCamera() {
     const w = conteneur.clientWidth || 1, h = conteneur.clientHeight || 1, asp = w / h, N = vue.N;
     let demiL = N * 0.76, demiH = demiL / asp; const besoinH = N * 0.36 + 2.6; if (demiH < besoinH) { demiH = besoinH; demiL = demiH * asp; }
-    cam.left = -demiL / vue.zoom; cam.right = demiL / vue.zoom; cam.top = demiH / vue.zoom; cam.bottom = -demiH / vue.zoom;
+    const dec = asp < 1.5 ? 0.15 : 0; // mobile : le décor remonte de ~15 % (la moitié basse est moins gênée par les boutons)
+    cam.left = -demiL / vue.zoom; cam.right = demiL / vue.zoom; cam.top = (demiH * (1 - 2 * dec)) / vue.zoom; cam.bottom = (-demiH * (1 + 2 * dec)) / vue.zoom;
     cam.position.copy(vue.cible).addScaledVector(DIR, 80); cam.lookAt(vue.cible); cam.updateProjectionMatrix();
+    const zb = zoomBase(), dc = Math.abs(vue.zoom - zb) > 0.06 || Math.hypot(vue.cible.x - vue.N / 2, vue.cible.z - (vue.N / 2 + (zb > 1 ? 0.4 : 0))) > 0.6;
+    if (dc !== decaleeAvant) { decaleeAvant = dc; rap.onDecalee?.(dc); }
   }
+  let decaleeAvant = false;
   /** zoom de la vue d'ensemble : un peu plus serré sur un écran peu large (mobile), la scène occupe mieux la hauteur disponible */
   const zoomBase = () => { const asp = (conteneur.clientWidth || 1) / (conteneur.clientHeight || 1); return asp < 1.5 ? Math.min(1.25, 1 + (1.5 - asp) * 0.4) : 1; };
   function recadrer(immediat = false) {
@@ -266,7 +274,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
 /** recentrage sur l'élément mis en avant par le jeu (focus) */
   function centrer(e: Entree) {
     const a = e.focus ? (e.r.salle.pos.ANCRES as Record<string, [number, number] | undefined>)[e.focus.cle] : null; if (!a) return;
-    cibleVoulue = new THREE.Vector3(a[0], 0.5, a[1]); zoomVoulu = Math.max(zoomBase(), 1.6); transition = e.reduit ? 1 : 0;
+    cibleVoulue = new THREE.Vector3(a[0], 0.5, a[1]); zoomVoulu = zoomBase() > 1 ? Math.max(zoomBase(), 1.3) : 1.6; transition = e.reduit ? 1 : 0;
     if (e.reduit) { vue.cible.copy(cibleVoulue); vue.zoom = zoomVoulu; placerCamera(); }
     demander();
   }
@@ -320,7 +328,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   function annulerPrise() {
     const t = prise; prise = null; if (!t) return;
     const o = objets.find((x) => x.id === t.id)!;
-    t.grp.userData.zone.visible = false; t.grp.position.set(o.a[0] + t.depart[0], 0, o.a[1] + t.depart[1]); renderer.shadowMap.needsUpdate = true;
+    t.grp.position.set(o.a[0] + t.depart[0], 0, o.a[1] + t.depart[1]); majHalos(); renderer.shadowMap.needsUpdate = true;
   }
   const borneCible = () => { const N = vue.N; vue.cible.x = Math.max(0, Math.min(N, vue.cible.x)); vue.cible.z = Math.max(0, Math.min(N, vue.cible.z)); };
   canvas.addEventListener("pointerdown", (ev) => {
@@ -340,7 +348,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   });
   canvas.addEventListener("pointermove", (ev) => {
     if (doigts.has(ev.pointerId)) doigts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-    if (pince && doigts.size >= 2) { vue.zoom = Math.max(0.7, Math.min(3.2, pince.z0 * dist() / pince.d0)); placerCamera(); demander(); return; }
+    if (pince && doigts.size >= 2) { vue.zoom = Math.max(0.9, Math.min(3.2, pince.z0 * dist() / pince.d0)); placerCamera(); demander(); return; }
     if (pan) {
       const p = versSol(ev.clientX, ev.clientY); if (!p) return;
       vue.cible.x += pan.p.x - p.x; vue.cible.z += pan.p.z - p.z; borneCible(); placerCamera(); demander(); return;
@@ -363,9 +371,9 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     if (pince) { if (doigts.size < 2) pince = null; return; }
     pan = null;
     const t = prise; prise = null; if (!t || !courant) return;
-    t.grp.userData.zone.visible = false;
     const o = objets.find((x) => x.id === t.id)!;
-    if (t.bloque) { t.grp.position.set(o.a[0] + t.depart[0], 0, o.a[1] + t.depart[1]); rap.onRefus(); }
+    if (!t.bloque) { t.grp.userData.zone.material = mat.halo; t.grp.userData.zone.visible = courant.deplacable; }
+    if (t.bloque) { t.grp.position.set(o.a[0] + t.depart[0], 0, o.a[1] + t.depart[1]); t.grp.userData.zone.material = mat.halo; t.grp.userData.zone.visible = courant.deplacable; rap.onRefus(); }
     else if (t.dernier[0] !== t.depart[0] || t.dernier[1] !== t.depart[1]) { rap.onDeplacer(t.id, t.dernier[0], t.dernier[1]); }
     // l'objet se pose avec un léger rebond amorti (sauf si l'on préfère moins de mouvement)
     if (courant.reduit) t.grp.position.y = 0; else rebonds.push({ grp: t.grp, t0: performance.now(), y0: 0.18 });
@@ -373,7 +381,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   }
   canvas.addEventListener("pointerup", relacher); canvas.addEventListener("pointercancel", relacher);
   // zoom molette / pincement (jalon : molette seule + double clic = vue d'ensemble)
-  canvas.addEventListener("wheel", (ev) => { ev.preventDefault(); zoomVoulu = Math.max(0.7, Math.min(3.2, vue.zoom * (ev.deltaY < 0 ? 1.12 : 0.9))); vue.zoom = zoomVoulu; cibleVoulue = null; transition = 1; placerCamera(); demander(); }, { passive: false });
+  canvas.addEventListener("wheel", (ev) => { ev.preventDefault(); zoomVoulu = Math.max(0.9, Math.min(3.2, vue.zoom * (ev.deltaY < 0 ? 1.12 : 0.9))); vue.zoom = zoomVoulu; cibleVoulue = null; transition = 1; placerCamera(); demander(); }, { passive: false });
   canvas.addEventListener("dblclick", () => recadrer());
 
   return {
@@ -382,6 +390,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
       if (!avant || avant.r !== e.r) { reconstruire(e); }
       if (!avant || avant.nuit !== e.nuit || avant.r !== e.r) { lumiere(e.nuit); if (!avant || avant.r !== e.r || (avant.nuit > 0.5) !== (e.nuit > 0.5)) refaireFixes(e); }
       canvas.style.touchAction = "none";
+      if (avant && avant.deplacable !== e.deplacable) majHalos();
       if (e.focus && avant && avant.focus?.n !== e.focus.n) centrer(e);
       canvas.style.cursor = e.deplacable ? "grab" : "default";
       if (!pret) { pret = true; redim(); }

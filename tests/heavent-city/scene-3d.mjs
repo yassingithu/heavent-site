@@ -42,7 +42,7 @@ const b = await chromium.launch({ args: GL });
   const [t1x, t1y] = await p.evaluate(() => window.__hc3d.ecranObjet("t4"));
   // refus : t3 lâchée sur t4
   await p.mouse.move(sx, sy); await p.mouse.down(); await p.mouse.move((sx + t1x) / 2, (sy + t1y) / 2, { steps: 5 }); await p.mouse.move(t1x, t1y, { steps: 5 }); await p.mouse.up(); await p.waitForTimeout(500);
-  ok((await t("message-deplacer").innerText()).includes("déjà occupée"), "refus visible quand la place est occupée");
+  ok((await t("message-deplacer").innerText()).includes("Place occupée"), "refus visible quand la place est occupée");
   ok((await t("remettre").count()) === 0, "après un refus : rien n'est enregistré");
   // déplacement vers une case libre (coin avant de la salle)
   const N = await p.evaluate(() => Math.round(window.__hc3d.stats().cible[0] * 2));
