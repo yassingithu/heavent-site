@@ -166,7 +166,7 @@ html.s-anime .vu .s-ruban { transition: clip-path .6s var(--s-courbe) .25s; }
 .s-panneau nav > a[aria-current="page"] { color: var(--s-laiton-clair); }
 .s-panneau .s-btn { width: 100%; margin-top: 28px; }
 .s-panneau-pied { display: grid; gap: 4px; margin-top: 28px; }
-.s-panneau-pied a { display: flex; align-items: center; min-height: 44px; font: 400 15px var(--s-texte); color: var(--s-gris-nuit); }
+.s-panneau-pied a { display: flex; align-items: center; min-height: 44px; font: 400 15px var(--s-texte); color: var(--s-laiton-clair); }
 .s-panneau .s-langues { margin-top: 12px; }
 
 /* ———————— Pied de page ———————— */
@@ -398,6 +398,9 @@ html.s-anime .s-deroule.vu .s-etape::after { transition: transform .5s var(--s-c
   .s-nav a:not(.s-btn):hover::after, .s-nav a[aria-current="page"]::after { transform: scaleX(1); }
   .s-nav a[aria-current="page"] { color: var(--s-laiton-clair); }
   .s-nav .s-btn { min-height: 44px; padding: 0 20px; font-size: 13px; }
+  .s-nav-sep { width: 1px; height: 18px; background: rgba(228,212,154,.25); }
+  .s-nav a.s-nav-sec { font-size: 12.5px; letter-spacing: .08em; color: var(--s-gris-nuit); }
+  .s-nav a.s-nav-sec:hover { color: var(--s-laiton-clair); }
 }
 @media (min-width: 900px) {
 
@@ -479,3 +482,12 @@ html.s-anime .s-deroule.vu .s-etape::after { transition: transform .5s var(--s-c
   [class*="s-"], [class*="s-"]::before, [class*="s-"]::after, [class*="s-"] * { animation-duration: 1ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; transition-delay: 0s !important; }
   .s-ouverture, .s-passer, .s-lumieres, .s-lueur { display: none !important; }
 }
+
+/* En-tête ordinateur : les liens équipe / prestataires restent visibles ; sur les écrans moyens, seul « Espace staff » reste */
+.s-nav a, .s-nav .s-btn { white-space: nowrap; }
+@media (max-width: 1439px) {
+  .s-nav { gap: 18px; }
+  .s-nav a.s-nav-sec { font-size: 12px; letter-spacing: .04em; }
+}
+.s-marque { flex: none; }
+@media (max-width: 1319px) { .s-nav a.s-nav-sec[href="/inscription-staff"] { display: none; } }

@@ -92,6 +92,10 @@ const Header = () => {
           {navigation.map((item) => (
             <Link key={item.href} to={item.href} aria-current={pathname === item.href ? "page" : undefined}>{item.name}</Link>
           ))}
+          <span className="s-nav-sep" aria-hidden="true" />
+          <Link to="/auth" className="s-nav-sec">{t("nav.staffSpace")}</Link>
+          <Link to="/inscription-staff" className="s-nav-sec">{t("nav.joinTeam")}</Link>
+          <Link to="/prestataires" className="s-nav-sec" data-testid="bouton-prestataires-ordi">{x("Devenir prestataire")}</Link>
           <Langues />
           <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-filet" data-testid="entete-devis">{x("Demander un devis")}</Link>
         </nav>
