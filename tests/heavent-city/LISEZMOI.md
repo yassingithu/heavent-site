@@ -4,3 +4,4 @@ Démarrer le site (`npm run dev -- --port 5180`) puis :
 - `node tests/heavent-city/erreur-reseau.mjs` : échec serveur puis nouvelle tentative, choix conservés.
 - `node tests/heavent-city/identifiants.mjs` : identifiants du serveur IA = ceux du jeu.
 Playwright doit être installé (les scripts l'importent depuis /opt/npm-tools).
+- `node tests/heavent-city/scene-3d.mjs [url]` : scène 3D (?3d=1) : chaises des tables rectangulaires et d'honneur, déplacement, refus, annulation, pincement, repli SVG sans WebGL.
