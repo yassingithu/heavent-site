@@ -98,7 +98,7 @@ const Header = () => {
 
         <div className="s-entete-droite">
           <Link to={cibleDevis} onClick={versDevis} className="s-devis-court">{x("Devis")}</Link>
-          <button ref={boutonMenu} type="button" className="s-menu-btn" aria-expanded={ouvert} aria-controls="menu-site" onClick={() => setOuvert(true)} data-testid="ouvrir-menu">
+          <button ref={boutonMenu} type="button" className="s-menu-btn" aria-label={x("Ouvrir le menu")} aria-expanded={ouvert} aria-controls="menu-site" onClick={() => setOuvert(true)} data-testid="ouvrir-menu">
             {x("Menu")} <i aria-hidden="true" />
           </button>
         </div>

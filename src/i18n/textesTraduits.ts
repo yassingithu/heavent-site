@@ -858,6 +858,7 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "Agence de voyages": { en: "Travel agency", ar: "وكالة أسفار" },
   "Je ne sais pas encore": { en: "I don't know yet", ar: "لا أعرف بعد" },
   // Direction « Seuil » : accueil, en-tête, pied de page et pages publiques
+  "Ouvrir le menu": { en: "Open the menu", ar: "فتح القائمة" },
   "Accueil des invités": { en: "Guest welcome", ar: "استقبال الضيوف" },
   "Agence d'hôtesses & d'événementiel": { en: "Hostess & event agency", ar: "وكالة مضيفات وتنظيم مناسبات" },
   "Assiette ivoire à liseré or et couverts dorés dans une lumière rasante": { en: "Ivory plate with a gold rim and gilded cutlery in low, raking light", ar: "صحن عاجي بحافة ذهبية وأدوات مائدة مذهبة في ضوء خافت مائل" },

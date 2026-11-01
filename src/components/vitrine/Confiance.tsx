@@ -113,7 +113,7 @@ export function Temoignages({ v }: { v: Vitrine | null }) {
         <figure key={i} className="relative border border-[#DCCDAA] bg-[#FAF6EC] p-6 flex flex-col">
           {x.note ? <div className="flex mb-3" aria-label={`${x.note}/5`}>{[1, 2, 3, 4, 5].map((n) => <Star key={n} className={`h-3.5 w-3.5 ${n <= x.note! ? "fill-[#A8933F] text-[#A8933F]" : "text-[#DCCDAA]"}`} />)}</div> : null}
           <blockquote className="font-serif text-xl leading-snug text-[#141414] flex-1 whitespace-pre-line">« {x.texte} »</blockquote>
-          <figcaption className="mt-4 text-xs uppercase tracking-[0.2em] text-[#5A5146]"><b className="font-medium text-[#141414]">{x.auteur}</b>{x.contexte ? <span> · {x.contexte}</span> : null}</figcaption>
+          <figcaption className="mt-4 text-sm text-[#5A5146]"><b className="font-medium text-[#141414]">{x.auteur}</b>{x.contexte ? <span> · {x.contexte}</span> : null}</figcaption>
         </figure>
       ))}
     </div>
