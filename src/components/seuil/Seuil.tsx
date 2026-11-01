@@ -15,7 +15,7 @@ export function Photo({ nom, alt, l, h, tailles = "(min-width:900px) 40vw, 92vw"
 }) {
   const priorite = prioritaire ? { fetchpriority: "high" } : {};
   return (
-    <figure className={`s-photo${petit ? " petit" : ""} ${className}`} data-photo={prioritaire ? undefined : ""} style={style}>
+    <figure className={`s-photo${petit ? " petit" : ""}${prioritaire ? " direct" : ""} ${className}`} data-photo={prioritaire ? undefined : ""} style={style}>
       <div className="s-cadre"><div className="s-voile">
         <img src={`${DOSSIER}/${nom}-720.webp`} srcSet={`${DOSSIER}/${nom}-480.webp 480w, ${DOSSIER}/${nom}-720.webp 720w, ${DOSSIER}/${nom}.jpg 900w`} sizes={tailles}
           width={l} height={h} alt={alt} loading={prioritaire ? "eager" : "lazy"} decoding="async" {...priorite} />

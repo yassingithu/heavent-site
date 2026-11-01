@@ -40,6 +40,8 @@ html.s-anime [data-revele].vu { transition: opacity .7s var(--s-courbe), transfo
 [dir="rtl"] .s-btn .fl { transform: scaleX(-1); }
 .s-btn-plein { background: var(--s-papier); color: var(--s-nuit); }
 .s-platre .s-btn-plein, .s-papier .s-btn-plein, .s-btn-plein.s-sombre { background: var(--s-nuit); color: var(--s-papier); }
+/* une section sombre posée dans une page claire (formulaire des guides) garde son bouton clair */
+.s-platre .s-nuit .s-btn-plein:not(.s-sombre), .s-papier .s-nuit .s-btn-plein:not(.s-sombre) { background: var(--s-papier); color: var(--s-nuit); }
 .s-btn-plein::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(100deg, transparent 35%, rgba(228,212,154,.55) 50%, transparent 65%); transform: translateX(-110%); pointer-events: none; }
 .s-btn-plein.brille::after, .s-btn-plein:hover::after { animation: s-reflet .9s var(--s-courbe); }
 @keyframes s-reflet { to { transform: translateX(110%); } }
@@ -73,6 +75,13 @@ html.s-anime [data-revele].vu { transition: opacity .7s var(--s-courbe), transfo
 .s-note { font: 400 13px/1.55 var(--s-texte); color: var(--s-texte-2); }
 .s-nuit .s-note { color: var(--s-gris-nuit); }
 .s-nuit h1, .s-nuit h2 { color: var(--s-papier); }
+/* une section claire posée dans une page sombre reprend ses propres couleurs */
+.s-platre h1, .s-platre h2, .s-papier h1, .s-papier h2 { color: var(--s-nuit); }
+.s-platre .s-texte, .s-papier .s-texte, .s-platre .s-note, .s-papier .s-note { color: var(--s-texte-2); }
+.s-platre .s-chapo, .s-papier .s-chapo { color: #3d362d; }
+.s-platre .s-surtitre, .s-papier .s-surtitre { color: var(--s-laiton-texte); }
+.s-platre .s-nuit h1, .s-platre .s-nuit h2, .s-papier .s-nuit h2 { color: var(--s-papier); }
+.s-platre .s-nuit .s-surtitre, .s-papier .s-nuit .s-surtitre { color: var(--s-laiton-clair); }
 
 /* ———————— Photos réelles : liseré or comme une assiette de la maison, format d'origine ———————— */
 .s-photo { position: relative; margin: 0; }
@@ -81,7 +90,7 @@ html.s-anime [data-revele].vu { transition: opacity .7s var(--s-courbe), transfo
 .s-photo .s-voile { overflow: hidden; }
 .s-photo img { display: block; width: 100%; height: auto; }
 .s-photo.petit .s-cadre { padding: 5px; }
-html.s-anime .s-photo:not(.vu) .s-voile, html.s-anime .s-photo:not(.vu) .s-cadre::before { clip-path: inset(100% 0 0 0); }
+html.s-anime .s-photo:not(.vu):not(.direct) .s-voile, html.s-anime .s-photo:not(.vu):not(.direct) .s-cadre::before { clip-path: inset(100% 0 0 0); }
 html.s-anime .s-photo.vu .s-voile { animation: s-leve .7s var(--s-courbe) var(--retard-photo, 0s) both; }
 html.s-anime .s-photo.vu img { animation: s-recule 1s var(--s-courbe) var(--retard-photo, 0s) both; }
 html.s-anime .s-photo.vu .s-cadre::before { animation: s-leve .9s var(--s-courbe) calc(var(--retard-photo, 0s) + .2s) both; }
@@ -322,7 +331,7 @@ html.s-anime .s-deroule.vu .s-etape::after { transition: transform .5s var(--s-c
 .s-page-tete h1 { margin-top: 22px; max-width: 16ch; }
 .s-page-tete .s-chapo { margin-top: 22px; max-width: 56ch; }
 .s-page-tete .s-actions { margin-top: 28px; }
-.s-colonnes { display: grid; gap: 40px; }
+.s-colonnes { display: grid; gap: 40px; align-items: start; }
 .s-encadre { position: relative; padding: 28px 22px; background: var(--s-papier); border: 1px solid var(--s-filet); }
 .s-encadre::before { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(168,147,63,.35); pointer-events: none; }
 .s-puces { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }

@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTexte } from "@/i18n/textes";
-import { Bouton } from "@/components/seuil/Seuil";
 
 const LANGUES_SITE = [{ code: "fr", abr: "FR", nom: "Français" }, { code: "en", abr: "EN", nom: "English" }, { code: "ar", abr: "ع", nom: "العربية" }];
 
@@ -58,6 +57,15 @@ const Header = () => {
     { name: t("nav.contact"), href: "/contact" },
   ];
   const devis = lienDevis(pathname);
+  // Sur l'accueil, « Demander un devis » descend au choix mariage / entreprise (#devis) au lieu d'imposer un formulaire
+  const accueil = pathname === "/";
+  const versDevis = (e?: React.MouseEvent) => {
+    setOuvert(false);
+    if (!accueil) return;
+    e?.preventDefault();
+    setTimeout(() => document.getElementById("devis")?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }), 60);
+  };
+  const cibleDevis = accueil ? "/#devis" : devis;
 
   // Menu ouvert : le fond ne défile plus, Échap ferme, le focus va au bouton « Fermer » puis revient au bouton « Menu »
   useEffect(() => {
@@ -85,11 +93,11 @@ const Header = () => {
             <Link key={item.href} to={item.href} aria-current={pathname === item.href ? "page" : undefined}>{item.name}</Link>
           ))}
           <Langues />
-          <Bouton to={devis} variante="filet" testid="entete-devis">{x("Demander un devis")}</Bouton>
+          <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-filet" data-testid="entete-devis">{x("Demander un devis")}</Link>
         </nav>
 
         <div className="s-entete-droite">
-          <Link to={devis} className="s-devis-court">{x("Devis")}</Link>
+          <Link to={cibleDevis} onClick={versDevis} className="s-devis-court">{x("Devis")}</Link>
           <button ref={boutonMenu} type="button" className="s-menu-btn" aria-expanded={ouvert} aria-controls="menu-site" onClick={() => setOuvert(true)} data-testid="ouvrir-menu">
             {x("Menu")} <i aria-hidden="true" />
           </button>
@@ -106,7 +114,7 @@ const Header = () => {
             <Link key={item.href} to={item.href} onClick={() => setOuvert(false)} aria-current={pathname === item.href ? "page" : undefined} tabIndex={ouvert ? 0 : -1}>{item.name}</Link>
           ))}
         </nav>
-        <Bouton to={devis} variante="plein" fleche onClick={() => setOuvert(false)}>{x("Demander un devis")}</Bouton>
+        <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-plein">{x("Demander un devis")} <span className="fl" aria-hidden="true">→</span></Link>
         <div className="s-panneau-pied">
           <Link to="/inscription-staff" onClick={() => setOuvert(false)} tabIndex={ouvert ? 0 : -1}>{t("nav.joinTeam")}</Link>
           <Link to="/auth" onClick={() => setOuvert(false)} tabIndex={ouvert ? 0 : -1}>{t("nav.staffSpace")}</Link>

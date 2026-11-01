@@ -406,7 +406,7 @@ const WeddingQuote = () => {
                     {x("J'accepte que mes données personnelles soient traitées conformément à la")} 
                     <a href="/politique-confidentialite" className="text-primary hover:underline ml-1">
                       {x("politique de confidentialité")}
-                    </a> 
+                    </a>{" "}
                     {x("et au RGPD. Ces données seront utilisées uniquement pour traiter ma demande de devis événement.")}
                   </Label>
                 </div>
