@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Confettis } from "@/components/inscription/ParcoursInscription";
 import { aujourdhuiMaroc, dateLongueMaroc, heureMaroc, jourMarocPlus } from "@/lib/dateMaroc";
-import { CalendarDays, Heart, Inbox, PartyPopper, Sparkles, Trophy, X } from "lucide-react";
+import { Heart, PartyPopper, Sparkles, Trophy, X } from "lucide-react";
 
 /**
  * Attentions personnelles de l'administration : surprise de bienvenue (une seule fois), accueil au prénom
@@ -126,45 +126,44 @@ export function CarteAccueil({ infos, nouvellesDemandes }: { infos: InfosAccueil
   }, []);
   const h = heureMaroc();
   const salut = h < 5 ? "Douce nuit" : h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : "Bonsoir";
-  const emoji = h < 5 ? "🌙" : h < 12 ? "☀️" : h < 18 ? "🌤️" : "🌙";
   const dateLongue = dateLongueMaroc();
 
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-[#141414] text-white p-4 sm:p-6" data-testid="carte-accueil">
-      <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_0%_0%,#C8B560_0,transparent_45%),radial-gradient(circle_at_100%_100%,#A8933F_0,transparent_40%)]" />
-      <div className="relative grid lg:grid-cols-[1.3fr_1fr] gap-4 items-start">
-        <div className="space-y-3">
+    <section className="a-nuit a-grain-nuit relative overflow-hidden text-[#F3ECDD] -mx-3 -mt-4 px-4 pt-3 pb-5 sm:mx-0 sm:mt-0 sm:px-7 sm:py-7 lg:px-10" data-testid="carte-accueil">
+      <div className="relative grid lg:grid-cols-[1.3fr_1fr] gap-5 lg:gap-10 items-end">
+        <div className="space-y-4 min-w-0">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-[#E4D49A] first-letter:uppercase">{dateLongue}</p>
-            <h2 className="font-serif text-2xl sm:text-3xl mt-0.5">{salut} {infos.prenom} {emoji}</h2>
+            <p className="a-surtitre whitespace-nowrap first-letter:uppercase">{dateLongue}</p>
+            <h2 className="font-serif text-[52px] sm:text-[60px] leading-[.95] tracking-[-0.025em] mt-4 text-[#FAF6EC]">
+              <span className="a-monte"><span>{salut}</span></span>
+              <span className="a-monte"><span className="text-[#E4D49A]" style={{ ["--r" as string]: ".1s" }}>{infos.prenom}.</span></span>
+            </h2>
           </div>
           {infos.mot && (
-            <figure className="rounded-2xl bg-white/[0.07] border border-white/10 p-4" data-testid="mot-du-jour">
-              <Heart className="h-4 w-4 text-[#E4D49A] fill-[#E4D49A] mb-1.5" />
-              <blockquote className="font-serif text-base sm:text-lg leading-snug text-[#FAF7EE]">{infos.mot}</blockquote>
-              <figcaption className="text-right text-xl text-[#E4D49A] mt-1" style={{ fontFamily: "'Great Vibes', cursive" }}>{infos.espace === "nawar" ? "Papa" : "Yassin"}</figcaption>
+            <figure className="a-entre border-t border-[#E4D49A]/15 pt-3" style={{ ["--r" as string]: ".35s" }} data-testid="mot-du-jour">
+              <blockquote className="font-light text-[16px] leading-relaxed text-[#E6DDCB] max-w-[36ch]">{infos.mot}</blockquote>
+              <figcaption className="text-right text-2xl text-[#E4D49A] -mt-1" style={{ fontFamily: "'Great Vibes', cursive" }}>{infos.espace === "nawar" ? "Papa" : "Yassin"}</figcaption>
             </figure>
           )}
         </div>
-        <div className="grid grid-cols-3 lg:grid-cols-1 gap-2">
-          <Resume icone={CalendarDays} valeur={jour ? String(jour.rdv) : "…"} libelle="rendez-vous aujourd'hui" />
-          <Resume icone={PartyPopper} valeur={jour ? String(jour.evenements.length || jour.semaine) : "…"}
+        <div className="grid grid-cols-3 lg:grid-cols-1 border-t border-[#E4D49A]/15 lg:border-t-0 lg:border-l lg:pl-8">
+          <Resume valeur={jour ? String(jour.rdv) : "…"} libelle="rendez-vous aujourd'hui" />
+          <Resume valeur={jour ? String(jour.evenements.length || jour.semaine) : "…"}
             libelle={jour ? (jour.evenements.length ? `événement${jour.evenements.length > 1 ? "s" : ""} aujourd'hui` : `événement${jour.semaine > 1 ? "s" : ""} dans les 7 jours`) : ""}
             detail={jour?.evenements.map((e) => e.client).join(", ")} />
-          <Resume icone={Inbox} valeur={String(nouvellesDemandes)} libelle={nouvellesDemandes > 1 ? "nouvelles demandes" : "nouvelle demande"} />
+          <Resume valeur={String(nouvellesDemandes)} libelle={nouvellesDemandes > 1 ? "nouvelles demandes" : "nouvelle demande"} />
         </div>
       </div>
     </section>
   );
 }
-function Resume({ icone: Icone, valeur, libelle, detail }: { icone: typeof Heart; valeur: string; libelle: string; detail?: string }) {
+function Resume({ valeur, libelle, detail }: { valeur: string; libelle: string; detail?: string }) {
   return (
-    <div className="rounded-2xl bg-white/[0.07] border border-white/10 px-3 py-2.5 lg:flex lg:items-center lg:gap-3">
-      <Icone className="h-4 w-4 text-[#E4D49A] mb-1 lg:mb-0 shrink-0" />
+    <div className="min-w-0 pt-3 pr-2 [&+&]:pl-3 [&+&]:border-l [&+&]:border-[#E4D49A]/15 lg:[&+&]:pl-0 lg:[&+&]:border-l-0 lg:[&+&]:border-t lg:pb-3 lg:flex lg:items-baseline lg:gap-4">
+      <div className="font-serif text-[34px] leading-none tracking-[-0.02em] tabular-nums text-[#FAF6EC] lg:w-12">{valeur}</div>
       <div className="min-w-0">
-        <div className="font-serif text-2xl leading-none">{valeur}</div>
-        <div className="text-[11px] sm:text-xs text-white/60 leading-tight mt-1">{libelle}</div>
-        {detail && <div className="text-[11px] text-white/50 truncate mt-0.5">{detail}</div>}
+        <div className="text-[11.5px] text-[#BDB29C] leading-tight mt-1.5 lg:mt-0">{libelle}</div>
+        {detail && <div className="text-[11px] text-[#E4D49A] truncate mt-0.5">{detail}</div>}
       </div>
     </div>
   );
@@ -215,18 +214,18 @@ export function Celebrations({ infos, onVu }: { infos: InfosAccueil; onVu: () =>
   };
   const total = nouvelles.reduce((s, d) => s + Number(d.total_ttc || 0), 0);
   return (
-    <section className="relative overflow-hidden rounded-3xl border-2 border-[#C8B560] bg-gradient-to-br from-[#FFF8E6] to-white p-5 sm:p-6" data-testid="celebration">
+    <section className="a-carte relative overflow-hidden p-5 sm:p-6" data-testid="celebration">
       <Confettis />
       <button onClick={vu} className="absolute top-3 right-3 h-9 w-9 rounded-full hover:bg-black/5 flex items-center justify-center" aria-label="Fermer"><X className="h-4 w-4" /></button>
       <div className="flex items-start gap-4">
-        <div className="h-12 w-12 shrink-0 rounded-full bg-[#141414] flex items-center justify-center">
-          {nouvelles.length ? <PartyPopper className="h-6 w-6 text-[#E4D49A]" /> : <Trophy className="h-6 w-6 text-[#E4D49A]" />}
+        <div className="h-12 w-12 shrink-0 bg-[#9C4A2C] flex items-center justify-center [clip-path:polygon(50%_0,62%_12%,79%_7%,82%_24%,98%_32%,90%_50%,98%_68%,82%_76%,79%_93%,62%_88%,50%_100%,38%_88%,21%_93%,18%_76%,2%_68%,10%_50%,2%_32%,18%_24%,21%_7%,38%_12%)]">
+          {nouvelles.length ? <PartyPopper className="h-5 w-5 text-[#FAF6EC]" /> : <Trophy className="h-5 w-5 text-[#FAF6EC]" />}
         </div>
         <div className="space-y-1">
           {nouvelles.length > 0 && (
             <>
               <h3 className="font-serif text-2xl">{nouvelles.length === 1 ? `${nouvelles[0].client_societe || nouvelles[0].client_nom} a signé ! 🎉` : `${nouvelles.length} devis signés depuis ta dernière visite ! 🎉`}</h3>
-              <p className="text-sm text-[#5E554A]">
+              <p className="text-sm text-[#5A5146]">
                 {nouvelles.length === 1 ? `${nouvelles[0].titre || "Devis " + (nouvelles[0].numero ?? "")} · ${mad(nouvelles[0].total_ttc)}` : `${nouvelles.map((d) => d.client_societe || d.client_nom).join(", ")} · ${mad(total)} au total`}
               </p>
             </>
@@ -234,10 +233,10 @@ export function Celebrations({ infos, onVu }: { infos: InfosAccueil; onVu: () =>
           {record && (
             <div className={nouvelles.length ? "pt-2" : ""}>
               <h3 className="font-serif text-xl flex items-center gap-2"><Trophy className="h-5 w-5 text-[#A8933F]" /> {record.titre}</h3>
-              <p className="text-sm text-[#5E554A]">{record.texte}</p>
+              <p className="text-sm text-[#5A5146]">{record.texte}</p>
             </div>
           )}
-          <button onClick={vu} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#141414] text-white px-4 min-h-9 text-sm">Bravo à moi 💛</button>
+          <button onClick={vu} className="s-btn s-btn-plein s-sombre mt-3 !min-h-11 !px-5 !text-[13px]">Bravo à moi 💛</button>
         </div>
       </div>
     </section>

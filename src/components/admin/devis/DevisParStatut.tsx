@@ -71,8 +71,27 @@ export default function DevisParStatut({ titre, types, statuts, vide }: Props) {
       <CardContent className="overflow-x-auto">
         {liste.length === 0 ? (
           <p className="text-sm text-muted-foreground py-3">{vide ?? "Aucun devis."}</p>
-        ) : (
-          <Table>
+        ) : (<>
+          <div className="sm:hidden grid gap-3.5">
+            {liste.map((d) => (
+              <article key={d.id} className="border-t border-[#DCCDAA] pt-3.5">
+                <div className="flex justify-between items-baseline gap-3">
+                  <h3 className="font-serif text-[21px] leading-tight break-words min-w-0">{d.client_societe || d.client_nom}</h3>
+                  <span className="text-[10.5px] font-medium tracking-[0.14em] text-[#5A5146] whitespace-nowrap">{d.numero}</span>
+                </div>
+                <p className="text-[13.5px] text-[#5A5146] mt-0.5 break-words">{TYPES[d.type] ?? d.type}{d.titre ? ` · ${d.titre}` : ""}{d.date_evenement ? ` · ${dateFr(d.date_evenement)}` : ""}</p>
+                <div className="flex items-center justify-between gap-3 mt-2">
+                  <Select value={d.statut} onValueChange={(v) => changerStatut(d, v)}>
+                    <SelectTrigger className="h-11 w-auto border-0 p-0 shadow-none bg-transparent" aria-label="Changer le statut"><span className={d.statut === "accepte" || d.statut === "facture" ? "a-st vert" : d.statut === "refuse" ? "a-st terre" : "a-st vide"}>{STATUTS[d.statut]?.label ?? d.statut}</span></SelectTrigger>
+                    <SelectContent>{Object.entries(STATUTS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <span className="font-serif text-[22px] tabular-nums whitespace-nowrap">{money(d.total_ttc, d.devise)}</span>
+                </div>
+                <button onClick={() => ouvrirDevis(d.id)} className="s-btn s-btn-plein s-sombre a-btn-grand mt-2.5"><ExternalLink className="h-4 w-4" /> Ouvrir</button>
+              </article>
+            ))}
+          </div>
+          <Table className="hidden sm:table">
             <TableHeader><TableRow>
               <TableHead>N°</TableHead><TableHead>Type</TableHead><TableHead>Client</TableHead><TableHead>Événement</TableHead>
               <TableHead className="text-right">Total TTC</TableHead><TableHead>Statut</TableHead><TableHead />
@@ -96,7 +115,7 @@ export default function DevisParStatut({ titre, types, statuts, vide }: Props) {
               ))}
             </TableBody>
           </Table>
-        )}
+        </>)}
       </CardContent>
     </Card>
   );

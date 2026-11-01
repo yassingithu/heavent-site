@@ -262,6 +262,20 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     return () => window.removeEventListener("heavent:ouvrir-devis", f);
   });
 
+  // Demande choisie depuis une carte de l'onglet Demandes (téléphone) : même action que « Faire le devis » ici
+  useEffect(() => {
+    const chiffrer = (q: { kind: "entreprise" | "mariage"; id: string } | null) => {
+      if (!q) return;
+      (window as any).__heaventDemandeAChiffrer = null;
+      if (q.kind === "entreprise") { const d = demandesEntreprise.find((x) => x.id === q.id); if (d) depuisDemandeEntreprise(d); }
+      else { const d = demandesMariage.find((x) => x.id === q.id); if (d) depuisDemandeMariage(d); }
+    };
+    chiffrer((window as any).__heaventDemandeAChiffrer);
+    const f = (e: Event) => chiffrer((e as CustomEvent).detail);
+    window.addEventListener("heavent:chiffrer-demande", f);
+    return () => window.removeEventListener("heavent:chiffrer-demande", f);
+  });
+
   // ---------- édition ----------
   const set = <K extends keyof DevisForm>(k: K, v: DevisForm[K]) => setForm((f) => (f ? { ...f, [k]: v } : f));
   const setLigne = (i: number, patch: Partial<Ligne>) =>

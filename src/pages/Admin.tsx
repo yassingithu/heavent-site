@@ -50,6 +50,8 @@ import FichesPaieMensuelles from "@/components/admin/paie/FichesPaieMensuelles";
 import ContratsManuels from "@/components/admin/equipe/ContratsManuels";
 import ContratsEvenements from "@/components/admin/equipe/ContratsEvenements";
 import DevisParStatut from "@/components/admin/devis/DevisParStatut";
+import { CartesDemandes, CartesDevisSuivis } from "@/components/admin/CartesDemandes";
+import "@/styles/admin-seuil.css";
 
 
 interface Staff {
@@ -992,6 +994,13 @@ const Admin = () => {
   useAppAdmin();
   const [surpriseFermee, setSurpriseFermee] = useState(false);
 
+  const chiffrerDemande = (kind: "entreprise" | "mariage", id: string) => {
+    (window as any).__heaventDemandeAChiffrer = { kind, id };
+    setOngletAdmin("devis-rapide"); window.scrollTo({ top: 0 });
+    window.dispatchEvent(new CustomEvent("heavent:chiffrer-demande", { detail: { kind, id } }));
+  };
+  const versDevis = () => { setOngletAdmin("devis-rapide"); window.scrollTo({ top: 0 }); };
+
   const nouvellesEntreprise = devisEntreprise.filter((d: any) => d.statut === "en_attente").length;
   const nouvellesMariage = devisMariage.filter((d: any) => d.statut === "en_attente").length;
 
@@ -1029,24 +1038,27 @@ const Admin = () => {
     }));
 
   return (
-    <Tabs value={ongletAdmin} onValueChange={(v) => { setOngletAdmin(v); window.scrollTo({ top: 0 }); }} orientation="vertical" className="admin-theme min-h-screen bg-[#FAF7EE] lg:flex">
+    <Tabs value={ongletAdmin} onValueChange={(v) => { setOngletAdmin(v); window.scrollTo({ top: 0 }); }} orientation="vertical" className="admin-theme admin-seuil min-h-screen lg:flex">
       <Seo noindex />
       {/* Menu : colonne latérale réductible sur ordinateur / appli Mac ; sur téléphone, barre du bas (voir BarreBasseAdmin) */}
-      <aside className={`sticky top-0 z-40 bg-[#141414] text-white lg:h-screen lg:shrink-0 lg:flex lg:flex-col transition-[width] duration-200 ${reduit ? "lg:w-[4.5rem]" : "lg:w-60"}`} data-testid="menu-lateral" data-reduit={reduit ? "oui" : "non"}>
+      <aside className={`a-grain-nuit sticky top-0 z-40 text-[#F3ECDD] lg:h-screen lg:shrink-0 lg:flex lg:flex-col transition-[width] duration-200 ${reduit ? "lg:w-[4.5rem]" : "lg:w-60"}`} data-testid="menu-lateral" data-reduit={reduit ? "oui" : "non"}>
         {/* Application Mac : zone pour déplacer la fenêtre (et les boutons rouge / orange / vert) */}
         {dansApplication && <div className="h-8 shrink-0" style={{ WebkitAppRegion: "drag" } as React.CSSProperties} aria-hidden />}
         <div className={`flex items-center justify-between gap-3 px-4 py-2 lg:pt-5 lg:pb-4 ${reduit ? "lg:flex-col lg:px-2 lg:gap-2" : "lg:px-5"}`}>
-          <div className={`min-w-0 ${reduit ? "lg:hidden" : ""}`}>
+          <div className={`min-w-0 flex items-center gap-3 ${reduit ? "lg:hidden" : ""}`}>
+            {!estDemo() && <img src="/seuil/mono-or.png" alt="" className="h-7 lg:h-8 w-auto shrink-0" />}
+            <div className="min-w-0">
             {estDemo() && baseDemo()?._meta.logo && <img src={baseDemo()!._meta.logo} alt="" className="h-8 lg:h-10 w-auto max-w-[140px] object-contain mb-1.5 rounded bg-white/90 p-1" data-testid="logo-demo" />}
-            <p className="uppercase tracking-[0.28em] text-[9px] lg:text-[10px] text-[#E4D49A]">{estDemo() ? baseDemo()?._meta.agence ?? "Votre agence" : "Heavent"}</p>
-            <p className="font-serif text-lg lg:text-2xl leading-tight">Administration</p>
+            <p className="uppercase tracking-[0.3em] text-[9.5px] font-medium text-[#BDB29C]">{estDemo() ? baseDemo()?._meta.agence ?? "Votre agence" : "Heavent"}</p>
+            <p className="font-serif text-[19px] lg:text-[22px] leading-tight">Administration</p>
+            </div>
           </div>
           <button onClick={basculerMenu} className="hidden lg:flex h-9 w-9 shrink-0 rounded-full items-center justify-center text-white/60 hover:text-white hover:bg-white/10" aria-label={reduit ? "Déplier le menu" : "Réduire le menu"} title={reduit ? "Déplier le menu" : "Réduire le menu"} data-testid="basculer-menu">
             {reduit ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           </button>
-          <div className="flex items-center gap-1 lg:hidden">
-            <a href="/?depuis-admin=1" target="_blank" rel="noreferrer" className="h-9 w-9 rounded-full flex items-center justify-center text-white/70 hover:bg-white/10" aria-label="Voir le site"><Globe className="h-4 w-4" /></a>
-            <button onClick={handleSignOut} className="h-9 w-9 rounded-full flex items-center justify-center text-white/70 hover:bg-white/10" aria-label="Déconnexion"><LogOut className="h-4 w-4" /></button>
+          <div className="flex items-center gap-2 lg:hidden">
+            <a href="/?depuis-admin=1" target="_blank" rel="noreferrer" className="h-11 w-11 rounded-full border border-[#E4D49A]/25 flex items-center justify-center text-[#E4D49A] hover:bg-white/10" aria-label="Voir le site"><Globe className="h-4 w-4" /></a>
+            <button onClick={handleSignOut} className="h-11 w-11 rounded-full border border-[#E4D49A]/25 flex items-center justify-center text-[#E4D49A] hover:bg-white/10" aria-label="Déconnexion"><LogOut className="h-4 w-4" /></button>
           </div>
         </div>
         {/* Les rubriques : visibles seulement sur ordinateur (le téléphone utilise la barre du bas) */}
@@ -1055,12 +1067,12 @@ const Admin = () => {
             <div key={groupe.titre} className="block mb-3">
               {reduit
                 ? <div className="mx-3 my-2 border-t border-white/10" aria-hidden />
-                : <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-[0.2em] text-white/35">{groupe.titre}</div>}
+                : <div className="px-3 pt-2 pb-1 text-[10px] font-medium uppercase tracking-[0.26em] text-[#E4D49A]/60">{groupe.titre}</div>}
               {groupe.items.map(({ valeur, libelle, Icone, badge }) => (
                 <TabsTrigger key={valeur} value={valeur} data-testid={valeur === "agenda" ? "onglet-agenda" : undefined} title={libelle}
-                  className={`relative w-full gap-2.5 rounded-xl py-2 text-sm font-medium text-white/70 hover:text-white hover:bg-white/[0.06] data-[state=active]:bg-white data-[state=active]:text-[#141414] data-[state=active]:shadow-none transition-colors ${reduit ? "justify-center px-0" : "justify-start px-3"}`}>
+                  className={`relative w-full gap-2.5 rounded-none py-2 text-[13.5px] font-normal tracking-[0.02em] text-[#BDB29C] hover:text-[#FAF6EC] hover:bg-white/[0.05] data-[state=active]:bg-white/[0.06] data-[state=active]:text-[#E4D49A] data-[state=active]:shadow-none before:absolute before:left-0 before:top-2 before:bottom-2 before:w-px before:bg-[#E4D49A] before:origin-top before:scale-y-0 before:transition-transform data-[state=active]:before:scale-y-100 transition-colors ${reduit ? "justify-center px-0" : "justify-start px-3"}`}>
                   <Icone className="h-4 w-4 shrink-0" /><span className={reduit ? "sr-only" : ""}>{libelle}</span>
-                  {badge > 0 && <span className={reduit ? "absolute top-0.5 right-2 min-w-4 h-4 px-1 rounded-full bg-[#C8B560] text-[#141414] text-[10px] font-semibold inline-flex items-center justify-center" : "ml-auto min-w-5 h-5 px-1.5 rounded-full bg-[#C8B560] text-[#141414] text-[11px] font-semibold inline-flex items-center justify-center"} aria-hidden title={`${badge} nouvelle(s) demande(s)`}>{badge}</span>}
+                  {badge > 0 && <span className={reduit ? "absolute top-0.5 right-2 min-w-4 h-4 px-1 text-[#E4D49A] text-[10.5px] font-medium tabular-nums inline-flex items-center justify-center" : "ml-auto min-w-5 h-5 px-1.5 border border-[#E4D49A]/40 text-[#E4D49A] text-[11px] font-medium tabular-nums inline-flex items-center justify-center"} aria-hidden title={`${badge} nouvelle(s) demande(s)`}>{badge}</span>}
                 </TabsTrigger>
               ))}
             </div>
@@ -1085,9 +1097,9 @@ const Admin = () => {
       <div className="mx-auto max-w-[1400px] px-3 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-10 lg:pt-6 lg:pb-8">
         {/* En-tête compact : le Bilan a déjà son propre accueil, il n'a donc pas de titre en plus */}
         {(ongletAdmin !== "tableau" || !accueil?.prenom) && (
-          <header className="mb-4 lg:mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
-            <h1 className="font-serif text-xl sm:text-2xl lg:text-3xl text-[#141414]" data-testid="titre-section">{(estDemo() ? titreOnglet(ongletAdmin, TITRES_ADMIN[ongletAdmin]) : TITRES_ADMIN[ongletAdmin])?.[0] ?? "Administration"}</h1>
-            <p className="text-xs sm:text-sm text-[#6B6155] hidden sm:block">{(estDemo() ? titreOnglet(ongletAdmin, TITRES_ADMIN[ongletAdmin]) : TITRES_ADMIN[ongletAdmin])?.[1]}</p>
+          <header className="mb-4 lg:mb-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+            <h1 className="font-serif text-[30px] leading-none sm:text-[34px] lg:text-[40px] tracking-[-0.02em] text-[#141414]" data-testid="titre-section">{(estDemo() ? titreOnglet(ongletAdmin, TITRES_ADMIN[ongletAdmin]) : TITRES_ADMIN[ongletAdmin])?.[0] ?? "Administration"}</h1>
+            <p className="text-[13px] text-[#5A5146] hidden sm:block">{(estDemo() ? titreOnglet(ongletAdmin, TITRES_ADMIN[ongletAdmin]) : TITRES_ADMIN[ongletAdmin])?.[1]}</p>
           </header>
         )}
 
@@ -1757,7 +1769,9 @@ const Admin = () => {
               <CardTitle>Demandes de Devis Entreprise</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
+              <CartesDemandes type="entreprise" demandes={devisEntreprise} onChiffrer={(d) => chiffrerDemande("entreprise", d.id)} onOuvrirDevis={versDevis}
+                onStatut={(id, st) => updateDevisStatus(id, "entreprise", st)} />
+              <div className="hidden sm:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1801,7 +1815,9 @@ const Admin = () => {
               <CardTitle>Demandes de Devis Événement</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
+              <CartesDemandes type="mariage" demandes={devisMariage as any} onChiffrer={(d) => chiffrerDemande("mariage", d.id)} onOuvrirDevis={versDevis}
+                onStatut={(id, st) => updateDevisStatus(id, "mariage", st)} />
+              <div className="hidden sm:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1828,11 +1844,10 @@ const Admin = () => {
                       <TableCell>{devis.type_evenement || "Non spécifié"}</TableCell>
                       <TableCell>{devis.lieu || "Non spécifié"}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          devis.statut === 'accepte' ? 'bg-green-100 text-green-800' :
-                          devis.statut === 'refuse' ? 'bg-red-100 text-red-800' :
-                          devis.statut === 'envoye' ? 'bg-blue-100 text-blue-800' :
-                          'bg-yellow-100 text-yellow-800'
+                        <span className={`whitespace-nowrap ${
+                          devis.statut === 'accepte' ? 'a-st vert' :
+                          devis.statut === 'refuse' ? 'a-st terre' :
+                          'a-st vide'
                         }`}>
                           {devis.statut === 'en_attente' ? 'En attente' :
                            devis.statut === 'envoye' ? 'Envoyé' : 
@@ -1879,7 +1894,9 @@ const Admin = () => {
                 <CardTitle>Devis Entreprise Envoyés</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
+                <CartesDevisSuivis type="entreprise" demandes={devisEntreprise.filter((d) => d.statut === 'envoye' || d.statut === 'accepte' || d.statut === 'refuse')}
+                  onFacture={(id) => generateInvoicePDF(id, 'entreprise')} onStatut={(id, st) => updateDevisStatus(id, 'entreprise', st)} />
+                <div className="hidden sm:block overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1901,10 +1918,10 @@ const Admin = () => {
                           {devis.date_envoi_devis ? formatDate(devis.date_envoi_devis) : '-'}
                         </TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            devis.statut === 'accepte' ? 'bg-green-100 text-green-800' :
-                            devis.statut === 'refuse' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
+                          <span className={`whitespace-nowrap ${
+                            devis.statut === 'accepte' ? 'a-st vert' :
+                            devis.statut === 'refuse' ? 'a-st terre' :
+                            'a-st vide'
                           }`}>
                             {devis.statut === 'envoye' ? 'Envoyé' : 
                              devis.statut === 'accepte' ? 'Accepté' : 'Refusé'}
@@ -1916,7 +1933,7 @@ const Admin = () => {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                className="rounded-none border-[#141414] bg-transparent text-[#141414] hover:bg-[#EBE2CF]"
                                 onClick={() => generateInvoicePDF(devis.id, 'entreprise')}
                               >
                                 <FileText className="h-3 w-3 mr-1" />
@@ -1953,7 +1970,9 @@ const Admin = () => {
                 <CardTitle>Devis Événement Envoyés</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
+                <CartesDevisSuivis type="mariage" demandes={devisMariage.filter((d) => d.statut === 'envoye' || d.statut === 'accepte' || d.statut === 'refuse') as any}
+                  onFacture={(id) => generateInvoicePDF(id, 'mariage')} onStatut={(id, st) => updateDevisStatus(id, 'mariage', st)} />
+                <div className="hidden sm:block overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1979,10 +1998,10 @@ const Admin = () => {
                           {devis.date_envoi_devis ? formatDate(devis.date_envoi_devis) : '-'}
                         </TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            devis.statut === 'accepte' ? 'bg-green-100 text-green-800' :
-                            devis.statut === 'refuse' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
+                          <span className={`whitespace-nowrap ${
+                            devis.statut === 'accepte' ? 'a-st vert' :
+                            devis.statut === 'refuse' ? 'a-st terre' :
+                            'a-st vide'
                           }`}>
                             {devis.statut === 'envoye' ? 'Envoyé' : 
                              devis.statut === 'accepte' ? 'Accepté' : 'Refusé'}
@@ -1994,7 +2013,7 @@ const Admin = () => {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                className="rounded-none border-[#141414] bg-transparent text-[#141414] hover:bg-[#EBE2CF]"
                                 onClick={() => generateInvoicePDF(devis.id, 'mariage')}
                               >
                                 <FileText className="h-3 w-3 mr-1" />

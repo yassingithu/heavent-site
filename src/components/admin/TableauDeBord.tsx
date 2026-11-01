@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ChevronRight } from "lucide-react";
 import { aujourdhuiMaroc } from "@/lib/dateMaroc";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +16,8 @@ const mois = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStar
 const nomMois = (cle: string) => new Date(cle + "-15").toLocaleDateString("fr-FR", { month: "short" }).replace(".", "");
 const mad = (n: number) => `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Math.round(n))} MAD`;
 const jourFr = (d: string) => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long" });
+const partieDate = (d: string, o: Intl.DateTimeFormatOptions) => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", o);
+const Fleche = () => <svg className="a-fl shrink-0" width="18" height="12" viewBox="0 0 18 12" aria-hidden><path d="M0 6h16M11 1l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.3" /></svg>;
 
 /** Barres verticales d'une seule série, avec infobulle au survol (et au toucher). */
 function Barres({ titre, donnees, format, testId }: { titre: string; donnees: { cle: string; valeur: number }[]; format: (n: number) => string; testId: string }) {
@@ -48,17 +49,18 @@ function Barres({ titre, donnees, format, testId }: { titre: string; donnees: { 
   );
 }
 
-function Tuile({ titre, valeur, detail, testId }: { titre: string; valeur: string; detail?: string; testId?: string }) {
+function Tuile({ titre, valeur, detail, testId, grand }: { titre: string; valeur: string; detail?: string; testId?: string; grand?: boolean }) {
   return (
-    <Card data-testid={testId}>
-      <CardContent className="p-3 sm:p-4">
-        <div className="text-[10px] sm:text-[11px] uppercase tracking-[0.12em] font-semibold text-[#8C6D22] leading-tight">{titre}</div>
-        <div className="font-serif text-2xl mt-0.5 text-[#141414] truncate">{valeur}</div>
-        {detail && <div className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 leading-tight">{detail}</div>}
-      </CardContent>
-    </Card>
+    <div data-testid={testId} className="min-w-0">
+      <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#7A5F1F] leading-snug">{titre}</div>
+      <div className={`font-serif tracking-[-0.025em] tabular-nums text-[#141414] mt-1.5 leading-[.95] ${grand ? "text-[52px] sm:text-[60px]" : "text-[36px] sm:text-[40px]"}`}>{valeur}</div>
+      {detail && <div className="text-[12.5px] text-[#5A5146] mt-1.5 leading-snug">{detail}</div>}
+    </div>
   );
 }
+
+/** « 60 000 MAD » → chiffre en grand, unité en petites capitales */
+const madGros = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Math.round(n));
 
 /** Tableau de bord de l'activité : demandes, devis, signatures, chiffre d'affaires, événements à venir, choix du jeu. */
 export default function TableauDeBord({ demandesMariage, demandesEntreprise, onAller, haut, bas }: {
@@ -113,50 +115,82 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onA
   const quand = (jour: string) => { const n = dansJours(jour); return n === 0 ? "Aujourd'hui" : n === 1 ? "Demain" : `Dans ${n} jours`; };
   const nbEntreprise = demandesEntreprise.filter((d) => d.statut === "en_attente").length;
   const nbEvenement = demandesMariage.filter((d) => d.statut === "en_attente").length;
-  const aTraiter: { cle: string; nombre: number; libelle: string; onglet: string }[] = [
+  const aTraiter: { cle: string; nombre: number; libelle: string; onglet: string; urgent?: boolean }[] = [
     { cle: "mariage", nombre: nbEvenement, libelle: nbEvenement > 1 ? "demandes événement à traiter" : "demande événement à traiter", onglet: "mariage" },
     { cle: "entreprise", nombre: nbEntreprise, libelle: nbEntreprise > 1 ? "demandes entreprise à traiter" : "demande entreprise à traiter", onglet: "entreprise" },
-    { cle: "sansreponse", nombre: s.sansReponse.length, libelle: s.sansReponse.length > 1 ? "devis sans réponse depuis 5 jours ou plus" : "devis sans réponse depuis 5 jours ou plus", onglet: "devis-rapide" },
+    { cle: "sansreponse", nombre: s.sansReponse.length, libelle: s.sansReponse.length > 1 ? "devis sans réponse depuis 5 jours ou plus" : "devis sans réponse depuis 5 jours ou plus", onglet: "devis-rapide", urgent: true },
     { cle: "bulletins", nombre: bulletinsAValider ?? 0, libelle: (bulletinsAValider ?? 0) > 1 ? "bulletins de paie à valider" : "bulletin de paie à valider", onglet: "fiches" },
   ].filter((x) => x.nombre > 0);
   return (
     <div className="space-y-4" data-testid="tableau-de-bord">
       {haut}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card data-testid="a-traiter">
-          <CardHeader className="pb-2"><CardTitle className="font-serif text-lg font-normal">À traiter maintenant</CardTitle></CardHeader>
-          <CardContent className="space-y-1.5 text-sm">
-            {aTraiter.length === 0 && <p className="text-muted-foreground" data-testid="rien-a-traiter">Rien d'urgent : tout est à jour.</p>}
-            {aTraiter.map((x) => (
-              <button key={x.cle} onClick={() => onAller?.(x.onglet)} data-testid={`a-traiter-${x.cle}`}
-                className="w-full flex items-center gap-3 rounded-xl border border-[#EADFC8] bg-[#FDFBF5] px-3 min-h-12 text-left hover:bg-[#F6EFD9] transition-colors">
-                <span className="font-serif text-xl w-8 text-center text-[#8C6D22] tabular-nums">{x.nombre}</span>
-                <span className="flex-1 leading-tight">{x.libelle}</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-              </button>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8 items-start">
+        <section className="a-carte px-[18px] pt-[18px] pb-1.5" data-testid="a-traiter" aria-labelledby="t-a-traiter">
+          <p className="a-surtitre">Maintenant</p>
+          <h2 id="t-a-traiter" className="font-serif text-[30px] leading-[1.05] tracking-[-0.015em] mt-2.5">À traiter maintenant</h2>
+          <ul className="mt-3">
+            {aTraiter.length === 0 && <li className="border-t border-[#DCCDAA] py-4 text-[14px] text-[#1F5A4C]" data-testid="rien-a-traiter"><span className="a-st vert">Rien d'urgent : tout est à jour.</span></li>}
+            {aTraiter.map((x, i) => (
+              <li key={x.cle} className="a-entre border-t border-[#DCCDAA]" style={{ ["--r" as string]: `${0.15 + i * 0.07}s` }}>
+                <button onClick={() => onAller?.(x.onglet)} data-testid={`a-traiter-${x.cle}`}
+                  className="a-ligne w-full grid grid-cols-[52px_1fr_18px] items-center gap-3 min-h-[72px] py-3 text-left">
+                  <span className={`font-serif text-[44px] leading-[.9] tracking-[-0.03em] text-center tabular-nums ${x.urgent ? "text-[#9C4A2C]" : "text-[#141414]"}`}>{x.nombre}</span>
+                  <span className="text-[15.5px] leading-snug">{x.libelle}</span>
+                  <Fleche />
+                </button>
+              </li>
             ))}
-          </CardContent>
-        </Card>
-        <Card data-testid="prochains-evenements">
-          <CardHeader className="pb-2"><CardTitle className="font-serif text-lg font-normal">Prochains événements</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {s.aVenir.length === 0 && <p className="text-muted-foreground">Aucun événement confirmé à venir.</p>}
-            {s.aVenir.slice(0, 5).map((d) => (
-              <div key={d.id} className="flex justify-between gap-3 border-b last:border-0 pb-2 last:pb-0">
-                <div className="min-w-0"><div className="font-medium truncate">{d.titre || d.client_nom}</div><div className="text-xs text-muted-foreground truncate">{d.client_nom} · {d.numero}</div></div>
-                <div className="text-right text-xs whitespace-nowrap"><div className="font-medium text-[#8C6D22]">{quand(d.date_evenement!)}</div><div className="text-muted-foreground capitalize">{jourFr(d.date_evenement!)}</div></div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+          </ul>
+        </section>
+        <section data-testid="prochains-evenements" aria-labelledby="t-evts" className="lg:pt-2">
+          <h2 id="t-evts" className="a-surtitre">Prochains événements</h2>
+          <ul className="mt-2">
+            {s.aVenir.length === 0 && <li className="py-4 text-[14px] text-[#5A5146] border-b border-[#DCCDAA]">Aucun événement confirmé à venir.</li>}
+            {s.aVenir.slice(0, 5).map((d, i) => {
+              const j = d.date_evenement!; const n = dansJours(j);
+              return (
+                <li key={d.id} className="a-entre grid grid-cols-[62px_1fr] gap-4 py-[18px] border-b border-[#DCCDAA]" style={{ ["--r" as string]: `${0.3 + i * 0.07}s` }}>
+                  <div className="relative text-center pt-0.5" title={jourFr(j)}>
+                    <small className="block text-[10px] font-medium uppercase tracking-[0.18em] text-[#5A5146]">{partieDate(j, { weekday: "short" })}</small>
+                    <b className="block font-serif font-normal text-[46px] leading-[.95] tracking-[-0.03em] mt-1">{partieDate(j, { day: "numeric" })}</b>
+                    <i className="block not-italic text-[10px] font-medium uppercase tracking-[0.18em] text-[#7A5F1F] mt-1.5">{partieDate(j, { month: "short" })}</i>
+                    {n === 0 && <span className="absolute left-3.5 right-3.5 -bottom-2 h-px bg-[#A8933F]" aria-hidden />}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10.5px] font-medium uppercase tracking-[0.2em] text-[#7A5F1F]">{quand(j)}</div>
+                    <h3 className="font-serif text-[20px] leading-tight mt-1 break-words">{d.titre || d.client_nom}</h3>
+                    <p className="text-[13.5px] text-[#5A5146] mt-0.5 break-words">{d.client_nom}{d.numero ? ` · ${d.numero}` : ""}</p>
+                    <span className="a-st vert mt-2">Devis signé</span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {onAller && <div className="flex justify-end mt-1"><button onClick={() => onAller("agenda")} className="a-ligne inline-flex items-center gap-2 min-h-11 text-[13.5px] font-medium text-[#7A5F1F] underline decoration-[#7A5F1F]/45 underline-offset-[5px]">Tout l'agenda <Fleche /></button></div>}
+        </section>
       </div>
       <MissionsDuJour />
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-        <Tuile testId="tuile-demandes" titre="Demandes ce mois-ci" valeur={String(s.demandesMois)} detail={`${s.demandesPrec} le mois dernier`} />
-        <Tuile titre="Devis en attente" valeur={String(s.enAttente.length)} detail={s.enAttente.length ? `${mad(s.montantAttente)} TTC en jeu` : "Aucun"} />
-        <Tuile testId="tuile-ca" titre="Signé ce mois-ci" valeur={mad(s.caMois)} detail={`${s.acceptesMois} devis accepté${s.acceptesMois > 1 ? "s" : ""}`} />
-        <Tuile titre="Taux de signature (6 mois)" valeur={s.taux === null ? "—" : `${s.taux} %`} detail={`${s.acceptes6} accepté${s.acceptes6 > 1 ? "s" : ""} sur ${s.envoyes6} envoyé${s.envoyes6 > 1 ? "s" : ""}`} />
-      </div>
+      <section className="a-carte px-[18px] pt-5 pb-[18px] sm:px-6" aria-labelledby="t-mois" data-testid="chiffres-du-mois">
+        <h2 id="t-mois" className="a-surtitre first-letter:uppercase">{new Date().toLocaleDateString("fr-FR", { month: "long" })}, à ce jour</h2>
+        <div className="grid lg:grid-cols-[1.2fr_2fr] gap-5 lg:gap-10 mt-4 items-end">
+          <div data-testid="tuile-ca">
+            <p className="text-[13px] text-[#5A5146]">Signé ce mois-ci</p>
+            <div className="flex items-baseline gap-2.5 mt-1"><b className="font-serif font-normal text-[52px] sm:text-[60px] leading-[.95] tracking-[-0.035em] tabular-nums">{madGros(s.caMois)}</b><span className="text-[12px] font-medium tracking-[0.2em] text-[#7A5F1F]">MAD</span></div>
+            <p className="text-[13.5px] text-[#5A5146] mt-1.5">{s.acceptesMois} devis accepté{s.acceptesMois > 1 ? "s" : ""}</p>
+          </div>
+          <div className="grid grid-cols-[1fr_1px_1fr] lg:grid-cols-[1fr_1px_1fr_1px_1fr] gap-4 pt-[18px] border-t border-[#DCCDAA] lg:border-t-0 lg:pt-0">
+            <Tuile testId="tuile-demandes" titre="Demandes ce mois-ci" valeur={String(s.demandesMois)} detail={`${s.demandesPrec} le mois dernier`} />
+            <i className="bg-[#DCCDAA]" aria-hidden />
+            <Tuile titre="Devis en attente" valeur={String(s.enAttente.length)} detail={s.enAttente.length ? `${mad(s.montantAttente)} TTC en jeu` : "Aucun"} />
+            <i className="hidden lg:block bg-[#DCCDAA]" aria-hidden />
+            <div className="col-span-3 lg:col-span-1 pt-4 border-t border-[#DCCDAA] lg:border-t-0 lg:pt-0">
+              <div className="flex justify-between items-baseline gap-3 text-[13px] text-[#5A5146]"><span>Taux de signature (6 mois)</span><b className="font-serif font-normal text-[22px] text-[#141414]">{s.taux === null ? "—" : `${s.taux} %`}</b></div>
+              <div className="relative h-[3px] mt-2.5 bg-[#A8933F]/20" aria-hidden><i className="absolute inset-y-0 left-0 bg-[#A8933F] transition-[width] duration-1000" style={{ width: `${s.taux ?? 0}%` }} /></div>
+              <p className="text-[12.5px] text-[#5A5146] mt-1.5">{s.acceptes6} accepté{s.acceptes6 > 1 ? "s" : ""} sur {s.envoyes6} envoyé{s.envoyes6 > 1 ? "s" : ""}</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card><CardContent className="p-4"><Barres testId="graph-demandes" titre="Demandes reçues par mois" donnees={s.courbeDemandes} format={(n) => `${n} demande${n > 1 ? "s" : ""}`} /></CardContent></Card>
