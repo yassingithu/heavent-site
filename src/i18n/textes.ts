@@ -9,8 +9,11 @@ import { TEXTES } from "./textesTraduits";
 export type Langue = "fr" | "en" | "ar";
 export const langueDe = (l?: string): Langue => (l?.startsWith("ar") ? "ar" : l?.startsWith("en") ? "en" : "fr");
 
+/** Typographie française : espace insécable avant « : ; ! ? » et à l'intérieur des guillemets (jamais de ponctuation seule en début de ligne). */
+const insecables = (t: string) => t.replace(/ ([:;!?»])/g, " $1").replace(/« /g, "« ");
+
 export function traduire(fr: string, langue: Langue, v?: Record<string, string | number>) {
-  const t = langue === "fr" ? fr : TEXTES[fr]?.[langue] ?? fr;
+  const t = langue === "fr" ? insecables(fr) : TEXTES[fr]?.[langue] ?? fr;
   return v ? t.replace(/\{(\w+)\}/g, (_, k) => String(v[k] ?? "")) : t;
 }
 

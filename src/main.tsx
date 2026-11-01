@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import './styles/seuil.css'
 import './i18n/index.ts'
 
 const racine = document.getElementById("root")!;

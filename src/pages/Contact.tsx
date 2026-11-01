@@ -8,22 +8,14 @@ import { useTranslation } from "react-i18next";
 import ChoisirRendezVous from "@/components/rendez-vous/ChoisirRendezVous";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "react-router-dom";
+import { Bouton, Etoile, PageTete, Surtitre } from "@/components/seuil/Seuil";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useTexte } from "@/i18n/textes";
-import { 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Instagram, 
-  MessageSquare,
-  Clock,
-  Send,
-  CheckCircle
-} from "lucide-react";
+import { Phone, Mail, MapPin, Instagram } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
@@ -135,157 +127,81 @@ const Contact = () => {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-accent/30 flex items-center justify-center py-12">
-        <Card className="max-w-md mx-4 text-center">
-          <CardContent className="p-8">
-            <CheckCircle className="text-green-500 mx-auto mb-4" size={64} />
-            <h2 className="text-2xl font-bold mb-4">{x("Message envoyé !")}</h2>
-            <p className="text-muted-foreground mb-6">
-              {x("Votre message a été envoyé avec succès. Notre équipe va l'examiner et vous répondra sous 24h.")}
-            </p>
-            <Button onClick={() => setIsSubmitted(false)}>
-              {x("Envoyer un nouveau message")}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <section className="s-platre">
+        <div className="s-section s-wrap">
+          <div className="s-fairepart s-merci">
+            <Etoile /><Etoile className="bas" />
+            <h1 className="s-h3">{x("Message envoyé !")}</h1>
+            <p className="s-texte" style={{ marginTop: 14 }}>{x("Votre message a été envoyé avec succès. Notre équipe va l'examiner et vous répondra sous 24h.")}</p>
+            <div className="s-actions" style={{ justifyContent: "center", marginTop: 24 }}>
+              <button type="button" className="s-btn s-btn-plein s-sombre" onClick={() => setIsSubmitted(false)}>{x("Envoyer un nouveau message")}</button>
+            </div>
+          </div>
+        </div>
+      </section>
     );
   }
 
   return (
     <div>
       <Seo page="contact" />
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="py-24 bg-gradient-to-b from-background to-accent/30">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-3xl mx-auto animate-fade-in">
-            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6">
-              {t('contact.title')}
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8">
-              {t('contact.subtitle')}
-            </p>
-          </div>
+      <PageTete surtitre={x("Contact")} titre={t('contact.title')} chapo={t('contact.subtitle')}>
+        <div className="s-actions s-entree-heros" style={{ animationDelay: ".2s" }}>
+          <Bouton href="#rendez-vous" variante="plein" fleche>{{ fr: "Prendre rendez-vous", en: "Book an appointment", ar: "احجز موعداً" }[langueRdv]}</Bouton>
+          <Bouton href="https://wa.me/212610939655" variante="filet" externe>{x("Chattez avec nous")} · WhatsApp</Bouton>
         </div>
-      </section>
+      </PageTete>
 
       {/* Prise de rendez-vous en ligne */}
-      <section className="pt-16" id="rendez-vous">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto rounded-3xl border border-[#EADFC8] bg-white p-5 sm:p-8 shadow-[0_20px_60px_-40px_rgba(140,109,34,0.5)]" dir={langueRdv === "ar" ? "rtl" : "ltr"}>
-            <h2 className="text-3xl font-serif font-bold mb-2">{{ fr: "Prendre rendez-vous", en: "Book an appointment", ar: "احجز موعداً" }[langueRdv]}</h2>
-            <p className="text-muted-foreground mb-6">{{ fr: "Choisissez directement un créneau pour parler de votre événement avec nous.", en: "Pick a time slot directly to talk about your event with us.", ar: "اختر موعداً مباشرة للتحدث معنا عن مناسبتك." }[langueRdv]}</p>
-            <ChoisirRendezVous langue={langueRdv} source="contact" />
+      <section className="s-papier" id="rendez-vous" style={{ scrollMarginTop: 64 }}>
+        <div className="s-section s-wrap s-colonnes">
+          <div className="s-col-q" data-revele="" dir={langueRdv === "ar" ? "rtl" : "ltr"}>
+            <Surtitre>{x("Rendez-vous")}</Surtitre>
+            <h2 className="s-h2" style={{ marginTop: 20, fontSize: "clamp(32px, 8vw, 56px)" }}>{{ fr: "Prendre rendez-vous", en: "Book an appointment", ar: "احجز موعداً" }[langueRdv]}</h2>
+            <p className="s-texte" style={{ marginTop: 16 }}>{{ fr: "Choisissez directement un créneau pour parler de votre événement avec nous.", en: "Pick a time slot directly to talk about your event with us.", ar: "اختر موعداً مباشرة للتحدث معنا عن مناسبتك." }[langueRdv]}</p>
+          </div>
+          <div className="s-col-r s-form" dir={langueRdv === "ar" ? "rtl" : "ltr"}>
+            <div style={{ padding: "22px 16px" }}>
+              <ChoisirRendezVous langue={langueRdv} source="contact" />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Contact Info & Form */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {/* Contact Information */}
-            <div className="lg:col-span-1">
-              <h2 className="text-3xl font-serif font-bold mb-8">
-                {x("Nos")} <span className="text-primary">{x("Coordonnées")}</span>
-              </h2>
-              
-              <div className="space-y-6">
-                {contactInfo.map((info, index) => (
-                  <Card key={index} className="hover-lift cursor-pointer">
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-4">
-                        <div className="flex-shrink-0">
-                          <div className="p-3 bg-primary/10 rounded-lg">
-                            <info.icon className="text-primary" size={24} />
-                          </div>
-                        </div>
-                        <div>
-                          <h3 className="font-semibold mb-1">{info.title}</h3>
-                          <a 
-                            href={info.href}
-                            className="text-foreground hover:text-primary transition-colors font-medium"
-                          >
-                            {info.value}
-                          </a>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {info.description}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+      {/* Coordonnées et message */}
+      <section className="s-platre">
+        <div className="s-section s-wrap s-colonnes">
+          <div className="s-col-q">
+            <Surtitre>{x("Coordonnées")}</Surtitre>
+            <ul className="s-liste" style={{ marginTop: 24 }}>
+              {contactInfo.map((info) => (
+                <li key={info.title} data-revele="" style={{ gridTemplateColumns: "1fr" }}>
+                  <span className="s-surtitre" style={{ letterSpacing: ".24em" }}>{info.title}</span>
+                  {info.href === "#" ? <b>{info.value}</b> : <a href={info.href} {...(info.href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}><b dir={info.href.startsWith("tel:") ? "ltr" : undefined}>{info.value}</b></a>}
+                  <p style={{ gridColumn: 1 }}>{info.description}</p>
+                </li>
+              ))}
+              <li data-revele="" style={{ gridTemplateColumns: "1fr" }}>
+                <span className="s-surtitre" style={{ letterSpacing: ".24em" }}>WhatsApp</span>
+                <a href="https://wa.me/212610939655" target="_blank" rel="noopener noreferrer"><b>{x("Chattez avec nous")}</b></a>
+                <p style={{ gridColumn: 1 }}>{x("Réponse rapide garantie")}</p>
+              </li>
+              <li data-revele="" style={{ gridTemplateColumns: "1fr" }}>
+                <span className="s-surtitre" style={{ letterSpacing: ".24em" }}>{x("Horaires d'ouverture")}</span>
+                <p style={{ gridColumn: 1, display: "grid", gridTemplateColumns: "1fr auto", gap: "4px 16px", maxWidth: 320 }}>
+                  <span>{x("Lun - Ven")}</span><span>9h00 - 18h00</span>
+                  <span>{x("Samedi")}</span><span>10h00 - 16h00</span>
+                  <span>{x("Dimanche")}</span><span>{x("Fermé")}</span>
+                </p>
+              </li>
+            </ul>
+          </div>
 
-              {/* WhatsApp Button */}
-              <Card className="mt-6 bg-green-50 border-green-200 hover-lift">
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-green-100 rounded-lg">
-                      <MessageSquare className="text-green-600" size={24} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold mb-1">WhatsApp</h3>
-                      <a 
-                        href="https://wa.me/212610939655"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-green-600 hover:text-green-700 transition-colors font-medium"
-                      >
-                        {x("Chattez avec nous")}
-                      </a>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {x("Réponse rapide garantie")}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Business Hours */}
-              <Card className="mt-6">
-                <CardContent className="p-6">
-                  <div className="flex items-start space-x-4">
-                    <div className="p-3 bg-primary/10 rounded-lg">
-                      <Clock className="text-primary" size={24} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold mb-3">{x("Horaires d'ouverture")}</h3>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span>{x("Lun - Ven")}</span>
-                          <span>9h00 - 18h00</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>{x("Samedi")}</span>
-                          <span>10h00 - 16h00</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>{x("Dimanche")}</span>
-                          <span>{x("Fermé")}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Contact Form */}
-            <div className="lg:col-span-2">
-              <Card className="animate-fade-in">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Send className="mr-2" size={24} />
-                    {x("Envoyez-nous un message")}
-                  </CardTitle>
-                  <CardDescription>
-                    {x("Remplissez ce formulaire et nous vous répondrons dans les plus brefs délais")}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
+          <div className="s-col-r">
+            <div className="s-form">
+              <div style={{ padding: "26px 18px 22px" }}>
+                <h2 className="s-h3">{x("Envoyez-nous un message")}</h2>
+                <p className="s-texte" style={{ marginTop: 8, marginBottom: 22, fontSize: 15 }}>{x("Remplissez ce formulaire et nous vous répondrons dans les plus brefs délais")}</p>
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -343,67 +259,33 @@ const Contact = () => {
                     <Button 
                       type="submit" 
                       disabled={isSubmitting}
-                      className="w-full gold-shadow"
+                      className="w-full"
                       size="lg"
                     >
                       {isSubmitting ? x("Envoi en cours...") : x("Envoyer le message")}
-                      <Send className="ml-2" size={20} />
+                      <span aria-hidden="true" className="ml-2">→</span>
                     </Button>
                   </form>
-                </CardContent>
-              </Card>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Quick Actions */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-serif font-bold mb-8">
-            {x("Vous préférez un devis")} <span className="text-primary">{x("immédiat")}</span>{x(" ?")}
-          </h2>
-          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            {x("Accédez directement à nos formulaires de devis spécialisés pour une réponse plus rapide")}
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            <Card className="hover-lift cursor-pointer">
-              <CardContent className="p-6">
-                <div className="text-center">
-                  <div className="p-4 bg-primary/10 rounded-full inline-flex mb-4">
-                    <Phone className="text-primary" size={32} />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">{x("Événement d'Entreprise")}</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {x("Devis personnalisé pour votre événement corporate")}
-                  </p>
-                  <Button asChild className="w-full">
-                    <a href="/devis-entreprise">{x("Demander un devis")}</a>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="hover-lift cursor-pointer">
-              <CardContent className="p-6">
-                <div className="text-center">
-                  <div className="p-4 bg-pink-100 rounded-full inline-flex mb-4">
-                    <MessageSquare className="text-pink-600" size={32} />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">{x("Mariage")}</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {x("Créons ensemble le mariage de vos rêves")}
-                  </p>
-                  <Button asChild variant="outline" className="w-full">
-                    <a href="/devis-mariage">{x("Demander un devis")}</a>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Devis direct */}
+      <section className="s-papier">
+        <div className="s-section s-sommaire s-wrap">
+          <div className="gauche" data-revele="">
+            <Surtitre>{x("Devis")}</Surtitre>
+            <h2>{x("Vous préférez un devis")} {x("immédiat")}{x(" ?")}</h2>
+            <p className="s-texte" style={{ marginTop: 16, maxWidth: "36ch" }}>{x("Accédez directement à nos formulaires de devis spécialisés pour une réponse plus rapide")}</p>
+          </div>
+          <div className="s-entrees">
+            <Link to="/devis-entreprise" className="s-entree" data-revele=""><span className="num">I</span><h3>{x("Événement d'Entreprise")}</h3><span className="fl" aria-hidden="true">→</span><p>{x("Devis personnalisé pour votre événement corporate")}</p></Link>
+            <Link to="/devis-mariage" className="s-entree" data-revele="" style={{ "--retard": ".08s" } as React.CSSProperties}><span className="num">II</span><h3>{x("Mariage")}</h3><span className="fl" aria-hidden="true">→</span><p>{x("Créons ensemble le mariage de vos rêves")}</p></Link>
           </div>
         </div>
       </section>
-    </div>
     </div>
   );
 };

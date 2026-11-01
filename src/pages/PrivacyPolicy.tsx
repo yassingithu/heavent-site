@@ -1,29 +1,18 @@
 import Seo from "@/components/Seo";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageTete } from "@/components/seuil/Seuil";
 import { useTexte } from "@/i18n/textes";
 
 const PrivacyPolicy = () => {
   const x = useTexte();
   return (
-    <div className="min-h-screen py-12">
-      <div className="container mx-auto px-4">
-        <Seo page="confidentialite" />
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-serif font-bold mb-4">
-              {x("Politique de")} <span className="text-primary">{x("Confidentialité")}</span>
-            </h1>
-            <p className="text-xl text-muted-foreground">
-              {x("Comment nous protégeons et utilisons vos données personnelles")}
-            </p>
-          </div>
-
-          <div className="space-y-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>{x("1. Collecte des données")}</CardTitle>
-              </CardHeader>
-              <CardContent className="prose prose-sm max-w-none">
+    <div>
+      <Seo page="confidentialite" />
+      <PageTete surtitre={x("Vos données")} titre={<>{x("Politique de")} {x("Confidentialité")}</>} chapo={x("Comment nous protégeons et utilisons vos données personnelles")} />
+      <section className="s-platre">
+        <div className="s-section s-wrap" style={{ maxWidth: 860 }}>
+          <div className="s-prose s-legal">
+            <section>
+              <h2>{x("1. Collecte des données")}</h2>
                 <p>
                   {x("Heavent People Agency collecte les données personnelles que vous nous fournissez volontairement lors de :")}
                 </p>
@@ -33,14 +22,9 @@ const PrivacyPolicy = () => {
                   <li>{x("Vos demandes de devis pour événements")}</li>
                   <li>{x("Vos messages via notre formulaire de contact")}</li>
                 </ul>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{x("2. Utilisation des données")}</CardTitle>
-              </CardHeader>
-              <CardContent className="prose prose-sm max-w-none">
+            </section>
+            <section>
+              <h2>{x("2. Utilisation des données")}</h2>
                 <p>{x("Vos données personnelles sont utilisées pour :")}</p>
                 <ul>
                   <li>{x("Traiter vos candidatures et demandes de devis")}</li>
@@ -48,14 +32,9 @@ const PrivacyPolicy = () => {
                   <li>{x("Améliorer la qualité de nos prestations")}</li>
                   <li>{x("Respecter nos obligations légales")}</li>
                 </ul>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{x("3. Protection des données")}</CardTitle>
-              </CardHeader>
-              <CardContent className="prose prose-sm max-w-none">
+            </section>
+            <section>
+              <h2>{x("3. Protection des données")}</h2>
                 <p>
                   {x("Nous mettons en place des mesures techniques et organisationnelles appropriées pour protéger vos données contre tout accès, modification, divulgation ou destruction non autorisés.")} 
                 </p>
@@ -68,14 +47,9 @@ const PrivacyPolicy = () => {
                 <p>
                   <strong>{x("Guides gratuits et newsletter.")}</strong> {x("Quand vous téléchargez un guide, nous enregistrons votre e-mail, votre prénom et le type d'événement qui vous intéresse, pour vous envoyer ce guide. Vous ne recevez notre newsletter que si vous avez coché la case prévue, et chaque e-mail contient un lien pour vous désinscrire en un clic. Ces données ne sont jamais revendues.")}
                 </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{x("4. Vos droits RGPD")}</CardTitle>
-              </CardHeader>
-              <CardContent className="prose prose-sm max-w-none">
+            </section>
+            <section>
+              <h2>{x("4. Vos droits RGPD")}</h2>
                 <p>{x("Conformément au RGPD, vous disposez des droits suivants :")}</p>
                 <ul>
                   <li>{x("Droit d'accès à vos données personnelles")}</li>
@@ -91,14 +65,9 @@ const PrivacyPolicy = () => {
                     privacy@heaventagency.com
                   </a>
                 </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{x("5. Contact")}</CardTitle>
-              </CardHeader>
-              <CardContent className="prose prose-sm max-w-none">
+            </section>
+            <section>
+              <h2>{x("5. Contact")}</h2>
                 <p>
                   {x("Pour toute question concernant cette politique de confidentialité ou le traitement de vos données personnelles, contactez-nous :")} 
                 </p>
@@ -107,11 +76,10 @@ const PrivacyPolicy = () => {
                   <li>{x("Téléphone : +212 6 10 93 96 55")}</li>
                   <li>{x("Adresse : Rabat, Maroc")}</li>
                 </ul>
-              </CardContent>
-            </Card>
+            </section>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

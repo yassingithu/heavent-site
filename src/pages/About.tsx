@@ -1,257 +1,102 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { CSSProperties } from "react";
+import { Link } from "react-router-dom";
 import Seo from "@/components/Seo";
-import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
-import { 
-  Award, 
-  Users, 
-  Heart, 
-  Star, 
-  Building2, 
-  Calendar,
-  CheckCircle,
-  Sparkles
-} from "lucide-react";
+import { useTexte } from "@/i18n/textes";
+import { PageTete, Photo, Surtitre } from "@/components/seuil/Seuil";
+import { FairePart, Fin } from "@/components/seuil/Sections";
+
+const ROMAINS = ["I", "II", "III", "IV", "V"];
 
 const About = () => {
   const { t } = useTranslation();
+  const x = useTexte();
 
-  const values = [
-    {
-      icon: Award,
-      title: t('about.values.excellence.title'),
-      description: t('about.values.excellence.description')
-    },
-    {
-      icon: Heart,
-      title: t('about.values.passion.title'),
-      description: t('about.values.passion.description')
-    },
-    {
-      icon: Users,
-      title: t('about.values.professionalism.title'),
-      description: t('about.values.professionalism.description')
-    },
-    {
-      icon: Sparkles,
-      title: t('about.values.innovation.title'),
-      description: t('about.values.innovation.description')
-    }
-  ];
-
-  const stats = [
-    { number: "10+", label: t('about.stats.years_experience'), icon: Calendar },
-    { number: "500+", label: t('about.stats.successful_events'), icon: CheckCircle },
-    { number: "98%", label: t('about.stats.satisfied_clients'), icon: Star },
-    { number: "100+", label: t('about.stats.partner_companies'), icon: Building2 }
-  ];
-
+  const valeurs = ["excellence", "passion", "professionalism", "innovation"].map((k) => ({
+    titre: t(`about.values.${k}.title`), texte: t(`about.values.${k}.description`),
+  }));
   const services = [
-    {
-      title: t('about.services.event_staffing.title'),
-      description: t('about.services.event_staffing.description'),
-      tags: t('about.services.event_staffing.tags', { returnObjects: true }) as string[]
-    },
-    {
-      title: t('about.services.corporate_events.title'),
-      description: t('about.services.corporate_events.description'),
-      tags: t('about.services.corporate_events.tags', { returnObjects: true }) as string[]
-    },
-    {
-      title: t('about.services.wedding_services.title'),
-      description: t('about.services.wedding_services.description'),
-      tags: t('about.services.wedding_services.tags', { returnObjects: true }) as string[]
-    }
-  ];
+    { cle: "event_staffing", lien: "/hotesses-salons-congres" },
+    { cle: "corporate_events", lien: "/staff-evenementiel" },
+    { cle: "wedding_services", lien: "/organisation-mariage" },
+  ].map(({ cle, lien }) => ({
+    titre: t(`about.services.${cle}.title`), texte: t(`about.services.${cle}.description`),
+    tags: t(`about.services.${cle}.tags`, { returnObjects: true }) as string[], lien,
+  }));
 
   return (
     <div>
       <Seo page="apropos" />
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="py-24 bg-gradient-to-b from-background to-accent/30">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-3xl mx-auto animate-fade-in">
-            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6">
-              {t('about.hero_title')}
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              {t('about.hero_description')}
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageTete surtitre={x("À propos")} titre={t("about.hero_title")} chapo={t("about.hero_description")} />
 
-      {/* Stats Section */}
-      <section className="py-16 bg-foreground text-background">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center animate-scale-in">
-                <stat.icon className="text-primary mx-auto mb-4" size={48} />
-                <div className="text-4xl font-bold mb-2">{stat.number}</div>
-                <div className="text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Story Section */}
-      <section className="py-24">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-              <div className="animate-fade-in">
-                <h2 className="text-4xl font-serif font-bold mb-6">
-                  {t('about.story_title')}
-                </h2>
-                <div className="space-y-4 text-muted-foreground leading-relaxed">
-                  <p>
-                    {t('about.story_paragraphs.p1')}
-                  </p>
-                  <p>
-                    {t('about.story_paragraphs.p2')}
-                  </p>
-                  <p>
-                    {t('about.story_paragraphs.p3')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 animate-scale-in">
-                <Card className="hover-lift">
-                  <CardContent className="p-6 text-center">
-                    <Award className="text-primary mx-auto mb-4" size={40} />
-                    <h3 className="font-semibold mb-2">{t('about.quality_cards.premium_quality')}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {t('about.quality_cards.premium_desc')}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="hover-lift">
-                  <CardContent className="p-6 text-center">
-                    <Users className="text-primary mx-auto mb-4" size={40} />
-                    <h3 className="font-semibold mb-2">{t('about.quality_cards.expert_team')}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {t('about.quality_cards.expert_desc')}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="hover-lift">
-                  <CardContent className="p-6 text-center">
-                    <Heart className="text-primary mx-auto mb-4" size={40} />
-                    <h3 className="font-semibold mb-2">{t('about.quality_cards.custom_made')}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {t('about.quality_cards.custom_desc')}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="hover-lift">
-                  <CardContent className="p-6 text-center">
-                    <CheckCircle className="text-primary mx-auto mb-4" size={40} />
-                    <h3 className="font-semibold mb-2">{t('about.quality_cards.reliability')}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {t('about.quality_cards.reliability_desc')}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
+      {/* L'histoire */}
+      <section className="s-platre">
+        <div className="s-section s-wrap s-colonnes">
+          <div className="s-col-g" data-revele="">
+            <Surtitre>{x("L'agence")}</Surtitre>
+            <h2 className="s-h2" style={{ marginTop: 20, maxWidth: "12ch" }}>{t("about.story_title")}</h2>
+            <div className="s-prose" style={{ marginTop: 26 }}>
+              <p>{t("about.story_paragraphs.p1")}</p>
+              <p>{t("about.story_paragraphs.p2")}</p>
+              <p>{t("about.story_paragraphs.p3")}</p>
             </div>
           </div>
+          <div className="s-col-d">
+            <Photo nom="ruban-heavent" l={900} h={1208} tailles="(min-width:900px) 34vw, 92vw" legende={x("Le ruban HEAVENT · assiette dorée ajourée")}
+              alt={x("Serviette blanche nouée d'un ruban noir marqué HEAVENT, posée sur une assiette de présentation dorée ajourée")} />
+          </div>
         </div>
       </section>
 
-      {/* Values Section */}
-      <section className="py-24 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-serif font-bold mb-6">
-              {t('about.values_title')}
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              {t('about.values_description')}
-            </p>
+      {/* Les valeurs */}
+      <section className="s-nuit">
+        <div className="s-section s-wrap s-colonnes">
+          <div className="s-col-g" data-revele="">
+            <Surtitre>{t("about.values_title")}</Surtitre>
+            <h2 className="s-h2" style={{ marginTop: 20, maxWidth: "13ch" }}>{t("about.values_description")}</h2>
           </div>
+          <ol className="s-liste s-col-d">
+            {valeurs.map((v, i) => (
+              <li key={v.titre} data-revele="" style={{ "--retard": `${i * 0.08}s` } as CSSProperties}>
+                <span className="num">{ROMAINS[i]}</span><div><b>{v.titre}</b></div><p>{v.texte}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {values.map((value, index) => (
-              <Card key={index} className="hover-lift text-center">
-                <CardContent className="p-8">
-                  <div className="inline-flex p-3 rounded-full bg-primary/10 mb-6">
-                    <value.icon className="text-primary" size={32} />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-4">{value.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {value.description}
-                  </p>
-                </CardContent>
-              </Card>
+      {/* Les chiffres, comme un faire-part */}
+      <section className="s-platre">
+        <div className="s-section s-wrap">
+          <div className="s-chiffres-zone">
+            <div className="s-intro" data-revele="">
+              <Surtitre>{x("En quelques chiffres")}</Surtitre>
+              <p className="s-texte">{x("Le siège est à Rabat ; les équipes se déplacent partout au Maroc.")}</p>
+            </div>
+            <FairePart />
+          </div>
+        </div>
+      </section>
+
+      {/* Les expertises */}
+      <section className="s-papier">
+        <div className="s-section s-sommaire s-wrap">
+          <div className="gauche" data-revele="">
+            <Surtitre>{t("about.services_title")}</Surtitre>
+            <h2>{t("about.services_description")}</h2>
+          </div>
+          <div className="s-entrees">
+            {services.map((s, i) => (
+              <Link key={s.titre} to={s.lien} className="s-entree" data-revele="" style={{ "--retard": `${i * 0.08}s` } as CSSProperties}>
+                <span className="num">{ROMAINS[i]}</span><h3>{s.titre}</h3><span className="fl" aria-hidden="true">→</span>
+                <p>{s.texte}<br /><span style={{ fontSize: 12, letterSpacing: ".18em", textTransform: "uppercase", color: "var(--s-laiton-texte)" }}>{s.tags.join(" · ")}</span></p>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Services Section */}
-      <section className="py-24">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-serif font-bold mb-6">
-              {t('about.services_title')}
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              {t('about.services_description')}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {services.map((service, index) => (
-              <Card key={index} className="hover-lift">
-                <CardContent className="p-8">
-                  <h3 className="text-2xl font-semibold mb-4">{service.title}</h3>
-                  <p className="text-muted-foreground mb-6 leading-relaxed">
-                    {service.description}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {service.tags.map((tag, tagIndex) => (
-                      <Badge key={tagIndex} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-24 bg-foreground text-background">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-serif font-bold mb-6">
-            {t('about.cta_title')}
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            {t('about.cta_description')}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a 
-              href="/contact" 
-              className="inline-flex items-center justify-center px-8 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
-            >
-              {t('about.contact_us')}
-            </a>
-            <a 
-              href="/devis-entreprise" 
-              className="inline-flex items-center justify-center px-8 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors font-medium"
-            >
-              {t('about.request_quote')}
-            </a>
-          </div>
-        </div>
-      </section>
-    </div>
+      <Fin titre={t("about.cta_title")} texte={t("about.cta_description")} libelleDevis={t("about.request_quote")} />
     </div>
   );
 };
