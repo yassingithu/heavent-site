@@ -5,8 +5,8 @@ const { chromium } = await import("/opt/npm-tools/node_modules/playwright/index.
 const BASE = process.argv[2] || "http://127.0.0.1:5180";
 const GL = ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"];
 let echecs = 0; const ok = (c, m) => { console.log((c ? "OK   " : "ECHEC"), m); if (!c) echecs++; };
-async function ouvrir(browser, url, tactile = false) {
-  const ctx = await browser.newContext({ locale: "fr-FR", viewport: tactile ? { width: 390, height: 800 } : { width: 1280, height: 800 }, hasTouch: tactile, isMobile: tactile });
+async function ouvrir(browser, url, tactile = false, reduit = false) {
+  const ctx = await browser.newContext({ locale: "fr-FR", viewport: tactile ? { width: 390, height: 800 } : { width: 1280, height: 800 }, hasTouch: tactile, isMobile: tactile, reducedMotion: reduit ? "reduce" : "no-preference" });
   await ctx.addInitScript(() => { try { sessionStorage.setItem("heavent-splash-vu", "1"); } catch {} });
   await ctx.route(/fonts\.(googleapis|gstatic)|googletagmanager|supabase\.co/, (r) => r.abort());
   const p = await ctx.newPage(); const err = []; p.on("pageerror", (e) => err.push(e.message)); const t = (i) => p.getByTestId(i);
@@ -43,6 +43,9 @@ const b = await chromium.launch({ args: GL });
   // refus : t3 lâchée sur t4
   await p.mouse.move(sx, sy); await p.mouse.down(); await p.mouse.move((sx + t1x) / 2, (sy + t1y) / 2, { steps: 5 }); await p.mouse.move(t1x, t1y, { steps: 5 }); await p.mouse.up(); await p.waitForTimeout(500);
   ok((await t("message-deplacer").innerText()).includes("Place occupée"), "refus visible quand la place est occupée");
+  const milieu = await p.evaluate(() => window.__hc3d.position("t3")); await p.waitForTimeout(1200);
+  const finRefus = await p.evaluate(() => window.__hc3d.position("t3"));
+  ok(Math.hypot(finRefus[0] - w0[0], finRefus[1] - w0[1]) < 0.01, "refus : retour animé vers la position de départ (" + Math.round(Math.hypot(milieu[0] - w0[0], milieu[1] - w0[1]) * 10) / 10 + " case à la fin de l'anneau → 0)");
   ok((await t("remettre").count()) === 0, "après un refus : rien n'est enregistré");
   // déplacement vers une case libre (coin avant de la salle)
   const N = await p.evaluate(() => Math.round(window.__hc3d.stats().cible[0] * 2));
@@ -76,6 +79,15 @@ const b = await chromium.launch({ args: GL });
   const c1 = await p.evaluate(() => window.__hc3d.stats().cible); ok(Math.hypot(c1[0] - c0[0], c1[1] - c0[1]) > 0.5, "un doigt sur le décor déplace la vue");
   await p.getByTestId("vue-ensemble").tap(); await p.waitForTimeout(1000);
   const z2 = await p.evaluate(() => window.__hc3d.stats().zoom); ok(z2 < z1 * 0.8, `« Vue d'ensemble » recadre (zoom ${z2})`);
+  await ctx.close();
+}
+
+// 3 bis. prefers-reduced-motion : « Vue d'ensemble » recadre aussitôt
+{
+  const { ctx, p } = await ouvrir(b, "?3d=1", false, true);
+  await p.evaluate(() => window.__hc3d.vers("t3", 2.6)); await p.waitForTimeout(200);
+  await p.getByTestId("vue-ensemble").click(); await p.waitForTimeout(150);
+  const z = await p.evaluate(() => window.__hc3d.stats().zoom); ok(z < 1.4, "« Vue d'ensemble » ramène la vue (zoom " + z + ")");
   await ctx.close();
 }
 

@@ -6,16 +6,16 @@
 import * as THREE from "./vendor/three.module.min.js";
 import { PALETTES, type LieuId } from "../donnees";
 import type { Rendu } from "../etat";
-import { construireFixes, formeParId, mt } from "./formes";
+import { construireFixes, estPartagee, formeParId, libererCache, mt } from "./formes";
 import { chevauche, objetsDeplacables, RAYON_TABLE, type Objet3D } from "./objets";
 
 export interface Entree { r: Rendu; nuit: number; deplacable: boolean; reduit: boolean; focus?: { cle: string; n: number } | null }
-export interface Rappels { onDeplacer: (id: string, dx: number, dy: number) => void; onRefus: () => void; /** la vue n'est plus celle d'ensemble (zoom ou déplacement) */ onDecalee?: (decalee: boolean) => void }
+export interface Rappels { onDeplacer: (id: string, dx: number, dy: number) => void; onRefus: () => void; /** la vue n'est plus celle d'ensemble (zoom ou déplacement) */ onDecalee?: (decalee: boolean) => void; /** contexte WebGL perdu : repli sur le SVG */ onPerdu?: () => void }
 export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** objets restés en pavé générique (doit être vide) */ generiques(): string[]; /** position monde (cases) d'un objet, pour les tests */ position(id: string): [number, number] | null; /** position écran (px client) d'un point du sol ou d'un objet, pour les tests */ ecran(x: number, z: number): [number, number]; ecranObjet(id: string): [number, number] | null; /** chaises d'un objet (position locale, direction du dossier), pour les tests */ chaises(id: string): { x: number; z: number; dos: [number, number] }[]; dims(id: string): { w: number; d: number } | null; /** cadre un objet de près (tests, captures) */ vers(id: string, zoom: number): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[] } }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const couleur = (a: string, b: string, t: number) => new THREE.Color(a).lerp(new THREE.Color(b), t);
-const rebond = (t: number) => { const c = 1.9; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+const bez = (() => { const x1 = 0.2, y1 = 0.7, x2 = 0.2, y2 = 1, cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx, cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by; return (t: number) => { let u = t; for (let i = 0; i < 8; i++) { const x = ((ax * u + bx) * u + cx) * u - t, d = (3 * ax * u + 2 * bx) * u + cx; if (Math.abs(x) < 1e-5 || !d) break; u -= x / d; } u = Math.max(0, Math.min(1, u)); return ((ay * u + by) * u + cy) * u; }; })();
 function hasard(graine: number) { let s = graine >>> 0 || 1; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 
 function texture(l: number, h: number, dessin: (c: CanvasRenderingContext2D, l: number, h: number) => void, repeter = true) {
@@ -71,6 +71,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     blanc: new THREE.MeshStandardMaterial({ color: 0xfaf5ea, roughness: 0.9 }),
     verre: new THREE.MeshStandardMaterial({ color: 0xe8c27a, roughness: 0.12, metalness: 0.1, transparent: true, opacity: 0.72 }),
     bougie: new THREE.MeshBasicMaterial({ color: 0xffd98a }),
+    refusAnim: new THREE.MeshBasicMaterial({ color: 0xe24e4e, transparent: true, opacity: 0.45, depthWrite: false }),
     refus: new THREE.MeshBasicMaterial({ color: 0xe24e4e, transparent: true, opacity: 0.45, depthWrite: false }),
     halo: new THREE.MeshBasicMaterial({ color: 0xf4d774, transparent: true, opacity: 0.14, depthWrite: false }),
     libre: new THREE.MeshBasicMaterial({ color: 0xf4d774, transparent: true, opacity: 0.35, depthWrite: false }),
@@ -86,6 +87,15 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   ]);
   const gypsoGeo = fusion(Array.from({ length: 70 }, (_, i): [any, any] => { const q = hasard(i + 3); return [g.ico, M4((q() - 0.5) * 3, -q() * 0.45, (q() - 0.5) * 0.5, q() * 3, 0.05 + q() * 0.05)]; }));
 
+  /** libère ce qui a été créé pour un objet retiré (matières et textures propres ; les matières partagées restent) */
+  function liberer(racine: any) {
+    racine.traverse((o: any) => {
+      if (o.isInstancedMesh) o.dispose();
+      if (o.isLine) { o.geometry.dispose(); o.material.dispose(); return; }
+      const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+      for (const m of ms) if (!estPartagee(m) && !Object.values(mat).includes(m)) { m.map?.dispose(); m.dispose(); }
+    });
+  }
   // ── Décor du lieu ─────────────────────────────────────────────────────────
   let decor: any = null, objets: Objet3D[] = [], groupes = new Map<string, any>(), courant: Entree | null = null, cleDecor = "";
   const ombre = <T extends { castShadow: boolean; receiveShadow: boolean }>(m: T, porte = true, recoit = true) => { m.castShadow = porte; m.receiveShadow = recoit; return m; };
@@ -240,7 +250,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   let objetsGroupe = new THREE.Group(); scene.add(objetsGroupe);
   let pret = false; let fixes: any = null;
   function refaireFixes(e: Entree) {
-    if (fixes) { scene.remove(fixes); fixes.traverse((o: any) => { if (o.isInstancedMesh) o.dispose(); }); }
+    if (fixes) { scene.remove(fixes); liberer(fixes); }
     const pal = PALETTES.find((p) => p.id === e.r.palette) ?? PALETTES[0];
     fixes = construireFixes(e.r, pal, e.nuit); scene.add(fixes);
   }
@@ -248,13 +258,13 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     const { r } = e, pal = PALETTES.find((p) => p.id === r.palette) ?? PALETTES[0], N = r.salle.n;
     const cle = `${r.lieu}|${N}|${r.palette}`;
     if (cle !== cleDecor) {
-      if (decor) scene.remove(decor);
+      if (decor) { scene.remove(decor); liberer(decor); }
       decor = construireDecor(r.lieu, N, pal); scene.add(decor); cleDecor = cle;
       soleil.shadow.camera.left = -N * 0.85; soleil.shadow.camera.right = N * 0.85; soleil.shadow.camera.top = N * 0.85; soleil.shadow.camera.bottom = -N * 0.85; soleil.shadow.camera.far = N * 6; soleil.shadow.camera.updateProjectionMatrix();
       soleil.position.set(N / 2 - N * 0.5, N * 1.6, N / 2 + N * 0.8); soleil.target.position.set(N / 2, 0, N / 2); soleil.target.updateMatrixWorld();
       recadrer(true);
     }
-    for (const c of [...objetsGroupe.children]) { objetsGroupe.remove(c); c.traverse((o: any) => { if (o.isInstancedMesh) o.dispose(); }); }
+    for (const c of [...objetsGroupe.children]) { objetsGroupe.remove(c); liberer(c); }
     groupes.clear(); objets = objetsDeplacables(r);
     for (const o of objets) {
       const grp = construireObjet(o, r, pal, r.lumiere === "bougies");
@@ -262,6 +272,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
       grp.position.set(o.a[0] + dx, 0, o.a[1] + dy); groupes.set(o.id, grp); objetsGroupe.add(grp);
       // sens des chaises du honneur : la face « salle » est du côté +gy
     }
+    for (const id of poses.keys()) { const g2 = groupes.get(id); if (g2) g2.position.y = 0.18; }
     majHalos();
     // lampes chaudes de la nuit : près de la table d'honneur / du bar / de la piste, sinon des premières tables
     const pts = ["honneur", "nawar", "piste", "t0"].map((id) => groupes.get(id)).filter(Boolean).slice(0, 4);
@@ -279,7 +290,8 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
 
   // ── Caméra isométrique (2:1) ──────────────────────────────────────────────
   const vue = { cible: new THREE.Vector3(6, 0.8, 6), zoom: 1, N: 12 };
-  let cibleVoulue: any = null, zoomVoulu = 1, transition = 0;
+  let cibleVoulue: any = null, zoomVoulu = 1, transition = 0, camT0 = 0, camC0: any = new THREE.Vector3(), camZ0 = 1;
+  const lancerCam = () => { camT0 = performance.now(); camC0.copy(vue.cible); camZ0 = vue.zoom; };
   const DIR = new THREE.Vector3(1, Math.tan(Math.PI / 6) * Math.SQRT2, 1).normalize();
   function placerCamera() {
     const w = conteneur.clientWidth || 1, h = conteneur.clientHeight || 1, asp = w / h, N = vue.N;
@@ -295,13 +307,13 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   const zoomBase = () => { const asp = (conteneur.clientWidth || 1) / (conteneur.clientHeight || 1); return asp < 1.5 ? Math.min(1.25, 1 + (1.5 - asp) * 0.4) : 1; };
   function recadrer(immediat = false) {
     const N = vue.N = courant?.r.salle.n ?? 12;
-    cibleVoulue = new THREE.Vector3(N / 2, 0.8, N / 2 + (zoomBase() > 1 ? 0.4 : 0)); zoomVoulu = zoomBase(); transition = immediat || courant?.reduit ? 1 : 0; if (immediat) { vue.cible.copy(cibleVoulue); vue.zoom = zoomVoulu; placerCamera(); }
+    cibleVoulue = new THREE.Vector3(N / 2, 0.8, N / 2 + (zoomBase() > 1 ? 0.4 : 0)); zoomVoulu = zoomBase(); transition = immediat || courant?.reduit ? 1 : 0; lancerCam(); if (immediat || courant?.reduit) { vue.cible.copy(cibleVoulue); vue.zoom = zoomVoulu; placerCamera(); }
     demander();
   }
 /** recentrage sur l'élément mis en avant par le jeu (focus) */
   function centrer(e: Entree) {
     const a = e.focus ? (e.r.salle.pos.ANCRES as Record<string, [number, number] | undefined>)[e.focus.cle] : null; if (!a) return;
-    cibleVoulue = new THREE.Vector3(a[0], 0.5, a[1]); zoomVoulu = zoomBase() > 1 ? Math.max(zoomBase(), 1.3) : 1.6; transition = e.reduit ? 1 : 0;
+    cibleVoulue = new THREE.Vector3(a[0], 0.5, a[1]); zoomVoulu = zoomBase() > 1 ? Math.max(zoomBase(), 1.3) : 1.6; transition = e.reduit ? 1 : 0; lancerCam();
     if (e.reduit) { vue.cible.copy(cibleVoulue); vue.zoom = zoomVoulu; placerCamera(); }
     demander();
   }
@@ -311,20 +323,43 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   }
   const ro = new ResizeObserver(redim); ro.observe(conteneur);
 
+  // perte du contexte WebGL : on prévient le jeu, qui retombe sur le SVG
+  const perdu = (ev: Event) => { ev.preventDefault(); rap.onPerdu?.(); };
+  canvas.addEventListener("webglcontextlost", perdu); canvas.addEventListener("webglcontextrestored", demander);
   // ── Boucle à la demande ───────────────────────────────────────────────────
-  let enCours = false, tPrec = 0, rebonds: { grp: any; t0: number; y0: number }[] = [];
+  let enCours = false, tPrec = 0;
+  const poses = new Map<string, { t0: number }>();
+  let refusAnim: { id: string; t0: number; de: [number, number]; vers: [number, number] } | null = null;
+  let nuitAff = 0, lumAnim: { t0: number; de: number; vers: number } | null = null;
   let appels = 0, tris = 0;
   function demander() { if (!enCours) { enCours = true; requestAnimationFrame(boucle); } }
   function boucle(t: number) {
     const dt = Math.min(0.05, (t - tPrec) / 1000 || 0.016); tPrec = t;
     let anime = false;
     if (cibleVoulue && transition < 1) {
-      const k = 1 - Math.exp(-dt * 9); vue.cible.lerp(cibleVoulue, k); vue.zoom = lerp(vue.zoom, zoomVoulu, k);
-      if (vue.cible.distanceTo(cibleVoulue) < 0.01 && Math.abs(vue.zoom - zoomVoulu) < 0.002) { vue.cible.copy(cibleVoulue); vue.zoom = zoomVoulu; transition = 1; }
+      // interpolation à sortie douce sur ~600 ms
+      const u = Math.min(1, (performance.now() - camT0) / 600), k = 1 - Math.pow(1 - u, 3);
+      vue.cible.lerpVectors(camC0, cibleVoulue, k); vue.zoom = lerp(camZ0, zoomVoulu, k);
+      if (u >= 1) transition = 1;
       placerCamera(); anime = transition < 1;
     }
-    rebonds = rebonds.filter((b) => { const u = Math.min(1, (t - b.t0) / 420); b.grp.position.y = b.y0 * (1 - rebond(u)) ; if (u >= 1) { b.grp.position.y = 0; return false; } return true; });
-    if (rebonds.length) { anime = true; renderer.shadowMap.needsUpdate = true; }
+    // montée des lumières sur 800 ms (smoothstep)
+    if (lumAnim) { const u = Math.min(1, (performance.now() - lumAnim.t0) / 800), k = u * u * (3 - 2 * u); nuitAff = lerp(lumAnim.de, lumAnim.vers, k); lumiere(nuitAff); if (u >= 1) lumAnim = null; else anime = true; }
+    // pose réussie : chute douce 0,18 → 0 en 350 ms, courbe cubic-bezier(.2,.7,.2,1), sans rebond sous le sol
+    for (const [id, a] of poses) { const u = Math.min(1, (performance.now() - a.t0) / 350), g2 = groupes.get(id); if (g2) g2.position.y = 0.18 * (1 - bez(u)); renderer.shadowMap.needsUpdate = true; if (u >= 1) { poses.delete(id); if (g2) g2.position.y = 0; } else anime = true; }
+    // refus : anneau rouge qui pulse 2 fois, retour doux vers le départ, fondu
+    if (refusAnim) {
+      const a = refusAnim, g2 = groupes.get(a.id), ms = performance.now() - a.t0, z = g2?.userData.zone;
+      if (g2 && z) {
+        z.visible = true; z.material = mat.refusAnim;
+        if (ms < 400) { mat.refusAnim.opacity = 0.2 + 0.5 * (0.5 - 0.5 * Math.cos((ms / 400) * Math.PI * 4)); g2.position.set(a.de[0], 0.18, a.de[1]); }
+        else if (ms < 760) { const u = (ms - 400) / 360, k = bez(u); g2.position.set(lerp(a.de[0], a.vers[0], k), 0.18 * (1 - k), lerp(a.de[1], a.vers[1], k)); mat.refusAnim.opacity = 0.45; }
+        else if (ms < 880) { g2.position.set(a.vers[0], 0, a.vers[1]); mat.refusAnim.opacity = 0.45 * (1 - (ms - 760) / 120); }
+        else { g2.position.set(a.vers[0], 0, a.vers[1]); refusAnim = null; majHalos(); }
+        renderer.shadowMap.needsUpdate = true;
+      } else refusAnim = null;
+      if (refusAnim) anime = true;
+    }
     if (prise) anime = true;
     renderer.render(scene, cam);
     appels = renderer.info.render.calls; tris = renderer.info.render.triangles;
@@ -399,11 +434,17 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     pan = null;
     const t = prise; prise = null; if (!t || !courant) return;
     const o = objets.find((x) => x.id === t.id)!;
-    if (!t.bloque) { t.grp.userData.zone.material = mat.halo; t.grp.userData.zone.visible = courant.deplacable; }
-    if (t.bloque) { t.grp.position.set(o.a[0] + t.depart[0], 0, o.a[1] + t.depart[1]); t.grp.userData.zone.material = mat.halo; t.grp.userData.zone.visible = courant.deplacable; rap.onRefus(); }
-    else if (t.dernier[0] !== t.depart[0] || t.dernier[1] !== t.depart[1]) { rap.onDeplacer(t.id, t.dernier[0], t.dernier[1]); }
-    // l'objet se pose avec un léger rebond amorti (sauf si l'on préfère moins de mouvement)
-    if (courant.reduit) t.grp.position.y = 0; else rebonds.push({ grp: t.grp, t0: performance.now(), y0: 0.18 });
+    const depart: [number, number] = [o.a[0] + t.depart[0], o.a[1] + t.depart[1]];
+    if (t.bloque) {
+      rap.onRefus();
+      if (courant.reduit) { t.grp.position.set(depart[0], 0, depart[1]); majHalos(); }
+      else refusAnim = { id: t.id, t0: performance.now(), de: [o.a[0] + t.dernier[0], o.a[1] + t.dernier[1]], vers: depart };
+    } else {
+      t.grp.userData.zone.material = mat.halo; t.grp.userData.zone.visible = courant.deplacable;
+      if (t.dernier[0] !== t.depart[0] || t.dernier[1] !== t.depart[1]) rap.onDeplacer(t.id, t.dernier[0], t.dernier[1]);
+      // la pose est rejouée par identifiant : elle survit à la reconstruction des groupes qui suit l'enregistrement
+      if (courant.reduit) t.grp.position.y = 0; else poses.set(t.id, { t0: performance.now() });
+    }
     renderer.shadowMap.needsUpdate = true; demander();
   }
   canvas.addEventListener("pointerup", relacher); canvas.addEventListener("pointercancel", relacher);
@@ -415,7 +456,9 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     maj(e) {
       const avant = courant; courant = e;
       if (!avant || avant.r !== e.r) { reconstruire(e); }
-      if (!avant || avant.nuit !== e.nuit || avant.r !== e.r) { lumiere(e.nuit); if (!avant || avant.r !== e.r || (avant.nuit > 0.5) !== (e.nuit > 0.5)) refaireFixes(e); }
+      if (avant && avant.nuit !== e.nuit) { if (e.reduit) { nuitAff = e.nuit; lumAnim = null; } else lumAnim = { t0: performance.now(), de: nuitAff, vers: e.nuit }; }
+      if (!avant) nuitAff = e.nuit;
+      if (!avant || avant.nuit !== e.nuit || avant.r !== e.r) { lumiere(nuitAff); if (!avant || avant.r !== e.r || (avant.nuit > 0.5) !== (e.nuit > 0.5)) refaireFixes(e); }
       canvas.style.touchAction = "none";
       if (avant && avant.deplacable !== e.deplacable) majHalos();
       if (e.focus && avant && avant.focus?.n !== e.focus.n) centrer(e);
@@ -433,6 +476,11 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     vers(id, zoom) { const g2 = groupes.get(id); if (!g2) return; cibleVoulue = null; transition = 1; vue.cible.set(g2.position.x, 0.4, g2.position.z); vue.zoom = zoom; placerCamera(); demander(); },
     sous: (x, y) => objetSous(x, y),
     stats: () => ({ appels, triangles: tris, objets: objets.length, zoom: +vue.zoom.toFixed(3), cible: [+vue.cible.x.toFixed(2), +vue.cible.z.toFixed(2)] }),
-    detruire() { ro.disconnect(); renderer.dispose(); renderer.forceContextLoss(); },
+    detruire() {
+      ro.disconnect(); canvas.removeEventListener("webglcontextlost", perdu); canvas.removeEventListener("webglcontextrestored", demander);
+      for (const r2 of [decor, fixes, objetsGroupe]) if (r2) liberer(r2);
+      libererCache(); for (const m of Object.values(mat)) (m as any).dispose(); for (const gg of Object.values(g)) (gg as any).dispose(); chaiseGeo.dispose(); gypsoGeo.dispose();
+      renderer.dispose(); renderer.forceContextLoss();
+    },
   };
 }

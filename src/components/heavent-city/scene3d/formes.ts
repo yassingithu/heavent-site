@@ -13,6 +13,9 @@ const G = {
   box: new THREE.BoxGeometry(1, 1, 1), sph: new THREE.SphereGeometry(1, 12, 9), tore: new THREE.TorusGeometry(1, 0.08, 6, 24), plan: new THREE.PlaneGeometry(1, 1),
 };
 const cache = new Map<string, any>();
+/** vrai pour une matière gardée en cache (jamais libérée avant la fermeture de la scène) */
+export const estPartagee = (m: any) => { for (const v of cache.values()) if (v === m) return true; return false; };
+export function libererCache() { for (const m of cache.values()) { m.map?.dispose(); m.dispose(); } cache.clear(); }
 /** matière partagée (une seule par couleur/rugosité/métal/émission) */
 export const mt = (c: string | number, rough = 0.7, metal = 0, emis = 0) => {
   const k = `${c}|${rough}|${metal}|${emis}`; let m = cache.get(k);

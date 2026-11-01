@@ -20,14 +20,14 @@ function veut3D(p: SceneProps): boolean {
 
 export function SceneChoix(p: SceneProps & { reduit?: boolean }) {
   const [essai] = useState(() => veut3D(p));
-  const [etat, setEtat] = useState<"charge" | "pret" | "echec">("charge");
+  const [etat, setEtat] = useState<"charge" | "pret" | "fini" | "echec">("charge");
   const en3d = essai && etat !== "echec" && p.r.tables !== "conference";
   if (!en3d) return <SceneSvg {...p} />;
   return (
     <>
-      {etat !== "pret" && <SceneSvg {...p} />}
+      {etat !== "fini" && <SceneSvg {...p} />}
       <Suspense fallback={null}>
-        <Scene3D {...p} reduit={!!p.reduit} onPret={() => setEtat("pret")} onEchec={() => setEtat("echec")} />
+        <Scene3D {...p} reduit={!!p.reduit} onPret={() => setEtat(p.reduit ? "fini" : "pret")} visible={etat === "pret" || etat === "fini"} onFondu={() => setEtat("fini")} onEchec={() => setEtat("echec")} />
       </Suspense>
     </>
   );
