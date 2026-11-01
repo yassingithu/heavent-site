@@ -1,287 +1,239 @@
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import Seo from "@/components/Seo";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Briefcase, 
-  Users, 
-  Building2, 
-  Heart, 
-  Star, 
-  Award, 
-  CheckCircle,
-  ArrowRight,
-  Sparkles
-} from "lucide-react";
-import heroImage from "@/assets/hero-staff.webp";
 import SectionConfiance from "@/components/vitrine/Confiance";
-import { SERVICES } from "@/lib/pagesLocales";
+import { VILLES } from "@/lib/pagesLocales";
 import { useTexte } from "@/i18n/textes";
-import heroImageMobile from "@/assets/hero-staff-mobile.webp";
+import { NUMERO_WHATSAPP } from "@/components/BoutonWhatsApp";
+import { Bouton, Etoile, Lumieres, Photo, Ruban, Surtitre, consommerPremierAffichage } from "@/components/seuil/Seuil";
+
+/**
+ * Accueil — direction « Seuil » (v3, prototype design-captures/v3/accueil.html).
+ * Uniquement de vraies photos des événements Heavent et du bar Nawar, entières, avec leur liseré or.
+ * L'ouverture en battants est jouée par index.html (une fois par visite) ; le titre monte ensuite dans ses masques.
+ */
+const WHATSAPP = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent("Bonjour Heavent People Agency, j'aimerais avoir des informations.")}`;
 
 const Home = () => {
-  const { t } = useTranslation();
   const x = useTexte();
+  // Page pré-générée déjà affichée : les animations du héros reprennent là où elles en sont (pas de second départ)
+  const [t0] = useState(() => (consommerPremierAffichage() ? -Math.min(Math.round(performance.now()), 5000) : 0));
+  const cta = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    // le reflet passe une fois sur le bouton plein quand le titre est en place
+    const ouverture = document.documentElement.classList.contains("avec-ouverture") && !document.documentElement.classList.contains("ouverture-finie");
+    const id = window.setTimeout(() => cta.current?.classList.add("brille"), Math.max(0, (ouverture ? 2000 : 1300) + t0));
+    return () => window.clearTimeout(id);
+  }, [t0]);
 
-  const services = [
-    {
-      icon: Users,
-      title: t('home.hostess.title'),
-      description: t('home.hostess.description'),
-      link: "/devis-entreprise",
-      color: "text-blue-600"
-    },
-    {
-      icon: Heart,
-      title: t('home.wedding.title'),
-      description: t('home.wedding.description'),
-      link: "/devis-mariage",
-      color: "text-pink-600"
-    },
-    {
-      icon: Building2,
-      title: t('home.event.title'),
-      description: t('home.event.description'),
-      link: "/devis-entreprise",
-      color: "text-primary"
-    }
+  const metiers = [
+    { num: "I", titre: x("Hôtesses & accueil"), texte: x("Congrès, salons, galas, ambassades : l'accueil qui donne le ton dès la porte."), lien: "/hotesses-salons-congres" },
+    { num: "II", titre: x("Staff événementiel"), texte: x("Maîtres d'hôtel, serveurs, vestiaire, voituriers : une équipe en tenue, coordonnée sur place."), lien: "/staff-evenementiel" },
+    { num: "III", titre: x("Mariages"), texte: x("Du henné au dernier invité, chaque soirée orchestrée sans que personne ne vous voie courir."), lien: "/organisation-mariage" },
+    { num: "IV", titre: "Nawar", texte: x("Le bar à parfums : des parfums choisis par les mariés pour leurs invités, servis au flacon."), lien: "/nawar" },
   ];
-
-  const features = [
-    {
-      icon: Star,
-      title: t('home.experience.title'),
-      description: t('home.experience.description')
-    },
-    {
-      icon: Users,
-      title: t('home.team.title'),
-      description: t('home.team.description')
-    },
-    {
-      icon: Award,
-      title: t('home.service.title'),
-      description: t('home.service.description')
-    },
-    {
-      icon: CheckCircle,
-      title: t('home.satisfaction.title'),
-      description: t('home.satisfaction.description')
-    }
+  const engagements = [
+    { num: "I", titre: x("En place avant vous"), texte: x("L'équipe arrive bien avant le premier invité : tenues, vestiaire et plan de salle sont prêts.") },
+    { num: "II", titre: x("Une seule personne à appeler"), texte: x("Un coordinateur suit votre événement, du devis jusqu'au dernier invité.") },
+    { num: "III", titre: x("Le soir même, on ne vous dérange pas"), texte: x("Les imprévus se règlent entre nous, sans que la salle ne le remarque.") },
+  ];
+  const etapes = [
+    ["16h00", x("Mise en place"), x("La salle est vérifiée, l'équipe s'habille, chacun connaît sa place.")],
+    ["19h30", x("Accueil des invités"), x("Hôtesses au seuil, vestiaire, placement à table.")],
+    ["21h00", x("Entrée des mariés"), x("Le signal est donné à la musique et au service, à la seconde.")],
+    ["23h00", x("Dîner et soirée"), x("Le service suit le rythme de la piste, pas l'inverse.")],
+    ["03h00", x("Dernier invité"), x("On raccompagne, on range ; vous partez les mains libres.")],
   ];
 
   return (
     <div>
       <Seo page="accueil" />
-      {/* Hero Section */}
-      <section 
-        className="relative min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), url(${typeof window !== "undefined" && window.innerWidth < 768 ? heroImageMobile : heroImage})` }}
-      >
-        <div className="container mx-auto px-4 text-center text-white">
-          <div className="max-w-4xl mx-auto animate-fade-in">
-            <p className="uppercase tracking-[0.2em] text-xs md:text-sm text-primary/90 mb-4">
-              {x("Agence d'hôtesses & d'événementiel · Rabat · Casablanca · Marrakech")}
-            </p>
-            <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6">
-              {t('home.heroTitle')}
-              <span className="block text-primary">{t('home.heroSubtitle')}</span>
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 text-gray-200 max-w-2xl mx-auto">
-              {t('home.heroDescription')}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" className="text-lg px-8 py-6 gold-shadow">
-                <Link to="/devis-entreprise">
-                  {t('home.getQuote')}
-                  <ArrowRight className="ml-2" size={20} />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 bg-white/10 border-white/20 text-white hover:bg-white/20">
-                <Link to="/cree-ton-evenement">
-                  {t('home.createEvent')}
-                  <Sparkles className="ml-2" size={20} />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 bg-white/10 border-white/20 text-white hover:bg-white/20">
-                <Link to="/inscription-staff">
-                  {t('home.joinUs')}
-                  <Users className="ml-2" size={20} />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 bg-white/10 border-white/20 text-white hover:bg-white/20">
-                <Link to="/prestataires">
-                  {x("Devenir prestataire")}
-                  <Briefcase className="ml-2" size={20} />
-                </Link>
-              </Button>
+      <Helmet>
+        <link rel="preload" as="image" href="/photos/table-honneur-720.webp" imageSrcSet="/photos/table-honneur-480.webp 480w, /photos/table-honneur-720.webp 720w, /photos/table-honneur.jpg 900w" imageSizes="(min-width:900px) 40vw, 92vw" />
+      </Helmet>
+
+      {/* Héros : le titre, le bouton devis dans le premier écran, la table d'honneur */}
+      <section className="s-nuit" aria-labelledby="t-heros">
+        <div className="s-heros s-wrap" style={{ "--t0": `${t0}ms` } as CSSProperties}>
+          <div className="s-meta"><span>{x("Agence d'hôtesses & d'événementiel")}</span><span className="long">{x("Rabat · partout au Maroc")}</span></div>
+          <span className="s-filet" aria-hidden="true" />
+          <h1 className="s-titre-heros" id="t-heros">
+            <span className="s-ligne s-l1"><span>{x("L'accueil,")}</span></span>
+            <span className="s-ligne s-l2"><span>{x("c'est le premier")}</span></span>
+            <span className="s-ligne s-l2 s-l3"><span>{x("souvenir.")}</span></span>
+          </h1>
+          <div className="s-chapo-zone">
+            <p className="s-chapo s-entree-heros">{x("Hôtesses, staff et mariages orchestrés de Rabat à Marrakech, par une équipe qui connaît chaque palais, chaque protocole et chaque détail.")}</p>
+            <div className="s-actions s-entree-heros">
+              <a ref={cta} className="s-btn s-btn-plein" href="#devis" data-testid="accueil-devis">{x("Demander un devis")} <span className="fl" aria-hidden="true">→</span></a>
+              <Bouton to="/cree-ton-evenement" variante="filet">{x("Imaginer mon événement")}</Bouton>
             </div>
           </div>
+          <Photo prioritaire nom="table-honneur" l={900} h={1204} legende={x("Table d'honneur · gypsophile suspendue")}
+            alt={x("Table d'honneur d'un mariage devant de grandes verrières en arche, un nuage de gypsophile suspendu au-dessus de la nappe ivoire")} />
         </div>
       </section>
 
-      {/* Services Section */}
-      <section className="py-24 bg-gradient-to-b from-background to-accent/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16 animate-slide-up">
-            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
-              {t('home.servicesTitle')}
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              {t('home.servicesSubtitle')}
-            </p>
+      {/* Sommaire des métiers */}
+      <section className="s-platre" aria-labelledby="t-som">
+        <div className="s-section s-sommaire s-wrap">
+          <div className="gauche" data-revele="">
+            <Surtitre>{x("Sommaire")}</Surtitre>
+            <h2 id="t-som">{x("Quatre métiers, un seul accueil.")}</h2>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            {services.map((service, index) => (
-              <Card key={index} className="hover-lift elegant-shadow group cursor-pointer">
-                <CardContent className="p-8 text-center">
-                  <div className={`inline-flex p-3 rounded-full bg-accent mb-6 ${service.color}`}>
-                    <service.icon size={32} />
-                  </div>
-                  <h3 className="text-2xl font-semibold mb-4">{service.title}</h3>
-                  <p className="text-muted-foreground mb-6">{service.description}</p>
-                  <Button asChild variant="outline" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    <Link to={service.link}>
-                      {x("En savoir plus")}
-                      <ArrowRight className="ml-2" size={16} />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* CTA Section */}
-          <div className="text-center">
-            <Card className="inline-block p-8 gold-gradient text-primary-foreground">
-              <div className="flex items-center justify-center mb-4">
-                <Sparkles className="mr-2" size={24} />
-                <span className="text-xl font-semibold">{x("Prêt à organiser votre événement ?")}</span>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button asChild variant="secondary" size="lg">
-                  <Link to="/devis-entreprise">{x("Devis Entreprise")}</Link>
-                </Button>
-                <Button asChild variant="secondary" size="lg">
-                  <Link to="/devis-mariage">{x("Devis Événement")}</Link>
-                </Button>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-24 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="animate-fade-in">
-              <h2 className="text-4xl md:text-5xl font-serif font-bold mb-8">
-                {t('home.whyChooseTitle')}
-                <span className="block text-primary">{t('home.whyChooseTitleBrand')}</span>
-              </h2>
-              <p className="text-lg text-muted-foreground mb-8">
-                {t('home.whyChooseDescription')}
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {features.map((feature, index) => (
-                  <div key={index} className="flex items-start space-x-3 p-4 bg-background rounded-lg border">
-                    <feature.icon className="text-primary flex-shrink-0 mt-1" size={20} />
-                    <div>
-                      <h4 className="font-semibold mb-1">{feature.title}</h4>
-                      <p className="text-sm text-muted-foreground">{feature.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Button asChild size="lg" className="gold-shadow">
-                <Link to="/a-propos">
-                  {x("Découvrir notre histoire")}
-                  <ArrowRight className="ml-2" size={20} />
-                </Link>
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6 animate-scale-in">
-              <Card className="hover-lift">
-                <CardContent className="p-6 text-center">
-                  <Award className="text-primary mx-auto mb-4" size={48} />
-                  <h3 className="text-2xl font-bold mb-2">10+</h3>
-                  <p className="text-muted-foreground">{x("Années d'expérience")}</p>
-                </CardContent>
-              </Card>
-              <Card className="hover-lift">
-                <CardContent className="p-6 text-center">
-                  <Users className="text-primary mx-auto mb-4" size={48} />
-                  <h3 className="text-2xl font-bold mb-2">500+</h3>
-                  <p className="text-muted-foreground">{x("Événements réussis")}</p>
-                </CardContent>
-              </Card>
-              <Card className="hover-lift">
-                <CardContent className="p-6 text-center">
-                  <Star className="text-primary mx-auto mb-4" size={48} />
-                  <h3 className="text-2xl font-bold mb-2">98%</h3>
-                  <p className="text-muted-foreground">{x("Clients satisfaits")}</p>
-                </CardContent>
-              </Card>
-              <Card className="hover-lift">
-                <CardContent className="p-6 text-center">
-                  <Building2 className="text-primary mx-auto mb-4" size={48} />
-                  <h3 className="text-2xl font-bold mb-2">100+</h3>
-                  <p className="text-muted-foreground">{x("Entreprises partenaires")}</p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA Section */}
-      {/* Partout au Maroc (contenu local utile aux clients… et à Google) */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4 max-w-5xl">
-          <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4 text-center">{x("Hôtesses d'accueil et staff événementiel partout au Maroc")}</h2>
-          <p className="text-lg text-muted-foreground text-center max-w-3xl mx-auto mb-10">
-            {x("Salons, congrès, lancements de produit, soirées d'entreprise ou mariages : nous sélectionnons des hôtes et hôtesses bilingues (français, arabe, anglais), formés à l'accueil haut de gamme, et nous gérons pour vous contrats, tenues et coordination sur place.")}
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              ["Rabat", "Siège de l'agence : accueil protocolaire, congrès, ambassades et institutions."],
-              ["Casablanca", "Salons professionnels, lancements de marque, séminaires et soirées d'entreprise."],
-              ["Marrakech", "Mariages, événements de prestige, incentives et accueil VIP dans les palaces."],
-              ["Tanger", "Congrès, inaugurations et événements corporate dans la région du Nord."],
-              ["Agadir", "Séminaires, événements hôteliers et animations commerciales."],
-              ["Fès", "Congrès et événements culturels ; nos équipes se déplacent aussi partout au Maroc, sur devis."],
-            ].map(([ville, texte]) => (
-              <Link key={ville} to={`/hotesses-${ville.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()}`} className="group rounded-lg border bg-card p-5 hover:border-[#C8B560] hover:shadow-sm transition">
-                <h3 className="font-semibold text-lg mb-1 group-hover:text-[#8C6D22]">{x("Hôtesses à {ville}", { ville: x(ville) })} <ArrowRight className="inline h-4 w-4 opacity-0 group-hover:opacity-100 transition" /></h3>
-                <p className="text-sm text-muted-foreground">{x(texte)}</p>
+          <div className="s-entrees">
+            {metiers.map((m, i) => (
+              <Link key={m.num} to={m.lien} className="s-entree" data-revele="" style={{ "--retard": `${i * 0.08}s` } as CSSProperties}>
+                <span className="num">{m.num}</span><h3>{m.titre}</h3><span className="fl" aria-hidden="true">→</span><p>{m.texte}</p>
               </Link>
             ))}
           </div>
-          <div className="flex flex-wrap justify-center gap-2 mt-8">
-            {SERVICES.map((s) => <Link key={s.chemin} to={s.chemin} className="rounded-full border px-4 py-2 text-sm hover:border-[#C8B560] hover:text-[#8C6D22]">{x(s.nomCourt)}</Link>)}
+        </div>
+      </section>
+
+      {/* La signature : le ruban noir HEAVENT des serviettes */}
+      <section className="s-papier" aria-labelledby="t-ruban">
+        <div className="s-signature-r s-wrap">
+          <div className="s-txt" data-revele="">
+            <Ruban>Heavent</Ruban>
+            <h2 id="t-ruban">{x("Notre signature tient dans un ruban.")}</h2>
+            <p className="s-texte">{x("Sur chaque assiette, une serviette nouée d'un ruban noir à notre nom. Personne ne le cherche ; tout le monde le remarque.")}</p>
+          </div>
+          <Photo nom="ruban-heavent" l={900} h={1208} legende={x("Le ruban HEAVENT · assiette dorée ajourée")}
+            alt={x("Serviette blanche nouée d'un ruban noir marqué HEAVENT, posée sur une assiette de présentation dorée ajourée")} />
+        </div>
+      </section>
+
+      {/* Notre règle : une phrase, puis ce qu'elle veut dire concrètement */}
+      <section className="s-nuit" aria-labelledby="t-regle">
+        <div className="s-regle s-wrap">
+          <div className="gauche" data-revele="">
+            <Surtitre>{x("Notre règle")}</Surtitre>
+            <h2 id="t-regle">{x("Le luxe, c'est quand")} <em>{x("personne ne voit")}</em> {x("le travail.")}</h2>
+          </div>
+          <ol className="s-liste">
+            {engagements.map((e, i) => (
+              <li key={e.num} data-revele="" style={{ "--retard": `${i * 0.08}s` } as CSSProperties}><span className="num">{e.num}</span><div><b>{e.titre}</b></div><p>{e.texte}</p></li>
+            ))}
+          </ol>
+          <div className="s-details">
+            <Photo petit nom="assiette-liseret-or" l={900} h={1026} tailles="(min-width:900px) 25vw, 46vw" legende={x("Liseré or")} alt={x("Assiette ivoire à liseré or et couverts dorés dans une lumière rasante")} />
+            <Photo petit nom="coffret-laiton" l={900} h={1218} tailles="(min-width:900px) 25vw, 46vw" legende={x("Laiton ciselé")} alt={x("Coffret octogonal en bois avec encensoir en laiton ciselé et pétales de rose séchés")} />
           </div>
         </div>
       </section>
 
+      {/* Les chiffres, comme un faire-part */}
+      <section className="s-platre" aria-labelledby="t-fp">
+        <div className="s-section s-wrap">
+          <div className="s-chiffres-zone">
+            <div className="s-intro" data-revele="">
+              <Surtitre>{x("En quelques chiffres")}</Surtitre>
+              <p className="s-texte">{x("Le siège est à Rabat ; les équipes se déplacent partout au Maroc.")}</p>
+              <nav className="s-villes" aria-label={x("Nos villes")}>
+                {VILLES.map((v) => <Link key={v.chemin} to={v.chemin}>{x("Hôtesses à {ville}", { ville: x(v.nomCourt) })}</Link>)}
+              </nav>
+            </div>
+            <div className="s-fairepart" data-revele="">
+              <Etoile /><Etoile className="bas" />
+              <div className="s-fp-tete">Heavent People Agency</div>
+              <h2 className="s-fp-titre" id="t-fp">{x("a l'honneur de vous annoncer")}</h2>
+              <div className="s-chiffres">
+                <div className="s-chiffre"><b data-compte="10">10</b><span><strong>{x("ans")}</strong>{x("d'accueil, d'événements et de mariages")}</span></div>
+                <div className="s-chiffre"><b data-compte="6">6</b><span><strong>{x("villes")}</strong>Rabat, Casablanca, Marrakech, Tanger, Agadir, Fès</span></div>
+                <div className="s-chiffre"><b data-compte="3">3</b><span><strong>{x("langues")}</strong>{x("français, anglais et arabe")}</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Mariages : le déroulé de la soirée, le henné, le sur-mesure */}
+      <section className="s-platre" aria-labelledby="t-mar">
+        <div className="s-section s-wrap" style={{ paddingTop: 0 }}>
+          <div className="s-mariages">
+            <div className="s-txt" data-revele="">
+              <Surtitre>{x("Mariages")}</Surtitre>
+              <h2 id="t-mar">{x("Le jour J, on ne vous verra pas courir.")}</h2>
+              <p className="s-texte">{x("Organisation complète ou partielle : prestataires, planning, accueil des invités et coordination le soir même, pour que vous n'ayez qu'à être là.")}</p>
+              <Link className="s-lien" to="/organisation-mariage">{x("Voir les mariages")}</Link>
+            </div>
+            <Photo nom="allee-gypsophile" l={900} h={1104} legende={x("Chemin de gypsophile et roses blanches")}
+              alt={x("Longue table de mariage avec un chemin de gypsophile et de roses blanches, chaises médaillon ivoire, sous une verrière")} />
+            <div className="s-deroule" data-deroule="">
+              <h3>{x("Une soirée, de notre côté")}</h3>
+              <div className="s-etapes">
+                {etapes.map(([h, t, d]) => <div key={h} className="s-etape"><time>{h}</time><div><b>{t}</b><span>{d}</span></div></div>)}
+              </div>
+            </div>
+            <div className="s-henne">
+              <Photo nom="decor-henne" l={900} h={1208}
+                alt={x("Décor de henné : banquette dorée devant un panneau de moucharabieh en arche, plateau de laiton et tapis rouge")} />
+              <div className="s-texte-h" data-revele="">
+                <Surtitre>{x("Le henné")}</Surtitre>
+                <h3>{x("La soirée qui ouvre le mariage.")}</h3>
+                <p>{x("Banquette, moucharabieh en arche, laiton et bougies : un décor installé et tenu pour vous, jusqu'à la dernière invitée.")}</p>
+              </div>
+            </div>
+            <div className="s-prenom">
+              <div className="s-texte-p" data-revele="">
+                <Surtitre>{x("Sur mesure")}</Surtitre>
+                <h3>{x("Jusqu'au prénom de la mariée.")}</h3>
+                <p>{x("Boîte brodée, chevalet d'accueil, date peinte à la main : chaque soirée porte son nom.")}</p>
+              </div>
+              <div className="s-duo">
+                <Photo petit nom="boite-henne-prenom" l={900} h={1092} tailles="(min-width:900px) 25vw, 46vw" legende={x("Boîte de henné brodée")}
+                  alt={x("Boîte de henné brodée d'une étoile, au prénom de la mariée et à la date de la soirée, entre deux brûle-parfums en laiton")} />
+                <Photo petit nom="chevalet-accueil" l={900} h={1216} tailles="(min-width:900px) 25vw, 46vw" legende={x("Chevalet d'accueil")}
+                  alt={x("Chevalet doré « Marhbabikoum au Henna de Zayneb », un encensoir fumant au premier plan")} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Nawar : de vraies photos du bar, et ses petites lumières */}
+      <section className="s-nawar" aria-labelledby="t-naw">
+        <Lumieres />
+        <div className="s-nawar-s s-wrap s-grille">
+          <div className="s-txt" data-revele="">
+            <img className="s-logo-nawar" src="/logo-nawar-clair.png" alt={x("Nawar, bar à parfums")} width={463} height={488} loading="lazy" />
+            <h2 id="t-naw">{x("Ce que vos invités emportent, c'est un parfum.")}</h2>
+            <p className="s-chapo">{x("Les mariés choisissent les parfums ; Nawar les sert au flacon, et vos invités repartent avec un souvenir qu'on sent encore le lendemain.")}</p>
+            <div className="s-actions"><Bouton to="/nawar" variante="filet" fleche>{x("Découvrir Nawar")}</Bouton></div>
+          </div>
+          <div className="s-photos">
+            <Photo nom="nawar-bar" l={900} h={1246} legende={x("Le bar Nawar, un soir de mariage")}
+              alt={x("Le bar à parfums Nawar la nuit : comptoir en bois clair au logo Nawar, distributeurs de parfum et roses, sous des palmiers")} />
+            <Photo nom="nawar-flacons" className="second" l={880} h={1318} tailles="(min-width:900px) 25vw, 70vw" legende={x("Les parfums choisis par les mariés")}
+              alt={x("Les distributeurs numérotés N°1 à N°5 et les flacons Nawar, sous un palmier éclairé")} />
+          </div>
+        </div>
+      </section>
+
+      {/* Avis, engagements et questions fréquentes (renseignés dans l'admin) */}
       <SectionConfiance />
 
-      <section className="py-24 bg-foreground text-background">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
-            {t('home.ctaTitle')}
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            {t('home.ctaDescription')}
-          </p>
-          <Button asChild size="lg" variant="secondary" className="text-lg px-8 py-6">
-            <Link to="/contact">
-              {t('home.contactUs')}
-              <ArrowRight className="ml-2" size={20} />
-            </Link>
-          </Button>
+      {/* Fin : le devis, WhatsApp, les coordonnées, la signature */}
+      <section className="s-nuit" id="devis" aria-labelledby="t-fin" style={{ scrollMarginTop: 64 }}>
+        <div className="s-fin s-wrap" style={{ paddingBottom: 72 }}>
+          <div className="s-haut">
+            <div>
+              <Surtitre>{x("Votre date")}</Surtitre>
+              <h2 id="t-fin" data-revele="">{x("Racontez-nous l'événement. On s'occupe de l'accueil.")}</h2>
+              <div className="s-actions" data-revele="">
+                <Bouton to="/devis-mariage" variante="plein" fleche testid="fin-devis-mariage">{x("Devis mariage ou fête")}</Bouton>
+                <Bouton to="/devis-entreprise" variante="filet" testid="fin-devis-entreprise">{x("Devis entreprise")}</Bouton>
+              </div>
+              <a className="s-lien" href={WHATSAPP} target="_blank" rel="noopener noreferrer" style={{ marginTop: 14 }}>{x("Écrire sur WhatsApp")}</a>
+            </div>
+            <div className="s-coord" data-revele="">
+              <span><b>{x("Siège")}</b> · Rabat</span>
+              <span><b>{x("Contact")}</b> · <a href="mailto:info@heaventagency.com">info@heaventagency.com</a></span>
+              <span><b>{x("Langues")}</b> · FR · EN · ع</span>
+            </div>
+          </div>
         </div>
       </section>
     </div>

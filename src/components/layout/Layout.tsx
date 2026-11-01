@@ -4,6 +4,15 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 import BoutonWhatsApp from "@/components/BoutonWhatsApp";
+import { AnimationsSeuil } from "@/components/seuil/Seuil";
+import { PAGES_LOCALES } from "@/lib/pagesLocales";
+
+/** Pages publiques habillées avec la direction « Seuil » (polices Gloock et Jost sur toute la page). */
+const PAGES_SEUIL = ["/", "/devis-entreprise", "/devis-mariage", "/a-propos", "/contact", "/nawar", "/mentions-legales", "/politique-confidentialite", "/realisations", "/liens", ...PAGES_LOCALES.map((p) => p.chemin)];
+export const estPageSeuil = (chemin: string) => {
+  const c = chemin.replace(/\/+$/, "") || "/";
+  return PAGES_SEUIL.includes(c) || c.startsWith("/guides") || c.startsWith("/prestataires");
+};
 
 interface LayoutProps {
   children: ReactNode;
@@ -23,6 +32,12 @@ const Layout = ({ children }: LayoutProps) => {
     try { sessionStorage.setItem(CLE_VUE_SITE, "1"); } catch { /* sans mémoire : le site s'affiche quand même */ }
   }
   const vueSite = dansApplication && lireVueSite() && !pathname.startsWith("/admin");
+
+  // Typographie « Seuil » sur les pages publiques (posée sur <body> pour couvrir aussi les menus déroulants)
+  const seuil = estPageSeuil(pathname) && !(dansApplication && !vueSite);
+  useEffect(() => {
+    document.body.classList.toggle("seuil", seuil);
+  }, [seuil]);
 
   useEffect(() => {
     // Import dynamique du monitoring pour éviter d'impacter les performances
@@ -78,10 +93,11 @@ const Layout = ({ children }: LayoutProps) => {
 
   // Page de réponse d'un invité : une carte d'invitation, sans menu du site
   // L'administration a son propre en-tête (pas de menu ni de pied de page du site)
-  if (pathname.startsWith("/rsvp/") || pathname === "/liens" || pathname.startsWith("/studio") || pathname === "/nawar" || pathname === "/nawar/" || pathname === "/admin" || pathname === "/admin/") return <main>{children}</main>;
+  if (pathname.startsWith("/rsvp/") || pathname === "/liens" || pathname.startsWith("/studio") || pathname === "/nawar" || pathname === "/nawar/" || pathname === "/admin" || pathname === "/admin/") return <main>{seuil && <AnimationsSeuil />}{children}</main>;
 
   return (
     <div className="min-h-screen flex flex-col">
+      {seuil && <AnimationsSeuil />}
       <Header />
       <main className="flex-1">
         {children}

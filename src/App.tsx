@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense } from "react";
 import SuiviVisites from "./components/SuiviVisites";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,7 +7,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./i18n/index.ts";
-import SplashScreen from "./components/SplashScreen";
 import Layout from "./components/layout/Layout";
 import Home from "./pages/Home";
 const StaffRegistration = lazy(() => import("./pages/StaffRegistration"));
@@ -45,16 +44,7 @@ import RetourEnHaut from "./components/RetourEnHaut";
 const queryClient = new QueryClient();
 
 const App = () => {
-  // L'écran d'accueil animé ne s'affiche qu'une fois par visite (pas à chaque changement de page ni rechargement)
-  const [showSplash, setShowSplash] = useState(() => {
-    try { return !(window as unknown as { __pagePregeneree?: boolean }).__pagePregeneree && !navigator.userAgent.includes("HeaventAdminApp") && !sessionStorage.getItem("heavent-splash-vu") && !window.location.pathname.startsWith("/admin") && !window.location.pathname.startsWith("/staff") && !window.location.pathname.startsWith("/rsvp/"); } catch { return false; }
-  });
-  const finSplash = () => { try { sessionStorage.setItem("heavent-splash-vu", "1"); } catch { /* navigation privée */ } setShowSplash(false); };
-
-  if (showSplash) {
-    return <SplashScreen onComplete={finSplash} />;
-  }
-
+  // L'ouverture animée de l'accueil est jouée par index.html (balisage statique, une fois par visite) : rien ne bloque l'affichage ici.
   return (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>

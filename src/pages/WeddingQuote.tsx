@@ -7,14 +7,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Bouton, Etoile, PageTete, Photo, Surtitre } from "@/components/seuil/Seuil";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Calendar, Users, CheckCircle, Sparkles } from "lucide-react";
+import { Heart, Calendar, Users } from "lucide-react";
 import { useTexte } from "@/i18n/textes";
 
 const formSchema = z.object({
@@ -128,60 +128,38 @@ const WeddingQuote = () => {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-accent/30 flex items-center justify-center py-12">
-        <Card className="max-w-md mx-4 text-center">
-          <CardContent className="p-8">
-            <div className="flex justify-center mb-4">
-              <div className="relative">
-                <CheckCircle className="text-green-500" size={64} />
-                <Heart className="absolute -top-2 -right-2 text-pink-500" size={24} />
-              </div>
+      <section className="s-platre">
+        <div className="s-section s-wrap">
+          <div className="s-fairepart s-merci">
+            <Etoile /><Etoile className="bas" />
+            <div className="s-fp-tete">Heavent People Agency</div>
+            <h1 className="s-h3" style={{ marginTop: 10 }}>{x("Demande envoyée !")}</h1>
+            <p className="s-texte" style={{ marginTop: 14 }}>{x("Votre demande de devis événement a été envoyée avec succès. Notre équipe spécialisée va l'examiner et vous contacter sous 24h pour organiser un rendez-vous et discuter de votre projet en détail.")}</p>
+            <div className="s-actions" style={{ justifyContent: "center", marginTop: 24 }}>
+              <Bouton to="/" variante="plein" sombre>{x("Retour à l'accueil")}</Bouton>
             </div>
-            <h2 className="text-2xl font-bold mb-4">{x("Demande envoyée !")}</h2>
-            <p className="text-muted-foreground mb-6">
-              {x("Votre demande de devis événement a été envoyée avec succès. Notre équipe spécialisée va l'examiner et vous contacter sous 24h pour organiser un rendez-vous et discuter de votre projet en détail.")}
-            </p>
-            <Button onClick={() => window.location.href = "/"}>
-              {x("Retour à l'accueil")}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
+      </section>
     );
   }
 
   return (
     <div>
       <Seo page="mariage" />
-    <div className="min-h-screen bg-gradient-to-b from-background to-accent/30 py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-serif font-bold mb-4">
-              {x("Demande de devis")} <span className="text-primary">{x("Événement")}</span>
-            </h1>
-            <p className="text-xl text-muted-foreground flex items-center justify-center">
-              <Heart className="mr-2 text-pink-500" size={24} />
-              {x("Créons ensemble l'événement de vos rêves")}
-            </p>
-          </div>
-
-          <Card className="animate-fade-in">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Sparkles className="mr-2" size={24} />
-                  {t('wedding_quote.project_title')}
-                </CardTitle>
-                <CardDescription>
-                  {t('wedding_quote.project_description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+      <PageTete surtitre={x("Mariages & fêtes")} titre={<>{x("Demande de devis")} {x("Événement")}</>} chapo={x("Créons ensemble l'événement de vos rêves")} />
+      <section className="s-platre">
+        <div className="s-section s-wrap s-colonnes">
+          <div className="s-col-r s-r1">
+            <div className="s-form">
+              <div className="px-4 py-6 sm:px-8 sm:py-8">
+                <h2 className="s-h3">{t('wedding_quote.project_title')}</h2>
+                <p className="s-texte" style={{ marginTop: 8, marginBottom: 22, fontSize: 15 }}>{t('wedding_quote.project_description')}</p>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Informations des participants */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold flex items-center">
-                    <Heart className="mr-2 text-pink-500" size={20} />
+                    <Heart className="mr-2" size={20} />
                     {x("Vos informations")}
                   </h3>
                   
@@ -428,7 +406,7 @@ const WeddingQuote = () => {
                     {x("J'accepte que mes données personnelles soient traitées conformément à la")} 
                     <a href="/politique-confidentialite" className="text-primary hover:underline ml-1">
                       {x("politique de confidentialité")}
-                    </a> 
+                    </a>{" "}
                     {x("et au RGPD. Ces données seront utilisées uniquement pour traiter ma demande de devis événement.")}
                   </Label>
                 </div>
@@ -439,17 +417,28 @@ const WeddingQuote = () => {
                 <Button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="w-full gold-shadow"
+                  className="w-full"
                   size="lg"
                 >
                   {isSubmitting ? x("Envoi en cours...") : x("Envoyer ma demande de devis")}
                 </Button>
               </form>
-            </CardContent>
-          </Card>
+              </div>
+            </div>
+          </div>
+          <aside className="s-col-q s-r1">
+            <div data-revele="">
+              <Surtitre>{x("Ensuite")}</Surtitre>
+              <ol className="s-liste" style={{ marginTop: 22 }}>
+                <li><span className="num">I</span><div><b>{x("Réponse sous 24 h")}</b></div><p>{x("Nous relisons votre demande et revenons vers vous, par téléphone ou par e-mail.")}</p></li>
+                <li><span className="num">II</span><div><b>{x("Un devis détaillé")}</b></div><p>{x("Ligne par ligne, à consulter et à signer en ligne depuis votre téléphone.")}</p></li>
+                <li><span className="num">III</span><div><b>{x("Une seule personne à appeler")}</b></div><p>{x("Un coordinateur suit votre événement, du devis jusqu'au dernier invité.")}</p></li>
+              </ol>
+            </div>
+            <Photo style={{ marginTop: 36 }} nom="decor-henne" l={900} h={1208} tailles="(min-width:900px) 30vw, 92vw" alt={x("Décor de henné : banquette dorée devant un panneau de moucharabieh en arche, plateau de laiton et tapis rouge")} />
+          </aside>
         </div>
-      </div>
-    </div>
+      </section>
     </div>
   );
 };

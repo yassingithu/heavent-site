@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import Seo, { DONNEES_AGENCE, SITE } from "@/components/Seo";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, CalendarCheck2, CheckCircle2, MapPin, MessageCircle, Sparkles } from "lucide-react";
+import { Bouton, PageTete, Photo, Surtitre } from "@/components/seuil/Seuil";
 import SectionConfiance, { NoteGoogle, useVitrine } from "@/components/vitrine/Confiance";
 import { NUMERO_WHATSAPP } from "@/components/BoutonWhatsApp";
 import { PageLocale as Page, SERVICES, VILLES } from "@/lib/pagesLocales";
@@ -29,81 +28,94 @@ export default function PageLocale({ page }: { page: Page }) {
   const autresVilles = VILLES.filter((p) => p.chemin !== page.chemin);
   const autresServices = SERVICES.filter((p) => p.chemin !== page.chemin);
 
+  // Une vraie photo par page, choisie selon le sujet (mariage, Nawar, accueil)
+  const photo = page.devis === "mariage"
+    ? { nom: "allee-gypsophile", l: 900, h: 1104, alt: x("Longue table de mariage avec un chemin de gypsophile et de roses blanches, chaises médaillon ivoire, sous une verrière") }
+    : { nom: "table-honneur", l: 900, h: 1204, alt: x("Table d'honneur d'un mariage devant de grandes verrières en arche, un nuage de gypsophile suspendu au-dessus de la nappe ivoire") };
+
   return (
     <div data-testid="page-locale">
       <Seo perso={{ chemin: page.chemin, titre: page.titreSeo, description: page.descriptionSeo, motsCles: page.motsCles, jsonLd }} />
 
-      <section className="py-20 md:py-28 bg-gradient-to-b from-[#FAF7EE] to-background">
-        <div className="container mx-auto px-4 max-w-4xl text-center space-y-6">
-          <nav className="text-xs text-muted-foreground" aria-label={x("Fil d'Ariane")}><Link to="/" className="hover:underline">{x("Accueil")}</Link> › {x(page.nomCourt)}</nav>
-          <p className="uppercase tracking-[0.25em] text-xs text-[#8C6D22] flex items-center justify-center gap-1">
-            {page.ville ? <><MapPin className="h-3.5 w-3.5" /> {x(page.ville)}</> : <><Sparkles className="h-3.5 w-3.5" /> Heavent People Agency</>}
-          </p>
-          <h1 className="text-4xl md:text-6xl font-serif font-bold">{x(page.h1)}</h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">{x(page.accroche)}</p>
-          <div className="flex flex-wrap justify-center gap-3 pt-2">
-            <Button asChild size="lg"><Link to={lienDevis}>{x("Demander un devis")} <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
-            <Button asChild size="lg" variant="outline"><Link to="/contact#rendez-vous"><CalendarCheck2 className="mr-2 h-4 w-4" /> {x("Prendre rendez-vous")}</Link></Button>
+      <PageTete
+        ariane={<nav className="s-ariane" aria-label={x("Fil d'Ariane")}><Link to="/">{x("Accueil")}</Link><span aria-hidden="true">›</span><span>{x(page.nomCourt)}</span></nav>}
+        surtitre={page.ville ? x(page.ville) : "Heavent People Agency"}
+        titre={x(page.h1)}
+        chapo={x(page.accroche)}>
+        <div className="s-actions s-entree-heros" style={{ animationDelay: ".2s" }}>
+          <Bouton to={lienDevis} variante="plein" fleche>{x("Demander un devis")}</Bouton>
+          <Bouton to="/contact#rendez-vous" variante="filet">{x("Prendre rendez-vous")}</Bouton>
+        </div>
+        <div style={{ marginTop: 24 }}><NoteGoogle v={v} clair /></div>
+      </PageTete>
+
+      <section className="s-platre">
+        <div className="s-section s-wrap s-colonnes">
+          <div className="s-col-g" data-revele="">
+            <Surtitre>{page.type === "ville" ? x("Sur place") : x("Le service")}</Surtitre>
+            <div className="s-prose" style={{ marginTop: 22 }}>
+              {page.intro.map((p, i) => <p key={i}>{x(p)}</p>)}
+            </div>
           </div>
-          <div className="pt-2"><NoteGoogle v={v} /></div>
+          <div className="s-col-d">
+            <div className="s-encadre" data-revele="">
+              <h2 className="s-h3" style={{ marginBottom: 18 }}>{page.type === "ville" ? x("Nos missions à {ville}", { ville: x(page.ville ?? "") }) : x("Ce que nous prenons en charge")}</h2>
+              <ul className="s-puces">
+                {page.evenements.map((e) => <li key={e}>{x(e)}</li>)}
+              </ul>
+            </div>
+            <Photo nom={photo.nom} l={photo.l} h={photo.h} alt={photo.alt} tailles="(min-width:900px) 34vw, 92vw" style={{ marginTop: 32 }} />
+          </div>
         </div>
       </section>
 
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-5xl grid lg:grid-cols-[1.4fr_1fr] gap-10">
-          <div className="space-y-4 text-[17px] leading-relaxed text-[#3d362d]">
-            {page.intro.map((p, i) => <p key={i}>{x(p)}</p>)}
+      <section className="s-nuit">
+        <div className="s-section s-wrap s-colonnes">
+          <div className="s-col-g" data-revele="">
+            <Surtitre>{x("Comment ça se passe")}</Surtitre>
+            <h2 className="s-h2" style={{ marginTop: 20, maxWidth: "12ch" }}>{x("Du devis au dernier invité.")}</h2>
           </div>
-          <div className="rounded-2xl border border-[#EADFC8] bg-white p-6">
-            <h2 className="font-serif text-2xl mb-4">{page.type === "ville" ? x("Nos missions à {ville}", { ville: x(page.ville ?? "") }) : x("Ce que nous prenons en charge")}</h2>
-            <ul className="space-y-2">
-              {page.evenements.map((e) => <li key={e} className="flex gap-2"><CheckCircle2 className="h-5 w-5 shrink-0 text-[#A8933F]" /> {x(e)}</li>)}
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4 max-w-5xl">
-          <h2 className="text-3xl font-serif font-bold mb-8 text-center">{x("Comment ça se passe")}</h2>
-          <div className="grid md:grid-cols-3 gap-5">
+          <ol className="s-liste s-col-d">
             {page.pointsCles.map((p, i) => (
-              <div key={p.titre} className="rounded-2xl bg-white border border-[#EADFC8] p-6">
-                <div className="h-9 w-9 rounded-full bg-[#141414] text-white flex items-center justify-center font-semibold mb-3">{i + 1}</div>
-                <h3 className="font-semibold text-lg mb-1">{x(p.titre)}</h3>
-                <p className="text-sm text-muted-foreground">{x(p.texte)}</p>
-              </div>
+              <li key={p.titre} data-revele="" style={{ "--retard": `${i * 0.08}s` } as React.CSSProperties}>
+                <span className="num">{["I", "II", "III", "IV", "V"][i]}</span><div><b>{x(p.titre)}</b></div><p>{x(p.texte)}</p>
+              </li>
             ))}
+          </ol>
+        </div>
+      </section>
+
+      <div className="s-confiance"><SectionConfiance faqExtra={page.faq} /></div>
+
+      <section className="s-nuit">
+        <div className="s-fin s-wrap" style={{ paddingBottom: 72 }}>
+          <div className="s-haut">
+            <div>
+              <Surtitre>{x("Votre date")}</Surtitre>
+              <h2 data-revele="">{x("Parlons de votre événement")}</h2>
+              <p className="s-chapo" style={{ marginTop: 18, maxWidth: "46ch" }}>{x("Devis détaillé, à consulter et signer en ligne. Ou réservez directement un rendez-vous.")}</p>
+              <div className="s-actions">
+                <Bouton to={lienDevis} variante="plein" fleche>{x("Demander un devis")}</Bouton>
+                <Bouton href={whatsapp} variante="filet" externe>WhatsApp</Bouton>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <SectionConfiance faqExtra={page.faq} />
-
-      <section className="py-16 bg-foreground text-background">
-        <div className="container mx-auto px-4 text-center space-y-5 max-w-3xl">
-          <h2 className="text-3xl md:text-4xl font-serif font-bold">{x("Parlons de votre événement")}</h2>
-          <p className="text-lg opacity-80">{x("Devis détaillé, à consulter et signer en ligne. Ou réservez directement un rendez-vous.")}</p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Button asChild size="lg" variant="secondary"><Link to={lienDevis}>{x("Demander un devis")}</Link></Button>
-            <Button asChild size="lg" variant="outline" className="bg-transparent text-background border-background/40 hover:bg-background/10"><a href={whatsapp} target="_blank" rel="noreferrer"><MessageCircle className="mr-2 h-4 w-4" /> WhatsApp</a></Button>
+      <section className="s-papier">
+        <div className="s-section s-wrap s-colonnes" style={{ paddingTop: 56, paddingBottom: 56 }}>
+          <div className="s-col-g">
+            <h2 className="s-surtitre" style={{ marginBottom: 14 }}>{x("Nos villes")}</h2>
+            <div className="s-villes" style={{ marginTop: 0 }}>{autresVilles.map((p) => <Link key={p.chemin} to={p.chemin}>{x("Hôtesses à {ville}", { ville: x(p.nomCourt) })}</Link>)}</div>
           </div>
-        </div>
-      </section>
-
-      <section className="py-12 bg-background">
-        <div className="container mx-auto px-4 max-w-5xl grid sm:grid-cols-2 gap-8 text-sm">
-          <div>
-            <h2 className="font-semibold mb-3">{x("Nos villes")}</h2>
-            <ul className="space-y-1.5">{autresVilles.map((p) => <li key={p.chemin}><Link to={p.chemin} className="text-[#8C6D22] hover:underline">{x("Hôtesses à {ville}", { ville: x(p.nomCourt) })}</Link></li>)}</ul>
-          </div>
-          <div>
-            <h2 className="font-semibold mb-3">{x("Nos services")}</h2>
-            <ul className="space-y-1.5">
-              {autresServices.map((p) => <li key={p.chemin}><Link to={p.chemin} className="text-[#8C6D22] hover:underline">{x(p.nomCourt)}</Link></li>)}
-              <li><Link to="/realisations" className="text-[#8C6D22] hover:underline">{x("Nos réalisations en photos")}</Link></li>
-              <li><Link to="/cree-ton-evenement" className="text-[#8C6D22] hover:underline">{x("Crée ton événement (simulateur)")}</Link></li>
-            </ul>
+          <div className="s-col-d">
+            <h2 className="s-surtitre" style={{ marginBottom: 14 }}>{x("Nos services")}</h2>
+            <div className="s-villes" style={{ marginTop: 0 }}>
+              {autresServices.map((p) => <Link key={p.chemin} to={p.chemin}>{x(p.nomCourt)}</Link>)}
+              <Link to="/realisations">{x("Nos réalisations en photos")}</Link>
+              <Link to="/cree-ton-evenement">{x("Crée ton événement (simulateur)")}</Link>
+            </div>
           </div>
         </div>
       </section>

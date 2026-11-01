@@ -1,3 +1,4 @@
+import { PageTete } from "@/components/seuil/Seuil";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,21 +28,17 @@ export default function Realisations() {
   const changer = (d: 1 | -1) => setOuverte((o) => (o ? { r: o.r, i: (o.i + d + o.r.photos.length) % o.r.photos.length } : o));
 
   return (
-    <div className="min-h-screen bg-[#FBF8F1] text-[#2A2420]">
+    <div className="min-h-screen s-platre">
       {liste && liste.length ? <Seo page="realisations" /> : <Seo noindex />}
-      <div className="container mx-auto px-4 py-12 sm:py-16 max-w-7xl space-y-8">
-        <header className="text-center space-y-3 max-w-2xl mx-auto">
-          <p className="uppercase tracking-[0.25em] text-xs text-[#8C6D22]">{x("Nos réalisations")}</p>
-          <h1 className="font-serif text-4xl sm:text-5xl">{x("Des événements qui nous ressemblent")}</h1>
-          <p className="text-[#5E554A]">{x("Mariages, fêtes, soirées d'entreprise et salons : quelques moments que nous avons eu la joie d'organiser et d'accompagner.")}</p>
-        </header>
+      <PageTete surtitre={x("Nos réalisations")} titre={x("Des événements qui nous ressemblent")} chapo={x("Mariages, fêtes, soirées d'entreprise et salons : quelques moments que nous avons eu la joie d'organiser et d'accompagner.")} />
+      <div className="s-section s-wrap space-y-8">
 
         {liste === null ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">{Array.from({ length: 6 }, (_, i) => <div key={i} className="aspect-[4/3] rounded-3xl bg-[#EFE7D6] animate-pulse" />)}</div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">{Array.from({ length: 6 }, (_, i) => <div key={i} className="aspect-[4/3] bg-[#EBE2CF] animate-pulse" />)}</div>
         ) : liste.length === 0 ? (
           <div className="text-center py-10 space-y-4" data-testid="realisations-vide">
-            <p className="text-[#5E554A]">{x("Nos premières réalisations en images arrivent très bientôt.")}</p>
-            <Link to="/cree-ton-evenement" className="inline-flex rounded-full bg-[#141414] text-white px-6 min-h-11 items-center font-medium">{x("Imaginer mon événement")}</Link>
+            <p className="s-texte">{x("Nos premières réalisations en images arrivent très bientôt.")}</p>
+            <Link to="/cree-ton-evenement" className="s-btn s-btn-plein">{x("Imaginer mon événement")}</Link>
           </div>
         ) : (
           <>
@@ -49,16 +46,16 @@ export default function Realisations() {
               <div className="flex flex-wrap justify-center gap-2" role="tablist" aria-label={x("Filtrer par type d'événement")}>
                 {[{ id: "tous", nom: "Tout" }, ...types].map((t) => (
                   <button key={t.id} role="tab" aria-selected={filtre === t.id} onClick={() => setFiltre(t.id)}
-                    className={`rounded-full px-4 min-h-10 text-sm border transition-colors ${filtre === t.id ? "bg-[#2A2420] text-white border-[#2A2420]" : "bg-white border-[#E3D6BA] hover:bg-[#F6EEDC]"}`}>{t.nom}</button>
+                    className={`px-4 min-h-[44px] text-sm tracking-wide border transition-colors ${filtre === t.id ? "bg-[#141414] text-[#FAF6EC] border-[#141414]" : "bg-[#FAF6EC] border-[#DCCDAA] hover:border-[#A8933F]"}`}>{t.nom}</button>
                 ))}
               </div>
             )}
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" data-testid="galerie">
               {visibles.map((r) => (
-                <button key={r.id} onClick={() => setOuverte({ r, i: 0 })} className="group text-left rounded-3xl overflow-hidden bg-white border border-[#EADFC8] shadow-[0_20px_50px_-40px_rgba(140,109,34,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A74E]">
+                <button key={r.id} onClick={() => setOuverte({ r, i: 0 })} className="group text-start bg-[#FAF6EC] border border-[rgba(168,147,63,.75)] p-[6px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8933F]">
                   <div className="aspect-[4/3] overflow-hidden"><img src={r.photos[0]} alt={r.titre} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" /></div>
                   <div className="p-4">
-                    <div className="text-[11px] uppercase tracking-[0.2em] text-[#8C6D22]">{TYPES_REALISATION.find((t) => t.id === r.type_evenement)?.nom}</div>
+                    <div className="text-[11px] uppercase tracking-[0.2em] text-[#7A5F1F]">{TYPES_REALISATION.find((t) => t.id === r.type_evenement)?.nom}</div>
                     <div className="font-serif text-xl mt-1">{r.titre}</div>
                     {r.lieu && <div className="text-sm text-[#6B6155] flex items-center gap-1 mt-1"><MapPin className="h-3.5 w-3.5" />{r.lieu}</div>}
                   </div>
@@ -66,7 +63,7 @@ export default function Realisations() {
               ))}
             </div>
             <div className="text-center pt-4">
-              <Link to="/cree-ton-evenement" className="inline-flex rounded-full bg-[#141414] text-white px-6 min-h-12 items-center font-medium">{x("Créer mon événement")}</Link>
+              <Link to="/cree-ton-evenement" className="s-btn s-btn-plein">{x("Créer mon événement")}</Link>
             </div>
           </>
         )}

@@ -1,18 +1,44 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { LanguageSelector } from "@/components/ui/language-selector";
-import { cn } from "@/lib/utils";
 import { useTexte } from "@/i18n/textes";
 
+const LANGUES_SITE = [{ code: "fr", abr: "FR", nom: "Français" }, { code: "en", abr: "EN", nom: "English" }, { code: "ar", abr: "ع", nom: "العربية" }];
+
+/** FR · EN · ع : la langue choisie est soulignée (et retenue par le navigateur). */
+export function Langues() {
+  const { i18n } = useTranslation();
+  const actuelle = (i18n.language || "fr").slice(0, 2);
+  const changer = (code: string) => {
+    i18n.changeLanguage(code);
+    document.documentElement.dir = code === "ar" ? "rtl" : "ltr";
+    document.documentElement.lang = code;
+  };
+  return (
+    <div className="s-langues" role="group" aria-label={"Langue / Language / اللغة"}>
+      {LANGUES_SITE.map((l, i) => (
+        <span key={l.code} style={{ display: "contents" }}>
+          {i > 0 && <span aria-hidden="true">·</span>}
+          <button type="button" lang={l.code} aria-label={l.nom} aria-pressed={actuelle === l.code} onClick={() => changer(l.code)}>{l.abr}</button>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Où mène « Demander un devis » : le formulaire mariage sur les pages qui parlent de mariage, sinon celui des entreprises. */
+export function lienDevis(chemin: string) {
+  return /mariage|marrakech|nawar/.test(chemin) ? "/devis-mariage" : "/devis-entreprise";
+}
+
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const location = useLocation();
+  const [ouvert, setOuvert] = useState(false);
+  const { pathname } = useLocation();
   const { t } = useTranslation();
   const x = useTexte();
+  const boutonMenu = useRef<HTMLButtonElement>(null);
+  const boutonFermer = useRef<HTMLButtonElement>(null);
   // « Réalisations » n'apparaît qu'une fois au moins une réalisation publiée (jamais de page vide)
   const [realisations, setRealisations] = useState(false);
   useEffect(() => {
@@ -23,119 +49,78 @@ const Header = () => {
   }, []);
 
   const navigation = [
-    { name: t('nav.home'), href: "/" },
-    { name: t('nav.business'), href: "/devis-entreprise" },
-    { name: t('nav.weddings'), href: "/devis-mariage" },
-    ...(realisations ? [{ name: t('nav.realisations'), href: "/realisations" }] : []),
-    { name: t('nav.about'), href: "/a-propos" },
-    { name: t('nav.contact'), href: "/contact" },
+    { name: t("nav.home"), href: "/" },
+    { name: t("nav.business"), href: "/devis-entreprise" },
+    { name: t("nav.weddings"), href: "/devis-mariage" },
+    ...(realisations ? [{ name: t("nav.realisations"), href: "/realisations" }] : []),
+    { name: t("nav.about"), href: "/a-propos" },
+    { name: t("nav.contact"), href: "/contact" },
   ];
+  const devis = lienDevis(pathname);
+  // Sur l'accueil, « Demander un devis » descend au choix mariage / entreprise (#devis) au lieu d'imposer un formulaire
+  const accueil = pathname === "/";
+  const versDevis = (e?: React.MouseEvent) => {
+    setOuvert(false);
+    if (!accueil) return;
+    e?.preventDefault();
+    setTimeout(() => document.getElementById("devis")?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }), 60);
+  };
+  const cibleDevis = accueil ? "/#devis" : devis;
 
-  const isActive = (href: string) => location.pathname === href;
+  // Menu ouvert : le fond ne défile plus, Échap ferme, le focus va au bouton « Fermer » puis revient au bouton « Menu »
+  useEffect(() => {
+    if (!ouvert) return;
+    const avant = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    boutonFermer.current?.focus({ preventScroll: true });
+    const touche = (e: KeyboardEvent) => { if (e.key === "Escape") fermer(); };
+    window.addEventListener("keydown", touche);
+    return () => { document.body.style.overflow = avant; window.removeEventListener("keydown", touche); };
+  }, [ouvert]);
+  const fermer = () => { setOuvert(false); boutonMenu.current?.focus({ preventScroll: true }); };
+  // Changement de page : le menu se referme
+  useEffect(() => { setOuvert(false); }, [pathname]);
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-      <div className="container mx-auto px-4">
-        <div className="flex h-20 md:h-24 items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <img 
-              src="/lovable-uploads/df0014d7-d697-4525-a5ee-71cf8fa774ab.png" 
-              alt="Heavent People Agency" 
-              className="h-16 w-auto md:h-20"
-              style={{
-                filter: 'brightness(0)'
-              }}
-            />
-          </Link>
+    <header className="s-entete">
+      <div className="s-entete-in">
+        <Link to="/" className="s-marque" aria-label={x("Heavent People Agency, accueil")}>
+          <img src="/seuil/logo-heavent-or.png" alt="Heavent People Agency" width={726} height={214} />
+        </Link>
 
-          {/* Desktop Navigation & Language Selector */}
-          <div className="hidden md:flex items-center space-x-6">
-            <nav className="flex items-center space-x-8">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={cn(
-                    "text-sm font-medium transition-colors hover:text-primary",
-                    isActive(item.href)
-                      ? "text-primary"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </nav>
-            <LanguageSelector />
-          </div>
+        <nav className="s-nav" aria-label={x("Navigation principale")}>
+          {navigation.map((item) => (
+            <Link key={item.href} to={item.href} aria-current={pathname === item.href ? "page" : undefined}>{item.name}</Link>
+          ))}
+          <Langues />
+          <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-filet" data-testid="entete-devis">{x("Demander un devis")}</Link>
+        </nav>
 
-          {/* CTA Buttons */}
-          <div className="hidden md:flex items-center gap-2 lg:gap-3">
-            <Button asChild variant="outline">
-              <Link to="/auth">{t('nav.staffSpace')}</Link>
-            </Button>
-            <Button asChild variant="default" className="gold-shadow">
-              <Link to="/inscription-staff">{t('nav.joinTeam')}</Link>
-            </Button>
-            <Button asChild variant="outline" className="border-primary/40" data-testid="bouton-prestataires">
-              <Link to="/prestataires">{x("Devenir prestataire")}</Link>
-            </Button>
-          </div>
-
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
-            aria-expanded={isMenuOpen}
-            className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground"
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        <div className="s-entete-droite">
+          <Link to={cibleDevis} onClick={versDevis} className="s-devis-court">{x("Devis")}</Link>
+          <button ref={boutonMenu} type="button" className="s-menu-btn" aria-label={x("Ouvrir le menu")} aria-expanded={ouvert} aria-controls="menu-site" onClick={() => setOuvert(true)} data-testid="ouvrir-menu">
+            {x("Menu")} <i aria-hidden="true" />
           </button>
         </div>
+      </div>
 
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden border-t border-border mt-4 pt-4 pb-4 animate-fade-in">
-            <nav className="flex flex-col space-y-4">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={cn(
-                    "text-sm font-medium transition-colors hover:text-primary",
-                    isActive(item.href)
-                      ? "text-primary"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  {item.name}
-                </Link>
-              ))}
-              <div className="flex flex-col space-y-4 pt-4 border-t border-border">
-                <LanguageSelector />
-                <div className="flex space-x-4">
-                  <Button asChild variant="outline" className="flex-1">
-                    <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
-                      {t('nav.staffSpace')}
-                    </Link>
-                  </Button>
-                  <Button asChild variant="default" className="flex-1">
-                    <Link to="/inscription-staff" onClick={() => setIsMenuOpen(false)}>
-                      {t('nav.joinTeam')}
-                    </Link>
-                  </Button>
-                </div>
-                <Button asChild variant="outline" className="w-full border-primary/40">
-                  <Link to="/prestataires" onClick={() => setIsMenuOpen(false)}>
-                    {x("Devenir prestataire")}
-                  </Link>
-                </Button>
-              </div>
-            </nav>
-          </div>
-        )}
+      <div id="menu-site" className={`s-panneau s-nuit${ouvert ? " ouvert" : ""}`} role="dialog" aria-modal="true" aria-label={x("Menu")} aria-hidden={!ouvert}>
+        <div className="s-panneau-tete">
+          <img src="/seuil/logo-heavent-or.png" alt="" width={726} height={214} />
+          <button ref={boutonFermer} type="button" className="fermer" onClick={fermer} tabIndex={ouvert ? 0 : -1}>{x("Fermer")}</button>
+        </div>
+        <nav aria-label={x("Navigation principale")}>
+          {navigation.map((item) => (
+            <Link key={item.href} to={item.href} onClick={() => setOuvert(false)} aria-current={pathname === item.href ? "page" : undefined} tabIndex={ouvert ? 0 : -1}>{item.name}</Link>
+          ))}
+        </nav>
+        <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-plein">{x("Demander un devis")} <span className="fl" aria-hidden="true">→</span></Link>
+        <div className="s-panneau-pied">
+          <Link to="/inscription-staff" onClick={() => setOuvert(false)} tabIndex={ouvert ? 0 : -1}>{t("nav.joinTeam")}</Link>
+          <Link to="/auth" onClick={() => setOuvert(false)} tabIndex={ouvert ? 0 : -1}>{t("nav.staffSpace")}</Link>
+          <Link to="/prestataires" onClick={() => setOuvert(false)} tabIndex={ouvert ? 0 : -1} data-testid="bouton-prestataires">{x("Devenir prestataire")}</Link>
+        </div>
+        <Langues />
       </div>
     </header>
   );

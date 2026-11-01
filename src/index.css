@@ -6,6 +6,26 @@
 All colors MUST be HSL. Color scheme: white, black, gold (#C8B560)
 */
 
+
+/* ———— Direction « Seuil » : polices servies en local et couleurs de la marque ———— */
+@font-face { font-family: "Gloock"; src: url(/polices/gloock-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Jost"; src: url(/polices/jost-latin-300-normal.woff2) format("woff2"); font-weight: 300; font-display: swap; }
+@font-face { font-family: "Jost"; src: url(/polices/jost-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Jost"; src: url(/polices/jost-latin-500-normal.woff2) format("woff2"); font-weight: 500; font-display: swap; }
+:root {
+  --s-nuit: #141414; --s-platre: #F3ECDD; --s-papier: #FAF6EC; --s-filet: #DCCDAA;
+  --s-laiton: #A8933F;        /* filets et décor — jamais en texte sur crème */
+  --s-laiton-clair: #E4D49A;  /* texte or sur noir */
+  --s-laiton-texte: #7A5F1F;  /* texte or sur plâtre */
+  --s-texte-2: #5A5146;       /* texte secondaire sur plâtre */
+  --s-gris-nuit: #BDB29C;     /* texte secondaire sur nuit */
+  --s-zellige: #1F5A4C; --s-terre: #9C4A2C;
+  --s-titre: "Gloock", Didot, Georgia, serif;
+  --s-texte: "Jost", Futura, system-ui, sans-serif;
+  --s-courbe: cubic-bezier(.2, .7, .2, 1);
+  --s-g: 16px;
+}
+
 /* RTL Support for Arabic */
 [dir="rtl"] {
   direction: rtl;
