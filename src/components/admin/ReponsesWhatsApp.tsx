@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { useTexte } from "@/i18n/textes";
 import { ChevronLeft, MessageCircle, Send } from "lucide-react";
 
 /**
@@ -59,16 +61,7 @@ function evenementEtDate(c: ContexteClient, l: LangueClient) {
   return { evt, date };
 }
 
-export const TITRES_MODELES: { id: ModeleId; titre: string }[] = [
-  { id: "recu", titre: "Bien reçu 🙏" },
-  { id: "devisPret", titre: "Votre devis est prêt 📄" },
-  { id: "appel", titre: "Proposer un appel 📞" },
-  { id: "relance", titre: "Petite relance 🙂" },
-  { id: "paiement", titre: "Rappel de paiement 💳" },
-  { id: "confirme", titre: "Date confirmée ✅" },
-  { id: "merci", titre: "Merci après l'événement 💛" },
-  { id: "indispo", titre: "Date indisponible 😔" },
-];
+export const ORDRE_MODELES: ModeleId[] = ["recu", "devisPret", "appel", "relance", "paiement", "confirme", "merci", "indispo"];
 
 /** Texte d'un modèle dans la langue du client (exporté pour les tests). */
 export function texteModele(id: ModeleId, l: LangueClient, c: ContexteClient, prenomSignataire: string | null): string {
@@ -85,7 +78,7 @@ export function texteModele(id: ModeleId, l: LangueClient, c: ContexteClient, pr
       recu: `Merci beaucoup pour votre demande pour ${evt}${date} ! Je l'étudie avec attention et je vous envoie votre devis très rapidement.`,
       devisPret: `Votre devis pour ${evt}${date} est prêt${c.lienDevis ? ` : vous pouvez le consulter et le signer en ligne ici 👉 ${c.lienDevis}` : " et vient de vous être envoyé par e-mail"}.\n\nJe reste disponible pour toute question ou ajustement.`,
       appel: `Pour bien préparer ${evt}${date}, je vous propose un court appel de 10 minutes afin de valider ensemble vos envies et les détails. Quel moment vous arrangerait ?`,
-      relance: `Je me permets de revenir vers vous au sujet du devis pour ${evt}${date}. Avez-vous pu le consulter ? Si vous souhaitez modifier quelque chose, je l'adapte avec plaisir.`,
+      relance: `Je me permets de revenir vers vous au sujet du devis pour ${evt}${date}. Avez-vous pu le consulter ? Si vous souhaitez modifier quelque chose, je l'adapte avec plaisir.${c.lienDevis ? `\n\nVous le retrouvez ici 👉 ${c.lienDevis}` : ""}`,
       paiement: `Je me permets de vous écrire au sujet du règlement de la facture${ref}${mont} pour ${evt}${date}. Pourriez-vous me dire quand le virement pourra être effectué ? Si c'est déjà fait, merci beaucoup, et n'hésitez pas à m'envoyer la preuve de paiement.`,
       confirme: `C'est confirmé : nous serons à vos côtés pour ${evt}${date} ! Merci pour votre confiance. Je reviens vers vous quelques jours avant pour caler les derniers détails.`,
       merci: `Un immense merci de nous avoir fait confiance pour ${evt}. Ce fut un plaisir de partager ce moment avec vous ! Si vous avez une minute, votre avis nous aiderait énormément.\n\nÀ très bientôt,`,
@@ -95,7 +88,7 @@ export function texteModele(id: ModeleId, l: LangueClient, c: ContexteClient, pr
       recu: `Thank you so much for your request for ${evt}${date}! I'm reviewing it carefully and will send you your quote very shortly.`,
       devisPret: `Your quote for ${evt}${date} is ready${c.lienDevis ? `: you can view and sign it online here 👉 ${c.lienDevis}` : " and has just been sent to you by email"}.\n\nI remain available for any question or adjustment.`,
       appel: `To prepare ${evt}${date} properly, I'd suggest a short 10-minute call so we can go over your wishes and the details together. What time would suit you?`,
-      relance: `I'm following up on the quote for ${evt}${date}. Have you had a chance to look at it? If you'd like to change anything, I'll gladly adapt it.`,
+      relance: `I'm following up on the quote for ${evt}${date}. Have you had a chance to look at it? If you'd like to change anything, I'll gladly adapt it.${c.lienDevis ? `\n\nYou can find it here 👉 ${c.lienDevis}` : ""}`,
       paiement: `I'm writing about the payment of invoice${ref}${mont} for ${evt}${date}. Could you let me know when the transfer can be made? If it's already done, thank you very much, and please feel free to send me the proof of payment.`,
       confirme: `It's confirmed: we will be by your side for ${evt}${date}! Thank you for your trust. I'll get back to you a few days beforehand to settle the last details.`,
       merci: `A huge thank you for trusting us with ${evt}. It was a pleasure to share this moment with you! If you have a minute, your review would help us enormously.\n\nSee you very soon,`,
@@ -105,7 +98,7 @@ export function texteModele(id: ModeleId, l: LangueClient, c: ContexteClient, pr
       recu: `شكرًا جزيلًا على طلبكم بخصوص ${evt}${date}! أقوم بدراسته باهتمام وسأرسل لكم عرض السعر في أقرب وقت.`,
       devisPret: `عرض السعر بخصوص ${evt}${date} جاهز${c.lienDevis ? `، ويمكنكم الاطلاع عليه وتوقيعه إلكترونيًا من هنا 👉 ${c.lienDevis}` : " وقد تم إرساله إليكم للتو عبر البريد الإلكتروني"}.\n\nأنا رهن إشارتكم لأي سؤال أو تعديل.`,
       appel: `لتحضير ${evt}${date} على أفضل وجه، أقترح عليكم مكالمة قصيرة مدتها 10 دقائق لنتفق معًا على رغباتكم وعلى التفاصيل. ما هو الوقت المناسب لكم؟`,
-      relance: `أعاود التواصل معكم بخصوص عرض السعر المتعلق ب${evt}${date}. هل تمكنتم من الاطلاع عليه؟ وإن رغبتم في تعديل أي شيء فسأقوم بذلك بكل سرور.`,
+      relance: `أعاود التواصل معكم بخصوص عرض السعر المتعلق ب${evt}${date}. هل تمكنتم من الاطلاع عليه؟ وإن رغبتم في تعديل أي شيء فسأقوم بذلك بكل سرور.${c.lienDevis ? `\n\nيمكنكم الاطلاع عليه هنا 👉 ${c.lienDevis}` : ""}`,
       paiement: `أكتب إليكم بخصوص أداء الفاتورة${ref}${mont} المتعلقة ب${evt}${date}. هل يمكنكم إخباري بموعد إجراء التحويل؟ وإن كان قد تم فعلًا فشكرًا جزيلًا، ويُرجى إرسال وصل الأداء إن أمكن.`,
       confirme: `تم التأكيد: سنكون إلى جانبكم في ${evt}${date}! شكرًا لثقتكم بنا. سأتواصل معكم قبل الموعد بأيام قليلة لضبط آخر التفاصيل.`,
       merci: `شكرًا جزيلًا على ثقتكم بنا في ${evt}. كان من دواعي سرورنا مشاركتكم هذه اللحظة الجميلة! وإن توفّر لديكم بعض الوقت، فرأيكم سيساعدنا كثيرًا.\n\nإلى لقاء قريب،`,
@@ -131,7 +124,15 @@ interface Props {
   onEnvoye?: () => void;
 }
 
+const useMobile = () => {
+  const [m, setM] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches);
+  useEffect(() => { const q = window.matchMedia("(max-width: 639px)"); const f = () => setM(q.matches); q.addEventListener("change", f); return () => q.removeEventListener("change", f); }, []);
+  return m;
+};
+
 export default function ReponsesWhatsApp({ contexte, compact = false, modeleDirect, libelle, classe, onEnvoye }: Props) {
+  const x = useTexte();
+  const mobile = useMobile();
   const [prenomSig, setPrenomSig] = useState<string | null>(null);
   const [langue, setLangue] = useState<LangueClient>(deviner(contexte));
   const [modele, setModele] = useState<ModeleId | null>(null);
@@ -142,58 +143,81 @@ export default function ReponsesWhatsApp({ contexte, compact = false, modeleDire
   const numero = numeroWhatsApp(contexte.telephone);
   if (!numero) return null;
 
+  const titres: Record<ModeleId, string> = {
+    recu: x("Bien reçu"), devisPret: x("Votre devis est prêt"), appel: x("Proposer un appel"), relance: x("Petite relance"),
+    paiement: x("Rappel de paiement"), confirme: x("Date confirmée"), merci: x("Merci après l'événement"), indispo: x("Date indisponible"),
+  };
   const choisir = (id: ModeleId, l: LangueClient = langue) => { setModele(id); setTexte(texteModele(id, l, contexte, prenomSig)); setModifie(false); };
   const changerLangue = (l: LangueClient) => {
     if (l === langue) return;
-    if (modele && texte !== null && modifie && !confirm("Changer de langue remplace le message que tu as modifié. Continuer ?")) return;
+    if (modele && texte !== null && modifie && !confirm(x("Changer de langue remplace le message que tu as modifié. Continuer ?"))) return;
     setLangue(l);
     if (modele) choisir(modele, l);
   };
   const retour = () => { setTexte(null); setModele(null); setModifie(false); };
   const ouvrir = (o: boolean) => {
+    if (!o && modifie && texte !== null && !confirm(x("Fermer sans envoyer ? Ton message modifié sera perdu."))) return;
     setOuvert(o);
     if (o) { const l = deviner(contexte); setLangue(l); if (modeleDirect) { setModele(modeleDirect); setTexte(texteModele(modeleDirect, l, contexte, prenomSig)); setModifie(false); } }
     else retour();
   };
-  const envoyer = () => { window.open(`https://wa.me/${numero}?text=${encodeURIComponent(texte ?? "")}`, "_blank", "noopener"); onEnvoye?.(); setOuvert(false); retour(); };
+  const envoyer = () => { window.open(`https://wa.me/${numero}?text=${encodeURIComponent(texte ?? "")}`, "_blank", "noopener"); onEnvoye?.(); setModifie(false); setOuvert(false); retour(); };
 
-  const puces = (
-    <div className="flex gap-1.5" role="group" aria-label="Langue du message" data-testid="langue-whatsapp">
+  const onglets = (
+    <div className="wa-onglets" role="group" aria-label={x("Langue du message")} data-testid="langue-whatsapp">
       {CHOIX_LANGUE.map((c) => (
-        <button key={c.id} type="button" onClick={() => changerLangue(c.id)} aria-pressed={langue === c.id} data-langue={c.id}
-          className={`h-9 px-3 rounded-full border text-xs ${langue === c.id ? "bg-[#141414] text-white border-[#141414]" : "bg-white hover:bg-muted"}`}>{c.texte}</button>
+        <button key={c.id} type="button" onClick={() => changerLangue(c.id)} aria-pressed={langue === c.id} data-langue={c.id}>{c.texte}</button>
       ))}
     </div>
   );
+  const corps = (
+    <div className="wa-panneau" data-testid="panneau-whatsapp">
+      {texte === null ? (
+        <div data-testid="modeles-whatsapp">
+          <p className="wa-titre">{x("Réponses prêtes")}</p>
+          {onglets}
+          <div className="wa-liste">
+            {ORDRE_MODELES.map((id) => <button key={id} onClick={() => choisir(id)}>{titres[id]}</button>)}
+          </div>
+        </div>
+      ) : (
+        <div>
+          <p className="wa-titre">{modele ? titres[modele] : ""}</p>
+          {onglets}
+          <div className="wa-texte">
+            {!modeleDirect && <button onClick={retour} className="wa-retour"><ChevronLeft className="h-4 w-4 rtl:rotate-180" /> {x("Autres réponses")}</button>}
+            <textarea value={texte} onChange={(e) => { setTexte(e.target.value); setModifie(true); }} rows={mobile ? 8 : 9} dir={langue === "ar" ? "rtl" : "ltr"} lang={langue} data-testid="texte-whatsapp" />
+          </div>
+          <div className="wa-envoyer">
+            <button onClick={envoyer} className="s-btn s-btn-plein s-sombre" data-testid="ouvrir-whatsapp"><Send className="h-4 w-4 text-[#25D366]" /> {x("Ouvrir dans WhatsApp")}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+  const declencheur = (
+    <button type="button" onClick={(e) => { e.stopPropagation(); if (mobile) ouvrir(true); }} data-testid="reponses-whatsapp"
+      className={classe ?? `inline-flex items-center gap-1.5 rounded-md border border-green-200 bg-green-50 text-green-800 hover:bg-green-100 text-sm ${compact ? "h-9 px-2.5" : "h-10 px-3"}`}>
+      <MessageCircle className={`h-4 w-4 ${classe ? "text-[#25D366]" : ""}`} /> {libelle ?? (compact ? "WhatsApp" : "Répondre sur WhatsApp")}
+    </button>
+  );
 
+  if (mobile) return (
+    <>
+      {declencheur}
+      <Sheet open={ouvert} onOpenChange={ouvrir}>
+        <SheetContent side="bottom" className="wa-tiroir p-0" onInteractOutside={(e) => { if (modifie) e.preventDefault(); }} onClick={(e) => e.stopPropagation()}>
+          <SheetTitle className="sr-only">{x("Réponses prêtes")}</SheetTitle>
+          {corps}
+        </SheetContent>
+      </Sheet>
+    </>
+  );
   return (
     <Popover open={ouvert} onOpenChange={ouvrir}>
-      <PopoverTrigger asChild>
-        <button type="button" onClick={(e) => e.stopPropagation()} data-testid="reponses-whatsapp"
-          className={classe ?? `inline-flex items-center gap-1.5 rounded-md border border-green-200 bg-green-50 text-green-800 hover:bg-green-100 text-sm ${compact ? "h-9 px-2.5" : "h-10 px-3"}`}>
-          <MessageCircle className="h-4 w-4" /> {libelle ?? (compact ? "WhatsApp" : "Répondre sur WhatsApp")}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-[min(92vw,380px)] p-0" onClick={(e) => e.stopPropagation()}>
-        {texte === null ? (
-          <div className="py-1" data-testid="modeles-whatsapp">
-            <div className="px-3 pt-2 pb-1 text-xs uppercase tracking-wider text-muted-foreground">Réponses prêtes</div>
-            <div className="px-3 pb-2">{puces}</div>
-            {TITRES_MODELES.map((m) => (
-              <button key={m.id} onClick={() => choisir(m.id)} className="block w-full text-left px-3 min-h-11 text-sm hover:bg-muted">{m.titre}</button>
-            ))}
-          </div>
-        ) : (
-          <div className="p-3 space-y-2">
-            {!modeleDirect && <button onClick={retour} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground min-h-9"><ChevronLeft className="h-3.5 w-3.5" /> Autres réponses</button>}
-            {puces}
-            <textarea value={texte} onChange={(e) => { setTexte(e.target.value); setModifie(true); }} rows={9} dir={langue === "ar" ? "rtl" : "ltr"} lang={langue}
-              className="w-full rounded-md border p-2 text-sm leading-relaxed" data-testid="texte-whatsapp" />
-            <button onClick={envoyer} className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-green-600 text-white h-11 text-sm hover:bg-green-700" data-testid="ouvrir-whatsapp">
-              <Send className="h-4 w-4" /> Ouvrir dans WhatsApp
-            </button>
-          </div>
-        )}
+      <PopoverTrigger asChild>{declencheur}</PopoverTrigger>
+      <PopoverContent align="end" className="wa-fenetre w-[min(92vw,400px)] p-0" onClick={(e) => e.stopPropagation()} onInteractOutside={(e) => { if (modifie) e.preventDefault(); }}>
+        {corps}
       </PopoverContent>
     </Popover>
   );
