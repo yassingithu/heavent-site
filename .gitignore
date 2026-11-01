@@ -31,3 +31,4 @@ tests/jeu/.logique.test.mjs
 jeu-captures/
 ergonomie-captures/
 design-captures/
+.claude/worktrees/
