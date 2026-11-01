@@ -122,6 +122,7 @@ const nb = (page, genre) => page.locator(`[data-testid="aj-ligne"][data-genre="$
   ok(l <= 2, "390 px : aucun défilement horizontal");
   const petits = await page.locator('[data-testid="aujourdhui"] button.aj-btn').evaluateAll((bs) => bs.filter((b) => b.getBoundingClientRect().height < 44).length);
   ok(petits === 0, "390 px : tous les boutons d'action font au moins 44 px de haut");
+  await page.evaluate(() => document.querySelectorAll("*").forEach((e) => { if (["fixed", "sticky"].includes(getComputedStyle(e).position) && !e.closest("[data-testid=aujourdhui]")) e.style.visibility = "hidden"; }));
   await page.getByTestId("aujourdhui").scrollIntoViewIfNeeded();
   await page.screenshot({ path: `${DOSSIER}/390-haut.png` });
   await page.getByTestId("aujourdhui").screenshot({ path: `${DOSSIER}/390-aujourdhui.png` });
@@ -133,11 +134,40 @@ const nb = (page, genre) => page.locator(`[data-testid="aj-ligne"][data-genre="$
   const b = nouvelleBase(); b.admin_profils = [{ email: ADMIN, prenom: "Yassin", espace: "admin", recoit_mots: false, records_vus: [] }]; b.devis_mariage = [];
   for (const [mobile, l, h, nom] of [[false, 1280, 900, "1280"], [true, 390, 844, "390"]]) {
     const { page, ctx } = await ouvrir(b, { largeur: l, hauteur: h, mobile });
-    ok((await page.getByTestId("aj-titre").innerText()).includes("Rien d'urgent aujourd'hui"), `${nom} px : « Rien d'urgent aujourd'hui »`);
+    ok((await page.getByTestId("aj-titre").innerText()).match(/Rien d.urgent aujourd.hui/), `${nom} px : « Rien d'urgent aujourd'hui »`);
     ok(await page.getByTestId("aj-vide").isVisible(), `${nom} px : message rassurant`);
     await page.getByTestId("aujourdhui").screenshot({ path: `${DOSSIER}/${nom}-vide.png` });
     await ctx.close();
   }
+}
+
+// ——— 3b. Erreur de chargement : jamais « Rien d'urgent » ———
+{
+  const b = baseRiche();
+  const c = await contexte(navigateur, b, ADMIN, { mobile: false });
+  await c.ctx.route(/rest\/v1\/factures/, (r) => r.fulfill({ status: 500, json: { message: "panne simulée" } }));
+  await connecter(c.page, BASE, ADMIN, "/admin");
+  await c.page.waitForSelector('[data-testid="aj-erreur"]', { timeout: 15000 });
+  ok(/Impossible de charger/.test(await c.page.getByTestId("aj-titre").innerText()), "erreur : titre « Impossible de charger tes tâches »");
+  ok(await c.page.getByTestId("aj-vide").count() === 0, "erreur : jamais « Rien d'urgent »");
+  ok((await c.page.getByTestId("aj-compteur-relance").innerText()).includes("–"), "erreur : compteurs « – »");
+  ok((await c.page.getByTestId("aj-reessayer").boundingBox()).height >= 44, "erreur : bouton Réessayer d'au moins 44 px");
+  await c.page.getByTestId("aujourdhui").screenshot({ path: `${DOSSIER}/1280-erreur.png` });
+  await c.ctx.close();
+}
+
+// ——— 3c. Rappel de paiement mémorisé ———
+{
+  const { page, ctx } = await ouvrir(baseRiche(), { largeur: 1280, hauteur: 900, mobile: false });
+  const l = page.locator('[data-testid="aj-ligne"]', { hasText: "FAC-2026-0007" });
+  await l.getByTestId("reponses-whatsapp").click();
+  const [p2] = await Promise.all([page.context().waitForEvent("page"), page.getByTestId("ouvrir-whatsapp").click()]);
+  await p2.close().catch(() => {});
+  await page.waitForTimeout(600);
+  const l2 = page.locator('[data-testid="aj-ligne"]', { hasText: "FAC-2026-0007" });
+  ok(/rappel envoyé aujourd/.test(await l2.innerText()), "le rappel envoyé est affiché dans le détail");
+  ok(/Renvoyer le rappel/.test(await l2.innerText()), "le bouton devient « Renvoyer le rappel »");
+  await ctx.close();
 }
 
 // ——— 4. Modèles WhatsApp des demandes (3 langues) ———
