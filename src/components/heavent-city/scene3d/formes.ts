@@ -52,7 +52,7 @@ export function formeParId(grp: any, o: Objet3D, pal: Pal): boolean {
     personne(q, 0, 0, -D * 0.5, "#1c1a20", 2);
   } else if (id === "regie") {
     q(G.box, BOIS_SOMBRE(), 0, 0.37, 0, W, 0.06, D * 0.9); for (const s of [-1, 1]) q(G.box, BOIS_SOMBRE(), s * (W / 2 - 0.05), 0.18, 0, 0.06, 0.36, D * 0.9);
-    for (const s of [-0.5, 0, 0.5]) { q(G.box, NOIR(), s * W * 0.4, 0.62, -0.1, 0.4, 0.26, 0.03); q(G.box, mt("#5aa0e0", 0.3, 0, 0.8), s * W * 0.4, 0.62, -0.085, 0.36, 0.22, 0.01); }
+    for (const s of [-0.5, 0, 0.5]) { q(G.box, NOIR(), s * W * 0.4, 0.62, -0.1, 0.4, 0.26, 0.03); q(G.box, mt("#E8C27A", 0.3, 0, 0.8), s * W * 0.4, 0.62, -0.085, 0.36, 0.22, 0.01); }
     q(G.box, mt("#cfd6e0", 0.3, 0.5), 0, 0.4, 0.15, W * 0.5, 0.02, 0.16);
   } else if (id === "orch") {
     q(G.box, mt("#6B4A33", 0.7), 0, 0.15, 0, W, 0.3, D); q(G.box, LAITON(), 0, 0.31, D / 2 - 0.02, W, 0.03, 0.04);
@@ -64,8 +64,8 @@ export function formeParId(grp: any, o: Objet3D, pal: Pal): boolean {
       else pp(G.cyl, mt("#d8c9a8", 0.6), x, 0.3 + 0.35, 0.25, 0.13, 0.3, 0.13); // tambour
     }
   } else if (id === "troupe") {
-    const cols = ["#C9A74E", "#B65B38", "#2F6277", "#F1E6CE", "#7B2F3E"];
-    for (let i = 0; i < 5; i++) { const x = (i - 2) * 0.32, z = (i % 2) * 0.22 - 0.1; q(G.cone, mt(cols[i], 0.85), x, 0.4, z, 0.2, 0.8, 0.2); q(G.sph, mt(PEAUX[i % 4], 0.8), x, 0.9, z, 0.11); q(G.cyl, mt(i % 2 ? "#B65B38" : "#C9A74E", 0.5), x, 0.98, z, 0.14, 0.1, 0.14); }
+    const cols = ["#C9A74E", "#9C4A2C", "#1F5A4C", "#F1E6CE", "#9C4A2C"];
+    for (let i = 0; i < 5; i++) { const x = (i - 2) * 0.32, z = (i % 2) * 0.22 - 0.1; q(G.cone, mt(cols[i], 0.85), x, 0.4, z, 0.2, 0.8, 0.2); q(G.sph, mt(PEAUX[i % 4], 0.8), x, 0.9, z, 0.11); q(G.cyl, mt(i % 2 ? "#9C4A2C" : "#C9A74E", 0.5), x, 0.98, z, 0.14, 0.1, 0.14); }
     q(G.cyl, mt("#8a5a30", 0.7), -0.65, 0.35, 0.3, 0.15, 0.2, 0.15); q(G.cyl, mt("#8a5a30", 0.7), 0.65, 0.35, 0.3, 0.15, 0.2, 0.15);
   } else if (id === "photobooth") {
     const H = 2.0;
@@ -87,13 +87,13 @@ export function formeParId(grp: any, o: Objet3D, pal: Pal): boolean {
   } else if (id === "salon") {
     const rep = Math.max(W, D);
     q(G.box, mt(pal.accent, 0.95), 0, 0.01, 0.1, W, 0.02, D); // tapis
-    const sofa = (x: number, z: number, w: number, d: number, ry: number) => { const s = new THREE.Group(); s.position.set(x, 0, z); s.rotation.y = ry; loc.add(s); const r = ouvrier(s); r(G.box, mt("#7A2F3E", 0.9), 0, 0.2, 0, w, 0.4, d); r(G.box, mt("#7A2F3E", 0.9), 0, 0.5, -d * 0.42, w, 0.4, d * 0.18); for (let i = 0; i < Math.max(2, Math.floor(w / 0.55)); i++) r(G.box, mt(i % 2 ? "#C9A74E" : "#2F6277", 0.9), ((i + 0.5) / Math.max(2, Math.floor(w / 0.55)) - 0.5) * w * 0.9, 0.5, d * 0.1, 0.3, 0.25, 0.1); };
+    const sofa = (x: number, z: number, w: number, d: number, ry: number) => { const s = new THREE.Group(); s.position.set(x, 0, z); s.rotation.y = ry; loc.add(s); const r = ouvrier(s); r(G.box, mt("#9C4A2C", 0.9), 0, 0.2, 0, w, 0.4, d); r(G.box, mt("#9C4A2C", 0.9), 0, 0.5, -d * 0.42, w, 0.4, d * 0.18); for (let i = 0; i < Math.max(2, Math.floor(w / 0.55)); i++) r(G.box, mt(i % 2 ? "#C9A74E" : "#1F5A4C", 0.9), ((i + 0.5) / Math.max(2, Math.floor(w / 0.55)) - 0.5) * w * 0.9, 0.5, d * 0.1, 0.3, 0.25, 0.1); };
     sofa(0, -D * 0.4, W * 0.95, 0.5, 0); sofa(-W * 0.45, 0, D * 0.6, 0.5, Math.PI / 2); sofa(W * 0.45, 0, D * 0.6, 0.5, -Math.PI / 2);
     q(G.cyl, LAITON(), 0, 0.25, 0.1, 0.32, 0.05, 0.32); q(G.cyl8, LAITON(), 0, 0.12, 0.1, 0.06, 0.24, 0.06); void rep;
   } else if (id === "fontaine") {
     const R = o.hw;
-    q(G.cyl8, mt("#2F6277", 0.4), 0, 0.17, 0, R, 0.34, R); q(G.cyl8, mt("#F1E6CE", 0.5), 0, 0.35, 0, R * 0.92, 0.04, R * 0.92); q(G.cyl, mt("#7fd0e0", 0.05, 0.1), 0, 0.33, 0, R * 0.82, 0.04, R * 0.82);
-    q(G.cyl8, mt("#F1E6CE", 0.5), 0, 0.6, 0, 0.12, 0.5, 0.12); q(G.cyl, mt("#2F6277", 0.4), 0, 0.88, 0, 0.32, 0.1, 0.32); q(G.cyl, mt("#9fe0ee", 0.05, 0.1, 0.2), 0, 0.94, 0, 0.27, 0.03, 0.27); q(G.sph, mt("#bfeaf5", 0.1, 0, 0.4), 0, 1.1, 0, 0.07, 0.14, 0.07);
+    q(G.cyl8, mt("#1F5A4C", 0.4), 0, 0.17, 0, R, 0.34, R); q(G.cyl8, mt("#F1E6CE", 0.5), 0, 0.35, 0, R * 0.92, 0.04, R * 0.92); q(G.cyl, mt("#7fd0e0", 0.05, 0.1), 0, 0.33, 0, R * 0.82, 0.04, R * 0.82);
+    q(G.cyl8, mt("#F1E6CE", 0.5), 0, 0.6, 0, 0.12, 0.5, 0.12); q(G.cyl, mt("#1F5A4C", 0.4), 0, 0.88, 0, 0.32, 0.1, 0.32); q(G.cyl, mt("#9fe0ee", 0.05, 0.1, 0.2), 0, 0.94, 0, 0.27, 0.03, 0.27); q(G.sph, mt("#bfeaf5", 0.1, 0, 0.4), 0, 1.1, 0, 0.07, 0.14, 0.07);
   } else if (id === "gateau") {
     [[0.5, 0.3], [0.38, 0.28], [0.27, 0.26]].forEach(([r, h], i) => { const y = 0.3 + [0, 0.3, 0.58][i]; q(G.cyl, i % 2 ? mt("#F6EFDD", 0.6) : BLANC(), 0, y + h / 2, 0, r * 0.85, h, r * 0.85); q(G.tore, LAITON(), 0, y + 0.02, 0, r * 0.86, r * 0.86, 0.5).rotation.x = Math.PI / 2; });
     q(G.cyl, nappe, 0, 0.15, 0, 0.46, 0.3, 0.46); q(G.sph, fleur, 0, 0.95, 0, 0.1);
@@ -102,21 +102,21 @@ export function formeParId(grp: any, o: Objet3D, pal: Pal): boolean {
     q(G.box, mt("#6B4A33", 0.7), 0, 0.18, 0, w, 0.18, d); q(G.box, accent, 0, 0.32, 0, w * 0.8, 0.1, d * 0.8);
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) q(G.cyl8, LAITON(), sx * (w / 2 - 0.08), H / 2, sz * (d / 2 - 0.08), 0.04, H, 0.04);
     q(G.pyr, LAITON(), 0, H + 0.2, 0, w * 0.78, 0.5, d * 0.78).rotation.y = Math.PI / 4; q(G.box, accent, 0, H - 0.02, 0, w + 0.1, 0.06, d + 0.1);
-    for (const s of [-1, 1]) q(G.box, mt("#7A2F3E", 0.9), 0, H * 0.55, s * (d / 2 - 0.1), w * 0.85, H * 0.6, 0.02); // voiles
+    for (const s of [-1, 1]) q(G.box, mt("#9C4A2C", 0.9), 0, H * 0.55, s * (d / 2 - 0.1), w * 0.85, H * 0.6, 0.02); // voiles
     for (const s of [-1, 1]) { q(G.cyl8, BOIS_SOMBRE(), 0, 0.12, s * (d / 2 + 0.25), w * 0.5 + 0.2, 0.025, 0.025).rotation.z = Math.PI / 2; }
     q(G.box, mt("#F6EFDD", 0.8), 0, 0.5, 0, 0.5, 0.3, 0.35);
   } else if (id === "neggafa") {
-    q(G.cone, mt("#C9A74E", 0.5, 0.3), 0, 0.5, 0, 0.42, 1.0, 0.42); q(G.cone, mt("#7A2F3E", 0.85), 0, 0.55, 0.02, 0.32, 0.9, 0.3); q(G.sph, mt(PEAUX[1], 0.8), 0, 1.12, 0, 0.12); q(G.cyl, LAITON(), 0, 1.25, 0, 0.14, 0.1, 0.14); q(G.tore, LAITON(), 0, 0.72, 0.28, 0.16, 0.16, 0.5).rotation.x = Math.PI / 2;
+    q(G.cone, mt("#C9A74E", 0.5, 0.3), 0, 0.5, 0, 0.42, 1.0, 0.42); q(G.cone, mt("#9C4A2C", 0.85), 0, 0.55, 0.02, 0.32, 0.9, 0.3); q(G.sph, mt(PEAUX[1], 0.8), 0, 1.12, 0, 0.12); q(G.cyl, LAITON(), 0, 1.25, 0, 0.14, 0.1, 0.14); q(G.tore, LAITON(), 0, 0.72, 0.28, 0.16, 0.16, 0.5).rotation.x = Math.PI / 2;
   } else if (id === "fauteuils") {
     q(G.box, mt("#6B4A33", 0.7), 0, 0.1, 0, W, 0.2, D); q(G.box, accent, 0, 0.21, 0.05, W * 0.9, 0.02, D * 0.85);
     for (const s of [-1, 1]) { const x = s * W * 0.22; q(G.box, mt("#F6EFDD", 0.8), x, 0.45, 0.02, 0.55, 0.3, 0.5); q(G.box, mt("#F6EFDD", 0.8), x, 0.9, -0.2, 0.55, 0.8, 0.1); q(G.tore, LAITON(), x, 1.05, -0.14, 0.26, 0.26, 0.4); for (const t of [-1, 1]) q(G.box, mt("#F6EFDD", 0.8), x + t * 0.3, 0.55, 0.02, 0.08, 0.3, 0.45); }
-    q(G.cyl, mt("#7A2F3E", 0.9), 0, 0.3, 0.3, 0.12, 0.2, 0.12); q(G.sph, fleur, 0, 0.5, 0.3, 0.14, 0.1, 0.14);
+    q(G.cyl, mt("#9C4A2C", 0.9), 0, 0.3, 0.3, 0.12, 0.2, 0.12); q(G.sph, fleur, 0, 0.5, 0.3, 0.14, 0.1, 0.14);
   } else if (id === "henne") {
     q(G.box, mt(pal.accent, 0.95), 0, 0.01, 0, W, 0.02, D);
-    for (const [x, z, w, ry] of [[0, -D * 0.38, W * 0.95, 0], [-W * 0.4, 0, D * 0.7, Math.PI / 2]] as const) { const s = new THREE.Group(); s.position.set(x, 0, z); s.rotation.y = ry; loc.add(s); const r = ouvrier(s); r(G.box, mt("#B65B38", 0.9), 0, 0.2, 0, w, 0.4, 0.5); r(G.box, mt("#B65B38", 0.9), 0, 0.5, -0.2, w, 0.4, 0.1); for (let i = 0; i < 4; i++) r(G.box, mt(i % 2 ? "#C9A74E" : "#F1E6CE", 0.9), ((i + 0.5) / 4 - 0.5) * w * 0.85, 0.5, 0.0, 0.3, 0.25, 0.1); }
+    for (const [x, z, w, ry] of [[0, -D * 0.38, W * 0.95, 0], [-W * 0.4, 0, D * 0.7, Math.PI / 2]] as const) { const s = new THREE.Group(); s.position.set(x, 0, z); s.rotation.y = ry; loc.add(s); const r = ouvrier(s); r(G.box, mt("#9C4A2C", 0.9), 0, 0.2, 0, w, 0.4, 0.5); r(G.box, mt("#9C4A2C", 0.9), 0, 0.5, -0.2, w, 0.4, 0.1); for (let i = 0; i < 4; i++) r(G.box, mt(i % 2 ? "#C9A74E" : "#F1E6CE", 0.9), ((i + 0.5) / 4 - 0.5) * w * 0.85, 0.5, 0.0, 0.3, 0.25, 0.1); }
     q(G.cyl, LAITON(), 0.1, 0.2, 0.1, 0.34, 0.04, 0.34); q(G.cyl8, LAITON(), 0.1, 0.1, 0.1, 0.06, 0.2, 0.06); for (let i = 0; i < 4; i++) q(G.cone, mt("#7a4a22", 0.7), 0.1 + (i - 1.5) * 0.1, 0.27, 0.1, 0.025, 0.1, 0.025).rotation.z = 1.2;
   } else if (id === "livre") {
-    q(G.cyl, LAITON(), 0, 0.5, 0, 0.18, 1.0, 0.18); q(G.box, mt("#F6EFDD", 0.7), -0.1, 1.04, 0, 0.2, 0.03, 0.28).rotation.z = 0.12; q(G.box, mt("#F6EFDD", 0.7), 0.1, 1.04, 0, 0.2, 0.03, 0.28).rotation.z = -0.12; q(G.box, mt("#7A2F3E", 0.8), 0, 1.01, 0, 0.44, 0.02, 0.32); q(G.cyl8, LAITON(), 0.3, 1.1, 0.05, 0.01, 0.2, 0.01).rotation.z = 1.1;
+    q(G.cyl, LAITON(), 0, 0.5, 0, 0.18, 1.0, 0.18); q(G.box, mt("#F6EFDD", 0.7), -0.1, 1.04, 0, 0.2, 0.03, 0.28).rotation.z = 0.12; q(G.box, mt("#F6EFDD", 0.7), 0.1, 1.04, 0, 0.2, 0.03, 0.28).rotation.z = -0.12; q(G.box, mt("#9C4A2C", 0.8), 0, 1.01, 0, 0.44, 0.02, 0.32); q(G.cyl8, LAITON(), 0.3, 1.1, 0.05, 0.01, 0.2, 0.01).rotation.z = 1.1;
   } else if (id.startsWith("mic")) {
     q(G.cyl, NOIR(), 0, 0.02, 0, 0.14, 0.04, 0.14); q(G.cyl8, mt("#cfd6e0", 0.3, 0.6), 0, 0.6, 0, 0.012, 1.2, 0.012); q(G.sph, mt("#2a2a33", 0.4), 0, 1.25, 0, 0.05);
   } else if (id === "enceintes") {
@@ -165,7 +165,18 @@ export function construireFixes(r: Rendu, pal: Pal, nuit: number): any {
   }
   if (r.lieu === "villa") {
     // bassin derrière le mur bas (côté gy < 0), eau réfléchissante, fleurs et bougies flottantes, piscine illuminée
-    const eau = mt(nuit > 0.5 ? "#1c4a78" : "#79C2D3", 0.04, 0.35, r.options.has("piscine_lumiere") ? 0.9 : 0.05);
+    const nuitEau = nuit > 0.5, cle = `eau|${nuitEau}|${r.options.has("piscine_lumiere")}`;
+    let eau = cache.get(cle);
+    if (!eau) {
+      // eau vert-bleu au fond de zellige (damier + étoiles fines)
+      const c = document.createElement("canvas"); c.width = c.height = 128; const x = c.getContext("2d")!;
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { x.fillStyle = (i + j) % 2 ? "#3FA79C" : "#2F8F86"; x.fillRect(i * 64, j * 64, 64, 64); }
+      x.strokeStyle = "rgba(240,236,221,0.55)"; x.lineWidth = 2; for (const [cx, cy] of [[32, 32], [96, 96]]) { x.beginPath(); for (let k = 0; k < 16; k++) { const t = (k / 16) * Math.PI * 2 - Math.PI / 2, rr = k % 2 ? 8 : 22; x.lineTo(cx + Math.cos(t) * rr, cy + Math.sin(t) * rr); } x.closePath(); x.stroke(); }
+      const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.repeat.set(10, 3);
+      eau = new THREE.MeshStandardMaterial({ map: tx, color: nuitEau ? "#2c5f5c" : "#ffffff", roughness: 0.05, metalness: 0.3 });
+      if (r.options.has("piscine_lumiere")) { eau.emissive = new THREE.Color("#3FD0C0"); eau.emissiveIntensity = 0.55; }
+      cache.set(cle, eau);
+    }
     p(G.box, mt("#EFEADF", 0.6), N / 2, -0.12, -2.45, N + 0.4, 0.3, 4.3); p(G.box, eau, N / 2, 0.0, -2.45, N - 0.2, 0.06, 3.9);
     for (let i = 0; i < 12; i++) p(G.cyl, mt(i % 2 ? pal.fleurs : "#FBF6EA", 0.8), 0.8 + ((i * 1.37) % (N - 1.6)), 0.05, -0.9 - ((i * 0.73) % 3), r.options.has("piscine_fleurs") ? 0.12 : 0.0001, 0.02, r.options.has("piscine_fleurs") ? 0.12 : 0.0001);
     if (r.options.has("piscine_bougies")) for (let i = 0; i < 8; i++) { p(G.cyl, BLANC(), 1.2 + i * ((N - 2.4) / 8), 0.1, -1.4 - (i % 3) * 0.9, 0.05, 0.1, 0.05); p(G.sph, bulbe(), 1.2 + i * ((N - 2.4) / 8), 0.18, -1.4 - (i % 3) * 0.9, 0.025, 0.04, 0.025); }

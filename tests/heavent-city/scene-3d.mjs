@@ -54,6 +54,12 @@ const b = await chromium.launch({ args: GL });
   await t("annuler").click(); await p.waitForTimeout(1200);
   const retour = await p.evaluate(() => window.__hc3d.position("t3"));
   ok(Math.hypot(retour[0] - w0[0], retour[1] - w0[1]) < 0.01, `annuler : la table revient à sa place (écart ${Math.hypot(retour[0] - w0[0], retour[1] - w0[1]).toFixed(2)} case)`);
+  // aucun objet ne doit rester en simple pavé « générique » quand tout est activé
+  await t("termine-deplacer").click();
+  await t("onglet-musique").click(); for (const m of ["orchestre", "troupe", "dj", "acoustique", "playlist"]) await t("musique-" + m).click();
+  for (const on of ["onglet-decor", "onglet-experiences"]) { await t(on).click(); for (const o of await p.locator('[data-testid^="option-"]').all()) if ((await o.getAttribute("aria-checked")) !== "true") await o.click(); }
+  await p.waitForTimeout(800);
+  const gen = await p.evaluate(() => window.__hc3d.generiques()); ok(gen.length === 0, "tous les objets ont une forme dédiée (génériques : " + gen.join(",") + ")");
   ok(err.length === 0, "aucune erreur JavaScript " + err.slice(0, 2).join(" | "));
   await ctx.close();
 }
