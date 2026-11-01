@@ -2,7 +2,7 @@
  * La scène : un petit diorama isométrique dessiné en calques SVG.
  * Elle ne contient AUCUNE règle de jeu : elle dessine ce que l'état lui donne (voir etat.ts → rendu()).
  */
-import { useId, useMemo, useRef, useState, type PointerEvent as PE, type ReactNode } from "react";
+import { memo, useId, useMemo, useRef, useState, type PointerEvent as PE, type ReactNode } from "react";
 import { PALETTES, STYLES, type LieuId } from "./donnees";
 import { repartition, type Rendu } from "./etat";
 import { VB, X, Y, poly, melanger, assombrir, eclaircir, hasard } from "./iso";
@@ -27,7 +27,7 @@ export interface SceneProps {
 const H_MUR = 128;
 
 // ── Ciel ────────────────────────────────────────────────────────────────────
-function Ciel({ nuit, lieu, animer }: { nuit: number; lieu: LieuId; animer?: boolean }) {
+const Ciel = memo(function Ciel({ nuit, lieu, animer }: { nuit: number; lieu: LieuId; animer?: boolean }) {
   const g = hasard(3);
   const haut = melanger("#53507A", "#0B1030", nuit), milieu = melanger("#DE8566", "#1A2050", nuit), bas = melanger("#FBC888", "#3C3057", nuit);
   const etoiles = Array.from({ length: 90 }, () => ({ x: -500 + g() * 1800, y: -300 + g() * 500, r: 0.5 + g() * 1.1, d: g() * 3 }));
@@ -57,7 +57,7 @@ function Ciel({ nuit, lieu, animer }: { nuit: number; lieu: LieuId; animer?: boo
       <Lointain lieu={lieu} nuit={nuit} />
     </g>
   );
-}
+});
 
 function Lointain({ lieu, nuit }: { lieu: LieuId; nuit: number }) {
   const ton = melanger("#7A5668", "#151a3a", nuit), ton2 = melanger("#9B6B6B", "#202750", nuit);
@@ -93,7 +93,7 @@ function Lointain({ lieu, nuit }: { lieu: LieuId; nuit: number }) {
 
 
 // ── Terrain autour du plateau et épaisseur de la dalle ──────────────────────
-function Terrain({ lieu, nuit, N }: { lieu: LieuId; nuit: number; N: number }) {
+const Terrain = memo(function Terrain({ lieu, nuit, N }: { lieu: LieuId; nuit: number; N: number }) {
   const base: Record<LieuId, [string, string, string, string]> = {
     riad: ["#D8B98B", "#B08A58", "#C6A474", "#A98550"],
     villa: ["#C8C2B2", "#9C9586", "#D9D3C4", "#B3AC9B"],
@@ -117,12 +117,12 @@ function Terrain({ lieu, nuit, N }: { lieu: LieuId; nuit: number; N: number }) {
       <ellipse cx="400" cy={Y(N, N, -20) + 18} rx={28 * N + 4} ry="16" fill="#2b1a10" opacity="0.18" />
     </g>
   );
-}
+});
 
 // ── Sols ────────────────────────────────────────────────────────────────────
 const dalle = (i: number, j: number, z = 0) => poly([i, j, z], [i + 1, j, z], [i + 1, j + 1, z], [i, j + 1, z]);
 
-function Sol({ lieu, pal, style, N, ax }: { lieu: LieuId; pal: Pal; style: string; N: number; ax: number }) {
+const Sol = memo(function Sol({ lieu, pal, style, N, ax }: { lieu: LieuId; pal: Pal; style: string; N: number; ax: number }) {
   const cases = Array.from({ length: N * N }, (_, k) => ({ i: k % N, j: Math.floor(k / N) }));
   const g = hasard(14);
   if (lieu === "riad") {
@@ -175,10 +175,10 @@ function Sol({ lieu, pal, style, N, ax }: { lieu: LieuId; pal: Pal; style: strin
       <polygon points={poly([1.4, 1.4], [N - 1.4, 1.4], [N - 1.4, 1.55], [1.4, 1.55])} fill={pal.deco} opacity="0.5" />
     </g>
   );
-}
+});
 
 // ── Murs ────────────────────────────────────────────────────────────────────
-function Mur({ lieu, cote, pal, nuit, style, N }: { lieu: LieuId; cote: "g" | "d"; pal: Pal; nuit: number; style: string; N: number }) {
+const Mur = memo(function Mur({ lieu, cote, pal, nuit, style, N }: { lieu: LieuId; cote: "g" | "d"; pal: Pal; nuit: number; style: string; N: number }) {
   const sens = cote === "g" ? "u" : "d";
   const L = 320, teinte = cote === "g" ? 0.07 : 0;
   const lampe = "#FFD98A";
@@ -281,10 +281,10 @@ function Mur({ lieu, cote, pal, nuit, style, N }: { lieu: LieuId; cote: "g" | "d
       ))}
     </Corps>
   );
-}
+});
 
 // ── Éléments propres au lieu, devant les murs ───────────────────────────────
-function DecorLieu({ lieu, nuit, pal, N, options, animer }: { lieu: LieuId; nuit: number; pal: Pal; N: number; options: ReadonlySet<string>; animer?: boolean }) {
+const DecorLieu = memo(function DecorLieu({ lieu, nuit, pal, N, options, animer }: { lieu: LieuId; nuit: number; pal: Pal; N: number; options: ReadonlySet<string>; animer?: boolean }) {
   if (lieu === "villa") {
     // Bassin derrière la balustrade (côté mur de droite)
     const eau = melanger("#79C2D3", "#1c3a66", nuit);
@@ -329,7 +329,7 @@ function DecorLieu({ lieu, nuit, pal, N, options, animer }: { lieu: LieuId; nuit
     );
   }
   return null;
-}
+});
 
 // ── Composition ─────────────────────────────────────────────────────────────
 interface Halo { x: number; y: number; r: number; a: number; c: "chaud" | "froid" | "rose" | "vert" | "violet" }
@@ -354,23 +354,26 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
 
   // ── Déplacement des objets : décalage en cases, appliqué à tout le dessin de l'objet ──
   const svgRef = useRef<SVGSVGElement>(null);
-  const [vif, setVif] = useState<{ id: string; off: [number, number]; bloque?: boolean } | null>(null);
-  const prise = useRef<{ id: string; a: [number, number]; depart: [number, number]; p0: [number, number]; dernier: [number, number]; bloque: boolean } | null>(null);
-  const dep = (id: string): [number, number] => (vif && vif.id === id ? vif.off : r.deplacements[id] ?? [0, 0]);
+  // Pendant le glissement, React ne redessine RIEN : seul le transform de l'objet saisi est modifié directement
+  // dans le DOM (voir bouge()). L'état `vif` ne change qu'à la prise et au relâchement.
+  const [vif, setVif] = useState<{ id: string } | null>(null);
+  const refusRef = useRef<SVGPolygonElement>(null), anneauRef = useRef<SVGEllipseElement>(null);
+  const prise = useRef<{ id: string; a: [number, number]; depart: [number, number]; p0: [number, number]; dernier: [number, number]; bloque: boolean; el: SVGGElement | null } | null>(null);
+  const dep = (id: string): [number, number] => (vif && vif.id === id && prise.current ? prise.current.depart : r.deplacements[id] ?? [0, 0]);
   const enveloppe = (id: string, a: [number, number], node: ReactNode) => {
     const [dx, dy] = dep(id);
     return (
       <g data-objet={id} transform={dx || dy ? `translate(${(dx - dy) * 32} ${(dx + dy) * 16})` : undefined} style={deplacable ? { cursor: vif?.id === id ? "grabbing" : "grab" } : undefined}>
         {node}
-        {vif?.id === id && vif.bloque && (() => { const e = emprises.get(id); return e ? <polygon points={poly([e.x0, e.y0], [e.x1, e.y0], [e.x1, e.y1], [e.x0, e.y1])} fill="#E24E4E" fillOpacity="0.45" stroke="#E24E4E" strokeWidth="2" /> : null; })()}
-        {deplacable && (() => { const rouge = vif?.id === id && vif.bloque; return <ellipse cx={X(a[0], a[1])} cy={Y(a[0], a[1])} rx="24" ry="12" fill={rouge ? "#E24E4E" : "#F4D774"} fillOpacity={rouge ? 0.35 : 0.22} stroke={rouge ? "#E24E4E" : "#F4D774"} strokeWidth="1.6" strokeDasharray="5 4" />; })()}
+        {vif?.id === id && (() => { const e = emprises.get(id); return e ? <polygon ref={refusRef} display="none" points={poly([e.x0, e.y0], [e.x1, e.y0], [e.x1, e.y1], [e.x0, e.y1])} fill="#E24E4E" fillOpacity="0.45" stroke="#E24E4E" strokeWidth="2" /> : null; })()}
+        {deplacable && <ellipse ref={vif?.id === id ? anneauRef : undefined} cx={X(a[0], a[1])} cy={Y(a[0], a[1])} rx="24" ry="12" fill="#F4D774" fillOpacity="0.22" stroke="#F4D774" strokeWidth="1.6" strokeDasharray="5 4" />}
       </g>
     );
   };
   const add = (z: number, k: string, node: ReactNode, mv?: Mobile) => {
     if (!mv) { E.push({ z, k, n: node }); return; }
     const [dx, dy] = dep(mv.id);
-    E.push({ z: z + dx + dy, k, n: enveloppe(mv.id, mv.a, node) });
+    E.push({ z: vif?.id === mv.id ? 1e6 : z + dx + dy, k, n: enveloppe(mv.id, mv.a, node) });
   };
   const decale = (id: string, gx: number, gy: number): [number, number] => { const [dx, dy] = dep(id); return [gx + dx, gy + dy]; };
 
@@ -392,8 +395,9 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
     e.preventDefault();
     svgRef.current?.setPointerCapture(e.pointerId);
     const depart = dep(id);
-    prise.current = { id, a: mv, depart, p0: p, dernier: depart, bloque: false };
-    setVif({ id, off: depart });
+    prise.current = { id, a: mv, depart, p0: p, dernier: depart, bloque: false, el: cible as SVGGElement | null };
+    svgRef.current?.classList.add("hc-glisse"); // décor figé pendant le glissement : seul l'objet saisi bouge
+    setVif({ id });
   };
   const bouge = (e: PE<SVGSVGElement>) => {
     const t = prise.current, p = point(e);
@@ -404,13 +408,25 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
     dgx = Math.round(dgx * 4) / 4; dgy = Math.round(dgy * 4) / 4;
     // l'objet reste dans la salle
     dgx = Math.max(0.6 - t.a[0], Math.min(N - 0.6 - t.a[0], dgx)); dgy = Math.max(0.6 - t.a[1], Math.min(N - 0.6 - t.a[1], dgy));
-    if (dgx !== t.dernier[0] || dgy !== t.dernier[1]) { t.dernier = [dgx, dgy]; t.bloque = chevauche(t.id, dgx, dgy); setVif({ id: t.id, off: [dgx, dgy], bloque: t.bloque }); }
+    if (dgx !== t.dernier[0] || dgy !== t.dernier[1]) {
+      t.dernier = [dgx, dgy]; const avant = t.bloque; t.bloque = chevauche(t.id, dgx, dgy);
+      t.el?.setAttribute("transform", `translate(${(dgx - dgy) * 32} ${(dgx + dgy) * 16})`);
+      if (t.bloque !== avant) {
+        refusRef.current?.setAttribute("display", t.bloque ? "inline" : "none");
+        const an = anneauRef.current, c = t.bloque ? "#E24E4E" : "#F4D774";
+        an?.setAttribute("fill", c); an?.setAttribute("stroke", c); an?.setAttribute("fill-opacity", t.bloque ? "0.35" : "0.22");
+      }
+    }
   };
   const haut = (e: PE<SVGSVGElement>) => {
     const t = prise.current;
     prise.current = null;
     if (!t) return;
     try { svgRef.current?.releasePointerCapture(e.pointerId); } catch { /* déjà relâché */ }
+    // l'état React n'a pas suivi le glissement : on remet le transform sur la valeur connue de React (il sera mis à jour si le déplacement est accepté)
+    const [ox, oy] = t.depart;
+    if (t.el) { if (ox || oy) t.el.setAttribute("transform", `translate(${(ox - oy) * 32} ${(ox + oy) * 16})`); else t.el.removeAttribute("transform"); }
+    svgRef.current?.classList.remove("hc-glisse");
     setVif(null);
     // une place déjà prise est refusée : l'objet revient où il était
     if (t.bloque) { onRefus?.(); return; }
@@ -583,6 +599,7 @@ export function SceneSvg({ r, nuit, animer = true, final = null, logos, focus, c
       style={{ direction: "ltr", display: "block", width: "100%", height: "100%", overflow: "visible", touchAction: deplacable ? "none" : undefined, userSelect: deplacable ? "none" : undefined }}
     >
       {animer && <style>{STYLE_CSS}</style>}
+      {deplacable && <style>{".hc-glisse *{animation-play-state:paused!important}"}</style>}
       <defs>
         {([["chaud", "#FFD58A"], ["froid", "#BFE3FF"], ["rose", "#FF9FC4"], ["vert", "#9FFFD0"], ["violet", "#C8A6FF"]] as const).map(([k, c]) => (
           <radialGradient key={k} id={`hc-h-${k}-${uid}`}><stop offset="0" stopColor={c} stopOpacity="0.95" /><stop offset="0.45" stopColor={c} stopOpacity="0.35" /><stop offset="1" stopColor={c} stopOpacity="0" /></radialGradient>
