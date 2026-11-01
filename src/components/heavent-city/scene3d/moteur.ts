@@ -6,11 +6,12 @@
 import * as THREE from "./vendor/three.module.min.js";
 import { PALETTES, type LieuId } from "../donnees";
 import type { Rendu } from "../etat";
+import { construireFixes, formeParId } from "./formes";
 import { chevauche, objetsDeplacables, RAYON_TABLE, type Objet3D } from "./objets";
 
 export interface Entree { r: Rendu; nuit: number; deplacable: boolean; reduit: boolean; focus?: { cle: string; n: number } | null }
 export interface Rappels { onDeplacer: (id: string, dx: number, dy: number) => void; onRefus: () => void }
-export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** cadre un objet de près (tests, captures) */ vers(id: string, zoom: number): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[] } }
+export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** chaises d'un objet (position locale, direction du dossier), pour les tests */ chaises(id: string): { x: number; z: number; dos: [number, number] }[]; dims(id: string): { w: number; d: number } | null; /** cadre un objet de près (tests, captures) */ vers(id: string, zoom: number): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[] } }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const couleur = (a: string, b: string, t: number) => new THREE.Color(a).lerp(new THREE.Color(b), t);
@@ -112,7 +113,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     });
     murTex.repeat.set(Math.max(1, Math.round(N / 8)), 1);
     const mm = new THREE.MeshStandardMaterial({ map: murTex, roughness: 0.85 });
-    const m1 = ombre(new THREE.Mesh(g.plan, mm), false, true); m1.scale.set(N, HM, 1); m1.position.set(N / 2, HM / 2, 0); d.add(m1);
+    const m1 = ombre(new THREE.Mesh(g.plan, mm), false, true); const hm1 = lieu === "villa" ? 0.9 : HM; m1.scale.set(N, hm1, 1); m1.position.set(N / 2, hm1 / 2, 0); if (lieu === "villa") m1.material = new THREE.MeshStandardMaterial({ color: "#EFEADF", roughness: 0.7, side: THREE.DoubleSide }); d.add(m1);
     const m2 = ombre(new THREE.Mesh(g.plan, mm), false, true); m2.scale.set(N, HM, 1); m2.rotation.y = Math.PI / 2; m2.position.set(0, HM / 2, N / 2); d.add(m2);
     // lanternes en laiton aux angles du plateau (donnent des points chauds la nuit)
     for (const [x, z] of [[0.35, 0.35], [N - 0.4, 0.35], [0.35, N - 0.4]] as [number, number][]) {
@@ -128,6 +129,9 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   }
   function construireObjet(o: Objet3D, r: Rendu, pal: { accent: string; deco: string; nappe: string; fleurs: string }, bougies: boolean) {
     const grp = new THREE.Group();
+    /** position locale et direction du dossier de chaque chaise (pour les tests : dossier vers l'extérieur) */
+    const notes: { x: number; z: number; dos: [number, number] }[] = [];
+    const noter = (x: number, z: number, ry: number) => notes.push({ x, z, dos: [-Math.sin(ry), -Math.cos(ry)] });
     const nappe = new THREE.MeshStandardMaterial({ color: pal.nappe, roughness: 0.95 });
     const fleurs = new THREE.MeshStandardMaterial({ color: pal.fleurs, roughness: 0.8 });
     const chaises = (n: number, rayon: number, haut: number, mat0: any) => {
@@ -147,7 +151,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
       grp.add(mesh(g.box, nappe, 0, 0.21, 0, 1.7, 0.42, 0.78)); grp.add(mesh(g.sph, fleurs, 0, 0.55, 0, 0.12, 0.1, 0.12));
       // chaises sur les deux GRANDS côtés (comme le SVG), face à la table, dossier vers l'extérieur ; rien sur les bouts
       const im = ombre(new THREE.InstancedMesh(chaiseGeo, chaiseMat, 6)); const m = new THREE.Matrix4();
-      for (let i = 0; i < 6; i++) { const lado = i < 3 ? -1 : 1, x = ((i % 3) - 1) * 0.567; m.compose(new THREE.Vector3(x, 0, lado * 0.64), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, lado > 0 ? Math.PI : 0, 0)), new THREE.Vector3(1, 1, 1)); im.setMatrixAt(i, m); }
+      for (let i = 0; i < 6; i++) { const lado = i < 3 ? -1 : 1, x = ((i % 3) - 1) * 0.567; m.compose(new THREE.Vector3(x, 0, lado * 0.64), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, lado > 0 ? Math.PI : 0, 0)), new THREE.Vector3(1, 1, 1)); im.setMatrixAt(i, m); noter(x, lado * 0.64, lado > 0 ? Math.PI : 0); }
       grp.add(im);
     } else if (o.genre === "haute") {
       grp.add(mesh(g.cyl8, mat.laiton, 0, 0.3, 0, 0.04, 0.6), mesh(g.cyl, mat.laiton, 0, 0.02, 0, 0.2, 0.04, 0.2), mesh(g.cyl, nappe, 0, 0.62, 0, 0.3, 0.04, 0.3));
@@ -158,7 +162,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
       // comme le SVG : seuls les mariés sont assis, côté mur (au nord de la table), dos au mur, face à la salle
       if (r.type === "mariage") {
         const im = ombre(new THREE.InstancedMesh(chaiseGeo, chaiseMat, 2)); const m = new THREE.Matrix4();
-        [-0.9, 0.9].forEach((x, i) => { m.compose(new THREE.Vector3(x, 0, -(d / 2 + 0.3)), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0)), new THREE.Vector3(1.25, 1.25, 1.25)); im.setMatrixAt(i, m); });
+        [-0.9, 0.9].forEach((x, i) => { m.compose(new THREE.Vector3(x, 0, -(d / 2 + 0.3)), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0)), new THREE.Vector3(1.25, 1.25, 1.25)); im.setMatrixAt(i, m); noter(x, -(d / 2 + 0.3), 0); });
         grp.add(im);
       }
       // gypsophile suspendue : barre en laiton + nuage de petites fleurs
@@ -191,20 +195,25 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
       const n = Math.max(3, Math.floor(d / 0.32));
       for (let i = 0; i < n; i++) { const z = ((i + 0.5) / n - 0.5) * d * 0.92; grp.add(mesh(g.cyl, mat.verre, 0, 1.02, z, 0.09, 0.26, 0.09), mesh(g.cyl, mat.laiton, 0, 1.18, z, 0.04, 0.06, 0.04, false)); }
       grp.add(mesh(g.box, mat.boisClair, -w * 0.35, 1.0, 0, 0.05, 1.0, d * 0.96));
-    } else {
+    } else if (!formeParId(grp, o, pal)) {
       const h = o.h ?? 0.6, c = couleurObjet(o.id, pal);
       grp.add(mesh(g.box, new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 }), 0, h / 2, 0, o.hw * 2 * 0.95, h, o.hd * 2 * 0.95));
       grp.add(mesh(g.box, mat.laiton, 0, h + 0.015, 0, o.hw * 2 * 0.97, 0.03, o.hd * 2 * 0.97, false));
     }
     // anneau de saisie (zone libre / refus)
     const zone = new THREE.Mesh(g.box, mat.libre); zone.scale.set(o.hw * 2 + 0.1, 0.02, o.hd * 2 + 0.1); zone.position.y = 0.012; zone.visible = false; zone.userData.zone = true; grp.add(zone);
-    grp.userData = { id: o.id, zone };
+    grp.userData = { id: o.id, zone, chaises: notes, w: o.hw * 2, d: o.hd * 2 };
     return grp;
   }
 
   // ── Mise à jour depuis le jeu ─────────────────────────────────────────────
   let objetsGroupe = new THREE.Group(); scene.add(objetsGroupe);
-  let pret = false;
+  let pret = false; let fixes: any = null;
+  function refaireFixes(e: Entree) {
+    if (fixes) { scene.remove(fixes); fixes.traverse((o: any) => { if (o.isInstancedMesh) o.dispose(); }); }
+    const pal = PALETTES.find((p) => p.id === e.r.palette) ?? PALETTES[0];
+    fixes = construireFixes(e.r, pal, e.nuit); scene.add(fixes);
+  }
   function reconstruire(e: Entree) {
     const { r } = e, pal = PALETTES.find((p) => p.id === r.palette) ?? PALETTES[0], N = r.salle.n;
     const cle = `${r.lieu}|${N}|${r.palette}`;
@@ -248,7 +257,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     cam.position.copy(vue.cible).addScaledVector(DIR, 80); cam.lookAt(vue.cible); cam.updateProjectionMatrix();
   }
   /** zoom de la vue d'ensemble : un peu plus serré sur un écran peu large (mobile), la scène occupe mieux la hauteur disponible */
-  const zoomBase = () => { const asp = (conteneur.clientWidth || 1) / (conteneur.clientHeight || 1); return asp < 1.5 ? Math.min(1.45, 1 + (1.5 - asp) * 0.55) : 1; };
+  const zoomBase = () => { const asp = (conteneur.clientWidth || 1) / (conteneur.clientHeight || 1); return asp < 1.5 ? Math.min(1.25, 1 + (1.5 - asp) * 0.4) : 1; };
   function recadrer(immediat = false) {
     const N = vue.N = courant?.r.salle.n ?? 12;
     cibleVoulue = new THREE.Vector3(N / 2, 0.8, N / 2 + (zoomBase() > 1 ? 0.4 : 0)); zoomVoulu = zoomBase(); transition = immediat || courant?.reduit ? 1 : 0; if (immediat) { vue.cible.copy(cibleVoulue); vue.zoom = zoomVoulu; placerCamera(); }
@@ -371,7 +380,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     maj(e) {
       const avant = courant; courant = e;
       if (!avant || avant.r !== e.r) { reconstruire(e); }
-      if (!avant || avant.nuit !== e.nuit || avant.r !== e.r) lumiere(e.nuit);
+      if (!avant || avant.nuit !== e.nuit || avant.r !== e.r) { lumiere(e.nuit); if (!avant || avant.r !== e.r || (avant.nuit > 0.5) !== (e.nuit > 0.5)) refaireFixes(e); }
       canvas.style.touchAction = "none";
       if (e.focus && avant && avant.focus?.n !== e.focus.n) centrer(e);
       canvas.style.cursor = e.deplacable ? "grab" : "default";
@@ -379,6 +388,8 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
       demander();
     },
     vueEnsemble: () => recadrer(),
+    chaises: (id) => groupes.get(id)?.userData.chaises ?? [],
+    dims: (id) => { const u = groupes.get(id)?.userData; return u ? { w: u.w, d: u.d } : null; },
     vers(id, zoom) { const g2 = groupes.get(id); if (!g2) return; cibleVoulue = null; transition = 1; vue.cible.set(g2.position.x, 0.4, g2.position.z); vue.zoom = zoom; placerCamera(); demander(); },
     sous: (x, y) => objetSous(x, y),
     stats: () => ({ appels, triangles: tris, objets: objets.length, zoom: +vue.zoom.toFixed(3), cible: [+vue.cible.x.toFixed(2), +vue.cible.z.toFixed(2)] }),
