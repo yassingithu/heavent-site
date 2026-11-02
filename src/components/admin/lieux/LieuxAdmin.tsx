@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { idAleatoire, reduirePhoto } from "@/lib/photos";
+import { useUrlsPrivees } from "@/lib/urlsPrivees";
 import { ChevronDown, ImagePlus, Loader2, MapPin, Phone, Plus, Save, Trash2, Users, X } from "lucide-react";
 
 /** Salles, palais, riads, jardins… avec leurs tarifs et leur localisation. Chaque tarif devient une ligne du catalogue des devis. */
@@ -14,7 +15,6 @@ interface Lieu {
 const TYPES = [["salle", "Salle des fêtes"], ["palais", "Palais"], ["riad", "Riad"], ["hotel", "Hôtel"], ["jardin", "Jardin / plein air"], ["villa", "Villa"], ["restaurant", "Restaurant"], ["autre", "Autre"]];
 const UNITES = [["forfait", "Forfait"], ["jour", "Par jour"], ["personne", "Par personne"], ["heure", "Par heure"]];
 const BUCKET = "prestataires";
-const url = (c: string) => supabase.storage.from(BUCKET).getPublicUrl(c).data.publicUrl;
 const mad = (n: number) => `${new Intl.NumberFormat("fr-FR").format(Number(n) || 0)} MAD`;
 
 /** Coordonnées lues dans un lien Google Maps (…@33.97,-6.85… ou ?q=33.97,-6.85) */
@@ -142,6 +142,7 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange, onSupprim
   const [f, setF] = useState<Lieu>(l);
   const [occupe, setOccupe] = useState(false);
   const [confirmer, setConfirmer] = useState(false);
+  const url = useUrlsPrivees(BUCKET, ouvert ? f.photos : l.photos.slice(0, 1));
   useEffect(() => { if (!ouvert) setConfirmer(false); }, [ouvert]);
   const blocConfirmation = (el: HTMLDivElement | null) => { el?.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); };
   const supprimer = async () => {
@@ -187,7 +188,7 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange, onSupprim
   return (
     <div id={`lieu-${l.id}`} className={`scroll-mt-4 a-carte overflow-hidden ${f.actif ? "" : "border-l-[3px] !border-l-[#9C4A2C]"}`} data-testid="fiche-lieu">
       <button onClick={onOuvrir} className="w-full flex items-center gap-3 p-3 sm:p-4 text-left">
-        {l.photos[0] && <div className="h-14 w-20 bg-[#FBF8F1] overflow-hidden shrink-0"><img src={url(l.photos[0])} alt="" className="h-full w-full object-cover" /></div>}
+        {l.photos[0] && <div className="h-14 w-20 bg-[#FBF8F1] overflow-hidden shrink-0"><img src={url(l.photos[0]) ?? undefined} alt="" className="h-full w-full object-cover" /></div>}
         <div className="flex-1 min-w-0">
           <div className="font-medium text-base leading-snug line-clamp-2">{l.nom}{!l.actif && <span className="ml-2 a-st terre align-middle">inactif</span>}{modifie && <span className="ml-2 a-st align-middle">modifié</span>}</div>
           <div className="text-[10.5px] uppercase tracking-[.22em] text-[#7A5F1F] mt-0.5">{TYPES.find((t) => t[0] === l.type)?.[1] ?? l.type}</div>
@@ -235,7 +236,7 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange, onSupprim
             <div className="flex flex-wrap gap-2">
               {f.photos.map((ph) => (
                 <div key={ph} className="relative h-24 w-32 rounded-xl overflow-hidden border">
-                  <img src={url(ph)} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  <img src={url(ph) ?? undefined} alt="" className="h-full w-full object-cover" loading="lazy" />
                   <button onClick={() => setF({ ...f, photos: f.photos.filter((x) => x !== ph) })} className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 text-white grid place-items-center" aria-label="Retirer"><X className="h-3.5 w-3.5" /></button>
                 </div>
               ))}

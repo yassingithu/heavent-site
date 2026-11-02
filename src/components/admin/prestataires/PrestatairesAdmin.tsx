@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { idAleatoire, reduirePhoto } from "@/lib/photos";
+import { useUrlsPrivees } from "@/lib/urlsPrivees";
 import { METIERS } from "@/pages/Prestataires";
 import { Ban, Check, ChevronDown, Copy, ImagePlus, Loader2, Mail, MessageCircle, Plus, RefreshCw, Save, Trash2, X } from "lucide-react";
 
@@ -16,7 +17,6 @@ export interface Prestataire {
   prestations: Prestation[]; statut: string; email_confirme_le: string | null; valide_le: string | null; notes: string | null;
 }
 const BUCKET = "prestataires";
-const url = (chemin: string | null) => (chemin ? supabase.storage.from(BUCKET).getPublicUrl(chemin).data.publicUrl : null);
 const STATUTS: Record<string, [string, string]> = {
   en_attente: ["À valider", "bg-amber-100 text-amber-900"], valide: ["Validé", "bg-emerald-100 text-emerald-800"],
   email_a_confirmer: ["E-mail non confirmé", "bg-slate-100 text-slate-700"], refuse: ["Refusé", "bg-red-100 text-red-800"], suspendu: ["Suspendu", "bg-zinc-200 text-zinc-700"],
@@ -87,6 +87,7 @@ function Fiche({ p, ouvert, onOuvrir, onChange }: { p: Prestataire; ouvert: bool
   const [marge, setMarge] = useState(20);
   useEffect(() => { setF(p); }, [p]);
   const modifie = JSON.stringify(f) !== JSON.stringify(p);
+  const url = useUrlsPrivees(BUCKET, [f.logo, ...f.photos]);
   const logo = url(f.logo);
 
   const enregistrer = async (extra: Partial<Prestataire> = {}) => {
@@ -171,7 +172,7 @@ function Fiche({ p, ouvert, onOuvrir, onChange }: { p: Prestataire; ouvert: bool
               </label>
               {f.photos.map((ph) => (
                 <div key={ph} className="relative h-24 w-24 rounded-xl overflow-hidden border">
-                  <a href={url(ph)!} target="_blank" rel="noreferrer"><img src={url(ph)!} alt="" className="h-full w-full object-cover" loading="lazy" /></a>
+                  <a href={url(ph) ?? undefined} target="_blank" rel="noreferrer"><img src={url(ph) ?? undefined} alt="" className="h-full w-full object-cover" loading="lazy" /></a>
                   <button onClick={() => setF({ ...f, photos: f.photos.filter((x) => x !== ph) })} className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 text-white grid place-items-center" aria-label="Retirer"><X className="h-3.5 w-3.5" /></button>
                 </div>
               ))}
