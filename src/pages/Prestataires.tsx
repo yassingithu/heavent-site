@@ -26,6 +26,7 @@ export default function Prestataires() {
   const [accord, setAccord] = useState(false);
   const [engagement, setEngagement] = useState(false);
   const [etat, setEtat] = useState<"saisie" | "envoi" | "ok">("saisie");
+  const [mailKo, setMailKo] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
   const champ = "w-full border border-[#CDBE98] bg-[#FFFDF7] px-4 h-12 focus:outline-none focus:border-[#A8933F] focus:ring-2 focus:ring-[#A8933F]/30";
@@ -40,6 +41,8 @@ export default function Prestataires() {
     return null;
   };
   const valide = f.societe.trim().length > 1 && f.contact.trim().length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.trim()) && lignesOk.length > 0 && accord && engagement;
+
+  useEffect(() => { if (erreur?.startsWith("Il manque") && !manque()) setErreur(null); });
 
   const deposer = async (fichier: Blob, nom: string, type: string) => {
     const chemin = `inscriptions/${idAleatoire()}/${nom}`;
@@ -63,7 +66,8 @@ export default function Prestataires() {
         prestations: lignesOk.map((l) => ({ fonction: l.fonction.trim(), unite: l.unite, prix: Number(l.prix), description: l.description.trim() })),
       } });
       if (error) throw new Error(/Trop de demandes/.test(error.message) ? "Trop de demandes en peu de temps : réessayez dans une heure." : error.message);
-      await fetch(`${FUNCTIONS_URL}/prestataires`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "inscription", id }) }).catch(() => {});
+      const rep = await fetch(`${FUNCTIONS_URL}/prestataires`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "inscription", id }) }).catch(() => null);
+      setMailKo(!rep || !rep.ok);
       suivre("demande", "prestataire");
       setEtat("ok"); window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) { setErreur((err as Error).message); setEtat("saisie"); }
@@ -75,6 +79,7 @@ export default function Prestataires() {
         <span className="mx-auto h-16 w-16 rounded-full bg-[#141414] text-[#E4D49A] grid place-items-center"><MailCheck className="h-8 w-8" /></span>
         <h1 className="font-serif text-4xl text-[#141414] mt-6">Plus qu'une étape</h1>
         <p className="text-[#5A5146] mt-4 text-lg leading-relaxed">Nous venons de vous envoyer un e-mail à <b>{f.email}</b>. Cliquez sur le lien qu'il contient pour confirmer votre inscription : notre équipe étudiera ensuite votre dossier et vous répondra sous 48 h.</p>
+        {mailKo && <p className="text-sm text-red-700 mt-4" data-testid="presta-mail-ko">Votre dossier est bien enregistré, mais l'e-mail n'a pas pu partir. Écrivez-nous par WhatsApp ou à info@heaventagency.com et nous vous le renverrons.</p>}
         <p className="text-sm text-[#5A5146] mt-4">Rien reçu ? Pensez à regarder dans les courriers indésirables.</p>
       </div>
     </div>
