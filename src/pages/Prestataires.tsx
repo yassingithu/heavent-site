@@ -24,12 +24,13 @@ export default function Prestataires() {
   const [logo, setLogo] = useState<File | null>(null);
   const [photos, setPhotos] = useState<File[]>([]);
   const [accord, setAccord] = useState(false);
+  const [engagement, setEngagement] = useState(false);
   const [etat, setEtat] = useState<"saisie" | "envoi" | "ok">("saisie");
   const [erreur, setErreur] = useState<string | null>(null);
 
   const champ = "w-full border border-[#CDBE98] bg-[#FFFDF7] px-4 h-12 focus:outline-none focus:border-[#A8933F] focus:ring-2 focus:ring-[#A8933F]/30";
   const lignesOk = lignes.filter((l) => l.fonction.trim().length > 1 && Number(l.prix) > 0);
-  const valide = f.societe.trim().length > 1 && f.contact.trim().length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.trim()) && lignesOk.length > 0 && accord;
+  const valide = f.societe.trim().length > 1 && f.contact.trim().length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.trim()) && lignesOk.length > 0 && accord && engagement;
 
   const deposer = async (fichier: Blob, nom: string, type: string) => {
     const chemin = `inscriptions/${idAleatoire()}/${nom}`;
@@ -47,7 +48,7 @@ export default function Prestataires() {
       const cheminsPhotos: string[] = [];
       for (const [i, p] of photos.entries()) cheminsPhotos.push(await deposer(await reduirePhoto(p, 1800), `photo-${i + 1}.jpg`, "image/jpeg"));
       const { data: id, error } = await (supabase as any).rpc("prestataire_inscrire", { p: {
-        ...f, categories: metiers, logo: cheminLogo, photos: cheminsPhotos,
+        ...f, source: new URLSearchParams(window.location.search).get("utm_source") ?? "", engagement_prix: true, categories: metiers, logo: cheminLogo, photos: cheminsPhotos,
         prestations: lignesOk.map((l) => ({ fonction: l.fonction.trim(), unite: l.unite, prix: Number(l.prix), description: l.description.trim() })),
       } });
       if (error) throw new Error(/Trop de demandes/.test(error.message) ? "Trop de demandes en peu de temps : réessayez dans une heure." : error.message);
@@ -74,6 +75,24 @@ export default function Prestataires() {
         description: "DJ, traiteurs, photographes, décorateurs, loueurs de matériel : rejoignez le réseau de prestataires de Heavent People Agency au Maroc." }} />
       <PageTete surtitre="Prestataires partenaires" titre="Travaillons ensemble sur nos prochains événements"
         chapo="DJ, traiteurs, photographes, décorateurs, loueurs de matériel… Présentez vos prestations et vos tarifs : une fois validé, vous êtes proposé dans nos devis mariages, fêtes et événements d'entreprise." />
+
+      <section className="max-w-3xl mx-auto px-4 pt-12 sm:pt-16" data-testid="presta-avantages" aria-labelledby="presta-pourquoi">
+        <p className="a-surtitre">Pourquoi nous rejoindre</p>
+        <h2 id="presta-pourquoi" className="font-serif text-[28px] sm:text-4xl text-[#141414] mt-2">Gratuit, sans commission sur vous</h2>
+        <ol className="mt-8 grid sm:grid-cols-3 gap-px bg-[#DCCDAA] border border-[#DCCDAA]">
+          {[
+            ["I", "Des demandes sans prospecter", "Vos prestations apparaissent dans nos devis mariages, fêtes et événements d'entreprise."],
+            ["II", "Inscription gratuite", "Aucun abonnement et aucune commission prélevée sur vos prix. Heavent est rémunérée par le client pour la coordination."],
+            ["III", "Vos prix, présentés avec soin", "Votre profil, votre logo et vos photos sont mis en valeur auprès de familles qui préparent leur événement."],
+          ].map(([n, t, d]) => (
+            <li key={n} className="bg-[#FAF6EC] p-5">
+              <span className="font-serif text-2xl text-[#7A5F1F]">{n}</span>
+              <h3 className="font-serif text-xl text-[#141414] mt-1">{t}</h3>
+              <p className="text-sm text-[#5A5146] mt-2 leading-relaxed">{d}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
 
       <form onSubmit={envoyer} className="max-w-3xl mx-auto px-4 py-12 sm:py-20 space-y-10" data-testid="formulaire-prestataire">
         <Bloc titre="Votre activité" numero={1}>
@@ -143,11 +162,15 @@ export default function Prestataires() {
           <input type="checkbox" checked={accord} onChange={(e) => setAccord(e.target.checked)} className="mt-1 h-4 w-4 accent-[#A8933F]" data-testid="presta-accord" />
           <span>J'accepte que Heavent People Agency conserve ces informations pour me proposer des prestations, et m'écrive à ce sujet. <Link to="/politique-confidentialite" className="underline">Confidentialité</Link></span>
         </label>
+        <label className="flex gap-3 text-sm text-[#5A5146] items-start">
+          <input type="checkbox" checked={engagement} onChange={(e) => setEngagement(e.target.checked)} className="mt-1 h-4 w-4 accent-[#A8933F]" data-testid="presta-engagement" />
+          <span>Je m'engage à indiquer des prix justes, identiques à ceux que je propose en direct aux clients, et à ne pas contourner Heavent pour les événements issus de ses devis.</span>
+        </label>
         {erreur && <p className="text-sm text-red-700" data-testid="presta-erreur">{erreur}</p>}
         <button type="submit" disabled={!valide || etat === "envoi"} className="w-full sm:w-auto s-btn s-btn-plein s-sombre" data-testid="presta-envoyer">
           {etat === "envoi" ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Envoyer ma candidature <span className="fl" aria-hidden="true">→</span>
         </button>
-        {!valide && <p className="text-xs text-[#5A5146]">Champs obligatoires : entreprise, nom, e-mail, au moins une prestation avec son prix, et votre accord.</p>}
+        {!valide && <p className="text-xs text-[#5A5146]">Champs obligatoires : entreprise, nom, e-mail, au moins une prestation avec son prix, votre accord et l'engagement sur vos prix.</p>}
       </form>
     </div>
   );
