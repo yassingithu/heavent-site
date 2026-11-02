@@ -595,7 +595,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   <div className="flex flex-wrap gap-2">
                     <ReponsesWhatsApp compact contexte={{ telephone: d.telephone, prenom: kind === "entreprise" ? d.prenom : d.prenom || d.nom,
                       evenement: kind === "entreprise" ? "votre événement" : nomEvenement((d as DemandeMariage).type_evenement),
-                      date: dateFr(kind === "entreprise" ? (d as DemandeEntreprise).date_evenement : (d as DemandeMariage).date_mariage) }} />
+                      date: dateFr(kind === "entreprise" ? (d as DemandeEntreprise).date_evenement : (d as DemandeMariage).date_mariage),
+                      dateIso: kind === "entreprise" ? (d as DemandeEntreprise).date_evenement : (d as DemandeMariage).date_mariage }} />
                     <Button size="sm" variant="outline" onClick={() => kind === "entreprise" ? depuisDemandeEntreprise(d as DemandeEntreprise) : depuisDemandeMariage(d as DemandeMariage)}>
                       <FileText className="h-4 w-4 mr-1" /> Faire le devis
                     </Button>
@@ -890,7 +891,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 {form.lien_token && <Button variant="ghost" size="sm" onClick={copierLien}><Link2 className="h-4 w-4 mr-1" /> Copier le lien client</Button>}
                 <ReponsesWhatsApp contexte={{ telephone: form.client_telephone, prenom: (form.client_nom || "").trim().split(/\s+/)[0],
                   evenement: form.type === "mariage" ? "votre mariage" : form.titre ? `« ${form.titre} »` : "votre événement",
-                  date: dateFr(form.date_evenement), lienDevis: lienClientDevis(form.lien_token) || null }} />
+                  date: dateFr(form.date_evenement), dateIso: form.date_evenement || null, lienDevis: lienClientDevis(form.lien_token) || null }} />
                 <Button variant="ghost" size="sm" onClick={() => enregistrer("envoye")} disabled={saving}>Marquer comme envoyé (sans e-mail)</Button>
                 <Button variant="ghost" onClick={() => { setForm(null); setOnglet("liste"); }}>Fermer</Button>
               </div>

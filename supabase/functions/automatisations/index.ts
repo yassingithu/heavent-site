@@ -58,6 +58,10 @@ serve(async (req) => {
   const { data: envoyes } = await db.from("devis").select("*").eq("statut", "envoye").is("signe_le", null).not("client_email", "is", null).not("date_envoi", "is", null).is("rdv_demande_le", null).lt("relances", 2);
   for (const d of envoyes ?? []) {
     if (d.date_validite && d.date_validite < aujourdhui) continue;
+    // Relance déjà faite (à la main : WhatsApp, e-mail) depuis moins de 4,5 jours : on n'en envoie pas une deuxième.
+    // 4,5 et non 5 : le passage quotidien arrive à la même heure que la veille, et la relance J+5 écrit son tampon
+    // quelques secondes après le début du passage ; avec 5 jours pile, la relance J+10 serait décalée d'un jour.
+    if (d.derniere_relance_le && (maintenant - new Date(d.derniere_relance_le).getTime()) / JOUR < 4.5) continue;
     const depuis = (maintenant - new Date(d.date_envoi).getTime()) / JOUR;
     const n = d.relances === 0 && depuis >= 5 ? 1 : d.relances === 1 && depuis >= 10 ? 2 : 0;
     if (!n) continue;

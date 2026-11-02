@@ -1106,6 +1106,7 @@ const Admin = () => {
         <TabsContent value="tableau" className="space-y-4">
           {accueil?.prenom && <CarteAccueil infos={accueil} nouvellesDemandes={nouvellesEntreprise + nouvellesMariage} />}
           <TableauDeBord demandesMariage={devisMariage as any} demandesEntreprise={devisEntreprise as any} onAller={(v) => { setOngletAdmin(v); window.scrollTo({ top: 0 }); }}
+            onChiffrer={chiffrerDemande} onOuvrirDevis={(id) => { (window as any).__heaventDevisAOuvrir = id; setOngletAdmin("devis-rapide"); window.scrollTo({ top: 0 }); window.dispatchEvent(new CustomEvent("heavent:ouvrir-devis", { detail: id })); }}
             haut={<>
               {accueil?.prenom && <Celebrations infos={accueil} onVu={rechargerAccueil} />}
               {!estDemo() && <CarteAppTelephone email={user?.email} mode="invitation" />}

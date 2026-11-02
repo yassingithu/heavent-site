@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CATALOGUE, TypeElement } from "@/components/jeu-evenement/config";
 import MissionsDuJour from "@/components/admin/equipe/MissionsDuJour";
+import Aujourdhui from "@/components/admin/accueil/Aujourdhui";
 
 interface Demande { id: string; created_at?: string | null; statut?: string | null; configuration?: any }
 interface DevisLigne {
@@ -63,8 +64,9 @@ function Tuile({ titre, valeur, detail, testId, grand }: { titre: string; valeur
 const madGros = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Math.round(n));
 
 /** Tableau de bord de l'activité : demandes, devis, signatures, chiffre d'affaires, événements à venir, choix du jeu. */
-export default function TableauDeBord({ demandesMariage, demandesEntreprise, onAller, haut, bas }: {
+export default function TableauDeBord({ demandesMariage, demandesEntreprise, onAller, onChiffrer, onOuvrirDevis, haut, bas }: {
   demandesMariage: Demande[]; demandesEntreprise: Demande[]; onAller?: (onglet: string) => void; haut?: ReactNode; bas?: ReactNode;
+  onChiffrer?: (kind: "entreprise" | "mariage", id: string) => void; onOuvrirDevis?: (id: string) => void;
 }) {
   const [devis, setDevis] = useState<DevisLigne[]>([]);
   const [bulletinsAValider, setBulletinsAValider] = useState<number | null>(null);
@@ -113,35 +115,11 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onA
   const aujourdhuiMa = aujourdhuiMaroc();
   const dansJours = (jour: string) => Math.round((new Date(jour + "T12:00:00Z").getTime() - new Date(aujourdhuiMa + "T12:00:00Z").getTime()) / 864e5);
   const quand = (jour: string) => { const n = dansJours(jour); return n === 0 ? "Aujourd'hui" : n === 1 ? "Demain" : `Dans ${n} jours`; };
-  const nbEntreprise = demandesEntreprise.filter((d) => d.statut === "en_attente").length;
-  const nbEvenement = demandesMariage.filter((d) => d.statut === "en_attente").length;
-  const aTraiter: { cle: string; nombre: number; libelle: string; onglet: string; urgent?: boolean }[] = [
-    { cle: "mariage", nombre: nbEvenement, libelle: nbEvenement > 1 ? "demandes événement à traiter" : "demande événement à traiter", onglet: "mariage" },
-    { cle: "entreprise", nombre: nbEntreprise, libelle: nbEntreprise > 1 ? "demandes entreprise à traiter" : "demande entreprise à traiter", onglet: "entreprise" },
-    { cle: "sansreponse", nombre: s.sansReponse.length, libelle: s.sansReponse.length > 1 ? "devis sans réponse depuis 5 jours ou plus" : "devis sans réponse depuis 5 jours ou plus", onglet: "devis-rapide", urgent: true },
-    { cle: "bulletins", nombre: bulletinsAValider ?? 0, libelle: (bulletinsAValider ?? 0) > 1 ? "bulletins de paie à valider" : "bulletin de paie à valider", onglet: "fiches" },
-  ].filter((x) => x.nombre > 0);
   return (
     <div className="space-y-4" data-testid="tableau-de-bord">
-      {haut}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8 items-start">
-        <section className="a-carte px-[18px] pt-[18px] pb-1.5" data-testid="a-traiter" aria-labelledby="t-a-traiter">
-          <p className="a-surtitre">Maintenant</p>
-          <h2 id="t-a-traiter" className="font-serif text-[30px] leading-[1.05] tracking-[-0.015em] mt-2.5">À traiter maintenant</h2>
-          <ul className="mt-3">
-            {aTraiter.length === 0 && <li className="border-t border-[#DCCDAA] py-4 text-[14px] text-[#1F5A4C]" data-testid="rien-a-traiter"><span className="a-st vert">Rien d'urgent : tout est à jour.</span></li>}
-            {aTraiter.map((x, i) => (
-              <li key={x.cle} className="a-entre border-t border-[#DCCDAA]" style={{ ["--r" as string]: `${0.15 + i * 0.07}s` }}>
-                <button onClick={() => onAller?.(x.onglet)} data-testid={`a-traiter-${x.cle}`}
-                  className="a-ligne w-full grid grid-cols-[52px_1fr_18px] items-center gap-3 min-h-[72px] py-3 text-left">
-                  <span className={`font-serif text-[44px] leading-[.9] tracking-[-0.03em] text-center tabular-nums ${x.urgent ? "text-[#9C4A2C]" : "text-[#141414]"}`}>{x.nombre}</span>
-                  <span className="text-[15.5px] leading-snug">{x.libelle}</span>
-                  <Fleche />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] gap-4 lg:gap-8 items-start">
+        <Aujourdhui demandesMariage={demandesMariage as any} demandesEntreprise={demandesEntreprise as any} bulletins={bulletinsAValider ?? 0}
+          onAller={(v) => onAller?.(v)} onChiffrer={(k, id) => onChiffrer?.(k, id)} onOuvrirDevis={(id) => onOuvrirDevis?.(id)} />
         <section data-testid="prochains-evenements" aria-labelledby="t-evts" className="lg:pt-2">
           <h2 id="t-evts" className="a-surtitre">Prochains événements</h2>
           <ul className="mt-2">
@@ -169,6 +147,7 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onA
           {onAller && <div className="flex justify-end mt-1"><button onClick={() => onAller("agenda")} className="a-ligne inline-flex items-center gap-2 min-h-11 text-[13.5px] font-medium text-[#7A5F1F] underline decoration-[#7A5F1F]/45 underline-offset-[5px]">Tout l'agenda <Fleche /></button></div>}
         </section>
       </div>
+      {haut}
       <MissionsDuJour />
       <section className="a-carte px-[18px] pt-5 pb-[18px] sm:px-6" aria-labelledby="t-mois" data-testid="chiffres-du-mois">
         <h2 id="t-mois" className="a-surtitre first-letter:uppercase">{new Date().toLocaleDateString("fr-FR", { month: "long" })}, à ce jour</h2>
