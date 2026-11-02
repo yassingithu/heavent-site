@@ -43,16 +43,38 @@ async function abonner(jeton: string, pageId?: string, p = "") {
   await enregistrer(p + "instagram_abonne_le", new Date().toISOString());
 }
 
+/** Attend qu'Instagram ait fini de préparer un média (image, vidéo ou carrousel) */
+async function attendre(id: string, jeton: string, essais: number, refus: string) {
+  for (let i = 0; i < essais; i++) {
+    const s = await appel(`${API}/${id}?fields=status_code&access_token=${encodeURIComponent(jeton)}`);
+    if (s.status_code === "FINISHED") return;
+    if (s.status_code === "ERROR" || s.status_code === "EXPIRED") throw new Error(refus);
+    await pause(3000);
+  }
+  throw new Error("Instagram met trop de temps à préparer ce média");
+}
+
 async function publier(post: any, jeton: string, compte: string, mode?: string) {
   API = mode === "facebook" ? API_FB : API_IG;
-  const corps = new URLSearchParams({ image_url: post.visuel_url, caption: post.legende ?? "", access_token: jeton });
-  const conteneur = await appel(`${API}/${compte}/media`, { method: "POST", body: corps });
-  // On attend que l'image soit prête chez Instagram (quelques secondes au plus)
-  for (let i = 0; i < 10; i++) {
-    const s = await appel(`${API}/${conteneur.id}?fields=status_code&access_token=${encodeURIComponent(jeton)}`);
-    if (s.status_code === "FINISHED") break;
-    if (s.status_code === "ERROR") throw new Error("Instagram a refusé l'image");
-    await pause(2000);
+  const legende = post.legende ?? "";
+  let conteneur: { id: string };
+  if (post.video_url) {
+    // Reel (vidéo verticale)
+    conteneur = await appel(`${API}/${compte}/media`, { method: "POST", body: new URLSearchParams({ media_type: "REELS", video_url: post.video_url, caption: legende, share_to_feed: "true", ...(post.visuel_url ? { cover_url: post.visuel_url } : {}), access_token: jeton }) });
+    await attendre(conteneur.id, jeton, 40, "Instagram a refusé la vidéo");
+  } else if (Array.isArray(post.diapositives) && post.diapositives.length > 1) {
+    // Carrousel : une image enfant par diapositive (2 à 10), puis le carrousel
+    const enfants: string[] = [];
+    for (const url of post.diapositives.slice(0, 10)) {
+      const e = await appel(`${API}/${compte}/media`, { method: "POST", body: new URLSearchParams({ image_url: url, is_carousel_item: "true", access_token: jeton }) });
+      await attendre(e.id, jeton, 10, "Instagram a refusé une image du carrousel");
+      enfants.push(e.id);
+    }
+    conteneur = await appel(`${API}/${compte}/media`, { method: "POST", body: new URLSearchParams({ media_type: "CAROUSEL", children: enfants.join(","), caption: legende, access_token: jeton }) });
+    await attendre(conteneur.id, jeton, 10, "Instagram a refusé le carrousel");
+  } else {
+    conteneur = await appel(`${API}/${compte}/media`, { method: "POST", body: new URLSearchParams({ image_url: post.visuel_url, caption: legende, access_token: jeton }) });
+    await attendre(conteneur.id, jeton, 10, "Instagram a refusé l'image");
   }
   const media = await appel(`${API}/${compte}/media_publish`, { method: "POST", body: new URLSearchParams({ creation_id: conteneur.id, access_token: jeton }) });
   await db.from("posts_instagram").update({ statut: "publie", publie_le: new Date().toISOString(), ig_media_id: media.id, erreur: null }).eq("id", post.id);
