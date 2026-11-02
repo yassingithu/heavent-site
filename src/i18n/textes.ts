@@ -20,9 +20,9 @@ export function traduire(fr: string, langue: Langue, v?: Record<string, string |
   return v ? t.replace(/\{(\w+)\}/g, (_, k) => String(v[k] ?? "")) : t;
 }
 
-export function useTexte() {
+export function useTexte(forcer?: "fr" | "en" | "ar") {
   const { i18n } = useTranslation();
-  const langue = langueDe(i18n.language);
+  const langue = forcer ?? langueDe(i18n.language);
   const x = (fr: string, v?: Record<string, string | number>) => traduire(fr, langue, v);
   x.langue = langue;
   return x;

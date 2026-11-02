@@ -36,7 +36,7 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
   demandesMariage: Demande[]; demandesEntreprise: Demande[]; bulletins?: number;
   onAller: (onglet: string) => void; onChiffrer: (kind: "entreprise" | "mariage", id: string) => void; onOuvrirDevis: (id: string) => void;
 }) {
-  const x = useTexte();
+  const x = useTexte("fr");
   const { toast } = useToast();
   const [donnees, setDonnees] = useState<Donnees | null>(null);
   const [erreur, setErreur] = useState(false);

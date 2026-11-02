@@ -110,7 +110,7 @@ export function genererFiches(base) {
 
 /** Ouvre un navigateur connecté avec l'email donné (admin ou crew) branché sur la fausse base. */
 export async function contexte(navigateur, base, email, { mobile = false, agent = undefined } = {}) {
-  const ctx = await navigateur.newContext({ viewport: mobile ? { width: 390, height: 844 } : { width: 1400, height: 1000 }, isMobile: mobile, hasTouch: mobile, acceptDownloads: true, ...(agent ? { userAgent: agent } : {}), locale: "fr-FR" });
+  const ctx = await navigateur.newContext({ viewport: mobile ? { width: 390, height: 844 } : { width: 1400, height: 1000 }, isMobile: mobile, hasTouch: mobile, acceptDownloads: true, ...(agent ? { userAgent: agent } : {}), locale: process.env.LOCALE_TEST || "fr-FR" });
   await ctx.route(/fonts\.(googleapis|gstatic)|googletagmanager/, (r) => r.abort());
   const admin = base.admins.some((a) => a.email === email);
   const moi = () => base.staff.find((s) => s.email === email);

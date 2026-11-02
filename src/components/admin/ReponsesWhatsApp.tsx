@@ -131,7 +131,7 @@ const useMobile = () => {
 };
 
 export default function ReponsesWhatsApp({ contexte, compact = false, modeleDirect, libelle, classe, onEnvoye }: Props) {
-  const x = useTexte();
+  const x = useTexte("fr");
   const mobile = useMobile();
   const [prenomSig, setPrenomSig] = useState<string | null>(null);
   const [langue, setLangue] = useState<LangueClient>(deviner(contexte));
