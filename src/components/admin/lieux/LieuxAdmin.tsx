@@ -30,55 +30,92 @@ export default function LieuxAdmin() {
   const [charge, setCharge] = useState(true);
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [ville, setVille] = useState("");
+  const [recherche, setRecherche] = useState("");
+  const [repliees, setRepliees] = useState<string[]>([]);
+  const [creation, setCreation] = useState(false);
+  const [aMontrer, setAMontrer] = useState<string | null>(null);
 
+  // La roue d'attente ne s'affiche qu'au premier chargement : après un enregistrement, la liste reste en place.
   const charger = async () => {
-    setCharge(true);
     const { data } = await (supabase as any).from("lieux").select("*").order("ville").order("nom");
     setLieux((data ?? []).map((l: Lieu) => ({ ...l, photos: l.photos ?? [], tarifs: l.tarifs ?? [], actif: l.actif !== false }))); setCharge(false);
   };
   useEffect(() => { charger(); }, []);
-  const ajouter = async () => {
-    const { data, error } = await (supabase as any).from("lieux").insert({ nom: "Nouveau lieu", type: "salle", photos: [], actif: true, tarifs: [{ libelle: "Location de la salle", unite: "jour", prix: 0 }] }).select().single();
-    if (error) return toast({ title: "Impossible d'ajouter", description: error.message, variant: "destructive" });
-    await charger(); setOuvert(data.id);
-  };
-  const [recherche, setRecherche] = useState("");
-  const [repliees, setRepliees] = useState<string[]>([]);
+
   const SANS_VILLE = "Sans ville";
-  const villeDe = (l: Lieu) => l.ville?.trim() || SANS_VILLE;
-  const sansAccent = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const sansAccent = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  // « Marrakech », « marrakech » et « Marrakech  » forment une seule ville.
+  const cleVille = (l: Lieu) => (l.ville?.trim() ? sansAccent(l.ville.trim().replace(/\s+/g, " ")) : "");
+  const nomVille: Record<string, string> = {};
   const nb: Record<string, number> = {};
-  lieux.forEach((l) => { nb[villeDe(l)] = (nb[villeDe(l)] ?? 0) + 1; });
+  lieux.forEach((l) => { const k = cleVille(l); nomVille[k] ??= k ? l.ville!.trim().replace(/\s+/g, " ") : SANS_VILLE; nb[k] = (nb[k] ?? 0) + 1; });
   // Les villes les plus fournies d'abord, « Sans ville » toujours en dernier.
-  const villes = Object.keys(nb).sort((a, b) => (a === SANS_VILLE ? 1 : b === SANS_VILLE ? -1 : nb[b] - nb[a] || a.localeCompare(b, "fr")));
+  const cles = Object.keys(nb).sort((a, b) => (a === "" ? 1 : b === "" ? -1 : nb[b] - nb[a] || nomVille[a].localeCompare(nomVille[b], "fr")));
   const q = sansAccent(recherche.trim());
-  const visibles = lieux.filter((l) => (!ville || villeDe(l) === ville) && (!q || sansAccent([l.nom, l.adresse, l.ville, l.contact_telephone].filter(Boolean).join(" ")).includes(q)));
-  const groupes = villes.map((v) => ({ ville: v, items: visibles.filter((l) => villeDe(l) === v).sort((a, b) => a.nom.localeCompare(b.nom, "fr")) })).filter((g) => g.items.length);
-  const basculer = (v: string) => setRepliees((r) => (r.includes(v) ? r.filter((x) => x !== v) : [...r, v]));
+  const chiffres = recherche.replace(/\D/g, "");
+  const correspond = (l: Lieu) => {
+    if (!q) return true;
+    const texte = sansAccent([l.nom, l.adresse, l.ville, l.contact_nom, l.contact_email, l.contact_telephone, TYPES.find((t) => t[0] === l.type)?.[1]].filter(Boolean).join(" "));
+    return texte.includes(q) || (chiffres.length >= 3 && (l.contact_telephone ?? "").replace(/\D/g, "").includes(chiffres));
+  };
+  const visibles = lieux.filter((l) => (!ville || cleVille(l) === ville) && correspond(l));
+  const groupes = cles.map((k) => ({ cle: k, ville: nomVille[k], items: visibles.filter((l) => cleVille(l) === k).sort((a, b) => a.nom.localeCompare(b.nom, "fr")) })).filter((g) => g.items.length);
+  const basculer = (k: string) => setRepliees((r) => (r.includes(k) ? r.filter((x) => x !== k) : [...r, k]));
+  const villesConnues = Object.entries(nomVille).filter(([k]) => k).map(([, v]) => v).sort((a, b) => a.localeCompare(b, "fr"));
+
+  const ajouter = async () => {
+    setCreation(true);
+    // La nouvelle fiche prend la ville filtrée, pour qu'on la retrouve tout de suite.
+    const villeActive = ville ? nomVille[ville] : null;
+    const { data, error } = await (supabase as any).from("lieux").insert({ nom: "Nouveau lieu", type: "salle", ville: villeActive, photos: [], actif: true, tarifs: [{ libelle: "Location de la salle", unite: "jour", prix: 0 }] }).select().single();
+    setCreation(false);
+    if (error) return toast({ title: "Impossible d'ajouter", description: error.message, variant: "destructive" });
+    setRecherche(""); setRepliees((r) => r.filter((x) => x !== (villeActive ? sansAccent(villeActive) : "")));
+    await charger(); setOuvert(data.id); setAMontrer(data.id);
+  };
+  // Quand une fiche change de place (nouveau lieu, ville modifiée), on déplie son groupe et on y va.
+  const apresEnregistrement = async (id: string, villeFiche: string | null) => {
+    setRepliees((r) => r.filter((x) => x !== (villeFiche?.trim() ? sansAccent(villeFiche.trim().replace(/\s+/g, " ")) : "")));
+    await charger(); setAMontrer(id);
+  };
+  useEffect(() => {
+    if (!aMontrer) return;
+    const t = setTimeout(() => { document.getElementById(`lieu-${aMontrer}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); setAMontrer(null); }, 80);
+    return () => clearTimeout(t);
+  }, [aMontrer, lieux]);
 
   return (
     <div className="space-y-4" data-testid="lieux-admin">
       <div className="flex flex-wrap items-center gap-2">
-        <button onClick={() => setVille("")} className={`rounded-full px-4 h-9 text-sm border ${!ville ? "bg-[#141414] text-white" : "bg-white"}`}>Toutes les villes <span className="opacity-60">{lieux.length}</span></button>
-        {villes.map((v) => <button key={v} onClick={() => setVille(ville === v ? "" : v)} className={`rounded-full px-4 h-9 text-sm border ${ville === v ? "bg-[#141414] text-white" : "bg-white"}`}>{v} <span className="opacity-60">{nb[v]}</span></button>)}
-        <button onClick={ajouter} className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#C8B560] text-[#141414] px-4 h-9 text-sm font-medium" data-testid="ajouter-lieu"><Plus className="h-4 w-4" /> Ajouter un lieu</button>
+        <div className="relative flex-1 min-w-[220px]">
+          <input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Chercher un lieu, une adresse, un numéro…" className="w-full rounded-full border border-[#EADFC8] bg-white pl-4 pr-10 h-11 text-base sm:text-sm" data-testid="lieux-recherche" />
+          {recherche && <button onClick={() => setRecherche("")} aria-label="Effacer la recherche" className="absolute right-1 top-1 h-9 w-9 grid place-items-center text-muted-foreground"><X className="h-4 w-4" /></button>}
+        </div>
+        <button onClick={ajouter} disabled={creation} className="inline-flex items-center gap-1.5 rounded-full bg-[#C8B560] text-[#141414] px-4 h-11 text-sm font-medium disabled:opacity-60" data-testid="ajouter-lieu"><Plus className="h-4 w-4" /> Ajouter un lieu</button>
       </div>
-      <input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Chercher un lieu, une adresse, un numéro…" className="w-full rounded-full border border-[#EADFC8] bg-white px-4 h-10 text-sm" data-testid="lieux-recherche" />
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filtrer par ville">
+        <button onClick={() => setVille("")} aria-pressed={!ville} className={`rounded-full px-4 h-11 sm:h-9 text-sm border ${!ville ? "bg-[#141414] text-white" : "bg-white"}`}>Toutes les villes <span className="opacity-60">{lieux.length}</span></button>
+        {cles.map((k) => <button key={k || "sans"} onClick={() => setVille(ville === k ? "" : k)} aria-pressed={ville === k} className={`rounded-full px-4 h-11 sm:h-9 text-sm border ${ville === k ? "bg-[#141414] text-white" : "bg-white"}`}>{nomVille[k]} <span className="opacity-60">{nb[k]}</span></button>)}
+      </div>
       <p className="text-xs text-muted-foreground">Chaque tarif d'un lieu actif apparaît dans le catalogue des devis (catégorie « lieux »). Collez un lien Google Maps : la position est reprise automatiquement.</p>
       {charge ? <Loader2 className="h-6 w-6 animate-spin text-[#A8933F]" /> : visibles.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-[#DCCBA6] bg-white p-8 text-center text-sm text-muted-foreground">{lieux.length ? "Aucun lieu ne correspond à cette recherche." : "Aucun lieu pour l'instant. Ajoutez vos salles, palais et riads partenaires."}</p>
+        <div className="rounded-2xl border border-dashed border-[#DCCBA6] bg-white p-8 text-center text-sm text-muted-foreground space-y-3">
+          {!lieux.length ? <p>Aucun lieu pour l'instant. Ajoutez vos salles, palais et riads partenaires.</p>
+            : ville && lieux.some((l) => correspond(l)) ? <><p>Rien à {nomVille[ville]} pour cette recherche.</p><button onClick={() => setVille("")} className="rounded-full border px-4 h-10 bg-white text-[#141414]">Chercher dans toutes les villes</button></>
+            : <p>Aucun lieu ne correspond à cette recherche.</p>}
+        </div>
       ) : (
         <div className="space-y-5">{groupes.map((g) => {
-          const ferme = !q && repliees.includes(g.ville);
+          const ferme = !q && repliees.includes(g.cle);
           return (
-            <section key={g.ville} data-testid="groupe-ville">
-              <button onClick={() => basculer(g.ville)} className="w-full flex items-center gap-3 mb-2 text-left" aria-expanded={!ferme}>
+            <section key={g.cle || "sans"} data-testid="groupe-ville">
+              <button onClick={() => basculer(g.cle)} className="w-full min-h-11 flex items-center gap-3 mb-2 text-left" aria-expanded={!ferme}>
                 <span className="font-serif text-lg text-[#141414]">{g.ville}</span>
                 <span className="text-xs text-muted-foreground">{g.items.length} lieu{g.items.length > 1 ? "x" : ""}</span>
                 <span className="flex-1 h-px bg-[#DCCDAA]" />
                 <ChevronDown className={`h-4 w-4 text-[#A8933F] transition ${ferme ? "-rotate-90" : ""}`} />
               </button>
-              {!ferme && <div className="grid gap-3">{g.items.map((l) => <FicheLieu key={l.id} l={l} ouvert={ouvert === l.id} onOuvrir={() => setOuvert(ouvert === l.id ? null : l.id)} onChange={charger} />)}</div>}
+              {!ferme && <div className="grid gap-3">{g.items.map((l) => <FicheLieu key={l.id} l={l} villes={villesConnues} recherche={!!q} ouvert={ouvert === l.id} onOuvrir={() => setOuvert(ouvert === l.id ? null : l.id)} onChange={(v) => apresEnregistrement(l.id, v)} />)}</div>}
             </section>
           );
         })}</div>
@@ -87,7 +124,7 @@ export default function LieuxAdmin() {
   );
 }
 
-function FicheLieu({ l, ouvert, onOuvrir, onChange }: { l: Lieu; ouvert: boolean; onOuvrir: () => void; onChange: () => void }) {
+function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange }: { l: Lieu; villes: string[]; recherche: boolean; ouvert: boolean; onOuvrir: () => void; onChange: (ville: string | null) => void }) {
   const { toast } = useToast();
   const [f, setF] = useState<Lieu>(l);
   const [occupe, setOccupe] = useState(false);
@@ -104,7 +141,7 @@ function FicheLieu({ l, ouvert, onOuvrir, onChange }: { l: Lieu; ouvert: boolean
     setOccupe(false);
     if (error) return toast({ title: "Non enregistré", description: error.message, variant: "destructive" });
     toast({ title: "Lieu enregistré ✓", description: (extra.actif ?? f.actif) ? "Ses tarifs sont dans le catalogue des devis." : "Retiré du catalogue des devis." });
-    onChange();
+    onChange(f.ville);
   };
   const ajouterPhotos = async (fichiers: FileList | null) => {
     if (!fichiers?.length) return;
@@ -120,12 +157,12 @@ function FicheLieu({ l, ouvert, onOuvrir, onChange }: { l: Lieu; ouvert: boolean
   const setTarif = (i: number, v: Partial<Tarif>) => setF({ ...f, tarifs: f.tarifs.map((t, k) => (k === i ? { ...t, ...v } : t)) });
 
   return (
-    <div className={`rounded-2xl border bg-white overflow-hidden ${f.actif ? "border-[#EADFC8]" : "border-dashed opacity-75"}`} data-testid="fiche-lieu">
+    <div id={`lieu-${l.id}`} className={`scroll-mt-4 rounded-2xl border bg-white overflow-hidden ${f.actif ? "border-[#EADFC8]" : "border-dashed opacity-75"}`} data-testid="fiche-lieu">
       <button onClick={onOuvrir} className="w-full flex items-center gap-3 p-3 sm:p-4 text-left">
         <div className="h-14 w-20 rounded-lg bg-[#FBF8F1] overflow-hidden shrink-0 grid place-items-center">{l.photos[0] ? <img src={url(l.photos[0])} alt="" className="h-full w-full object-cover" /> : <MapPin className="h-5 w-5 text-[#A8933F]" />}</div>
         <div className="flex-1 min-w-0">
-          <div className="font-medium truncate">{l.nom} <span className="text-xs text-muted-foreground font-normal">· {TYPES.find((t) => t[0] === l.type)?.[1] ?? l.type}{l.ville ? ` · ${l.ville}` : ""}</span>{!l.actif && <span className="ml-2 text-[11px] rounded-full bg-zinc-200 px-2">inactif</span>}</div>
-          <div className="text-xs text-muted-foreground truncate">{l.capacite_max ? `${l.capacite_min ? l.capacite_min + "–" : "jusqu'à "}${l.capacite_max} pers. · ` : ""}{l.tarifs.map((t) => `${t.libelle} ${mad(t.prix)}`).join(" · ")}{!l.tarifs.length && (l.contact_telephone || l.contact_email || "Coordonnées à compléter")}</div>
+          <div className="font-medium truncate">{l.nom} <span className="text-xs text-muted-foreground font-normal">· {TYPES.find((t) => t[0] === l.type)?.[1] ?? l.type}{l.ville ? ` · ${l.ville}` : ""}</span>{!l.actif && <span className="ml-2 text-[11px] rounded-full bg-zinc-200 px-2">inactif</span>}{modifie && <span className="ml-2 text-[11px] rounded-full bg-[#C8B560]/30 text-[#7A5F1F] px-2">modifié</span>}</div>
+          <div className="text-xs text-muted-foreground truncate">{l.capacite_max ? `${l.capacite_min ? l.capacite_min + "–" : "jusqu'à "}${l.capacite_max} pers. · ` : ""}{l.tarifs.map((t) => `${t.libelle} ${mad(t.prix)}`).join(" · ")}{(!l.tarifs.length || recherche) && (l.contact_telephone || l.contact_email || (!l.tarifs.length ? "Coordonnées à compléter" : ""))}</div>
         </div>
         <ChevronDown className={`h-5 w-5 text-[#A8933F] transition ${ouvert ? "rotate-180" : ""}`} />
       </button>
@@ -134,7 +171,7 @@ function FicheLieu({ l, ouvert, onOuvrir, onChange }: { l: Lieu; ouvert: boolean
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
             <label className="text-[11px] text-muted-foreground lg:col-span-2">Nom<input className={champ} value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} data-testid="lieu-nom" /></label>
             <label className="text-[11px] text-muted-foreground">Type<select className={champ} value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })}>{TYPES.map(([v, t]) => <option key={v} value={v}>{t}</option>)}</select></label>
-            <label className="text-[11px] text-muted-foreground">Ville<input className={champ} value={f.ville ?? ""} onChange={(e) => setF({ ...f, ville: e.target.value })} data-testid="lieu-ville" /></label>
+            <label className="text-[11px] text-muted-foreground">Ville<input className={champ} list="lieux-villes" value={f.ville ?? ""} onChange={(e) => setF({ ...f, ville: e.target.value })} data-testid="lieu-ville" /><datalist id="lieux-villes">{villes.map((v) => <option key={v} value={v} />)}</datalist></label>
             <label className="text-[11px] text-muted-foreground lg:col-span-2">Adresse<input className={champ} value={f.adresse ?? ""} onChange={(e) => setF({ ...f, adresse: e.target.value })} /></label>
             <label className="text-[11px] text-muted-foreground lg:col-span-2">Lien Google Maps<input className={champ} value={f.lien_maps ?? ""} placeholder="Collez le lien « Partager » de Google Maps"
               onChange={(e) => { const c = coordonneesDepuisLien(e.target.value); setF({ ...f, lien_maps: e.target.value, ...(c ? { latitude: c[0], longitude: c[1] } : {}) }); }} data-testid="lieu-maps" /></label>
