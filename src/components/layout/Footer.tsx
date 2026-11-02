@@ -3,6 +3,7 @@ import { SERVICES, VILLES } from "@/lib/pagesLocales";
 import { useTranslation } from "react-i18next";
 import { useTexte } from "@/i18n/textes";
 import { NUMERO_WHATSAPP } from "@/components/BoutonWhatsApp";
+import { PAYS_WP, VILLES_WP } from "@/lib/weddingPlannerMaroc";
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -68,6 +69,17 @@ const Footer = () => {
           </div>
         </div>
       </div>
+
+      {/* Wedding planner au Maroc : page de référencement, accessible uniquement d'ici */}
+      <nav className="s-pied-wp s-wrap" aria-label="Wedding planner au Maroc" data-testid="pied-wedding-planner">
+        <h2><Link to="/wedding-planner-maroc">Wedding planner et organisation de mariage au Maroc</Link></h2>
+        <ul>
+          {VILLES_WP.map((v) => <li key={v.id}><Link to={`/wedding-planner-maroc#${v.id}`}>Wedding planner {v.nom}</Link></li>)}
+        </ul>
+        <ul>
+          {PAYS_WP.map((p) => <li key={p.id}><Link to={`/wedding-planner-maroc#pays-${p.id}`}>Mariage au Maroc depuis {p.de}</Link></li>)}
+        </ul>
+      </nav>
 
       <div className="s-pied-bas s-wrap">
         <span>&copy; {new Date().getFullYear()} Heavent People Agency. {x("Tous droits réservés.")}</span>
