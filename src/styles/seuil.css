@@ -498,21 +498,47 @@ html.s-anime .s-deroule.vu .s-etape::after { transition: transform .5s var(--s-c
 @media (min-width: 1180px) { .s-sommaire h2 { font-size: clamp(48px, 4.4vw, 66px); } }
 
 /* Page « Wedding planner au Maroc » et son bloc en pied de page */
-.s-wp-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); border-top: 1px solid var(--s-filet); border-left: 1px solid var(--s-filet); }
-.s-wp-ville { padding: 24px 22px 26px; border-right: 1px solid var(--s-filet); border-bottom: 1px solid var(--s-filet); scroll-margin-top: 96px; display: flex; flex-direction: column; gap: 10px; transition: background .3s; }
-.s-wp-ville h3 { font: 400 22px/1.2 var(--s-titre); }
-.s-wp-ville p { font: 400 15px/1.55 var(--s-texte); color: var(--s-texte-2); }
-.s-wp-ville .liens { margin-top: auto; padding-top: 6px; display: flex; flex-wrap: wrap; gap: 0 18px; }
-.s-wp-ville .liens a { display: inline-flex; align-items: center; min-height: 40px; color: var(--s-laiton-texte); text-decoration: underline; text-underline-offset: 5px; text-decoration-color: rgba(168,147,63,.5); }
+.s-wp-bandeau { border-bottom: 1px solid var(--s-filet); }
+.s-wp-bandeau-in { padding-inline: var(--s-g, 20px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px 36px; padding-block: 28px; }
+.s-wp-bandeau-in > div { flex: 1 1 320px; min-width: 0; }
+.s-wp-bandeau-in p { margin-top: 10px; font: 400 16px/1.6 var(--s-texte); color: var(--s-texte-2); max-width: 62ch; }
+.s-wp-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); border-top: 1px solid var(--s-filet); border-left: 1px solid var(--s-filet); }
+.s-wp-ville { scroll-margin-top: 96px; transition: background .3s; position: relative; }
+.s-wp-ville .pre { display: block; font: 500 11px/1 var(--s-texte); letter-spacing: .24em; text-transform: uppercase; color: var(--s-laiton-texte); margin-bottom: 10px; }
+.s-wp-ville p { font: 400 15px/1.6 var(--s-texte); color: var(--s-texte-2); }
+.s-wp-ville a { color: var(--s-laiton-texte); text-decoration: underline; text-underline-offset: 5px; text-decoration-color: rgba(168,147,63,.5); }
+.s-wp-ville-grande { padding: 30px 26px 28px; border-right: 1px solid var(--s-filet); border-bottom: 1px solid var(--s-filet); display: flex; flex-direction: column; gap: 12px; }
+.s-wp-ville-grande h3 { font: 400 clamp(30px, 4.2vw, 40px)/1.1 var(--s-titre); }
+.s-wp-ville-grande .liens { margin-top: auto; padding-top: 6px; }
+.s-wp-ville-grande .liens a { display: inline-flex; align-items: center; min-height: 44px; }
+.s-wp-autres { display: grid; grid-template-columns: 1fr; column-gap: 48px; }
+.s-wp-autres > .s-surtitre { grid-column: 1 / -1; }
+@media (min-width: 900px) { .s-wp-autres { grid-template-columns: 1fr 1fr; } }
+.s-wp-ville-ligne { padding: 18px 0; border-bottom: 1px solid var(--s-filet); }
+.s-wp-ville-ligne h4 { font: 400 22px/1.2 var(--s-titre); margin-bottom: 6px; }
+.s-wp-ville-ligne p a { white-space: nowrap; display: inline-block; padding-block: 8px; }
 .s-wp-ville:target, .s-wp-ville.choisie { background: var(--s-papier); }
-.s-wp-pays { list-style: none; margin: 26px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; scroll-margin-top: 96px; }
-.s-wp-pays li { padding: 9px 16px; border: 1px solid var(--s-laiton); font: 500 15px/1.3 var(--s-texte); scroll-margin-top: 96px; }
-.s-pied-wp { padding-top: 34px; padding-bottom: 6px; border-top: 1px solid rgba(228,212,154,.18); }
-.s-pied-wp h2 { font: 400 20px/1.25 var(--s-titre); margin-bottom: 14px; }
+.s-wp-ville::after { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: linear-gradient(90deg, var(--s-laiton), rgba(168,147,63,.15)); transform: scaleX(0); transform-origin: left; pointer-events: none; }
+.s-wp-ville:target::after, .s-wp-ville.choisie::after { animation: s-wp-trace .9s var(--s-courbe, ease) .15s both; }
+@keyframes s-wp-trace { to { transform: scaleX(1); } }
+.s-wp-pays { margin: 26px 0 0; font: 400 clamp(20px, 2.6vw, 24px)/1.6 var(--s-titre); color: #D9D0BD; scroll-margin-top: 96px; }
+.s-wp-pays span { scroll-margin-top: 96px; }
+.s-wp-pays a { color: var(--s-laiton-clair, #E4D49A); text-decoration: underline; text-underline-offset: 6px; text-decoration-color: rgba(228,212,154,.5); padding-block: 4px; }
+.s-pied-wp { padding: 34px var(--s-g, 20px) 6px; border-top: 1px solid rgba(228,212,154,.18); }
+.s-pied-wp h2 { font: 400 20px/1.25 var(--s-titre); margin-bottom: 18px; text-transform: none; letter-spacing: 0; color: var(--s-papier, #FBF6E9); }
 .s-pied-wp h2 a { color: inherit; }
-.s-pied-wp ul { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 0 18px; }
-.s-pied-wp li a { display: inline-flex; align-items: center; min-height: 36px; font: 400 14px var(--s-texte); color: var(--s-laiton-clair, #E4D49A); opacity: .85; text-decoration: none; }
+.s-pied-wp .s-surtitre { margin: 6px 0 4px; }
+.s-pied-wp ul { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 0 18px; }
+.s-pied-wp ul.pays { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.s-pied-wp li a { display: inline-flex; align-items: center; min-height: 44px; font: 400 14px var(--s-texte); color: var(--s-laiton-clair, #E4D49A); opacity: .85; text-decoration: none; }
 .s-pied-wp li a:hover, .s-pied-wp li a:focus-visible { opacity: 1; text-decoration: underline; text-underline-offset: 4px; }
 .s-nuit .s-prose { color: #D9D0BD; }
-.s-wp-ar h2 { font-size: clamp(28px, 5vw, 40px); line-height: 1.45; }
+.s-wp-ar h2 { font-family: "Amiri", "Noto Naskh Arabic", var(--s-titre), serif; font-weight: 700; font-size: clamp(28px, 5vw, 40px); line-height: 1.45; }
 .s-wp-ar .s-prose { font-size: 18px; line-height: 1.9; }
+.s-wp-ar .s-surtitre { letter-spacing: 0; text-transform: none; font-size: 14px; }
+.s-wp-page h1 { text-wrap: balance; }
+/* Mouvement sobre : entrées brèves, sans flou sur les grands blocs */
+.s-wp-page .s-entree-heros { animation-duration: .4s; }
+html.s-anime .s-wp-page [data-revele]:not(.vu) { filter: none; transform: translateY(10px); }
+html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
+@media (prefers-reduced-motion: reduce) { .s-wp-ville:target::after, .s-wp-ville.choisie::after { animation: none; transform: scaleX(1); } }

@@ -1,4 +1,5 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import Seo, { DONNEES_AGENCE, SITE } from "@/components/Seo";
 import { Bouton, PageTete, Photo, Surtitre } from "@/components/seuil/Seuil";
 import SectionConfiance from "@/components/vitrine/Confiance";
@@ -19,17 +20,27 @@ export default function WeddingPlannerMaroc() {
   const [params] = useSearchParams();
   const ville = VILLES_WP.find((v) => v.id === sans(params.get("ville") ?? ""));
   const pays = PAYS_WP.find((p) => p.id === sans(params.get("pays") ?? ""));
+  const { hash } = useLocation();
+  // Arrivée par ancre (pied de page, annonce) : la page est chargée en différé, on fait donc défiler nous-mêmes, sans animation.
+  useEffect(() => {
+    const id = decodeURIComponent(hash.slice(1));
+    if (!id) return;
+    const t = setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: "start" }), 80);
+    return () => clearTimeout(t);
+  }, [hash]);
   const url = `${SITE}${CHEMIN}`;
+  const versDevis = ville ? `/devis-mariage?ville=${ville.id}` : pays ? `/devis-mariage?pays=${pays.id}` : "/devis-mariage";
   const whatsapp = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent("Bonjour, je souhaite organiser mon mariage au Maroc avec Heavent.")}`;
 
   const titre = ville ? <>Wedding planner à {ville.nom} : organisation de mariage</>
-    : pays ? <>Wedding planner au Maroc pour les couples de {pays.de}</>
-    : <>Wedding planner et organisation de mariage au Maroc</>;
+    : pays ? <>Mariage au Maroc depuis {pays.de} : wedding planner</>
+    : <>Wedding planner au Maroc</>;
   const chapo = ville
-    ? `Heavent People Agency organise votre mariage à ${ville.nom} : décoration, prestataires, planning et coordination du jour J. Devis détaillé gratuit sous 24 h.`
+    ? `Heavent People Agency organise votre mariage à ${ville.nom} : décoration, prestataires, planning et coordination du jour J. Réponse sous 24 h, devis détaillé gratuit.`
     : pays
-      ? `Couples de ${pays.nom} : nous préparons votre mariage au Maroc avec vous, à distance, et nous coordonnons le jour J sur place. Devis détaillé gratuit sous 24 h.`
-      : "Heavent People Agency organise des mariages à Marrakech, Casablanca, Rabat, Tanger, Fès, Agadir et dans tout le Maroc, pour les couples qui vivent ici comme pour ceux qui reviennent de l'étranger.";
+      ? `Vous vous mariez au Maroc depuis ${pays.de} ? Nous préparons votre mariage avec vous à distance et nous coordonnons le jour J sur place. Réponse sous 24 h.`
+      
+      : "L'organisation de votre mariage, de A\u00a0à\u00a0Z. Heavent People Agency organise des mariages à Marrakech, Casablanca, Rabat, Tanger, Fès, Agadir et dans tout le Maroc, pour les couples qui vivent ici comme pour ceux qui reviennent de l'étranger.";
 
   const jsonLd = [
     {
@@ -47,11 +58,11 @@ export default function WeddingPlannerMaroc() {
   ];
 
   return (
-    <div data-testid="page-wedding-planner">
+    <div data-testid="page-wedding-planner" className="s-wp-page">
       <Seo perso={{
         chemin: CHEMIN,
         titre: "Wedding planner au Maroc | Organisation de mariage | Heavent",
-        description: "Wedding planner au Maroc : organisation complète ou partielle de votre mariage à Marrakech, Casablanca, Rabat, Tanger, Fès, Agadir. Devis détaillé gratuit sous 24 h, signé en ligne.",
+        description: "Wedding planner au Maroc : organisation complète ou partielle de votre mariage à Marrakech, Casablanca, Rabat, Tanger, Fès, Agadir. Réponse sous 24 h, devis détaillé gratuit signé en ligne.",
         motsCles: "wedding planner Maroc, organisation mariage Maroc, mariage marocain, mariage au Maroc, se marier au Maroc, wedding planner Marrakech, wedding planner Casablanca, wedding planner Rabat, organisatrice de mariage Maroc, agence organisation mariage Maroc, décoration mariage Maroc, destination wedding Morocco, Morocco wedding planner",
         jsonLd,
       }} />
@@ -63,11 +74,22 @@ export default function WeddingPlannerMaroc() {
         chapo={chapo}
         testid="wp-tete">
         <div className="s-actions s-entree-heros" style={{ animationDelay: ".2s" }}>
-          <Bouton to="/devis-mariage" variante="plein" fleche onClick={() => suivre("devis_haut")} testid="wp-devis">Demander un devis gratuit</Bouton>
-          <Bouton to="/contact#rendez-vous" variante="filet" onClick={() => suivre("rdv_haut")}>Prendre rendez-vous</Bouton>
-          <Bouton href={whatsapp} variante="filet" externe onClick={() => suivre("whatsapp_haut")}>WhatsApp</Bouton>
+          <Bouton to={versDevis} variante="plein" fleche onClick={() => suivre("devis_haut")} testid="wp-devis">Demander un devis gratuit</Bouton>
+          <Bouton href={whatsapp} variante="filet" externe onClick={() => suivre("whatsapp_haut")}>Écrire sur WhatsApp</Bouton>
         </div>
       </PageTete>
+
+      {ville ? (
+        <section className="s-platre s-wp-bandeau" data-testid="wp-bandeau-ville">
+          <div className="s-wrap s-wp-bandeau-in">
+            <div>
+              <Surtitre>Votre mariage à {ville.nom}</Surtitre>
+              <p>{ville.texte}</p>
+            </div>
+            <Bouton to={versDevis} variante="plein" fleche onClick={() => suivre(`devis_bandeau_${ville.id}`)}>Devis à {ville.nom}</Bouton>
+          </div>
+        </section>
+      ) : null}
 
       {/* Qu'est-ce qu'un wedding planner : réponse directe, utile aux extraits Google */}
       <section className="s-platre">
@@ -143,14 +165,22 @@ export default function WeddingPlannerMaroc() {
             <p className="s-chapo" style={{ marginTop: 18, maxWidth: "58ch", color: "var(--s-texte-2)" }}>Choisissez votre ville : nous organisons votre mariage sur place ou à distance, et les déplacements éventuels sont précisés ligne par ligne dans le devis.</p>
           </div>
           <div className="s-wp-grille" style={{ marginTop: 36 }}>
-            {VILLES_WP.map((v) => (
-              <article key={v.id} id={v.id} className={`s-wp-ville${ville?.id === v.id ? " choisie" : ""}`}>
-                <h3>Wedding planner à {v.nom}</h3>
+            {VILLES_WP.filter((v) => v.page).map((v) => (
+              <article key={v.id} id={v.id} className={`s-wp-ville s-wp-ville-grande${ville?.id === v.id ? " choisie" : ""}`}>
+                <h3><span className="pre">Wedding planner à</span> {v.nom}</h3>
                 <p>{v.texte}</p>
                 <p className="liens">
-                  <Link to="/devis-mariage" onClick={() => suivre(`devis_${v.id}`)}>Devis à {v.nom} →</Link>
-                  {v.page ? <Link to={v.page}>Hôtesses à {v.nom}</Link> : null}
+                  <Link to={`/devis-mariage?ville=${v.id}`} onClick={() => suivre(`devis_${v.id}`)}>Devis à {v.nom} →</Link>
                 </p>
+              </article>
+            ))}
+          </div>
+          <div className="s-wp-autres" style={{ marginTop: 40 }}>
+            <h3 className="s-surtitre" style={{ marginBottom: 6 }}>Et aussi dans ces villes</h3>
+            {VILLES_WP.filter((v) => !v.page).map((v) => (
+              <article key={v.id} id={v.id} className={`s-wp-ville s-wp-ville-ligne${ville?.id === v.id ? " choisie" : ""}`}>
+                <h4><span className="pre">Wedding planner à</span> {v.nom}</h4>
+                <p>{v.texte} <Link to={`/devis-mariage?ville=${v.id}`} onClick={() => suivre(`devis_${v.id}`)}>Devis à {v.nom} →</Link></p>
               </article>
             ))}
           </div>
@@ -166,9 +196,11 @@ export default function WeddingPlannerMaroc() {
             <div className="s-prose" style={{ marginTop: 22 }}>
               <p>Se marier au Maroc quand on vit en France, en Belgique ou ailleurs, c'est préparer à distance un jour très important. Nous travaillons avec vous en visio ou par WhatsApp, vous envoyons un devis détaillé à signer en ligne, puis nous coordonnons tout sur place : vous arrivez, tout est prêt.</p>
             </div>
-            <ul className="s-wp-pays" aria-label="Pays depuis lesquels nous organisons votre mariage au Maroc">
-              {PAYS_WP.map((p) => <li key={p.id} id={`pays-${p.id}`}>Mariage au Maroc depuis {p.de}</li>)}
-            </ul>
+            <p className="s-wp-pays" id="pays">
+              Nous accompagnons les couples qui vivent {PAYS_WP.map((p, i) => (
+                <span key={p.id} id={`pays-${p.id}`}>{i > 0 ? (i === PAYS_WP.length - 1 ? " ou " : ", ") : ""}<Link to={`/wedding-planner-maroc?pays=${p.id}`} onClick={() => suivre(`pays_${p.id}`)} aria-label={`Mariage au Maroc depuis ${p.de}`}>{p.nom}</Link></span>
+              ))}.
+            </p>
           </div>
           <div className="s-col-d">
             <ol className="s-liste">
@@ -190,18 +222,18 @@ export default function WeddingPlannerMaroc() {
             <h2 className="s-h2" style={{ marginTop: 20, maxWidth: "16ch" }}>Wedding planner in Morocco</h2>
             <div className="s-prose" style={{ marginTop: 22 }}>
               <p>Heavent People Agency is a wedding planning and event agency based in Rabat. We plan and coordinate weddings in Marrakech, Casablanca, Rabat, Tangier, Fez, Agadir and across Morocco, for local couples and for couples getting married in Morocco from abroad.</p>
-              <p>Full planning, partial planning or day-of coordination: tell us your date, city and guest count and we will send you a detailed quote within 24 hours. We work in English, French and Arabic.</p>
+              <p>Full planning, partial planning or day-of coordination: tell us your date, city and guest count and we will reply within 24 hours and send you a detailed quote. We work in English, French and Arabic.</p>
             </div>
             <div className="s-actions" style={{ marginTop: 24 }}>
-              <Bouton to="/devis-mariage" variante="plein" fleche onClick={() => suivre("devis_en")}>Request a free quote</Bouton>
+              <Bouton to={versDevis} variante="plein" fleche onClick={() => suivre("devis_en")}>Request a free quote</Bouton>
             </div>
           </div>
           <div className="s-col-d s-wp-ar" lang="ar" dir="rtl" data-revele="">
             <Surtitre>بالعربية</Surtitre>
-            <h2 className="s-h2" style={{ marginTop: 20 }}>منظمة حفلات زفاف في المغرب</h2>
+            <h2 className="s-h2" style={{ marginTop: 20 }}>منظمة حفلات زفاف وتنظيم أعراس في المغرب</h2>
             <div className="s-prose" style={{ marginTop: 22 }}>
-              <p>هيفنت للتنظيم والحفلات وكالة مقرها الرباط. ننظم حفلات الزفاف والخطوبة وليلة الحناء في مراكش والدار البيضاء والرباط وطنجة وفاس وأكادير وفي جميع مدن المغرب.</p>
-              <p>أخبرونا بالتاريخ والمدينة وعدد المدعوين، وسنرسل لكم عرض أسعار مفصلاً خلال 24 ساعة.</p>
+              <p>Heavent People Agency وكالة مقرها الرباط. ننظم حفلات الزفاف والخطوبة وليلة الحناء في مراكش والدار البيضاء والرباط وطنجة وفاس وأكادير وفي جميع مدن المغرب.</p>
+              <p>أخبرونا بالتاريخ والمدينة وعدد المدعوين، وسنرد عليكم خلال 24 ساعة ثم نرسل لكم عرض أسعار مفصلاً.</p>
             </div>
           </div>
         </div>
@@ -215,9 +247,9 @@ export default function WeddingPlannerMaroc() {
             <div>
               <Surtitre>Votre date</Surtitre>
               <h2 data-revele="">Parlons de votre mariage</h2>
-              <p className="s-chapo" style={{ marginTop: 18, maxWidth: "46ch" }}>Devis détaillé gratuit sous 24 h, à consulter et signer en ligne. Ou réservez directement un rendez-vous.</p>
+              <p className="s-chapo" style={{ marginTop: 18, maxWidth: "46ch" }}>Réponse sous 24 h, puis devis détaillé gratuit, à consulter et signer en ligne. Ou réservez directement un rendez-vous.</p>
               <div className="s-actions">
-                <Bouton to="/devis-mariage" variante="plein" fleche onClick={() => suivre("devis_bas")}>Demander un devis gratuit</Bouton>
+                <Bouton to={versDevis} variante="plein" fleche onClick={() => suivre("devis_bas")}>Demander un devis gratuit</Bouton>
                 <Bouton to="/contact#rendez-vous" variante="filet" onClick={() => suivre("rdv_bas")}>Prendre rendez-vous</Bouton>
                 <Bouton href={whatsapp} variante="filet" externe onClick={() => suivre("whatsapp_bas")}>WhatsApp</Bouton>
               </div>

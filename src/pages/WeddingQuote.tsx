@@ -2,6 +2,7 @@ import { suivre } from "@/lib/suivi";
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,6 +43,9 @@ const WeddingQuote = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { toast } = useToast();
+  const [params] = useSearchParams();
+  // Arrivée depuis la page « Wedding planner au Maroc » (ou une annonce) : la ville est déjà choisie.
+  const villeUrl = ["rabat", "casablanca", "marrakech", "fes", "tanger", "agadir", "meknes", "oujda", "kenitra", "tetouan"].find((v) => v === params.get("ville")) ?? (params.get("ville") ? "autre" : "");
 
   const {
     register,
@@ -53,7 +57,8 @@ const WeddingQuote = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       services: [],
-      eventType: ""
+      eventType: "",
+      eventLocation: villeUrl
     }
   });
 
@@ -253,7 +258,7 @@ const WeddingQuote = () => {
 
                   <div>
                     <Label htmlFor="eventLocation">{x("Lieu principal (ville/région) *")}</Label>
-                    <Select onValueChange={(value) => setValue("eventLocation", value)}>
+                    <Select defaultValue={villeUrl || undefined} onValueChange={(value) => setValue("eventLocation", value)}>
                       <SelectTrigger className={errors.eventLocation ? "border-destructive" : ""}>
                         <SelectValue placeholder={x("Sélectionner la ville principale")} />
                       </SelectTrigger>

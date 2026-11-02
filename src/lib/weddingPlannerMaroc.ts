@@ -50,35 +50,37 @@ export const FORMULES_WP = [
 ];
 
 export const MOMENTS_WP = [
-  "Fiançailles et demande en mariage",
-  "Soirée de henné",
-  "Entrée des mariés et amariya",
-  "Négafa et changements de tenues",
+  "Fiançailles : la khotba (demande en mariage) et la fatiha",
+  "Soirée de henné, pour la mariée et ses proches",
+  "Cortège des mariés jusqu'à la salle",
+  "Zaffa et entrée des mariés sur l'amariya",
+  "Négafa : l'habillage de la mariée et les changements de tenues",
   "Dîner, soirée dansante et orchestre ou DJ",
-  "Cortège et zaffa",
-  "Mariage civil, religieux ou laïc selon vos souhaits",
-  "Brunch du lendemain et retour des familles",
+  "Cérémonie symbolique ou religieuse, selon vos convictions",
+  "Le lendemain : retrouvailles avec les familles",
 ];
 
 export const ETAPES_WP = [
   { titre: "Imaginez votre mariage", texte: "Avec notre simulateur « Crée ton événement », composez les tables, l'arche, les fleurs et les éclairages et suivez le budget estimé. Vous nous envoyez votre projet en un clic." },
   { titre: "Parlons-en", texte: "Réservez un rendez-vous en ligne (visio, téléphone ou WhatsApp) : nous affinons ensemble le style, le nombre d'invités, la ville et le budget." },
-  { titre: "Un devis clair, signé en ligne", texte: "Vous recevez un devis détaillé ligne par ligne, sous 24 h, à consulter et signer depuis votre téléphone, où que vous soyez." },
+  { titre: "Un devis clair, signé en ligne", texte: "Nous vous répondons sous 24 h, puis vous recevez un devis détaillé ligne par ligne, à consulter et signer depuis votre téléphone, où que vous soyez." },
   { titre: "Nous coordonnons, vous profitez", texte: "Notre équipe est briefée, confirme sa présence et pointe son arrivée sur place, et chaque prestataire reçoit son planning. Le jour J, vous n'avez qu'à vivre votre mariage." },
 ];
 
 export const FAQ_WP = [
   { q: "Qu'est-ce qu'un wedding planner et que fait-il ?", r: "Un wedding planner (ou organisateur, organisatrice de mariage) conçoit et coordonne votre mariage avec vous : il définit le style, sélectionne et coordonne les prestataires (salle, traiteur, négafa, orchestre ou DJ, photographe, décorateur), suit le budget et le planning, puis s'assure que le jour J se déroule comme prévu." },
-  { q: "Combien coûte un wedding planner au Maroc ?", r: "Le budget dépend du nombre d'invités, de la ville, du style et de la formule choisie (organisation complète, partielle ou coordination du jour J). Chez Heavent, vous recevez gratuitement un devis détaillé ligne par ligne sous 24 h : vous savez exactement ce que vous payez, et pour quoi." },
+  { q: "Combien coûte un wedding planner au Maroc ?", r: "Le prix dépend du nombre d'invités, de la ville, du style, de la saison et de la formule choisie (organisation complète, partielle ou coordination du jour J). Il se compose de nos honoraires de coordination, du budget des prestataires et d'éventuels déplacements. Chez Heavent, vous recevez gratuitement un devis détaillé ligne par ligne : vous savez ce que vous payez, et pour quoi. Donnez-nous votre date, votre ville et votre nombre d'invités pour recevoir une estimation adaptée." },
   { q: "Quelle est la différence entre organisation complète, partielle et coordination du jour J ?", r: "L'organisation complète couvre tout le mariage, de l'idée au jour J. L'organisation partielle complète ce que vous avez déjà : certains prestataires, le budget, le planning. La coordination du jour J s'occupe uniquement de l'installation, des prestataires et du déroulé le jour même." },
-  { q: "Combien de temps à l'avance faut-il réserver son wedding planner ?", r: "Le plus tôt possible : idéalement 6 à 12 mois avant la date, surtout pour Marrakech et pour les périodes très demandées comme l'été et les vacances des familles installées à l'étranger. Plus court est possible selon nos disponibilités : écrivez-nous avec votre date." },
-  { q: "Organisez-vous des mariages à Marrakech, Casablanca, Rabat, Tanger, Fès et Agadir ?", r: "Oui, dans ces villes et dans tout le Maroc : Meknès, Kénitra, Oujda, Tétouan, El Jadida, Essaouira, Mohammedia, Salé, Témara, Nador, Ifrane, Ouarzazate et partout ailleurs. Les déplacements éventuels sont précisés ligne par ligne dans le devis." },
-  { q: "Je vis à l'étranger : puis-je organiser mon mariage au Maroc à distance ?", r: "Oui, que vous viviez en France, en Belgique, aux Pays-Bas, en Espagne, en Italie, en Allemagne, au Canada ou ailleurs. Rendez-vous en visio ou par WhatsApp, devis signé en ligne, suivi à distance, puis coordination sur place par notre équipe : vous arrivez, tout est prêt." },
+  { q: "Combien de temps à l'avance faut-il réserver son wedding planner ?", r: "Le plus tôt possible : idéalement 12 mois avant pour l'été, les vacances des familles installées à l'étranger et Marrakech, et 6 mois pour une date hors saison. Plus court est possible selon nos disponibilités : écrivez-nous avec votre date. Pensez aussi aux dates du Ramadan et de l'Aïd, et à la chaleur de juillet-août à Marrakech (horaires, lieu couvert ou climatisé)." },
+  { q: "Organisez-vous des mariages à Marrakech, Casablanca, Rabat, Tanger, Fès et Agadir ?", r: "Oui, à Marrakech, Casablanca, Rabat, Tanger, Fès et Agadir, et dans les autres villes du Maroc : Meknès, Kénitra, Oujda, Tétouan, El Jadida, Essaouira, Mohammedia, Salé, Témara, Nador, Ifrane, Ouarzazate. Nous construisons un réseau de partenaires ville par ville : pour la vôtre, le devis précise ce que nous assurons sur place et les déplacements éventuels." },
+  { q: "Je vis à l'étranger : puis-je organiser mon mariage au Maroc à distance ?", r: "Oui, que vous viviez en France, en Belgique, aux Pays-Bas, en Espagne, en Italie, en Allemagne, au Canada ou ailleurs. Rendez-vous en visio ou par WhatsApp, devis signé en ligne, suivi à distance, puis coordination sur place par notre équipe, pour que vous arriviez l'esprit tranquille." },
   { q: "Organisez-vous aussi les fiançailles et la soirée de henné ?", r: "Oui. Nous organisons les fiançailles, le henné et le mariage, ensemble ou séparément, avec la décoration et la coordination adaptées à chaque moment." },
-  { q: "Travaillez-vous avec une négafa, un traiteur, un orchestre et un photographe ?", r: "Nous sélectionnons et coordonnons les prestataires adaptés à votre style et à votre budget : négafa, traiteur, orchestre ou DJ, photographe, vidéaste, décorateur, fleuriste, salle. Vous pouvez aussi garder vos prestataires : nous les intégrons au planning." },
+  { q: "Travaillez-vous avec une négafa, un traiteur, un orchestre et un photographe ?", r: "Nous sélectionnons et coordonnons des prestataires partenaires adaptés à votre style et à votre budget : négafa, traiteur, orchestre ou DJ, photographe, vidéaste, décorateur, fleuriste, salle. Vous pouvez aussi garder vos prestataires : nous les intégrons au planning." },
   { q: "Puis-je visualiser mon mariage avant de demander un devis ?", r: "Oui, avec notre simulateur gratuit « Crée ton événement » : vous composez la décoration, vous suivez le budget estimé et vous nous envoyez votre projet en un clic." },
   { q: "Comment se passent le devis et la signature ?", r: "Vous recevez un devis détaillé que vous pouvez télécharger en PDF et signer en ligne depuis votre téléphone. Vous préférez d'abord en parler ? Réservez un rendez-vous en ligne." },
   { q: "Pouvez-vous gérer les réponses de mes invités ?", r: "Oui. Nous mettons à votre disposition un espace en ligne pour les mariés et un lien de réponse (RSVP) à envoyer à vos invités, pour suivre qui vient." },
   { q: "Dans quelles langues travaillez-vous ?", r: "En français, en arabe et en anglais. Précisez votre langue de préférence dans votre demande." },
+  { q: "Heavent s'occupe-t-il des démarches légales et de l'acte de mariage ?", r: "Non. Heavent organise la fête : décor, prestataires, déroulé et coordination. L'acte de mariage et les papiers relèvent des adouls, de l'administration et, pour les couples vivant à l'étranger, de votre consulat. Nous pouvons vous orienter, mais nous vous conseillons de vérifier votre situation auprès des autorités ou d'un avocat." },
+  { q: "Qu'est-ce qu'une négafa ?", r: "La négafa est la professionnelle qui habille et accompagne la mariée le jour du mariage : elle gère les changements de tenues (caftans, takchitas), l'amariya et le bon déroulement du protocole traditionnel. Nous pouvons vous aider à choisir une négafa et à l'intégrer au planning." },
   { q: "Où se trouve votre agence ?", r: "Heavent People Agency est basée à Rabat (quartier Océan). Nos équipes se déplacent partout au Maroc pour organiser votre mariage." },
 ];

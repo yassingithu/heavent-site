@@ -73,11 +73,13 @@ const Footer = () => {
       {/* Wedding planner au Maroc : page de référencement, accessible uniquement d'ici */}
       <nav className="s-pied-wp s-wrap" aria-label="Wedding planner au Maroc" data-testid="pied-wedding-planner">
         <h2><Link to="/wedding-planner-maroc">Wedding planner et organisation de mariage au Maroc</Link></h2>
+        <p className="s-surtitre">Villes</p>
         <ul>
           {VILLES_WP.map((v) => <li key={v.id}><Link to={`/wedding-planner-maroc#${v.id}`}>Wedding planner {v.nom}</Link></li>)}
         </ul>
-        <ul>
-          {PAYS_WP.map((p) => <li key={p.id}><Link to={`/wedding-planner-maroc#pays-${p.id}`}>Mariage au Maroc depuis {p.de}</Link></li>)}
+        <p className="s-surtitre">Depuis l'étranger</p>
+        <ul className="pays">
+          {PAYS_WP.map((p) => <li key={p.id}><Link to={`/wedding-planner-maroc?pays=${p.id}`}>Mariage au Maroc depuis {p.de}</Link></li>)}
         </ul>
       </nav>
 

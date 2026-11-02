@@ -8,7 +8,7 @@ import { AnimationsSeuil } from "@/components/seuil/Seuil";
 import { PAGES_LOCALES } from "@/lib/pagesLocales";
 
 /** Pages publiques habillées avec la direction « Seuil » (polices Gloock et Jost sur toute la page). */
-const PAGES_SEUIL = ["/", "/devis-entreprise", "/devis-mariage", "/a-propos", "/contact", "/nawar", "/mentions-legales", "/politique-confidentialite", "/realisations", "/liens", ...PAGES_LOCALES.map((p) => p.chemin)];
+const PAGES_SEUIL = ["/", "/devis-entreprise", "/devis-mariage", "/a-propos", "/contact", "/nawar", "/mentions-legales", "/politique-confidentialite", "/realisations", "/liens", "/wedding-planner-maroc", ...PAGES_LOCALES.map((p) => p.chemin)];
 export const estPageSeuil = (chemin: string) => {
   const c = chemin.replace(/\/+$/, "") || "/";
   return PAGES_SEUIL.includes(c) || c.startsWith("/guides") || c.startsWith("/prestataires");
