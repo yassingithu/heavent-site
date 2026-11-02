@@ -37,6 +37,7 @@ const Studio = lazy(() => import("./pages/Studio"));
 const Nawar = lazy(() => import("./pages/Nawar"));
 const Prestataires = lazy(() => import("./pages/Prestataires"));
 const WeddingPlannerMaroc = lazy(() => import("./pages/WeddingPlannerMaroc"));
+const BureauAgents = lazy(() => import("./pages/BureauAgents"));
 const ConfirmerPrestataire = lazy(() => import("./pages/Prestataires").then((m) => ({ default: m.ConfirmerPrestataire })));
 const StudioDemo = lazy(() => import("./pages/StudioDemo"));
 import { PAGES_LOCALES } from "./lib/pagesLocales";
@@ -80,6 +81,7 @@ const App = () => {
               <Route path="/nawar" element={<Nawar />} />
               <Route path="/prestataires" element={<Prestataires />} />
               <Route path="/wedding-planner-maroc" element={<WeddingPlannerMaroc />} />
+              <Route path="/bureau-prive" element={<BureauAgents />} />
               <Route path="/prestataires/confirmer/:jeton" element={<ConfirmerPrestataire />} />
               <Route path="/studio/demo/:jeton" element={<StudioDemo />} />
               <Route path="/desinscription/:jeton" element={<Desinscription />} />
