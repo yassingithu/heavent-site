@@ -40,3 +40,6 @@ verify_jwt = false
 
 [functions.heavent-city-ia]
 verify_jwt = false
+
+[functions.bureau-public]
+verify_jwt = false

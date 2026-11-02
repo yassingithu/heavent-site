@@ -23,7 +23,7 @@ AddType application/manifest+json .webmanifest
   # Adresses dynamiques de l'application (jeton dans l'adresse) et /realisations : l'application se charge de les afficher
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_URI} ^/(mon-devis|mon-mariage|rsvp|desinscription|studio/demo|prestataires/confirmer|realisations)(/|$)
+  RewriteCond %{REQUEST_URI} ^/(mon-devis|mon-mariage|rsvp|desinscription|studio/demo|prestataires/confirmer|realisations|bureau)(/|$)
   RewriteRule ^ index.html [L]
 
   # Toute autre adresse inexistante : vraie erreur 404 (page d'erreur de l'application, non indexée), plutôt que l'accueil en « 200 »
