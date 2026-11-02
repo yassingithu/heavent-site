@@ -128,7 +128,7 @@ export default function LieuxAdmin() {
                 <span className="flex-1 h-px" style={{ background: "linear-gradient(90deg,#DCCDAA,transparent)" }} />
                 <span className="lx-signe" data-ferme={ferme} aria-hidden />
               </button>
-              <div className="lx-corps" data-ferme={ferme} {...(ferme ? { inert: "" as any } : {})}><div className="grid gap-3">{g.items.map((l) => <FicheLieu key={l.id} l={l} villes={villesConnues} recherche={!!q} ouvert={ouvert === l.id} onOuvrir={() => setOuvert(ouvert === l.id ? null : l.id)} onChange={(v) => apresEnregistrement(l.id, v)} />)}</div></div>
+              <div className="lx-corps" data-ferme={ferme} {...(ferme ? { inert: "" as any } : {})}><div className="grid gap-3">{g.items.map((l) => <FicheLieu key={l.id} l={l} villes={villesConnues} recherche={!!q} ouvert={ouvert === l.id} onOuvrir={() => setOuvert(ouvert === l.id ? null : l.id)} onChange={(v) => apresEnregistrement(l.id, v)} onSupprime={() => { setOuvert(null); charger(); }} />)}</div></div>
             </section>
           );
         })}</div>
@@ -137,10 +137,23 @@ export default function LieuxAdmin() {
   );
 }
 
-function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange }: { l: Lieu; villes: string[]; recherche: boolean; ouvert: boolean; onOuvrir: () => void; onChange: (ville: string | null) => void }) {
+function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange, onSupprime }: { l: Lieu; villes: string[]; recherche: boolean; ouvert: boolean; onOuvrir: () => void; onChange: (ville: string | null) => void; onSupprime: () => void }) {
   const { toast } = useToast();
   const [f, setF] = useState<Lieu>(l);
   const [occupe, setOccupe] = useState(false);
+  const [confirmer, setConfirmer] = useState(false);
+  useEffect(() => { if (!ouvert) setConfirmer(false); }, [ouvert]);
+  const supprimer = async () => {
+    setOccupe(true);
+    const { error } = await (supabase as any).from("lieux").delete().eq("id", l.id);
+    setOccupe(false);
+    if (error) return toast({ title: "Suppression impossible", description: error.message, variant: "destructive" });
+    // Les photos envoyées pour ce lieu sont retirées aussi (sans bloquer si elles n'existent plus).
+    const chemins = (l.photos ?? []).filter((c) => c && !c.startsWith("http"));
+    if (chemins.length) await supabase.storage.from(BUCKET).remove(chemins).catch(() => undefined);
+    toast({ title: "Lieu supprimé", description: l.nom });
+    onSupprime();
+  };
   const vue = useRef(JSON.stringify(l));
   useEffect(() => { const j = JSON.stringify(l); if (j !== vue.current) { vue.current = j; setF(l); } }, [l]);
   const modifie = JSON.stringify(f) !== JSON.stringify(l);
@@ -240,11 +253,25 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange }: { l: Li
           <label className="block text-[11px] text-muted-foreground">Description (visible dans le devis)<textarea className={`${champ} h-20 py-2`} value={f.description ?? ""} onChange={(e) => setF({ ...f, description: e.target.value })} /></label>
           <label className="block text-[11px] text-muted-foreground">Notes internes<textarea className={`${champ} h-16 py-2`} value={f.notes ?? ""} onChange={(e) => setF({ ...f, notes: e.target.value })} /></label>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button disabled={!modifie || occupe} onClick={() => enregistrer()} className="inline-flex items-center gap-1.5 rounded-full bg-[#141414] text-white px-4 h-11 sm:h-9 text-sm disabled:opacity-40" data-testid="enregistrer-lieu"><Save className="h-4 w-4" /> Enregistrer</button>
-            <button disabled={occupe} onClick={() => enregistrer({ actif: !f.actif })} className="inline-flex items-center gap-1.5 rounded-full border px-4 h-11 sm:h-9 text-sm">{f.actif ? "Désactiver (retirer des devis)" : "Réactiver"}</button>
-            {occupe && <Loader2 className="h-4 w-4 animate-spin" />}
-          </div>
+          {confirmer ? (
+            <div className="flex flex-col gap-3 border border-[#9C4A2C]/40 bg-[#9C4A2C]/5 p-3" role="alertdialog" aria-label="Confirmer la suppression">
+              <p className="text-sm text-[#9C4A2C]">
+                Supprimer « {l.nom} » pour de bon ? Elle disparaît aussi des devis{(l.photos ?? []).length ? ` et ses ${(l.photos ?? []).length} photo(s) sont effacées` : ""}. Pour seulement la retirer des devis, utilisez « Désactiver ».
+              </p>
+              <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3">
+                <button disabled={occupe} onClick={supprimer} className="rounded-full bg-[#9C4A2C] text-white px-4 h-11 sm:h-9 text-sm disabled:opacity-40" data-testid="confirmer-suppression-lieu">Oui, supprimer</button>
+                <button disabled={occupe} onClick={() => setConfirmer(false)} className="rounded-full border border-[#DCCDAA] bg-white px-4 h-11 sm:h-9 text-sm" autoFocus>Garder</button>
+                {occupe && <Loader2 className="h-4 w-4 animate-spin" />}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <button disabled={!modifie || occupe} onClick={() => enregistrer()} className="inline-flex items-center gap-1.5 rounded-full bg-[#141414] text-white px-4 h-11 sm:h-9 text-sm disabled:opacity-40" data-testid="enregistrer-lieu"><Save className="h-4 w-4" /> Enregistrer</button>
+              <button disabled={occupe} onClick={() => enregistrer({ actif: !f.actif })} className="inline-flex items-center gap-1.5 rounded-full border px-4 h-11 sm:h-9 text-sm">{f.actif ? "Désactiver (retirer des devis)" : "Réactiver"}</button>
+              {occupe && <Loader2 className="h-4 w-4 animate-spin" />}
+              <button disabled={occupe} onClick={() => setConfirmer(true)} className="sm:ml-auto inline-flex items-center gap-1.5 rounded-full border border-[#9C4A2C]/60 text-[#9C4A2C] px-4 h-11 sm:h-9 text-sm" data-testid="supprimer-lieu"><Trash2 className="h-4 w-4" /> Supprimer</button>
+            </div>
+          )}
         </div>
       )}
     </div>
