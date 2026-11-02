@@ -24,16 +24,16 @@ export default function WeddingPlannerMaroc() {
   // Arrivée par ancre (pied de page, annonce) : la page est chargée en différé, on fait donc défiler nous-mêmes, sans animation.
   useEffect(() => {
     const id = decodeURIComponent(hash.slice(1));
-    if (!id) return;
+    if (!id) { window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior }); return; }
     const t = setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: "start" }), 80);
     return () => clearTimeout(t);
-  }, [hash]);
+  }, [hash, params]);
   const url = `${SITE}${CHEMIN}`;
   const versDevis = ville ? `/devis-mariage?ville=${ville.id}` : pays ? `/devis-mariage?pays=${pays.id}` : "/devis-mariage";
   const whatsapp = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent("Bonjour, je souhaite organiser mon mariage au Maroc avec Heavent.")}`;
 
-  const titre = ville ? <>Wedding planner à {ville.nom} : organisation de mariage</>
-    : pays ? <>Mariage au Maroc depuis {pays.de} : wedding planner</>
+  const titre = ville ? <>Wedding planner à {ville.nom} : organisation de mariage</>
+    : pays ? <>Mariage au Maroc depuis {pays.de} : wedding planner</>
     : <>Wedding planner au Maroc</>;
   const chapo = ville
     ? `Heavent People Agency organise votre mariage à ${ville.nom} : décoration, prestataires, planning et coordination du jour J. Réponse sous 24 h, devis détaillé gratuit.`
