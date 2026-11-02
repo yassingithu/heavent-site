@@ -7,3 +7,4 @@
   3. appliquer les points « Indispensable » ou les changements les plus forts, puis seulement après faire tester par **beta-testeur-heavent**.
 - Nawar : des parfums **choisis par les mariés (ou les hôtes) pour leurs invités**, jamais « chacun compose son parfum ».
 - Heavent City (le jeu) : tout changement de rendu, d'objets ou de scène passe par l'agent **3d-heavent-city**.
+- Questions de métier (prestataires, prix, déroulé, logistique, contrats, recrutement de partenaires) : demander conseil à l'agent **event-manager-heavent** avant de décider. Heavent est une agence qui recrute des partenaires, jamais une plateforme.
