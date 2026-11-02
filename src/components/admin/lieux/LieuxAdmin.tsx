@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { idAleatoire, reduirePhoto } from "@/lib/photos";
@@ -45,38 +45,45 @@ export default function LieuxAdmin() {
   const SANS_VILLE = "Sans ville";
   const sansAccent = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   // « Marrakech », « marrakech » et « Marrakech  » forment une seule ville.
-  const cleVille = (l: Lieu) => (l.ville?.trim() ? sansAccent(l.ville.trim().replace(/\s+/g, " ")) : "");
+  const SANS = "__sans";
+  const cleDe = (v: string | null) => (v?.trim() ? sansAccent(v.trim().replace(/\s+/g, " ")) : SANS);
+  const cleVille = (l: Lieu) => cleDe(l.ville);
   const nomVille: Record<string, string> = {};
   const nb: Record<string, number> = {};
-  lieux.forEach((l) => { const k = cleVille(l); nomVille[k] ??= k ? l.ville!.trim().replace(/\s+/g, " ") : SANS_VILLE; nb[k] = (nb[k] ?? 0) + 1; });
+  lieux.forEach((l) => { const k = cleVille(l); nomVille[k] ??= k !== SANS ? l.ville!.trim().replace(/\s+/g, " ") : SANS_VILLE; nb[k] = (nb[k] ?? 0) + 1; });
   // Les villes les plus fournies d'abord, « Sans ville » toujours en dernier.
-  const cles = Object.keys(nb).sort((a, b) => (a === "" ? 1 : b === "" ? -1 : nb[b] - nb[a] || nomVille[a].localeCompare(nomVille[b], "fr")));
+  const cles = Object.keys(nb).sort((a, b) => (a === SANS ? 1 : b === SANS ? -1 : nb[b] - nb[a] || nomVille[a].localeCompare(nomVille[b], "fr")));
   const q = sansAccent(recherche.trim());
   const chiffres = recherche.replace(/\D/g, "");
+  const numero = (v: string) => v.replace(/\D/g, "").replace(/^(00)?212/, "").replace(/^0/, "");
   const correspond = (l: Lieu) => {
     if (!q) return true;
     const texte = sansAccent([l.nom, l.adresse, l.ville, l.contact_nom, l.contact_email, l.contact_telephone, TYPES.find((t) => t[0] === l.type)?.[1]].filter(Boolean).join(" "));
-    return texte.includes(q) || (chiffres.length >= 3 && (l.contact_telephone ?? "").replace(/\D/g, "").includes(chiffres));
+    return texte.includes(q) || (chiffres.length >= 3 && numero(l.contact_telephone ?? "").includes(numero(chiffres)));
   };
   const visibles = lieux.filter((l) => (!ville || cleVille(l) === ville) && correspond(l));
   const groupes = cles.map((k) => ({ cle: k, ville: nomVille[k], items: visibles.filter((l) => cleVille(l) === k).sort((a, b) => a.nom.localeCompare(b.nom, "fr")) })).filter((g) => g.items.length);
-  const basculer = (k: string) => setRepliees((r) => (r.includes(k) ? r.filter((x) => x !== k) : [...r, k]));
-  const villesConnues = Object.entries(nomVille).filter(([k]) => k).map(([, v]) => v).sort((a, b) => a.localeCompare(b, "fr"));
+  const basculer = (k: string) => q ? undefined : setRepliees((r) => (r.includes(k) ? r.filter((x) => x !== k) : [...r, k]));
+  const villesConnues = Object.entries(nomVille).filter(([k]) => k !== SANS).map(([, v]) => v).sort((a, b) => a.localeCompare(b, "fr"));
 
   const ajouter = async () => {
     setCreation(true);
     // La nouvelle fiche prend la ville filtrée, pour qu'on la retrouve tout de suite.
-    const villeActive = ville ? nomVille[ville] : null;
+    const villeActive = ville && ville !== SANS ? nomVille[ville] : null;
     const { data, error } = await (supabase as any).from("lieux").insert({ nom: "Nouveau lieu", type: "salle", ville: villeActive, photos: [], actif: true, tarifs: [{ libelle: "Location de la salle", unite: "jour", prix: 0 }] }).select().single();
     setCreation(false);
     if (error) return toast({ title: "Impossible d'ajouter", description: error.message, variant: "destructive" });
-    setRecherche(""); setRepliees((r) => r.filter((x) => x !== (villeActive ? sansAccent(villeActive) : "")));
+    setRecherche(""); setRepliees((r) => r.filter((x) => x !== cleDe(villeActive)));
     await charger(); setOuvert(data.id); setAMontrer(data.id);
   };
   // Quand une fiche change de place (nouveau lieu, ville modifiée), on déplie son groupe et on y va.
   const apresEnregistrement = async (id: string, villeFiche: string | null) => {
-    setRepliees((r) => r.filter((x) => x !== (villeFiche?.trim() ? sansAccent(villeFiche.trim().replace(/\s+/g, " ")) : "")));
-    await charger(); setAMontrer(id);
+    const avant = lieux.find((x) => x.id === id);
+    const cle = cleDe(villeFiche);
+    const aBouge = !!avant && cleDe(avant.ville) !== cle;
+    setRepliees((r) => r.filter((x) => x !== cle));
+    if (aBouge && ville) setVille(cle);
+    await charger(); if (aBouge) setAMontrer(id);
   };
   useEffect(() => {
     if (!aMontrer) return;
@@ -93,27 +100,27 @@ export default function LieuxAdmin() {
         </div>
         <select value={ville} onChange={(e) => setVille(e.target.value)} aria-label="Ville" className="border px-3 h-11 text-base sm:text-sm min-w-[150px]" data-testid="lieux-ville-filtre">
           <option value="">Toutes les villes ({lieux.length})</option>
-          {cles.map((k) => <option key={k || "sans"} value={k}>{nomVille[k]} ({nb[k]})</option>)}
+          {cles.map((k) => <option key={k} value={k}>{nomVille[k]} ({nb[k]})</option>)}
         </select>
         <button onClick={ajouter} disabled={creation} className="s-btn disabled:opacity-60" data-testid="ajouter-lieu"><Plus className="h-4 w-4 mr-1" /> Ajouter un lieu</button>
       </div>
       <div className="flex items-center gap-5 text-xs">
         <span className="a-st">{q || ville ? `${visibles.length} lieu${visibles.length > 1 ? "x" : ""}` : `${lieux.length} lieux`}</span>
-        <button onClick={() => setRepliees(cles)} className="uppercase tracking-[.2em] text-[10.5px] font-medium text-[#7A5F1F] min-h-11">Tout replier</button>
-        <button onClick={() => setRepliees([])} className="uppercase tracking-[.2em] text-[10.5px] font-medium text-[#7A5F1F] min-h-11">Tout déplier</button>
+        <button onClick={() => setRepliees(cles)} disabled={!!q} className="disabled:opacity-40 uppercase tracking-[.2em] text-[10.5px] font-medium text-[#7A5F1F] min-h-11">Tout replier</button>
+        <button onClick={() => setRepliees([])} disabled={!!q} className="disabled:opacity-40 uppercase tracking-[.2em] text-[10.5px] font-medium text-[#7A5F1F] min-h-11">Tout déplier</button>
       </div>
       <p className="text-xs text-[#5b5547]">Chaque tarif d'un lieu actif apparaît dans le catalogue des devis (catégorie « lieux »). Collez un lien Google Maps : la position est reprise automatiquement.</p>
       {charge ? <Loader2 className="h-6 w-6 animate-spin text-[#A8933F]" /> : visibles.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#DCCBA6] bg-white p-8 text-center text-sm text-muted-foreground space-y-3">
           {!lieux.length ? <p>Aucun lieu pour l'instant. Ajoutez vos salles, palais et riads partenaires.</p>
-            : ville && lieux.some((l) => correspond(l)) ? <><p>Rien à {nomVille[ville]} pour cette recherche.</p><button onClick={() => setVille("")} className="rounded-full border px-4 h-10 bg-white text-[#141414]">Chercher dans toutes les villes</button></>
+            : ville && lieux.some((l) => correspond(l)) ? <><p>Rien {ville === SANS ? "sans ville" : `à ${nomVille[ville] ?? "cette ville"}`} pour cette recherche.</p><button onClick={() => setVille("")} className="rounded-full border px-4 h-10 bg-white text-[#141414]">Chercher dans toutes les villes</button></>
             : <p>Aucun lieu ne correspond à cette recherche.</p>}
         </div>
       ) : (
-        <div className="space-y-9">{groupes.map((g) => {
+        <div className="flex flex-col">{groupes.map((g) => {
           const ferme = !q && repliees.includes(g.cle);
           return (
-            <section key={g.cle || "sans"} data-testid="groupe-ville">
+            <section key={g.cle} data-testid="groupe-ville" style={{ marginBottom: ferme ? 12 : 36 }}>
               <button onClick={() => basculer(g.cle)} className="w-full min-h-12 flex items-center gap-3 mb-2 text-left" aria-expanded={!ferme}>
                 <span className="font-serif text-[22px] sm:text-[26px] leading-none text-[#141414]">{g.ville}</span>
                 <span className="font-serif text-lg text-[#7A5F1F] tabular-nums">{String(g.items.length).padStart(2, "0")}</span>
@@ -134,7 +141,8 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange }: { l: Li
   const { toast } = useToast();
   const [f, setF] = useState<Lieu>(l);
   const [occupe, setOccupe] = useState(false);
-  useEffect(() => { setF(l); }, [l]);
+  const vue = useRef(JSON.stringify(l));
+  useEffect(() => { const j = JSON.stringify(l); if (j !== vue.current) { vue.current = j; setF(l); } }, [l]);
   const modifie = JSON.stringify(f) !== JSON.stringify(l);
   const champ = "w-full !rounded-none border border-[#DCCDAA] px-3 h-11 sm:h-9 text-base sm:text-sm bg-white";
   const carte = lienCarte(f);
@@ -191,7 +199,7 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange }: { l: Li
             <iframe title="Carte" className="w-full h-56 rounded-xl border" loading="lazy" referrerPolicy="no-referrer-when-downgrade"
               src={`https://www.openstreetmap.org/export/embed.html?bbox=${f.longitude - 0.01}%2C${f.latitude - 0.006}%2C${f.longitude + 0.01}%2C${f.latitude + 0.006}&layer=mapnik&marker=${f.latitude}%2C${f.longitude}`} />
           )}
-          {carte && <a href={carte} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-[#8C6D22]"><MapPin className="h-4 w-4" /> Ouvrir dans Google Maps</a>}
+          {carte && <a href={carte} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-[#8C6D22] min-h-11"><MapPin className="h-4 w-4" /> Ouvrir dans Google Maps</a>}
 
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Tarifs (deviennent des lignes de devis)</div>
@@ -201,10 +209,10 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange }: { l: Li
                   <input className={`${champ} col-span-2 sm:col-span-1`} value={t.libelle} placeholder="Ex. Location samedi soir" onChange={(e) => setTarif(i, { libelle: e.target.value })} />
                   <select className={champ} value={t.unite} onChange={(e) => setTarif(i, { unite: e.target.value })}>{UNITES.map(([v, x]) => <option key={v} value={v}>{x}</option>)}</select>
                   <input className={champ} type="number" value={t.prix} onChange={(e) => setTarif(i, { prix: Number(e.target.value) })} placeholder="MAD" data-testid="lieu-prix" />
-                  <button onClick={() => setF({ ...f, tarifs: f.tarifs.filter((_, k) => k !== i) })} className="h-9 w-9 grid place-items-center text-muted-foreground hover:text-red-700" aria-label="Retirer"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => setF({ ...f, tarifs: f.tarifs.filter((_, k) => k !== i) })} className="h-11 w-11 sm:h-9 sm:w-9 grid place-items-center text-muted-foreground hover:text-red-700" aria-label="Retirer"><Trash2 className="h-4 w-4" /></button>
                 </div>
               ))}
-              <button onClick={() => setF({ ...f, tarifs: [...f.tarifs, { libelle: "", unite: "forfait", prix: 0 }] })} className="text-sm text-[#8C6D22] inline-flex items-center gap-1"><Plus className="h-4 w-4" /> Ajouter un tarif</button>
+              <button onClick={() => setF({ ...f, tarifs: [...f.tarifs, { libelle: "", unite: "forfait", prix: 0 }] })} className="text-sm text-[#8C6D22] inline-flex items-center gap-1 min-h-11"><Plus className="h-4 w-4" /> Ajouter un tarif</button>
             </div>
           </div>
 
@@ -233,8 +241,8 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange }: { l: Li
           <label className="block text-[11px] text-muted-foreground">Notes internes<textarea className={`${champ} h-16 py-2`} value={f.notes ?? ""} onChange={(e) => setF({ ...f, notes: e.target.value })} /></label>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button disabled={!modifie || occupe} onClick={() => enregistrer()} className="inline-flex items-center gap-1.5 rounded-full bg-[#141414] text-white px-4 h-9 text-sm disabled:opacity-40" data-testid="enregistrer-lieu"><Save className="h-4 w-4" /> Enregistrer</button>
-            <button disabled={occupe} onClick={() => enregistrer({ actif: !f.actif })} className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm">{f.actif ? "Désactiver (retirer des devis)" : "Réactiver"}</button>
+            <button disabled={!modifie || occupe} onClick={() => enregistrer()} className="inline-flex items-center gap-1.5 rounded-full bg-[#141414] text-white px-4 h-11 sm:h-9 text-sm disabled:opacity-40" data-testid="enregistrer-lieu"><Save className="h-4 w-4" /> Enregistrer</button>
+            <button disabled={occupe} onClick={() => enregistrer({ actif: !f.actif })} className="inline-flex items-center gap-1.5 rounded-full border px-4 h-11 sm:h-9 text-sm">{f.actif ? "Désactiver (retirer des devis)" : "Réactiver"}</button>
             {occupe && <Loader2 className="h-4 w-4 animate-spin" />}
           </div>
         </div>
