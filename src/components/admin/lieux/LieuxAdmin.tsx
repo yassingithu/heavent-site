@@ -42,20 +42,47 @@ export default function LieuxAdmin() {
     if (error) return toast({ title: "Impossible d'ajouter", description: error.message, variant: "destructive" });
     await charger(); setOuvert(data.id);
   };
-  const villes = [...new Set(lieux.map((l) => l.ville).filter(Boolean))] as string[];
-  const visibles = lieux.filter((l) => !ville || l.ville === ville);
+  const [recherche, setRecherche] = useState("");
+  const [repliees, setRepliees] = useState<string[]>([]);
+  const SANS_VILLE = "Sans ville";
+  const villeDe = (l: Lieu) => l.ville?.trim() || SANS_VILLE;
+  const sansAccent = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const nb: Record<string, number> = {};
+  lieux.forEach((l) => { nb[villeDe(l)] = (nb[villeDe(l)] ?? 0) + 1; });
+  // Les villes les plus fournies d'abord, « Sans ville » toujours en dernier.
+  const villes = Object.keys(nb).sort((a, b) => (a === SANS_VILLE ? 1 : b === SANS_VILLE ? -1 : nb[b] - nb[a] || a.localeCompare(b, "fr")));
+  const q = sansAccent(recherche.trim());
+  const visibles = lieux.filter((l) => (!ville || villeDe(l) === ville) && (!q || sansAccent([l.nom, l.adresse, l.ville, l.contact_telephone].filter(Boolean).join(" ")).includes(q)));
+  const groupes = villes.map((v) => ({ ville: v, items: visibles.filter((l) => villeDe(l) === v).sort((a, b) => a.nom.localeCompare(b.nom, "fr")) })).filter((g) => g.items.length);
+  const basculer = (v: string) => setRepliees((r) => (r.includes(v) ? r.filter((x) => x !== v) : [...r, v]));
 
   return (
     <div className="space-y-4" data-testid="lieux-admin">
       <div className="flex flex-wrap items-center gap-2">
         <button onClick={() => setVille("")} className={`rounded-full px-4 h-9 text-sm border ${!ville ? "bg-[#141414] text-white" : "bg-white"}`}>Toutes les villes <span className="opacity-60">{lieux.length}</span></button>
-        {villes.map((v) => <button key={v} onClick={() => setVille(v)} className={`rounded-full px-4 h-9 text-sm border ${ville === v ? "bg-[#141414] text-white" : "bg-white"}`}>{v}</button>)}
+        {villes.map((v) => <button key={v} onClick={() => setVille(ville === v ? "" : v)} className={`rounded-full px-4 h-9 text-sm border ${ville === v ? "bg-[#141414] text-white" : "bg-white"}`}>{v} <span className="opacity-60">{nb[v]}</span></button>)}
         <button onClick={ajouter} className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#C8B560] text-[#141414] px-4 h-9 text-sm font-medium" data-testid="ajouter-lieu"><Plus className="h-4 w-4" /> Ajouter un lieu</button>
       </div>
+      <input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Chercher un lieu, une adresse, un numéro…" className="w-full rounded-full border border-[#EADFC8] bg-white px-4 h-10 text-sm" data-testid="lieux-recherche" />
       <p className="text-xs text-muted-foreground">Chaque tarif d'un lieu actif apparaît dans le catalogue des devis (catégorie « lieux »). Collez un lien Google Maps : la position est reprise automatiquement.</p>
       {charge ? <Loader2 className="h-6 w-6 animate-spin text-[#A8933F]" /> : visibles.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-[#DCCBA6] bg-white p-8 text-center text-sm text-muted-foreground">Aucun lieu pour l'instant. Ajoutez vos salles, palais et riads partenaires.</p>
-      ) : <div className="grid gap-3">{visibles.map((l) => <FicheLieu key={l.id} l={l} ouvert={ouvert === l.id} onOuvrir={() => setOuvert(ouvert === l.id ? null : l.id)} onChange={charger} />)}</div>}
+        <p className="rounded-2xl border border-dashed border-[#DCCBA6] bg-white p-8 text-center text-sm text-muted-foreground">{lieux.length ? "Aucun lieu ne correspond à cette recherche." : "Aucun lieu pour l'instant. Ajoutez vos salles, palais et riads partenaires."}</p>
+      ) : (
+        <div className="space-y-5">{groupes.map((g) => {
+          const ferme = !q && repliees.includes(g.ville);
+          return (
+            <section key={g.ville} data-testid="groupe-ville">
+              <button onClick={() => basculer(g.ville)} className="w-full flex items-center gap-3 mb-2 text-left" aria-expanded={!ferme}>
+                <span className="font-serif text-lg text-[#141414]">{g.ville}</span>
+                <span className="text-xs text-muted-foreground">{g.items.length} lieu{g.items.length > 1 ? "x" : ""}</span>
+                <span className="flex-1 h-px bg-[#DCCDAA]" />
+                <ChevronDown className={`h-4 w-4 text-[#A8933F] transition ${ferme ? "-rotate-90" : ""}`} />
+              </button>
+              {!ferme && <div className="grid gap-3">{g.items.map((l) => <FicheLieu key={l.id} l={l} ouvert={ouvert === l.id} onOuvrir={() => setOuvert(ouvert === l.id ? null : l.id)} onChange={charger} />)}</div>}
+            </section>
+          );
+        })}</div>
+      )}
     </div>
   );
 }
@@ -98,7 +125,7 @@ function FicheLieu({ l, ouvert, onOuvrir, onChange }: { l: Lieu; ouvert: boolean
         <div className="h-14 w-20 rounded-lg bg-[#FBF8F1] overflow-hidden shrink-0 grid place-items-center">{l.photos[0] ? <img src={url(l.photos[0])} alt="" className="h-full w-full object-cover" /> : <MapPin className="h-5 w-5 text-[#A8933F]" />}</div>
         <div className="flex-1 min-w-0">
           <div className="font-medium truncate">{l.nom} <span className="text-xs text-muted-foreground font-normal">· {TYPES.find((t) => t[0] === l.type)?.[1] ?? l.type}{l.ville ? ` · ${l.ville}` : ""}</span>{!l.actif && <span className="ml-2 text-[11px] rounded-full bg-zinc-200 px-2">inactif</span>}</div>
-          <div className="text-xs text-muted-foreground truncate">{l.capacite_max ? `${l.capacite_min ? l.capacite_min + "–" : "jusqu'à "}${l.capacite_max} pers. · ` : ""}{l.tarifs.map((t) => `${t.libelle} ${mad(t.prix)}`).join(" · ")}</div>
+          <div className="text-xs text-muted-foreground truncate">{l.capacite_max ? `${l.capacite_min ? l.capacite_min + "–" : "jusqu'à "}${l.capacite_max} pers. · ` : ""}{l.tarifs.map((t) => `${t.libelle} ${mad(t.prix)}`).join(" · ")}{!l.tarifs.length && (l.contact_telephone || l.contact_email || "Coordonnées à compléter")}</div>
         </div>
         <ChevronDown className={`h-5 w-5 text-[#A8933F] transition ${ouvert ? "rotate-180" : ""}`} />
       </button>
