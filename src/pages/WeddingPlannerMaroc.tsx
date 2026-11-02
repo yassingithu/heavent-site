@@ -36,9 +36,9 @@ export default function WeddingPlannerMaroc() {
     : pays ? <>Mariage au Maroc depuis {pays.de} : wedding planner</>
     : <>Wedding planner au Maroc</>;
   const chapo = ville
-    ? `Heavent People Agency organise votre mariage à ${ville.nom} : décoration, prestataires, planning et coordination du jour J. Réponse sous 24 h, devis détaillé gratuit.`
+    ? `Heavent People Agency organise votre mariage à ${ville.nom} : décoration, prestataires, planning et coordination du jour J. Réponse sous 24 à 48 h, devis détaillé gratuit.`
     : pays
-      ? `Vous vous mariez au Maroc depuis ${pays.de} ? Nous préparons votre mariage avec vous à distance et nous coordonnons le jour J sur place. Réponse sous 24 h.`
+      ? `Vous vous mariez au Maroc depuis ${pays.de} ? Nous préparons votre mariage avec vous à distance et nous coordonnons le jour J sur place. Réponse sous 24 à 48 h.`
       
       : "L'organisation de votre mariage, de A\u00a0à\u00a0Z. Heavent People Agency organise des mariages à Marrakech, Casablanca, Rabat, Tanger, Fès, Agadir et dans tout le Maroc, pour les couples qui vivent ici comme pour ceux qui reviennent de l'étranger.";
 
@@ -62,7 +62,7 @@ export default function WeddingPlannerMaroc() {
       <Seo perso={{
         chemin: CHEMIN,
         titre: "Wedding planner au Maroc | Organisation de mariage | Heavent",
-        description: "Wedding planner au Maroc : organisation complète ou partielle de votre mariage à Marrakech, Casablanca, Rabat, Tanger, Fès, Agadir. Réponse sous 24 h, devis détaillé gratuit signé en ligne.",
+        description: "Wedding planner au Maroc : organisation complète ou partielle de votre mariage à Marrakech, Casablanca, Rabat, Tanger, Fès, Agadir. Forfaits de 10 000 à 20 000 MAD, réponse sous 24 à 48 h.",
         motsCles: "wedding planner Maroc, organisation mariage Maroc, mariage marocain, mariage au Maroc, se marier au Maroc, wedding planner Marrakech, wedding planner Casablanca, wedding planner Rabat, organisatrice de mariage Maroc, agence organisation mariage Maroc, décoration mariage Maroc, destination wedding Morocco, Morocco wedding planner",
         jsonLd,
       }} />
@@ -222,7 +222,7 @@ export default function WeddingPlannerMaroc() {
             <h2 className="s-h2" style={{ marginTop: 20, maxWidth: "16ch" }}>Wedding planner in Morocco</h2>
             <div className="s-prose" style={{ marginTop: 22 }}>
               <p>Heavent People Agency is a wedding planning and event agency based in Rabat. We plan and coordinate weddings in Marrakech, Casablanca, Rabat, Tangier, Fez, Agadir and across Morocco, for local couples and for couples getting married in Morocco from abroad.</p>
-              <p>Full planning, partial planning or day-of coordination: tell us your date, city and guest count and we will reply within 24 hours and send you a detailed quote. We work in English, French and Arabic.</p>
+              <p>Full planning, partial planning or day-of coordination: tell us your date, city and guest count and we will reply within 24 to 48 hours and send you a detailed quote. We work in English, French and Arabic.</p>
             </div>
             <div className="s-actions" style={{ marginTop: 24 }}>
               <Bouton to={versDevis} variante="plein" fleche onClick={() => suivre("devis_en")}>Request a free quote</Bouton>
@@ -233,7 +233,7 @@ export default function WeddingPlannerMaroc() {
             <h2 className="s-h2" style={{ marginTop: 20 }}>منظمة حفلات زفاف وتنظيم أعراس في المغرب</h2>
             <div className="s-prose" style={{ marginTop: 22 }}>
               <p>Heavent People Agency وكالة مقرها الرباط. ننظم حفلات الزفاف والخطوبة وليلة الحناء في مراكش والدار البيضاء والرباط وطنجة وفاس وأكادير وفي جميع مدن المغرب.</p>
-              <p>أخبرونا بالتاريخ والمدينة وعدد المدعوين، وسنرد عليكم خلال 24 ساعة ثم نرسل لكم عرض أسعار مفصلاً.</p>
+              <p>أخبرونا بالتاريخ والمدينة وعدد المدعوين، وسنرد عليكم خلال 24 إلى 48 ساعة ثم نرسل لكم عرض أسعار مفصلاً.</p>
             </div>
           </div>
         </div>
@@ -247,7 +247,7 @@ export default function WeddingPlannerMaroc() {
             <div>
               <Surtitre>Votre date</Surtitre>
               <h2 data-revele="">Parlons de votre mariage</h2>
-              <p className="s-chapo" style={{ marginTop: 18, maxWidth: "46ch" }}>Réponse sous 24 h, puis devis détaillé gratuit, à consulter et signer en ligne. Ou réservez directement un rendez-vous.</p>
+              <p className="s-chapo" style={{ marginTop: 18, maxWidth: "46ch" }}>Réponse sous 24 à 48 h, puis devis détaillé gratuit, à consulter et signer en ligne. Ou réservez directement un rendez-vous.</p>
               <div className="s-actions">
                 <Bouton to={versDevis} variante="plein" fleche onClick={() => suivre("devis_bas")}>Demander un devis gratuit</Bouton>
                 <Bouton to="/contact#rendez-vous" variante="filet" onClick={() => suivre("rdv_bas")}>Prendre rendez-vous</Bouton>
