@@ -74,7 +74,7 @@ export default function Prestataires() {
       <div className="max-w-lg text-center">
         <span className="mx-auto h-16 w-16 rounded-full bg-[#141414] text-[#E4D49A] grid place-items-center"><MailCheck className="h-8 w-8" /></span>
         <h1 className="font-serif text-4xl text-[#141414] mt-6">Plus qu'une étape</h1>
-        <p className="text-[#5A5146] mt-4 text-lg leading-relaxed">Nous venons de vous envoyer un e-mail à <b>{f.email}</b>. Cliquez sur le lien qu'il contient pour confirmer votre inscription : notre équipe étudiera ensuite votre dossier.</p>
+        <p className="text-[#5A5146] mt-4 text-lg leading-relaxed">Nous venons de vous envoyer un e-mail à <b>{f.email}</b>. Cliquez sur le lien qu'il contient pour confirmer votre inscription : notre équipe étudiera ensuite votre dossier et vous répondra sous 48 h.</p>
         <p className="text-sm text-[#5A5146] mt-4">Rien reçu ? Pensez à regarder dans les courriers indésirables.</p>
       </div>
     </div>
