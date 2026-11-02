@@ -1481,6 +1481,51 @@ await scenario("Heavent Studio : démo concession automobile avec logo, site vit
   await p.ctx.close();
 });
 
+
+// Prestataires : parcours téléphone détaillé (avantages, « Il manque », engagement, utm_source)
+for (const utm of ["", "instagram"]) await scenario(`Prestataires mobile : avantages, « Il manque : … », engagement et source${utm ? " (?utm_source=" + utm + ")" : ""}`, async (notes) => {
+  const base = nouvelleBase();
+  const photo = new URL("./photo-test.jpg", import.meta.url).pathname;
+  const v = await contexte(navigateur, base, "dj@prestataire.test", { mobile: true });
+  await v.page.goto(BASE + "/"); await v.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1"));
+  await v.page.goto(BASE + "/prestataires" + (utm ? "?utm_source=" + utm : "")); await v.page.waitForTimeout(1500);
+  const sfx = utm || "direct";
+  verifier(await v.page.getByTestId("presta-avantages").isVisible(), "bloc avantages absent");
+  await v.page.screenshot({ path: `${CAPTURES}/prestataires-${sfx}-1-avantages.png` });
+  await v.page.getByRole("link", { name: /Je m'inscris/ }).tap(); await v.page.waitForTimeout(800);
+  verifier(await v.page.getByTestId("presta-societe").isVisible(), "« Je m'inscris » ne mène pas au formulaire");
+  const haut = await v.page.getByTestId("formulaire-prestataire").evaluate((e) => e.getBoundingClientRect().top);
+  notes.push(`après « Je m'inscris », le formulaire est à ${Math.round(haut)} px du haut`);
+  const envoyer = v.page.getByTestId("presta-envoyer");
+  const attendu = async (txt) => { await envoyer.tap(); await v.page.waitForTimeout(900);
+    const e = v.page.getByTestId("presta-erreur"); verifier(await e.count(), "pas de message « Il manque »");
+    const t = await e.innerText(); verifier(t.includes(txt), `message « ${t} » au lieu de « …${txt}… »`);
+    const b = await e.evaluate((x) => { const r = x.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, h: window.innerHeight }; }); verifier(b.top >= 0 && b.bottom <= b.h, "le message n'est pas visible à l'écran (pas de défilement)"); };
+  await attendu("entreprise");
+  await v.page.screenshot({ path: `${CAPTURES}/prestataires-${sfx}-2-il-manque.png` });
+  await v.page.getByTestId("presta-societe").fill("DJ Atlas Sound"); await attendu("nom et prénom");
+  await v.page.getByTestId("presta-contact").fill("Mehdi Sound"); await attendu("e-mail");
+  await v.page.getByTestId("presta-email").fill("dj@prestataire"); await attendu("e-mail");
+  await v.page.getByTestId("presta-email").fill("dj@prestataire.test"); await attendu("prestation");
+  const det = v.page.locator("details").first();
+  verifier(!(await det.evaluate((d) => d.open)), "« Pour mieux vous présenter » doit être replié au départ");
+  await det.locator("summary").tap(); verifier(await det.evaluate((d) => d.open), "la section ne s'ouvre pas");
+  await v.page.getByPlaceholder("Ville", { exact: true }).fill("Casablanca");
+  await v.page.getByRole("button", { name: "DJ / animation" }).tap();
+  await v.page.getByTestId("presta-fonction").fill("DJ soirée de mariage"); await v.page.getByTestId("presta-prix").fill("8 000"); await attendu("engagement");
+  await v.page.getByTestId("presta-engagement").tap(); await attendu("confidentialité");
+  await v.page.getByTestId("presta-accord").tap();
+  await v.page.screenshot({ path: `${CAPTURES}/prestataires-${sfx}-3-rempli.png`, fullPage: true });
+  await envoyer.tap(); await v.page.waitForTimeout(2500);
+  const r = base.prestataires?.[0];
+  verifier(r, "rien n'a été envoyé");
+  verifier((r.source ?? "") === utm, `source « ${r.source} » au lieu de « ${utm} »`);
+  verifier(await v.page.getByTestId("prestataire-merci").isVisible(), "pas de page de confirmation");
+  await v.page.screenshot({ path: `${CAPTURES}/prestataires-${sfx}-4-confirmation.png` });
+  verifier(!v.erreurs.length, "erreurs JavaScript : " + v.erreurs.join(" ; "));
+  await v.ctx.close();
+});
+
 // Prestataires partenaires : inscription publique → confirmation e-mail → validation admin → lignes de devis
 await scenario("Prestataires : inscription avec logo et photos, confirmation e-mail, validation, ajout aux devis", async (notes) => {
   const base = nouvelleBase();
@@ -1488,12 +1533,13 @@ await scenario("Prestataires : inscription avec logo et photos, confirmation e-m
   const v = await contexte(navigateur, base, "dj@prestataire.test", { mobile: true });
   await v.page.goto(BASE + "/"); await v.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1"));
   await v.page.goto(BASE + "/prestataires"); await v.page.waitForTimeout(1500);
-  verifier(await v.page.getByTestId("presta-envoyer").isDisabled(), "le bouton doit être grisé tant que le formulaire est incomplet");
+  verifier(await v.page.getByTestId("presta-envoyer").isEnabled(), "le bouton Envoyer doit rester actif (il explique ce qui manque)");
   await v.page.getByTestId("presta-societe").fill("DJ Atlas Sound"); await v.page.getByTestId("presta-contact").fill("Mehdi Sound");
   await v.page.getByTestId("presta-email").fill("dj@prestataire.test");
   await v.page.getByRole("button", { name: "DJ / animation" }).tap();
   await v.page.getByTestId("presta-fonction").fill("DJ soirée de mariage"); await v.page.getByTestId("presta-prix").fill("8000");
   await v.page.getByTestId("presta-logo").setInputFiles(photo); await v.page.getByTestId("presta-photos").setInputFiles([photo, photo]);
+  await v.page.getByTestId("presta-engagement").check();
   await v.page.getByTestId("presta-accord").check();
   await v.page.getByTestId("presta-envoyer").tap(); await v.page.waitForTimeout(2500);
   const r = base.prestataires?.[0];

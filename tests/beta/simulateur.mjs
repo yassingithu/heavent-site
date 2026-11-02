@@ -423,7 +423,7 @@ export async function contexte(navigateur, base, email, { mobile = false, agent 
       if (!p?.societe || !p?.contact || !/@/.test(p?.email ?? "") || !p.prestations?.length) return route.fulfill({ status: 400, json: { message: "Nom, contact et e-mail sont obligatoires" } });
       const r = { id: "pr" + Math.random().toString(36).slice(2), cree_le: new Date().toISOString(), societe: p.societe, contact: p.contact, email: p.email.toLowerCase(), telephone: p.telephone || null,
         ville: p.ville || null, zones: p.zones || null, categories: p.categories ?? [], description: p.description || null, site_web: p.site_web || null, instagram: p.instagram || null,
-        logo: p.logo, photos: p.photos ?? [], prestations: p.prestations, statut: "email_a_confirmer", jeton: crypto.randomUUID(), email_confirme_le: null, valide_le: null, notes: null };
+        logo: p.logo, photos: p.photos ?? [], prestations: p.prestations, source: p.source || null, engagement_prix_le: p.engagement_prix === true ? new Date().toISOString() : null, statut: "email_a_confirmer", jeton: crypto.randomUUID(), email_confirme_le: null, valide_le: null, notes: null };
       base.prestataires.push(r); return route.fulfill({ json: r.id });
     }
     if (url.pathname.includes("/rpc/prestataire_confirmer")) {
