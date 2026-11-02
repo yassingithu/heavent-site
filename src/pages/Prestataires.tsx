@@ -30,6 +30,15 @@ export default function Prestataires() {
 
   const champ = "w-full border border-[#CDBE98] bg-[#FFFDF7] px-4 h-12 focus:outline-none focus:border-[#A8933F] focus:ring-2 focus:ring-[#A8933F]/30";
   const lignesOk = lignes.filter((l) => l.fonction.trim().length > 1 && Number(l.prix) > 0);
+  const manque = () => {
+    if (f.societe.trim().length < 2) return "le nom de votre entreprise ou de votre nom d'artiste";
+    if (f.contact.trim().length < 2) return "votre nom et prénom";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.trim())) return "une adresse e-mail valide";
+    if (lignesOk.length === 0) return "au moins une prestation avec son prix";
+    if (!engagement) return "la case d'engagement sur vos prix";
+    if (!accord) return "la case de confidentialité";
+    return null;
+  };
   const valide = f.societe.trim().length > 1 && f.contact.trim().length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.trim()) && lignesOk.length > 0 && accord && engagement;
 
   const deposer = async (fichier: Blob, nom: string, type: string) => {
@@ -41,7 +50,9 @@ export default function Prestataires() {
 
   const envoyer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!valide || f.piege) return;
+    if (f.piege) return;
+    const m = manque();
+    if (m) { setErreur(`Il manque : ${m}.`); setTimeout(() => document.querySelector('[data-testid="presta-erreur"]')?.scrollIntoView({ block: "center", behavior: "smooth" }), 50); return; }
     setEtat("envoi"); setErreur(null);
     try {
       const cheminLogo = logo ? await deposer(await reduirePhoto(logo, 800, "image/png"), "logo.png", "image/png") : null;
@@ -72,49 +83,57 @@ export default function Prestataires() {
   return (
     <div className="s-platre min-h-screen">
       <Seo perso={{ chemin: "/prestataires", titre: "Devenir prestataire partenaire | Heavent People Agency",
-        description: "DJ, traiteurs, photographes, décorateurs, loueurs de matériel : rejoignez le réseau de prestataires de Heavent People Agency au Maroc." }} />
+        description: "DJ, traiteurs, photographes, décorateurs, loueurs de matériel : inscription gratuite : rejoignez le réseau de prestataires de Heavent People Agency au Maroc." }} />
       <PageTete surtitre="Prestataires partenaires" titre="Travaillons ensemble sur nos prochains événements"
-        chapo="DJ, traiteurs, photographes, décorateurs, loueurs de matériel… Présentez vos prestations et vos tarifs : une fois validé, vous êtes proposé dans nos devis mariages, fêtes et événements d'entreprise." />
+        chapo="DJ, traiteurs, photographes, décorateurs, loueurs de matériel… Inscription gratuite. Présentez vos prestations et vos tarifs : une fois validé, vous êtes proposé dans nos devis mariages, fêtes et événements d'entreprise." />
 
       <section className="max-w-3xl mx-auto px-4 pt-12 sm:pt-16" data-testid="presta-avantages" aria-labelledby="presta-pourquoi">
-        <p className="a-surtitre">Pourquoi nous rejoindre</p>
-        <h2 id="presta-pourquoi" className="font-serif text-[28px] sm:text-4xl text-[#141414] mt-2">Gratuit, sans commission sur vous</h2>
-        <ol className="mt-8 grid sm:grid-cols-3 gap-px bg-[#DCCDAA] border border-[#DCCDAA]">
+        <p className="s-surtitre">Pourquoi nous rejoindre <span className="s-filet" /></p>
+        <h2 id="presta-pourquoi" className="font-serif text-[28px] sm:text-4xl text-[#141414] mt-2">Gratuit, et sans commission sur vos prix</h2>
+        <ul className="mt-6 space-y-4">
           {[
-            ["I", "Des demandes sans prospecter", "Vos prestations apparaissent dans nos devis mariages, fêtes et événements d'entreprise."],
-            ["II", "Inscription gratuite", "Aucun abonnement et aucune commission prélevée sur vos prix. Heavent est rémunérée par le client pour la coordination."],
-            ["III", "Vos prix, présentés avec soin", "Votre profil, votre logo et vos photos sont mis en valeur auprès de familles qui préparent leur événement."],
-          ].map(([n, t, d]) => (
-            <li key={n} className="bg-[#FAF6EC] p-5">
-              <span className="font-serif text-2xl text-[#7A5F1F]">{n}</span>
-              <h3 className="font-serif text-xl text-[#141414] mt-1">{t}</h3>
-              <p className="text-sm text-[#5A5146] mt-2 leading-relaxed">{d}</p>
+            ["Inscription gratuite", "Aucun abonnement, aucune commission prélevée sur vos prix."],
+            ["Proposé dans nos devis", "Une fois votre dossier validé, vos prestations peuvent être ajoutées à nos devis mariages, fêtes et événements d'entreprise."],
+            ["Vos prix, présentés avec soin", "Votre profil, votre logo et vos photos sont mis en valeur."],
+          ].map(([t, d]) => (
+            <li key={t} className="flex gap-4 items-start border-t border-[#DCCDAA] pt-4">
+              <span aria-hidden className="mt-2 h-2 w-2 shrink-0 rotate-45 border border-[#A8933F] bg-[#A8933F]" />
+              <div><h3 className="font-serif text-xl text-[#141414]">{t}</h3><p className="text-[15px] text-[#5A5146] mt-1 leading-relaxed">{d}</p></div>
             </li>
           ))}
-        </ol>
+        </ul>
+        <a href="#formulaire-prestataire" className="s-btn s-btn-filet mt-6">Je m'inscris <span aria-hidden="true">↓</span></a>
       </section>
 
-      <form onSubmit={envoyer} className="max-w-3xl mx-auto px-4 py-12 sm:py-20 space-y-10" data-testid="formulaire-prestataire">
+      <form onSubmit={envoyer} className="max-w-3xl mx-auto px-4 py-12 sm:py-20 space-y-10" id="formulaire-prestataire" data-testid="formulaire-prestataire" noValidate>
         <Bloc titre="Votre activité" numero={1}>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <input className={champ} placeholder="Nom de l'entreprise ou nom d'artiste *" value={f.societe} onChange={(e) => setF({ ...f, societe: e.target.value })} data-testid="presta-societe" />
-            <input className={champ} placeholder="Votre nom et prénom *" value={f.contact} onChange={(e) => setF({ ...f, contact: e.target.value })} data-testid="presta-contact" />
-            <input className={champ} type="email" placeholder="E-mail *" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} data-testid="presta-email" />
-            <input className={champ} type="tel" placeholder="Téléphone / WhatsApp" value={f.telephone} onChange={(e) => setF({ ...f, telephone: e.target.value })} />
-            <input className={champ} placeholder="Ville" value={f.ville} onChange={(e) => setF({ ...f, ville: e.target.value })} />
-            <input className={champ} placeholder="Villes où vous intervenez" value={f.zones} onChange={(e) => setF({ ...f, zones: e.target.value })} />
-            <input className={champ} placeholder="Site web" value={f.site_web} onChange={(e) => setF({ ...f, site_web: e.target.value })} />
-            <input className={champ} placeholder="Instagram (@…)" value={f.instagram} onChange={(e) => setF({ ...f, instagram: e.target.value })} />
-          </div>
-          <p className="text-sm text-[#5A5146] mt-5 mb-2">Vos métiers</p>
+          <p className="text-sm text-[#5A5146] mb-2">Vous êtes ?</p>
           <div className="flex flex-wrap gap-2">
             {METIERS.map((m) => {
               const actif = metiers.includes(m);
               return <button type="button" key={m} onClick={() => setMetiers(actif ? metiers.filter((x) => x !== m) : [...metiers, m])}
-                className={`px-4 min-h-[40px] text-sm border transition ${actif ? "bg-[#141414] text-[#FAF6EC] border-[#141414]" : "bg-[#FFFDF7] border-[#CDBE98] hover:border-[#A8933F]"}`}>{actif && <Check className="inline h-3.5 w-3.5 mr-1" />}{m}</button>;
+                className={`px-4 min-h-[44px] text-sm border transition ${actif ? "bg-[#141414] text-[#FAF6EC] border-[#141414]" : "bg-[#FFFDF7] border-[#CDBE98] hover:border-[#A8933F]"}`}>{actif && <Check className="inline h-3.5 w-3.5 mr-1" />}{m}</button>;
             })}
           </div>
-          <textarea className={`${champ} h-28 py-3 mt-4 resize-none`} placeholder="Présentez-vous en quelques lignes (expérience, style, matériel…)" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
+
+          <div className="grid sm:grid-cols-2 gap-3 mt-5">
+            <input className={champ} autoComplete="organization" placeholder="Nom de l'entreprise ou nom d'artiste *" value={f.societe} onChange={(e) => setF({ ...f, societe: e.target.value })} data-testid="presta-societe" />
+            <input className={champ} autoComplete="name" placeholder="Votre nom et prénom *" value={f.contact} onChange={(e) => setF({ ...f, contact: e.target.value })} data-testid="presta-contact" />
+            <input className={champ} type="email" autoComplete="email" autoCapitalize="none" placeholder="E-mail *" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} data-testid="presta-email" />
+            <input className={champ} type="tel" autoComplete="tel" placeholder="WhatsApp" value={f.telephone} onChange={(e) => setF({ ...f, telephone: e.target.value })} />
+          </div>
+          <details className="mt-5 border border-[#DCCDAA] bg-[#FAF6EC]">
+            <summary className="cursor-pointer min-h-[44px] flex items-center px-4 text-sm text-[#7A5F1F]">Pour mieux vous présenter (facultatif)</summary>
+            <div className="p-4 pt-0">
+              <div className="grid sm:grid-cols-2 gap-3">
+                <input className={champ} placeholder="Ville" value={f.ville} onChange={(e) => setF({ ...f, ville: e.target.value })} />
+                <input className={champ} placeholder="Villes où vous intervenez" value={f.zones} onChange={(e) => setF({ ...f, zones: e.target.value })} />
+                <input className={champ} autoCapitalize="none" placeholder="Instagram (@…)" value={f.instagram} onChange={(e) => setF({ ...f, instagram: e.target.value })} />
+                <input className={champ} type="url" autoCapitalize="none" placeholder="Site web" value={f.site_web} onChange={(e) => setF({ ...f, site_web: e.target.value })} />
+              </div>
+          <textarea className={`${champ} h-28 py-3 mt-3 resize-none`} placeholder="Présentez-vous en quelques lignes (expérience, style, matériel…)" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
+            </div>
+          </details>
         </Bloc>
 
         <Bloc titre="Vos prestations et tarifs" numero={2} aide="Une ligne par prestation, avec le prix que vous proposez (en MAD). Une fois validées, elles pourront être ajoutées à nos devis.">
@@ -127,14 +146,19 @@ export default function Prestataires() {
                 </select>
                 <input className={champ} inputMode="decimal" placeholder="Prix MAD" value={l.prix} onChange={(e) => setLignes(lignes.map((x, k) => (k === i ? { ...x, prix: e.target.value.replace(/[^\d.,]/g, "").replace(",", ".") } : x)))} data-testid="presta-prix" />
                 <button type="button" onClick={() => setLignes(lignes.length > 1 ? lignes.filter((_, k) => k !== i) : [ligneVide()])} className="h-12 w-12 grid place-items-center text-[#5A5146] hover:text-red-700" aria-label="Retirer"><Trash2 className="h-4 w-4" /></button>
-                <input className={`${champ} sm:col-span-3 h-10 text-sm`} placeholder="Détail (optionnel) : durée, inclus, conditions…" value={l.description} onChange={(e) => setLignes(lignes.map((x, k) => (k === i ? { ...x, description: e.target.value } : x)))} />
+                <input className={`${champ} sm:col-span-3 h-11 text-sm`} placeholder="Détail (optionnel) : durée, inclus, conditions…" value={l.description} onChange={(e) => setLignes(lignes.map((x, k) => (k === i ? { ...x, description: e.target.value } : x)))} />
               </div>
             ))}
             {lignes.length < 30 && <button type="button" onClick={() => setLignes([...lignes, ligneVide()])} className="inline-flex items-center gap-1.5 min-h-[44px] text-sm text-[#7A5F1F]"><Plus className="h-4 w-4" /> Ajouter une prestation</button>}
           </div>
+          <label className="flex gap-3 text-sm text-[#5A5146] items-start mt-5 min-h-[44px]">
+            <input type="checkbox" checked={engagement} onChange={(e) => setEngagement(e.target.checked)} className="mt-0.5 h-6 w-6 shrink-0 accent-[#A8933F]" data-testid="presta-engagement" />
+            <span>Mes prix sont les mêmes que ceux que je donne à un client en direct. Pour un événement venu d'un devis Heavent, je continue à passer par Heavent.
+              <span className="block text-xs mt-1">Heavent ne prend rien sur vos prix : le client paie la coordination. Cette règle nous permet de rester gratuits pour vous.</span></span>
+          </label>
         </Bloc>
 
-        <Bloc titre="Votre logo et vos photos" numero={3} aide="Votre logo (si vous en avez un) et jusqu'à 8 photos de votre matériel ou de vos réalisations.">
+        <Bloc titre="Votre logo et vos photos (facultatif)" numero={3} aide="Votre logo (si vous en avez un) et jusqu'à 8 photos de votre matériel ou de vos réalisations.">
           <div className="flex flex-wrap gap-4 items-start">
             <label className="cursor-pointer">
               <input type="file" accept="image/*" className="hidden" onChange={(e) => { const x = e.target.files?.[0]; if (x) setLogo(x); e.target.value = ""; }} data-testid="presta-logo" />
@@ -158,19 +182,14 @@ export default function Prestataires() {
         </Bloc>
 
         <input tabIndex={-1} autoComplete="off" aria-hidden className="hidden" value={f.piege} onChange={(e) => setF({ ...f, piege: e.target.value })} />
-        <label className="flex gap-3 text-sm text-[#5A5146] items-start">
-          <input type="checkbox" checked={accord} onChange={(e) => setAccord(e.target.checked)} className="mt-1 h-4 w-4 accent-[#A8933F]" data-testid="presta-accord" />
+        <label className="flex gap-3 text-sm text-[#5A5146] items-start min-h-[44px]">
+          <input type="checkbox" checked={accord} onChange={(e) => setAccord(e.target.checked)} className="mt-0.5 h-6 w-6 shrink-0 accent-[#A8933F]" data-testid="presta-accord" />
           <span>J'accepte que Heavent People Agency conserve ces informations pour me proposer des prestations, et m'écrive à ce sujet. <Link to="/politique-confidentialite" className="underline">Confidentialité</Link></span>
         </label>
-        <label className="flex gap-3 text-sm text-[#5A5146] items-start">
-          <input type="checkbox" checked={engagement} onChange={(e) => setEngagement(e.target.checked)} className="mt-1 h-4 w-4 accent-[#A8933F]" data-testid="presta-engagement" />
-          <span>Je m'engage à indiquer des prix justes, identiques à ceux que je propose en direct aux clients, et à ne pas contourner Heavent pour les événements issus de ses devis.</span>
-        </label>
         {erreur && <p className="text-sm text-red-700" data-testid="presta-erreur">{erreur}</p>}
-        <button type="submit" disabled={!valide || etat === "envoi"} className="w-full sm:w-auto s-btn s-btn-plein s-sombre" data-testid="presta-envoyer">
+        <button type="submit" disabled={etat === "envoi"} className="w-full sm:w-auto s-btn s-btn-plein s-sombre" data-testid="presta-envoyer">
           {etat === "envoi" ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Envoyer ma candidature <span className="fl" aria-hidden="true">→</span>
         </button>
-        {!valide && <p className="text-xs text-[#5A5146]">Champs obligatoires : entreprise, nom, e-mail, au moins une prestation avec son prix, votre accord et l'engagement sur vos prix.</p>}
       </form>
     </div>
   );
