@@ -336,8 +336,8 @@ function majLive(){
   nb.innerHTML=rows.map(r=>{const ag=AG.find(g=>g.a.cle===r.agent);const nom=ag?ag.a.prenom:(r.agent==='instagram'?'Instagram':r.agent);const col=ag?ag.a.c:'#E4D49A';
     return `<li style="--c:${col}"><time datetime="${esc(r.cree_le)}">${esc(quand(r.cree_le))}</time><b>${esc(nom)}</b><span>${esc(r.action)}<span class="etat ${esc(r.statut)}">${esc(NOMS_ETAT[r.statut]||r.statut)}</span></span></li>`}).join('');
 }
-window.addEventListener('message',e=>{if(e.origin!==location.origin||!e.data||e.data.type!=='journal'||!Array.isArray(e.data.rows))return;JOURNAL=e.data.rows;majLive()});
-parent.postMessage({type:'pret'},location.origin);
+window.addEventListener('message',e=>{if(e.origin!==window.origin||!e.data||e.data.type!=='journal'||!Array.isArray(e.data.rows))return;JOURNAL=e.data.rows;majLive()});
+parent.postMessage({type:'pret'},window.origin);
 /* ---------- boucle ---------- */
 let pause=false,last=performance.now(),ordre='',t0=performance.now();
 function frame(now){
