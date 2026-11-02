@@ -93,6 +93,7 @@ export default function Prestataires() {
         <ul className="mt-6 space-y-4">
           {[
             ["Inscription gratuite", "Aucun abonnement, aucune commission prélevée sur vos prix."],
+            ["Payé par Heavent, à votre prix", "C'est Heavent qui encaisse le client : vous recevez votre prix, un acompte avant l'événement et le solde à la fin de votre prestation."],
             ["Proposé dans nos devis", "Une fois votre dossier validé, vos prestations peuvent être ajoutées à nos devis mariages, fêtes et événements d'entreprise."],
             ["Vos prix, présentés avec soin", "Votre profil, votre logo et vos photos sont mis en valeur."],
           ].map(([t, d]) => (
@@ -154,7 +155,7 @@ export default function Prestataires() {
           <label className="flex gap-3 text-sm text-[#5A5146] items-start mt-5 min-h-[44px]">
             <input type="checkbox" checked={engagement} onChange={(e) => setEngagement(e.target.checked)} className="mt-0.5 h-6 w-6 shrink-0 accent-[#A8933F]" data-testid="presta-engagement" />
             <span>Mes prix sont les mêmes que ceux que je donne à un client en direct. Pour un événement venu d'un devis Heavent, je continue à passer par Heavent.
-              <span className="block text-xs mt-1">Heavent ne prend rien sur vos prix : le client paie la coordination. Cette règle nous permet de rester gratuits pour vous.</span></span>
+              <span className="block text-xs mt-1">Heavent ne prend rien sur vos prix : vous touchez votre prix (acompte avant l'événement, solde à la fin de la prestation) et le client paie la coordination. Cette règle nous permet de rester gratuits pour vous.</span></span>
           </label>
         </Bloc>
 
