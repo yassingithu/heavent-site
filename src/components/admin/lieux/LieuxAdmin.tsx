@@ -86,18 +86,23 @@ export default function LieuxAdmin() {
 
   return (
     <div className="space-y-4" data-testid="lieux-admin">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 ig">
         <div className="relative flex-1 min-w-[220px]">
-          <input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Chercher un lieu, une adresse, un numéro…" className="w-full rounded-full border border-[#EADFC8] bg-white pl-4 pr-10 h-11 text-base sm:text-sm" data-testid="lieux-recherche" />
+          <input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Chercher un lieu, une adresse, un numéro…" className="w-full border pl-4 pr-10 h-11 text-base sm:text-sm" data-testid="lieux-recherche" />
           {recherche && <button onClick={() => setRecherche("")} aria-label="Effacer la recherche" className="absolute right-1 top-1 h-9 w-9 grid place-items-center text-muted-foreground"><X className="h-4 w-4" /></button>}
         </div>
-        <button onClick={ajouter} disabled={creation} className="inline-flex items-center gap-1.5 rounded-full bg-[#C8B560] text-[#141414] px-4 h-11 text-sm font-medium disabled:opacity-60" data-testid="ajouter-lieu"><Plus className="h-4 w-4" /> Ajouter un lieu</button>
+        <select value={ville} onChange={(e) => setVille(e.target.value)} aria-label="Ville" className="border px-3 h-11 text-base sm:text-sm min-w-[150px]" data-testid="lieux-ville-filtre">
+          <option value="">Toutes les villes ({lieux.length})</option>
+          {cles.map((k) => <option key={k || "sans"} value={k}>{nomVille[k]} ({nb[k]})</option>)}
+        </select>
+        <button onClick={ajouter} disabled={creation} className="s-btn disabled:opacity-60" data-testid="ajouter-lieu"><Plus className="h-4 w-4 mr-1" /> Ajouter un lieu</button>
       </div>
-      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filtrer par ville">
-        <button onClick={() => setVille("")} aria-pressed={!ville} className={`rounded-full px-4 h-11 sm:h-9 text-sm border ${!ville ? "bg-[#141414] text-white" : "bg-white"}`}>Toutes les villes <span className="opacity-60">{lieux.length}</span></button>
-        {cles.map((k) => <button key={k || "sans"} onClick={() => setVille(ville === k ? "" : k)} aria-pressed={ville === k} className={`rounded-full px-4 h-11 sm:h-9 text-sm border ${ville === k ? "bg-[#141414] text-white" : "bg-white"}`}>{nomVille[k]} <span className="opacity-60">{nb[k]}</span></button>)}
+      <div className="flex items-center gap-5 text-xs">
+        <span className="a-st">{q || ville ? `${visibles.length} lieu${visibles.length > 1 ? "x" : ""}` : `${lieux.length} lieux`}</span>
+        <button onClick={() => setRepliees(cles)} className="uppercase tracking-[.2em] text-[10.5px] font-medium text-[#7A5F1F] min-h-11">Tout replier</button>
+        <button onClick={() => setRepliees([])} className="uppercase tracking-[.2em] text-[10.5px] font-medium text-[#7A5F1F] min-h-11">Tout déplier</button>
       </div>
-      <p className="text-xs text-muted-foreground">Chaque tarif d'un lieu actif apparaît dans le catalogue des devis (catégorie « lieux »). Collez un lien Google Maps : la position est reprise automatiquement.</p>
+      <p className="text-xs text-[#5b5547]">Chaque tarif d'un lieu actif apparaît dans le catalogue des devis (catégorie « lieux »). Collez un lien Google Maps : la position est reprise automatiquement.</p>
       {charge ? <Loader2 className="h-6 w-6 animate-spin text-[#A8933F]" /> : visibles.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#DCCBA6] bg-white p-8 text-center text-sm text-muted-foreground space-y-3">
           {!lieux.length ? <p>Aucun lieu pour l'instant. Ajoutez vos salles, palais et riads partenaires.</p>
@@ -105,17 +110,18 @@ export default function LieuxAdmin() {
             : <p>Aucun lieu ne correspond à cette recherche.</p>}
         </div>
       ) : (
-        <div className="space-y-5">{groupes.map((g) => {
+        <div className="space-y-9">{groupes.map((g) => {
           const ferme = !q && repliees.includes(g.cle);
           return (
             <section key={g.cle || "sans"} data-testid="groupe-ville">
-              <button onClick={() => basculer(g.cle)} className="w-full min-h-11 flex items-center gap-3 mb-2 text-left" aria-expanded={!ferme}>
-                <span className="font-serif text-lg text-[#141414]">{g.ville}</span>
-                <span className="text-xs text-muted-foreground">{g.items.length} lieu{g.items.length > 1 ? "x" : ""}</span>
-                <span className="flex-1 h-px bg-[#DCCDAA]" />
-                <ChevronDown className={`h-4 w-4 text-[#A8933F] transition ${ferme ? "-rotate-90" : ""}`} />
+              <button onClick={() => basculer(g.cle)} className="w-full min-h-12 flex items-center gap-3 mb-2 text-left" aria-expanded={!ferme}>
+                <span className="font-serif text-[22px] sm:text-[26px] leading-none text-[#141414]">{g.ville}</span>
+                <span className="font-serif text-lg text-[#7A5F1F] tabular-nums">{String(g.items.length).padStart(2, "0")}</span>
+                <span className="text-[11px] text-[#5b5547]">lieu{g.items.length > 1 ? "x" : ""}</span>
+                <span className="flex-1 h-px" style={{ background: "linear-gradient(90deg,#DCCDAA,transparent)" }} />
+                <span className="lx-signe" data-ferme={ferme} aria-hidden />
               </button>
-              {!ferme && <div className="grid gap-3">{g.items.map((l) => <FicheLieu key={l.id} l={l} villes={villesConnues} recherche={!!q} ouvert={ouvert === l.id} onOuvrir={() => setOuvert(ouvert === l.id ? null : l.id)} onChange={(v) => apresEnregistrement(l.id, v)} />)}</div>}
+              <div className="lx-corps" data-ferme={ferme} {...(ferme ? { inert: "" as any } : {})}><div className="grid gap-3">{g.items.map((l) => <FicheLieu key={l.id} l={l} villes={villesConnues} recherche={!!q} ouvert={ouvert === l.id} onOuvrir={() => setOuvert(ouvert === l.id ? null : l.id)} onChange={(v) => apresEnregistrement(l.id, v)} />)}</div></div>
             </section>
           );
         })}</div>
@@ -130,7 +136,7 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange }: { l: Li
   const [occupe, setOccupe] = useState(false);
   useEffect(() => { setF(l); }, [l]);
   const modifie = JSON.stringify(f) !== JSON.stringify(l);
-  const champ = "w-full rounded-md border px-3 h-9 text-sm bg-white";
+  const champ = "w-full !rounded-none border border-[#DCCDAA] px-3 h-11 sm:h-9 text-base sm:text-sm bg-white";
   const carte = lienCarte(f);
   const num = (v: string) => (v === "" ? null : Number(v));
 
@@ -140,7 +146,7 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange }: { l: Li
     const { error } = await (supabase as any).from("lieux").update(reste).eq("id", id);
     setOccupe(false);
     if (error) return toast({ title: "Non enregistré", description: error.message, variant: "destructive" });
-    toast({ title: "Lieu enregistré ✓", description: (extra.actif ?? f.actif) ? "Ses tarifs sont dans le catalogue des devis." : "Retiré du catalogue des devis." });
+    toast({ title: "Lieu enregistré", description: (extra.actif ?? f.actif) ? "Ses tarifs sont dans le catalogue des devis." : "Retiré du catalogue des devis." });
     onChange(f.ville);
   };
   const ajouterPhotos = async (fichiers: FileList | null) => {
@@ -157,14 +163,15 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange }: { l: Li
   const setTarif = (i: number, v: Partial<Tarif>) => setF({ ...f, tarifs: f.tarifs.map((t, k) => (k === i ? { ...t, ...v } : t)) });
 
   return (
-    <div id={`lieu-${l.id}`} className={`scroll-mt-4 rounded-2xl border bg-white overflow-hidden ${f.actif ? "border-[#EADFC8]" : "border-dashed opacity-75"}`} data-testid="fiche-lieu">
+    <div id={`lieu-${l.id}`} className={`scroll-mt-4 a-carte overflow-hidden ${f.actif ? "" : "border-l-[3px] !border-l-[#9C4A2C]"}`} data-testid="fiche-lieu">
       <button onClick={onOuvrir} className="w-full flex items-center gap-3 p-3 sm:p-4 text-left">
-        <div className="h-14 w-20 rounded-lg bg-[#FBF8F1] overflow-hidden shrink-0 grid place-items-center">{l.photos[0] ? <img src={url(l.photos[0])} alt="" className="h-full w-full object-cover" /> : <MapPin className="h-5 w-5 text-[#A8933F]" />}</div>
+        {l.photos[0] && <div className="h-14 w-20 bg-[#FBF8F1] overflow-hidden shrink-0"><img src={url(l.photos[0])} alt="" className="h-full w-full object-cover" /></div>}
         <div className="flex-1 min-w-0">
-          <div className="font-medium truncate">{l.nom} <span className="text-xs text-muted-foreground font-normal">· {TYPES.find((t) => t[0] === l.type)?.[1] ?? l.type}{l.ville ? ` · ${l.ville}` : ""}</span>{!l.actif && <span className="ml-2 text-[11px] rounded-full bg-zinc-200 px-2">inactif</span>}{modifie && <span className="ml-2 text-[11px] rounded-full bg-[#C8B560]/30 text-[#7A5F1F] px-2">modifié</span>}</div>
+          <div className="font-medium text-base leading-snug line-clamp-2">{l.nom}{!l.actif && <span className="ml-2 a-st terre align-middle">inactif</span>}{modifie && <span className="ml-2 a-st align-middle">modifié</span>}</div>
+          <div className="text-[10.5px] uppercase tracking-[.22em] text-[#7A5F1F] mt-0.5">{TYPES.find((t) => t[0] === l.type)?.[1] ?? l.type}</div>
           <div className="text-xs text-muted-foreground truncate">{l.capacite_max ? `${l.capacite_min ? l.capacite_min + "–" : "jusqu'à "}${l.capacite_max} pers. · ` : ""}{l.tarifs.map((t) => `${t.libelle} ${mad(t.prix)}`).join(" · ")}{(!l.tarifs.length || recherche) && (l.contact_telephone || l.contact_email || (!l.tarifs.length ? "Coordonnées à compléter" : ""))}</div>
         </div>
-        <ChevronDown className={`h-5 w-5 text-[#A8933F] transition ${ouvert ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-5 w-5 text-[#A8933F] transition ${ouvert ? "rotate-180" : ""}`} aria-hidden />
       </button>
       {ouvert && (
         <div className="border-t border-[#F1ECDD] p-3 sm:p-4 space-y-4">

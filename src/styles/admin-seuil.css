@@ -275,3 +275,15 @@
 .wa-texte textarea[dir="rtl"] { font-size: 17px; line-height: 1.7; }
 .wa-envoyer { position: sticky; bottom: 0; padding: 12px 16px 16px; background: var(--s-papier); }
 .wa-envoyer .s-btn { width: 100%; min-height: 52px; }
+
+
+/* Salles & palais : repli sobre des villes */
+.lx-corps { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .28s var(--s-courbe); }
+.lx-corps[data-ferme="true"] { grid-template-rows: 0fr; }
+.lx-corps > div { overflow: hidden; min-height: 0; transition: opacity .2s; }
+.lx-corps[data-ferme="true"] > div { opacity: 0; }
+.lx-signe { position: relative; width: 14px; height: 14px; flex: none; }
+.lx-signe::before, .lx-signe::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1.5px; background: var(--s-laiton); transition: transform .22s var(--s-courbe); }
+.lx-signe::after { transform: rotate(90deg); }
+.lx-signe[data-ferme="false"]::after { transform: rotate(0deg); }
+@media (prefers-reduced-motion: reduce) { .lx-corps, .lx-corps > div, .lx-signe::before, .lx-signe::after { transition: none; } }
