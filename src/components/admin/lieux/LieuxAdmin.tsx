@@ -143,6 +143,7 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange, onSupprim
   const [occupe, setOccupe] = useState(false);
   const [confirmer, setConfirmer] = useState(false);
   useEffect(() => { if (!ouvert) setConfirmer(false); }, [ouvert]);
+  const blocConfirmation = (el: HTMLDivElement | null) => { el?.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); };
   const supprimer = async () => {
     setOccupe(true);
     const { error } = await (supabase as any).from("lieux").delete().eq("id", l.id);
@@ -254,7 +255,7 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange, onSupprim
           <label className="block text-[11px] text-muted-foreground">Notes internes<textarea className={`${champ} h-16 py-2`} value={f.notes ?? ""} onChange={(e) => setF({ ...f, notes: e.target.value })} /></label>
 
           {confirmer ? (
-            <div className="flex flex-col gap-3 border border-[#9C4A2C]/40 bg-[#9C4A2C]/5 p-3" role="alertdialog" aria-label="Confirmer la suppression">
+            <div ref={blocConfirmation} className="flex flex-col gap-3 border border-[#9C4A2C]/40 bg-[#9C4A2C]/5 p-3" role="alertdialog" aria-label="Confirmer la suppression">
               <p className="text-sm text-[#9C4A2C]">
                 Supprimer « {l.nom} » pour de bon ? Elle disparaît aussi des devis{(l.photos ?? []).length ? ` et ses ${(l.photos ?? []).length} photo(s) sont effacées` : ""}. Pour seulement la retirer des devis, utilisez « Désactiver ».
               </p>
