@@ -1,11 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink, Heart } from "lucide-react";
+import { Check, Copy, ExternalLink, Heart } from "lucide-react";
+import { lienClientDevis } from "./devisUtils";
 
 interface Moment { id: string; heure: string; titre: string; details: string }
 interface TableM { id: string; nom: string; places: number }
 interface InviteM { id: string; nom: string; nb_prevus: number; reponse: string; nb_confirmes: number | null; remarque: string | null; table_id: string | null; liste_statut?: string }
+
+function LigneLien({ libelle, aide, url }: { libelle: string; aide: string; url: string }) {
+  const [ok, setOk] = useState(false);
+  const copier = async () => { try { await navigator.clipboard.writeText(url); setOk(true); setTimeout(() => setOk(false), 1500); } catch { window.prompt("Lien à copier :", url); } };
+  return (
+    <div className="rounded-lg border p-2.5" data-testid="lien-admin">
+      <div className="text-sm font-medium">{libelle}</div>
+      <div className="text-xs text-muted-foreground mb-1.5">{aide}</div>
+      <div className="flex gap-2">
+        <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} aria-label={libelle} className="flex-1 min-w-0 rounded-md border bg-background px-2 py-1.5 text-xs" />
+        <button type="button" onClick={copier} className="inline-flex items-center gap-1 rounded-md border px-2.5 text-xs hover:bg-muted min-h-9">{ok ? <><Check className="h-3.5 w-3.5" /> Copié</> : <><Copy className="h-3.5 w-3.5" /> Copier</>}</button>
+        <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border px-2.5 text-xs hover:bg-muted min-h-9" aria-label="Ouvrir"><ExternalLink className="h-3.5 w-3.5" /></a>
+      </div>
+    </div>
+  );
+}
 
 const cleHeure = (h: string) => { const [a, b] = (h || "99:99").split(":").map(Number); return (a < 12 ? a + 24 : a) * 60 + (b || 0); };
 
@@ -28,7 +45,8 @@ export default function EspaceMariesAdmin({ devisId, token, statut }: { devisId?
 
   const programme = useMemo(() => [...(espace?.programme ?? [])].sort((a, b) => cleHeure(a.heure) - cleHeure(b.heure)), [espace]);
   if (!devisId) return null;
-  const lien = token ? `/mon-mariage/${token}` : null;
+  const base = "https://heaventagency.com";
+  const lien = token ? `${base}/mon-mariage/${token}` : null;
   const oui = invites.filter((x) => x.reponse === "oui");
   const personnes = oui.reduce((s, x) => s + (x.nb_confirmes ?? x.nb_prevus), 0);
   const attente = invites.filter((x) => x.reponse === "attente");
@@ -42,6 +60,13 @@ export default function EspaceMariesAdmin({ devisId, token, statut }: { devisId?
         {lien && statut === "accepte" && <a href={lien} target="_blank" rel="noreferrer" className="text-xs text-[#8C6D22] inline-flex items-center gap-1 hover:underline">Ouvrir <ExternalLink className="h-3 w-3" /></a>}
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
+        {token && (
+          <div className="space-y-2">
+            <LigneLien libelle="Espace des mariés" aide="À envoyer aux mariés : ils y gèrent invités, programme et plan de table." url={`${base}/mon-mariage/${token}`} />
+            <LigneLien libelle="Lien d'invitation pour les invités" aide="Un seul lien pour tous les invités (enveloppe, nom, réponse)." url={`${base}/reponse/${token}`} />
+            <LigneLien libelle="Devis à signer" aide="Le devis en ligne du client." url={lienClientDevis(token)} />
+          </div>
+        )}
         {statut !== "accepte" ? (
           <p className="text-muted-foreground">Les mariés accèdent à leur espace (check-list, budget, programme, invités, plan de table) depuis le lien du devis, dès qu'il est signé.</p>
         ) : !charge ? null : !espace ? (
