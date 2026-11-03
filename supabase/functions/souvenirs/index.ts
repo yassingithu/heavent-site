@@ -6,12 +6,18 @@ const rep = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
-  const { token } = await req.json().catch(() => ({}));
+  const { token, livre } = await req.json().catch(() => ({}));
   if (!token || !/^[0-9a-f-]{36}$/i.test(String(token))) return rep({ error: "Lien invalide" }, 400);
   const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     { auth: { autoRefreshToken: false, persistSession: false } });
   const { data: devisId } = await db.rpc("_devis_mariage", { p_token: token });
   if (!devisId) return rep({ error: "Lien invalide" }, 404);
+  if (livre) {
+    const { data: l } = await db.from("souvenirs_livres").select("chemin").eq("devis_id", devisId).maybeSingle();
+    if (!l) return rep({ error: "Livre pas encore prêt" }, 404);
+    const { data: u } = await db.storage.from("livres-souvenirs").createSignedUrl(l.chemin, 600, { download: "livre-souvenir.zip" });
+    return rep({ url: u?.signedUrl ?? null });
+  }
   const { data: photos } = await db.from("souvenirs_photos").select("id, chemin").eq("devis_id", devisId);
   const chemins = (photos ?? []).map((p: any) => p.chemin);
   if (!chemins.length) return rep({ urls: {} });

@@ -14,6 +14,17 @@ export default function SouvenirsMaries({ token, date }: { token: string; date: 
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [dl, setDl] = useState<Record<string, string>>({});
   const [urlsKo, setUrlsKo] = useState(false);
+  const [livre, setLivre] = useState<{ disponible: boolean; nb_photos?: number; taille_mo?: number | null } | null>(null);
+  const [livreEnCours, setLivreEnCours] = useState(false);
+  const [livreKo, setLivreKo] = useState(false);
+  useEffect(() => { (async () => { const { data } = await (supabase as any).rpc("souvenir_livre", { p_token: token }); setLivre(data ?? null); })(); }, [token]);
+  const telechargerLivre = async () => {
+    setLivreEnCours(true); setLivreKo(false);
+    const r = await supabase.functions.invoke("souvenirs", { body: { token, livre: true } });
+    const url = (r.data as any)?.url;
+    if (url) window.location.href = url; else setLivreKo(true);
+    setLivreEnCours(false);
+  };
   const [erreur, setErreur] = useState(false);
   const [voirMasquees, setVoirMasquees] = useState(false);
 
@@ -64,6 +75,15 @@ export default function SouvenirsMaries({ token, date }: { token: string; date: 
         <p className="text-xs text-[#6B6155] mt-3">Seules les photos que vous ne masquez pas figureront dans votre livre souvenir. Les invités ont accepté ce partage en les envoyant.</p>
       </section>
 
+      {livre?.disponible && (
+        <section className={`${carte} p-5 border-[#C8B560]`} data-testid="livre-pret">
+          <h2 className="font-titre text-xl">Votre livre souvenir est prêt</h2>
+          <p className="text-sm text-[#6B6155] mt-1">{livre.nb_photos} photo{(livre.nb_photos ?? 0) > 1 ? "s" : ""} et les mots de vos invités, dans un livre qui s'ouvre sans internet. Gardez-le précieusement : il n'est conservé en ligne qu'un an. Si vous retirez une photo après l'avoir téléchargé, prévenez-nous pour que nous le refassions.</p>
+          <button type="button" className={`${bouton} mt-3`} onClick={() => void telechargerLivre()} disabled={livreEnCours} data-testid="telecharger-livre">{livreEnCours ? "Préparation du lien…" : `Télécharger le livre${livre.taille_mo ? ` (${livre.taille_mo} Mo)` : ""}`}</button>
+          {livreKo && <p className="text-xs text-[#B5483C] mt-2" role="alert">Le téléchargement n'a pas démarré. Réessayez dans un instant.</p>}
+          <p className="text-xs text-[#6B6155] mt-3">Pour l'ouvrir : décompressez le fichier, puis double-cliquez sur « livre-souvenir.html ».</p>
+        </section>
+      )}
       {liste === null ? <div className="py-8 grid place-items-center"><Loader2 className="h-5 w-5 animate-spin text-[#8C6D22]" /></div>
         : erreur ? <p className="text-sm text-[#B5483C]">Impossible de charger les souvenirs. <button className="underline" onClick={() => void charger()}>Réessayer</button></p>
         : !avecContenu.length ? <p className="text-sm text-[#6B6155] px-1" data-testid="souvenirs-vide">Aucun souvenir pour l'instant.</p>

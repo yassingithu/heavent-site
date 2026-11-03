@@ -738,7 +738,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 clientNom={form.client_societe || form.client_nom}
               />
 
-              {form.type === "mariage" && <EspaceMariesAdmin devisId={form.id} token={form.lien_token} statut={form.statut} />}
+              {form.type === "mariage" && <EspaceMariesAdmin devisId={form.id} token={form.lien_token} statut={form.statut} noms={form.client_nom} date={form.date_evenement} lieu={form.lieu} />}
 
               <Card>
                 <CardHeader className="space-y-3">

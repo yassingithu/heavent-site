@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Copy, ExternalLink, Heart } from "lucide-react";
 import { lienClientDevis } from "./devisUtils";
+import LivreSouvenirsAdmin from "./LivreSouvenirsAdmin";
 
 interface Moment { id: string; heure: string; titre: string; details: string }
 interface TableM { id: string; nom: string; places: number }
@@ -27,7 +28,7 @@ function LigneLien({ libelle, aide, url }: { libelle: string; aide: string; url:
 const cleHeure = (h: string) => { const [a, b] = (h || "99:99").split(":").map(Number); return (a < 12 ? a + 24 : a) * 60 + (b || 0); };
 
 /** Vue agence de l'espace mariés : programme du jour J, réponses des invités et plan de table (lecture seule). */
-export default function EspaceMariesAdmin({ devisId, token, statut }: { devisId?: string; token?: string | null; statut?: string }) {
+export default function EspaceMariesAdmin({ devisId, token, statut, noms, date, lieu }: { devisId?: string; token?: string | null; statut?: string; noms?: string; date?: string; lieu?: string }) {
   const [espace, setEspace] = useState<{ noms: string | null; programme: Moment[]; tables: TableM[]; checklist: { fait: boolean }[]; updated_at: string } | null>(null);
   const [invites, setInvites] = useState<InviteM[]>([]);
   const [charge, setCharge] = useState(false);
@@ -78,6 +79,7 @@ export default function EspaceMariesAdmin({ devisId, token, statut }: { devisId?
               <div className="rounded-lg bg-muted/50 p-2"><div className="text-lg font-semibold">{attente.length}</div><div className="text-xs text-muted-foreground">invitations sans réponse</div></div>
               <div className="rounded-lg bg-muted/50 p-2"><div className="text-lg font-semibold">{tables.length}</div><div className="text-xs text-muted-foreground">tables</div></div>
             </div>
+            {devisId && <LivreSouvenirsAdmin devisId={devisId} noms={espace.noms || noms || ""} date={date || ""} lieu={lieu || ""} />}
             {programme.length > 0 && (
               <div>
                 <div className="font-medium mb-1">Programme du jour J</div>
