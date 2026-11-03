@@ -1,0 +1,12 @@
+-- Accompagnants nommés (prénom + nom) et mode de liste (fermée / ouverte) pour les invitations de mariage.
+-- Appliquée sur le projet via apply_migration « accompagnants_et_liste_ouverte » ; ce fichier en garde la trace.
+-- Contenu :
+--  * invites_mariage.accompagnants jsonb ('[]'), invites_mariage.liste_statut ('valide' | 'a_valider' | 'refuse')
+--  * espace_maries.liste_mode ('ouverte' | 'fermee', nul = automatique : fermée si les mariés ont déjà une liste)
+--  * _liste_mode(devis), _accompagnants_propres(noms[], n) : chaque accompagnant doit avoir prénom et nom, nombre exact
+--  * rsvp_repondre(jeton, reponse, nb, remarque, accompagnants[]) (l'ancienne version à 4 arguments délègue avec une liste vide)
+--  * rsvp_public / rsvp_groupe_infos (mode) / rsvp_groupe_chercher (statut 'refuse')
+--  * rsvp_groupe_ajouter(..., accompagnants[]) : refusé si liste fermée, prénom+nom obligatoires, ajout « a_valider », max 5 personnes
+--  * invite_enregistrer : accompagnants + liste_statut ; espace_maries_enregistrer : liste_mode
+-- Retour arrière : alter table invites_mariage drop column accompagnants, drop column liste_statut; alter table espace_maries drop column liste_mode;
+--                  puis recréer les fonctions depuis 20261103120000_rsvp_groupe.sql et 20261019210000_espace_maries.sql.

@@ -7,7 +7,7 @@ import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvita
 import type { InvitationReglages } from "@/lib/invitation";
 import {
   COTES, ECHEANCES, Echeance, Invite, Moment, PosteBudget, TableMariage, Tache,
-  budgetDefaut, checklistDefaut, dateEcheance, lienReponse, lienRsvp, messageWhatsappInvite, programmeDefaut, uid,
+  budgetDefaut, checklistDefaut, dateEcheance, estActive, nomsPersonnes, lienReponse, lienRsvp, messageWhatsappInvite, programmeDefaut, uid,
 } from "@/lib/mariage";
 import {
   ArrowLeft, Check, CheckCircle2, Copy, Download, Heart, ListChecks, Loader2, MessageCircle,
@@ -16,7 +16,7 @@ import {
 
 interface Espace {
   noms: string | null; checklist: Tache[]; budget: PosteBudget[]; programme: Moment[]; tables: TableMariage[];
-  invitation?: InvitationReglages | null; budget_total: number | null; message_invites: string | null; date_limite_reponse: string | null; updated_at?: string;
+  invitation?: InvitationReglages | null; budget_total: number | null; message_invites: string | null; date_limite_reponse: string | null; updated_at?: string; liste_mode?: "ouverte" | "fermee" | null;
 }
 interface InfosDevis { client_nom: string; date_evenement: string | null; lieu: string | null; nb_personnes: number | null; devise: string | null }
 
@@ -126,9 +126,11 @@ export default function EspaceMaries() {
   const joursRestants = devis.date_evenement ? Math.round((new Date(devis.date_evenement + "T00:00:00Z").getTime() - aujourdhui().getTime()) / 86400000) : null;
   const faits = espace.checklist.filter((t) => t.fait).length;
   const depense = espace.budget.reduce((s, b) => s + (b.reel ?? b.prevu ?? 0), 0);
-  const confirmes = invites.filter((i) => i.reponse === "oui").reduce((s, i) => s + (i.nb_confirmes ?? i.nb_prevus), 0);
-  const attendus = invites.reduce((s, i) => s + personnes(i), 0);
-  const absents = invites.filter((i) => i.reponse === "non").length;
+  const actives = invites.filter(estActive);
+  const confirmes = actives.filter((i) => i.reponse === "oui").reduce((s, i) => s + (i.nb_confirmes ?? i.nb_prevus), 0);
+  const attendus = actives.reduce((s, i) => s + personnes(i), 0);
+  const absents = actives.filter((i) => i.reponse === "non").length;
+  const aValider = invites.filter((i) => i.liste_statut === "a_valider").length;
 
   return (
     <Cadre>
@@ -168,7 +170,7 @@ export default function EspaceMaries() {
           <Resume icone={Wallet} titre="Budget engagé" valeur={`${nf(depense)} ${devis.devise ?? "MAD"}`} progression={espace.budget_total ? depense / espace.budget_total : null}
             sous={espace.budget_total ? `sur ${nf(espace.budget_total)} prévus` : undefined} />
           <Resume icone={Users} titre="Invités confirmés" valeur={`${confirmes} / ${attendus}`} progression={attendus ? confirmes / attendus : 0}
-            sous={invites.length ? `personnes attendues${absents ? ` · ${absents} invitation${absents > 1 ? "s" : ""} déclinée${absents > 1 ? "s" : ""}` : ""}` : undefined} />
+            sous={actives.length ? `personnes attendues${absents ? ` · ${absents} invitation${absents > 1 ? "s" : ""} déclinée${absents > 1 ? "s" : ""}` : ""}` : undefined} />
         </div>
 
         {/* Onglets */}
@@ -176,7 +178,7 @@ export default function EspaceMaries() {
           {ONGLETS.map(({ cle, libelle, icone: Icone }) => (
             <button key={cle} role="tab" aria-selected={onglet === cle} onClick={() => setOnglet(cle)} data-testid={`onglet-${cle}`}
               className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 min-h-10 text-sm font-medium border transition ${onglet === cle ? "bg-[#141414] text-white border-[#141414]" : "bg-white border-[#E3D6BA] text-[#4A4238] hover:bg-[#FAF7EE]"}`}>
-              <Icone className="h-4 w-4" /> {libelle}
+              <Icone className="h-4 w-4" /> {libelle}{cle === "invites" && aValider > 0 && <span className="ml-1 rounded-full bg-[#B5483C] text-white text-xs min-w-5 h-5 px-1.5 inline-flex items-center justify-center" aria-label={`${aValider} à valider`}>{aValider}</span>}
             </button>
           ))}
         </nav>
@@ -192,7 +194,7 @@ export default function EspaceMaries() {
             <p className="text-xs text-[#8C6D22] mt-4">Cette invitation s'affiche à vos invités quand ils ouvrent leur lien (onglet Invités).</p>
           </div>
         )}
-        {onglet === "tables" && <PlanDeTable espace={espace} invites={invites} maj={maj} enregistrer={enregistrerInvite} />}
+        {onglet === "tables" && <PlanDeTable espace={espace} invites={actives} maj={maj} enregistrer={enregistrerInvite} />}
 
         <p className="text-center text-xs text-[#8C6D22] print:hidden">Votre espace est enregistré automatiquement. L'équipe Heavent peut consulter votre programme et votre plan de table pour coordonner la soirée.</p>
       </div>
@@ -361,8 +363,12 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
   const [filtre, setFiltre] = useState<"tous" | Invite["reponse"]>("tous");
   const [copie, setCopie] = useState<string | null>(null);
   const [ajout, setAjout] = useState(false);
-  const liste = invites.filter((i) => filtre === "tous" || i.reponse === filtre);
-  const compte = (r: Invite["reponse"]) => invites.filter((i) => i.reponse === r).length;
+  const actives = invites.filter(estActive);
+  const enAttenteValidation = invites.filter((i) => i.liste_statut === "a_valider");
+  const refuses = invites.filter((i) => i.liste_statut === "refuse");
+  const liste = actives.filter((i) => filtre === "tous" || i.reponse === filtre);
+  const mode: "ouverte" | "fermee" = espace.liste_mode ?? (actives.length ? "fermee" : "ouverte");
+  const compte = (r: Invite["reponse"]) => actives.filter((i) => i.reponse === r).length;
 
   const ajouter = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -377,9 +383,14 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
   };
   const exporter = () => {
     const tables = new Map(espace.tables.map((t) => [t.id, t.nom]));
-    const lignes = [["Nom", "Côté", "Prévus", "Réponse", "Confirmés", "Table", "Remarque"], ...invites.map((i) => [
-      i.nom, COTES[i.cote], String(i.nb_prevus), { attente: "En attente", oui: "Présent", non: "Absent" }[i.reponse], i.nb_confirmes == null ? "" : String(i.nb_confirmes), tables.get(i.table_id ?? "") ?? "", i.remarque ?? "",
-    ])];
+    // une ligne par personne (invité puis accompagnants) : utile pour imprimer le plan de table
+    const lignes = [["Nom et prénom", "Invité principal", "Côté", "Réponse", "Table", "Remarque"], ...actives.flatMap((i) => {
+      const n = i.reponse === "non" ? 1 : i.reponse === "oui" ? i.nb_confirmes ?? i.nb_prevus : i.nb_prevus;
+      return nomsPersonnes(i, n).map((nomP, k) => [
+        nomP || `(accompagnant de ${i.nom}, nom à renseigner)`, k === 0 ? "Oui" : `Accompagnant de ${i.nom}`, COTES[i.cote],
+        { attente: "En attente", oui: "Présent", non: "Absent" }[i.reponse], tables.get(i.table_id ?? "") ?? "", k === 0 ? i.remarque ?? "" : "",
+      ]);
+    })];
     const csv = "﻿" + lignes.map((l) => l.map((c) => `"${c.replace(/"/g, '""')}"`).join(";")).join("\n");
     enregistrerFichier(new Blob([csv], { type: "text/csv;charset=utf-8" }), "Invites-mariage.csv");
   };
@@ -398,6 +409,42 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
           <a className={boutonClair} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(`💌 ${noms} vous invitent à leur mariage.\nOuvrez l'enveloppe et confirmez votre présence ici :\n${lienGeneral}`)}`}><MessageCircle className="h-4 w-4" /> Envoyer par WhatsApp</a>
         </div>
       </section>
+      <section className={`${carte} p-5 space-y-3`} data-testid="mode-liste">
+        <h2 className="font-serif text-xl">Qui peut répondre avec le lien ?</h2>
+        <div className="grid sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Mode de la liste d'invités">
+          {([
+            ["fermee", "Seulement ma liste", "Chaque invité doit retrouver son nom dans votre liste. Un inconnu ne peut pas répondre."],
+            ["ouverte", "Ouverte à tous", "N'importe qui peut écrire son nom et répondre. Vous acceptez ou refusez chaque demande."],
+          ] as const).map(([k, titre, texte]) => (
+            <button key={k} type="button" role="radio" aria-checked={mode === k} onClick={() => maj({ liste_mode: k })} data-testid={`mode-${k}`}
+              className={`text-left rounded-2xl border p-4 transition ${mode === k ? "border-[#141414] bg-[#FAF7EE] ring-1 ring-[#141414]" : "border-[#E3D6BA] bg-white hover:bg-[#FAF7EE]"}`}>
+              <span className="font-medium block">{titre}</span>
+              <span className="text-xs text-[#6B6155] block mt-1">{texte}</span>
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-[#6B6155]">Dans les deux cas, chaque invité qui vient accompagné doit écrire le prénom et le nom de ses accompagnants : vous avez ainsi la liste complète pour les tables.</p>
+      </section>
+
+      {enAttenteValidation.length > 0 && (
+        <section className={`${carte} p-5 space-y-3 border-[#E8B7AF]`} data-testid="a-valider">
+          <h2 className="font-serif text-xl">À valider ({enAttenteValidation.length})</h2>
+          <p className="text-xs text-[#6B6155]">Ces personnes ne sont pas dans votre liste et ont répondu avec le lien. Elles ne comptent pas tant que vous ne les avez pas acceptées.</p>
+          <ul className="divide-y divide-[#F1ECDD]">
+            {enAttenteValidation.map((i) => (
+              <li key={i.id} className="py-3 flex flex-wrap items-center gap-3">
+                <div className="flex-1 min-w-[180px]">
+                  <div className="font-medium">{i.nom} <span className="text-xs font-normal text-[#8C6D22]">· {i.reponse === "non" ? "ne viendra pas" : `${i.nb_confirmes ?? i.nb_prevus} pers.`}</span></div>
+                  {!!i.accompagnants?.length && <div className="text-xs text-[#6B6155]">Avec : {i.accompagnants.join(", ")}</div>}
+                </div>
+                <button className={`${boutonOr} min-h-9`} onClick={() => enregistrer({ ...i, liste_statut: "valide" })} data-testid="accepter-invite"><Check className="h-4 w-4" /> Accepter</button>
+                <button className={`${boutonClair} min-h-9`} onClick={() => enregistrer({ ...i, liste_statut: "refuse" })} data-testid="refuser-invite">Refuser</button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className={`${carte} p-5 space-y-4`}>
         <h2 className="font-serif text-xl">Ajouter des invités</h2>
         <form onSubmit={ajouter} className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-2">
@@ -421,13 +468,13 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
       <section className={`${carte} p-5 space-y-3`}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex gap-2 flex-wrap text-sm">
-            {([["tous", `Tous (${invites.length})`], ["oui", `Présents (${compte("oui")})`], ["attente", `En attente (${compte("attente")})`], ["non", `Absents (${compte("non")})`]] as const).map(([k, l]) => (
+            {([["tous", `Tous (${actives.length})`], ["oui", `Présents (${compte("oui")})`], ["attente", `En attente (${compte("attente")})`], ["non", `Absents (${compte("non")})`]] as const).map(([k, l]) => (
               <button key={k} onClick={() => setFiltre(k)} className={`rounded-full px-3 min-h-9 border ${filtre === k ? "bg-[#141414] text-white border-[#141414]" : "border-[#E3D6BA] bg-white"}`}>{l}</button>
             ))}
           </div>
-          {invites.length > 0 && <button className={boutonClair} onClick={exporter}><Download className="h-4 w-4" /> Exporter</button>}
+          {actives.length > 0 && <button className={boutonClair} onClick={exporter}><Download className="h-4 w-4" /> Exporter</button>}
         </div>
-        {!invites.length ? (
+        {!actives.length ? (
           <p className="text-sm text-[#6B6155] py-6 text-center">Ajoutez vos invités : chacun reçoit un lien personnel pour confirmer sa présence, à envoyer par WhatsApp.</p>
         ) : (
           <ul className="divide-y divide-[#F1ECDD]" data-testid="liste-invites">
@@ -436,6 +483,19 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
                 <div className="flex-1 min-w-[180px]">
                   <div className="font-medium">{i.nom} <span className="text-xs text-[#8C6D22] font-normal">· {COTES[i.cote]} · {i.nb_prevus} pers.</span></div>
                   {i.remarque && <div className="text-xs text-[#6B6155]">« {i.remarque} »</div>}
+                  {i.nb_prevus > 1 && (
+                    <details className="text-xs mt-1" data-testid="accompagnants-invite">
+                      <summary className={`cursor-pointer ${(i.accompagnants ?? []).filter(Boolean).length < i.nb_prevus - 1 ? "text-[#8A2E26]" : "text-[#8C6D22]"}`}>
+                        Noms des accompagnants ({(i.accompagnants ?? []).filter(Boolean).length}/{i.nb_prevus - 1})
+                      </summary>
+                      <div className="mt-2 grid gap-1.5 max-w-sm">
+                        {Array.from({ length: i.nb_prevus - 1 }, (_, k) => (
+                          <input key={`${i.id}-${k}-${(i.accompagnants ?? [])[k] ?? ""}`} defaultValue={(i.accompagnants ?? [])[k] ?? ""} maxLength={80} placeholder={`Prénom et nom de l'accompagnant ${k + 1}`} className={champ}
+                            onBlur={(e) => { const v = e.target.value.trim(); if (v === ((i.accompagnants ?? [])[k] ?? "")) return; const a = Array.from({ length: i.nb_prevus - 1 }, (_, j) => (j === k ? v : (i.accompagnants ?? [])[j] ?? "")); enregistrer({ ...i, accompagnants: a }); }} />
+                        ))}
+                      </div>
+                    </details>
+                  )}
                 </div>
                 <select value={i.nb_prevus} onChange={(e) => { const n = Number(e.target.value); enregistrer({ ...i, nb_prevus: n, nb_confirmes: i.nb_confirmes != null ? Math.min(i.nb_confirmes, n) : i.nb_confirmes }); }}
                   className="rounded-full border border-[#E3D6BA] bg-white px-3 min-h-9 text-xs" aria-label={`Places accordées à ${i.nom}`} title="Places accordées, invité compris" data-testid="places-invite">
@@ -458,6 +518,14 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
               </li>
             ))}
           </ul>
+        )}
+        {refuses.length > 0 && (
+          <details className="text-sm" data-testid="refuses">
+            <summary className="cursor-pointer text-[#6B6155]">Demandes refusées ({refuses.length})</summary>
+            <ul className="mt-2 space-y-1">
+              {refuses.map((i) => <li key={i.id} className="flex items-center justify-between gap-2"><span>{i.nom}</span><button className="text-xs text-[#8C6D22] underline" onClick={() => enregistrer({ ...i, liste_statut: "a_valider" })}>Remettre à valider</button></li>)}
+            </ul>
+          </details>
         )}
       </section>
     </div>
@@ -525,7 +593,10 @@ function PlanDeTable({ espace, invites, maj, enregistrer }: {
               <ul className="mt-3 space-y-1 text-sm">
                 {assis.map((i) => (
                   <li key={i.id} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 bg-[#FAF7EE]">
-                    <span>{i.nom}{personnes(i) > 1 ? <span className="text-[#8C6D22]"> ×{personnes(i)}</span> : null}{i.reponse === "attente" ? <span className="text-xs text-[#9A8F80]"> (en attente)</span> : null}</span>
+                    <span>
+                      {nomsPersonnes(i, personnes(i)).map((n, k) => <span key={k} className="block">{n || <span className="text-xs text-[#8A2E26]">accompagnant de {i.nom} : nom à renseigner</span>}</span>)}
+                      {i.reponse === "attente" ? <span className="text-xs text-[#9A8F80]"> (en attente)</span> : null}
+                    </span>
                     <button onClick={() => enregistrer({ ...i, table_id: null })} className="text-xs text-[#8A2E26] print:hidden" aria-label={`Retirer ${i.nom}`}>Retirer</button>
                   </li>
                 ))}

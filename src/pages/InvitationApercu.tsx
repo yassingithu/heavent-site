@@ -27,7 +27,7 @@ export default function InvitationApercu() {
   const [prenom, setPrenom] = useState("");
   const [famille, setFamille] = useState("");
   const [plus, setPlus] = useState(0);
-  const [accomp, setAccomp] = useState("");
+  const [accomps, setAccomps] = useState<string[]>([]);
 
   useEffect(() => {
     if (!/^[0-9a-f-]{36}$/i.test(jeton)) { setD(null); return; }
@@ -53,7 +53,7 @@ export default function InvitationApercu() {
             <div style={{ textAlign: "center" }}>
               <CheckCircle2 className="h-8 w-8 mx-auto" style={{ color: "var(--inv-accent)" }} />
               <p style={{ fontWeight: 500, margin: "10px 0 4px" }}>{DEMO[langue].merci}</p>
-              <button type="button" className="inv-lien" aria-label="Recommencer" onClick={() => { setRep(null); setChoix(null); setPlus(0); setAccomp(""); }}>↺</button>
+              <button type="button" className="inv-lien" aria-label="Recommencer" onClick={() => { setRep(null); setChoix(null); setPlus(0); setAccomps([]); }}>↺</button>
             </div>
           ) : (
             <>
@@ -70,7 +70,7 @@ export default function InvitationApercu() {
                       <option value={2}>{DEMO[langue].plus(2)}</option>
                     </select>
                   </label>
-                  {plus > 0 && <input className="inv-champ" style={{ marginBottom: 8 }} value={accomp} onChange={(e) => setAccomp(e.target.value)} placeholder={DEMO[langue].accomp} maxLength={120} data-testid="apercu-accompagnant" />}
+                  {Array.from({ length: plus }, (_, k) => <input key={k} className="inv-champ" style={{ marginBottom: 8 }} value={accomps[k] ?? ""} onChange={(e) => setAccomps((a) => { const c = [...a]; c[k] = e.target.value; return c; })} placeholder={plus > 1 ? `${DEMO[langue].accomp} ${k + 1}` : DEMO[langue].accomp} maxLength={80} data-testid={k === 0 ? "apercu-accompagnant" : `apercu-accompagnant-${k + 1}`} />)}
                 </>
               )}
               {choix && <button type="button" className="inv-btn" onClick={() => setRep(choix)} data-testid="apercu-envoyer">{DEMO[langue].envoyer}</button>}

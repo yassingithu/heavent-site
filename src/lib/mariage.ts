@@ -7,6 +7,7 @@ export interface TableMariage { id: string; nom: string; places: number }
 export interface Invite {
   id: string; jeton: string; nom: string; cote: "mariee" | "marie" | "commun"; nb_prevus: number;
   reponse: "attente" | "oui" | "non"; nb_confirmes: number | null; remarque: string | null; table_id: string | null; repondu_le: string | null;
+  accompagnants?: string[]; liste_statut?: "valide" | "a_valider" | "refuse";
 }
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
@@ -77,3 +78,13 @@ export const lienRsvp = (jeton: string) => `${typeof window !== "undefined" ? wi
 
 export const messageWhatsappInvite = (inv: Invite, noms: string, date: string | null) =>
   `Bonjour ${inv.nom},\n\n${noms} ont la joie de vous convier à leur mariage${date ? ` le ${new Date(date + "T00:00:00Z").toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" })}` : ""}.\n\nMerci de nous confirmer votre présence ici : ${lienRsvp(inv.jeton)}`;
+
+/** Une invitation compte dans les totaux et le plan de table seulement si les mariés l'ont validée */
+export const estActive = (i: Invite) => (i.liste_statut ?? "valide") === "valide";
+/** Noms de toutes les personnes d'une invitation (l'invité puis ses accompagnants), avec « à renseigner » pour les places sans nom */
+export const nomsPersonnes = (i: Invite, n: number) => {
+  const acc = (i.accompagnants ?? []).filter(Boolean);
+  const liste = [i.nom, ...acc];
+  while (liste.length < n) liste.push("");
+  return liste.slice(0, Math.max(n, 1));
+};
