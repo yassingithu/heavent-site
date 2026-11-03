@@ -435,3 +435,88 @@
 .inv .inv-etiq > span { display: block; margin-bottom: 4px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; opacity: .8; text-align: center; }
 .inv[dir="rtl"] .inv-etiq > span { letter-spacing: 0; text-transform: none; }
 .inv .inv-manque { margin: 0 0 8px; font-size: 13px; text-align: center; color: var(--inv-texte); font-weight: 500; }
+
+/* ===== Papier faire-part : grain de coton + fibres, plis de l'enveloppe, rabat qui se retourne ===== */
+.inv {
+  --inv-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' seed='3' result='fin'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.03 .22' numOctaves='3' seed='11' result='fibre'/%3E%3CfeComposite in='fin' in2='fibre' operator='arithmetic' k1='0' k2='.75' k3='.25' k4='0' result='n'/%3E%3CfeDiffuseLighting in='n' surfaceScale='1.3' diffuseConstant='1.05' lighting-color='%23ffffff' result='l'%3E%3CfeDistantLight azimuth='225' elevation='60'/%3E%3C/feDiffuseLighting%3E%3CfeComponentTransfer in='l'%3E%3CfeFuncR type='linear' slope='.2' intercept='.8'/%3E%3CfeFuncG type='linear' slope='.2' intercept='.8'/%3E%3CfeFuncB type='linear' slope='.2' intercept='.8'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23p)'/%3E%3C/svg%3E");
+  --inv-grain-fort: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' seed='3' result='fin'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.03 .22' numOctaves='3' seed='11' result='fibre'/%3E%3CfeComposite in='fin' in2='fibre' operator='arithmetic' k1='0' k2='.75' k3='.25' k4='0' result='n'/%3E%3CfeDiffuseLighting in='n' surfaceScale='1.3' diffuseConstant='1.05' lighting-color='%23ffffff' result='l'%3E%3CfeDistantLight azimuth='225' elevation='60'/%3E%3C/feDiffuseLighting%3E%3CfeComponentTransfer in='l'%3E%3CfeFuncR type='linear' slope='.55' intercept='.45'/%3E%3CfeFuncG type='linear' slope='.55' intercept='.45'/%3E%3CfeFuncB type='linear' slope='.55' intercept='.45'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23p)'/%3E%3C/svg%3E");
+}
+.inv-carte, .inv-env-carte > span { background-image: var(--inv-grain); background-size: 420px 420px; background-blend-mode: multiply; }
+.inv-carte { box-shadow: 0 22px 44px rgba(0, 0, 0, .28), inset 0 0 0 1px rgba(255, 255, 255, .4), inset 0 -3px 6px rgba(0, 0, 0, .05); }
+.inv-env-carte > span { box-shadow: 0 1px 6px rgba(0, 0, 0, .18), inset 0 0 0 1px rgba(255, 255, 255, .4); }
+
+/* Texture un peu plus marquée sur l'enveloppe, plis éclairés/ombrés sur chaque arête */
+.inv-env-fond::after, .inv-env-poche::after, .inv-fl i::after { background-image: var(--inv-grain-fort); background-size: 420px 420px; mix-blend-mode: multiply; opacity: 1; }
+.inv-fl { filter: drop-shadow(0 -1px 0 rgba(255, 255, 255, .3)) drop-shadow(0 2px 3px rgba(0, 0, 0, .5)) brightness(1); }
+.inv-fl-h i { background: linear-gradient(180deg, color-mix(in srgb, var(--inv-env) 82%, #fff), var(--inv-env) 50%, color-mix(in srgb, var(--inv-env) 80%, #000)); }
+
+/* Rabat du haut : il se plie, passe de l'extérieur à la doublure, puis se pose ouvert au-dessus de l'enveloppe */
+@keyframes inv-rabat-haut {
+  0% { transform: scaleY(1); z-index: 6; filter: drop-shadow(0 -1px 0 rgba(255, 255, 255, .3)) drop-shadow(0 2px 3px rgba(0, 0, 0, .5)) brightness(1); }
+  45% { transform: scaleY(.12); z-index: 6; filter: drop-shadow(0 -1px 0 rgba(255, 255, 255, .3)) drop-shadow(0 2px 3px rgba(0, 0, 0, .5)) brightness(.72); }
+  50% { transform: scaleY(0); z-index: 1; filter: drop-shadow(0 -1px 0 rgba(255, 255, 255, .3)) drop-shadow(0 2px 3px rgba(0, 0, 0, .5)) brightness(.7); }
+  100% { transform: scaleY(-1); z-index: 1; filter: drop-shadow(0 -1px 0 rgba(255, 255, 255, .3)) drop-shadow(0 -3px 5px rgba(0, 0, 0, .35)) brightness(1.04); }
+}
+@keyframes inv-doublure { 0%, 49% { background-position: 0 0; } 50%, 100% { background: linear-gradient(0deg, color-mix(in srgb, var(--inv-env) 58%, var(--inv-papier)), color-mix(in srgb, var(--inv-env) 82%, #fff)); } }
+.inv[data-phase="ouverture"] .inv-fl-h { animation: inv-rabat-haut .75s cubic-bezier(.45, 0, .25, 1) .3s forwards; }
+.inv[data-phase="ouverture"] .inv-fl-h i { animation: inv-doublure .75s linear .3s forwards; }
+/* Les autres rabats s'assombrissent en se repliant */
+@keyframes inv-ombre-pli { 0% { filter: drop-shadow(0 -1px 0 rgba(255, 255, 255, .3)) drop-shadow(0 2px 3px rgba(0, 0, 0, .5)) brightness(1); } 100% { filter: drop-shadow(0 -1px 0 rgba(255, 255, 255, .3)) drop-shadow(0 2px 3px rgba(0, 0, 0, .5)) brightness(.7); } }
+.inv[data-phase="ouverture"] .inv-fl-g, .inv[data-phase="ouverture"] .inv-fl-d, .inv[data-phase="ouverture"] .inv-fl-b { animation-name: inv-ouvre-h, inv-ombre-pli; }
+.inv[data-phase="ouverture"] .inv-fl-b { animation-name: inv-ouvre-v, inv-ombre-pli; }
+.inv[data-phase="ouverture"] .inv-fl-g { animation-duration: .5s, .5s; animation-delay: .65s, .65s; animation-fill-mode: forwards, forwards; }
+.inv[data-phase="ouverture"] .inv-fl-d { animation-duration: .5s, .5s; animation-delay: .72s, .72s; animation-fill-mode: forwards, forwards; }
+.inv[data-phase="ouverture"] .inv-fl-b { animation-duration: .55s, .55s; animation-delay: 1s, 1s; animation-fill-mode: forwards, forwards; }
+@media (prefers-reduced-motion: reduce) { .inv .inv-fl, .inv .inv-fl i { animation: none !important; } }
+
+/* ===== Ouverture : séquence du motion (résistance du papier, voiles d'ombre en opacity, doublure) ===== */
+@keyframes inv-haut {
+  0%    { transform: scaleY(1); z-index: 6; animation-timing-function: cubic-bezier(.3, 0, .6, 1); }
+  14%   { transform: scaleY(.965); z-index: 6; animation-timing-function: cubic-bezier(.4, 0, .25, 1); }
+  50%   { transform: scaleY(.02) scaleX(1.03); z-index: 6; }
+  50.1% { transform: scaleY(-.02) scaleX(1.03); z-index: 1; animation-timing-function: cubic-bezier(.15, .6, .3, 1); }
+  100%  { transform: scaleY(-.14); z-index: 1; }
+}
+@keyframes inv-doublure2 {
+  0%, 50% { background-position: 0 0; }
+  50.1%, 100% { background: linear-gradient(0deg, color-mix(in srgb, var(--inv-env) 58%, var(--inv-papier)), color-mix(in srgb, var(--inv-env) 82%, #fff)); }
+}
+@keyframes inv-cote { 0% { transform: scaleX(1); animation-timing-function: cubic-bezier(.3, 0, .6, 1); } 12% { transform: scaleX(.975); animation-timing-function: cubic-bezier(.4, 0, .2, 1); } 100% { transform: scaleX(0); } }
+@keyframes inv-bas2 { 0% { transform: scaleY(1); animation-timing-function: cubic-bezier(.3, 0, .6, 1); } 12% { transform: scaleY(.975); animation-timing-function: cubic-bezier(.4, 0, .2, 1); } 100% { transform: scaleY(0); } }
+@keyframes inv-ombre-h { 0%, 14% { opacity: 0; } 50% { opacity: .45; } 50.1% { opacity: .22; } 100% { opacity: 0; } }
+@keyframes inv-ombre-cote { from { opacity: 0; } to { opacity: .5; } }
+@keyframes inv-ombre-portee { 0%, 14% { opacity: 0; } 30% { opacity: 1; } 50% { opacity: .6; } 50.1%, 100% { opacity: 0; } }
+.inv-fl i::before { content: ""; position: absolute; inset: 0; z-index: 1; background: #0a0f2a; opacity: 0; pointer-events: none; }
+.inv-fl-h::before { content: ""; position: absolute; inset: 0; z-index: -1; clip-path: polygon(-4% 0, 104% 0, 50% 62%); background: radial-gradient(ellipse 60% 45% at 50% 0, rgba(0, 0, 0, .5), transparent 75%); opacity: 0; pointer-events: none; }
+.inv[data-phase="ouverture"] .inv-fl-h { animation: inv-haut .95s linear .26s forwards; }
+.inv[data-phase="ouverture"] .inv-fl-h i { animation: inv-doublure2 .95s linear .26s forwards; }
+.inv[data-phase="ouverture"] .inv-fl-h i::before { animation: inv-ombre-h .95s linear .26s forwards; }
+.inv[data-phase="ouverture"] .inv-fl-h::before { animation: inv-ombre-portee .95s linear .26s forwards; }
+.inv[data-phase="ouverture"] .inv-fl-g { animation: inv-cote .55s linear .62s forwards; }
+.inv[data-phase="ouverture"] .inv-fl-d { animation: inv-cote .5s linear .74s forwards; }
+.inv[data-phase="ouverture"] .inv-fl-b { animation: inv-bas2 .6s linear .95s forwards; }
+.inv[data-phase="ouverture"] .inv-fl-g i::before { animation: inv-ombre-cote .55s linear .62s forwards; }
+.inv[data-phase="ouverture"] .inv-fl-d i::before { animation: inv-ombre-cote .5s linear .74s forwards; }
+.inv[data-phase="ouverture"] .inv-fl-b i::before { animation: inv-ombre-cote .6s linear .95s forwards; }
+.inv[data-phase="ouverture"] .inv-env-carte { transform: translateY(-18%) rotate(-.4deg); transition: transform 1.05s cubic-bezier(.2, .7, .2, 1) .95s; }
+.inv-lang, .inv-langues { z-index: 8; }
+@media (prefers-reduced-motion: reduce) {
+  .inv .inv-fl, .inv .inv-fl i, .inv .inv-fl i::before, .inv .inv-fl::before { animation: none !important; }
+  .inv .inv-env-carte { transition: none !important; }
+}
+
+/* Épaisseur du papier, léger relief de couleur sur l'enveloppe, sceau moins parfait */
+.inv-carte { box-shadow: 0 22px 44px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .85), inset 0 -1px 0 rgba(0, 0, 0, .12), inset 1px 0 0 rgba(255, 255, 255, .5), inset -1px 0 0 rgba(0, 0, 0, .06); }
+.inv-env-fond { background-image: radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, .1), transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(0, 0, 0, .18), transparent 60%), linear-gradient(180deg, rgba(0, 0, 0, .22), rgba(0, 0, 0, .08)); }
+.inv-env-cachet { border-radius: 50% 48% 52% 50% / 49% 52% 48% 51%; }
+
+/* Passage de la carte de l'enveloppe à la carte finale sans saut : même haut, même largeur, plus de fondu gris */
+.inv-page .inv-env-carte { top: 114px; bottom: 6%; }
+.inv-page[data-phase="fermee"] .inv-env-carte { transform: translateY(14%); }
+.inv-page[data-phase="ouverture"] .inv-env-carte { transform: none; transition: transform 1.05s cubic-bezier(.2, .7, .2, 1) .95s; }
+.inv-page[data-phase="ouverture"] .inv-env-carte span { animation: none; }
+@keyframes inv-pose { from { transform: translateY(6px); } to { transform: none; } }
+.inv-page .inv-carte { animation: inv-pose .3s ease-out backwards; }
+.inv-page .inv-carte > :is(.inv-petit, .inv-date, .inv-heure, .inv-lieu, .inv-maps, .inv-message, .inv-suite) { animation-delay: .05s; }
+.inv-page[data-phase="fermee"] .inv-env-carte, .inv-page[data-phase="ouverture"] .inv-env-carte { top: 104px; left: 10px; right: 10px; bottom: 6%; }
+@media (min-width: 700px) { .inv-page[data-phase="fermee"] .inv-env-carte, .inv-page[data-phase="ouverture"] .inv-env-carte { top: 114px; left: calc(50% - 220px); right: calc(50% - 220px); } }
