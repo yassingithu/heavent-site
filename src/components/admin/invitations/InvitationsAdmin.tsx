@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { Copy, Loader2, MessageCircle, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Copy, Loader2, MessageCircle, Plus, Trash2, ArrowLeft, BadgeCheck, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvitation";
 import type { InvitationReglages } from "@/lib/invitation";
 
-interface Apercu { id: string; jeton: string; noms: string; date_evenement: string | null; lieu: string | null; message: string | null; invitation: InvitationReglages; prospect: string | null; expire_le: string; created_at: string }
+interface Apercu { id: string; jeton: string; noms: string; date_evenement: string | null; lieu: string | null; message: string | null; invitation: InvitationReglages; prospect: string | null; expire_le: string; created_at: string; mode: "test" | "final"; avec_reponse: boolean }
+interface Confirme { apercu_id: string; nom: string; reponse: "oui" | "non"; nb_confirmes: number; accompagnants: string[]; created_at: string }
 interface Reponse { nom: string; reponse: string; nb_confirmes: number | null; repondu_le: string; couple: string }
 interface Lieu { nom: string; ville: string | null; lien_maps: string | null }
 
@@ -20,6 +21,9 @@ export default function InvitationsAdmin() {
   const [reponses, setReponses] = useState<Reponse[]>([]);
   const [edit, setEdit] = useState<Apercu | null>(null);
   const [envoi, setEnvoi] = useState(false);
+  const [onglet, setOnglet] = useState<"apercus" | "confirmes">("apercus");
+  const [confirmes, setConfirmes] = useState<Confirme[]>([]);
+  const [finaliser, setFinaliser] = useState(false);
   const { toast: t } = useToast();
   const toast = { success: (title: string) => t({ title }), error: (title: string) => t({ title, variant: "destructive" }) };
 
@@ -29,6 +33,8 @@ export default function InvitationsAdmin() {
       db.from("lieux").select("nom,ville,lien_maps").eq("actif", true).order("ville").order("nom"),
     ]);
     setListe(a.data ?? []); setLieux(l.data ?? []);
+    const c = await db.from("reponses_invitation").select("apercu_id,nom,reponse,nb_confirmes,accompagnants,created_at").order("created_at", { ascending: true });
+    setConfirmes(c.data ?? []);
     const r = await db.from("invites_mariage").select("nom,reponse,nb_confirmes,repondu_le,devis_id").not("repondu_le", "is", null).order("repondu_le", { ascending: false }).limit(15);
     const ids = [...new Set((r.data ?? []).map((x: any) => x.devis_id))];
     const dv = ids.length ? await db.from("devis").select("id,client_nom").in("id", ids) : { data: [] };
@@ -66,6 +72,38 @@ export default function InvitationsAdmin() {
     const url = `https://wa.me/?text=${encodeURIComponent(t)}`;
     if (fenetre) fenetre.location.href = url; else window.location.href = url;
   };
+  const passerFinale = async () => {
+    if (!edit) return;
+    if (!edit.noms.trim()) { toast.error("Saisissez d'abord les prénoms des mariés"); return; }
+    setEnvoi(true);
+    const fin = new Date(); fin.setFullYear(fin.getFullYear() + 1);
+    const { error } = await db.from("invitations_apercu").update({ noms: edit.noms.trim(), date_evenement: edit.date_evenement || null, lieu: edit.lieu?.trim() || null, message: edit.message?.trim() || null, invitation: edit.invitation, prospect: edit.prospect?.trim() || null, mode: "final", finale_le: new Date().toISOString(), expire_le: fin.toISOString() }).eq("id", edit.id);
+    setEnvoi(false); setFinaliser(false);
+    if (error) { toast.error("Passage en version finale impossible"); return; }
+    const maj = { ...edit, mode: "final" as const, expire_le: fin.toISOString() };
+    setEdit(maj); setListe((l) => (l ?? []).map((x) => (x.id === edit.id ? maj : x)));
+    toast.success("Version finale prête : le filigrane a disparu");
+  };
+  const basculerReponses = async (a: Apercu, v: boolean) => {
+    const maj = { ...a, avec_reponse: v };
+    setEdit(maj); setListe((l) => (l ?? []).map((x) => (x.id === a.id ? maj : x)));
+    await db.from("invitations_apercu").update({ avec_reponse: v }).eq("id", a.id);
+  };
+  const whatsappClient = async (a: Apercu) => {
+    const fenetre = window.open("about:blank", "_blank");
+    if (edit?.id === a.id) await enregistrer();
+    const t = `💌 Voici votre invitation de mariage numérique, prête à envoyer à vos invités :\n${lien(a.jeton)}\n\n${a.avec_reponse ? "Vos invités peuvent y confirmer leur présence ; nous vous enverrons la liste des personnes qui ont confirmé." : "Vous pouvez l'envoyer à qui vous voulez (WhatsApp, SMS, e-mail)."}\n\nHeavent People Agency`;
+    const url = `https://wa.me/?text=${encodeURIComponent(t)}`;
+    if (fenetre) fenetre.location.href = url; else window.location.href = url;
+  };
+  const texteListe = (a: Apercu) => {
+    const oui = confirmes.filter((c) => c.apercu_id === a.id && c.reponse === "oui");
+    const non = confirmes.filter((c) => c.apercu_id === a.id && c.reponse === "non");
+    const total = oui.reduce((n, c) => n + c.nb_confirmes, 0);
+    return `✅ Invités confirmés — ${a.noms}\n${total} personne${total > 1 ? "s" : ""} (${oui.length} réponse${oui.length > 1 ? "s" : ""})\n\n${oui.map((c) => `• ${c.nom}${c.accompagnants.length ? ` + ${c.accompagnants.join(", ")}` : ""}`).join("\n") || "Aucune confirmation pour l'instant."}${non.length ? `\n\nNe viendront pas : ${non.map((c) => c.nom).join(", ")}` : ""}`;
+  };
+  const copierListe = async (a: Apercu) => { try { await navigator.clipboard.writeText(texteListe(a)); toast.success("Liste copiée"); } catch { toast.error("Copie impossible"); } };
+  const envoyerListe = (a: Apercu) => { window.open(`https://wa.me/?text=${encodeURIComponent(texteListe(a))}`, "_blank"); };
   const choisirLieu = (nom: string) => {
     const l = lieux.find((x) => x.nom === nom);
     if (!edit) return;
@@ -94,17 +132,60 @@ export default function InvitationsAdmin() {
         <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 sm:p-6">
           <PersonnaliserInvitation noms={edit.noms || "Prénom & Prénom"} date={edit.date_evenement} lieu={edit.lieu} message={edit.message} valeur={edit.invitation} onChange={(v) => setEdit({ ...edit, invitation: v })} />
         </div>
+        <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 space-y-3" data-testid="invitation-etat">
+          <p className="text-sm flex items-center gap-2">{edit.mode === "final" ? <><BadgeCheck className="h-4 w-4 text-[#1F5A4C]" /> <b>Version finale</b> : sans filigrane, le lien peut être utilisé par le client.</> : <><b>Version test</b> : un filigrane « Aperçu » recouvre la page, la réponse est une démonstration.</>}</p>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={edit.avec_reponse} onChange={(e) => basculerReponses(edit, e.target.checked)} data-testid="avec-reponse" /> Les invités confirment leur présence sur la carte <span className="text-[#6B6154]">(décochez si le client envoie la carte sans réponse)</span></label>
+        </div>
         <div className="flex flex-wrap gap-2 sticky bottom-3">
           <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={enregistrer} disabled={envoi} data-testid="apercu-enregistrer">{envoi && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer</button>
           <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => copier(edit)}><Copy className="h-4 w-4" /> Copier le lien</button>
-          <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => whatsapp(edit)}><MessageCircle className="h-4 w-4" /> Envoyer par WhatsApp</button>
+          {edit.mode === "test" ? (<>
+            <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => whatsapp(edit)}><MessageCircle className="h-4 w-4" /> Envoyer le test par WhatsApp</button>
+            {finaliser ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#FFF7E6] border border-[#F0D9A8] px-3 min-h-10 text-sm">Retirer le filigrane ? <button type="button" className="font-semibold underline" onClick={passerFinale} disabled={envoi} data-testid="finale-confirmer">Oui, version finale</button> <button type="button" onClick={() => setFinaliser(false)}>Annuler</button></span>
+            ) : <button type="button" className={`${btn} bg-[#B8923A] text-white`} onClick={() => setFinaliser(true)} data-testid="finale-passer"><Send className="h-4 w-4" /> Passer en version finale</button>}
+          </>) : (
+            <button type="button" className={`${btn} bg-[#B8923A] text-white`} onClick={() => whatsappClient(edit)} data-testid="finale-envoyer"><MessageCircle className="h-4 w-4" /> Envoyer la version finale au client</button>
+          )}
         </div>
       </div>
     );
   }
 
+  const finales = liste.filter((a) => a.mode === "final" && a.avec_reponse);
   return (
     <div className="space-y-4" data-testid="invitations-admin">
+      <div className="flex gap-2" role="tablist">
+        {([["apercus", "Aperçus et cartes"], ["confirmes", `Confirmés${finales.length ? ` (${confirmes.filter((c) => c.reponse === "oui").length})` : ""}`]] as const).map(([k, l]) => (
+          <button key={k} type="button" role="tab" aria-selected={onglet === k} onClick={() => setOnglet(k)} data-testid={`onglet-${k}`} className={`${btn} border ${onglet === k ? "bg-[#141414] text-white border-[#141414]" : "bg-white border-[#DCCBA6]"}`}>{l}</button>
+        ))}
+      </div>
+      {onglet === "confirmes" ? (
+        <div className="space-y-3" data-testid="invitations-confirmes">
+          {finales.length === 0 && <p className="text-sm text-[#5E554A] text-center py-10">Aucune carte finale avec réponses pour le moment. Passez un aperçu en « version finale » pour recevoir les confirmations ici.</p>}
+          {finales.map((a) => {
+            const oui = confirmes.filter((c) => c.apercu_id === a.id && c.reponse === "oui");
+            const non = confirmes.filter((c) => c.apercu_id === a.id && c.reponse === "non");
+            const total = oui.reduce((n, c) => n + c.nb_confirmes, 0);
+            return (
+              <section key={a.id} className="rounded-3xl bg-white border border-[#EADFC8] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div><h3 className="font-serif text-lg">{a.noms}</h3><p className="text-xs text-[#6B6154]">{total} personne{total > 1 ? "s" : ""} confirmée{total > 1 ? "s" : ""} · {non.length} absent{non.length > 1 ? "s" : ""}</p></div>
+                  <div className="flex gap-1.5">
+                    <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => copierListe(a)}><Copy className="h-4 w-4" /> Copier la liste</button>
+                    <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={() => envoyerListe(a)}><MessageCircle className="h-4 w-4" /> Envoyer au client</button>
+                  </div>
+                </div>
+                {oui.length === 0 ? <p className="text-sm text-[#5E554A] mt-3">Personne n'a encore confirmé.</p> : (
+                  <ul className="divide-y divide-[#EFE6D2] text-sm mt-2">
+                    {oui.map((c, i) => <li key={i} className="py-2"><b>{c.nom}</b>{c.accompagnants.length ? <span className="text-[#6B6154]"> + {c.accompagnants.join(", ")}</span> : null}</li>)}
+                  </ul>
+                )}
+              </section>
+            );
+          })}
+        </div>
+      ) : (<>
       <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-[#5E554A] max-w-xl">Créez en 1 minute un aperçu avec les prénoms d'un couple et envoyez-lui le lien : l'enveloppe s'ouvre, la salle s'affiche sur Google Maps. Les liens restent valables 30 jours. Pour un couple client, l'invitation se règle dans son espace mariés (onglet « Mon invitation »).</p>
         <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={creer} data-testid="apercu-nouveau"><Plus className="h-4 w-4" /> Nouvel aperçu</button>
@@ -127,7 +208,7 @@ export default function InvitationsAdmin() {
         {liste.map((a) => (
           <li key={a.id} className="rounded-2xl bg-white border border-[#EADFC8] p-3 flex flex-wrap items-center gap-2 justify-between">
             <button type="button" className="text-left min-w-0 flex-1" onClick={() => setEdit(a)}>
-              <span className="block font-medium truncate">{a.noms}</span>
+              <span className="block font-medium truncate">{a.noms} <span className={`ml-1 align-middle text-[10px] uppercase tracking-widest rounded-full px-2 py-0.5 ${a.mode === "final" ? "bg-[#E6F2EC] text-[#1F5A4C]" : "bg-[#F4ECD8] text-[#7A5A12]"}`}>{a.mode === "final" ? "Finale" : "Test"}</span></span>
               <span className="block text-xs text-[#6B6154] truncate">{[a.prospect, a.lieu, `expire le ${new Date(a.expire_le).toLocaleDateString("fr-FR")}`].filter(Boolean).join(" · ")}</span>
             </button>
             <div className="flex gap-1.5">
@@ -138,6 +219,7 @@ export default function InvitationsAdmin() {
           </li>
         ))}
       </ul>
+      </>)}
     </div>
   );
 }

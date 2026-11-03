@@ -535,3 +535,8 @@
   .inv-lieu { margin: 2px 0 0; }
   .inv-defiler { display: none; }
 }
+
+/* Filigrane de la version test : couvre toute la page, ne bloque rien (captures d'écran inutilisables) */
+.inv-filigrane { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; user-select: none; -webkit-user-select: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='190'><text x='150' y='100' text-anchor='middle' transform='rotate(-26 150 95)' font-family='Jost,Arial,sans-serif' font-size='19' letter-spacing='5' fill='rgba(120,120,120,0.55)' stroke='rgba(255,255,255,0.45)' stroke-width='.6'>HEAVENT · APERÇU</text></svg>"); background-size: 300px 190px; }
+.inv-filigrane span { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); padding: 6px 14px; border-radius: 999px; background: rgba(20,20,20,.78); color: #E4D49A; font: 500 11px/1 "Jost", sans-serif; letter-spacing: .22em; text-transform: uppercase; white-space: nowrap; }
