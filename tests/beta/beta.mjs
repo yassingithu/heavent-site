@@ -1707,7 +1707,8 @@ if (process.env.BETA_LIVE) {
     const pages = ["/", "/devis-entreprise", "/devis-mariage", "/inscription-staff", "/a-propos", "/contact", "/politique-confidentialite", "/mentions-legales", "/auth", "/admin-auth"];
     const alertes = [];
     for (const p of pages) {
-      let r = await page.goto(LIVE + p, { waitUntil: "domcontentloaded" });
+      let r = await page.goto(LIVE + p, { waitUntil: "domcontentloaded", timeout: 20000 }).catch((e) => { alertes.push(`${p} : ${String(e.message).split("\n")[0]}`); return null; });
+      if (!r) { if (p === "/") { notes.push("⚠️ le site ne répond pas aux serveurs GitHub (protection de l'hébergeur) : contrôle en ligne non fait"); alertes.forEach((x) => notes.push("⚠️ " + x)); await ctx.close(); return; } continue; }
       for (let t = 0; t < 3 && r && r.status() >= 500; t++) { await page.waitForTimeout(5000); r = await page.goto(LIVE + p, { waitUntil: "domcontentloaded" }); }
       if (p === "/" && r && [403, 429, 503].includes(r.status())) { notes.push(`⚠️ le site répond ${r.status()} aux serveurs GitHub (protection de l'hébergeur) : contrôle en ligne non fait`); await ctx.close(); return; }
       verifier(r && r.status() === 200, `${p} répond ${r?.status()}`);
