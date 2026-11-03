@@ -795,6 +795,7 @@ await scenario("Espace mariés : check-list, budget, programme, invités qui ré
   // L'invité répond depuis son lien
   const g = await contexte(navigateur, base, null, { mobile: true });
   await g.page.goto(`${BASE}/rsvp/${base.invites_mariage[0].jeton}`); await g.page.waitForTimeout(1500);
+  if (await g.page.getByTestId("invitation-ouvrir").count()) { await g.page.getByTestId("invitation-ouvrir").tap(); await g.page.getByTestId("rsvp-noms").waitFor({ timeout: 8000 }); await g.page.waitForTimeout(800); }
   verifier(/Salma & Youssef/.test(await g.page.getByTestId("rsvp-noms").innerText()), "la page invité n'affiche pas les mariés");
   verifier(!(await g.page.locator("header").count()), "la page invité affiche le menu du site");
   await g.page.getByTestId("rsvp-oui").tap();
@@ -1702,7 +1703,9 @@ if (process.env.BETA_LIVE) {
     const page = await ctx.newPage(); const erreurs = []; page.on("pageerror", (e) => erreurs.push(e.message));
     const pages = ["/", "/devis-entreprise", "/devis-mariage", "/inscription-staff", "/a-propos", "/contact", "/politique-confidentialite", "/mentions-legales", "/auth", "/admin-auth"];
     for (const p of pages) {
-      const r = await page.goto(LIVE + p, { waitUntil: "domcontentloaded" });
+      let r = await page.goto(LIVE + p, { waitUntil: "domcontentloaded" });
+      for (let t = 0; t < 3 && r && r.status() >= 500; t++) { await page.waitForTimeout(5000); r = await page.goto(LIVE + p, { waitUntil: "domcontentloaded" }); }
+      if (p === "/" && r && [403, 429, 503].includes(r.status())) { notes.push(`⚠️ le site répond ${r.status()} aux serveurs GitHub (protection de l'hébergeur) : contrôle en ligne non fait`); await ctx.close(); return; }
       verifier(r && r.status() === 200, `${p} répond ${r?.status()}`);
       await page.waitForTimeout(p === "/" ? 4500 : 1500);
       const texte = (await page.locator("main").innerText().catch(() => "")).trim();
