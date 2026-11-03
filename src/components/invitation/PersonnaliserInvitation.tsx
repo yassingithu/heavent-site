@@ -18,7 +18,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
   const modele = modeleDe(valeur.modele);
   const actuelles = couleursDe(valeur);
 
-  const choisirModele = (id: string) => onChange({ ...valeur, modele: id, couleurs: {} });
+  const choisirModele = (id: string) => onChange({ ...valeur, modele: id });
   const appliquerPalette = (c: Couleurs) => onChange({ ...valeur, couleurs: { ...c } });
   const changer = (k: keyof Couleurs, v: string) => onChange({ ...valeur, couleurs: { ...(valeur.couleurs ?? {}), [k]: v } });
   const modifiees = Object.keys(valeur.couleurs ?? {}).length > 0;
@@ -30,7 +30,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
       <div className="space-y-6 min-w-0">
         <section>
           <h3 className="font-serif text-xl mb-1">1. Choisissez un modèle</h3>
-          <p className="text-sm text-[#5E554A] mb-3">Chaque modèle a ses couleurs et son ornement. Vous pourrez ensuite changer toutes les couleurs.</p>
+          <p className="text-sm text-[#5E554A] mb-3">Chaque modèle a son ornement et ses couleurs. Vos couleurs personnalisées sont conservées quand vous changez de modèle.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {MODELES.map((m) => (
               <button key={m.id} type="button" onClick={() => choisirModele(m.id)} aria-pressed={modele.id === m.id} data-testid={`modele-${m.id}`}
@@ -89,7 +89,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </section>
       </div>
 
-      <aside className="min-w-0 lg:sticky lg:top-4 self-start space-y-2" aria-label="Aperçu de l'invitation">
+      <aside className="min-w-0 order-first lg:order-none lg:sticky lg:top-4 self-start space-y-2" aria-label="Aperçu de l'invitation">
         <div className="flex items-center justify-between gap-2">
           <div className="flex gap-1" role="group" aria-label="Langue de l'aperçu">
             {LANGUES.map(([l, t]) => (

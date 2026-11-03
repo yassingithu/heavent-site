@@ -62,13 +62,14 @@ export default function Rsvp() {
   const dateTxt = (d: string) => new Date(d + "T00:00:00Z").toLocaleDateString(t.locale, { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const passe = !!infos?.date_evenement && infos.date_evenement < new Date().toISOString().slice(0, 10);
 
-  const envoyer = async () => {
-    if (!choix || !infos) return;
+  const envoyer = async (direct?: "oui" | "non") => {
+    const rep = direct ?? choix;
+    if (!rep || !infos) return;
     setEnvoi(true); setErreur("");
-    const { error } = await (supabase as any).rpc("rsvp_repondre", { p_jeton: jeton, p_reponse: choix, p_nb: nb, p_remarque: mot });
+    const { error } = await (supabase as any).rpc("rsvp_repondre", { p_jeton: jeton, p_reponse: rep, p_nb: rep === "oui" ? nb : 0, p_remarque: mot });
     setEnvoi(false);
     if (error) { setErreur(t.erreur); return; }
-    setInfos({ ...infos, reponse: choix, nb_confirmes: choix === "oui" ? nb : 0, remarque: mot });
+    setInfos({ ...infos, reponse: rep, nb_confirmes: rep === "oui" ? nb : 0, remarque: mot });
     setEdition(false);
   };
 
@@ -113,7 +114,7 @@ export default function Rsvp() {
             <div>
               <p className="inv-titre-suite">{t.repondre}</p>
               {(["oui", "non"] as const).map((c) => (
-                <button key={c} type="button" onClick={() => setChoix(c)} aria-pressed={choix === c} data-testid={`rsvp-${c}`} className="inv-choix">
+                <button key={c} type="button" onClick={() => { setChoix(c); if (infos.nb_prevus <= 1) void envoyer(c); }} aria-pressed={choix === c} data-testid={`rsvp-${c}`} className="inv-choix">
                   {c === "oui" ? t.oui : t.non}
                 </button>
               ))}
@@ -129,7 +130,7 @@ export default function Rsvp() {
               )}
               {choix && <textarea value={mot} onChange={(e) => setMot(e.target.value)} maxLength={300} rows={3} placeholder={t.mot} className="inv-champ" style={{ marginBottom: 8 }} />}
               {erreur && <p className="inv-erreur">{erreur}</p>}
-              <button type="button" onClick={envoyer} disabled={!choix || envoi} data-testid="rsvp-envoyer" className="inv-btn">
+              <button type="button" onClick={() => envoyer()} disabled={!choix || envoi} data-testid="rsvp-envoyer" className="inv-btn">
                 {envoi && <Loader2 className="h-4 w-4 animate-spin" />} {t.envoyer}
               </button>
               {infos.date_limite && <p style={{ fontSize: 12, textAlign: "center", opacity: .75, margin: "10px 0 0" }}>{t.avant} {dateTxt(infos.date_limite)}</p>}

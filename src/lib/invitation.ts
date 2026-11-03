@@ -9,15 +9,15 @@ export const MODELES: Modele[] = [
   { id: "fleur-oranger", nom: "Fleur d'oranger", description: "Rose poudré, doux et lumineux", ornement: "fleur",
     couleurs: { fond: "#F2E2DA", enveloppe: "#E8C7BC", papier: "#FFFBF6", texte: "#4A3731", accent: "#B07A68" } },
   { id: "or-ivoire", nom: "Or & ivoire", description: "Classique, noir et or", ornement: "khatam",
-    couleurs: { fond: "#141414", enveloppe: "#2A2622", papier: "#F7F1E3", texte: "#2A2420", accent: "#A8933F" } },
+    couleurs: { fond: "#141414", enveloppe: "#2A2622", papier: "#F7F1E3", texte: "#2A2420", accent: "#B5923A" } },
   { id: "emeraude", nom: "Émeraude", description: "Vert profond et zellige", ornement: "zellige",
     couleurs: { fond: "#173F36", enveloppe: "#1F5A4C", papier: "#F6F0E2", texte: "#1B2A25", accent: "#B79A45" } },
   { id: "majorelle", nom: "Bleu Majorelle", description: "Bleu intense, éclat d'or", ornement: "arche",
     couleurs: { fond: "#1E2C6B", enveloppe: "#2B3F8C", papier: "#FAF6EC", texte: "#1A2250", accent: "#C5A24A" } },
   { id: "sable", nom: "Sable & terre", description: "Beige chaud, terre cuite", ornement: "cadre",
     couleurs: { fond: "#E9DCC6", enveloppe: "#D8BFA0", papier: "#FFFBF2", texte: "#4B3A2C", accent: "#9C4A2C" } },
-  { id: "lavande", nom: "Lavande", description: "Mauve tendre, très romantique", ornement: "filet",
-    couleurs: { fond: "#E7E1F0", enveloppe: "#CFC4E3", papier: "#FFFCFF", texte: "#3F3552", accent: "#8A6FB5" } },
+  { id: "grenat", nom: "Grenat & or", description: "Rouge profond, raffiné et chaleureux", ornement: "khatam",
+    couleurs: { fond: "#3A1420", enveloppe: "#5A1F32", papier: "#FBF4EE", texte: "#3A1F27", accent: "#C9A25B" } },
 ];
 
 /** Palettes toutes prêtes : un clic applique les 5 couleurs (le modèle reste le même) */
@@ -27,11 +27,12 @@ export const PALETTES: { id: string; nom: string; couleurs: Couleurs }[] = [
   { id: "vert", nom: "Vert émeraude", couleurs: MODELES[2].couleurs },
   { id: "bleu", nom: "Bleu Majorelle", couleurs: MODELES[3].couleurs },
   { id: "terre", nom: "Terre cuite", couleurs: MODELES[4].couleurs },
-  { id: "mauve", nom: "Lavande", couleurs: MODELES[5].couleurs },
-  { id: "bordeaux", nom: "Bordeaux", couleurs: { fond: "#3A1420", enveloppe: "#5A1F32", papier: "#FBF4EE", texte: "#3A1F27", accent: "#C9A25B" } },
+  { id: "grenat", nom: "Grenat & or", couleurs: MODELES[5].couleurs },
+  { id: "ivoire", nom: "Ivoire & or", couleurs: { fond: "#F4EFE3", enveloppe: "#E4D49A", papier: "#FBF6E9", texte: "#2F2A20", accent: "#8C6D22" } },
   { id: "sauge", nom: "Sauge", couleurs: { fond: "#DDE3D3", enveloppe: "#BCC8AC", papier: "#FCFBF5", texte: "#2F3A2A", accent: "#7B8F5E" } },
   { id: "marine", nom: "Bleu nuit", couleurs: { fond: "#101B30", enveloppe: "#1B2E52", papier: "#F4F1EA", texte: "#16213A", accent: "#C9B27A" } },
   { id: "peche", nom: "Pêche", couleurs: { fond: "#F8E4D6", enveloppe: "#F0C7AE", papier: "#FFFAF5", texte: "#54382B", accent: "#D07C58" } },
+  { id: "lavande", nom: "Lavande", couleurs: { fond: "#E7E1F0", enveloppe: "#CFC4E3", papier: "#FFFCFF", texte: "#3F3552", accent: "#8A6FB5" } },
 ];
 
 export const CHAMPS_COULEUR: { cle: keyof Couleurs; libelle: string; aide: string }[] = [
@@ -94,6 +95,6 @@ export const TEXTES = {
 } as const;
 
 export const initiales = (noms: string) => {
-  const m = noms.split(/\s*(?:&|et|and|و)\s*/i).map((s) => s.trim().charAt(0).toUpperCase()).filter(Boolean);
+  const m = noms.split(/\s+(?:et|and|و)\s+|\s*&\s*/i).map((s) => s.trim().charAt(0).toUpperCase()).filter(Boolean);
   return m.length >= 2 ? `${m[0]} & ${m[1]}` : (m[0] ?? "♥");
 };

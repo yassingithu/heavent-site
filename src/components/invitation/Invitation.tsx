@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { MapPin } from "lucide-react";
 import { couleursDe, initiales, lienMaps, modeleDe, surCouleur, TEXTES, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
+import "@fontsource/pinyon-script/latin-400.css";
+import "@fontsource/pinyon-script/latin-ext-400.css";
+import "@fontsource/amiri/arabic-400.css";
+import "@fontsource/amiri/arabic-700.css";
 import "@/styles/invitation.css";
 
 export interface InvitationProps {
@@ -25,6 +29,17 @@ export interface InvitationProps {
 }
 
 const sansAnimation = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+function Lettres({ texte, base, ar }: { texte: string; base: number; ar: boolean }) {
+  if (ar) return <span className="inv-mot" style={{ "--i": base } as CSSProperties}>{texte}</span>;
+  return (
+    <span className="inv-prenom" aria-hidden="true">
+      {Array.from(texte).map((c, i) => <span key={i} className="inv-lettre" style={{ "--i": base + i } as CSSProperties}>{c === " " ? "\u00A0" : c}</span>)}
+    </span>
+  );
+}
+
+const ETINCELLES = Array.from({ length: 16 }, (_, i) => ({ x: (i * 37) % 100, d: (i * 53) % 700, t: 700 + ((i * 91) % 900), s: 3 + (i % 4) }));
 
 function Ornement({ type }: { type: Ornement }) {
   const p = { fill: "none", stroke: "currentColor", strokeWidth: 1.2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -54,7 +69,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   useEffect(() => { setPhase(ouverte || sansAnimation() ? "ouverte" : "fermee"); }, [ouverte, rejouer]);
   useEffect(() => {
     if (phase !== "ouverture") return;
-    const id = window.setTimeout(() => setPhase("ouverte"), 1900);
+    const id = window.setTimeout(() => setPhase("ouverte"), sansAnimation() ? 0 : 2450);
     return () => window.clearTimeout(id);
   }, [phase]);
 
@@ -64,7 +79,10 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   } as CSSProperties;
   const carte = lienMaps(reglages, lieu);
   const heure = reglages?.heure?.trim();
-  const dateTxt = date ? new Date(date + "T00:00:00Z").toLocaleDateString(t.locale, { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" }) : null;
+  const dp = date ? new Intl.DateTimeFormat(t.locale, { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" }).formatToParts(new Date(date + "T00:00:00Z")) : null;
+  const part = (k: string) => dp?.find((x) => x.type === k)?.value ?? "";
+  const maj = (v: string) => v.charAt(0).toLocaleUpperCase(t.locale) + v.slice(1);
+  const lignes = noms.split(/\s+(?:et|and|و)\s+|\s*&\s*/i).map((x) => x.trim()).filter(Boolean);
 
   return (
     <div className={`inv ${pleinePage ? "inv-page" : "inv-bloc"}`} style={style} dir={langue === "ar" ? "rtl" : "ltr"} data-phase={phase} data-testid="invitation">
@@ -72,28 +90,40 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       {haut}
       {phase !== "ouverte" && (
         <div className="inv-scene">
+          <span className="inv-env-ombre" aria-hidden="true" />
           <button type="button" className="inv-enveloppe" onClick={() => phase === "fermee" && setPhase("ouverture")} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
             <span className="inv-env-fond" />
             <span className="inv-env-carte"><span /></span>
             <span className="inv-env-poche" />
-            <span className="inv-env-rabat" />
-            <span className="inv-env-cachet">{initiales(noms)}</span>
+            <span className="inv-env-rabat"><i /><b /></span>
+            <span className="inv-env-cachet"><em>{initiales(noms)}</em></span>
           </button>
           <p className="inv-aide" aria-hidden={phase !== "fermee"}>{t.ouvrir}</p>
         </div>
       )}
       {phase === "ouverte" && (
         <article className={`inv-carte inv-orn-${ornement}`} data-testid="invitation-carte">
+          <div className="inv-etincelles" aria-hidden="true">{ETINCELLES.map((e, i) => <span key={i} style={{ left: `${e.x}%`, animationDelay: `${e.d}ms`, animationDuration: `${e.t + 900}ms`, width: e.s, height: e.s }} />)}</div>
+          <div className="inv-motif" aria-hidden="true" />
           <div className="inv-ornement"><Ornement type={ornement} /></div>
           {invite && <p className="inv-petit">{t.cher} {invite},</p>}
           <p className="inv-petit">{invite ? t.invites : t.invite}</p>
-          <h1 className="inv-noms" data-testid="rsvp-noms">{noms}</h1>
-          {dateTxt && <p className="inv-date">{dateTxt}{heure ? ` · ${heure}` : ""}</p>}
-          {lieu && <p className="inv-lieu">{lieu}</p>}
+          <h1 className="inv-noms" data-testid="rsvp-noms" aria-label={noms}>
+            {lignes.length === 2 ? (<><Lettres texte={lignes[0]} base={0} ar={langue === "ar"} /><span className="inv-et" aria-hidden="true">&</span><Lettres texte={lignes[1]} base={lignes[0].length + 2} ar={langue === "ar"} /></>) : <Lettres texte={noms} base={0} ar={langue === "ar"} />}</h1>
+          <svg className="inv-trait" viewBox="0 0 220 14" aria-hidden="true"><path pathLength="1" d="M4 8c30-9 58 6 92-1s58-6 78 0c14 4 28 3 42-2" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
+          {dp && (
+            <div className="inv-date" data-testid="invitation-date">
+              <bdi className="inv-date-cote">{maj(part("weekday"))}</bdi>
+              <span className="inv-date-jour">{part("day")}</span>
+              <bdi className="inv-date-cote">{part("month")} {part("year")}</bdi>
+            </div>
+          )}
+          {heure && <p className="inv-heure" dir="auto">{heure}</p>}
+          {lieu && <p className="inv-lieu" dir="auto">{lieu}</p>}
           {carte && (
             <a className="inv-maps" href={carte} target="_blank" rel="noopener noreferrer"><MapPin className="h-4 w-4" aria-hidden="true" /> {t.maps}</a>
           )}
-          {message && <p className="inv-message">{message}</p>}
+          {message && <p className="inv-message" dir="auto">{message}</p>}
           {children && <div className="inv-suite">{children}</div>}
         </article>
       )}

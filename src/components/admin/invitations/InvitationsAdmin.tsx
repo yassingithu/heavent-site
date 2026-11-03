@@ -31,14 +31,15 @@ export default function InvitationsAdmin() {
   useEffect(() => { charger(); }, [charger]);
 
   const creer = async () => {
-    const { data, error } = await db.from("invitations_apercu").insert({ noms: "Sara & Yassine", invitation: { modele: "fleur-oranger" } }).select().single();
+    const { data, error } = await db.from("invitations_apercu").insert({ noms: "", invitation: { modele: "fleur-oranger" } }).select().single();
     if (error) { toast.error("Création impossible"); return; }
     setListe((l) => [data, ...(l ?? [])]); setEdit(data);
   };
   const enregistrer = async () => {
     if (!edit) return;
+    if (!edit.noms.trim()) { toast.error("Saisissez les prénoms des mariés"); return; }
     setEnvoi(true);
-    const { error } = await db.from("invitations_apercu").update({ noms: edit.noms.trim() || "Les mariés", date_evenement: edit.date_evenement || null, lieu: edit.lieu?.trim() || null, message: edit.message?.trim() || null, invitation: edit.invitation, prospect: edit.prospect?.trim() || null }).eq("id", edit.id);
+    const { error } = await db.from("invitations_apercu").update({ noms: edit.noms.trim(), date_evenement: edit.date_evenement || null, lieu: edit.lieu?.trim() || null, message: edit.message?.trim() || null, invitation: edit.invitation, prospect: edit.prospect?.trim() || null }).eq("id", edit.id);
     setEnvoi(false);
     if (error) { toast.error("Enregistrement impossible"); return; }
     toast.success("Aperçu enregistré");
@@ -50,7 +51,9 @@ export default function InvitationsAdmin() {
     setListe((l) => (l ?? []).filter((x) => x.id !== a.id)); if (edit?.id === a.id) setEdit(null);
   };
   const copier = async (a: Apercu) => { try { await navigator.clipboard.writeText(lien(a.jeton)); toast.success("Lien copié"); } catch { toast.error(lien(a.jeton)); } };
-  const whatsapp = (a: Apercu) => {
+  const whatsapp = async (a: Apercu) => {
+    if (!a.noms.trim()) { toast.error("Saisissez d'abord les prénoms des mariés"); return; }
+    if (edit?.id === a.id) await enregistrer();
     const t = `Bonjour ! Voici à quoi pourrait ressembler votre invitation de mariage numérique, avec vos prénoms. Touchez l'enveloppe pour l'ouvrir :\n${lien(a.jeton)}\n\nLes couleurs se changent à votre goût, et vos invités répondent en un clic. — Heavent People Agency`;
     window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, "_blank", "noopener");
   };
@@ -67,7 +70,7 @@ export default function InvitationsAdmin() {
       <div className="space-y-5" data-testid="invitation-edition">
         <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => setEdit(null)}><ArrowLeft className="h-4 w-4" /> Tous les aperçus</button>
         <div className="grid sm:grid-cols-2 gap-3 rounded-3xl bg-white border border-[#EADFC8] p-4">
-          <label className="text-sm">Prénoms des mariés<input className={`${champ} mt-1`} value={edit.noms} onChange={(e) => setEdit({ ...edit, noms: e.target.value })} data-testid="apercu-noms" /></label>
+          <label className="text-sm">Prénoms des mariés<input className={`${champ} mt-1`} value={edit.noms} placeholder="Sara & Yassine" onChange={(e) => setEdit({ ...edit, noms: e.target.value })} data-testid="apercu-noms" /></label>
           <label className="text-sm">Pour qui (note interne)<input className={`${champ} mt-1`} value={edit.prospect ?? ""} placeholder="Ex. couple rencontré au salon" onChange={(e) => setEdit({ ...edit, prospect: e.target.value })} /></label>
           <label className="text-sm">Date<input type="date" className={`${champ} mt-1`} value={edit.date_evenement ?? ""} onChange={(e) => setEdit({ ...edit, date_evenement: e.target.value })} /></label>
           <label className="text-sm">Salle (liste Heavent)
@@ -80,7 +83,7 @@ export default function InvitationsAdmin() {
           <label className="text-sm sm:col-span-2">Petit mot (facultatif)<textarea rows={2} maxLength={300} className={`${champ} mt-1 py-2`} value={edit.message ?? ""} onChange={(e) => setEdit({ ...edit, message: e.target.value })} /></label>
         </div>
         <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 sm:p-6">
-          <PersonnaliserInvitation noms={edit.noms} date={edit.date_evenement} lieu={edit.lieu} message={edit.message} valeur={edit.invitation} onChange={(v) => setEdit({ ...edit, invitation: v })} />
+          <PersonnaliserInvitation noms={edit.noms || "Prénom & Prénom"} date={edit.date_evenement} lieu={edit.lieu} message={edit.message} valeur={edit.invitation} onChange={(v) => setEdit({ ...edit, invitation: v })} />
         </div>
         <div className="flex flex-wrap gap-2 sticky bottom-3">
           <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={enregistrer} disabled={envoi} data-testid="apercu-enregistrer">{envoi && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer</button>
