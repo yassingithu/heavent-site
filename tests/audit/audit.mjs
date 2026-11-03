@@ -3,6 +3,19 @@
 import { execSync } from "node:child_process";
 import { writeFileSync, readFileSync, existsSync } from "node:fs";
 import tls from "node:tls";
+// L'hébergeur coupe ou répond 503 quand les requêtes vont trop vite : on espace et on réessaie (sans masquer une vraie panne)
+const fetchBrut = globalThis.fetch;
+globalThis.fetch = async (url, opts) => {
+  const hote = String(url instanceof Request ? url.url : url);
+  if (!/heaventagency\.com/.test(hote)) return fetchBrut(url, opts);
+  let derniere;
+  for (let t = 0; t < 5; t++) {
+    await new Promise((r) => setTimeout(r, t === 0 ? 350 : 4000 * t));
+    try { const r = await fetchBrut(url, opts); if (r.status !== 503 || t === 4) return r; derniere = r; } catch (e) { if (t === 4) throw e; }
+  }
+  return derniere;
+};
+
 
 const SITE = "https://heaventagency.com";
 const SUPABASE = "https://mapiwnsjsluiwmnulhqk.supabase.co";
