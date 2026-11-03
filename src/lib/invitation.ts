@@ -67,6 +67,7 @@ export function couleursDe(r?: InvitationReglages | null): Couleurs {
     if (typeof v === "string" && HEX.test(v)) c[k] = v;
   });
   if (contraste(c.texte, c.papier) < 4.5) c.texte = surCouleur(c.papier);
+  if (contraste(c.accent, c.papier) < 2) c.accent = c.texte;
   return c;
 }
 

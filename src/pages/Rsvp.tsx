@@ -101,15 +101,16 @@ export default function Rsvp() {
       <Invitation noms={infos.noms} date={infos.date_evenement} lieu={infos.lieu} message={infos.message} reglages={infos.invitation} langue={langue} invite={infos.nom}
         haut={langues} bas={pied}>
         <div data-testid="rsvp">
-          {passe ? (
-            <p style={{ textAlign: "center", fontSize: 14 }}>{t.close}</p>
-          ) : repondu ? (
+          {repondu ? (
             <div style={{ textAlign: "center" }} data-testid="rsvp-merci">
               <CheckCircle2 className="h-8 w-8 mx-auto" style={{ color: "var(--inv-accent)" }} />
               <p style={{ fontWeight: 500, margin: "10px 0 4px" }}>{infos.reponse === "oui" ? t.merciOui : t.merciNon}</p>
               {infos.reponse === "oui" && <p style={{ fontSize: 14, opacity: .8, margin: 0 }}>{t.personnes(infos.nb_confirmes ?? 1)}</p>}
-              <button type="button" onClick={() => setEdition(true)} className="inv-lien">{t.modifier}</button>
+              {!passe && <button type="button" onClick={() => setEdition(true)} className="inv-lien">{t.modifier}</button>}
+              {passe && <p style={{ fontSize: 12, opacity: .75 }}>{t.close}</p>}
             </div>
+          ) : passe ? (
+            <p style={{ textAlign: "center", fontSize: 14 }}>{t.close}</p>
           ) : (
             <div>
               <p className="inv-titre-suite">{t.repondre}</p>

@@ -60,9 +60,11 @@ export default function InvitationsAdmin() {
   const copier = async (a: Apercu) => { try { await navigator.clipboard.writeText(lien(a.jeton)); toast.success("Lien copié"); } catch { toast.error(lien(a.jeton)); } };
   const whatsapp = async (a: Apercu) => {
     if (!a.noms.trim()) { toast.error("Saisissez d'abord les prénoms des mariés"); return; }
+    const fenetre = window.open("about:blank", "_blank");
     if (edit?.id === a.id) await enregistrer();
     const t = `Bonjour ! Voici à quoi pourrait ressembler votre invitation de mariage numérique, avec vos prénoms. Touchez l'enveloppe pour l'ouvrir :\n${lien(a.jeton)}\n\nLes couleurs se changent à votre goût, et vos invités répondent en un clic. — Heavent People Agency`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, "_blank", "noopener");
+    const url = `https://wa.me/?text=${encodeURIComponent(t)}`;
+    if (fenetre) fenetre.location.href = url; else window.location.href = url;
   };
   const choisirLieu = (nom: string) => {
     const l = lieux.find((x) => x.nom === nom);
