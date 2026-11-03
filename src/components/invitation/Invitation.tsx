@@ -87,7 +87,7 @@ function Anneaux() {
       droites.forEach((g) => { g.style.transform = `translateX(${dx}px) rotate(${rot}deg)`; });
       svg.classList.toggle("inv-joint", p > 0.97);
     };
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(maj); };
+    const onScroll = () => maj();
     maj();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
