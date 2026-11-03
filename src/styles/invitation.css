@@ -235,7 +235,7 @@
 /* ===== Expérience à faire défiler ===== */
 .inv-page[data-phase="ouverte"] { align-items: flex-start; padding-top: max(56px, env(safe-area-inset-top)); }
 .inv-histoire { width: min(100%, 440px); margin: 0 auto; display: flex; flex-direction: column; gap: 18px; padding: 18px 0 40px; }
-.inv-sec { position: relative; box-sizing: border-box; text-align: center; padding: 34px 22px; background: var(--inv-papier); color: var(--inv-texte); border-radius: 6px; box-shadow: 0 18px 38px rgba(0,0,0,.22); opacity: 0; transform: translateY(34px) scale(.97); transition: opacity .8s cubic-bezier(.2,.8,.2,1), transform .8s cubic-bezier(.2,.8,.2,1); }
+.inv-sec { position: relative; box-sizing: border-box; text-align: center; padding: 34px 22px; background: var(--inv-papier); color: var(--inv-texte); border-radius: 6px; box-shadow: 0 18px 38px rgba(0,0,0,.22); opacity: 0; transform: translateY(16px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
 .inv-sec.is-in { opacity: 1; transform: none; }
 .inv-sec::before { content: ""; position: absolute; inset: 8px; border: 1px solid color-mix(in srgb, var(--inv-accent) 55%, transparent); border-radius: 3px; pointer-events: none; }
 .inv-sec-titre { margin: 0 0 16px; font-family: 'Gloock', serif; font-weight: 400; font-size: 1.15rem; letter-spacing: .08em; color: var(--inv-accent); }
@@ -254,7 +254,7 @@
 .inv-sec.is-in .inv-an-d { animation: inv-tourne-d 6s ease-in-out 1.8s infinite; transform-origin: 122px 62px; }
 @keyframes inv-tourne-g { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-8deg); } }
 @keyframes inv-tourne-d { 0%,100% { transform: rotate(0); } 50% { transform: rotate(8deg); } }
-.inv-gemme { opacity: 0; transform: translateY(-14px) scale(.4); transform-origin: 100px 26px; transition: opacity .6s ease 1.7s, transform .9s cubic-bezier(.3,1.6,.4,1) 1.7s; }
+.inv-gemme { opacity: 0; transform: translateY(-14px) scale(.4); transform-origin: 100px 26px; transform-box: view-box; transition: opacity .6s ease 1.7s, transform .9s cubic-bezier(.3,1.6,.4,1) 1.7s; }
 .inv-sec.is-in .inv-gemme { opacity: 1; transform: none; }
 .inv-eclat { opacity: 0; }
 .inv-sec.is-in .inv-eclat { animation: inv-eclat 2.4s ease-in-out 2.2s infinite; }
@@ -290,3 +290,25 @@
 .inv-repondre { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin-top: 14px; padding: 0 22px; border: 1px solid var(--inv-accent); border-radius: 2px; color: var(--inv-texte); font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; }
 .inv-compte span, .inv-defiler { font-size: max(.72rem, 12px); }
 .inv-langues button, .inv-lien { min-height: 44px; }
+
+/* ---- retours designer + motion ---- */
+.inv-sec-titre, .inv-defiler, .inv-programme b { color: color-mix(in srgb, var(--inv-accent) 55%, var(--inv-texte)); }
+.inv-sec { box-shadow: none; filter: drop-shadow(0 14px 22px rgba(0,0,0,.2)); }
+.inv-nuit { background: radial-gradient(70% 60% at 50% 40%, #2a2418, #141414 75%); color: #EADFC8; filter: none; border: 1px solid color-mix(in srgb, var(--inv-accent) 45%, transparent); }
+.inv-nuit::before { border-color: color-mix(in srgb, var(--inv-accent) 35%, transparent); }
+.inv-nuit .inv-sec-titre, .inv-nuit .inv-sec-mot { color: #E4D49A; }
+.inv-nuit .inv-anneaux { color: #E4D49A; filter: none; }
+.inv-nuit .inv-compte div { background: rgba(228,212,154,.08); }
+.inv-nuit .inv-compte b { color: #E4D49A; }
+.inv-nuit .inv-lieu { color: #EADFC8; opacity: 1; }
+.inv-nuit .inv-maps { color: #E4D49A; border-color: #E4D49A; }
+.inv-nuit .inv-carte-g { border-color: #E4D49A; border-radius: 160px 160px 4px 4px; background: #1c1a16; min-height: 240px; }
+.inv-nuit .inv-carte-g iframe { filter: grayscale(1) invert(.92) sepia(.45) hue-rotate(-10deg); }
+.inv-an { transition-duration: .8s; transition-delay: 0s; transition-timing-function: cubic-bezier(.2,.7,.2,1); }
+.inv-gemme { transition: opacity .6s ease .6s; transform: none; }
+.inv-sec.is-in .inv-an-g, .inv-sec.is-in .inv-an-d { animation: none; }
+.inv-sec.is-in .inv-eclat { animation: inv-eclat 1.6s ease-in-out .9s 1 both; }
+@keyframes inv-eclat { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
+.inv-programme li { transition-duration: .5s; transition-delay: calc(var(--k, 0) * .08s + .15s); }
+.inv-noms-balance, .inv-petit { text-wrap: balance; }
+.inv-anneaux { display: block; margin: 0 auto; }

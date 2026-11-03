@@ -36,17 +36,17 @@ function useReveal<T extends HTMLElement>() {
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === "undefined") { setVu(true); return; }
-    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { setVu(true); io.disconnect(); } }, { threshold: 0.25 });
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { setVu(true); io.disconnect(); } }, { threshold: 0, rootMargin: "0px 0px -8% 0px" });
     io.observe(el);
     return () => io.disconnect();
   }, []);
   return [ref, vu] as const;
 }
 
-function Section({ className = "", children, titre, id }: { className?: string; children: ReactNode; titre?: string; id?: string }) {
+function Section({ className = "", children, titre, id, nuit }: { nuit?: boolean; className?: string; children: ReactNode; titre?: string; id?: string }) {
   const [ref, vu] = useReveal<HTMLElement>();
   return (
-    <section ref={ref} id={id} className={`inv-sec ${vu ? "is-in" : ""} ${className}`}>
+    <section ref={ref} id={id} className={`inv-sec ${nuit ? "inv-nuit" : ""} ${vu ? "is-in" : ""} ${className}`}>
       {titre && <h2 className="inv-sec-titre">{titre}</h2>}
       {children}
     </section>
@@ -58,12 +58,11 @@ function Anneaux() {
     <svg className="inv-anneaux" viewBox="0 0 200 110" aria-hidden="true">
       <defs>
         <linearGradient id="inv-or" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="currentColor" stopOpacity=".55" /><stop offset=".5" stopColor="currentColor" /><stop offset="1" stopColor="currentColor" stopOpacity=".6" /></linearGradient>
-      </defs>
+      <clipPath id="inv-bas"><rect x="84" y="62" width="32" height="60" /></clipPath></defs>
       <g className="inv-an inv-an-g"><circle cx="78" cy="62" r="32" fill="none" stroke="url(#inv-or)" strokeWidth="6" /><circle cx="78" cy="62" r="26" fill="none" stroke="currentColor" strokeOpacity=".25" strokeWidth="1" /></g>
-      <g className="inv-an inv-an-d"><circle cx="122" cy="62" r="32" fill="none" stroke="url(#inv-or)" strokeWidth="6" /><circle cx="122" cy="62" r="26" fill="none" stroke="currentColor" strokeOpacity=".25" strokeWidth="1" /></g>
-      <g className="inv-gemme"><path d="M100 14l7 10-7 12-7-12z" fill="currentColor" /><path d="M100 14l7 10h-14z" fill="#fff" fillOpacity=".55" /></g>
-      <g className="inv-eclat" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><path d="M100 2v6M88 8l3 4M112 8l-3 4" /></g>
-    </svg>
+      <g className="inv-an inv-an-d"><circle cx="122" cy="62" r="32" fill="none" stroke="url(#inv-or)" strokeWidth="6" /><circle cx="122" cy="62" r="26" fill="none" stroke="currentColor" strokeOpacity=".25" strokeWidth="1" /><g transform="translate(22 -6)"><g className="inv-gemme"><path d="M100 14l7 10-7 12-7-12z" fill="currentColor" /><path d="M100 14l7 10h-14z" fill="#fff" fillOpacity=".55" /></g>
+      <g className="inv-eclat" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><path d="M100 2v6M88 8l3 4M112 8l-3 4" /></g></g></g>
+      <g clipPath="url(#inv-bas)"><g className="inv-an inv-an-g inv-copie"><circle cx="78" cy="62" r="32" fill="none" stroke="url(#inv-or)" strokeWidth="6" /><circle cx="78" cy="62" r="26" fill="none" stroke="currentColor" strokeOpacity=".25" strokeWidth="1" /></g></g></svg>
   );
 }
 
@@ -193,10 +192,10 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
         </article>
         {pleinePage && (
           <div className="inv-histoire">
-            <Section className="inv-sec-anneaux"><Anneaux /><p className="inv-sec-mot">{t.alliances}</p></Section>
-            {cibleMs && <Section titre={t.compte}><CompteARebours cible={cibleMs} t={t} /></Section>}
+            <Section nuit className="inv-sec-anneaux"><Anneaux /><p className="inv-sec-mot">{t.alliances}</p></Section>
+            {cibleMs && <Section nuit titre={t.compte}><CompteARebours cible={cibleMs} t={t} /></Section>}
             {(lieu || carte) && (
-              <Section titre={t.lieuTitre}>
+              <Section nuit titre={t.lieuTitre}>
                 {lieu && <p className="inv-lieu" dir="auto" style={{ marginBottom: 12 }}>{lieu}</p>}
                 {lieu && <div className="inv-carte-g"><a className="inv-voile" href={carte ?? undefined} target="_blank" rel="noopener noreferrer" aria-label={t.itineraire} /><iframe title={lieu} loading="lazy" referrerPolicy="no-referrer-when-downgrade" src={`https://maps.google.com/maps?q=${encodeURIComponent(lieu)}&z=15&output=embed`} /></div>}
                 {carte && <a className="inv-maps" href={carte} target="_blank" rel="noopener noreferrer"><MapPin className="h-4 w-4" aria-hidden="true" /> {t.itineraire}</a>}
