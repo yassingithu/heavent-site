@@ -11,6 +11,7 @@ import type { InvitationReglages, Langue } from "@/lib/invitation";
 interface Apercu { noms: string; date_evenement: string | null; lieu: string | null; message: string | null; invitation: InvitationReglages | null }
 
 /** Aperçu offert à un couple : lien privé, non indexé, valable 30 jours. */
+const PIED = { fr: "Aperçu offert par Heavent People Agency", en: "Preview offered by Heavent People Agency", ar: "معاينة مقدمة من Heavent People Agency" } as const;
 const DEMO = {
   fr: { q: "Serez-vous des nôtres ?", oui: "Avec joie, je serai là", non: "Je ne pourrai pas venir", merci: "Merci, votre réponse est enregistrée.", note: "Démonstration : vos invités répondent ici en un clic, et vous êtes prévenus." },
   en: { q: "Will you join us?", oui: "Joyfully accept", non: "Regretfully decline", merci: "Thank you, your answer is saved.", note: "Demo: your guests answer here in one tap, and you are notified." },
@@ -41,7 +42,7 @@ export default function InvitationApercu() {
     <>
       <Seo noindex />
       <Invitation noms={d.noms} date={d.date_evenement} lieu={d.lieu} message={d.message} reglages={d.invitation} langue={langue} haut={langues}
-        bas={<p className="inv-pied">Aperçu offert par Heavent People Agency</p>}>
+        bas={<p className="inv-pied">{PIED[langue]}</p>}>
         <div data-testid="apercu-rsvp">
           {rep ? (
             <div style={{ textAlign: "center" }}>

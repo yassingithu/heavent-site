@@ -386,9 +386,10 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
           <select value={cote} onChange={(e) => setCote(e.target.value as Invite["cote"])} className={champ} aria-label="Côté">
             {Object.entries(COTES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
-          <label className="flex items-center gap-2 text-sm"><span className="text-[#6B6155]">Personnes</span><input type="number" min={1} max={20} value={nb} onChange={(e) => setNb(e.target.value)} className={`${champ} w-20`} data-testid="invite-nb" /></label>
+          <label className="flex items-center gap-2 text-sm"><span className="text-[#6B6155]" title="1 = l'invité seul, 2 = il peut venir avec une personne (+1), 3 = avec deux (+2)…">Personnes (+1, +2…)</span><input type="number" min={1} max={20} value={nb} onChange={(e) => setNb(e.target.value)} className={`${champ} w-20`} data-testid="invite-nb" /></label>
           <button className={boutonOr} disabled={ajout} data-testid="ajouter-invite">{ajout ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Ajouter</button>
         </form>
+        <p className="text-xs text-[#6B6155]">« Personnes » = nombre de places pour cet invité, lui compris : 1 = seul, 2 = il peut venir avec une personne (+1), 3 = avec deux (+2). Un invité ne peut pas confirmer plus de places que celles que vous lui avez accordées.</p>
         <details className="text-sm">
           <summary className="cursor-pointer text-[#8C6D22]">Message et date limite de réponse</summary>
           <div className="grid sm:grid-cols-[1fr_auto] gap-3 mt-3">
@@ -417,6 +418,10 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
                   <div className="font-medium">{i.nom} <span className="text-xs text-[#8C6D22] font-normal">· {COTES[i.cote]} · {i.nb_prevus} pers.</span></div>
                   {i.remarque && <div className="text-xs text-[#6B6155]">« {i.remarque} »</div>}
                 </div>
+                <select value={i.nb_prevus} onChange={(e) => { const n = Number(e.target.value); enregistrer({ ...i, nb_prevus: n, nb_confirmes: i.nb_confirmes != null ? Math.min(i.nb_confirmes, n) : i.nb_confirmes }); }}
+                  className="rounded-full border border-[#E3D6BA] bg-white px-3 min-h-9 text-xs" aria-label={`Places accordées à ${i.nom}`} title="Places accordées, invité compris" data-testid="places-invite">
+                  {Array.from({ length: 10 }, (_, k) => k + 1).map((n) => <option key={n} value={n}>{n === 1 ? "Seul(e)" : `+${n - 1} (${n} places)`}</option>)}
+                </select>
                 <select value={i.reponse} onChange={(e) => enregistrer({ ...i, reponse: e.target.value as Invite["reponse"], nb_confirmes: e.target.value === "oui" ? i.nb_confirmes ?? i.nb_prevus : e.target.value === "non" ? 0 : null })}
                   className={`rounded-full border px-3 min-h-9 text-xs font-medium ${i.reponse === "oui" ? "bg-[#EEF6EA] border-[#CFE3C5] text-[#2F5A2A]" : i.reponse === "non" ? "bg-[#FBEDEB] border-[#EFC9C4] text-[#8A2E26]" : "bg-[#FFF7E6] border-[#F0D9A8] text-[#5C4512]"}`}
                   aria-label={`Réponse de ${i.nom}`} data-testid="reponse-invite">

@@ -14,7 +14,7 @@ type Langue = "fr" | "en" | "ar";
 const T = {
   fr: {
     invite: "Vous êtes invité(e) au mariage de", cher: "Bonjour", repondre: "Serez-vous des nôtres ?", oui: "Avec joie, je serai là", non: "Je ne pourrai pas venir",
-    combien: "Nombre de personnes", mot: "Un mot pour les mariés, un régime alimentaire… (facultatif)", envoyer: "Envoyer ma réponse",
+    combien: "Nombre de personnes", accompagne: (n: number) => `Les mariés vous autorisent à venir accompagné(e) : jusqu'à ${n} personnes en tout, vous compris.`, accompagnants: "Prénoms de vos accompagnants (facultatif)", avec: "Accompagné(e) de", mot: "Un mot pour les mariés, un régime alimentaire… (facultatif)", envoyer: "Envoyer ma réponse",
     merciOui: "Merci ! Votre présence est confirmée.", merciNon: "Merci de nous avoir prévenus.", modifier: "Modifier ma réponse",
     avant: "Merci de répondre avant le", introuvable: "Cette invitation est introuvable.", erreur: "La réponse n'a pas pu être envoyée. Réessayez.",
         prenom: "Prénom", nomFamille: "Nom", chercher: "Continuer", cherche: "Retrouvons votre invitation", pasTrouve: "Nous ne vous trouvons pas dans la liste. Vérifiez l'orthographe, ou envoyez quand même votre réponse : les mariés la valideront.", plusieurs: "Plusieurs invités portent ce nom. Utilisez le lien personnel que les mariés vous ont envoyé.", envoyerQuandMeme: "Répondre quand même", retour: "Changer de nom", bonjourNom: (n: string) => `Bonjour ${n}`,
@@ -22,7 +22,7 @@ const T = {
   },
   en: {
     invite: "You are invited to the wedding of", cher: "Dear", repondre: "Will you join us?", oui: "Joyfully accept", non: "Regretfully decline",
-    combien: "Number of guests", mot: "A note for the couple, dietary needs… (optional)", envoyer: "Send my reply",
+    combien: "Number of guests", accompagne: (n: number) => `The couple allows you to bring guests: up to ${n} people in total, including you.`, accompagnants: "Names of your guests (optional)", avec: "Accompanied by", mot: "A note for the couple, dietary needs… (optional)", envoyer: "Send my reply",
     merciOui: "Thank you! Your attendance is confirmed.", merciNon: "Thank you for letting us know.", modifier: "Change my reply",
     avant: "Kindly reply before", introuvable: "This invitation could not be found.", erreur: "Your reply could not be sent. Please try again.",
         prenom: "First name", nomFamille: "Last name", chercher: "Continue", cherche: "Let's find your invitation", pasTrouve: "We can't find you in the guest list. Check the spelling, or reply anyway: the couple will validate it.", plusieurs: "Several guests share this name. Please use the personal link the couple sent you.", envoyerQuandMeme: "Reply anyway", retour: "Change name", bonjourNom: (n: string) => `Hello ${n}`,
@@ -30,11 +30,11 @@ const T = {
   },
   ar: {
     invite: "يسعدنا دعوتكم لحضور حفل زفاف", cher: "مرحباً", repondre: "هل ستشرفوننا بحضوركم؟", oui: "بكل سرور، سأحضر", non: "للأسف لن أتمكن من الحضور",
-    combien: "عدد الأشخاص", mot: "كلمة للعروسين، نظام غذائي… (اختياري)", envoyer: "إرسال ردي",
+    combien: "عدد الأشخاص", accompagne: (n: number) => `يسمح لكم العروسان بمرافقة آخرين: حتى ${n} أشخاص بمن فيهم أنتم.`, accompagnants: "أسماء المرافقين (اختياري)", avec: "برفقة", mot: "كلمة للعروسين، نظام غذائي… (اختياري)", envoyer: "إرسال ردي",
     merciOui: "شكراً! تم تأكيد حضوركم.", merciNon: "شكراً لإعلامنا.", modifier: "تعديل ردي",
     avant: "يرجى الرد قبل", introuvable: "هذه الدعوة غير موجودة.", erreur: "تعذر إرسال الرد. حاولوا مرة أخرى.",
         prenom: "الاسم الشخصي", nomFamille: "اسم العائلة", chercher: "متابعة", cherche: "لنجد دعوتكم", pasTrouve: "لم نجدكم في قائمة المدعوين. تحققوا من الكتابة أو أرسلوا ردكم على أي حال وسيؤكده العروسان.", plusieurs: "عدة مدعوين يحملون هذا الاسم. استعملوا الرابط الشخصي الذي أرسله لكم العروسان.", envoyerQuandMeme: "الرد على أي حال", retour: "تغيير الاسم", bonjourNom: (n: string) => `مرحباً ${n}`,
-    close: "انتهت فترة الرد على هذه الدعوة.", personnes: (n: number) => `${n} ${n > 1 ? "أشخاص" : "شخص"}`, locale: "ar-MA",
+    close: "انتهت فترة الرد على هذه الدعوة.", personnes: (n: number) => `${n} ${n > 1 ? "أشخاص" : "شخص"}`, locale: "ar-MA-u-nu-latn-ca-gregory",
   },
 };
 
@@ -57,6 +57,7 @@ export default function Rsvp() {
   const [choix, setChoix] = useState<"oui" | "non" | null>(null);
   const [nb, setNb] = useState(1);
   const [mot, setMot] = useState("");
+  const [accomp, setAccomp] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
   const [edition, setEdition] = useState(false);
@@ -83,11 +84,12 @@ export default function Rsvp() {
   const dateTxt = (d: string) => new Date(d + "T00:00:00Z").toLocaleDateString(t.locale, { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const passe = !!infos?.date_evenement && infos.date_evenement < new Date().toISOString().slice(0, 10);
 
+  const remarqueFinale = (rep: "oui" | "non") => [rep === "oui" && nb > 1 && accomp.trim() ? `${t.avec} : ${accomp.trim()}` : "", mot.trim()].filter(Boolean).join(" · ").slice(0, 300);
   const envoyer = async (direct?: "oui" | "non") => {
     const rep = direct ?? choix;
     if (!rep || !infos) return;
     setEnvoi(true); setErreur("");
-    const { error } = await (supabase as any).rpc("rsvp_repondre", { p_jeton: jeton, p_reponse: rep, p_nb: rep === "oui" ? nb : 0, p_remarque: mot });
+    const { error } = await (supabase as any).rpc("rsvp_repondre", { p_jeton: jeton, p_reponse: rep, p_nb: rep === "oui" ? nb : 0, p_remarque: remarqueFinale(rep) });
     setEnvoi(false);
     if (error) { setErreur(t.erreur); return; }
     setInfos({ ...infos, reponse: rep, nb_confirmes: rep === "oui" ? nb : 0, remarque: mot });
@@ -191,6 +193,7 @@ export default function Rsvp() {
                   {c === "oui" ? t.oui : t.non}
                 </button>
               ))}
+              {infos.nb_prevus > 1 && <p style={{ fontSize: 13, textAlign: "center", margin: "0 0 10px", opacity: .85 }} data-testid="rsvp-accompagne">{t.accompagne(infos.nb_prevus)}</p>}
               {choix === "oui" && infos.nb_prevus > 1 && (
                 <div className="inv-ligne">
                   <span>{t.combien}</span>
@@ -201,6 +204,7 @@ export default function Rsvp() {
                   </span>
                 </div>
               )}
+              {choix === "oui" && nb > 1 && <input className="inv-champ" style={{ marginBottom: 8 }} value={accomp} onChange={(e) => setAccomp(e.target.value)} maxLength={120} placeholder={t.accompagnants} data-testid="rsvp-accompagnants" />}
               {choix && <textarea value={mot} onChange={(e) => setMot(e.target.value)} maxLength={300} rows={3} placeholder={t.mot} className="inv-champ" style={{ marginBottom: 8 }} />}
               {erreur && <p className="inv-erreur">{erreur}</p>}
               <button type="button" onClick={() => envoyer()} disabled={!choix || envoi} data-testid="rsvp-envoyer" className="inv-btn">

@@ -91,7 +91,7 @@ export const TEXTES = {
   },
   ar: {
     ouvrir: "المسوا لفتح الدعوة", invite: "يتشرفان بدعوتكم لحضور حفل زفافهما", invites: "يسعدنا دعوتكم لحضور حفل زفاف",
-    cher: "مرحباً", a: "في", maps: "عرض المكان على خرائط جوجل", locale: "ar-MA", pour: "دعوة إلى",
+    cher: "مرحباً", a: "في", maps: "عرض المكان على خرائط جوجل", locale: "ar-MA-u-nu-latn-ca-gregory", pour: "دعوة إلى",
   },
 } as const;
 
