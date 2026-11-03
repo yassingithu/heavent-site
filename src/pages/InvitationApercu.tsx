@@ -73,7 +73,7 @@ export default function InvitationApercu() {
                   {Array.from({ length: plus }, (_, k) => <input key={k} className="inv-champ" style={{ marginBottom: 8 }} value={accomps[k] ?? ""} onChange={(e) => setAccomps((a) => { const c = [...a]; c[k] = e.target.value; return c; })} placeholder={plus > 1 ? `${DEMO[langue].accomp} ${k + 1}` : DEMO[langue].accomp} maxLength={80} data-testid={k === 0 ? "apercu-accompagnant" : `apercu-accompagnant-${k + 1}`} />)}
                 </>
               )}
-              {choix && <button type="button" className="inv-btn" onClick={() => setRep(choix)} data-testid="apercu-envoyer">{DEMO[langue].envoyer}</button>}
+              {choix && <button type="button" className="inv-btn" disabled={choix === "oui" && plus > 0 && !Array.from({ length: plus }, (_, k) => (accomps[k] ?? "").trim()).every((v) => v.length >= 5 && v.split(/\s+/).length >= 2)} onClick={() => setRep(choix)} data-testid="apercu-envoyer">{DEMO[langue].envoyer}</button>}
             </>
           )}
           <p style={{ fontSize: 11, textAlign: "center", opacity: .65, margin: "10px 0 0" }}>{DEMO[langue].note}</p>

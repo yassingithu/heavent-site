@@ -150,8 +150,8 @@ export default function Rsvp() {
                 {erreur && <p className="inv-erreur">{erreur}</p>}
                 {recherche === "plusieurs" && <p className="inv-erreur">{t.plusieurs}</p>}
                 {recherche === "refuse" && <p className="inv-erreur">{t.indisponible}</p>}
-                {recherche === "absent" && g.mode === "fermee" && <p className="inv-erreur" data-testid="rsvp-liste-fermee">{t.pasTrouveFerme}</p>}
-                {recherche === "absent" && g.mode !== "fermee" && (
+                {recherche === "absent" && g.mode !== "ouverte" && <p className="inv-erreur" data-testid="rsvp-liste-fermee">{t.pasTrouveFerme}</p>}
+                {recherche === "absent" && g.mode === "ouverte" && (
                   <div>
                     <p className="inv-erreur">{t.pasTrouve}</p>
                     <div className="inv-ligne">
@@ -162,7 +162,7 @@ export default function Rsvp() {
                         <button type="button" className="inv-rond" onClick={() => setNbOuvert(Math.min(4, nbOuvert + 1))} aria-label="+"><Plus className="h-4 w-4" /></button>
                       </span>
                     </div>
-                    {nbOuvert > 0 && <div className="inv-groupe"><p className="inv-aide">{t.nomsRequis}</p>{Array.from({ length: nbOuvert }, (_, k) => <label key={k} className="inv-etiq"><span>{t.etiq(k + 1)}</span><input className="inv-champ" value={accomps[k] ?? ""} onChange={(e) => setAccomps((a) => { const c = [...a]; c[k] = e.target.value; return c; })} maxLength={80} placeholder={t.phNom} autoComplete="off" data-testid={`rsvp-accompagnant-${k + 1}`} /></label>)}{premierManque(nbOuvert) >= 0 && <p className="inv-manque" aria-live="polite">{t.manque(premierManque(nbOuvert) + 1)}</p>}</div>}
+                    {nbOuvert > 0 && <div className="inv-groupe"><p className="inv-info">{t.nomsRequis}</p>{Array.from({ length: nbOuvert }, (_, k) => <label key={k} className="inv-etiq"><span>{t.etiq(k + 1)}</span><input className="inv-champ" value={accomps[k] ?? ""} onChange={(e) => setAccomps((a) => { const c = [...a]; c[k] = e.target.value; return c; })} maxLength={80} placeholder={t.phNom} autoComplete="off" data-testid={`rsvp-accompagnant-${k + 1}`} /></label>)}{premierManque(nbOuvert) >= 0 && <p className="inv-manque" aria-live="polite">{t.manque(premierManque(nbOuvert) + 1)}</p>}</div>}
                     <textarea value={mot} onChange={(e) => setMot(e.target.value)} maxLength={200} rows={2} placeholder={t.mot} className="inv-champ" style={{ marginBottom: 8 }} />
                     {(["oui", "non"] as const).map((c) => <button key={c} type="button" className="inv-choix" disabled={envoi || (c === "oui" && !accompsOk(nbOuvert))} onClick={() => void repondreSansListe(c)} data-testid={`rsvp-sans-liste-${c}`}>{t.envoyerQuandMeme} · {t[c]}</button>)}
                   </div>
@@ -226,7 +226,7 @@ export default function Rsvp() {
               )}
               {choix === "oui" && nb > 1 && (
                 <div data-testid="rsvp-accompagnants" className="inv-groupe">
-                  <p className="inv-aide">{t.nomsRequis}</p>
+                  <p className="inv-info">{t.nomsRequis}</p>
                   {Array.from({ length: nb - 1 }, (_, k) => (
                     <label key={k} className="inv-etiq"><span>{t.etiq(k + 1)}</span>
                       <input className="inv-champ" value={accomps[k] ?? ""} onChange={(e) => setAccomps((a) => { const c = [...a]; c[k] = e.target.value; return c; })} maxLength={80} placeholder={t.phNom} autoComplete="off" enterKeyHint="next" data-testid={`rsvp-accompagnant-${k + 1}`} />

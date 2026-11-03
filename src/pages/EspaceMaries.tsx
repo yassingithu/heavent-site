@@ -367,7 +367,7 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
   const enAttenteValidation = invites.filter((i) => i.liste_statut === "a_valider");
   const refuses = invites.filter((i) => i.liste_statut === "refuse");
   const liste = actives.filter((i) => filtre === "tous" || i.reponse === filtre);
-  const manquants = actives.filter((i) => i.reponse !== "non").reduce((s, i) => s + Math.max(0, (i.reponse === "oui" ? i.nb_confirmes ?? i.nb_prevus : i.nb_prevus) - 1 - (i.accompagnants ?? []).filter(Boolean).length), 0);
+  const manquants = actives.filter((i) => i.reponse !== "non").reduce((s, i) => s + Math.max(0, (i.reponse === "oui" ? i.nb_confirmes ?? i.nb_prevus : i.nb_prevus) - 1 - (i.accompagnants ?? []).filter((n) => n.trim().split(/\s+/).length >= 2).length), 0);
   const mode: "ouverte" | "fermee" = espace.liste_mode ?? (actives.length ? "fermee" : "ouverte");
   const compte = (r: Invite["reponse"]) => actives.filter((i) => i.reponse === r).length;
 
