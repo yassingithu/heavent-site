@@ -14,7 +14,7 @@ type Langue = "fr" | "en" | "ar";
 const T = {
   fr: {
     invite: "Vous êtes invité(e) au mariage de", cher: "Bonjour", repondre: "Serez-vous des nôtres ?", oui: "Avec joie, je serai là", non: "Je ne pourrai pas venir",
-    combien: "Nombre de personnes", accompagne: (n: number) => `Les mariés vous autorisent à venir accompagné(e) : jusqu'à ${n} personnes en tout, vous compris.`, accompagnant: (i: number) => `Prénom et nom de l'accompagnant ${i}`, nomsRequis: "Merci d'indiquer le prénom et le nom de chaque accompagnant : ils servent au placement des tables.", pasTrouveFerme: "Nous ne vous trouvons pas dans la liste des invités. Vérifiez l'orthographe de votre prénom et de votre nom, ou contactez les mariés.", indisponible: "Cette invitation n'est plus disponible. Contactez les mariés.", aValider: "Les mariés vont valider votre venue. Vous serez prévenu(e) par eux.", venirAvec: "Je viens accompagné(e) de", avec: "Accompagné(e) de", mot: "Un mot pour les mariés, un régime alimentaire… (facultatif)", envoyer: "Envoyer ma réponse",
+    combien: "Nombre de personnes", accompagne: (n: number) => `Les mariés vous autorisent à venir accompagné(e) : jusqu'à ${n} personnes en tout, vous compris.`, accompagnant: (i: number) => `Prénom et nom de l'accompagnant ${i}`, etiq: (i: number) => `Accompagnant ${i}`, phNom: "Prénom et nom", manque: (i: number) => `Il manque le prénom et le nom de l'accompagnant ${i}.`, nomsRequis: "Prénom et nom de chaque personne, enfants compris : ils servent au placement des tables. Même nom que vous ? Écrivez-le quand même.", pasTrouveFerme: "Nous ne vous trouvons pas dans la liste des invités. Vérifiez l'orthographe de votre prénom et de votre nom, ou contactez les mariés.", indisponible: "Cette invitation n'est plus disponible. Contactez les mariés.", aValider: "Les mariés vont valider votre venue. Vous serez prévenu(e) par eux.", venirAvec: "Je viens accompagné(e) de", avec: "Accompagné(e) de", mot: "Un mot pour les mariés, un régime alimentaire… (facultatif)", envoyer: "Envoyer ma réponse",
     merciOui: "Merci ! Votre présence est confirmée.", merciNon: "Merci de nous avoir prévenus.", modifier: "Modifier ma réponse",
     avant: "Merci de répondre avant le", introuvable: "Cette invitation est introuvable.", erreur: "La réponse n'a pas pu être envoyée. Réessayez.",
         prenom: "Prénom", nomFamille: "Nom", chercher: "Continuer", cherche: "Retrouvons votre invitation", pasTrouve: "Nous ne vous trouvons pas dans la liste. Vérifiez l'orthographe, ou envoyez quand même votre réponse : les mariés la valideront.", plusieurs: "Plusieurs invités portent ce nom. Utilisez le lien personnel que les mariés vous ont envoyé.", envoyerQuandMeme: "Répondre quand même", retour: "Changer de nom", erreurCherche: "Recherche impossible. Réessayez.", bonjourNom: (n: string) => `Bonjour ${n}`,
@@ -22,7 +22,7 @@ const T = {
   },
   en: {
     invite: "You are invited to the wedding of", cher: "Dear", repondre: "Will you join us?", oui: "Joyfully accept", non: "Regretfully decline",
-    combien: "Number of guests", accompagne: (n: number) => `The couple allows you to bring guests: up to ${n} people in total, including you.`, accompagnant: (i: number) => `First and last name of guest ${i}`, nomsRequis: "Please give the first and last name of each guest: they are needed for the table plan.", pasTrouveFerme: "We can't find you in the guest list. Check the spelling of your first and last name, or contact the couple.", indisponible: "This invitation is no longer available. Please contact the couple.", aValider: "The couple will confirm your attendance and let you know.", venirAvec: "I am coming with", avec: "Accompanied by", mot: "A note for the couple, dietary needs… (optional)", envoyer: "Send my reply",
+    combien: "Number of guests", accompagne: (n: number) => `The couple allows you to bring guests: up to ${n} people in total, including you.`, accompagnant: (i: number) => `First and last name of guest ${i}`, etiq: (i: number) => `Guest ${i}`, phNom: "First and last name", manque: (i: number) => `The first and last name of guest ${i} is missing.`, nomsRequis: "First and last name of each person, children included: needed for the table plan. Same surname as you? Please write it anyway.", pasTrouveFerme: "We can't find you in the guest list. Check the spelling of your first and last name, or contact the couple.", indisponible: "This invitation is no longer available. Please contact the couple.", aValider: "The couple will confirm your attendance and let you know.", venirAvec: "I am coming with", avec: "Accompanied by", mot: "A note for the couple, dietary needs… (optional)", envoyer: "Send my reply",
     merciOui: "Thank you! Your attendance is confirmed.", merciNon: "Thank you for letting us know.", modifier: "Change my reply",
     avant: "Kindly reply before", introuvable: "This invitation could not be found.", erreur: "Your reply could not be sent. Please try again.",
         prenom: "First name", nomFamille: "Last name", chercher: "Continue", cherche: "Let's find your invitation", pasTrouve: "We can't find you in the guest list. Check the spelling, or reply anyway: the couple will validate it.", plusieurs: "Several guests share this name. Please use the personal link the couple sent you.", envoyerQuandMeme: "Reply anyway", retour: "Change name", erreurCherche: "Search failed. Please try again.", bonjourNom: (n: string) => `Hello ${n}`,
@@ -30,7 +30,7 @@ const T = {
   },
   ar: {
     invite: "يسعدنا دعوتكم لحضور حفل زفاف", cher: "مرحباً", repondre: "هل ستشرفوننا بحضوركم؟", oui: "بكل سرور، سأحضر", non: "للأسف لن أتمكن من الحضور",
-    combien: "عدد الأشخاص", accompagne: (n: number) => `يسمح لكم العروسان بمرافقة آخرين: حتى ${n} أشخاص بمن فيهم أنتم.`, accompagnant: (i: number) => `الاسم الشخصي والعائلي للمرافق ${i}`, nomsRequis: "يرجى كتابة الاسم الشخصي والعائلي لكل مرافق: نحتاجه لتوزيع الطاولات.", pasTrouveFerme: "لم نجدكم في قائمة المدعوين. تحققوا من كتابة اسمكم الشخصي والعائلي أو تواصلوا مع العروسين.", indisponible: "هذه الدعوة لم تعد متاحة. يرجى التواصل مع العروسين.", aValider: "سيؤكد العروسان حضوركم وسيخبرونكم.", venirAvec: "سأحضر برفقة", avec: "برفقة", mot: "كلمة للعروسين، نظام غذائي… (اختياري)", envoyer: "إرسال ردي",
+    combien: "عدد الأشخاص", accompagne: (n: number) => `يسمح لكم العروسان بمرافقة آخرين: حتى ${n} أشخاص بمن فيهم أنتم.`, accompagnant: (i: number) => `الاسم الشخصي والعائلي للمرافق ${i}`, etiq: (i: number) => `المرافق ${i}`, phNom: "الاسم الشخصي والعائلي", manque: (i: number) => `ينقص الاسم الشخصي والعائلي للمرافق ${i}.`, nomsRequis: "الاسم الشخصي والعائلي لكل شخص بما في ذلك الأطفال: نحتاجه لتوزيع الطاولات. نفس اسم العائلة؟ اكتبوه رغم ذلك.", pasTrouveFerme: "لم نجدكم في قائمة المدعوين. تحققوا من كتابة اسمكم الشخصي والعائلي أو تواصلوا مع العروسين.", indisponible: "هذه الدعوة لم تعد متاحة. يرجى التواصل مع العروسين.", aValider: "سيؤكد العروسان حضوركم وسيخبرونكم.", venirAvec: "سأحضر برفقة", avec: "برفقة", mot: "كلمة للعروسين، نظام غذائي… (اختياري)", envoyer: "إرسال ردي",
     merciOui: "شكراً! تم تأكيد حضوركم.", merciNon: "شكراً لإعلامنا.", modifier: "تعديل ردي",
     avant: "يرجى الرد قبل", introuvable: "هذه الدعوة غير موجودة.", erreur: "تعذر إرسال الرد. حاولوا مرة أخرى.",
         prenom: "الاسم الشخصي", nomFamille: "اسم العائلة", chercher: "متابعة", cherche: "لنجد دعوتكم", pasTrouve: "لم نجدكم في قائمة المدعوين. تحققوا من الكتابة أو أرسلوا ردكم على أي حال وسيؤكده العروسان.", plusieurs: "عدة مدعوين يحملون هذا الاسم. استعملوا الرابط الشخصي الذي أرسله لكم العروسان.", envoyerQuandMeme: "الرد على أي حال", retour: "تغيير الاسم", erreurCherche: "تعذر البحث. حاولوا مرة أخرى.", bonjourNom: (n: string) => `مرحباً ${n}`,
@@ -78,7 +78,7 @@ export default function Rsvp() {
       if (!/^[0-9a-f-]{36}$/i.test(jeton)) { setInfos(null); return; }
       const { data } = await (supabase as any).rpc("rsvp_public", { p_jeton: jeton });
       setInfos(data ?? null);
-      if (data) { setNb(data.nb_confirmes || 1); setMot(data.remarque ?? ""); setAccomps(Array.isArray(data.accompagnants) ? data.accompagnants : []); setChoix(data.reponse === "attente" ? null : data.reponse); }
+      if (data) { setNb(data.nb_confirmes || Math.max(1, 1 + (Array.isArray(data.accompagnants) ? data.accompagnants.filter(Boolean).length : 0))); setMot(data.remarque ?? ""); setAccomps(Array.isArray(data.accompagnants) ? data.accompagnants : []); setChoix(data.reponse === "attente" ? null : data.reponse); }
     })();
   }, [jeton, groupe]);
 
@@ -88,6 +88,7 @@ export default function Rsvp() {
   const nomComplet = (v: string) => v.trim().length >= 5 && v.trim().split(/\s+/).length >= 2;
   const accompsNb = (n: number) => Array.from({ length: Math.max(0, n) }, (_, k) => (accomps[k] ?? "").trim().replace(/\s+/g, " "));
   const accompsOk = (n: number) => accompsNb(n).every(nomComplet);
+  const premierManque = (n: number) => accompsNb(n).findIndex((v) => !nomComplet(v));
   const remarqueFinale = () => mot.trim().slice(0, 300);
   const envoyer = async (direct?: "oui" | "non") => {
     const rep = direct ?? choix;
@@ -157,14 +158,13 @@ export default function Rsvp() {
                       <span>{t.venirAvec}</span>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
                         <button type="button" className="inv-rond" onClick={() => setNbOuvert(Math.max(0, nbOuvert - 1))} aria-label="-"><Minus className="h-4 w-4" /></button>
-                        <strong data-testid="rsvp-nb-ouvert" style={{ minWidth: 20, textAlign: "center" }}>{nbOuvert}</strong>
+                        <strong className="inv-nb" data-testid="rsvp-nb-ouvert">+{nbOuvert}</strong>
                         <button type="button" className="inv-rond" onClick={() => setNbOuvert(Math.min(4, nbOuvert + 1))} aria-label="+"><Plus className="h-4 w-4" /></button>
                       </span>
                     </div>
-                    {Array.from({ length: nbOuvert }, (_, k) => <input key={k} className="inv-champ" style={{ marginBottom: 8 }} value={accomps[k] ?? ""} onChange={(e) => setAccomps((a) => { const c = [...a]; c[k] = e.target.value; return c; })} maxLength={80} placeholder={t.accompagnant(k + 1)} autoComplete="off" data-testid={`rsvp-accompagnant-${k + 1}`} />)}
-                    {nbOuvert > 0 && <p style={{ fontSize: 12, opacity: .8, margin: "0 0 8px" }}>{t.nomsRequis}</p>}
+                    {nbOuvert > 0 && <div className="inv-groupe"><p className="inv-aide">{t.nomsRequis}</p>{Array.from({ length: nbOuvert }, (_, k) => <label key={k} className="inv-etiq"><span>{t.etiq(k + 1)}</span><input className="inv-champ" value={accomps[k] ?? ""} onChange={(e) => setAccomps((a) => { const c = [...a]; c[k] = e.target.value; return c; })} maxLength={80} placeholder={t.phNom} autoComplete="off" data-testid={`rsvp-accompagnant-${k + 1}`} /></label>)}{premierManque(nbOuvert) >= 0 && <p className="inv-manque" aria-live="polite">{t.manque(premierManque(nbOuvert) + 1)}</p>}</div>}
                     <textarea value={mot} onChange={(e) => setMot(e.target.value)} maxLength={200} rows={2} placeholder={t.mot} className="inv-champ" style={{ marginBottom: 8 }} />
-                    {(["oui", "non"] as const).map((c) => <button key={c} type="button" className="inv-choix" disabled={envoi} onClick={() => void repondreSansListe(c)} data-testid={`rsvp-sans-liste-${c}`}>{t.envoyerQuandMeme} · {t[c]}</button>)}
+                    {(["oui", "non"] as const).map((c) => <button key={c} type="button" className="inv-choix" disabled={envoi || (c === "oui" && !accompsOk(nbOuvert))} onClick={() => void repondreSansListe(c)} data-testid={`rsvp-sans-liste-${c}`}>{t.envoyerQuandMeme} · {t[c]}</button>)}
                   </div>
                 )}
                 <button type="submit" className="inv-btn" disabled={cherche || prenom.trim().length < 2 || famille.trim().length < 2} data-testid="rsvp-chercher">{cherche && <Loader2 className="h-4 w-4 animate-spin" />} {t.chercher}</button>
@@ -216,18 +216,23 @@ export default function Rsvp() {
               {infos.nb_prevus > 1 && <p style={{ fontSize: 13, textAlign: "center", margin: "0 0 10px", opacity: .85 }} data-testid="rsvp-accompagne">{t.accompagne(infos.nb_prevus)}</p>}
               {choix === "oui" && infos.nb_prevus > 1 && (
                 <div className="inv-ligne">
-                  <span>{t.combien}</span>
+                  <span>{t.venirAvec}</span>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
                     <button type="button" className="inv-rond" onClick={() => setNb(Math.max(1, nb - 1))} aria-label="-"><Minus className="h-4 w-4" /></button>
-                    <strong data-testid="rsvp-nb" style={{ minWidth: 20, textAlign: "center" }}>{nb}</strong>
+                    <strong className="inv-nb" data-testid="rsvp-nb" aria-label={t.personnes(nb)}>+{nb - 1}<small>{t.personnes(nb)}</small></strong>
                     <button type="button" className="inv-rond" onClick={() => setNb(Math.min(infos.nb_prevus, nb + 1))} aria-label="+"><Plus className="h-4 w-4" /></button>
                   </span>
                 </div>
               )}
               {choix === "oui" && nb > 1 && (
-                <div data-testid="rsvp-accompagnants">
-                  {Array.from({ length: nb - 1 }, (_, k) => <input key={k} className="inv-champ" style={{ marginBottom: 8 }} value={accomps[k] ?? ""} onChange={(e) => setAccomps((a) => { const c = [...a]; c[k] = e.target.value; return c; })} maxLength={80} placeholder={t.accompagnant(k + 1)} autoComplete="off" data-testid={`rsvp-accompagnant-${k + 1}`} />)}
-                  <p style={{ fontSize: 12, opacity: .8, margin: "0 0 8px" }}>{t.nomsRequis}</p>
+                <div data-testid="rsvp-accompagnants" className="inv-groupe">
+                  <p className="inv-aide">{t.nomsRequis}</p>
+                  {Array.from({ length: nb - 1 }, (_, k) => (
+                    <label key={k} className="inv-etiq"><span>{t.etiq(k + 1)}</span>
+                      <input className="inv-champ" value={accomps[k] ?? ""} onChange={(e) => setAccomps((a) => { const c = [...a]; c[k] = e.target.value; return c; })} maxLength={80} placeholder={t.phNom} autoComplete="off" enterKeyHint="next" data-testid={`rsvp-accompagnant-${k + 1}`} />
+                    </label>
+                  ))}
+                  {premierManque(nb - 1) >= 0 && <p className="inv-manque" aria-live="polite" data-testid="rsvp-manque">{t.manque(premierManque(nb - 1) + 1)}</p>}
                 </div>
               )}
               {choix && <textarea value={mot} onChange={(e) => setMot(e.target.value)} maxLength={300} rows={3} placeholder={t.mot} className="inv-champ" style={{ marginBottom: 8 }} />}

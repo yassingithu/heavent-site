@@ -420,3 +420,18 @@
 }
 /* La phrase d'invitation passe sur 2 lignes (sinon elle déborde du haut de l'arche sur grand écran) */
 .inv-page .inv-carte .inv-petit { max-width: 260px; margin-inline: auto; text-wrap: balance; }
+
+/* Champs plus lisibles (contraste), cibles tactiles de 44 px, groupe des accompagnants */
+.inv .inv-champ { border-color: color-mix(in srgb, var(--inv-texte) 45%, transparent); }
+.inv .inv-champ::placeholder { color: color-mix(in srgb, var(--inv-texte) 70%, transparent); }
+.inv .inv-champ:focus { outline: 3px solid var(--inv-texte); outline-offset: 1px; }
+.inv .inv-rond { width: 44px; height: 44px; border-radius: 0; border-color: color-mix(in srgb, var(--inv-texte) 45%, transparent); }
+.inv .inv-rond:disabled { opacity: .35; }
+.inv .inv-nb { display: flex; flex-direction: column; align-items: center; min-width: 64px; font-family: var(--inv-titre), Georgia, serif; font-weight: 400; font-size: 30px; line-height: 1; }
+.inv .inv-nb small { font-family: "Jost", sans-serif; font-size: 11px; letter-spacing: .08em; opacity: .75; margin-top: 4px; }
+.inv .inv-groupe { margin: 4px 0 10px; padding-top: 10px; border-top: 1px solid var(--inv-accent); }
+.inv .inv-aide { margin: 0 0 10px; font-size: 13px; font-style: italic; opacity: .85; text-align: center; }
+.inv .inv-etiq { display: block; margin-bottom: 8px; }
+.inv .inv-etiq > span { display: block; margin-bottom: 4px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; opacity: .8; text-align: center; }
+.inv[dir="rtl"] .inv-etiq > span { letter-spacing: 0; text-transform: none; }
+.inv .inv-manque { margin: 0 0 8px; font-size: 13px; text-align: center; color: var(--inv-texte); font-weight: 500; }

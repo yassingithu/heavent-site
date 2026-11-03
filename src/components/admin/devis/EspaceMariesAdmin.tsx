@@ -5,7 +5,7 @@ import { ExternalLink, Heart } from "lucide-react";
 
 interface Moment { id: string; heure: string; titre: string; details: string }
 interface TableM { id: string; nom: string; places: number }
-interface InviteM { id: string; nom: string; nb_prevus: number; reponse: string; nb_confirmes: number | null; remarque: string | null; table_id: string | null }
+interface InviteM { id: string; nom: string; nb_prevus: number; reponse: string; nb_confirmes: number | null; remarque: string | null; table_id: string | null; liste_statut?: string }
 
 const cleHeure = (h: string) => { const [a, b] = (h || "99:99").split(":").map(Number); return (a < 12 ? a + 24 : a) * 60 + (b || 0); };
 
@@ -20,9 +20,9 @@ export default function EspaceMariesAdmin({ devisId, token, statut }: { devisId?
     (async () => {
       const [e, i] = await Promise.all([
         (supabase as any).from("espace_maries").select("noms, programme, tables, checklist, updated_at").eq("devis_id", devisId).maybeSingle(),
-        (supabase as any).from("invites_mariage").select("id, nom, nb_prevus, reponse, nb_confirmes, remarque, table_id").eq("devis_id", devisId).order("nom"),
+        (supabase as any).from("invites_mariage").select("id, nom, nb_prevus, reponse, nb_confirmes, remarque, table_id, liste_statut").eq("devis_id", devisId).order("nom"),
       ]);
-      setEspace(e.data ?? null); setInvites(i.data ?? []); setCharge(true);
+      setEspace(e.data ?? null); setInvites(((i.data ?? []) as InviteM[]).filter((x) => (x.liste_statut ?? "valide") === "valide")); setCharge(true);
     })();
   }, [devisId]);
 

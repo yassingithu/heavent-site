@@ -367,12 +367,14 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
   const enAttenteValidation = invites.filter((i) => i.liste_statut === "a_valider");
   const refuses = invites.filter((i) => i.liste_statut === "refuse");
   const liste = actives.filter((i) => filtre === "tous" || i.reponse === filtre);
+  const manquants = actives.filter((i) => i.reponse !== "non").reduce((s, i) => s + Math.max(0, (i.reponse === "oui" ? i.nb_confirmes ?? i.nb_prevus : i.nb_prevus) - 1 - (i.accompagnants ?? []).filter(Boolean).length), 0);
   const mode: "ouverte" | "fermee" = espace.liste_mode ?? (actives.length ? "fermee" : "ouverte");
   const compte = (r: Invite["reponse"]) => actives.filter((i) => i.reponse === r).length;
 
   const ajouter = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nom.trim()) return;
+    if (/^\s*(famille|family|les)\b|&|\bet\b/i.test(nom) && !window.confirm("Ce nom ressemble à une famille ou à un couple. Pour les tables, mieux vaut un prénom et un nom (ex. Samir Benali) avec 3 places, puis les prénoms des autres dans « Noms des accompagnants ». Ajouter quand même ?")) return;
     setAjout(true);
     const ok = await enregistrer({ nom: nom.trim(), cote, nb_prevus: Math.min(20, Math.max(1, Number(nb) || 1)) });
     setAjout(false);
@@ -382,6 +384,7 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
     try { await navigator.clipboard.writeText(lienRsvp(i.jeton)); setCopie(i.id); setTimeout(() => setCopie(null), 1500); } catch { window.prompt("Lien à copier :", lienRsvp(i.jeton)); }
   };
   const exporter = () => {
+    if (manquants > 0 && !window.confirm(`${manquants} nom${manquants > 1 ? "s" : ""} d'accompagnant manque${manquants > 1 ? "nt" : ""} encore. Exporter quand même ?`)) return;
     const tables = new Map(espace.tables.map((t) => [t.id, t.nom]));
     // une ligne par personne (invité puis accompagnants) : utile pour imprimer le plan de table
     const lignes = [["Nom et prénom", "Invité principal", "Côté", "Réponse", "Table", "Remarque"], ...actives.flatMap((i) => {
@@ -391,7 +394,7 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
         { attente: "En attente", oui: "Présent", non: "Absent" }[i.reponse], tables.get(i.table_id ?? "") ?? "", k === 0 ? i.remarque ?? "" : "",
       ]);
     })];
-    const csv = "﻿" + lignes.map((l) => l.map((c) => `"${c.replace(/"/g, '""')}"`).join(";")).join("\n");
+    const csv = "﻿" + lignes.map((l) => l.map((c) => `"${(/^[=+\-@\t\r]/.test(c) ? "'" + c : c).replace(/"/g, '""')}"`).join(";")).join("\n");
     enregistrerFichier(new Blob([csv], { type: "text/csv;charset=utf-8" }), "Invites-mariage.csv");
   };
 
@@ -401,34 +404,9 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
   };
   return (
     <div className="space-y-4" data-testid="invites">
-      <section className={`${carte} p-5 space-y-3`} data-testid="lien-general">
-        <h2 className="font-serif text-xl">Un seul lien pour tous vos invités</h2>
-        <p className="text-sm text-[#5E554A]">Envoyez ce lien dans votre groupe WhatsApp : chaque invité écrit son prénom et son nom, retrouve son invitation et répond. Sa réponse se coche toute seule dans la liste ci-dessous. Pensez à bien écrire les noms de vos invités dans la liste.</p>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className={boutonOr} onClick={copierGeneral} data-testid="copier-lien-general">{copie === "general" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copie === "general" ? "Lien copié" : "Copier le lien"}</button>
-          <a className={boutonClair} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(`💌 ${noms} vous invitent à leur mariage.\nOuvrez l'enveloppe et confirmez votre présence ici :\n${lienGeneral}`)}`}><MessageCircle className="h-4 w-4" /> Envoyer par WhatsApp</a>
-        </div>
-      </section>
-      <section className={`${carte} p-5 space-y-3`} data-testid="mode-liste">
-        <h2 className="font-serif text-xl">Qui peut répondre avec le lien ?</h2>
-        <div className="grid sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Mode de la liste d'invités">
-          {([
-            ["fermee", "Seulement ma liste", "Chaque invité doit retrouver son nom dans votre liste. Un inconnu ne peut pas répondre."],
-            ["ouverte", "Ouverte à tous", "N'importe qui peut écrire son nom et répondre. Vous acceptez ou refusez chaque demande."],
-          ] as const).map(([k, titre, texte]) => (
-            <button key={k} type="button" role="radio" aria-checked={mode === k} onClick={() => maj({ liste_mode: k })} data-testid={`mode-${k}`}
-              className={`text-left rounded-2xl border p-4 transition ${mode === k ? "border-[#141414] bg-[#FAF7EE] ring-1 ring-[#141414]" : "border-[#E3D6BA] bg-white hover:bg-[#FAF7EE]"}`}>
-              <span className="font-medium block">{titre}</span>
-              <span className="text-xs text-[#6B6155] block mt-1">{texte}</span>
-            </button>
-          ))}
-        </div>
-        <p className="text-xs text-[#6B6155]">Dans les deux cas, chaque invité qui vient accompagné doit écrire le prénom et le nom de ses accompagnants : vous avez ainsi la liste complète pour les tables.</p>
-      </section>
-
       {enAttenteValidation.length > 0 && (
-        <section className={`${carte} p-5 space-y-3 border-[#E8B7AF]`} data-testid="a-valider">
-          <h2 className="font-serif text-xl">À valider ({enAttenteValidation.length})</h2>
+        <section className={`${carte} p-5 space-y-3 border-[#C8B560]`} data-testid="a-valider">
+          <h2 className="font-titre text-xl">À valider ({enAttenteValidation.length})</h2>
           <p className="text-xs text-[#6B6155]">Ces personnes ne sont pas dans votre liste et ont répondu avec le lien. Elles ne comptent pas tant que vous ne les avez pas acceptées.</p>
           <ul className="divide-y divide-[#F1ECDD]">
             {enAttenteValidation.map((i) => (
@@ -437,25 +415,50 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
                   <div className="font-medium">{i.nom} <span className="text-xs font-normal text-[#8C6D22]">· {i.reponse === "non" ? "ne viendra pas" : `${i.nb_confirmes ?? i.nb_prevus} pers.`}</span></div>
                   {!!i.accompagnants?.length && <div className="text-xs text-[#6B6155]">Avec : {i.accompagnants.join(", ")}</div>}
                 </div>
-                <button className={`${boutonOr} min-h-9`} onClick={() => enregistrer({ ...i, liste_statut: "valide" })} data-testid="accepter-invite"><Check className="h-4 w-4" /> Accepter</button>
-                <button className={`${boutonClair} min-h-9`} onClick={() => enregistrer({ ...i, liste_statut: "refuse" })} data-testid="refuser-invite">Refuser</button>
+                <button className={`${boutonOr} min-h-11`} onClick={() => enregistrer({ ...i, liste_statut: "valide" })} data-testid="accepter-invite"><Check className="h-4 w-4" /> Accepter</button>
+                <button className={`${boutonClair} min-h-11`} onClick={() => { if (window.confirm(`Refuser ${i.nom} ? Vous pourrez la remettre à valider ensuite.`)) enregistrer({ ...i, liste_statut: "refuse" }); }} data-testid="refuser-invite">Refuser</button>
               </li>
             ))}
           </ul>
         </section>
       )}
 
+      <section className={`${carte} p-5 space-y-3`} data-testid="lien-general">
+        <h2 className="font-titre text-xl">Un seul lien pour tous vos invités</h2>
+        <p className="text-sm text-[#5E554A]">Envoyez ce lien dans votre groupe WhatsApp : chaque invité écrit son prénom et son nom, retrouve son invitation et répond. Sa réponse se coche toute seule dans la liste ci-dessous. Pensez à bien écrire les noms de vos invités dans la liste.</p>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className={boutonOr} onClick={copierGeneral} data-testid="copier-lien-general">{copie === "general" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copie === "general" ? "Lien copié" : "Copier le lien"}</button>
+          <a className={boutonClair} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(`💌 ${noms} vous invitent à leur mariage.\nOuvrez l'enveloppe et confirmez votre présence ici :\n${lienGeneral}`)}`}><MessageCircle className="h-4 w-4" /> Envoyer par WhatsApp</a>
+        </div>
+      </section>
+      <section className={`${carte} p-5 space-y-3`} data-testid="mode-liste">
+        <h2 className="font-titre text-xl">Qui peut répondre avec le lien ?</h2>
+        <div className="grid sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Mode de la liste d'invités">
+          {([
+            ["fermee", "Seulement ma liste", "Chaque invité doit retrouver son nom dans votre liste. Un inconnu ne peut pas répondre."],
+            ["ouverte", "Ouverte à tous", "N'importe qui peut écrire son nom et répondre. Vous acceptez ou refusez chaque demande."],
+          ] as const).map(([k, titre, texte]) => (
+            <button key={k} type="button" role="radio" aria-checked={mode === k} onClick={() => maj({ liste_mode: k })} data-testid={`mode-${k}`}
+              className={`text-left rounded-2xl border p-4 transition ${mode === k ? "border-[#141414] bg-[#FAF7EE] ring-1 ring-[#141414]" : "border-[#E3D6BA] bg-white hover:bg-[#FAF7EE]"}`}>
+              <span className="font-medium block"><span aria-hidden="true" className={`inline-block h-3.5 w-3.5 rounded-full border mr-2 align-[-1px] ${mode === k ? "bg-[#141414] border-[#141414]" : "border-[#B9A978]"}`} />{titre}</span>
+              <span className="text-xs text-[#6B6155] block mt-1">{texte}</span>
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-[#6B6155]">Dans les deux cas, chaque invité qui vient accompagné doit écrire le prénom et le nom de ses accompagnants : vous avez ainsi la liste complète pour les tables.</p>
+      </section>
+
       <section className={`${carte} p-5 space-y-4`}>
-        <h2 className="font-serif text-xl">Ajouter des invités</h2>
+        <h2 className="font-titre text-xl">Ajouter des invités</h2>
         <form onSubmit={ajouter} className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-2">
-          <input value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Nom (ex. Famille Benali)" className={champ} data-testid="invite-nom" />
+          <input value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Prénom et nom (ex. Samir Benali)" className={champ} data-testid="invite-nom" />
           <select value={cote} onChange={(e) => setCote(e.target.value as Invite["cote"])} className={champ} aria-label="Côté">
             {Object.entries(COTES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
           <label className="flex items-center gap-2 text-sm"><span className="text-[#6B6155]" title="1 = l'invité seul, 2 = il peut venir avec une personne (+1), 3 = avec deux (+2)…">Personnes (+1, +2…)</span><input type="number" min={1} max={20} value={nb} onChange={(e) => setNb(e.target.value)} className={`${champ} w-20`} data-testid="invite-nb" /></label>
           <button className={boutonOr} disabled={ajout} data-testid="ajouter-invite">{ajout ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Ajouter</button>
         </form>
-        <p className="text-xs text-[#6B6155]">« Personnes » = nombre de places pour cet invité, lui compris : 1 = seul, 2 = il peut venir avec une personne (+1), 3 = avec deux (+2). Un invité ne peut pas confirmer plus de places que celles que vous lui avez accordées.</p>
+        <p className="text-xs text-[#6B6155]">Une famille ? Ajoutez une personne (ex. Samir Benali) avec 3 places, puis écrivez le prénom et le nom des autres dans « Noms des accompagnants ». « Personnes » = nombre de places pour cet invité, lui compris : 1 = seul, 2 = il peut venir avec une personne (+1), 3 = avec deux (+2). Un invité ne peut pas confirmer plus de places que celles que vous lui avez accordées.</p>
         <details className="text-sm">
           <summary className="cursor-pointer text-[#8C6D22]">Message et date limite de réponse</summary>
           <div className="grid sm:grid-cols-[1fr_auto] gap-3 mt-3">
@@ -474,6 +477,7 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
           </div>
           {actives.length > 0 && <button className={boutonClair} onClick={exporter}><Download className="h-4 w-4" /> Exporter</button>}
         </div>
+        {manquants > 0 && <p className="text-sm text-[#5C4512] bg-[#FFF7E6] border border-[#F0D9A8] rounded-2xl px-4 py-3" data-testid="noms-manquants">{manquants} nom{manquants > 1 ? "s" : ""} d'accompagnant manque{manquants > 1 ? "nt" : ""} pour vos tables : ouvrez « Noms des accompagnants » sous l'invité concerné.</p>}
         {!actives.length ? (
           <p className="text-sm text-[#6B6155] py-6 text-center">Ajoutez vos invités : chacun reçoit un lien personnel pour confirmer sa présence, à envoyer par WhatsApp.</p>
         ) : (
@@ -485,7 +489,7 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
                   {i.remarque && <div className="text-xs text-[#6B6155]">« {i.remarque} »</div>}
                   {i.nb_prevus > 1 && (
                     <details className="text-xs mt-1" data-testid="accompagnants-invite">
-                      <summary className={`cursor-pointer ${(i.accompagnants ?? []).filter(Boolean).length < i.nb_prevus - 1 ? "text-[#8A2E26]" : "text-[#8C6D22]"}`}>
+                      <summary className={`cursor-pointer ${i.reponse === "oui" && (i.accompagnants ?? []).filter(Boolean).length < (i.nb_confirmes ?? i.nb_prevus) - 1 ? "text-[#8A2E26]" : "text-[#8C6D22]"}`}>
                         Noms des accompagnants ({(i.accompagnants ?? []).filter(Boolean).length}/{i.nb_prevus - 1})
                       </summary>
                       <div className="mt-2 grid gap-1.5 max-w-sm">
