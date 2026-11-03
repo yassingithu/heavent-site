@@ -77,6 +77,7 @@ const App = () => {
               <Route path="/mon-mariage/:token" element={<EspaceMaries />} />
               <Route path="/rsvp/:jeton" element={<Rsvp />} />
               <Route path="/souvenirs/:jeton" element={<Souvenirs />} />
+              <Route path="/souvenirs/mariage/:token" element={<Souvenirs />} />
               <Route path="/reponse/:token" element={<Rsvp />} />
               <Route path="/invitation/:jeton" element={<InvitationApercu />} />
               <Route path="/realisations" element={<Realisations />} />

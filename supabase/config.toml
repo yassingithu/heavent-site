@@ -52,3 +52,6 @@ verify_jwt = false
 
 [functions.souvenirs-purge]
 verify_jwt = false
+
+[functions.rappel-souvenirs]
+verify_jwt = false

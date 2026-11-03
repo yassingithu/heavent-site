@@ -196,7 +196,7 @@ export default function EspaceMaries() {
             <p className="text-xs text-[#8C6D22] mt-4">Cette invitation s'affiche à vos invités quand ils ouvrent leur lien (onglet Invités).</p>
           </div>
         )}
-        {onglet === "souvenirs" && <SouvenirsMaries token={token} date={devis.date_evenement} />}
+        {onglet === "souvenirs" && <SouvenirsMaries token={token} date={devis.date_evenement} noms={noms} />}
         {onglet === "tables" && <PlanDeTable espace={espace} invites={actives} maj={maj} enregistrer={enregistrerInvite} />}
 
         <p className="text-center text-xs text-[#8C6D22] print:hidden">Votre espace est enregistré automatiquement. L'équipe Heavent peut consulter votre programme et votre plan de table pour coordonner la soirée.</p>
