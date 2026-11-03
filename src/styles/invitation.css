@@ -205,3 +205,29 @@
 .inv-page[data-phase="ouverture"] .inv-env-rabat, .inv-bloc[data-phase="ouverture"] .inv-env-rabat { animation: inv-descend .5s ease-in 2.0s both; z-index: 4; }
 .inv[data-phase="ouverture"] .inv-env-rabat i { animation: inv-plie .4s ease-in .35s forwards; }
 .inv[data-phase="ouverture"] .inv-env-rabat b { animation: inv-deplie .45s ease-out .75s forwards; }
+
+
+/* ---------- Enveloppe à 4 rabats qui s'ouvrent ---------- */
+.inv-fl { inset: 0; filter: drop-shadow(0 0 5px rgba(0, 0, 0, .35)); will-change: transform; }
+.inv-fl i { position: absolute; inset: 0; display: block; }
+.inv-fl i::after { content: ""; position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' seed='7' result='n'/%3E%3CfeDiffuseLighting in='n' surfaceScale='.9' diffuseConstant='1' lighting-color='%23ffffff'%3E%3CfeDistantLight azimuth='235' elevation='62'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23p)'/%3E%3C/svg%3E"); background-size: 300px 300px; mix-blend-mode: overlay; opacity: .4; pointer-events: none; }
+.inv-fl-h { z-index: 5; transform-origin: 50% 0; }
+.inv-fl-h i { clip-path: polygon(0 0, 100% 0, 50% 50%); background: linear-gradient(180deg, color-mix(in srgb, var(--inv-env) 80%, #fff), var(--inv-env) 55%, color-mix(in srgb, var(--inv-env) 80%, #000)); }
+.inv-fl-g { z-index: 4; transform-origin: 0 50%; }
+.inv-fl-g i { clip-path: polygon(0 0, 50% 50%, 0 100%); background: linear-gradient(90deg, color-mix(in srgb, var(--inv-env) 88%, #fff), color-mix(in srgb, var(--inv-env) 90%, #000)); }
+.inv-fl-d { z-index: 4; transform-origin: 100% 50%; }
+.inv-fl-d i { clip-path: polygon(100% 0, 50% 50%, 100% 100%); background: linear-gradient(270deg, color-mix(in srgb, var(--inv-env) 94%, #fff), color-mix(in srgb, var(--inv-env) 78%, #000)); }
+.inv-fl-b { z-index: 3; transform-origin: 50% 100%; }
+.inv-fl-b i { clip-path: polygon(0 100%, 100% 100%, 50% 50%); background: linear-gradient(0deg, color-mix(in srgb, var(--inv-env) 96%, #fff), color-mix(in srgb, var(--inv-env) 74%, #000)); }
+.inv-env-cachet { z-index: 6; top: 50%; margin-top: -46px; }
+.inv-env-carte { z-index: 2; }
+@keyframes inv-ouvre-v { to { transform: scaleY(0); } }
+@keyframes inv-ouvre-h { to { transform: scaleX(0); } }
+.inv[data-phase="ouverture"] .inv-fl-h { animation: inv-ouvre-v .55s cubic-bezier(.5, 0, .3, 1) .3s forwards; }
+.inv[data-phase="ouverture"] .inv-fl-g { animation: inv-ouvre-h .5s cubic-bezier(.5, 0, .3, 1) .65s forwards; }
+.inv[data-phase="ouverture"] .inv-fl-d { animation: inv-ouvre-h .5s cubic-bezier(.5, 0, .3, 1) .72s forwards; }
+.inv[data-phase="ouverture"] .inv-fl-b { animation: inv-ouvre-v .55s cubic-bezier(.5, 0, .3, 1) 1s forwards; }
+.inv[data-phase="ouverture"] .inv-env-carte { transform: translateY(-4%); transition: transform .9s cubic-bezier(.25, .6, .2, 1) 1.15s; }
+.inv-env-fond { background: linear-gradient(180deg, rgba(0, 0, 0, .22), rgba(0, 0, 0, .08)), color-mix(in srgb, var(--inv-env) 78%, #000); }
+.inv[data-phase="ouverture"] .inv-env-fond { animation: inv-descend .5s ease-in 2.0s both; }
+@media (prefers-reduced-motion: reduce) { .inv .inv-fl { animation: none !important; } }

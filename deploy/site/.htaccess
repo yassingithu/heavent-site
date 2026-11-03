@@ -21,6 +21,14 @@ AddType application/manifest+json .webmanifest
   RewriteRule ^(.+)$ $1/index.html [L]
 
   # Adresses dynamiques de l'application (jeton dans l'adresse) et /realisations : l'application se charge de les afficher
+  # Invitations : même application, avec un aperçu de lien qui explique ce que c'est (WhatsApp, SMS)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^invitation/. invitation-modele.html [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^rsvp/. rsvp-modele.html [L]
+
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_URI} ^/(mon-devis|mon-mariage|rsvp|invitation|desinscription|studio/demo|prestataires/confirmer|realisations|bureau)(/|$)

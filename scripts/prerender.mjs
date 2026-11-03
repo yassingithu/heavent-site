@@ -35,6 +35,19 @@ const shellPrive = shell.replace("<head>", '<head>\n    <meta name="robots" cont
 for (const r of PRIVEES) { mkdirSync(`dist/${r}`, { recursive: true }); writeFileSync(`dist/${r}/index.html`, shellPrive); }
 // Page d'erreur 404 du serveur (ErrorDocument) : l'application affiche « Page non trouvée », jamais indexée
 writeFileSync("dist/404.html", shellPrive);
+// Liens d'invitation (/invitation/<jeton>, /rsvp/<jeton>) : même application, mais l'aperçu du lien (WhatsApp, SMS) dit ce que c'est
+const IMAGE_INVITATION = "https://heaventagency.com/invitation-og.jpg";
+function modeleApercu(titre, description) {
+  const e = (t) => t.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  return shellPrive
+    .replace(/<title>[^<]*<\/title>/, `<title>${e(titre)}</title>`)
+    .replace(/(<meta name="description" content=")[^"]*(")/, `$1${e(description)}$2`)
+    .replace(/(<meta (?:property="og:title"|name="twitter:title") content=")[^"]*(")/g, `$1${e(titre)}$2`)
+    .replace(/(<meta (?:property="og:description"|name="twitter:description") content=")[^"]*(")/g, `$1${e(description)}$2`)
+    .replace(/(<meta (?:property="og:image"|name="twitter:image") content=")[^"]*(")/g, `$1${IMAGE_INVITATION}$2`);
+}
+writeFileSync("dist/invitation-modele.html", modeleApercu("Votre invitation de mariage 💌", "Touchez l'enveloppe pour la découvrir : date, lieu sur Google Maps et réponse en un clic."));
+writeFileSync("dist/rsvp-modele.html", modeleApercu("Vous êtes invité(e) à un mariage 💌", "Ouvrez l'enveloppe et confirmez votre présence en un clic."));
 
 let chromium;
 try { ({ chromium } = await import("/opt/npm-tools/node_modules/playwright/index.mjs")); }

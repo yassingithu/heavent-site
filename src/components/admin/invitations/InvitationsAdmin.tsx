@@ -62,7 +62,7 @@ export default function InvitationsAdmin() {
     if (!a.noms.trim()) { toast.error("Saisissez d'abord les prénoms des mariés"); return; }
     const fenetre = window.open("about:blank", "_blank");
     if (edit?.id === a.id) await enregistrer();
-    const t = `Bonjour ! Voici à quoi pourrait ressembler votre invitation de mariage numérique, avec vos prénoms. Touchez l'enveloppe pour l'ouvrir :\n${lien(a.jeton)}\n\nLes couleurs se changent à votre goût, et vos invités répondent en un clic. — Heavent People Agency`;
+    const t = `💌 Votre invitation de mariage numérique\n\nBonjour ! Voici à quoi pourrait ressembler votre invitation, avec vos prénoms. Touchez l'enveloppe pour l'ouvrir :\n${lien(a.jeton)}\n\nLes couleurs se changent à votre goût, et vos invités répondent en un clic. — Heavent People Agency`;
     const url = `https://wa.me/?text=${encodeURIComponent(t)}`;
     if (fenetre) fenetre.location.href = url; else window.location.href = url;
   };

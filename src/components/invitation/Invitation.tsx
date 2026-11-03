@@ -94,8 +94,10 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           <button type="button" className="inv-enveloppe" onClick={() => phase === "fermee" && setPhase("ouverture")} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
             <span className="inv-env-fond" />
             <span className="inv-env-carte"><span><em>{lignes.length === 2 ? <>{lignes[0]}<small>&</small>{lignes[1]}</> : noms}</em></span></span>
-            <span className="inv-env-poche" />
-            <span className="inv-env-rabat"><i /><b /></span>
+            <span className="inv-fl inv-fl-b"><i /></span>
+            <span className="inv-fl inv-fl-g"><i /></span>
+            <span className="inv-fl inv-fl-d"><i /></span>
+            <span className="inv-fl inv-fl-h"><i /></span>
             <span className="inv-env-cachet"><em>{initiales(noms)}</em></span>
           </button>
           <p className="inv-aide" aria-hidden={phase !== "fermee"}>{t.ouvrir}</p>
