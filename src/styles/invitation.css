@@ -349,3 +349,20 @@
 .inv .inv-champ::placeholder { text-align: center; }
 /* Tailles minimales lisibles */
 .inv-maps, .inv-compte span { font-size: max(.75rem, 12px); }
+
+/* ===== Date : colonne centrée (les côtés de longueurs différentes décalaient l'ensemble) ===== */
+.inv-date { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.inv-date-cote, .inv-date-cote:first-child, .inv-date-cote:last-child { text-align: center; padding-inline-start: .2em; }
+.inv[dir="rtl"] .inv-date-cote { padding-inline-start: 0; }
+.inv-date-jour { border-inline: 0; border-block: 1px solid color-mix(in srgb, var(--inv-accent) 70%, transparent); padding: 10px 34px; margin: 2px 0; }
+
+/* ===== Alliances pilotées par le défilement ===== */
+.inv-an, .inv-sec.is-in .inv-an, .inv-an-g, .inv-an-d { transition: none; animation: none !important; }
+.inv-an-g { transform-origin: 78px 62px; }
+.inv-an-d { transform-origin: 122px 62px; }
+.inv-anneaux { transition: filter .6s ease; }
+.inv-sec.is-in .inv-anneaux:not(.inv-joint) .inv-gemme { opacity: 0; transform: translateY(-6px); }
+.inv-sec.is-in .inv-anneaux.inv-joint .inv-gemme { opacity: 1; transform: none; transition: opacity .5s ease .1s, transform .6s ease-out .1s; }
+.inv-sec.is-in .inv-eclat { animation: none; }
+.inv-sec.is-in .inv-anneaux.inv-joint .inv-eclat { animation: inv-eclat 1.6s ease-in-out .35s 1 both; }
+.inv-nuit .inv-anneaux.inv-joint, .inv-anneaux.inv-joint { filter: drop-shadow(0 0 12px color-mix(in srgb, var(--inv-accent) 55%, transparent)); }

@@ -65,9 +65,36 @@ function Section({ className = "", children, titre, id, nuit }: { nuit?: boolean
   );
 }
 
+/* Les alliances se rapprochent au fil du défilement et s'enlacent quand elles arrivent au centre de l'écran. */
 function Anneaux() {
+  const ref = useRef<SVGSVGElement>(null);
+  useEffect(() => {
+    const svg = ref.current;
+    if (!svg) return;
+    const reduit = sansAnimation();
+    const gauches = svg.querySelectorAll<SVGGElement>(".inv-an-g");
+    const droites = svg.querySelectorAll<SVGGElement>(".inv-an-d");
+    let raf = 0;
+    const maj = () => {
+      raf = 0;
+      const r = svg.getBoundingClientRect();
+      const vh = window.innerHeight || 800;
+      const centre = r.top + r.height / 2;
+      const p = reduit ? 1 : Math.min(1, Math.max(0, (vh - centre) / (vh * 0.45)));
+      const e = 1 - Math.pow(1 - p, 3);
+      const dx = (1 - e) * 64, rot = (1 - e) * 28;
+      gauches.forEach((g) => { g.style.transform = `translateX(${-dx}px) rotate(${-rot}deg)`; });
+      droites.forEach((g) => { g.style.transform = `translateX(${dx}px) rotate(${rot}deg)`; });
+      svg.classList.toggle("inv-joint", p > 0.97);
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(maj); };
+    maj();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); if (raf) cancelAnimationFrame(raf); };
+  }, []);
   return (
-    <svg className="inv-anneaux" viewBox="0 0 200 110" aria-hidden="true">
+    <svg ref={ref} className="inv-anneaux" viewBox="0 0 200 110" aria-hidden="true">
       <defs>
         <linearGradient id="inv-or" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="currentColor" stopOpacity=".55" /><stop offset=".5" stopColor="currentColor" /><stop offset="1" stopColor="currentColor" stopOpacity=".6" /></linearGradient>
       <clipPath id="inv-bas"><rect x="84" y="62" width="32" height="60" /></clipPath></defs>
