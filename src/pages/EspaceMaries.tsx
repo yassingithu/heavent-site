@@ -43,7 +43,7 @@ const champ = "w-full rounded-xl border border-[#E3D6BA] bg-white px-3 min-h-10 
 const bouton = "inline-flex items-center justify-center gap-1.5 rounded-full px-4 min-h-10 text-sm font-medium transition disabled:opacity-60";
 const boutonOr = `${bouton} bg-[#141414] text-white hover:bg-[#2a2a2a]`;
 const boutonClair = `${bouton} border border-[#DCCBA6] bg-white hover:bg-[#FAF7EE]`;
-const carte = "rounded-3xl bg-white border border-[#EADFC8] shadow-[0_20px_60px_-40px_rgba(140,109,34,0.5)]";
+const carte = "rounded-lg bg-white border border-[#EADFC8] shadow-[0_1px_0_#fff_inset,0_18px_40px_-34px_rgba(140,109,34,0.55)]";
 
 export default function EspaceMaries() {
   const { token = "" } = useParams();
@@ -207,7 +207,7 @@ function LienInvitation({ lien, noms, onInvites }: { lien: string; noms: string;
   const [copie, setCopie] = useState(false);
   const copier = async () => { try { await navigator.clipboard.writeText(lien); setCopie(true); setTimeout(() => setCopie(false), 1500); } catch { window.prompt("Lien à copier :", lien); } };
   return (
-    <div className="mb-6 rounded-2xl border border-[#E3D6BA] bg-[#FAF7EE] p-4" data-testid="lien-invitation">
+    <div className="mb-6 rounded-lg border border-[#E3D6BA] bg-[#FAF7EE] p-4" data-testid="lien-invitation">
       <p className="text-sm font-medium">Le lien de votre invitation</p>
       <p className="text-xs text-[#8C6D22] mt-1">Un seul lien pour tous vos invités : ils ouvrent l'enveloppe, tapent leur nom et répondent. Vous pouvez aussi envoyer un lien personnel à chacun depuis l'onglet Invités.</p>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -363,6 +363,9 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
   const [filtre, setFiltre] = useState<"tous" | Invite["reponse"]>("tous");
   const [copie, setCopie] = useState<string | null>(null);
   const [ajout, setAjout] = useState(false);
+  const [annul, setAnnul] = useState<Invite | null>(null);
+  const minuteur = useRef<number>();
+  useEffect(() => () => window.clearTimeout(minuteur.current), []);
   const actives = invites.filter(estActive);
   const enAttenteValidation = invites.filter((i) => i.liste_statut === "a_valider");
   const refuses = invites.filter((i) => i.liste_statut === "refuse");
@@ -416,11 +419,17 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
                   {!!i.accompagnants?.length && <div className="text-xs text-[#6B6155]">Avec : {i.accompagnants.join(", ")}</div>}
                 </div>
                 <button className={`${boutonOr} min-h-11`} onClick={() => enregistrer({ ...i, liste_statut: "valide" })} data-testid="accepter-invite"><Check className="h-4 w-4" /> Accepter</button>
-                <button className={`${boutonClair} min-h-11`} onClick={() => { if (window.confirm(`Refuser ${i.nom} ? Vous pourrez la remettre à valider ensuite.`)) enregistrer({ ...i, liste_statut: "refuse" }); }} data-testid="refuser-invite">Refuser</button>
+                <button className={`${boutonClair} min-h-11`} onClick={async () => { const ok = await enregistrer({ ...i, liste_statut: "refuse" }); if (!ok) return; setAnnul(i); window.clearTimeout(minuteur.current); minuteur.current = window.setTimeout(() => setAnnul(null), 8000); }} data-testid="refuser-invite">Refuser</button>
               </li>
             ))}
           </ul>
         </section>
+      )}
+      {annul && (
+        <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-[#141414] text-white px-4 py-3 text-sm" data-testid="annuler-refus">
+          <span>{annul.nom} a été refusé(e).</span>
+          <button className="underline underline-offset-2 min-h-11 px-2" onClick={async () => { const ok = await enregistrer({ ...annul, liste_statut: "a_valider" }); if (ok) { window.clearTimeout(minuteur.current); setAnnul(null); } }}>Annuler</button>
+        </div>
       )}
 
       <section className={`${carte} p-5 space-y-3`} data-testid="lien-general">
@@ -439,7 +448,7 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
             ["ouverte", "Ouverte à tous", "N'importe qui peut écrire son nom et répondre. Vous acceptez ou refusez chaque demande."],
           ] as const).map(([k, titre, texte]) => (
             <button key={k} type="button" role="radio" aria-checked={mode === k} onClick={() => maj({ liste_mode: k })} data-testid={`mode-${k}`}
-              className={`text-left rounded-2xl border p-4 transition ${mode === k ? "border-[#141414] bg-[#FAF7EE] ring-1 ring-[#141414]" : "border-[#E3D6BA] bg-white hover:bg-[#FAF7EE]"}`}>
+              className={`text-left rounded-lg border p-4 transition ${mode === k ? "border-[#141414] bg-[#FAF7EE] ring-1 ring-[#141414]" : "border-[#E3D6BA] bg-white hover:bg-[#FAF7EE]"}`}>
               <span className="font-medium block"><span aria-hidden="true" className={`inline-block h-3.5 w-3.5 rounded-full border mr-2 align-[-1px] ${mode === k ? "bg-[#141414] border-[#141414]" : "border-[#B9A978]"}`} />{titre}</span>
               <span className="text-xs text-[#6B6155] block mt-1">{texte}</span>
             </button>
@@ -477,7 +486,7 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
           </div>
           {actives.length > 0 && <button className={boutonClair} onClick={exporter}><Download className="h-4 w-4" /> Exporter</button>}
         </div>
-        {manquants > 0 && <p className="text-sm text-[#5C4512] bg-[#FFF7E6] border border-[#F0D9A8] rounded-2xl px-4 py-3" data-testid="noms-manquants">{manquants} nom{manquants > 1 ? "s" : ""} d'accompagnant manque{manquants > 1 ? "nt" : ""} pour vos tables : ouvrez « Noms des accompagnants » sous l'invité concerné.</p>}
+        {manquants > 0 && <p className="text-sm text-[#5C4512] bg-[#FFF7E6] border border-[#F0D9A8] rounded-lg px-4 py-3" data-testid="noms-manquants">{manquants} nom{manquants > 1 ? "s" : ""} d'accompagnant manque{manquants > 1 ? "nt" : ""} pour vos tables : ouvrez « Noms des accompagnants » sous l'invité concerné.</p>}
         {!actives.length ? (
           <p className="text-sm text-[#6B6155] py-6 text-center">Ajoutez vos invités : chacun reçoit un lien personnel pour confirmer sa présence, à envoyer par WhatsApp.</p>
         ) : (
@@ -527,7 +536,7 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
           <details className="text-sm" data-testid="refuses">
             <summary className="cursor-pointer text-[#6B6155]">Demandes refusées ({refuses.length})</summary>
             <ul className="mt-2 space-y-1">
-              {refuses.map((i) => <li key={i.id} className="flex items-center justify-between gap-2"><span>{i.nom}</span><button className="text-xs text-[#8C6D22] underline" onClick={() => enregistrer({ ...i, liste_statut: "a_valider" })}>Remettre à valider</button></li>)}
+              {refuses.map((i) => <li key={i.id} className="flex items-center justify-between gap-2"><span>{i.nom}</span><button className="text-xs text-[#8C6D22] underline" onClick={() => { setAnnul(null); enregistrer({ ...i, liste_statut: "a_valider" }); }}>Remettre à valider</button></li>)}
             </ul>
           </details>
         )}
@@ -575,7 +584,7 @@ function PlanDeTable({ espace, invites, maj, enregistrer }: {
       </section>
 
       {sansTable.length > 0 && espace.tables.length > 0 && (
-        <p className="text-sm text-[#5C4512] bg-[#FFF7E6] border border-[#F0D9A8] rounded-2xl px-4 py-3 print:hidden" data-testid="sans-table">
+        <p className="text-sm text-[#5C4512] bg-[#FFF7E6] border border-[#F0D9A8] rounded-lg px-4 py-3 print:hidden" data-testid="sans-table">
           {sansTable.length} invitation{sansTable.length > 1 ? "s" : ""} sans table : {sansTable.slice(0, 6).map((i) => i.nom).join(", ")}{sansTable.length > 6 ? "…" : ""}
         </p>
       )}
@@ -623,7 +632,7 @@ function PlanDeTable({ espace, invites, maj, enregistrer }: {
 
 function Resume({ icone: Icone, titre, valeur, progression, sous }: { icone: typeof Heart; titre: string; valeur: string; progression: number | null; sous?: string }) {
   return (
-    <div className="rounded-2xl border border-[#EADFC8] bg-white px-4 py-3">
+    <div className="rounded-lg border border-[#EADFC8] bg-white px-4 py-3">
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-[#8C6D22] font-semibold"><Icone className="h-4 w-4" /> {titre}</div>
       <div className="font-serif text-2xl mt-1">{valeur}</div>
       {sous && <div className="text-xs text-[#6B6155]">{sous}</div>}
