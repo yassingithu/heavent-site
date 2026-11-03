@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { MapPin } from "lucide-react";
 import { couleursDe, initiales, lienMaps, modeleDe, surCouleur, TEXTES, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
 import "@fontsource/pinyon-script/latin-400.css";
@@ -29,6 +29,58 @@ export interface InvitationProps {
 }
 
 const sansAnimation = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+function useReveal<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [vu, setVu] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") { setVu(true); return; }
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { setVu(true); io.disconnect(); } }, { threshold: 0.25 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return [ref, vu] as const;
+}
+
+function Section({ className = "", children, titre, id }: { className?: string; children: ReactNode; titre?: string; id?: string }) {
+  const [ref, vu] = useReveal<HTMLElement>();
+  return (
+    <section ref={ref} id={id} className={`inv-sec ${vu ? "is-in" : ""} ${className}`}>
+      {titre && <h2 className="inv-sec-titre">{titre}</h2>}
+      {children}
+    </section>
+  );
+}
+
+function Anneaux() {
+  return (
+    <svg className="inv-anneaux" viewBox="0 0 200 110" aria-hidden="true">
+      <defs>
+        <linearGradient id="inv-or" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="currentColor" stopOpacity=".55" /><stop offset=".5" stopColor="currentColor" /><stop offset="1" stopColor="currentColor" stopOpacity=".6" /></linearGradient>
+      </defs>
+      <g className="inv-an inv-an-g"><circle cx="78" cy="62" r="32" fill="none" stroke="url(#inv-or)" strokeWidth="6" /><circle cx="78" cy="62" r="26" fill="none" stroke="currentColor" strokeOpacity=".25" strokeWidth="1" /></g>
+      <g className="inv-an inv-an-d"><circle cx="122" cy="62" r="32" fill="none" stroke="url(#inv-or)" strokeWidth="6" /><circle cx="122" cy="62" r="26" fill="none" stroke="currentColor" strokeOpacity=".25" strokeWidth="1" /></g>
+      <g className="inv-gemme"><path d="M100 14l7 10-7 12-7-12z" fill="currentColor" /><path d="M100 14l7 10h-14z" fill="#fff" fillOpacity=".55" /></g>
+      <g className="inv-eclat" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><path d="M100 2v6M88 8l3 4M112 8l-3 4" /></g>
+    </svg>
+  );
+}
+
+function CompteARebours({ cible, t }: { cible: number; t: { jours: string; heures: string; minutes: string; secondes: string; aujourdhui: string } }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const id = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(id); }, []);
+  const reste = cible - now;
+  if (reste <= 0) return reste > -864e5 ? <p className="inv-aujourdhui">{t.aujourdhui}</p> : null;
+  const j = Math.floor(reste / 864e5), h = Math.floor(reste / 36e5) % 24, m = Math.floor(reste / 6e4) % 60, sec = Math.floor(reste / 1e3) % 60;
+  return (
+    <div className="inv-compte" role="timer" aria-live="off" aria-label={`${j} ${t.jours}`}>
+      {([[j, t.jours], [h, t.heures], [m, t.minutes], [sec, t.secondes]] as const).map(([v, l]) => (
+        <div key={l}><b>{String(v).padStart(2, "0")}</b><span>{l}</span></div>
+      ))}
+    </div>
+  );
+}
 
 function Lettres({ texte, base, ar }: { texte: string; base: number; ar: boolean }) {
   if (ar) return <span className="inv-mot" style={{ "--i": base } as CSSProperties}>{texte}</span>;
@@ -82,6 +134,15 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const dp = date ? new Intl.DateTimeFormat(t.locale, { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" }).formatToParts(new Date(date + "T00:00:00Z")) : null;
   const part = (k: string) => dp?.find((x) => x.type === k)?.value ?? "";
   const maj = (v: string) => v.charAt(0).toLocaleUpperCase(t.locale) + v.slice(1);
+  const programme = (reglages?.programme ?? []).filter((l) => l && (l.heure || l.titre)).slice(0, 8);
+  const cibleMs = (() => {
+    if (!date) return null;
+    const m = (heure ?? "").match(/(\d{1,2})\s*(?:h|:)\s*(\d{2})?/i);
+    const hh = m ? String(Math.min(23, Number(m[1]))).padStart(2, "0") : "18";
+    const mm = m?.[2] ?? "00";
+    const v = new Date(`${date}T${hh}:${mm}:00+01:00`).getTime();
+    return Number.isNaN(v) ? null : v;
+  })();
   const lignes = noms.split(/\s+(?:et|and|و)\s+|\s*&\s*/i).map((x) => x.trim()).filter(Boolean);
 
   return (
@@ -103,7 +164,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           <p className="inv-aide" aria-hidden={phase !== "fermee"}>{t.ouvrir}</p>
         </div>
       )}
-      {phase === "ouverte" && (
+      {phase === "ouverte" && (<>
         <article className={`inv-carte inv-orn-${ornement}`} data-testid="invitation-carte">
           <div className="inv-etincelles" aria-hidden="true">{ETINCELLES.map((e, i) => <span key={i} style={{ left: `${e.x}%`, animationDelay: `${e.d}ms`, animationDuration: `${e.t + 900}ms`, width: e.s, height: e.s }} />)}</div>
           <div className="inv-motif" aria-hidden="true" />
@@ -122,13 +183,35 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           )}
           {heure && <p className="inv-heure" dir="auto">{heure}</p>}
           {lieu && <p className="inv-lieu" dir="auto">{lieu}</p>}
-          {carte && (
+          {!pleinePage && carte && (
             <a className="inv-maps" href={carte} target="_blank" rel="noopener noreferrer"><MapPin className="h-4 w-4" aria-hidden="true" /> {t.maps}</a>
           )}
-          {message && <p className="inv-message" dir="auto">{message}</p>}
-          {children && <div className="inv-suite">{children}</div>}
+          {!pleinePage && message && <p className="inv-message" dir="auto">{message}</p>}
+          {pleinePage && <p className="inv-defiler" aria-hidden="true"><span>{t.defiler}</span><i /></p>}
+          {pleinePage && children && <a className="inv-repondre" href="#inv-reponse" onClick={(e) => { e.preventDefault(); document.getElementById("inv-reponse")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>{t.repondre}</a>}
+          {!pleinePage && children && <div className="inv-suite">{children}</div>}
         </article>
-      )}
+        {pleinePage && (
+          <div className="inv-histoire">
+            <Section className="inv-sec-anneaux"><Anneaux /><p className="inv-sec-mot">{t.alliances}</p></Section>
+            {cibleMs && <Section titre={t.compte}><CompteARebours cible={cibleMs} t={t} /></Section>}
+            {(lieu || carte) && (
+              <Section titre={t.lieuTitre}>
+                {lieu && <p className="inv-lieu" dir="auto" style={{ marginBottom: 12 }}>{lieu}</p>}
+                {lieu && <div className="inv-carte-g"><a className="inv-voile" href={carte ?? undefined} target="_blank" rel="noopener noreferrer" aria-label={t.itineraire} /><iframe title={lieu} loading="lazy" referrerPolicy="no-referrer-when-downgrade" src={`https://maps.google.com/maps?q=${encodeURIComponent(lieu)}&z=15&output=embed`} /></div>}
+                {carte && <a className="inv-maps" href={carte} target="_blank" rel="noopener noreferrer"><MapPin className="h-4 w-4" aria-hidden="true" /> {t.itineraire}</a>}
+              </Section>
+            )}
+            {programme.length > 0 && (
+              <Section titre={t.programmeTitre}>
+                <ol className="inv-programme">{programme.map((l, k) => <li key={k} style={{ ["--k" as string]: k } as CSSProperties}><b>{l.heure}</b><span dir="auto">{l.titre}</span></li>)}</ol>
+              </Section>
+            )}
+            {message && <Section><p className="inv-message" dir="auto" style={{ border: 0, padding: 0, margin: 0 }}>{message}</p></Section>}
+            {children && <Section id="inv-reponse" titre={t.reponseTitre} className="inv-sec-reponse">{children}</Section>}
+          </div>
+        )}
+      </>)}
       {bas}
       </div>
     </div>

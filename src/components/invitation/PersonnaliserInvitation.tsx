@@ -87,6 +87,22 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             <span className="block text-xs text-[#6B6154] mt-1">Sans lien, le bouton ouvre une recherche Google Maps avec le nom du lieu.</span>
           </label>
         </section>
+
+        <section className="space-y-3" data-testid="invitation-programme">
+          <h3 className="font-serif text-xl">4. Le programme (facultatif)</h3>
+          <p className="text-xs text-[#6B6154]">Affiché aux invités quand ils font défiler l'invitation.</p>
+          {(valeur.programme ?? []).map((l, k) => (
+            <div key={k} className="flex gap-2">
+              <input className={`${champ} w-24`} value={l.heure} maxLength={10} placeholder="19h30" aria-label="Heure" onChange={(e) => onChange({ ...valeur, programme: (valeur.programme ?? []).map((x, i) => (i === k ? { ...x, heure: e.target.value } : x)) })} />
+              <input className={`${champ} flex-1 min-w-0`} value={l.titre} maxLength={50} placeholder="Cérémonie" aria-label="Moment" onChange={(e) => onChange({ ...valeur, programme: (valeur.programme ?? []).map((x, i) => (i === k ? { ...x, titre: e.target.value } : x)) })} />
+              <button type="button" className="px-3 min-h-11 text-sm underline" aria-label="Retirer cette ligne" onClick={() => onChange({ ...valeur, programme: (valeur.programme ?? []).filter((_, i) => i !== k) })}>✕</button>
+            </div>
+          ))}
+          <div className="flex flex-wrap gap-2">
+            {(valeur.programme ?? []).length < 8 && <button type="button" className={bouton} onClick={() => onChange({ ...valeur, programme: [...(valeur.programme ?? []), { heure: "", titre: "" }] })}>Ajouter un moment</button>}
+            {!(valeur.programme ?? []).length && <button type="button" className={bouton} onClick={() => onChange({ ...valeur, programme: [{ heure: "19h30", titre: "Accueil des invités" }, { heure: "20h30", titre: "Entrée des mariés" }, { heure: "21h00", titre: "Dîner" }, { heure: "23h00", titre: "Soirée dansante" }] })}>Programme type</button>}
+          </div>
+        </section>
       </div>
 
       <aside className="min-w-0 order-first lg:order-none lg:sticky lg:top-4 self-start space-y-2" aria-label="Aperçu de l'invitation">
