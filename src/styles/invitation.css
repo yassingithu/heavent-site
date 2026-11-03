@@ -520,3 +520,18 @@
 .inv-page .inv-carte > :is(.inv-petit, .inv-date, .inv-heure, .inv-lieu, .inv-maps, .inv-message, .inv-suite) { animation-delay: .05s; }
 .inv-page[data-phase="fermee"] .inv-env-carte, .inv-page[data-phase="ouverture"] .inv-env-carte { top: 104px; left: 10px; right: 10px; bottom: 6%; }
 @media (min-width: 700px) { .inv-page[data-phase="fermee"] .inv-env-carte, .inv-page[data-phase="ouverture"] .inv-env-carte { top: 114px; left: calc(50% - 220px); right: calc(50% - 220px); } }
+
+/* Écrans larges mais peu hauts (ordinateur portable) : première page resserrée pour que « Répondre maintenant » tienne à l'écran */
+@media (min-width: 700px) and (max-height: 900px) {
+  .inv-page[data-phase="ouverte"] { padding-top: max(46px, env(safe-area-inset-top)); }
+  .inv-carte.inv-orn-arche, .inv-carte.inv-orn-khatam, .inv-carte { padding-top: 40px; padding-bottom: 22px; }
+  .inv-ornement { margin-bottom: 4px; }
+  .inv-ornement svg { height: 30px; width: auto; }
+  .inv-noms { font-size: clamp(44px, min(16vw, 9.5vh), 70px); margin: 2px 0; }
+  .inv-trait { margin: 2px auto; }
+  .inv-date { gap: 3px; }
+  .inv-date-jour { font-size: 42px; padding: 6px 28px; }
+  .inv-heure { margin: 4px 0 0; }
+  .inv-lieu { margin: 2px 0 0; }
+  .inv-defiler { display: none; }
+}
