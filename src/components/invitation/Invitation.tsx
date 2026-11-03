@@ -220,7 +220,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           {invite && <p className="inv-petit">{t.cher} {inviteA},</p>}
           <p className="inv-petit">{invite ? t.invites : t.invite}</p>
           <h1 className="inv-noms" data-testid="rsvp-noms" aria-label={nomsA}>
-            {lignes.length === 2 ? (<><Lettres texte={lignes[0]} base={0} ar={langue === "ar"} /><span className="inv-et" aria-hidden="true">&</span><Lettres texte={lignes[1]} base={lignes[0].length + 2} ar={langue === "ar"} /></>) : <Lettres texte={nomsA} base={0} ar={langue === "ar"} />}</h1>
+            {lignes.length === 2 ? (<><Lettres texte={lignes[0]} base={0} ar={langue === "ar"} /><span className="inv-et" aria-hidden="true">{langue === "ar" ? "و" : "&"}</span><Lettres texte={lignes[1]} base={lignes[0].length + 2} ar={langue === "ar"} /></>) : <Lettres texte={nomsA} base={0} ar={langue === "ar"} />}</h1>
           <svg className="inv-trait" viewBox="0 0 220 14" aria-hidden="true"><path pathLength="1" d="M4 8c30-9 58 6 92-1s58-6 78 0c14 4 28 3 42-2" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
           {dp && (
             <div className="inv-date" data-testid="invitation-date">
