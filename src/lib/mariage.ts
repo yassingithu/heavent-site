@@ -72,6 +72,7 @@ export const dateEcheance = (dateMariage: string | null, e: Echeance) => {
   return d;
 };
 
+export const lienReponse = (token: string) => `${typeof window !== "undefined" ? window.location.origin : "https://heaventagency.com"}/reponse/${token}`;
 export const lienRsvp = (jeton: string) => `${typeof window !== "undefined" ? window.location.origin : "https://heaventagency.com"}/rsvp/${jeton}`;
 
 export const messageWhatsappInvite = (inv: Invite, noms: string, date: string | null) =>

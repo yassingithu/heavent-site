@@ -100,7 +100,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   // Page de réponse d'un invité : une carte d'invitation, sans menu du site
   // L'administration a son propre en-tête (pas de menu ni de pied de page du site)
-  if (pathname.startsWith("/rsvp/") || pathname.startsWith("/invitation/") || pathname === "/liens" || pathname.startsWith("/studio") || pathname === "/nawar" || pathname === "/nawar/" || pathname === "/admin" || pathname === "/admin/" || pathname.startsWith("/staff-dashboard")) return <main>{seuil && <AnimationsSeuil />}{children}</main>;
+  if (pathname.startsWith("/rsvp/") || pathname.startsWith("/invitation/") || pathname.startsWith("/reponse/") || pathname === "/liens" || pathname.startsWith("/studio") || pathname === "/nawar" || pathname === "/nawar/" || pathname === "/admin" || pathname === "/admin/" || pathname.startsWith("/staff-dashboard")) return <main>{seuil && <AnimationsSeuil />}{children}</main>;
 
   return (
     <div className="min-h-screen flex flex-col">

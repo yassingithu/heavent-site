@@ -7,7 +7,7 @@ import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvita
 import type { InvitationReglages } from "@/lib/invitation";
 import {
   COTES, ECHEANCES, Echeance, Invite, Moment, PosteBudget, TableMariage, Tache,
-  budgetDefaut, checklistDefaut, dateEcheance, lienRsvp, messageWhatsappInvite, programmeDefaut, uid,
+  budgetDefaut, checklistDefaut, dateEcheance, lienReponse, lienRsvp, messageWhatsappInvite, programmeDefaut, uid,
 } from "@/lib/mariage";
 import {
   ArrowLeft, Check, CheckCircle2, Copy, Download, Heart, ListChecks, Loader2, MessageCircle,
@@ -184,7 +184,7 @@ export default function EspaceMaries() {
         {onglet === "checklist" && <Checklist espace={espace} date={devis.date_evenement} maj={maj} />}
         {onglet === "budget" && <Budget espace={espace} devise={devis.devise ?? "MAD"} maj={maj} />}
         {onglet === "programme" && <Programme espace={espace} noms={noms} date={devis.date_evenement} maj={maj} />}
-        {onglet === "invites" && <Invites espace={espace} invites={invites} noms={noms} date={devis.date_evenement} maj={maj} enregistrer={enregistrerInvite} supprimer={supprimerInvite} />}
+        {onglet === "invites" && <Invites token={token} espace={espace} invites={invites} noms={noms} date={devis.date_evenement} maj={maj} enregistrer={enregistrerInvite} supprimer={supprimerInvite} />}
         {onglet === "invitation" && (
           <div className={`${carte} p-4 sm:p-6`}>
             <PersonnaliserInvitation noms={noms} date={devis.date_evenement} lieu={devis.lieu} message={espace.message_invites} valeur={espace.invitation ?? {}} onChange={(v) => maj({ invitation: v })} />
@@ -334,8 +334,8 @@ function Programme({ espace, noms, date, maj }: { espace: Espace; noms: string; 
 }
 
 /* ---------------- Invités ---------------- */
-function Invites({ espace, invites, noms, date, maj, enregistrer, supprimer }: {
-  espace: Espace; invites: Invite[]; noms: string; date: string | null; maj: (m: Partial<Espace>) => void;
+function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprimer }: {
+  token: string; espace: Espace; invites: Invite[]; noms: string; date: string | null; maj: (m: Partial<Espace>) => void;
   enregistrer: (i: Partial<Invite> & { nom: string }) => Promise<Invite | null>; supprimer: (id: string) => void;
 }) {
   const [nom, setNom] = useState(""); const [cote, setCote] = useState<Invite["cote"]>("commun"); const [nb, setNb] = useState("1");
@@ -365,8 +365,20 @@ function Invites({ espace, invites, noms, date, maj, enregistrer, supprimer }: {
     enregistrerFichier(new Blob([csv], { type: "text/csv;charset=utf-8" }), "Invites-mariage.csv");
   };
 
+  const lienGeneral = lienReponse(token);
+  const copierGeneral = async () => {
+    try { await navigator.clipboard.writeText(lienGeneral); setCopie("general"); setTimeout(() => setCopie(null), 1500); } catch { window.prompt("Lien à copier :", lienGeneral); }
+  };
   return (
     <div className="space-y-4" data-testid="invites">
+      <section className={`${carte} p-5 space-y-3`} data-testid="lien-general">
+        <h2 className="font-serif text-xl">Un seul lien pour tous vos invités</h2>
+        <p className="text-sm text-[#5E554A]">Envoyez ce lien dans votre groupe WhatsApp : chaque invité écrit son prénom et son nom, retrouve son invitation et répond. Sa réponse se coche toute seule dans la liste ci-dessous. Pensez à bien écrire les noms de vos invités dans la liste.</p>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className={boutonOr} onClick={copierGeneral} data-testid="copier-lien-general">{copie === "general" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copie === "general" ? "Lien copié" : "Copier le lien"}</button>
+          <a className={boutonClair} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(`💌 ${noms} vous invitent à leur mariage.\nOuvrez l'enveloppe et confirmez votre présence ici :\n${lienGeneral}`)}`}><MessageCircle className="h-4 w-4" /> Envoyer par WhatsApp</a>
+        </div>
+      </section>
       <section className={`${carte} p-5 space-y-4`}>
         <h2 className="font-serif text-xl">Ajouter des invités</h2>
         <form onSubmit={ajouter} className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-2">
