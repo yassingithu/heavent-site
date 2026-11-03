@@ -418,3 +418,5 @@
   .inv-page[data-phase="fermee"] .inv-env-carte, .inv-page[data-phase="ouverture"] .inv-env-carte { top: 114px; }
   .inv-page .inv-env-carte > span { align-items: flex-start; padding-top: 150px; }
 }
+/* La phrase d'invitation passe sur 2 lignes (sinon elle déborde du haut de l'arche sur grand écran) */
+.inv-page .inv-carte .inv-petit { max-width: 260px; margin-inline: auto; text-wrap: balance; }
