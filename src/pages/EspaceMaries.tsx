@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
 import { enregistrerFichier } from "@/lib/pdf";
+import SouvenirsMaries from "@/components/mariage/SouvenirsMaries";
 import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvitation";
 import type { InvitationReglages } from "@/lib/invitation";
 import {
@@ -11,7 +12,7 @@ import {
 } from "@/lib/mariage";
 import {
   ArrowLeft, Check, CheckCircle2, Copy, Download, Heart, ListChecks, Loader2, MessageCircle,
-  Plus, Printer, Trash2, Users, Wallet, Armchair, Clock, Mail,
+  Plus, Printer, Trash2, Users, Wallet, Armchair, Clock, Mail, Camera,
 } from "lucide-react";
 
 interface Espace {
@@ -20,7 +21,7 @@ interface Espace {
 }
 interface InfosDevis { client_nom: string; date_evenement: string | null; lieu: string | null; nb_personnes: number | null; devise: string | null }
 
-type Onglet = "checklist" | "budget" | "programme" | "invites" | "invitation" | "tables";
+type Onglet = "checklist" | "budget" | "programme" | "invites" | "invitation" | "tables" | "souvenirs";
 const ONGLETS: { cle: Onglet; libelle: string; icone: typeof Heart }[] = [
   { cle: "checklist", libelle: "Check-list", icone: ListChecks },
   { cle: "budget", libelle: "Budget", icone: Wallet },
@@ -28,6 +29,7 @@ const ONGLETS: { cle: Onglet; libelle: string; icone: typeof Heart }[] = [
   { cle: "invites", libelle: "Invités", icone: Users },
   { cle: "invitation", libelle: "Mon invitation", icone: Mail },
   { cle: "tables", libelle: "Plan de table", icone: Armchair },
+  { cle: "souvenirs", libelle: "Souvenirs", icone: Camera },
 ];
 
 const nf = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n);
@@ -194,6 +196,7 @@ export default function EspaceMaries() {
             <p className="text-xs text-[#8C6D22] mt-4">Cette invitation s'affiche à vos invités quand ils ouvrent leur lien (onglet Invités).</p>
           </div>
         )}
+        {onglet === "souvenirs" && <SouvenirsMaries token={token} date={devis.date_evenement} />}
         {onglet === "tables" && <PlanDeTable espace={espace} invites={actives} maj={maj} enregistrer={enregistrerInvite} />}
 
         <p className="text-center text-xs text-[#8C6D22] print:hidden">Votre espace est enregistré automatiquement. L'équipe Heavent peut consulter votre programme et votre plan de table pour coordonner la soirée.</p>

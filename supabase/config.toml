@@ -46,3 +46,6 @@ verify_jwt = false
 
 [functions.bureau-public]
 verify_jwt = false
+
+[functions.souvenirs]
+verify_jwt = false

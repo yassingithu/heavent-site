@@ -18,7 +18,7 @@ const T = {
     merciOui: "Merci ! Votre présence est confirmée.", merciNon: "Merci de nous avoir prévenus.", modifier: "Modifier ma réponse",
     avant: "Merci de répondre avant le", introuvable: "Cette invitation est introuvable.", erreur: "La réponse n'a pas pu être envoyée. Réessayez.",
         prenom: "Prénom", nomFamille: "Nom", chercher: "Continuer", cherche: "Retrouvons votre invitation", pasTrouve: "Nous ne vous trouvons pas dans la liste. Vérifiez l'orthographe, ou envoyez quand même votre réponse : les mariés la valideront.", plusieurs: "Plusieurs invités portent ce nom. Utilisez le lien personnel que les mariés vous ont envoyé.", envoyerQuandMeme: "Répondre quand même", retour: "Changer de nom", erreurCherche: "Recherche impossible. Réessayez.", bonjourNom: (n: string) => `Bonjour ${n}`,
-    close: "Les réponses sont closes pour ce mariage.", personnes: (n: number) => `${n} personne${n > 1 ? "s" : ""}`, locale: "fr-FR",
+    partager: "Partager mes photos du mariage", close: "Les réponses sont closes pour ce mariage.", personnes: (n: number) => `${n} personne${n > 1 ? "s" : ""}`, locale: "fr-FR",
   },
   en: {
     invite: "You are invited to the wedding of", cher: "Dear", repondre: "Will you join us?", oui: "Joyfully accept", non: "Regretfully decline",
@@ -26,7 +26,7 @@ const T = {
     merciOui: "Thank you! Your attendance is confirmed.", merciNon: "Thank you for letting us know.", modifier: "Change my reply",
     avant: "Kindly reply before", introuvable: "This invitation could not be found.", erreur: "Your reply could not be sent. Please try again.",
         prenom: "First name", nomFamille: "Last name", chercher: "Continue", cherche: "Let's find your invitation", pasTrouve: "We can't find you in the guest list. Check the spelling, or reply anyway: the couple will validate it.", plusieurs: "Several guests share this name. Please use the personal link the couple sent you.", envoyerQuandMeme: "Reply anyway", retour: "Change name", erreurCherche: "Search failed. Please try again.", bonjourNom: (n: string) => `Hello ${n}`,
-    close: "Replies are now closed for this wedding.", personnes: (n: number) => `${n} guest${n > 1 ? "s" : ""}`, locale: "en-GB",
+    partager: "Share my wedding photos", close: "Replies are now closed for this wedding.", personnes: (n: number) => `${n} guest${n > 1 ? "s" : ""}`, locale: "en-GB",
   },
   ar: {
     invite: "يسعدنا دعوتكم لحضور حفل زفاف", cher: "مرحباً", repondre: "هل ستشرفوننا بحضوركم؟", oui: "بكل سرور، سأحضر", non: "للأسف لن أتمكن من الحضور",
@@ -34,7 +34,7 @@ const T = {
     merciOui: "شكراً! تم تأكيد حضوركم.", merciNon: "شكراً لإعلامنا.", modifier: "تعديل ردي",
     avant: "يرجى الرد قبل", introuvable: "هذه الدعوة غير موجودة.", erreur: "تعذر إرسال الرد. حاولوا مرة أخرى.",
         prenom: "الاسم الشخصي", nomFamille: "اسم العائلة", chercher: "متابعة", cherche: "لنجد دعوتكم", pasTrouve: "لم نجدكم في قائمة المدعوين. تحققوا من الكتابة أو أرسلوا ردكم على أي حال وسيؤكده العروسان.", plusieurs: "عدة مدعوين يحملون هذا الاسم. استعملوا الرابط الشخصي الذي أرسله لكم العروسان.", envoyerQuandMeme: "الرد على أي حال", retour: "تغيير الاسم", erreurCherche: "تعذر البحث. حاولوا مرة أخرى.", bonjourNom: (n: string) => `مرحباً ${n}`,
-    close: "انتهت فترة الرد على هذه الدعوة.", personnes: (n: number) => `${n} ${n > 1 ? "أشخاص" : "شخص"}`, locale: "ar-MA-u-nu-latn-ca-gregory",
+    partager: "مشاركة صوري من الزفاف", close: "انتهت فترة الرد على هذه الدعوة.", personnes: (n: number) => `${n} ${n > 1 ? "أشخاص" : "شخص"}`, locale: "ar-MA-u-nu-latn-ca-gregory",
   },
 };
 
@@ -83,7 +83,9 @@ export default function Rsvp() {
   }, [jeton, groupe]);
 
   const dateTxt = (d: string) => new Date(d + "T00:00:00Z").toLocaleDateString(t.locale, { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const passe = !!infos?.date_evenement && infos.date_evenement < new Date().toISOString().slice(0, 10);
+  const auj = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Casablanca" });
+  const souvenirsOuverts = !!infos?.date_evenement && auj >= infos.date_evenement && auj <= new Date(new Date(infos.date_evenement + "T00:00:00Z").getTime() + 2 * 86400e3).toISOString().slice(0, 10);
+  const passe = !!infos?.date_evenement && infos.date_evenement < new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Casablanca" });
 
   const nomComplet = (v: string) => v.trim().length >= 5 && v.trim().split(/\s+/).length >= 2;
   const accompsNb = (n: number) => Array.from({ length: Math.max(0, n) }, (_, k) => (accomps[k] ?? "").trim().replace(/\s+/g, " "));
@@ -136,7 +138,7 @@ export default function Rsvp() {
     const g = groupeInfos;
     if (g === undefined) return <div className="inv inv-page" style={{ "--inv-fond": "#141414", "--inv-sur-fond": "#FFFFFF" } as React.CSSProperties}><Loader2 className="h-6 w-6 animate-spin mx-auto" style={{ color: "#fff" }} /></div>;
     if (g === null) return <div className="inv inv-page" style={{ "--inv-fond": "#141414", "--inv-texte": "#FFFFFF", "--inv-sur-fond": "#FFFFFF" } as React.CSSProperties}><Seo noindex /><p style={{ color: "#fff" }}>{t.introuvable}</p></div>;
-    const termine = !!g.date_evenement && g.date_evenement < new Date().toISOString().slice(0, 10);
+    const termine = !!g.date_evenement && g.date_evenement < new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Casablanca" });
     return (
       <>
         <Seo noindex />
@@ -200,13 +202,18 @@ export default function Rsvp() {
               {infos.reponse === "oui" && <p style={{ fontSize: 14, opacity: .8, margin: 0 }}>{t.personnes(infos.nb_confirmes ?? 1)}</p>}
               {infos.reponse === "oui" && !!infos.accompagnants?.length && <p style={{ fontSize: 13, opacity: .8, margin: "4px 0 0" }} data-testid="rsvp-merci-accompagnants">{t.avec} : {infos.accompagnants.join(", ")}</p>}
               {infos.statut_liste === "a_valider" && <p style={{ fontSize: 13, opacity: .85, margin: "8px 0 0" }} data-testid="rsvp-a-valider">{t.aValider}</p>}
+              {souvenirsOuverts && infos.statut_liste !== "a_valider" && <a href={`/souvenirs/${jeton}`} className="inv-btn" style={{ display: "block", margin: "14px 0 0", textDecoration: "none", textAlign: "center" }} data-testid="rsvp-souvenirs">{t.partager}</a>}
               {!passe && <button type="button" onClick={() => setEdition(true)} className="inv-lien">{t.modifier}</button>}
               {passe && <p style={{ fontSize: 12, opacity: .75 }}>{t.close}</p>}
             </div>
           ) : passe ? (
-            <p style={{ textAlign: "center", fontSize: 14 }}>{t.close}</p>
+            <div style={{ textAlign: "center" }}>
+              <p style={{ fontSize: 14 }}>{t.close}</p>
+              {souvenirsOuverts && infos.statut_liste !== "a_valider" && <a href={`/souvenirs/${jeton}`} className="inv-btn" style={{ display: "block", textDecoration: "none" }} data-testid="rsvp-souvenirs">{t.partager}</a>}
+            </div>
           ) : (
             <div>
+              {souvenirsOuverts && infos.statut_liste !== "a_valider" && <a href={`/souvenirs/${jeton}`} className="inv-btn" style={{ display: "block", margin: "0 0 16px", textDecoration: "none", textAlign: "center" }} data-testid="rsvp-souvenirs">{t.partager}</a>}
               <p className="inv-titre-suite">{t.repondre}</p>
               {(["oui", "non"] as const).map((c) => (
                 <button key={c} type="button" onClick={() => { setChoix(c); if (infos.nb_prevus <= 1) void envoyer(c); }} aria-pressed={choix === c} data-testid={`rsvp-${c}`} className="inv-choix">

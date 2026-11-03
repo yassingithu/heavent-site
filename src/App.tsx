@@ -18,6 +18,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Admin = lazy(() => import("./pages/Admin"));
 const EspaceMaries = lazy(() => import("./pages/EspaceMaries"));
 const Rsvp = lazy(() => import("./pages/Rsvp"));
+const Souvenirs = lazy(() => import("./pages/Souvenirs"));
 const InvitationApercu = lazy(() => import("./pages/InvitationApercu"));
 const AdminAuth = lazy(() => import("./pages/AdminAuth"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -75,6 +76,7 @@ const App = () => {
               <Route path="/mon-devis/:token" element={<MonDevis />} />
               <Route path="/mon-mariage/:token" element={<EspaceMaries />} />
               <Route path="/rsvp/:jeton" element={<Rsvp />} />
+              <Route path="/souvenirs/:jeton" element={<Souvenirs />} />
               <Route path="/reponse/:token" element={<Rsvp />} />
               <Route path="/invitation/:jeton" element={<InvitationApercu />} />
               <Route path="/realisations" element={<Realisations />} />
