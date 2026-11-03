@@ -329,3 +329,23 @@
 .inv-nuit .inv-carte-g { background: none; border-color: var(--inv-accent); }
 .inv-nuit .inv-carte-g iframe { filter: sepia(.25) saturate(.85); }
 .inv-carte .inv-sec-reponse { padding-bottom: 12px; }
+
+/* ===== Centrage exact des petits textes espacés ===== */
+/* Le dernier caractère garde un espace de lettre : on le compense pour que le texte soit au vrai centre. */
+.inv-petit { padding-inline-start: .28em; }
+.inv-heure { padding-inline-start: .12em; }
+.inv-sec-titre { padding-inline-start: .08em; }
+.inv-defiler span { padding-inline-start: .22em; }
+.inv-repondre, .inv-maps { text-indent: .14em; }
+.inv-compte span { padding-inline-start: .14em; }
+.inv-programme b { padding-inline-start: .06em; }
+.inv-btn { text-indent: .16em; }
+/* En arabe, l'espacement des lettres casse la liaison : on le supprime partout, sans majuscules forcées. */
+.inv[dir="rtl"] *, .inv[dir="rtl"] *::before, .inv[dir="rtl"] *::after { letter-spacing: 0 !important; text-transform: none !important; }
+.inv[dir="rtl"] :is(.inv-petit, .inv-heure, .inv-sec-titre, .inv-defiler span, .inv-compte span, .inv-programme b) { padding-inline-start: 0; }
+.inv[dir="rtl"] :is(.inv-repondre, .inv-maps, .inv-btn) { text-indent: 0; }
+/* Les champs de réponse : texte saisi centré, comme le reste de la carte */
+.inv .inv-champ { text-align: center; }
+.inv .inv-champ::placeholder { text-align: center; }
+/* Tailles minimales lisibles */
+.inv-maps, .inv-compte span { font-size: max(.75rem, 12px); }
