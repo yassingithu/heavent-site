@@ -6,6 +6,7 @@ import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvita
 import type { InvitationReglages } from "@/lib/invitation";
 
 interface Apercu { id: string; jeton: string; noms: string; date_evenement: string | null; lieu: string | null; message: string | null; invitation: InvitationReglages; prospect: string | null; expire_le: string; created_at: string }
+interface Reponse { nom: string; reponse: string; nb_confirmes: number | null; repondu_le: string; couple: string }
 interface Lieu { nom: string; ville: string | null; lien_maps: string | null }
 
 const champ = "w-full rounded-xl border border-[#E3D6BA] bg-white px-3 min-h-10 text-sm";
@@ -16,6 +17,7 @@ const db = supabase as any;
 export default function InvitationsAdmin() {
   const [liste, setListe] = useState<Apercu[] | null>(null);
   const [lieux, setLieux] = useState<Lieu[]>([]);
+  const [reponses, setReponses] = useState<Reponse[]>([]);
   const [edit, setEdit] = useState<Apercu | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const { toast: t } = useToast();
@@ -27,6 +29,11 @@ export default function InvitationsAdmin() {
       db.from("lieux").select("nom,ville,lien_maps").eq("actif", true).order("ville").order("nom"),
     ]);
     setListe(a.data ?? []); setLieux(l.data ?? []);
+    const r = await db.from("invites_mariage").select("nom,reponse,nb_confirmes,repondu_le,devis_id").not("repondu_le", "is", null).order("repondu_le", { ascending: false }).limit(15);
+    const ids = [...new Set((r.data ?? []).map((x: any) => x.devis_id))];
+    const dv = ids.length ? await db.from("devis").select("id,client_nom").in("id", ids) : { data: [] };
+    const noms: Record<string, string> = Object.fromEntries((dv.data ?? []).map((x: any) => [x.id, x.client_nom]));
+    setReponses((r.data ?? []).map((x: any) => ({ nom: x.nom, reponse: x.reponse, nb_confirmes: x.nb_confirmes, repondu_le: x.repondu_le, couple: noms[x.devis_id] ?? "" })));
   }, []);
   useEffect(() => { charger(); }, [charger]);
 
@@ -101,6 +108,19 @@ export default function InvitationsAdmin() {
         <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={creer} data-testid="apercu-nouveau"><Plus className="h-4 w-4" /> Nouvel aperçu</button>
       </div>
       {liste.length === 0 && <p className="text-sm text-[#5E554A] text-center py-10">Aucun aperçu pour le moment.</p>}
+      <section className="rounded-3xl bg-white border border-[#EADFC8] p-4" data-testid="dernieres-reponses">
+        <h3 className="font-serif text-lg mb-2">Dernières réponses des invités</h3>
+        {reponses.length === 0 ? <p className="text-sm text-[#5E554A]">Aucune réponse pour l'instant.</p> : (
+          <ul className="divide-y divide-[#EFE6D2] text-sm">
+            {reponses.map((r, i) => (
+              <li key={i} className="py-2 flex flex-wrap items-center justify-between gap-x-3">
+                <span><b>{r.nom}</b> <span className="text-[#6B6154]">· {r.couple}</span></span>
+                <span className={r.reponse === "oui" ? "text-[#1F5A4C]" : "text-[#9B2C23]"}>{r.reponse === "oui" ? `Présent${(r.nb_confirmes ?? 1) > 1 ? ` (${r.nb_confirmes})` : ""}` : "Absent"} · {new Date(r.repondu_le).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       <ul className="space-y-2">
         {liste.map((a) => (
           <li key={a.id} className="rounded-2xl bg-white border border-[#EADFC8] p-3 flex flex-wrap items-center gap-2 justify-between">
