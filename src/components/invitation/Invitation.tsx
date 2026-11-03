@@ -30,6 +30,17 @@ export interface InvitationProps {
 
 const sansAnimation = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+/* Plein écran au toucher de l'enveloppe (un geste est obligatoire). iPhone : Safari ne l'autorise pas pour une page ; la barre se replie d'elle-même au défilement. */
+function pleinEcran() {
+  try {
+    const d = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => void };
+    const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
+    if (d.fullscreenElement || d.webkitFullscreenElement) return;
+    const r = el.requestFullscreen ? el.requestFullscreen({ navigationUI: "hide" }) : el.webkitRequestFullscreen?.();
+    if (r && typeof (r as Promise<void>).catch === "function") (r as Promise<void>).catch(() => {});
+  } catch { /* plein écran refusé : l'invitation reste lisible */ }
+}
+
 function useReveal<T extends HTMLElement>() {
   const ref = useRef<T>(null);
   const [vu, setVu] = useState(false);
@@ -117,6 +128,9 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const t = TEXTES[langue];
   const [phase, setPhase] = useState<"fermee" | "ouverture" | "ouverte">(ouverte || sansAnimation() ? "ouverte" : "fermee");
 
+  useEffect(() => () => {
+    try { const d = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => void }; if (d.fullscreenElement) void d.exitFullscreen(); else if (d.webkitFullscreenElement) d.webkitExitFullscreen?.(); } catch { /* ignoré */ }
+  }, []);
   useEffect(() => { setPhase(ouverte || sansAnimation() ? "ouverte" : "fermee"); }, [ouverte, rejouer]);
   useEffect(() => {
     if (phase !== "ouverture") return;
@@ -151,7 +165,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       {phase !== "ouverte" && (
         <div className="inv-scene">
           <span className="inv-env-ombre" aria-hidden="true" />
-          <button type="button" className="inv-enveloppe" onClick={() => phase === "fermee" && setPhase("ouverture")} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
+          <button type="button" className="inv-enveloppe" onClick={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); setPhase("ouverture"); }} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
             <span className="inv-env-fond" />
             <span className="inv-env-carte"><span><em>{lignes.length === 2 ? <>{lignes[0]}<small>&</small>{lignes[1]}</> : noms}</em></span></span>
             <span className="inv-fl inv-fl-b"><i /></span>
