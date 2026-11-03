@@ -3,27 +3,30 @@ import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
 import { enregistrerFichier } from "@/lib/pdf";
+import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvitation";
+import type { InvitationReglages } from "@/lib/invitation";
 import {
   COTES, ECHEANCES, Echeance, Invite, Moment, PosteBudget, TableMariage, Tache,
   budgetDefaut, checklistDefaut, dateEcheance, lienRsvp, messageWhatsappInvite, programmeDefaut, uid,
 } from "@/lib/mariage";
 import {
   ArrowLeft, Check, CheckCircle2, Copy, Download, Heart, ListChecks, Loader2, MessageCircle,
-  Plus, Printer, Trash2, Users, Wallet, Armchair, Clock,
+  Plus, Printer, Trash2, Users, Wallet, Armchair, Clock, Mail,
 } from "lucide-react";
 
 interface Espace {
   noms: string | null; checklist: Tache[]; budget: PosteBudget[]; programme: Moment[]; tables: TableMariage[];
-  budget_total: number | null; message_invites: string | null; date_limite_reponse: string | null; updated_at?: string;
+  invitation?: InvitationReglages | null; budget_total: number | null; message_invites: string | null; date_limite_reponse: string | null; updated_at?: string;
 }
 interface InfosDevis { client_nom: string; date_evenement: string | null; lieu: string | null; nb_personnes: number | null; devise: string | null }
 
-type Onglet = "checklist" | "budget" | "programme" | "invites" | "tables";
+type Onglet = "checklist" | "budget" | "programme" | "invites" | "invitation" | "tables";
 const ONGLETS: { cle: Onglet; libelle: string; icone: typeof Heart }[] = [
   { cle: "checklist", libelle: "Check-list", icone: ListChecks },
   { cle: "budget", libelle: "Budget", icone: Wallet },
   { cle: "programme", libelle: "Programme du jour J", icone: Clock },
   { cle: "invites", libelle: "Invités", icone: Users },
+  { cle: "invitation", libelle: "Mon invitation", icone: Mail },
   { cle: "tables", libelle: "Plan de table", icone: Armchair },
 ];
 
@@ -182,6 +185,12 @@ export default function EspaceMaries() {
         {onglet === "budget" && <Budget espace={espace} devise={devis.devise ?? "MAD"} maj={maj} />}
         {onglet === "programme" && <Programme espace={espace} noms={noms} date={devis.date_evenement} maj={maj} />}
         {onglet === "invites" && <Invites espace={espace} invites={invites} noms={noms} date={devis.date_evenement} maj={maj} enregistrer={enregistrerInvite} supprimer={supprimerInvite} />}
+        {onglet === "invitation" && (
+          <div className={`${carte} p-4 sm:p-6`}>
+            <PersonnaliserInvitation noms={noms} date={devis.date_evenement} lieu={devis.lieu} message={espace.message_invites} valeur={espace.invitation ?? {}} onChange={(v) => maj({ invitation: v })} />
+            <p className="text-xs text-[#8C6D22] mt-4">Cette invitation s'affiche à vos invités quand ils ouvrent leur lien (onglet Invités).</p>
+          </div>
+        )}
         {onglet === "tables" && <PlanDeTable espace={espace} invites={invites} maj={maj} enregistrer={enregistrerInvite} />}
 
         <p className="text-center text-xs text-[#8C6D22] print:hidden">Votre espace est enregistré automatiquement. L'équipe Heavent peut consulter votre programme et votre plan de table pour coordonner la soirée.</p>

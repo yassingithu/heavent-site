@@ -19,6 +19,7 @@ import { baseDemo, libelleOnglet, ongletMasque, titreOnglet } from "@/demo/serve
 import StudioAdmin from "@/components/admin/studio/StudioAdmin";
 import PrestatairesAdmin from "@/components/admin/prestataires/PrestatairesAdmin";
 import LieuxAdmin from "@/components/admin/lieux/LieuxAdmin";
+import InvitationsAdmin from "@/components/admin/invitations/InvitationsAdmin";
 import RealisationsAdmin from "@/components/admin/RealisationsAdmin";
 import AgendaAdmin from "@/components/admin/agenda/AgendaAdmin";
 import VitrineAdmin from "@/components/admin/VitrineAdmin";
@@ -161,6 +162,7 @@ const MENU_ADMIN: { titre: string; items: (readonly [string, string, typeof User
   { titre: "Équipe", items: [["staff", "Personnel", Users], ["disponibilites", "Disponibilités", CalendarCheck], ["contrats", "Contrats", FileSignature], ["fiches", "Paie", Wallet]] },
   { titre: "Prestataires", items: [["prestataires", "Prestataires", Handshake]] },
   { titre: "Lieux", items: [["lieux", "Salles & palais", MapPin]] },
+  { titre: "Invitations", items: [["invitations", "Invitations digitales", Mail]] },
   { titre: "Communication", items: [["instagram", "Instagram", Instagram], ["newsletter", "Newsletter", Mail]] },
   { titre: "Heavent Studio", items: [["studio", "Démos agences", Sparkles]] },
   { titre: "Réglages", items: [["realisations", "Site web", Globe], ["securite", "Sécurité", Shield]] },
@@ -182,6 +184,7 @@ const TITRES_ADMIN: Record<string, [string, string]> = {
   realisations: ["Site web", "Éléments de confiance, FAQ et réalisations publiées"],
   instagram: ["Instagram", "Posts conseils préparés, photos et légendes prêtes à publier"],
   prestataires: ["Prestataires", "Candidatures, validation et tarifs des prestataires partenaires"],
+  invitations: ["Invitations digitales", "Aperçus offerts aux couples : enveloppe, couleurs, lieu sur Google Maps"],
   lieux: ["Salles & palais", "Lieux partenaires, tarifs et localisation"],
   studio: ["Heavent Studio", "Demandes de démo des agences et démos personnalisées à partager"],
   newsletter: ["Newsletter", "Abonnés venus des guides gratuits, newsletters à préparer et envoyer"],
@@ -1136,6 +1139,10 @@ const Admin = () => {
 
         <TabsContent value="prestataires" className="space-y-4">
           <PrestatairesAdmin />
+        </TabsContent>
+
+        <TabsContent value="invitations" className="space-y-4">
+          <InvitationsAdmin />
         </TabsContent>
 
         <TabsContent value="lieux" className="space-y-4">

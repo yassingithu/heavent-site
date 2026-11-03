@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
-import { CheckCircle2, Heart, Loader2, Minus, Plus } from "lucide-react";
+import { CheckCircle2, Loader2, Minus, Plus } from "lucide-react";
+import Invitation from "@/components/invitation/Invitation";
+import type { InvitationReglages } from "@/lib/invitation";
 
 interface Infos {
   nom: string; nb_prevus: number; reponse: "attente" | "oui" | "non"; nb_confirmes: number | null; remarque: string | null;
-  noms: string; date_evenement: string | null; lieu: string | null; message: string | null; date_limite: string | null;
+  noms: string; date_evenement: string | null; lieu: string | null; message: string | null; date_limite: string | null; invitation?: InvitationReglages | null;
 }
 type Langue = "fr" | "en" | "ar";
 const T = {
@@ -72,80 +74,69 @@ export default function Rsvp() {
 
   const repondu = infos && infos.reponse !== "attente" && !edition;
 
-  return (
-    <div className="relative overflow-hidden min-h-screen bg-[#141414] text-white flex items-center justify-center px-4 py-10" dir={langue === "ar" ? "rtl" : "ltr"}>
-      <Seo noindex />
-      <div className="absolute inset-0 opacity-25 pointer-events-none bg-[radial-gradient(circle_at_15%_15%,#C8B560_0,transparent_40%),radial-gradient(circle_at_85%_85%,#A8933F_0,transparent_40%)]" />
-      <div className="relative w-full max-w-md">
-        <div className="flex justify-center gap-1 mb-4 text-xs">
-          {(["fr", "en", "ar"] as Langue[]).map((l) => (
-            <button key={l} onClick={() => setLangue(l)} className={`rounded-full px-3 py-1 ${langue === l ? "bg-white text-[#141414]" : "text-white/70 hover:text-white"}`}>{l === "fr" ? "FR" : l === "en" ? "EN" : "عربي"}</button>
-          ))}
-        </div>
-        <div className="rounded-[2rem] bg-[#FBF8F1] text-[#2A2420] p-7 sm:p-9 text-center shadow-2xl" data-testid="rsvp">
-          {infos === undefined ? (
-            <Loader2 className="h-6 w-6 animate-spin mx-auto text-[#8C6D22]" />
-          ) : infos === null ? (
-            <p>{t.introuvable}</p>
-          ) : (
-            <div className="space-y-5">
-              <Heart className="h-7 w-7 mx-auto text-[#C8B560] fill-[#C8B560]" />
-              <div className="space-y-1">
-                <p className="text-sm text-[#6B6155]">{t.cher} {infos.nom},</p>
-                <p className="text-sm text-[#6B6155]">{t.invite}</p>
-                <h1 className="font-serif text-3xl sm:text-4xl leading-tight" data-testid="rsvp-noms">{infos.noms}</h1>
-                {infos.date_evenement && <p className="text-[#8C6D22] font-medium pt-1">{dateTxt(infos.date_evenement)}</p>}
-                {infos.lieu && <p className="text-sm text-[#6B6155]">{infos.lieu}</p>}
-              </div>
-              {infos.message && <p className="text-sm italic text-[#4A4238] whitespace-pre-line border-y border-[#EADFC8] py-4">{infos.message}</p>}
+  const langues = (
+    <div className="inv-langues">
+      {(["fr", "en", "ar"] as Langue[]).map((l) => (
+        <button key={l} type="button" aria-pressed={langue === l} onClick={() => setLangue(l)}>{l === "fr" ? "FR" : l === "en" ? "EN" : "عربي"}</button>
+      ))}
+    </div>
+  );
+  const pied = <p className="inv-pied">Heavent People Agency</p>;
 
-              {passe ? (
-                <p className="text-sm text-[#6B6155]">{t.close}</p>
-              ) : repondu ? (
-                <div className="space-y-3" data-testid="rsvp-merci">
-                  <CheckCircle2 className="h-8 w-8 mx-auto text-[#2F5A2A]" />
-                  <p className="font-medium">{infos.reponse === "oui" ? t.merciOui : t.merciNon}</p>
-                  {infos.reponse === "oui" && <p className="text-sm text-[#6B6155]">{t.personnes(infos.nb_confirmes ?? 1)}</p>}
-                  <button onClick={() => setEdition(true)} className="text-sm text-[#8C6D22] underline">{t.modifier}</button>
-                </div>
-              ) : (
-                <div className="space-y-4 text-start">
-                  <p className="font-serif text-xl text-center">{t.repondre}</p>
-                  <div className="grid gap-2">
-                    {(["oui", "non"] as const).map((c) => (
-                      <button key={c} onClick={() => setChoix(c)} data-testid={`rsvp-${c}`}
-                        className={`rounded-2xl border px-4 min-h-12 text-sm font-medium transition ${choix === c ? "bg-[#141414] text-white border-[#141414]" : "bg-white border-[#E3D6BA] hover:bg-[#FAF7EE]"}`}>
-                        {c === "oui" ? t.oui : t.non}
-                      </button>
-                    ))}
-                  </div>
-                  {choix === "oui" && infos.nb_prevus > 1 && (
-                    <div className="flex items-center justify-between rounded-2xl border border-[#E3D6BA] bg-white px-4 py-2">
-                      <span className="text-sm">{t.combien}</span>
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => setNb(Math.max(1, nb - 1))} className="h-9 w-9 rounded-full border border-[#DCCBA6] flex items-center justify-center" aria-label="-"><Minus className="h-4 w-4" /></button>
-                        <span className="w-6 text-center font-semibold" data-testid="rsvp-nb">{nb}</span>
-                        <button onClick={() => setNb(Math.min(infos.nb_prevus, nb + 1))} className="h-9 w-9 rounded-full border border-[#DCCBA6] flex items-center justify-center" aria-label="+"><Plus className="h-4 w-4" /></button>
-                      </div>
-                    </div>
-                  )}
-                  {choix && (
-                    <textarea value={mot} onChange={(e) => setMot(e.target.value)} maxLength={300} rows={3} placeholder={t.mot}
-                      className="w-full rounded-2xl border border-[#E3D6BA] bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C8B560]/50" />
-                  )}
-                  {erreur && <p className="text-sm text-[#8A2E26]">{erreur}</p>}
-                  <button onClick={envoyer} disabled={!choix || envoi} data-testid="rsvp-envoyer"
-                    className="w-full rounded-full bg-[#A8933F] text-white min-h-12 font-medium disabled:opacity-50 inline-flex items-center justify-center gap-2">
-                    {envoi && <Loader2 className="h-4 w-4 animate-spin" />} {t.envoyer}
-                  </button>
-                  {infos.date_limite && <p className="text-xs text-center text-[#8C6D22]">{t.avant} {dateTxt(infos.date_limite)}</p>}
+  if (infos === undefined || infos === null) {
+    return (
+      <div className="inv inv-page" style={{ "--inv-fond": "#141414", "--inv-texte": "#FFFFFF", "--inv-sur-fond": "#FFFFFF" } as React.CSSProperties} dir={langue === "ar" ? "rtl" : "ltr"}>
+        <Seo noindex />
+        <div className="inv-colonne" data-testid="rsvp">
+          {infos === undefined ? <Loader2 className="h-6 w-6 animate-spin mx-auto" /> : <p style={{ textAlign: "center" }}>{t.introuvable}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Seo noindex />
+      <Invitation noms={infos.noms} date={infos.date_evenement} lieu={infos.lieu} message={infos.message} reglages={infos.invitation} langue={langue} invite={infos.nom}
+        haut={langues} bas={pied}>
+        <div data-testid="rsvp">
+          {passe ? (
+            <p style={{ textAlign: "center", fontSize: 14 }}>{t.close}</p>
+          ) : repondu ? (
+            <div style={{ textAlign: "center" }} data-testid="rsvp-merci">
+              <CheckCircle2 className="h-8 w-8 mx-auto" style={{ color: "var(--inv-accent)" }} />
+              <p style={{ fontWeight: 500, margin: "10px 0 4px" }}>{infos.reponse === "oui" ? t.merciOui : t.merciNon}</p>
+              {infos.reponse === "oui" && <p style={{ fontSize: 14, opacity: .8, margin: 0 }}>{t.personnes(infos.nb_confirmes ?? 1)}</p>}
+              <button type="button" onClick={() => setEdition(true)} className="inv-lien">{t.modifier}</button>
+            </div>
+          ) : (
+            <div>
+              <p className="inv-titre-suite">{t.repondre}</p>
+              {(["oui", "non"] as const).map((c) => (
+                <button key={c} type="button" onClick={() => setChoix(c)} aria-pressed={choix === c} data-testid={`rsvp-${c}`} className="inv-choix">
+                  {c === "oui" ? t.oui : t.non}
+                </button>
+              ))}
+              {choix === "oui" && infos.nb_prevus > 1 && (
+                <div className="inv-ligne">
+                  <span>{t.combien}</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+                    <button type="button" className="inv-rond" onClick={() => setNb(Math.max(1, nb - 1))} aria-label="-"><Minus className="h-4 w-4" /></button>
+                    <strong data-testid="rsvp-nb" style={{ minWidth: 20, textAlign: "center" }}>{nb}</strong>
+                    <button type="button" className="inv-rond" onClick={() => setNb(Math.min(infos.nb_prevus, nb + 1))} aria-label="+"><Plus className="h-4 w-4" /></button>
+                  </span>
                 </div>
               )}
+              {choix && <textarea value={mot} onChange={(e) => setMot(e.target.value)} maxLength={300} rows={3} placeholder={t.mot} className="inv-champ" style={{ marginBottom: 8 }} />}
+              {erreur && <p className="inv-erreur">{erreur}</p>}
+              <button type="button" onClick={envoyer} disabled={!choix || envoi} data-testid="rsvp-envoyer" className="inv-btn">
+                {envoi && <Loader2 className="h-4 w-4 animate-spin" />} {t.envoyer}
+              </button>
+              {infos.date_limite && <p style={{ fontSize: 12, textAlign: "center", opacity: .75, margin: "10px 0 0" }}>{t.avant} {dateTxt(infos.date_limite)}</p>}
             </div>
           )}
         </div>
-        <p className="text-center text-[11px] text-white/50 mt-4">Heavent People Agency</p>
-      </div>
-    </div>
+      </Invitation>
+    </>
   );
 }
