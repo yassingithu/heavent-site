@@ -1,5 +1,5 @@
 import { noms_ar, nomInvite_ar, lieu_ar, heure_ar, titre_ar } from "@/lib/arabe";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { MapPin } from "lucide-react";
 import { couleursDe, initiales, lienMaps, modeleDe, surCouleur, TEXTES, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
 import "@fontsource/pinyon-script/latin-400.css";
@@ -160,9 +160,24 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     try { const d = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => void }; if (d.fullscreenElement) void d.exitFullscreen(); else if (d.webkitFullscreenElement) d.webkitExitFullscreen?.(); } catch { /* ignoré */ }
   }, []);
   useEffect(() => { setPhase(ouverte || sansAnimation() ? "ouverte" : "fermee"); }, [ouverte, rejouer]);
+  const emRef = useRef<HTMLElement>(null);
+  const nomsRef = useRef<HTMLHeadingElement>(null);
+  const depart = useRef<DOMRect | null>(null);
+  /* Les prénoms restent au centre de la carte qui sort de l'enveloppe, puis glissent à leur place pendant que le reste apparaît. */
+  useLayoutEffect(() => {
+    if (phase !== "ouverte") return;
+    const d = depart.current; depart.current = null;
+    const h = nomsRef.current;
+    if (!d || !h || sansAnimation() || typeof h.animate !== "function") return;
+    const n = h.getBoundingClientRect();
+    const dy = (d.top + d.height / 2) - (n.top + n.height / 2);
+    if (Math.abs(dy) < 2) return;
+    h.classList.add("inv-glisse");
+    h.animate([{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }], { duration: 1000, delay: 250, easing: "cubic-bezier(.2,.7,.2,1)", fill: "backwards" });
+  }, [phase]);
   useEffect(() => {
     if (phase !== "ouverture") return;
-    const id = window.setTimeout(() => setPhase("ouverte"), sansAnimation() ? 0 : 2450);
+    const id = window.setTimeout(() => { depart.current = emRef.current?.getBoundingClientRect() ?? null; setPhase("ouverte"); }, sansAnimation() ? 0 : 2450);
     return () => window.clearTimeout(id);
   }, [phase]);
 
@@ -202,7 +217,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           <span className="inv-env-ombre" aria-hidden="true" />
           <button type="button" className="inv-enveloppe" onClick={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); setPhase("ouverture"); }} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
             <span className="inv-env-fond" />
-            <span className="inv-env-carte"><span><em>{lignes.length === 2 ? <>{lignes[0]}<small>&</small>{lignes[1]}</> : noms}</em></span></span>
+            <span className="inv-env-carte"><span><em ref={emRef}>{lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}</em></span></span>
             <span className="inv-fl inv-fl-b"><i /></span>
             <span className="inv-fl inv-fl-g"><i /></span>
             <span className="inv-fl inv-fl-d"><i /></span>
@@ -219,7 +234,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           <div className="inv-ornement"><Ornement type={ornement} /></div>
           {invite && <p className="inv-petit">{t.cher} {inviteA},</p>}
           <p className="inv-petit">{invite ? t.invites : t.invite}</p>
-          <h1 className="inv-noms" data-testid="rsvp-noms" aria-label={nomsA}>
+          <h1 ref={nomsRef} className="inv-noms" data-testid="rsvp-noms" aria-label={nomsA}>
             {lignes.length === 2 ? (<><Lettres texte={lignes[0]} base={0} ar={langue === "ar"} /><span className="inv-et" aria-hidden="true">{langue === "ar" ? "و" : "&"}</span><Lettres texte={lignes[1]} base={lignes[0].length + 2} ar={langue === "ar"} /></>) : <Lettres texte={nomsA} base={0} ar={langue === "ar"} />}</h1>
           <svg className="inv-trait" viewBox="0 0 220 14" aria-hidden="true"><path pathLength="1" d="M4 8c30-9 58 6 92-1s58-6 78 0c14 4 28 3 42-2" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
           {dp && (
