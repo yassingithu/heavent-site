@@ -13,9 +13,9 @@ interface Apercu { noms: string; date_evenement: string | null; lieu: string | n
 /** Aperçu offert à un couple : lien privé, non indexé, valable 30 jours. */
 const PIED = { fr: "Aperçu offert par Heavent People Agency", en: "Preview offered by Heavent People Agency", ar: "معاينة مقدمة من Heavent People Agency" } as const;
 const DEMO = {
-  fr: { q: "Serez-vous des nôtres ?", oui: "Avec joie, je serai là", non: "Je ne pourrai pas venir", merci: "Merci, votre réponse est enregistrée.", note: "Démonstration : vos invités répondent ici en un clic, et vous êtes prévenus." },
-  en: { q: "Will you join us?", oui: "Joyfully accept", non: "Regretfully decline", merci: "Thank you, your answer is saved.", note: "Demo: your guests answer here in one tap, and you are notified." },
-  ar: { q: "هل ستشرفوننا بحضوركم؟", oui: "بكل سرور، سأحضر", non: "للأسف لن أتمكن من الحضور", merci: "شكراً، تم تسجيل ردكم.", note: "نموذج تجريبي: يرد ضيوفكم هنا بضغطة واحدة ويصلكم الإشعار." },
+  fr: { q: "Serez-vous des nôtres ?", oui: "Avec joie, je serai là", non: "Je ne pourrai pas venir", merci: "Merci, votre réponse est enregistrée.", prenom: "Prénom", nom: "Nom", avec: "Je viens accompagné(e)", seul: "Seul(e)", plus: (n: number) => `+${n}`, accomp: "Prénom et nom de la personne qui vous accompagne", envoyer: "Envoyer ma réponse", note: "Démonstration : vos invités répondent ici avec leur nom (retrouvé dans votre liste), et les accompagnants si vous les autorisez. Vous êtes prévenus." },
+  en: { q: "Will you join us?", oui: "Joyfully accept", non: "Regretfully decline", merci: "Thank you, your answer is saved.", prenom: "First name", nom: "Last name", avec: "I am bringing a guest", seul: "Just me", plus: (n: number) => `+${n}`, accomp: "First and last name of your guest", envoyer: "Send my reply", note: "Demo: your guests reply here with their name (matched to your list), plus guests if you allow them. You are notified." },
+  ar: { q: "هل ستشرفوننا بحضوركم؟", oui: "بكل سرور، سأحضر", non: "للأسف لن أتمكن من الحضور", merci: "شكراً، تم تسجيل ردكم.", prenom: "الاسم الشخصي", nom: "اسم العائلة", avec: "سأحضر برفقة", seul: "وحدي", plus: (n: number) => `+${n}`, accomp: "الاسم الكامل لمرافقكم", envoyer: "إرسال ردي", note: "نموذج تجريبي: يرد ضيوفكم هنا باسمهم (يُطابَق مع قائمتكم) ومع مرافقيهم إن سمحتم بذلك. يصلكم الإشعار." },
 } as const;
 
 export default function InvitationApercu() {
@@ -23,6 +23,11 @@ export default function InvitationApercu() {
   const [d, setD] = useState<Apercu | null | undefined>(undefined);
   const [langue, setLangue] = useState<Langue>("fr");
   const [rep, setRep] = useState<"oui" | "non" | null>(null);
+  const [choix, setChoix] = useState<"oui" | "non" | null>(null);
+  const [prenom, setPrenom] = useState("");
+  const [famille, setFamille] = useState("");
+  const [plus, setPlus] = useState(0);
+  const [accomp, setAccomp] = useState("");
 
   useEffect(() => {
     if (!/^[0-9a-f-]{36}$/i.test(jeton)) { setD(null); return; }
@@ -48,12 +53,27 @@ export default function InvitationApercu() {
             <div style={{ textAlign: "center" }}>
               <CheckCircle2 className="h-8 w-8 mx-auto" style={{ color: "var(--inv-accent)" }} />
               <p style={{ fontWeight: 500, margin: "10px 0 4px" }}>{DEMO[langue].merci}</p>
-              <button type="button" className="inv-lien" aria-label="Recommencer" onClick={() => setRep(null)}>↺</button>
+              <button type="button" className="inv-lien" aria-label="Recommencer" onClick={() => { setRep(null); setChoix(null); setPlus(0); setAccomp(""); }}>↺</button>
             </div>
           ) : (
             <>
               <p className="inv-titre-suite">{DEMO[langue].q}</p>
-              {(["oui", "non"] as const).map((c) => <button key={c} type="button" className="inv-choix" onClick={() => setRep(c)} data-testid={`apercu-${c}`}>{DEMO[langue][c]}</button>)}
+              <input className="inv-champ" style={{ marginBottom: 8 }} value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder={DEMO[langue].prenom} autoComplete="given-name" maxLength={40} data-testid="apercu-prenom" />
+              <input className="inv-champ" style={{ marginBottom: 8 }} value={famille} onChange={(e) => setFamille(e.target.value)} placeholder={DEMO[langue].nom} autoComplete="family-name" maxLength={40} data-testid="apercu-nom" />
+              {(["oui", "non"] as const).map((c) => <button key={c} type="button" className="inv-choix" aria-pressed={choix === c} onClick={() => setChoix(c)} data-testid={`apercu-${c}`}>{DEMO[langue][c]}</button>)}
+              {choix === "oui" && (
+                <>
+                  <label style={{ display: "block", fontSize: 13, margin: "6px 0" }}>{DEMO[langue].avec}
+                    <select className="inv-champ" style={{ marginTop: 4 }} value={plus} onChange={(e) => setPlus(Number(e.target.value))} data-testid="apercu-plus">
+                      <option value={0}>{DEMO[langue].seul}</option>
+                      <option value={1}>{DEMO[langue].plus(1)}</option>
+                      <option value={2}>{DEMO[langue].plus(2)}</option>
+                    </select>
+                  </label>
+                  {plus > 0 && <input className="inv-champ" style={{ marginBottom: 8 }} value={accomp} onChange={(e) => setAccomp(e.target.value)} placeholder={DEMO[langue].accomp} maxLength={120} data-testid="apercu-accompagnant" />}
+                </>
+              )}
+              {choix && <button type="button" className="inv-btn" onClick={() => setRep(choix)} data-testid="apercu-envoyer">{DEMO[langue].envoyer}</button>}
             </>
           )}
           <p style={{ fontSize: 11, textAlign: "center", opacity: .65, margin: "10px 0 0" }}>{DEMO[langue].note}</p>

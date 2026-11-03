@@ -1,3 +1,4 @@
+import { noms_ar, nomInvite_ar, lieu_ar, heure_ar, titre_ar } from "@/lib/arabe";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { MapPin } from "lucide-react";
 import { couleursDe, initiales, lienMaps, modeleDe, surCouleur, TEXTES, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
@@ -142,8 +143,14 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     "--inv-fond": c.fond, "--inv-env": c.enveloppe, "--inv-papier": c.papier, "--inv-texte": c.texte, "--inv-accent": c.accent,
     "--inv-sur-env": surCouleur(c.enveloppe), "--inv-sur-fond": surCouleur(c.fond), "--inv-sur-accent": surCouleur(c.accent),
   } as CSSProperties;
+  const ar = langue === "ar";
   const carte = lienMaps(reglages, lieu);
-  const heure = reglages?.heure?.trim();
+  const heureBrute = reglages?.heure?.trim();
+  const heure = heureBrute && ar ? heure_ar(heureBrute) : heureBrute;
+  const nomsA = ar ? (reglages?.noms_ar?.trim() || noms_ar(noms)) : noms;
+  const lieuA = ar && lieu ? (reglages?.lieu_ar?.trim() || lieu_ar(lieu)) : lieu;
+  const messageA = ar && message ? (reglages?.message_ar?.trim() || message) : message;
+  const inviteA = ar && invite ? nomInvite_ar(invite) : invite;
   const dp = date ? new Intl.DateTimeFormat(t.locale, { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" }).formatToParts(new Date(date + "T00:00:00Z")) : null;
   const part = (k: string) => dp?.find((x) => x.type === k)?.value ?? "";
   const maj = (v: string) => v.charAt(0).toLocaleUpperCase(t.locale) + v.slice(1);
@@ -151,13 +158,13 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const programme = (reglages?.programme ?? []).filter((l) => l && (l.heure || l.titre)).slice(0, 8);
   const cibleMs = (() => {
     if (!date) return null;
-    const m = (heure ?? "").match(/(\d{1,2})\s*(?:h|:)\s*(\d{2})?/i);
+    const m = (heureBrute ?? "").match(/(\d{1,2})\s*(?:h|:)\s*(\d{2})?/i);
     const hh = m ? String(Math.min(23, Number(m[1]))).padStart(2, "0") : "18";
     const mm = m?.[2] ?? "00";
     const v = new Date(`${date}T${hh}:${mm}:00+01:00`).getTime();
     return Number.isNaN(v) ? null : v;
   })();
-  const lignes = noms.split(/\s+(?:et|and|و)\s+|\s*&\s*/i).map((x) => x.trim()).filter(Boolean);
+  const lignes = nomsA.split(/\s+(?:et|and|و)\s+|\s*&\s*/i).map((x) => x.trim()).filter(Boolean);
 
   return (
     <div className={`inv ${pleinePage ? "inv-page" : "inv-bloc"}`} style={style} dir={langue === "ar" ? "rtl" : "ltr"} data-phase={phase} data-testid="invitation">
@@ -173,7 +180,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
             <span className="inv-fl inv-fl-g"><i /></span>
             <span className="inv-fl inv-fl-d"><i /></span>
             <span className="inv-fl inv-fl-h"><i /></span>
-            <span className="inv-env-cachet"><em>{initiales(noms)}</em></span>
+            <span className="inv-env-cachet"><em>{initiales(nomsA)}</em></span>
           </button>
           <p className="inv-aide" aria-hidden={phase !== "fermee"}>{t.ouvrir}</p>
         </div>
@@ -183,10 +190,10 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           <div className="inv-etincelles" aria-hidden="true">{ETINCELLES.map((e, i) => <span key={i} style={{ left: `${e.x}%`, animationDelay: `${e.d}ms`, animationDuration: `${e.t + 900}ms`, width: e.s, height: e.s }} />)}</div>
           <div className="inv-motif" aria-hidden="true" />
           <div className="inv-ornement"><Ornement type={ornement} /></div>
-          {invite && <p className="inv-petit">{t.cher} {invite},</p>}
+          {invite && <p className="inv-petit">{t.cher} {inviteA},</p>}
           <p className="inv-petit">{invite ? t.invites : t.invite}</p>
-          <h1 className="inv-noms" data-testid="rsvp-noms" aria-label={noms}>
-            {lignes.length === 2 ? (<><Lettres texte={lignes[0]} base={0} ar={langue === "ar"} /><span className="inv-et" aria-hidden="true">&</span><Lettres texte={lignes[1]} base={lignes[0].length + 2} ar={langue === "ar"} /></>) : <Lettres texte={noms} base={0} ar={langue === "ar"} />}</h1>
+          <h1 className="inv-noms" data-testid="rsvp-noms" aria-label={nomsA}>
+            {lignes.length === 2 ? (<><Lettres texte={lignes[0]} base={0} ar={langue === "ar"} /><span className="inv-et" aria-hidden="true">&</span><Lettres texte={lignes[1]} base={lignes[0].length + 2} ar={langue === "ar"} /></>) : <Lettres texte={nomsA} base={0} ar={langue === "ar"} />}</h1>
           <svg className="inv-trait" viewBox="0 0 220 14" aria-hidden="true"><path pathLength="1" d="M4 8c30-9 58 6 92-1s58-6 78 0c14 4 28 3 42-2" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
           {dp && (
             <div className="inv-date" data-testid="invitation-date">
@@ -196,35 +203,35 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
             </div>
           )}
           {heure && <p className="inv-heure" dir="auto">{heure}</p>}
-          {lieu && <p className="inv-lieu" dir="auto">{lieu}</p>}
+          {lieuA && <p className="inv-lieu" dir="auto">{lieuA}</p>}
           {!pleinePage && carte && (
             <a className="inv-maps" href={carte} target="_blank" rel="noopener noreferrer"><MapPin className="h-4 w-4" aria-hidden="true" /> {t.maps}</a>
           )}
-          {!pleinePage && message && <p className="inv-message" dir="auto">{message}</p>}
+          {!pleinePage && messageA && <p className="inv-message" dir="auto">{messageA}</p>}
           {pleinePage && <p className="inv-defiler" aria-hidden="true"><span>{t.defiler}</span><i /></p>}
           {pleinePage && children && <a className="inv-repondre" href="#inv-reponse" onClick={(e) => { e.preventDefault(); document.getElementById("inv-reponse")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>{t.repondre}</a>}
           {!pleinePage && children && <div className="inv-suite">{children}</div>}
-        </article>
         {pleinePage && (
           <div className="inv-histoire">
             <Section nuit className="inv-sec-anneaux"><Anneaux /><p className="inv-sec-mot">{t.alliances}</p></Section>
             {cibleMs && (cibleMs > Date.now() || date === aujourdhuiISO) && <Section nuit titre={t.compte}><CompteARebours cible={cibleMs} t={t} /></Section>}
             {(lieu || carte) && (
               <Section nuit titre={t.lieuTitre}>
-                {lieu && <p className="inv-lieu" dir="auto" style={{ marginBottom: 12 }}>{lieu}</p>}
-                {lieu && <div className="inv-carte-g"><a className="inv-voile" href={carte ?? undefined} target="_blank" rel="noopener noreferrer" aria-label={t.itineraire} /><iframe title={lieu} loading="lazy" referrerPolicy="no-referrer-when-downgrade" src={`https://maps.google.com/maps?q=${encodeURIComponent(lieu)}&z=15&output=embed`} /></div>}
+                {lieuA && <p className="inv-lieu" dir="auto" style={{ marginBottom: 12 }}>{lieuA}</p>}
+                {lieu && <div className="inv-carte-g"><a className="inv-voile" href={carte ?? undefined} target="_blank" rel="noopener noreferrer" aria-label={t.itineraire} /><iframe title={lieuA} loading="lazy" referrerPolicy="no-referrer-when-downgrade" src={`https://maps.google.com/maps?q=${encodeURIComponent(lieu)}&z=15&output=embed`} /></div>}
                 {carte && <a className="inv-maps" href={carte} target="_blank" rel="noopener noreferrer"><MapPin className="h-4 w-4" aria-hidden="true" /> {t.itineraire}</a>}
               </Section>
             )}
             {programme.length > 0 && (
               <Section titre={t.programmeTitre}>
-                <ol className="inv-programme">{programme.map((l, k) => <li key={k} style={{ ["--k" as string]: k } as CSSProperties}><b>{l.heure}</b><span dir="auto">{l.titre}</span></li>)}</ol>
+                <ol className="inv-programme">{programme.map((l, k) => <li key={k} style={{ ["--k" as string]: k } as CSSProperties}><b>{ar ? heure_ar(l.heure) : l.heure}</b><span dir="auto">{ar ? (l.titre_ar?.trim() || titre_ar(l.titre)) : l.titre}</span></li>)}</ol>
               </Section>
             )}
-            {message && <Section><p className="inv-message" dir="auto" style={{ border: 0, padding: 0, margin: 0 }}>{message}</p></Section>}
+            {messageA && <Section><p className="inv-message" dir="auto" style={{ border: 0, padding: 0, margin: 0 }}>{messageA}</p></Section>}
             {children && <Section id="inv-reponse" titre={t.reponseTitre} className="inv-sec-reponse">{children}</Section>}
           </div>
         )}
+        </article>
       </>)}
       {bas}
       </div>

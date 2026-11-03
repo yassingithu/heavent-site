@@ -312,3 +312,20 @@
 .inv-programme li { transition-duration: .5s; transition-delay: calc(var(--k, 0) * .08s + .15s); }
 .inv-noms-balance, .inv-petit { text-wrap: balance; }
 .inv-anneaux { display: block; margin: 0 auto; }
+
+/* ===== Une seule carte qui défile (les blocs ne sont plus des cartes séparées) ===== */
+.inv-carte:has(> .inv-histoire) > .inv-motif { height: 340px; }
+.inv-carte > .inv-histoire { width: 100%; margin: 0; padding: 6px 0 0; gap: 0; }
+.inv-sec, .inv-sec.inv-nuit { background: none; border: 0; border-radius: 0; box-shadow: none; filter: none; color: inherit; padding: 30px 4px 4px; }
+.inv-sec::before, .inv-sec.inv-nuit::before { display: none; }
+.inv-sec:not(:last-child)::after { content: ""; display: block; width: 72px; height: 1px; margin: 30px auto 0; background: linear-gradient(90deg, transparent, var(--inv-accent), transparent); }
+.inv-nuit .inv-sec-titre { color: color-mix(in srgb, var(--inv-accent) 55%, var(--inv-texte)); }
+.inv-nuit .inv-sec-mot { color: var(--inv-texte); }
+.inv-nuit .inv-anneaux { color: var(--inv-accent); filter: drop-shadow(0 4px 6px rgba(0,0,0,.18)); }
+.inv-nuit .inv-compte div { background: color-mix(in srgb, var(--inv-accent) 12%, var(--inv-papier)); }
+.inv-nuit .inv-compte b { color: var(--inv-texte); }
+.inv-nuit .inv-lieu { color: var(--inv-texte); }
+.inv-nuit .inv-maps { color: var(--inv-texte); border-color: var(--inv-accent); }
+.inv-nuit .inv-carte-g { background: none; border-color: var(--inv-accent); }
+.inv-nuit .inv-carte-g iframe { filter: sepia(.25) saturate(.85); }
+.inv-carte .inv-sec-reponse { padding-bottom: 12px; }

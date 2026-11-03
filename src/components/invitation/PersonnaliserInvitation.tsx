@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { RotateCcw, Play } from "lucide-react";
 import Invitation from "./Invitation";
+import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
 import { CHAMPS_COULEUR, MODELES, PALETTES, couleursDe, modeleDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
 
 interface Props {
@@ -95,6 +96,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             <div key={k} className="flex gap-2">
               <input className={`${champ} w-24`} value={l.heure} maxLength={10} placeholder="19h30" aria-label="Heure" onChange={(e) => onChange({ ...valeur, programme: (valeur.programme ?? []).map((x, i) => (i === k ? { ...x, heure: e.target.value } : x)) })} />
               <input className={`${champ} flex-1 min-w-0`} value={l.titre} maxLength={50} placeholder="Cérémonie" aria-label="Moment" onChange={(e) => onChange({ ...valeur, programme: (valeur.programme ?? []).map((x, i) => (i === k ? { ...x, titre: e.target.value } : x)) })} />
+              <input dir="rtl" className={`${champ} w-36`} value={l.titre_ar ?? ""} maxLength={50} placeholder={titre_ar(l.titre) || "بالعربية"} aria-label="Moment en arabe" onChange={(e) => onChange({ ...valeur, programme: (valeur.programme ?? []).map((x, i) => (i === k ? { ...x, titre_ar: e.target.value } : x)) })} />
               <button type="button" className="px-3 min-h-11 text-sm underline" aria-label="Retirer cette ligne" onClick={() => onChange({ ...valeur, programme: (valeur.programme ?? []).filter((_, i) => i !== k) })}>✕</button>
             </div>
           ))}
@@ -102,6 +104,24 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             {(valeur.programme ?? []).length < 8 && <button type="button" className={bouton} onClick={() => onChange({ ...valeur, programme: [...(valeur.programme ?? []), { heure: "", titre: "" }] })}>Ajouter un moment</button>}
             {!(valeur.programme ?? []).length && <button type="button" className={bouton} onClick={() => onChange({ ...valeur, programme: [{ heure: "19h30", titre: "Accueil des invités" }, { heure: "20h30", titre: "Entrée des mariés" }, { heure: "21h00", titre: "Dîner" }, { heure: "23h00", titre: "Soirée dansante" }] })}>Programme type</button>}
           </div>
+        </section>
+
+        <section className="space-y-3" data-testid="invitation-arabe">
+          <h3 className="font-serif text-xl">5. La version arabe</h3>
+          <p className="text-xs text-[#6B6154]">Les prénoms et le lieu sont écrits automatiquement en lettres arabes. Vérifiez et corrigez ici si besoin : ce que vous écrivez remplace la suggestion.</p>
+          <label className="block text-sm">Prénoms des mariés
+            <input dir="rtl" className={`${champ} mt-1`} value={valeur.noms_ar ?? ""} maxLength={80} placeholder={noms_ar(noms)} onChange={(e) => onChange({ ...valeur, noms_ar: e.target.value })} data-testid="invitation-noms-ar" />
+          </label>
+          {lieu && (
+            <label className="block text-sm">Lieu
+              <input dir="rtl" className={`${champ} mt-1`} value={valeur.lieu_ar ?? ""} maxLength={160} placeholder={lieu_ar(lieu)} onChange={(e) => onChange({ ...valeur, lieu_ar: e.target.value })} data-testid="invitation-lieu-ar" />
+            </label>
+          )}
+          {message && (
+            <label className="block text-sm">Votre message
+              <textarea dir="rtl" rows={2} className={`${champ} mt-1 py-2`} value={valeur.message_ar ?? ""} maxLength={300} placeholder="ترجمة رسالتكم بالعربية" onChange={(e) => onChange({ ...valeur, message_ar: e.target.value })} data-testid="invitation-message-ar" />
+            </label>
+          )}
         </section>
       </div>
 

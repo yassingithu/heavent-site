@@ -2,7 +2,7 @@
 export type Langue = "fr" | "en" | "ar";
 export type Ornement = "khatam" | "arche" | "cadre" | "fleur" | "filet" | "zellige";
 export interface Couleurs { fond: string; enveloppe: string; papier: string; texte: string; accent: string }
-export interface InvitationReglages { modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; programme?: { heure: string; titre: string }[] }
+export interface InvitationReglages { modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; programme?: { heure: string; titre: string; titre_ar?: string }[]; noms_ar?: string; lieu_ar?: string; message_ar?: string }
 export interface Modele { id: string; nom: string; description: string; ornement: Ornement; couleurs: Couleurs }
 
 export const MODELES: Modele[] = [
