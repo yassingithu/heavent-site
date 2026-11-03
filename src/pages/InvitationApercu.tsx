@@ -48,7 +48,7 @@ export default function InvitationApercu() {
             <div style={{ textAlign: "center" }}>
               <CheckCircle2 className="h-8 w-8 mx-auto" style={{ color: "var(--inv-accent)" }} />
               <p style={{ fontWeight: 500, margin: "10px 0 4px" }}>{DEMO[langue].merci}</p>
-              <button type="button" className="inv-lien" onClick={() => setRep(null)}>↺</button>
+              <button type="button" className="inv-lien" aria-label="Recommencer" onClick={() => setRep(null)}>↺</button>
             </div>
           ) : (
             <>

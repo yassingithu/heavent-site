@@ -81,7 +81,7 @@ function CompteARebours({ cible, t }: { cible: number; t: { jours: string; heure
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const id = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(id); }, []);
   const reste = cible - now;
-  if (reste <= 0) return reste > -864e5 ? <p className="inv-aujourdhui">{t.aujourdhui}</p> : null;
+  if (reste <= 0) return <p className="inv-aujourdhui">{t.aujourdhui}</p>;
   const j = Math.floor(reste / 864e5), h = Math.floor(reste / 36e5) % 24, m = Math.floor(reste / 6e4) % 60, sec = Math.floor(reste / 1e3) % 60;
   return (
     <div className="inv-compte" role="timer" aria-live="off" aria-label={`${j} ${t.jours}`}>
@@ -147,6 +147,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const dp = date ? new Intl.DateTimeFormat(t.locale, { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" }).formatToParts(new Date(date + "T00:00:00Z")) : null;
   const part = (k: string) => dp?.find((x) => x.type === k)?.value ?? "";
   const maj = (v: string) => v.charAt(0).toLocaleUpperCase(t.locale) + v.slice(1);
+  const aujourdhuiISO = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
   const programme = (reglages?.programme ?? []).filter((l) => l && (l.heure || l.titre)).slice(0, 8);
   const cibleMs = (() => {
     if (!date) return null;
@@ -207,7 +208,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
         {pleinePage && (
           <div className="inv-histoire">
             <Section nuit className="inv-sec-anneaux"><Anneaux /><p className="inv-sec-mot">{t.alliances}</p></Section>
-            {cibleMs && <Section nuit titre={t.compte}><CompteARebours cible={cibleMs} t={t} /></Section>}
+            {cibleMs && (cibleMs > Date.now() || date === aujourdhuiISO) && <Section nuit titre={t.compte}><CompteARebours cible={cibleMs} t={t} /></Section>}
             {(lieu || carte) && (
               <Section nuit titre={t.lieuTitre}>
                 {lieu && <p className="inv-lieu" dir="auto" style={{ marginBottom: 12 }}>{lieu}</p>}

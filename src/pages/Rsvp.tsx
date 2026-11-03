@@ -17,7 +17,7 @@ const T = {
     combien: "Nombre de personnes", accompagne: (n: number) => `Les mariés vous autorisent à venir accompagné(e) : jusqu'à ${n} personnes en tout, vous compris.`, accompagnants: "Prénoms de vos accompagnants (facultatif)", avec: "Accompagné(e) de", mot: "Un mot pour les mariés, un régime alimentaire… (facultatif)", envoyer: "Envoyer ma réponse",
     merciOui: "Merci ! Votre présence est confirmée.", merciNon: "Merci de nous avoir prévenus.", modifier: "Modifier ma réponse",
     avant: "Merci de répondre avant le", introuvable: "Cette invitation est introuvable.", erreur: "La réponse n'a pas pu être envoyée. Réessayez.",
-        prenom: "Prénom", nomFamille: "Nom", chercher: "Continuer", cherche: "Retrouvons votre invitation", pasTrouve: "Nous ne vous trouvons pas dans la liste. Vérifiez l'orthographe, ou envoyez quand même votre réponse : les mariés la valideront.", plusieurs: "Plusieurs invités portent ce nom. Utilisez le lien personnel que les mariés vous ont envoyé.", envoyerQuandMeme: "Répondre quand même", retour: "Changer de nom", bonjourNom: (n: string) => `Bonjour ${n}`,
+        prenom: "Prénom", nomFamille: "Nom", chercher: "Continuer", cherche: "Retrouvons votre invitation", pasTrouve: "Nous ne vous trouvons pas dans la liste. Vérifiez l'orthographe, ou envoyez quand même votre réponse : les mariés la valideront.", plusieurs: "Plusieurs invités portent ce nom. Utilisez le lien personnel que les mariés vous ont envoyé.", envoyerQuandMeme: "Répondre quand même", retour: "Changer de nom", erreurCherche: "Recherche impossible. Réessayez.", bonjourNom: (n: string) => `Bonjour ${n}`,
     close: "Les réponses sont closes pour ce mariage.", personnes: (n: number) => `${n} personne${n > 1 ? "s" : ""}`, locale: "fr-FR",
   },
   en: {
@@ -25,7 +25,7 @@ const T = {
     combien: "Number of guests", accompagne: (n: number) => `The couple allows you to bring guests: up to ${n} people in total, including you.`, accompagnants: "Names of your guests (optional)", avec: "Accompanied by", mot: "A note for the couple, dietary needs… (optional)", envoyer: "Send my reply",
     merciOui: "Thank you! Your attendance is confirmed.", merciNon: "Thank you for letting us know.", modifier: "Change my reply",
     avant: "Kindly reply before", introuvable: "This invitation could not be found.", erreur: "Your reply could not be sent. Please try again.",
-        prenom: "First name", nomFamille: "Last name", chercher: "Continue", cherche: "Let's find your invitation", pasTrouve: "We can't find you in the guest list. Check the spelling, or reply anyway: the couple will validate it.", plusieurs: "Several guests share this name. Please use the personal link the couple sent you.", envoyerQuandMeme: "Reply anyway", retour: "Change name", bonjourNom: (n: string) => `Hello ${n}`,
+        prenom: "First name", nomFamille: "Last name", chercher: "Continue", cherche: "Let's find your invitation", pasTrouve: "We can't find you in the guest list. Check the spelling, or reply anyway: the couple will validate it.", plusieurs: "Several guests share this name. Please use the personal link the couple sent you.", envoyerQuandMeme: "Reply anyway", retour: "Change name", erreurCherche: "Search failed. Please try again.", bonjourNom: (n: string) => `Hello ${n}`,
     close: "Replies are now closed for this wedding.", personnes: (n: number) => `${n} guest${n > 1 ? "s" : ""}`, locale: "en-GB",
   },
   ar: {
@@ -33,7 +33,7 @@ const T = {
     combien: "عدد الأشخاص", accompagne: (n: number) => `يسمح لكم العروسان بمرافقة آخرين: حتى ${n} أشخاص بمن فيهم أنتم.`, accompagnants: "أسماء المرافقين (اختياري)", avec: "برفقة", mot: "كلمة للعروسين، نظام غذائي… (اختياري)", envoyer: "إرسال ردي",
     merciOui: "شكراً! تم تأكيد حضوركم.", merciNon: "شكراً لإعلامنا.", modifier: "تعديل ردي",
     avant: "يرجى الرد قبل", introuvable: "هذه الدعوة غير موجودة.", erreur: "تعذر إرسال الرد. حاولوا مرة أخرى.",
-        prenom: "الاسم الشخصي", nomFamille: "اسم العائلة", chercher: "متابعة", cherche: "لنجد دعوتكم", pasTrouve: "لم نجدكم في قائمة المدعوين. تحققوا من الكتابة أو أرسلوا ردكم على أي حال وسيؤكده العروسان.", plusieurs: "عدة مدعوين يحملون هذا الاسم. استعملوا الرابط الشخصي الذي أرسله لكم العروسان.", envoyerQuandMeme: "الرد على أي حال", retour: "تغيير الاسم", bonjourNom: (n: string) => `مرحباً ${n}`,
+        prenom: "الاسم الشخصي", nomFamille: "اسم العائلة", chercher: "متابعة", cherche: "لنجد دعوتكم", pasTrouve: "لم نجدكم في قائمة المدعوين. تحققوا من الكتابة أو أرسلوا ردكم على أي حال وسيؤكده العروسان.", plusieurs: "عدة مدعوين يحملون هذا الاسم. استعملوا الرابط الشخصي الذي أرسله لكم العروسان.", envoyerQuandMeme: "الرد على أي حال", retour: "تغيير الاسم", erreurCherche: "تعذر البحث. حاولوا مرة أخرى.", bonjourNom: (n: string) => `مرحباً ${n}`,
     close: "انتهت فترة الرد على هذه الدعوة.", personnes: (n: number) => `${n} ${n > 1 ? "أشخاص" : "شخص"}`, locale: "ar-MA-u-nu-latn-ca-gregory",
   },
 };
@@ -77,7 +77,7 @@ export default function Rsvp() {
       if (!/^[0-9a-f-]{36}$/i.test(jeton)) { setInfos(null); return; }
       const { data } = await (supabase as any).rpc("rsvp_public", { p_jeton: jeton });
       setInfos(data ?? null);
-      if (data) { setNb(data.nb_confirmes || data.nb_prevus); setMot(data.remarque ?? ""); setChoix(data.reponse === "attente" ? null : data.reponse); }
+      if (data) { setNb(data.nb_confirmes || 1); setMot(data.remarque ?? ""); setChoix(data.reponse === "attente" ? null : data.reponse); }
     })();
   }, [jeton, groupe]);
 
@@ -102,7 +102,7 @@ export default function Rsvp() {
     setCherche(true); setRecherche(""); setErreur("");
     const { data, error } = await (supabase as any).rpc("rsvp_groupe_chercher", { p_token: token, p_nom: nomSaisi });
     setCherche(false);
-    if (error) { setErreur(t.erreur); return; }
+    if (error) { setErreur(t.erreurCherche); return; }
     if (data?.statut === "trouve") setJetonTrouve(data.jeton);
     else setRecherche(data?.statut === "plusieurs" ? "plusieurs" : "absent");
   };
@@ -163,7 +163,7 @@ export default function Rsvp() {
       <div className="inv inv-page" style={{ "--inv-fond": "#141414", "--inv-texte": "#FFFFFF", "--inv-sur-fond": "#FFFFFF" } as React.CSSProperties} dir={langue === "ar" ? "rtl" : "ltr"}>
         <Seo noindex />
         <div className="inv-colonne" data-testid="rsvp">
-          {infos === undefined ? <Loader2 className="h-6 w-6 animate-spin mx-auto" /> : <p style={{ textAlign: "center" }}>{t.introuvable}</p>}
+          {infos === undefined ? <Loader2 className="h-6 w-6 animate-spin mx-auto" /> : <><p style={{ textAlign: "center" }}>{t.introuvable}</p>{groupe && <button type="button" className="inv-lien" style={{ display: "block", margin: "12px auto" }} onClick={() => { setJetonTrouve(""); setInfos(undefined); setRecherche(""); }}>{t.retour}</button>}</>}
         </div>
       </div>
     );
@@ -172,7 +172,7 @@ export default function Rsvp() {
   return (
     <>
       <Seo noindex />
-      <Invitation noms={infos.noms} date={infos.date_evenement} lieu={infos.lieu} message={infos.message} reglages={infos.invitation} langue={langue} invite={infos.nom}
+      <Invitation ouverte={groupe} noms={infos.noms} date={infos.date_evenement} lieu={infos.lieu} message={infos.message} reglages={infos.invitation} langue={langue} invite={infos.nom}
         haut={langues} bas={pied}>
         <div data-testid="rsvp">
           {repondu ? (
