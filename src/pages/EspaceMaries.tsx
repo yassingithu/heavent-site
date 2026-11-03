@@ -187,6 +187,7 @@ export default function EspaceMaries() {
         {onglet === "invites" && <Invites token={token} espace={espace} invites={invites} noms={noms} date={devis.date_evenement} maj={maj} enregistrer={enregistrerInvite} supprimer={supprimerInvite} />}
         {onglet === "invitation" && (
           <div className={`${carte} p-4 sm:p-6`}>
+            <LienInvitation lien={lienReponse(token)} noms={noms} onInvites={() => setOnglet("invites")} />
             <PersonnaliserInvitation noms={noms} date={devis.date_evenement} lieu={devis.lieu} message={espace.message_invites} valeur={espace.invitation ?? {}} onChange={(v) => maj({ invitation: v })} />
             <p className="text-xs text-[#8C6D22] mt-4">Cette invitation s'affiche à vos invités quand ils ouvrent leur lien (onglet Invités).</p>
           </div>
@@ -200,6 +201,24 @@ export default function EspaceMaries() {
 }
 
 /* ---------------- Check-list ---------------- */
+function LienInvitation({ lien, noms, onInvites }: { lien: string; noms: string; onInvites: () => void }) {
+  const [copie, setCopie] = useState(false);
+  const copier = async () => { try { await navigator.clipboard.writeText(lien); setCopie(true); setTimeout(() => setCopie(false), 1500); } catch { window.prompt("Lien à copier :", lien); } };
+  return (
+    <div className="mb-6 rounded-2xl border border-[#E3D6BA] bg-[#FAF7EE] p-4" data-testid="lien-invitation">
+      <p className="text-sm font-medium">Le lien de votre invitation</p>
+      <p className="text-xs text-[#8C6D22] mt-1">Un seul lien pour tous vos invités : ils ouvrent l'enveloppe, tapent leur nom et répondent. Vous pouvez aussi envoyer un lien personnel à chacun depuis l'onglet Invités.</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <input readOnly value={lien} onFocus={(e) => e.currentTarget.select()} className={`${champ} flex-1 min-w-[220px]`} aria-label="Lien de l'invitation" />
+        <button type="button" onClick={copier} className={boutonOr}>{copie ? "Copié ✓" : "Copier le lien"}</button>
+        <a className={boutonClair} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(`💌 ${noms} vous invitent à leur mariage.\nOuvrez l'enveloppe et confirmez votre présence ici :\n${lien}`)}`}>WhatsApp</a>
+        <a className={boutonClair} target="_blank" rel="noopener noreferrer" href={lien}>Voir comme un invité</a>
+        <button type="button" onClick={onInvites} className={boutonClair}>Liens personnels</button>
+      </div>
+    </div>
+  );
+}
+
 function Checklist({ espace, date, maj }: { espace: Espace; date: string | null; maj: (m: Partial<Espace>) => void }) {
   const [nouveau, setNouveau] = useState<Record<string, string>>({});
   const set = (l: Tache[]) => maj({ checklist: l });
