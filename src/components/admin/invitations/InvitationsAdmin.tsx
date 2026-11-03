@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Copy, Loader2, MessageCircle, Plus, Trash2, ArrowLeft, BadgeCheck, Send } from "lucide-react";
+import { Copy, Loader2, MessageCircle, Plus, Trash2, ArrowLeft, BadgeCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvitation";
@@ -72,11 +72,13 @@ export default function InvitationsAdmin() {
     const url = `https://wa.me/?text=${encodeURIComponent(t)}`;
     if (fenetre) fenetre.location.href = url; else window.location.href = url;
   };
+  const manque = (a: Apercu) => !a.noms.trim() ? "Saisissez les prénoms des mariés" : !a.date_evenement ? "Ajoutez la date avant de passer en finale" : a.date_evenement < new Date().toISOString().slice(0, 10) ? "La date est déjà passée : corrigez-la avant de passer en finale" : !a.lieu?.trim() ? "Ajoutez la salle avant de passer en finale" : null;
   const passerFinale = async () => {
     if (!edit) return;
-    if (!edit.noms.trim()) { toast.error("Saisissez d'abord les prénoms des mariés"); return; }
+    if (!manque(edit)) { /* ok */ } else { toast.error(manque(edit)!); setFinaliser(false); return; }
     setEnvoi(true);
-    const fin = new Date(); fin.setFullYear(fin.getFullYear() + 1);
+    const fin = edit.date_evenement ? new Date(`${edit.date_evenement}T12:00:00`) : new Date();
+    if (edit.date_evenement) fin.setDate(fin.getDate() + 30); else fin.setFullYear(fin.getFullYear() + 1);
     const { error } = await db.from("invitations_apercu").update({ noms: edit.noms.trim(), date_evenement: edit.date_evenement || null, lieu: edit.lieu?.trim() || null, message: edit.message?.trim() || null, invitation: edit.invitation, prospect: edit.prospect?.trim() || null, mode: "final", finale_le: new Date().toISOString(), expire_le: fin.toISOString() }).eq("id", edit.id);
     setEnvoi(false); setFinaliser(false);
     if (error) { toast.error("Passage en version finale impossible"); return; }
@@ -142,10 +144,10 @@ export default function InvitationsAdmin() {
           {edit.mode === "test" ? (<>
             <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => whatsapp(edit)}><MessageCircle className="h-4 w-4" /> Envoyer le test par WhatsApp</button>
             {finaliser ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#FFF7E6] border border-[#F0D9A8] px-3 min-h-10 text-sm">Retirer le filigrane ? <button type="button" className="font-semibold underline" onClick={passerFinale} disabled={envoi} data-testid="finale-confirmer">Oui, version finale</button> <button type="button" onClick={() => setFinaliser(false)}>Annuler</button></span>
-            ) : <button type="button" className={`${btn} bg-[#B8923A] text-white`} onClick={() => setFinaliser(true)} data-testid="finale-passer"><Send className="h-4 w-4" /> Passer en version finale</button>}
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-[#141414] text-[#FBF6E9] border-t border-[#A8933F] px-4 py-2 text-sm max-w-xl">Le lien déjà envoyé deviendra la vraie carte ({new Date(`${edit.date_evenement}T12:00:00`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · {edit.lieu}). Réponses des invités : {edit.avec_reponse ? "activées" : "désactivées"}. Retour au test impossible. <button type="button" className="font-semibold rounded bg-[#E4D49A] text-[#141414] px-3 min-h-10" onClick={passerFinale} disabled={envoi} data-testid="finale-confirmer">Oui, version finale</button> <button type="button" className="underline min-h-10" onClick={() => setFinaliser(false)}>Annuler</button></span>
+            ) : <button type="button" className={`${btn} bg-[#B8923A] text-[#141414] hover:bg-[#C9A44A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#141414]`} onClick={() => { const m = manque(edit); if (m) toast.error(m); else setFinaliser(true); }} data-testid="finale-passer"><BadgeCheck className="h-4 w-4" /> Passer en version finale</button>}
           </>) : (
-            <button type="button" className={`${btn} bg-[#B8923A] text-white`} onClick={() => whatsappClient(edit)} data-testid="finale-envoyer"><MessageCircle className="h-4 w-4" /> Envoyer la version finale au client</button>
+            <button type="button" className={`${btn} bg-[#B8923A] text-[#141414] hover:bg-[#C9A44A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#141414]`} onClick={() => whatsappClient(edit)} data-testid="finale-envoyer"><MessageCircle className="h-4 w-4" /> Envoyer la version finale au client</button>
           )}
         </div>
       </div>
@@ -187,7 +189,7 @@ export default function InvitationsAdmin() {
         </div>
       ) : (<>
       <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-[#5E554A] max-w-xl">Créez en 1 minute un aperçu avec les prénoms d'un couple et envoyez-lui le lien : l'enveloppe s'ouvre, la salle s'affiche sur Google Maps. Les liens restent valables 30 jours. Pour un couple client, l'invitation se règle dans son espace mariés (onglet « Mon invitation »).</p>
+        <p className="text-sm text-[#5E554A] max-w-xl">Créez en 1 minute un aperçu avec les prénoms d'un couple et envoyez-lui le lien : l'enveloppe s'ouvre, la salle s'affiche sur Google Maps. Les aperçus restent valables 30 jours ; une carte finale reste valable jusqu'à 30 jours après le mariage. Pour un couple client, l'invitation se règle dans son espace mariés (onglet « Mon invitation »).</p>
         <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={creer} data-testid="apercu-nouveau"><Plus className="h-4 w-4" /> Nouvel aperçu</button>
       </div>
       {liste.length === 0 && <p className="text-sm text-[#5E554A] text-center py-10">Aucun aperçu pour le moment.</p>}
@@ -209,7 +211,7 @@ export default function InvitationsAdmin() {
           <li key={a.id} className="rounded-2xl bg-white border border-[#EADFC8] p-3 flex flex-wrap items-center gap-2 justify-between">
             <button type="button" className="text-left min-w-0 flex-1" onClick={() => setEdit(a)}>
               <span className="block font-medium truncate">{a.noms} <span className={`ml-1 align-middle text-[10px] uppercase tracking-widest rounded-full px-2 py-0.5 ${a.mode === "final" ? "bg-[#E6F2EC] text-[#1F5A4C]" : "bg-[#F4ECD8] text-[#7A5A12]"}`}>{a.mode === "final" ? "Finale" : "Test"}</span></span>
-              <span className="block text-xs text-[#6B6154] truncate">{[a.prospect, a.lieu, `expire le ${new Date(a.expire_le).toLocaleDateString("fr-FR")}`].filter(Boolean).join(" · ")}</span>
+              <span className="block text-xs text-[#6B6154] truncate">{[a.prospect, a.lieu, `${a.mode === "final" ? "valable jusqu'au" : "expire le"} ${new Date(a.expire_le).toLocaleDateString("fr-FR")}`].filter(Boolean).join(" · ")}</span>
             </button>
             <div className="flex gap-1.5">
               <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => copier(a)} aria-label="Copier le lien"><Copy className="h-4 w-4" /></button>

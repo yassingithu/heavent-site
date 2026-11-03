@@ -536,7 +536,8 @@
   .inv-defiler { display: none; }
 }
 
-/* Filigrane de la version test : couvre toute la page, ne bloque rien (captures d'écran inutilisables) */
+/* Filigrane de la version test : deux mentions en quinconce, trait or + cœur sombre (lisible sur fond crème comme sur fond noir) */
 .inv-filigrane { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; user-select: none; -webkit-user-select: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='190'><text x='150' y='100' text-anchor='middle' transform='rotate(-26 150 95)' font-family='Jost,Arial,sans-serif' font-size='19' letter-spacing='5' fill='rgba(120,120,120,0.55)' stroke='rgba(255,255,255,0.45)' stroke-width='.6'>HEAVENT · APERÇU</text></svg>"); background-size: 300px 190px; }
-.inv-filigrane span { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); padding: 6px 14px; border-radius: 999px; background: rgba(20,20,20,.78); color: #E4D49A; font: 500 11px/1 "Jost", sans-serif; letter-spacing: .22em; text-transform: uppercase; white-space: nowrap; }
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='460' height='300'><g transform='rotate(-24 230 150)' font-family='Gloock,Georgia,serif' font-size='17' letter-spacing='4' text-anchor='middle' fill='rgba(20,20,20,0.30)' stroke='rgba(228,212,154,0.70)' stroke-width='2' paint-order='stroke' stroke-linejoin='round'><text x='125' y='95'>HEAVENT · APERÇU</text><text x='345' y='215'>HEAVENT · APERÇU</text></g></svg>"); background-size: 460px 300px; }
+.inv-filigrane span { position: absolute; left: 50%; bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px)); transform: translateX(-50%); padding: 7px 16px; border-radius: 2px; background: #141414; border: 1px solid #A8933F; box-shadow: 0 4px 14px rgba(0,0,0,.25); color: #E4D49A; font: 500 12px/1 "Jost", sans-serif; letter-spacing: .22em; text-transform: uppercase; white-space: nowrap; }
+.inv-filigrane span:lang(ar) { letter-spacing: 0; text-transform: none; font: 500 14px/1.2 "Amiri", serif; }
