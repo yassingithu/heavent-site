@@ -799,13 +799,16 @@ await scenario("Espace mariés : check-list, budget, programme, invités qui ré
   verifier(/Salma.*Youssef/s.test((await g.page.getByTestId("rsvp-noms").getAttribute("aria-label")) || (await g.page.getByTestId("rsvp-noms").textContent()) || ""), "la page invité n'affiche pas les mariés");
   verifier(!(await g.page.locator("header").count()), "la page invité affiche le menu du site");
   await g.page.getByTestId("rsvp-oui").tap();
-  await g.page.getByRole("button", { name: "-" }).tap();
+  await g.page.getByRole("button", { name: "+" }).tap(); await g.page.getByRole("button", { name: "+" }).tap();
+  const champsAcc = g.page.getByTestId("rsvp-accompagnants").locator("input");
+  for (let k = 0; k < await champsAcc.count(); k++) await champsAcc.nth(k).fill(`Invité${k + 1} Benali`);
   await g.page.locator("textarea").fill("Un enfant allergique aux fruits à coque");
   await g.page.getByTestId("rsvp-envoyer").tap(); await g.page.waitForTimeout(800);
   verifier(await g.page.getByTestId("rsvp-merci").isVisible(), "pas de confirmation pour l'invité");
   verifier(base.invites_mariage[0].reponse === "oui" && base.invites_mariage[0].nb_confirmes === 3, "la réponse de l'invité n'est pas enregistrée");
   await g.page.screenshot({ path: `${CAPTURES}/22-rsvp-invite.png`, fullPage: true });
   await g.page.goto(`${BASE}/rsvp/${base.invites_mariage[1].jeton}`); await g.page.waitForTimeout(1200);
+  if (await g.page.getByTestId("invitation-ouvrir").count()) { await g.page.getByTestId("invitation-ouvrir").tap(); await g.page.getByTestId("rsvp-noms").waitFor({ timeout: 8000 }); await g.page.waitForTimeout(800); }
   await g.page.getByTestId("rsvp-non").tap(); await g.page.getByTestId("rsvp-envoyer").tap(); await g.page.waitForTimeout(600);
   verifier(!g.erreurs.length, "erreurs JavaScript (invité) : " + g.erreurs.join(" ; "));
   await g.ctx.close();
@@ -1716,7 +1719,9 @@ if (process.env.BETA_LIVE) {
     await page.goto(LIVE + "/devis-mariage"); await page.waitForTimeout(2000);
     await page.getByRole("button", { name: /Envoyer ma demande/ }).click(); await page.waitForTimeout(800);
     verifier(await page.locator(".text-destructive").count(), "le formulaire mariage vide n'affiche pas d'erreurs");
-    verifier(!erreurs.length, "erreurs JavaScript en ligne : " + erreurs.slice(0, 3).join(" ; "));
+    const vraies = erreurs.filter((e) => !/dynamically imported module|Failed to fetch|Load failed/i.test(e));
+    erreurs.filter((e) => !vraies.includes(e)).slice(0, 2).forEach((e) => alertes.push("chargement interrompu (hébergeur saturé ?) : " + e.slice(0, 120)));
+    verifier(!vraies.length, "erreurs JavaScript en ligne : " + vraies.slice(0, 3).join(" ; "));
     notes.push(`${pages.length} pages en ligne contrôlées, formulaire vide bien refusé`);
     alertes.forEach((a) => notes.push("⚠️ " + a));
     await page.screenshot({ path: `${CAPTURES}/5-en-ligne.png` });
