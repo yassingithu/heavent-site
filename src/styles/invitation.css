@@ -406,3 +406,15 @@
 .inv-noms.inv-glisse .inv-lettre, .inv-noms.inv-glisse .inv-mot { animation: none !important; }
 .inv-env-carte > span { padding-top: 16%; }
 @media (max-height: 780px) { .inv-noms { margin-top: 10px; } }
+
+/* ===== Carte qui sort de l'enveloppe = même gabarit que la carte finale (étroite, en arche), sous le sélecteur de langue ===== */
+.inv-page[data-phase="fermee"] .inv-env-carte, .inv-page[data-phase="ouverture"] .inv-env-carte { top: 140px; bottom: 4%; }
+@media (min-width: 700px) {
+  .inv-page[data-phase="fermee"] .inv-env-carte, .inv-page[data-phase="ouverture"] .inv-env-carte { left: calc(50% - 220px); right: calc(50% - 220px); }
+}
+.inv-env-carte[data-orn="arche"] > span, .inv-env-carte[data-orn="khatam"] > span { border-radius: 220px 220px 6px 6px; }
+/* Grand écran : la carte part du même haut que la carte finale et les prénoms restent dans le tiers haut (pas au milieu d'une carte très haute) */
+@media (min-width: 700px) {
+  .inv-page[data-phase="fermee"] .inv-env-carte, .inv-page[data-phase="ouverture"] .inv-env-carte { top: 114px; }
+  .inv-env-carte > span { align-items: flex-start; padding-top: 150px; }
+}

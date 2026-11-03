@@ -217,7 +217,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           <span className="inv-env-ombre" aria-hidden="true" />
           <button type="button" className="inv-enveloppe" onClick={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); setPhase("ouverture"); }} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
             <span className="inv-env-fond" />
-            <span className="inv-env-carte"><span><em ref={emRef}>{lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}</em></span></span>
+            <span className="inv-env-carte" data-orn={ornement}><span><em ref={emRef}>{lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}</em></span></span>
             <span className="inv-fl inv-fl-b"><i /></span>
             <span className="inv-fl inv-fl-g"><i /></span>
             <span className="inv-fl inv-fl-d"><i /></span>
