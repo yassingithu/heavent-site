@@ -1,5 +1,6 @@
 /* Ouvertures animées (porte marocaine, portail, Art déco, rideaux) et cœur à gratter.
    Tout est dessiné en SVG/CSS ; on n'anime que transform et opacity. */
+
 .inv-porte { --o-rayon: 50% 50% 0 0 / 19% 19% 0 0; position: relative; display: block; width: min(92vw, calc((100dvh - 170px) / 2), 400px); aspect-ratio: 1 / 2; padding: 0; border: 0; background: none; cursor: pointer; perspective: 1400px; overflow: hidden; border-radius: var(--o-rayon); -webkit-tap-highlight-color: transparent; box-shadow: 0 18px 40px rgba(0, 0, 0, .28); isolation: isolate; }
 .inv-porte:focus-visible { outline: 3px solid var(--inv-accent); outline-offset: 6px; }
 .inv-porte:disabled { cursor: default; }
@@ -17,8 +18,15 @@
 .inv-o-d svg { transform: scaleX(-1); }
 
 /* matières */
-.inv-o-marocaine .inv-o-battant { background: linear-gradient(90deg, color-mix(in srgb, var(--inv-env) 82%, #000), var(--inv-env) 45%, color-mix(in srgb, var(--inv-env) 88%, #000)); }
-.inv-o-marocaine .inv-o-d { background: linear-gradient(270deg, color-mix(in srgb, var(--inv-env) 82%, #000), var(--inv-env) 45%, color-mix(in srgb, var(--inv-env) 88%, #000)); }
+.inv-o-marocaine { --o-rayon: 0; aspect-ratio: 1536 / 2752; box-shadow: 0 18px 44px rgba(0, 0, 0, .4); }
+.inv-o-marocaine::after { display: none; }
+.inv-o-marocaine .inv-o-battant { background: #2a1a10 center / 100% 100% no-repeat; }
+.inv-o-marocaine .inv-o-g { background-image: url("/ouvertures/marocaine-g.webp"); }
+.inv-o-marocaine .inv-o-d { background-image: url("/ouvertures/marocaine-d.webp"); }
+.inv-o-marocaine .inv-o-g::after, .inv-o-marocaine .inv-o-d::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,.35)); opacity: 0; }
+.inv[data-phase="ouverture"] .inv-o-marocaine .inv-o-g::after, .inv[data-phase="ouverture"] .inv-o-marocaine .inv-o-d::after { animation: o-ombre 1.4s ease-in .22s both; }
+.inv-o-marocaine .inv-o-d::after { transform: scaleX(-1); }
+@keyframes o-ombre { to { opacity: 1; } }
 .inv-o-fer .inv-o-battant { background: transparent; }
 .inv-o-fer .inv-o-battant svg { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .35)); }
 .inv-o-artdeco .inv-o-battant { background: linear-gradient(180deg, #17120b, #0c0a07); }
@@ -72,4 +80,5 @@
 .inv-rev-bouton { min-height: 44px; padding: 0 22px; border-radius: 999px; border: 1px solid var(--inv-accent); background: transparent; color: var(--inv-sur-fond); font: inherit; font-size: 13px; letter-spacing: .18em; text-transform: uppercase; cursor: pointer; }
 .inv[dir="rtl"] .inv-rev-bouton { letter-spacing: 0; text-transform: none; font-size: 15px; }
 .inv-page .inv-rev-aide { position: static; color: var(--inv-sur-fond); }
-.inv-page .inv-porte + .inv-aide { color: var(--inv-sur-fond); }
+.inv-page .inv-scene:has(.inv-porte) { justify-content: center; }
+.inv-page .inv-porte + .inv-aide { color: var(--inv-sur-env); }
