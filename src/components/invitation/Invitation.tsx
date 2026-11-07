@@ -22,6 +22,8 @@ export interface InvitationProps {
   invite?: string | null;
   /** Aperçu : la carte est déjà sortie de l'enveloppe */
   ouverte?: boolean;
+  /** Aperçu de l'administration : après « Rejouer », l'ouverture se lance toute seule. */
+  autoOuvrir?: boolean;
   /** Change de valeur pour rejouer l'ouverture (aperçu) */
   rejouer?: number;
   /** Cadre de page entier (invité) ou simple bloc (aperçu dans un cadre) */
@@ -152,7 +154,7 @@ function Ornement({ type }: { type: Ornement }) {
   }
 }
 
-export default function Invitation({ noms, date, lieu, message, reglages, langue = "fr", invite, ouverte = false, rejouer = 0, pleinePage = true, haut, bas, children }: InvitationProps) {
+export default function Invitation({ noms, date, lieu, message, reglages, langue = "fr", invite, ouverte = false, autoOuvrir = false, rejouer = 0, pleinePage = true, haut, bas, children }: InvitationProps) {
   const c = useMemo(() => couleursDe(reglages), [reglages]);
   const modele = reglages?.modele;
   const ornement = modeleDe(modele).ornement;
@@ -164,7 +166,12 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   useEffect(() => () => {
     try { const d = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => void }; if (d.fullscreenElement) void d.exitFullscreen(); else if (d.webkitFullscreenElement) d.webkitExitFullscreen?.(); } catch { /* ignoré */ }
   }, []);
-  useEffect(() => { setPhase(ouverte || sansAnimation() ? "ouverte" : "fermee"); }, [ouverte, rejouer]);
+  useEffect(() => {
+    setPhase(ouverte || sansAnimation() ? "ouverte" : "fermee");
+    if (!autoOuvrir || ouverte || sansAnimation()) return;
+    const id = window.setTimeout(() => setPhase((p) => (p === "fermee" ? "ouverture" : p)), 700);
+    return () => window.clearTimeout(id);
+  }, [ouverte, rejouer, autoOuvrir]);
   const emRef = useRef<HTMLElement>(null);
   const nomsRef = useRef<HTMLHeadingElement>(null);
   const depart = useRef<DOMRect | null>(null);

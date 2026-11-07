@@ -110,8 +110,9 @@ export const initiales = (noms: string) => {
 export const OUVERTURES: { id: string; nom: string; description: string; duree: number }[] = [
   { id: "enveloppe", nom: "Enveloppe", description: "Le faire-part sort de son enveloppe cachetée.", duree: 2450 },
   { id: "marocaine", nom: "Porte marocaine", description: "Deux battants en bois sculpté sous un arc, cloutés de laiton.", duree: 1750 },
-  { id: "fer", nom: "Portail en fer forgé", description: "Un portail ajouré à arabesques : on devine déjà la fête derrière.", duree: 1650 },
+  { id: "fer", nom: "Portail en fer forgé", description: "Un portail ajouré à arabesques : on devine déjà la fête derrière.", duree: 1750 },
   { id: "artdeco", nom: "Portes Art déco", description: "Portes noires et or, éventail rayonnant, un rai de lumière entre les battants.", duree: 1800 },
+  { id: "florale", nom: "Couverture florale", description: "Deux volets en papier aquarellé, scellés d'un cachet de cire, qui s'ouvrent en livre.", duree: 1750 },
   { id: "rideaux", nom: "Rideaux", description: "Deux pans de tissu drapé qui s'écartent comme au théâtre.", duree: 1800 },
 ];
 export const REVELATIONS: { id: string; nom: string; description: string }[] = [

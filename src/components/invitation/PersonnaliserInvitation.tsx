@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { RotateCcw, Play } from "lucide-react";
 import Invitation from "./Invitation";
 import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
@@ -19,10 +19,12 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
   const modele = modeleDe(valeur.modele);
   const actuelles = couleursDe(valeur);
 
+  const apercuRef = useRef<HTMLElement>(null);
+  const montrer = () => { if (window.matchMedia("(max-width: 1023px)").matches) apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); };
   const ouv = ouvertureDe(valeur.ouverture);
   const rev = revelationDe(valeur.revelation);
-  const choisirOuverture = (id: string) => { onChange({ ...valeur, ouverture: id }); setRejouer((n) => n + 1); };
-  const choisirRevelation = (id: string) => { onChange({ ...valeur, revelation: id }); setRejouer((n) => n + 1); };
+  const choisirOuverture = (id: string) => { onChange({ ...valeur, ouverture: id }); setRejouer((n) => n + 1); montrer(); };
+  const choisirRevelation = (id: string) => { onChange({ ...valeur, revelation: id }); setRejouer((n) => n + 1); montrer(); };
   const choisirModele = (id: string) => onChange({ ...valeur, modele: id });
   const appliquerPalette = (c: Couleurs) => onChange({ ...valeur, couleurs: { ...c } });
   const changer = (k: keyof Couleurs, v: string) => onChange({ ...valeur, couleurs: { ...(valeur.couleurs ?? {}), [k]: v } });
@@ -36,13 +38,13 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         <section>
           <h3 className="font-serif text-xl mb-1">1. Comment l'invitation s'ouvre</h3>
           <p className="text-sm text-[#5E554A] mb-3">Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu.</p>
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2" role="group" aria-label="Ouverture">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2" role="group" aria-label="Ouverture">
             {OUVERTURES.map((o) => (
               <button key={o.id} type="button" onClick={() => choisirOuverture(o.id)} aria-pressed={ouv.id === o.id} data-testid={`ouverture-${o.id}`}
                 className={`text-left rounded-2xl border p-2 transition ${ouv.id === o.id ? "border-[#141414] ring-2 ring-[#141414]/15" : "border-[#E3D6BA] hover:border-[#C8B560]"}`}>
                 <span className="flex h-24 rounded-lg overflow-hidden mb-1.5 bg-[#EFE6D2]" aria-hidden="true">
                   {o.id === "enveloppe"
-                    ? <span className="m-auto h-12 w-16 rounded-sm bg-[#F7F1E3] border border-[#C8B560]" />
+                    ? <span className="relative m-auto h-14 w-20 rounded-sm bg-[#F7F1E3] border border-[#C8B560] grid place-items-center"><span className="h-5 w-5 rounded-full bg-[#B8963E] shadow-[0_0_0_2px_#8A6D24_inset]" /></span>
                     : <><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-g.webp)` }} /><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-d.webp)` }} /></>}
                 </span>
                 <span className="block text-xs font-medium leading-tight">{o.nom}</span>
@@ -64,7 +66,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </section>
 
         <section>
-          <h3 className="font-serif text-xl mb-1">3. Choisissez un modèle de couleurs</h3>
+          <h3 className="font-serif text-xl mb-1">3. Le style de l'invitation</h3>
           <p className="text-sm text-[#5E554A] mb-3">Chaque modèle a son ornement et ses couleurs. Vos couleurs personnalisées sont conservées quand vous changez de modèle.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {MODELES.map((m) => (
@@ -82,7 +84,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
 
         <section>
           <div className="flex items-center justify-between gap-2 mb-1">
-            <h3 className="font-serif text-xl">4. Vos couleurs</h3>
+            <h3 className="font-serif text-xl">4. Les couleurs</h3>
             <button type="button" className={bouton} onClick={() => onChange({ ...valeur, couleurs: {} })} disabled={!modifiees} data-testid="couleurs-reinit">
               <RotateCcw className="h-4 w-4" /> Couleurs du modèle
             </button>
@@ -159,7 +161,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </section>
       </div>
 
-      <aside className="min-w-0 order-first lg:order-none lg:sticky lg:top-4 self-start space-y-2" aria-label="Aperçu de l'invitation">
+      <aside ref={apercuRef} className="min-w-0 scroll-mt-16 order-first lg:order-none lg:sticky lg:top-4 self-start space-y-2" aria-label="Aperçu de l'invitation">
         <div className="flex items-center justify-between gap-2">
           <div className="flex gap-1" role="group" aria-label="Langue de l'aperçu">
             {LANGUES.map(([l, t]) => (
@@ -169,7 +171,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           </div>
           <button type="button" className={bouton} onClick={() => setRejouer((n) => n + 1)} data-testid="invitation-rejouer"><Play className="h-4 w-4" /> Voir l'ouverture</button>
         </div>
-        <Invitation noms={noms || "Prénom & Prénom"} date={date} lieu={lieu} message={message} reglages={valeur} langue={langue} pleinePage={false} rejouer={rejouer} ouverte={rejouer === 0} />
+        <Invitation noms={noms || "Prénom & Prénom"} date={date} lieu={lieu} message={message} reglages={valeur} langue={langue} pleinePage={false} rejouer={rejouer} ouverte={rejouer === 0} autoOuvrir />
       </aside>
     </div>
   );
