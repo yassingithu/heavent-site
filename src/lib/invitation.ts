@@ -107,13 +107,24 @@ export const initiales = (noms: string) => {
 };
 
 /** Ouvertures et révélations : chacune se combine librement avec n'importe quel modèle de couleurs. */
-export const OUVERTURES: { id: string; nom: string; description: string; duree: number }[] = [
+export interface OuvertureDef {
+  id: string; nom: string; description: string; duree: number;
+  /** Ouverture vidéo : fichier, affiche d'attente (1re image) et licence. Ajouter une entrée ici suffit : elle apparaît dans l'éditeur. */
+  video?: string; poster?: string; licence?: string;
+}
+const LICENCE_PARTENAIRE = "Ressource tierce, utilisée avec l'accord de son propriétaire";
+export const OUVERTURES: OuvertureDef[] = [
   { id: "enveloppe", nom: "Enveloppe", description: "Le faire-part sort de son enveloppe cachetée.", duree: 2450 },
   { id: "marocaine", nom: "Porte marocaine", description: "Deux battants en bois sculpté sous un arc, cloutés de laiton.", duree: 1750 },
   { id: "fer", nom: "Portail en fer forgé", description: "Un portail ajouré à arabesques : on devine déjà la fête derrière.", duree: 1750 },
   { id: "artdeco", nom: "Portes Art déco", description: "Portes noires et or, éventail rayonnant, un rai de lumière entre les battants.", duree: 1800 },
   { id: "florale", nom: "Couverture florale", description: "Deux volets en papier aquarellé, scellés d'un cachet de cire, qui s'ouvrent en livre.", duree: 1750 },
   { id: "rideaux", nom: "Rideaux", description: "Deux pans de tissu drapé qui s'écartent comme au théâtre.", duree: 1800 },
+  { id: "v-porte-blanche", nom: "Portes blanches brodées (vidéo)", description: "Deux portes de dentelle et de roses en relief, nouées d'un ruban, qui s'ouvrent sur un décor de fête. 6 s.", duree: 5700, video: "/ouvertures/video/porte-blanche.mp4", poster: "/ouvertures/video/porte-blanche-poster.webp", licence: LICENCE_PARTENAIRE },
+  { id: "v-minuit", nom: "Salle de bal (vidéo)", description: "Un dessin au trait doré s'éclaire : lustre, escaliers, lumières. 5 s.", duree: 5000, video: "/ouvertures/video/minuit.mp4", poster: "/ouvertures/video/minuit-poster.webp", licence: LICENCE_PARTENAIRE },
+  { id: "v-neige", nom: "Chalet sous la neige (vidéo)", description: "Une aquarelle d'hiver se peint sous vos yeux. 5 s.", duree: 5000, video: "/ouvertures/video/neige.mp4", poster: "/ouvertures/video/neige-poster.webp", licence: LICENCE_PARTENAIRE },
+  { id: "v-oliveto", nom: "Oliveraie (vidéo)", description: "Un chemin d'oliviers se colore, aquarelle méditerranéenne. 5 s.", duree: 5000, video: "/ouvertures/video/oliveto.mp4", poster: "/ouvertures/video/oliveto-poster.webp", licence: LICENCE_PARTENAIRE },
+  { id: "v-azure", nom: "Côte bleue (vidéo)", description: "Une arche donne sur la mer et les coupoles bleues. 5 s.", duree: 5000, video: "/ouvertures/video/azure.mp4", poster: "/ouvertures/video/azure-poster.webp", licence: LICENCE_PARTENAIRE },
 ];
 export const REVELATIONS: { id: string; nom: string; description: string }[] = [
   { id: "aucune", nom: "Aucune", description: "L'invitation s'affiche juste après l'ouverture." },

@@ -45,6 +45,8 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
                 <span className="flex h-24 rounded-lg overflow-hidden mb-1.5 bg-[#EFE6D2]" aria-hidden="true">
                   {o.id === "enveloppe"
                     ? <span className="relative m-auto h-14 w-20 rounded-sm bg-[#F7F1E3] border border-[#C8B560] grid place-items-center"><span className="h-5 w-5 rounded-full bg-[#B8963E] shadow-[0_0_0_2px_#8A6D24_inset]" /></span>
+                    : o.poster
+                    ? <span className="w-full bg-cover bg-center" style={{ backgroundImage: `url(${o.poster})` }} />
                     : <><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-g.webp)` }} /><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-d.webp)` }} /></>}
                 </span>
                 <span className="block text-xs font-medium leading-tight">{o.nom}</span>

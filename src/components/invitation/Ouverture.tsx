@@ -1,4 +1,5 @@
-import type { Ref, ReactNode } from "react";
+import { useEffect, useRef, useState, type Ref, type ReactNode } from "react";
+import { ouvertureDe } from "@/lib/invitation";
 
 /** Ouvertures animées de l'invitation : de vraies photos coupées en deux battants (public/ouvertures/<type>-g|d.webp),
  *  animées en CSS 3D. Chaque type partage la même structure (battants, cartouche des prénoms, lueur) pour rester interchangeable. */
@@ -39,6 +40,28 @@ function Defs() {
 }
 
 export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, noms, initiales, libelleBouton }: Props) {
+  const def = ouvertureDe(type);
+  const [echec, setEchec] = useState(false);
+  const video = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    if (phase !== "ouverture" || !def.video) return;
+    // Lecture au toucher (autorisée car déclenchée par le geste) ; si le navigateur la refuse, l'affiche s'estompe simplement.
+    video.current?.play().catch(() => setEchec(true));
+  }, [phase, def.video]);
+  if (def.video) {
+    return (
+      <div className="inv-scene">
+        <button type="button" className={`inv-porte inv-o-video${echec ? " inv-o-video-secours" : ""}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={libelle} data-testid="invitation-ouvrir" data-ouverture={type}>
+          <img className="inv-ov-affiche" src={def.poster} alt="" decoding="async" />
+          <video ref={video} className="inv-ov-film" src={phase === "fermee" ? undefined : def.video} poster={def.poster} muted playsInline preload="none" aria-hidden="true" onError={() => setEchec(true)} />
+          <span className="inv-o-sceau" aria-hidden="true"><em ref={nomsRef}>{initiales}</em></span>
+          <span className="inv-o-ouvrir">{libelleBouton}</span>
+          <span className="inv-sr-seul">{noms}</span>
+        </button>
+        <p className="inv-aide" aria-hidden={phase !== "fermee"}>{libelle}</p>
+      </div>
+    );
+  }
   return (
     <div className="inv-scene">
       <Defs />

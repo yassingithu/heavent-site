@@ -151,3 +151,13 @@
 .inv[data-phase="ouverture"] .inv-o-florale .inv-o-d { animation: o-livre-d 1.5s cubic-bezier(.4, .05, .25, 1) .25s both; }
 @keyframes o-livre-g { to { transform: rotateY(-89deg); } }
 @keyframes o-livre-d { to { transform: rotateY(89deg); } }
+
+/* ── Ouvertures vidéo (affiche d'attente puis film de 5 s, sans son ; l'affiche seule sert de repli) ── */
+.inv-o-video { --o-rayon: 0; aspect-ratio: 9 / 16; background: #111; box-shadow: 0 18px 44px rgba(0, 0, 0, .4); }
+.inv-o-video::after { display: none; }
+.inv-o-video .inv-ov-affiche, .inv-o-video .inv-ov-film { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.inv-o-video .inv-ov-film { opacity: 0; transition: opacity .25s; }
+.inv[data-phase="ouverture"] .inv-o-video:not(.inv-o-video-secours) .inv-ov-film { opacity: 1; }
+.inv-o-video .inv-o-sceau, .inv-o-video .inv-o-ouvrir { z-index: 3; }
+.inv[data-phase="ouverture"] .inv-o-video .inv-o-sceau, .inv[data-phase="ouverture"] .inv-o-video .inv-o-ouvrir { opacity: 0; transition: opacity .3s; }
+@media (prefers-reduced-motion: reduce) { .inv-o-video .inv-ov-film { display: none; } }
