@@ -2,7 +2,7 @@ import { useState } from "react";
 import { RotateCcw, Play } from "lucide-react";
 import Invitation from "./Invitation";
 import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
-import { CHAMPS_COULEUR, MODELES, PALETTES, couleursDe, modeleDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
+import { CHAMPS_COULEUR, MODELES, OUVERTURES, PALETTES, REVELATIONS, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
 
 interface Props {
   noms: string; date?: string | null; lieu?: string | null; message?: string | null;
@@ -19,6 +19,10 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
   const modele = modeleDe(valeur.modele);
   const actuelles = couleursDe(valeur);
 
+  const ouv = ouvertureDe(valeur.ouverture);
+  const rev = revelationDe(valeur.revelation);
+  const choisirOuverture = (id: string) => { onChange({ ...valeur, ouverture: id }); setRejouer((n) => n + 1); };
+  const choisirRevelation = (id: string) => { onChange({ ...valeur, revelation: id }); setRejouer((n) => n + 1); };
   const choisirModele = (id: string) => onChange({ ...valeur, modele: id });
   const appliquerPalette = (c: Couleurs) => onChange({ ...valeur, couleurs: { ...c } });
   const changer = (k: keyof Couleurs, v: string) => onChange({ ...valeur, couleurs: { ...(valeur.couleurs ?? {}), [k]: v } });
@@ -30,7 +34,37 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]" data-testid="personnaliser-invitation">
       <div className="space-y-6 min-w-0">
         <section>
-          <h3 className="font-serif text-xl mb-1">1. Choisissez un modèle</h3>
+          <h3 className="font-serif text-xl mb-1">1. Comment l'invitation s'ouvre</h3>
+          <p className="text-sm text-[#5E554A] mb-3">Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu.</p>
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2" role="group" aria-label="Ouverture">
+            {OUVERTURES.map((o) => (
+              <button key={o.id} type="button" onClick={() => choisirOuverture(o.id)} aria-pressed={ouv.id === o.id} data-testid={`ouverture-${o.id}`}
+                className={`text-left rounded-2xl border p-2 transition ${ouv.id === o.id ? "border-[#141414] ring-2 ring-[#141414]/15" : "border-[#E3D6BA] hover:border-[#C8B560]"}`}>
+                <span className="flex h-24 rounded-lg overflow-hidden mb-1.5 bg-[#EFE6D2]" aria-hidden="true">
+                  {o.id === "enveloppe"
+                    ? <span className="m-auto h-12 w-16 rounded-sm bg-[#F7F1E3] border border-[#C8B560]" />
+                    : <><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-g.webp)` }} /><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-d.webp)` }} /></>}
+                </span>
+                <span className="block text-xs font-medium leading-tight">{o.nom}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-[#6B6154] mt-2">{ouv.description}</p>
+        </section>
+
+        <section>
+          <h3 className="font-serif text-xl mb-1">2. Une petite surprise ?</h3>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Révélation">
+            {REVELATIONS.map((r) => (
+              <button key={r.id} type="button" onClick={() => choisirRevelation(r.id)} aria-pressed={rev.id === r.id} data-testid={`revelation-${r.id}`}
+                className={`rounded-full border px-4 min-h-10 text-sm ${rev.id === r.id ? "border-[#141414] bg-[#141414] text-white" : "border-[#E3D6BA] bg-white hover:border-[#C8B560]"}`}>{r.nom}</button>
+            ))}
+          </div>
+          <p className="text-xs text-[#6B6154] mt-2">{rev.description}</p>
+        </section>
+
+        <section>
+          <h3 className="font-serif text-xl mb-1">3. Choisissez un modèle de couleurs</h3>
           <p className="text-sm text-[#5E554A] mb-3">Chaque modèle a son ornement et ses couleurs. Vos couleurs personnalisées sont conservées quand vous changez de modèle.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {MODELES.map((m) => (
@@ -48,7 +82,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
 
         <section>
           <div className="flex items-center justify-between gap-2 mb-1">
-            <h3 className="font-serif text-xl">2. Vos couleurs</h3>
+            <h3 className="font-serif text-xl">4. Vos couleurs</h3>
             <button type="button" className={bouton} onClick={() => onChange({ ...valeur, couleurs: {} })} disabled={!modifiees} data-testid="couleurs-reinit">
               <RotateCcw className="h-4 w-4" /> Couleurs du modèle
             </button>
@@ -79,7 +113,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </section>
 
         <section className="space-y-3">
-          <h3 className="font-serif text-xl">3. Le lieu et l'heure</h3>
+          <h3 className="font-serif text-xl">5. Le lieu et l'heure</h3>
           <label className="block text-sm">Heure d'accueil (facultatif)
             <input className={`${champ} mt-1`} value={valeur.heure ?? ""} maxLength={20} placeholder="19h30" onChange={(e) => onChange({ ...valeur, heure: e.target.value })} data-testid="invitation-heure" />
           </label>
@@ -90,7 +124,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </section>
 
         <section className="space-y-3" data-testid="invitation-programme">
-          <h3 className="font-serif text-xl">4. Le programme (facultatif)</h3>
+          <h3 className="font-serif text-xl">6. Le programme (facultatif)</h3>
           <p className="text-xs text-[#6B6154]">Affiché aux invités quand ils font défiler l'invitation.</p>
           {(valeur.programme ?? []).map((l, k) => (
             <div key={k} className="flex gap-2">
@@ -107,7 +141,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </section>
 
         <section className="space-y-3" data-testid="invitation-arabe">
-          <h3 className="font-serif text-xl">5. La version arabe</h3>
+          <h3 className="font-serif text-xl">7. La version arabe</h3>
           <p className="text-xs text-[#6B6154]">Les prénoms et le lieu sont écrits automatiquement en lettres arabes. Vérifiez et corrigez ici si besoin : ce que vous écrivez remplace la suggestion.</p>
           <label className="block text-sm">Prénoms des mariés
             <input dir="rtl" className={`${champ} mt-1`} value={valeur.noms_ar ?? ""} maxLength={80} placeholder={noms_ar(noms)} onChange={(e) => onChange({ ...valeur, noms_ar: e.target.value })} data-testid="invitation-noms-ar" />
