@@ -5,10 +5,6 @@
 .inv-porte:focus-visible { outline: 3px solid var(--inv-accent); outline-offset: 6px; }
 .inv-porte:disabled { cursor: default; }
 .inv-porte::after { content: ""; position: absolute; inset: 0; border: 3px solid var(--inv-accent); border-radius: var(--o-rayon); pointer-events: none; z-index: 6; }
-.inv-o-fer { --o-rayon: 50% 50% 0 0 / 9% 9% 0 0; }
-.inv-o-artdeco { --o-rayon: 3px; }
-.inv-o-rideaux { --o-rayon: 3px; }
-.inv-o-rideaux::after { display: none; }
 
 .inv-o-lueur { position: absolute; inset: 0; z-index: 0; background: radial-gradient(62% 42% at 50% 54%, color-mix(in srgb, var(--inv-accent) 50%, var(--inv-papier)), var(--inv-papier) 72%); }
 .inv-o-battant { position: absolute; top: 0; bottom: 0; width: 50%; z-index: 2; color: var(--inv-accent); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
@@ -18,23 +14,25 @@
 .inv-o-d svg { transform: scaleX(-1); }
 
 /* matières */
-.inv-o-marocaine { --o-rayon: 0; aspect-ratio: 1536 / 2752; box-shadow: 0 18px 44px rgba(0, 0, 0, .4); }
-.inv-o-marocaine::after { display: none; }
-.inv-o-marocaine .inv-o-battant { background: #2a1a10 center / 100% 100% no-repeat; }
+.inv-porte { --o-rayon: 0; aspect-ratio: 1536 / 2752; box-shadow: 0 18px 44px rgba(0, 0, 0, .4); }
+.inv-porte::after { display: none; }
+.inv-o-battant { background: #1a1410 center / 100% 100% no-repeat; }
 .inv-o-marocaine .inv-o-g { background-image: url("/ouvertures/marocaine-g.webp"); }
 .inv-o-marocaine .inv-o-d { background-image: url("/ouvertures/marocaine-d.webp"); }
-.inv-o-marocaine .inv-o-g::after, .inv-o-marocaine .inv-o-d::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,.35)); opacity: 0; }
-.inv[data-phase="ouverture"] .inv-o-marocaine .inv-o-g::after, .inv[data-phase="ouverture"] .inv-o-marocaine .inv-o-d::after { animation: o-ombre 1.4s ease-in .22s both; }
-.inv-o-marocaine .inv-o-d::after { transform: scaleX(-1); }
+.inv-o-fer .inv-o-g { background-image: url("/ouvertures/fer-g.webp"); }
+.inv-o-fer .inv-o-d { background-image: url("/ouvertures/fer-d.webp"); }
+.inv-o-artdeco .inv-o-g { background-image: url("/ouvertures/artdeco-g.webp"); }
+.inv-o-artdeco .inv-o-d { background-image: url("/ouvertures/artdeco-d.webp"); }
+.inv-o-rideaux .inv-o-g { background-image: url("/ouvertures/rideaux-g.webp"); }
+.inv-o-rideaux .inv-o-d { background-image: url("/ouvertures/rideaux-d.webp"); }
+/* ombre portée sur les battants pendant qu'ils s'ouvrent */
+.inv-o-battant::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,.35)); opacity: 0; }
+.inv-o-d::after { transform: scaleX(-1); }
+.inv[data-phase="ouverture"] .inv-o-battant::after { animation: o-ombre 1.4s ease-in .22s both; }
 @keyframes o-ombre { to { opacity: 1; } }
-.inv-o-fer .inv-o-battant { background: transparent; }
-.inv-o-fer .inv-o-battant svg { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .35)); }
-.inv-o-artdeco .inv-o-battant { background: linear-gradient(180deg, #17120b, #0c0a07); }
-.inv-o-rideaux .inv-o-battant { background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--inv-accent) 24%, var(--inv-papier)) 0 8%, color-mix(in srgb, var(--inv-accent) 12%, var(--inv-papier)) 8% 16%); box-shadow: inset 0 22px 24px -10px rgba(0, 0, 0, .28); }
 
 /* rai de lumière entre les battants */
 .inv-o-rai { position: absolute; z-index: 3; left: calc(50% - 1px); top: 0; bottom: 0; width: 2px; opacity: 0; background: linear-gradient(180deg, transparent, #fff3c4 20%, #fff3c4 80%, transparent); transform-origin: center; pointer-events: none; }
-.inv-o-artdeco .inv-o-rai { opacity: .85; box-shadow: 0 0 10px 2px color-mix(in srgb, var(--inv-accent) 80%, #fff); }
 
 /* cartouche des prénoms */
 .inv-o-cartouche { position: absolute; z-index: 5; left: 9%; right: 9%; top: 42%; display: grid; place-items: center; padding: 14px 10px; background: var(--inv-papier); color: var(--inv-texte); border: 1px solid var(--inv-accent); border-radius: 3px; box-shadow: 0 6px 18px rgba(0, 0, 0, .3); text-align: center; pointer-events: none; }
@@ -59,8 +57,8 @@
 @keyframes o-pivot-d { to { transform: rotateY(82deg); } }
 @keyframes o-glisse-g { to { transform: translateX(-101%); } }
 @keyframes o-glisse-d { to { transform: translateX(101%); } }
-@keyframes o-rideau-g { to { transform: translateX(-98%) scaleX(.78); } }
-@keyframes o-rideau-d { to { transform: translateX(98%) scaleX(.78); } }
+@keyframes o-rideau-g { to { transform: translateX(-96%) scaleX(.9); } }
+@keyframes o-rideau-d { to { transform: translateX(96%) scaleX(.9); } }
 @keyframes o-rai { 0% { opacity: .9; transform: scaleX(1); } 100% { opacity: 0; transform: scaleX(46); } }
 @keyframes o-lueur { to { transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .inv-porte *, .inv-rev * { animation: none !important; transition: none !important; } }
