@@ -58,8 +58,8 @@
 .inv[data-phase="ouverture"] .inv-o-cartouche { opacity: 0; }
 .inv[data-phase="ouverture"] .inv-aide { opacity: 0; transition: opacity .3s; animation: none; }
 .inv[data-phase="ouverture"] .inv-o-battant { will-change: transform; }
-.inv[data-phase="ouverture"] :is(.inv-o-marocaine, .inv-o-fer, .inv-o-florale) .inv-o-g { animation: o-pivot-g 1.4s cubic-bezier(.45, .05, .25, 1) .22s both; }
-.inv[data-phase="ouverture"] :is(.inv-o-marocaine, .inv-o-fer, .inv-o-florale) .inv-o-d { animation: o-pivot-d 1.4s cubic-bezier(.45, .05, .25, 1) .22s both; }
+.inv[data-phase="ouverture"] :is(.inv-o-marocaine, .inv-o-fer) .inv-o-g { animation: o-pivot-g 1.4s cubic-bezier(.45, .05, .25, 1) .22s both; }
+.inv[data-phase="ouverture"] :is(.inv-o-marocaine, .inv-o-fer) .inv-o-d { animation: o-pivot-d 1.4s cubic-bezier(.45, .05, .25, 1) .22s both; }
 .inv[data-phase="ouverture"] .inv-o-artdeco .inv-o-g { animation: o-glisse-g 1.25s cubic-bezier(.45, .05, .25, 1) .3s both; }
 .inv[data-phase="ouverture"] .inv-o-artdeco .inv-o-d { animation: o-glisse-d 1.25s cubic-bezier(.45, .05, .25, 1) .3s both; }
 .inv[data-phase="ouverture"] .inv-o-rideaux .inv-o-g { transform-origin: left center; animation: o-rideau-g 1.4s cubic-bezier(.45, .05, .25, 1) .25s both; }
@@ -110,3 +110,42 @@
 .inv-o-monde { position: absolute; inset: 0; transform-origin: 50% 52%; }
 .inv[data-phase="ouverture"] :is(.inv-o-marocaine, .inv-o-fer, .inv-o-artdeco, .inv-o-rideaux) .inv-o-monde { will-change: transform; animation: o-avance 1.2s cubic-bezier(.5, 0, .75, .6) .5s both; }
 @keyframes o-avance { to { transform: scale(1.6); } }
+
+/* ---------- Sceau de cire, bouton « Ouvrir l'invitation », calque fixe personnalisable ---------- */
+.inv-sr-seul { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.inv-o-surcadre { position: absolute; inset: 0; z-index: 7; pointer-events: none;
+  /* ↓ DÉCOMMENTEZ et remplacez par VOTRE PNG transparent (cadre, arche, rideaux, couronne florale) déposé dans public/ouvertures/ : */
+  /* background: center / 100% 100% no-repeat url("/ouvertures/mon-cadre.png"); */ }
+.inv-o-sceau { position: absolute; z-index: 6; left: 50%; top: 50%; width: 88px; height: 88px; margin: -44px 0 0 -44px; display: grid; place-items: center; border-radius: 52% 48% 55% 45% / 48% 53% 47% 52%;
+  background: radial-gradient(circle at 34% 28%, #fbeab0 0, #e0be6a 30%, #b88f35 62%, #7d5d1c 100%);
+  box-shadow: 0 7px 16px rgba(0, 0, 0, .5), inset 0 2px 3px rgba(255, 255, 255, .55), inset 0 -3px 7px rgba(70, 45, 5, .55); pointer-events: none; transition: opacity .4s ease-out, transform .5s ease-out; }
+.inv-o-sceau::before { content: ""; position: absolute; inset: 8px; border-radius: 50%; border: 1.5px solid rgba(80, 52, 8, .55); box-shadow: inset 0 1px 2px rgba(255, 255, 255, .4), 0 1px 0 rgba(255, 255, 255, .35); }
+.inv-o-sceau em { position: relative; font-style: normal; font-family: "Pinyon Script", "Snell Roundhand", cursive; font-size: 31px; line-height: 1; color: #5a3d0b; text-shadow: 0 1px 0 rgba(255, 238, 180, .75); white-space: nowrap; }
+.inv[dir="rtl"] .inv-o-sceau em { font-family: "Amiri", serif; font-size: 28px; }
+.inv-o-ouvrir { position: absolute; z-index: 6; left: 50%; top: calc(50% + 64px); transform: translateX(-50%); padding: 9px 18px; border-radius: 999px; background: rgba(20, 16, 10, .8); border: 1px solid #c9a24b; color: #f0dea0; font-family: "Jost", system-ui, sans-serif; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; white-space: nowrap; pointer-events: none; transition: opacity .35s; }
+.inv[dir="rtl"] .inv-o-ouvrir { letter-spacing: 0; text-transform: none; font-size: 14px; }
+.inv[data-phase="ouverture"] :is(.inv-o-sceau, .inv-o-ouvrir) { opacity: 0; }
+.inv[data-phase="ouverture"] .inv-o-sceau { transform: scale(.82); }
+.inv-porte:not(:disabled):hover .inv-o-sceau { transform: scale(1.04); }
+
+/* ---------- Haute couture : dorure brossée, grain de papier, particules dorées ---------- */
+.inv-sec-titre, .inv-date-jour, .inv-noms .inv-et { background-image: linear-gradient(105deg, color-mix(in srgb, var(--inv-accent) 62%, #2a1c00) 0%, color-mix(in srgb, var(--inv-accent) 48%, #fff6d0) 42%, color-mix(in srgb, var(--inv-accent) 85%, #2a1c00) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.inv-page::after, .inv-bloc::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .08; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .4  0 0 0 0 .32  0 0 0 0 .2  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+.inv-bloc { position: relative; overflow: hidden; }
+.inv-bloc::after { position: absolute; }
+.inv-colonne { position: relative; z-index: 2; }
+.inv-particules { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.inv-bloc .inv-particules { position: absolute; }
+.inv-particules span { position: absolute; bottom: -12px; border-radius: 50%; background: radial-gradient(circle, #fff3c4, #d9b45a 60%, transparent 72%); opacity: 0; animation: inv-monte linear infinite; will-change: transform, opacity; }
+@keyframes inv-monte { 0% { transform: translate3d(0, 0, 0); opacity: 0; } 12% { opacity: .85; } 50% { transform: translate3d(14px, -50vh, 0); } 100% { transform: translate3d(-10px, -105vh, 0); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .inv-particules { display: none; } }
+.inv-musique { position: fixed; z-index: 40; right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom)); width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--inv-accent); background: color-mix(in srgb, var(--inv-papier) 88%, transparent); color: var(--inv-texte); font-size: 20px; cursor: pointer; }
+.inv-musique[aria-pressed="false"] { opacity: .6; }
+
+/* Couverture florale : une carte s'ouvre vers soi, comme un livre (les volets viennent vers l'invité puis s'effacent) */
+.inv-o-florale .inv-o-battants { perspective: 1300px; }
+.inv[data-phase="ouverture"] .inv-o-florale .inv-o-g { animation: o-livre-g 1.5s cubic-bezier(.4, .05, .25, 1) .25s both; }
+.inv[data-phase="ouverture"] .inv-o-florale .inv-o-d { animation: o-livre-d 1.5s cubic-bezier(.4, .05, .25, 1) .25s both; }
+@keyframes o-livre-g { to { transform: rotateY(-104deg); } }
+@keyframes o-livre-d { to { transform: rotateY(104deg); } }

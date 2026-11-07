@@ -66,6 +66,13 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </section>
 
         <section>
+          <label className="block text-sm">Musique à l'ouverture (facultatif)
+            <input className={`${champ} mt-1`} value={valeur.musique ?? ""} maxLength={300} inputMode="url" placeholder="https://…/ma-musique.mp3" data-testid="invitation-musique-lien" onChange={(e) => onChange({ ...valeur, musique: e.target.value })} />
+            <span className="block text-xs text-[#6B6154] mt-1">Lien direct vers un fichier audio (MP3) dont vous avez les droits. Elle démarre quand l'invité ouvre, avec un bouton pour la couper.</span>
+          </label>
+        </section>
+
+        <section>
           <h3 className="font-serif text-xl mb-1">3. Le style de l'invitation</h3>
           <p className="text-sm text-[#5E554A] mb-3">Chaque modèle a son ornement et ses couleurs. Vos couleurs personnalisées sont conservées quand vous changez de modèle.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

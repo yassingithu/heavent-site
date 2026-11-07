@@ -10,6 +10,9 @@ interface Props {
   libelle: string;
   nomsRef: Ref<HTMLElement>;
   noms: ReactNode;
+  /** Initiales des mariés, affichées dans le sceau de cire. */
+  initiales: string;
+  libelleBouton: string;
 }
 
 /** Ouverture de chaque décor (en proportions de l'image) : seuls les battants s'ouvrent, le cadre reste fixe. */
@@ -35,7 +38,7 @@ function Defs() {
   );
 }
 
-export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, noms }: Props) {
+export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, noms, initiales, libelleBouton }: Props) {
   return (
     <div className="inv-scene">
       <Defs />
@@ -49,7 +52,17 @@ export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, nom
         {type in OUVERTURE_PATH && <span className="inv-o-cadre" aria-hidden="true"><span className="inv-o-g" /><span className="inv-o-d" /></span>}
         <span className="inv-o-rai" />
         </span>
-        <span className="inv-o-cartouche"><span><em ref={nomsRef}>{noms}</em></span></span>
+        {/* ── CALQUE FIXE PERSONNALISABLE ───────────────────────────────────────────────
+            Pour mettre VOTRE cadre (arche royale, rideaux drapés, couronne florale…) :
+            1. déposez un PNG transparent dans  public/ouvertures/  (ex. mon-cadre.png)
+            2. dans src/styles/ouvertures.css, règle  .inv-o-surcadre  : décommentez la ligne
+               « background-image » et mettez  url("/ouvertures/mon-cadre.png").
+            Ce calque reste immobile, passe au-dessus des battants et ne bloque jamais les clics. */}
+        <span className="inv-o-surcadre" aria-hidden="true" />
+        {/* Sceau de cire : les initiales viennent des prénoms saisis dans l'administration. */}
+        <span className="inv-o-sceau" aria-hidden="true"><em ref={nomsRef}>{initiales}</em></span>
+        <span className="inv-o-ouvrir">{libelleBouton}</span>
+        <span className="inv-sr-seul">{noms}</span>
       </button>
       <p className="inv-aide" aria-hidden={phase !== "fermee"}>{libelle}</p>
     </div>

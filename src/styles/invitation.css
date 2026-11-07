@@ -1,5 +1,5 @@
 /* Invitation digitale : enveloppe qui s'ouvre, faire-part, suite (réponse de l'invité) */
-.inv { --inv-titre: "Gloock", Didot, Georgia, serif; --inv-texte-police: "Jost", system-ui, sans-serif; font-family: var(--inv-texte-police); color: var(--inv-texte); }
+.inv { --inv-titre: "Gloock", Didot, Georgia, serif; --inv-texte-police: "Cormorant Garamond", "Jost", Georgia, serif; font-weight: 500; letter-spacing: .01em; font-family: var(--inv-texte-police); color: var(--inv-texte); }
 .inv-page { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 14px 10px 24px; background: radial-gradient(70% 45% at 50% 38%, color-mix(in srgb, var(--inv-accent) 14%, var(--inv-fond)), var(--inv-fond) 72%); }
 .inv-bloc { display: flex; align-items: center; justify-content: center; padding: 28px 12px; background: var(--inv-fond); border-radius: 18px; min-height: 420px; }
 .inv[dir="rtl"] { font-family: "Noto Naskh Arabic", "Segoe UI", Tahoma, sans-serif; }

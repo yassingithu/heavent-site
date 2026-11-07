@@ -9,6 +9,10 @@ All colors MUST be HSL. Color scheme: white, black, gold (#C8B560)
 
 /* ———— Direction « Seuil » : polices servies en local et couleurs de la marque ———— */
 @font-face { font-family: "Gloock"; src: url(/polices/gloock-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url(/polices/cormorant-garamond-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url(/polices/cormorant-garamond-latin-500-normal.woff2) format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url(/polices/cormorant-garamond-latin-400-italic.woff2) format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url(/polices/cormorant-garamond-latin-600-normal.woff2) format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
 @font-face { font-family: "Jost"; src: url(/polices/jost-latin-300-normal.woff2) format("woff2"); font-weight: 300; font-display: swap; }
 @font-face { font-family: "Jost"; src: url(/polices/jost-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "Jost"; src: url(/polices/jost-latin-500-normal.woff2) format("woff2"); font-weight: 500; font-display: swap; }

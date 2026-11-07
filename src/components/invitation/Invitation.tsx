@@ -154,6 +154,9 @@ function Ornement({ type }: { type: Ornement }) {
   }
 }
 
+/** Particules dorées en suspension (légères : 14 points, transform/opacity seulement). */
+const PARTICULES = Array.from({ length: 14 }, (_, i) => ({ x: (i * 37 + 11) % 100, s: 2 + ((i * 5) % 4), d: (i * 913) % 9000, t: 9000 + ((i * 577) % 7000) }));
+
 export default function Invitation({ noms, date, lieu, message, reglages, langue = "fr", invite, ouverte = false, autoOuvrir = false, rejouer = 0, pleinePage = true, haut, bas, children }: InvitationProps) {
   const c = useMemo(() => couleursDe(reglages), [reglages]);
   const modele = reglages?.modele;
@@ -173,6 +176,17 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     return () => window.clearTimeout(id);
   }, [ouverte, rejouer, autoOuvrir]);
   const emRef = useRef<HTMLElement>(null);
+  /* Musique d'ouverture (facultative) : démarre au toucher, avec un bouton pour la couper. */
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [son, setSon] = useState(false);
+  const lancerMusique = () => {
+    const u = reglages?.musique?.trim();
+    if (!u || !/^(https:\/\/|\/)/.test(u) || audioRef.current) return;
+    try { const a = new Audio(u); a.loop = true; a.volume = 0.6; audioRef.current = a; void a.play().then(() => setSon(true)).catch(() => undefined); } catch { /* sans musique */ }
+  };
+  useEffect(() => () => { audioRef.current?.pause(); audioRef.current = null; }, []);
+  useEffect(() => { audioRef.current?.pause(); audioRef.current = null; setSon(false); }, [rejouer, reglages?.musique]);
+  const basculerSon = () => { const a = audioRef.current; if (!a) return; if (a.paused) { void a.play(); setSon(true); } else { a.pause(); setSon(false); } };
   const nomsRef = useRef<HTMLHeadingElement>(null);
   const depart = useRef<DOMRect | null>(null);
   /* Les prénoms restent au centre de la carte qui sort de l'enveloppe, puis glissent à leur place pendant que le reste apparaît. */
@@ -227,17 +241,18 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
 
   return (
     <div className={`inv ${pleinePage ? "inv-page" : "inv-bloc"}`} style={style} dir={langue === "ar" ? "rtl" : "ltr"} data-phase={phase} data-testid="invitation">
+      <div className="inv-particules" aria-hidden="true">{PARTICULES.map((q, i) => <span key={i} style={{ left: `${q.x}%`, width: q.s, height: q.s, animationDelay: `-${q.d}ms`, animationDuration: `${q.t}ms` }} />)}</div>
       <div className="inv-colonne">
       {haut}
       {(phase === "fermee" || phase === "ouverture") && ouv.id !== "enveloppe" && (
-        <Ouverture type={ouv.id} phase={phase} libelle={t.ouvrir} nomsRef={emRef}
+        <Ouverture type={ouv.id} phase={phase} libelle={t.ouvrir} libelleBouton={t.ouvrirBouton} initiales={initiales(nomsA)} nomsRef={emRef}
           noms={lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}
-          onOuvrir={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); setPhase("ouverture"); }} />
+          onOuvrir={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); lancerMusique(); setPhase("ouverture"); }} />
       )}
       {(phase === "fermee" || phase === "ouverture") && ouv.id === "enveloppe" && (
         <div className="inv-scene">
           <span className="inv-env-ombre" aria-hidden="true" />
-          <button type="button" className="inv-enveloppe" onClick={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); setPhase("ouverture"); }} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
+          <button type="button" className="inv-enveloppe" onClick={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); lancerMusique(); setPhase("ouverture"); }} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
             <span className="inv-env-fond" />
             <span className="inv-env-carte" data-orn={ornement}><span><em ref={emRef}>{lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}</em></span></span>
             <span className="inv-fl inv-fl-b"><i /></span>
@@ -253,6 +268,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
         <Revelation noms={nomsA} titre={t.gratter} bouton={t.decouvrir} onFini={() => setPhase("ouverte")}
           sous={dp ? { haut: maj(part("weekday")), jour: part("day"), bas: `${part("month")} ${part("year")}` } : { haut: "", jour: initiales(nomsA), bas: "" }} />
       )}
+      {audioRef.current && phase !== "fermee" && (<button type="button" className="inv-musique" onClick={basculerSon} aria-pressed={son} aria-label={son ? "Couper la musique" : "Activer la musique"} data-testid="invitation-musique">{son ? "♪" : "♪̸"}</button>)}
       {phase === "ouverte" && (<>
         <article className={`inv-carte inv-orn-${ornement}`} data-testid="invitation-carte">
           <div className="inv-etincelles" aria-hidden="true">{ETINCELLES.map((e, i) => <span key={i} style={{ left: `${e.x}%`, animationDelay: `${e.d}ms`, animationDuration: `${e.t + 900}ms`, width: e.s, height: e.s }} />)}</div>
