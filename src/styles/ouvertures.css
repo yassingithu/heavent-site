@@ -143,9 +143,11 @@
 .inv-musique { position: fixed; z-index: 40; right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom)); width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--inv-accent); background: color-mix(in srgb, var(--inv-papier) 88%, transparent); color: var(--inv-texte); font-size: 20px; cursor: pointer; }
 .inv-musique[aria-pressed="false"] { opacity: .6; }
 
-/* Couverture florale : une carte s'ouvre vers soi, comme un livre (les volets viennent vers l'invité puis s'effacent) */
-.inv-o-florale .inv-o-battants { perspective: 1300px; }
+/* Couverture florale : une carte s'ouvre vers soi, comme une enveloppe — les deux volets se rabattent vers l'extérieur et viennent vers l'invité (charnières sur les bords) */
+.inv-o-florale .inv-o-battants { perspective: 2200px; perspective-origin: 50% 50%; }
+.inv-o-florale .inv-o-g { transform-origin: left center; }
+.inv-o-florale .inv-o-d { transform-origin: right center; }
 .inv[data-phase="ouverture"] .inv-o-florale .inv-o-g { animation: o-livre-g 1.5s cubic-bezier(.4, .05, .25, 1) .25s both; }
 .inv[data-phase="ouverture"] .inv-o-florale .inv-o-d { animation: o-livre-d 1.5s cubic-bezier(.4, .05, .25, 1) .25s both; }
-@keyframes o-livre-g { to { transform: rotateY(-104deg); } }
-@keyframes o-livre-d { to { transform: rotateY(104deg); } }
+@keyframes o-livre-g { to { transform: rotateY(-89deg); } }
+@keyframes o-livre-d { to { transform: rotateY(89deg); } }
