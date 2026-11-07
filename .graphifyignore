@@ -1,0 +1,13 @@
+dist/
+dist-proto3d/
+deploy/
+beta-captures/
+design-captures/
+ergonomie-captures/
+desktop/
+docs/
+public/
+*.png
+*.jpg
+src/**/three.module.min.js
+**/*.min.js

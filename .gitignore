@@ -32,3 +32,6 @@ jeu-captures/
 ergonomie-captures/
 design-captures/
 .claude/worktrees/
+
+# Graphify : graphe local, régénéré par « graphify update . »
+graphify-out/
