@@ -257,7 +257,7 @@ const Admin = () => {
   });
 
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [ongletAdmin, setOngletAdmin] = useState("tableau");
+  const [ongletAdmin, setOngletAdmin] = useState(() => { try { return new URLSearchParams(window.location.search).get("crew") || sessionStorage.getItem("heavent-crew") ? "staff" : "tableau"; } catch { return "tableau"; } });
   // Menu latéral réductible (ordinateur / appli Mac) : choix mémorisé ; fenêtre étroite = réduit par défaut
   const [reduit, setReduit] = useState<boolean>(() => {
     try { const v = localStorage.getItem("heavent-menu-reduit"); if (v !== null) return v === "1"; } catch { /* stockage indisponible */ }
@@ -295,6 +295,8 @@ const Admin = () => {
   useEffect(() => {
     if (!authLoading) {
       if (!user || !session) {
+        // le lien d'une fiche crew (mail du matin) survit à la connexion
+        try { const c = new URLSearchParams(window.location.search).get("crew"); if (c) sessionStorage.setItem("heavent-crew", c); } catch { /* sans stockage */ }
         if (!estDemo()) navigate("/admin-auth");
         return;
       }

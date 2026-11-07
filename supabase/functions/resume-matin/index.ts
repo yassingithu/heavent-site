@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
   if (!essai && heureMaroc !== 7) return new Response(JSON.stringify({ envoyes: 0, raison: "pas l'heure" }));
   const jour = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Casablanca" }).format(maintenant);
   const hier = new Date(Date.now() - 864e5).toISOString();
-  const [{ data: profils }, { data: mot }, { data: rdv }, { data: evts }, { data: dm }, { data: de }, { data: equipes }, { data: signes }] = await Promise.all([
+  const [{ data: profils }, { data: mot }, { data: rdv }, { data: evts }, { data: dm }, { data: de }, { data: equipes }, { data: signes }, { data: nouveauxCrews }] = await Promise.all([
     db.from("admin_profils").select("email, prenom, recoit_mots").eq("recoit_resume", true).eq("espace", "admin"),
     db.rpc("_mot_du_jour", { p_jour: jour, p_pour: "imane" }),
     db.from("rendez_vous").select("debut, client_nom, type").eq("statut", "confirme").gte("debut", `${jour}T00:00:00Z`).lte("debut", `${jour}T23:59:59Z`).order("debut"),
@@ -32,6 +32,7 @@ Deno.serve(async (req) => {
     db.from("devis_entreprise").select("entreprise, nom, nb_personnes").gte("created_at", hier),
     db.from("affectations").select("devis_id").eq("date_jour", jour).neq("statut", "annule"),
     db.from("devis").select("client_nom, client_societe, total_ttc").gte("signe_le", hier).neq("statut", "annule"),
+    db.from("staff").select("id, prenom, nom, ville, admin_notifie_le").gte("created_at", hier).order("created_at"),
   ]);
   if (!profils?.length) return new Response(JSON.stringify({ envoyes: 0, raison: "personne" }));
 
@@ -43,7 +44,8 @@ Deno.serve(async (req) => {
   const bloc = (titre: string, lignes: string[], vide: string) => `
     <h3 style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#8C6D22;margin:24px 0 8px">${titre}</h3>
     ${lignes.length ? `<ul style="margin:0;padding-left:18px;line-height:1.7">${lignes.map((l) => `<li>${l}</li>`).join("")}</ul>` : `<p style="margin:0;color:#8a8070">${vide}</p>`}`;
-  const calme = !(rdv?.length || evts?.length || demandes.length || signes?.length);
+  const lienCrew = (c: any) => `<a href="https://heaventagency.com/admin?crew=${encodeURIComponent(c.id)}" style="color:#8C6D22">${esc(`${c.prenom ?? ""} ${c.nom ?? ""}`.trim())}</a>${c.ville ? ` · ${esc(c.ville)}` : ""}${c.admin_notifie_le ? "" : " · <i>alerte non reçue</i>"}`;
+  const calme = !(nouveauxCrews?.length || rdv?.length || evts?.length || demandes.length || signes?.length);
 
   const envoyes: string[] = [];
   const resend = new Resend(Deno.env.get("RESEND_API_KEY") ?? "");
@@ -60,6 +62,7 @@ Deno.serve(async (req) => {
           ${signes?.length ? bloc("🎉 Signé depuis hier", (signes as any[]).map((s) => `<b>${esc(s.client_societe || s.client_nom)}</b> · ${Math.round(Number(s.total_ttc || 0)).toLocaleString("fr-FR")} MAD`), "") : ""}
           ${bloc("Aujourd'hui", (evts ?? []).map((e: any) => `<b>${esc(e.client_societe || e.client_nom)}</b> · ${esc(e.titre || "Événement")}${e.lieu ? ` · ${esc(e.lieu)}` : ""}${crews(e.id) ? ` · ${crews(e.id)} crew${crews(e.id) > 1 ? "s" : ""}` : ""}`), "Pas d'événement aujourd'hui.")}
           ${bloc("Rendez-vous", (rdv ?? []).map((r: any) => `<b>${heure(r.debut)}</b> · ${esc(r.client_nom)}${r.type ? ` · ${esc(r.type)}` : ""}`), "Aucun rendez-vous.")}
+          ${nouveauxCrews?.length ? bloc(`Nouveaux crews (${nouveauxCrews.length})`, (nouveauxCrews as any[]).map(lienCrew), "") : ""}
           ${bloc("Nouvelles demandes (24 h)", demandes, "Aucune nouvelle demande.")}
           ${calme ? `<p style="margin-top:20px;color:#5E554A">Une journée calme : profites-en pour souffler un peu. Tu le mérites.</p>` : ""}
           <p style="text-align:center;margin:28px 0 4px"><a href="https://heaventagency.com/admin" style="background:#141414;color:#fff;text-decoration:none;border-radius:999px;padding:12px 26px;display:inline-block">Ouvrir mon espace</a></p>

@@ -67,25 +67,30 @@ const handler = async (req: Request): Promise<Response> => {
       numero_identite: txt(d.numero_identite, 40), numero_securite_sociale: txt(d.numero_securite_sociale, 40), iban: txt(d.iban, 60),
       niveau_etudes: txt(d.niveau_etudes, 60), nom_urgence: txt(d.nom_urgence, 100), telephone_urgence: txt(d.telephone_urgence, 40),
     };
-    const { error: errFiche } = await admin.from("staff").insert(fiche);
+    const { data: insere, error: errFiche } = await admin.from("staff").insert(fiche).select("id").single();
     if (errFiche) {
       await admin.auth.admin.deleteUser(cree.user!.id); // pas de compte sans fiche
       console.error(errFiche);
       return json({ error: "Erreur lors de l'enregistrement de vos informations. Veuillez réessayer." }, 500);
     }
 
+    const idFiche = insere!.id as string;
     // 3. Emails (une panne d'email ne bloque pas l'inscription)
     const cle = Deno.env.get("RESEND_API_KEY");
     if (cle) {
       const resend = new Resend(cle);
       const ligne = (l: string, v: unknown) => `<p style="margin:2px 0"><strong>${l} :</strong> ${e(v || "—")}</p>`;
-      await Promise.allSettled([
+      // Prévenir TOUS les admins qui reçoivent le résumé (plus une seule adresse codée en dur)
+      const { data: profils } = await admin.from("admin_profils").select("email").eq("recoit_resume", true).eq("espace", "admin");
+      const destinataires = [...new Set([ADMIN_EMAIL, ...((profils ?? []).map((p: any) => String(p.email).toLowerCase()))])];
+      const lien = `${SITE}/admin?crew=${encodeURIComponent(idFiche)}`;
+      const [resAdmin, resBienvenue] = await Promise.all([
         resend.emails.send({
-          from: FROM, to: [ADMIN_EMAIL], reply_to: email, subject: `Nouvelle inscription crew - ${fiche.prenom} ${fiche.nom}`,
+          from: FROM, to: destinataires, reply_to: email, subject: `Nouvelle inscription crew - ${fiche.prenom} ${fiche.nom}`,
           html: `<h2>Nouvelle inscription sur le site</h2>${ligne("Nom", `${fiche.prenom} ${fiche.nom}`)}${ligne("Email", email)}${ligne("Téléphone", fiche.telephone)}
             ${ligne("Ville", fiche.ville)}${ligne("Âge", fiche.age)}${ligne("Genre", fiche.genre)}${ligne("Langues", fiche.langues)}${ligne("Disponibilités", fiche.disponibilites)}
-            <p>La fiche complète est dans l'administration, onglet Personnel.</p>`,
-        }),
+            <p><a href="${lien}" style="background:#141414;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">Ouvrir la fiche</a></p>`,
+        }).catch((er: any) => ({ error: er })),
         resend.emails.send({
           from: FROM, to: [email], subject: "Bienvenue chez Heavent People Agency",
           html: `<div style="font-family:Arial,sans-serif;max-width:600px">
@@ -94,8 +99,11 @@ const handler = async (req: Request): Promise<Response> => {
             <p><a href="${SITE}/auth" style="background:#C8B560;color:#141414;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold">Accéder à mon espace staff</a></p>
             <p>Identifiant : ${e(email)}<br>Mot de passe : celui choisi lors de l'inscription.</p>
             <p>À très bientôt,<br>L'équipe Heavent People Agency</p></div>`,
-        }),
+        }).catch((er: any) => ({ error: er })),
       ]);
+      if (resAdmin?.error) console.error("mail admin refusé:", JSON.stringify(resAdmin.error));
+      else await admin.from("staff").update({ admin_notifie_le: new Date().toISOString() }).eq("id", idFiche);
+      if (resBienvenue?.error) console.error("mail bienvenue refusé:", JSON.stringify(resBienvenue.error));
     }
 
     return json({ success: true });
