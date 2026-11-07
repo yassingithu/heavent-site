@@ -100,3 +100,19 @@ export function nomDuClic(a: HTMLAnchorElement): string | null {
   if (m) return { "/devis-entreprise": "bouton devis entreprise", "/devis-mariage": "bouton devis mariage", "/cree-ton-evenement": "bouton jeu", "/inscription-staff": "bouton recrutement" }[m[1]]!;
   return null;
 }
+
+/**
+ * Entonnoir de la simulation Heavent City : « debut » = vraie entrée dans le jeu (clic sur « Commencer », pas une simple visite de la page),
+ * « fin » = portes ouvertes. Chaque étape n'est comptée qu'une fois par session : actualiser ou revenir en arrière ne la double pas.
+ * L'étape « a mené à une demande » est la demande envoyée (suivre("demande", "heavent-city")).
+ */
+export function suivreSimulation(etape: "debut" | "fin") {
+  if (typeof window === "undefined" || window.location.pathname.startsWith("/apercu")) return;
+  const une = (e: "debut" | "fin") => {
+    if (lire(`hv-sim-${e}`)) return;
+    ecrire(`hv-sim-${e}`, "1");
+    suivre("clic", `sim-${e}:city`);
+  };
+  if (etape === "fin") une("debut"); // une simulation reprise depuis la sauvegarde compte aussi comme commencée dans cette session
+  une(etape);
+}

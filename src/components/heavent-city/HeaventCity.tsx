@@ -3,6 +3,7 @@
  *   titre → questions (téléphone) → ville (choix du lieu) → scène (personnalisation + missions) → grand final → demande.
  * Aucun prix n'existe dans ce jeu. Voir LISEZMOI.md.
  */
+import { suivreSimulation } from "@/lib/suivi";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { ArrowLeft, Hand, Phone, Redo2, Undo2, DoorOpen } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
@@ -71,6 +72,7 @@ export default function HeaventCity() {
     }
   }, [missionsOuvertes, phase, missions]);
   useEffect(() => { if (phase === "accueil") vues.current = 0; }, [phase]);
+  useEffect(() => { if (phase === "final") suivreSimulation("fin"); }, [phase]);
 
   // Halo sur la zone modifiée
   const montrer = useCallback((cle: string) => {
@@ -111,7 +113,7 @@ export default function HeaventCity() {
   const basculerSon = () => { if (sonActif()) { couperSon(); setSon(false); } else setSon(activerSon()); };
   useEffect(() => () => couperSon(), []);
 
-  const commencer = () => { effacerSauvegarde(); dispatch({ t: "recommencer" }); setEcran("questions"); };
+  const commencer = () => { suivreSimulation("debut"); effacerSauvegarde(); dispatch({ t: "recommencer" }); setEcran("questions"); };
   const reprendre = () => {
     const s = sauvegarde.current; if (!s) return;
     dispatch({ t: "restaurer", etat: { ...s, phase: s.phase === "accueil" ? "ville" : s.phase === "final" ? "scene" : s.phase } });

@@ -9,6 +9,7 @@ interface Stats {
   visites: number; pages_vues: number; demandes: number; clics_contact: number;
   avant: { visites: number; pages_vues: number; demandes: number; clics_contact: number };
   par_jour: { jour: string; visites: number }[];
+  simulations?: { debut: number; fin: number; demande: number; avant: { debut: number; fin: number; demande: number } };
   pages: Ligne[]; sources: Ligne[]; clics: Ligne[]; demandes_detail: Ligne[]; appareils: Ligne[];
 }
 
@@ -30,7 +31,7 @@ const NOMS_CLICS: Record<string, string> = {
   "bouton devis entreprise": "Vers le devis entreprise", "bouton devis mariage": "Vers le devis mariage", "bouton jeu": "Vers le jeu", "bouton recrutement": "Vers le recrutement",
 };
 const NOMS_DEMANDES: Record<string, string> = {
-  "devis-entreprise": "Devis entreprise", "devis-mariage": "Devis mariage / événement", jeu: "Jeu « Crée ton événement »", contact: "Message (Contact)", "rendez-vous": "Rendez-vous réservé",
+  "devis-entreprise": "Devis entreprise", "devis-mariage": "Devis mariage / événement", "heavent-city": "Heavent City (jeu)", jeu: "Ancien jeu « Crée ton événement »", contact: "Message (Contact)", "rendez-vous": "Rendez-vous réservé",
 };
 
 export default function StatsSite() {
@@ -75,6 +76,8 @@ export default function StatsSite() {
             </div>
 
             <Courbe donnees={s.par_jour} />
+
+            {s.simulations && <Simulations s={s.simulations} />}
 
             <div className="grid md:grid-cols-2 gap-5">
               <Liste titre="D'où viennent les visiteurs" lignes={s.sources} noms={NOMS_SOURCES} unite="visite" testId="stats-sources" />
@@ -173,6 +176,31 @@ function Liste({ titre, lignes, noms, unite, vide, testId }: { titre: string; li
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function Simulations({ s }: { s: NonNullable<Stats["simulations"]> }) {
+  const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)} %` : "—");
+  const etapes = [
+    { titre: "Simulations commencées", n: s.debut, avant: s.avant.debut, note: "Clic sur « Commencer » (pas une simple visite)" },
+    { titre: "Simulations terminées", n: s.fin, avant: s.avant.fin, note: `${pct(s.fin, s.debut)} des simulations commencées` },
+    { titre: "Ont mené à une demande", n: s.demande, avant: s.avant.demande, note: `${pct(s.demande, s.debut)} des simulations commencées` },
+  ];
+  return (
+    <div className="space-y-2" data-testid="stats-simulations">
+      <div className="text-sm font-medium">Heavent City — la simulation <span className="text-xs font-normal text-muted-foreground">· une fois par visiteur et par visite (actualiser ne double pas)</span></div>
+      <div className="grid sm:grid-cols-3 gap-3">
+        {etapes.map((e) => (
+          <div key={e.titre} className="rounded-2xl border border-[#EADFC8] bg-[#FDFBF6] px-4 py-3">
+            <div className="text-[11px] uppercase tracking-[0.14em] font-semibold text-[#8C6D22]">{e.titre}</div>
+            <div className="flex items-baseline gap-2 mt-1"><span className="font-serif text-3xl">{nf(e.n)}</span>
+              {e.avant > 0 && e.n !== e.avant && <span className={`text-xs font-medium ${e.n > e.avant ? "text-[#2F5A2A]" : "text-[#8A2E26]"}`} title="Par rapport à la période précédente">{e.n > e.avant ? "+" : "−"}{Math.abs(Math.round(((e.n - e.avant) / e.avant) * 100))} %</span>}
+            </div>
+            <div className="text-xs text-muted-foreground">{e.note}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
