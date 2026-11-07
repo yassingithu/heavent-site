@@ -2,7 +2,7 @@
 export type Langue = "fr" | "en" | "ar";
 export type Ornement = "khatam" | "arche" | "cadre" | "fleur" | "filet" | "zellige";
 export interface Couleurs { fond: string; enveloppe: string; papier: string; texte: string; accent: string }
-export interface InvitationReglages { modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; programme?: { heure: string; titre: string; titre_ar?: string }[]; noms_ar?: string; lieu_ar?: string; message_ar?: string }
+export interface InvitationReglages { ouverture?: string; revelation?: string; modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; programme?: { heure: string; titre: string; titre_ar?: string }[]; noms_ar?: string; lieu_ar?: string; message_ar?: string }
 export interface Modele { id: string; nom: string; description: string; ornement: Ornement; couleurs: Couleurs }
 
 export const MODELES: Modele[] = [
@@ -82,19 +82,19 @@ export function lienMaps(r: InvitationReglages | null | undefined, lieu?: string
 
 export const TEXTES = {
   fr: {
-    ouvrir: "Touchez pour ouvrir", invite: "Ont la joie de vous convier à leur mariage", invites: "Vous êtes invité(e) au mariage de",
+    gratter: "Grattez le cœur pour découvrir la date", decouvrir: "Découvrir", ouvrir: "Touchez pour ouvrir", invite: "Ont la joie de vous convier à leur mariage", invites: "Vous êtes invité(e) au mariage de",
     cher: "Bonjour", a: "à", maps: "Voir le lieu sur Google Maps", locale: "fr-FR",
     defiler: "Faites défiler", repondre: "Répondre maintenant", alliances: "Nous allons nous dire oui", compte: "Le grand jour approche", aujourdhui: "C'est aujourd'hui !", jours: "jours", heures: "heures", minutes: "minutes", secondes: "secondes",
     lieuTitre: "Le lieu", itineraire: "Itinéraire", programmeTitre: "Le programme", reponseTitre: "Votre réponse", avecVous: "Nous avons hâte de partager ce moment avec vous", pour: "Une invitation pour",
   },
   en: {
-    ouvrir: "Tap to open", invite: "Joyfully invite you to their wedding", invites: "You are invited to the wedding of",
+    gratter: "Scratch the heart to reveal the date", decouvrir: "Reveal", ouvrir: "Tap to open", invite: "Joyfully invite you to their wedding", invites: "You are invited to the wedding of",
     cher: "Dear", a: "at", maps: "View the venue on Google Maps", locale: "en-GB",
     defiler: "Scroll down", repondre: "Reply now", alliances: "We are about to say yes", compte: "The big day is coming", aujourdhui: "It's today!", jours: "days", heures: "hours", minutes: "minutes", secondes: "seconds",
     lieuTitre: "The venue", itineraire: "Directions", programmeTitre: "The programme", reponseTitre: "Your reply", avecVous: "We can't wait to share this moment with you", pour: "An invitation for",
   },
   ar: {
-    ouvrir: "المسوا لفتح الدعوة", invite: "يتشرفان بدعوتكم لحضور حفل زفافهما", invites: "يسعدنا دعوتكم لحضور حفل زفاف",
+    gratter: "اخدشوا القلب لاكتشاف التاريخ", decouvrir: "اكتشفوا", ouvrir: "المسوا لفتح الدعوة", invite: "يتشرفان بدعوتكم لحضور حفل زفافهما", invites: "يسعدنا دعوتكم لحضور حفل زفاف",
     cher: "مرحباً", a: "في", maps: "عرض المكان على خرائط جوجل", locale: "ar-MA-u-nu-latn-ca-gregory",
     defiler: "مرروا للأسفل", repondre: "الرد الآن", alliances: "سنقول نعم قريباً", compte: "اليوم الكبير يقترب", aujourdhui: "إنه اليوم!", jours: "أيام", heures: "ساعات", minutes: "دقائق", secondes: "ثوان",
     lieuTitre: "المكان", itineraire: "الاتجاهات", programmeTitre: "البرنامج", reponseTitre: "ردكم", avecVous: "نتطلع لمشاركتكم هذه اللحظة", pour: "دعوة إلى",
@@ -105,3 +105,18 @@ export const initiales = (noms: string) => {
   const m = noms.split(/\s+(?:et|and|و)\s+|\s*&\s*/i).map((s) => s.trim().charAt(0).toUpperCase()).filter(Boolean);
   return m.length >= 2 ? `${m[0]} & ${m[1]}` : (m[0] ?? "♥");
 };
+
+/** Ouvertures et révélations : chacune se combine librement avec n'importe quel modèle de couleurs. */
+export const OUVERTURES: { id: string; nom: string; description: string; duree: number }[] = [
+  { id: "enveloppe", nom: "Enveloppe", description: "Le faire-part sort de son enveloppe cachetée.", duree: 2450 },
+  { id: "marocaine", nom: "Porte marocaine", description: "Deux battants en bois sculpté sous un arc, cloutés de laiton.", duree: 1750 },
+  { id: "fer", nom: "Portail en fer forgé", description: "Un portail ajouré à arabesques : on devine déjà la fête derrière.", duree: 1650 },
+  { id: "artdeco", nom: "Portes Art déco", description: "Portes noires et or, éventail rayonnant, un rai de lumière entre les battants.", duree: 1800 },
+  { id: "rideaux", nom: "Rideaux", description: "Deux pans de tissu drapé qui s'écartent comme au théâtre.", duree: 1800 },
+];
+export const REVELATIONS: { id: string; nom: string; description: string }[] = [
+  { id: "aucune", nom: "Aucune", description: "L'invitation s'affiche juste après l'ouverture." },
+  { id: "coeur", nom: "Cœur à gratter", description: "L'invité gratte un cœur doré pour découvrir la date." },
+];
+export const ouvertureDe = (id?: string) => OUVERTURES.find((o) => o.id === id) ?? OUVERTURES[0];
+export const revelationDe = (id?: string) => REVELATIONS.find((r) => r.id === id) ?? REVELATIONS[0];

@@ -1,12 +1,15 @@
 import { noms_ar, nomInvite_ar, lieu_ar, heure_ar, titre_ar } from "@/lib/arabe";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { MapPin } from "lucide-react";
-import { couleursDe, initiales, lienMaps, modeleDe, surCouleur, TEXTES, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
+import Ouverture from "./Ouverture";
+import Revelation from "./Revelation";
+import { couleursDe, initiales, lienMaps, modeleDe, ouvertureDe, revelationDe, surCouleur, TEXTES, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
 import "@fontsource/pinyon-script/latin-400.css";
 import "@fontsource/pinyon-script/latin-ext-400.css";
 import "@fontsource/amiri/arabic-400.css";
 import "@fontsource/amiri/arabic-700.css";
 import "@/styles/invitation.css";
+import "@/styles/ouvertures.css";
 
 export interface InvitationProps {
   noms: string;
@@ -154,7 +157,9 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const modele = reglages?.modele;
   const ornement = modeleDe(modele).ornement;
   const t = TEXTES[langue];
-  const [phase, setPhase] = useState<"fermee" | "ouverture" | "ouverte">(ouverte || sansAnimation() ? "ouverte" : "fermee");
+  const ouv = ouvertureDe(reglages?.ouverture);
+  const avecRevelation = revelationDe(reglages?.revelation).id === "coeur" && !sansAnimation();
+  const [phase, setPhase] = useState<"fermee" | "ouverture" | "revelation" | "ouverte">(ouverte || sansAnimation() ? "ouverte" : "fermee");
 
   useEffect(() => () => {
     try { const d = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => void }; if (d.fullscreenElement) void d.exitFullscreen(); else if (d.webkitFullscreenElement) d.webkitExitFullscreen?.(); } catch { /* ignoré */ }
@@ -177,9 +182,14 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   }, [phase]);
   useEffect(() => {
     if (phase !== "ouverture") return;
-    const id = window.setTimeout(() => { depart.current = emRef.current?.getBoundingClientRect() ?? null; setPhase("ouverte"); }, sansAnimation() ? 0 : 2450);
+    const id = window.setTimeout(() => { depart.current = avecRevelation ? null : (emRef.current?.getBoundingClientRect() ?? null); setPhase(avecRevelation ? "revelation" : "ouverte"); }, sansAnimation() ? 0 : ouv.duree);
     return () => window.clearTimeout(id);
-  }, [phase]);
+  }, [phase, ouv.duree, avecRevelation]);
+  useEffect(() => {
+    const saute = () => { if (document.visibilityState === "hidden") setPhase((p) => (p === "ouverture" ? "ouverte" : p)); };
+    document.addEventListener("visibilitychange", saute);
+    return () => document.removeEventListener("visibilitychange", saute);
+  }, []);
 
   const style = {
     "--inv-fond": c.fond, "--inv-env": c.enveloppe, "--inv-papier": c.papier, "--inv-texte": c.texte, "--inv-accent": c.accent,
@@ -212,7 +222,12 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     <div className={`inv ${pleinePage ? "inv-page" : "inv-bloc"}`} style={style} dir={langue === "ar" ? "rtl" : "ltr"} data-phase={phase} data-testid="invitation">
       <div className="inv-colonne">
       {haut}
-      {phase !== "ouverte" && (
+      {(phase === "fermee" || phase === "ouverture") && ouv.id !== "enveloppe" && (
+        <Ouverture type={ouv.id} phase={phase} libelle={t.ouvrir} nomsRef={emRef}
+          noms={lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}
+          onOuvrir={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); setPhase("ouverture"); }} />
+      )}
+      {(phase === "fermee" || phase === "ouverture") && ouv.id === "enveloppe" && (
         <div className="inv-scene">
           <span className="inv-env-ombre" aria-hidden="true" />
           <button type="button" className="inv-enveloppe" onClick={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); setPhase("ouverture"); }} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
@@ -226,6 +241,10 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           </button>
           <p className="inv-aide" aria-hidden={phase !== "fermee"}>{t.ouvrir}</p>
         </div>
+      )}
+      {phase === "revelation" && (
+        <Revelation noms={nomsA} titre={t.gratter} bouton={t.decouvrir} onFini={() => setPhase("ouverte")}
+          sous={dp ? { haut: maj(part("weekday")), jour: part("day"), bas: `${part("month")} ${part("year")}` } : { haut: "", jour: initiales(nomsA), bas: "" }} />
       )}
       {phase === "ouverte" && (<>
         <article className={`inv-carte inv-orn-${ornement}`} data-testid="invitation-carte">
