@@ -32,7 +32,7 @@ t75 = next(T_OUV0 + (T_OUV1 - T_OUV0) * k / 1000 for k in range(1001) if facile(
 def carte_finale():
     """Carte d'invitation (ivoire, filet or) au fond de l'entrée, face à la caméra. Le texte réel sera composé à la phase 4."""
     cx, cy, cz, w, h = 0.0, 3.4, 1.85, 0.90, 1.60
-    m, n, l, b = mat_nouveau("carte"); champ(b, "Base Color", (0.86, 0.79, 0.66, 1)); champ(b, "Roughness", 0.55)
+    m, n, l, b = mat_nouveau("carte"); champ(b, "Base Color", (0.62, 0.55, 0.43, 1)); champ(b, "Roughness", 0.55)
     mb = MB(); mb.box((cx, cy, cz), (w, 0.012, h)); mb.objet("carte", m, bevel=0.002)
     mo = mat_laiton("filet_or")
     mb = MB()
@@ -40,7 +40,7 @@ def carte_finale():
         mb.box((cx + dx, cy - 0.008, cz + dz), (sx, 0.004, sz))
     mb.objet("carte_filet", mo)
     # petit éclairage doux dédié à la carte
-    lg = bpy.data.lights.new("carte_lueur", "AREA"); lg.shape = "RECTANGLE"; lg.size = 2.2; lg.size_y = 1.6; lg.energy = 260; lg.color = (1.0, 0.82, 0.60)
+    lg = bpy.data.lights.new("carte_lueur", "AREA"); lg.shape = "RECTANGLE"; lg.size = 2.2; lg.size_y = 1.6; lg.energy = 70; lg.color = (1.0, 0.82, 0.60)
     lo = bpy.data.objects.new("carte_lueur", lg); bpy.context.collection.objects.link(lo); lo.location = (0.4, 1.0, 3.4)
     lo.rotation_euler = (Vector((cx, cy, cz)) - Vector(lo.location)).to_track_quat("-Z", "Y").to_euler()
 
@@ -69,7 +69,7 @@ def main_anim():
         cam.location = pos; cam.rotation_euler = (cible - pos).to_track_quat("-Z", "Y").to_euler()
         cam_d.dof.focus_distance = (cible - pos).length
         # la lueur d'intérieur monte avec l'ouverture
-        bpy.data.lights["patio"].energy = 3500 + 8000 * o ** 2
+        bpy.data.lights["patio"].energy = (3500 + 8000 * o ** 2) * (1.0 - 0.7 * u)
         sc.render.filepath = os.path.join(DOSSIER, f"f{i:04d}.png")
         if os.path.exists(sc.render.filepath): continue
         bpy.ops.render.render(write_still=True)

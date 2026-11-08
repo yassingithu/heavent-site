@@ -969,7 +969,7 @@ def construire(ouverture):
         "platre_clair": mat_platre("platre_clair", (0.80, 0.69, 0.53), 0.70, 0.30, 26),
         "tadelakt": mat_platre("tadelakt", (0.47, 0.30, 0.16), 0.30, 0.22, 9),
         "pierre": mat_platre("pierre", (0.58, 0.51, 0.40), 0.82, 0.5, 30),
-        "pierre_sombre": mat_platre("pierre_sombre", (0.20, 0.16, 0.12), 0.16, 0.18, 12),
+        "pierre_sombre": mat_platre("pierre_sombre", (0.34, 0.25, 0.17), 0.38, 0.18, 12),
         "cedre": mat_cedre("cedre"), "cedre_sombre": mat_cedre("cedre_sombre", True),
         "laiton": mat_laiton(),
         "emeraude": mat_emeraude(), "eau": mat_eau(), "feuille": mat_feuille(),
