@@ -33,8 +33,8 @@ export async function controlerVideo(f: File): Promise<{ duree: number; affiche:
     const attendre = (poser: (ok: () => void, ko: (e: Error) => void) => void) => new Promise<void>((ok, ko) => { const t = setTimeout(() => ko(new Error(illisible)), 8000); poser(() => { clearTimeout(t); ok(); }, (e) => { clearTimeout(t); ko(e); }); });
     await attendre((ok, ko) => { v.onloadeddata = () => ok(); v.onerror = () => ko(new Error(illisible)); });
     if (!Number.isFinite(v.duration)) throw new Error(illisible);
-    if (!(v.duration >= 1 && v.duration <= DUREE_MAX_S)) throw new Error(`Votre vidéo dure ${Math.round(v.duration)} s : elle doit durer entre 1 et ${DUREE_MAX_S} s.`);
-    if (v.videoWidth > 1100) throw new Error(`Votre vidéo fait ${v.videoWidth} px de large : réduisez-la à 1080 px maximum.`);
+    if (!(v.duration >= 1 && v.duration <= DUREE_MAX_S)) throw new Error(`Votre vidéo dure ${String(Math.round(v.duration * 10) / 10).replace(".", ",")} s : elle doit durer entre 1 et ${DUREE_MAX_S} s.`);
+    if (v.videoWidth > 1100) throw new Error(`Votre vidéo fait ${v.videoWidth} px de large : réduisez-la à 1100 px maximum.`);
     await attendre((ok) => { v.onseeked = () => ok(); v.currentTime = 0.1; });
     const c = document.createElement("canvas"); const k = Math.min(1, 540 / v.videoWidth);
     c.width = Math.round(v.videoWidth * k); c.height = Math.round(v.videoHeight * k);

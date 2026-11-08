@@ -23,12 +23,12 @@ export default function ImportOuverture({ onAjoutee }: { onAjoutee: (id: string)
       setEtat({ type: "cours", texte: "Envoi…" });
       const cache = "31536000";
       const v = await supabase.storage.from("ouvertures").upload(`${id}.${ext}`, fichier, { contentType: fichier.type, cacheControl: cache });
-      if (v.error) throw new Error("L'envoi a échoué (connexion ou droits). Réessayez ; si cela continue, prévenez le développeur. — " + v.error.message);
+      if (v.error) throw new Error("L'envoi a échoué (connexion ou droits). Réessayez ; si cela continue, prévenez le développeur. ");
       const a = await supabase.storage.from("ouvertures").upload(`${id}-poster.webp`, affiche, { contentType: "image/webp", cacheControl: cache });
-      if (a.error) throw new Error("L'envoi de l'affiche a échoué. Réessayez. — " + a.error.message);
+      if (a.error) throw new Error("L'envoi de l'affiche a échoué. Réessayez. ");
       const url = (p: string) => supabase.storage.from("ouvertures").getPublicUrl(p).data.publicUrl;
       const { error } = await (supabase as any).from("ouvertures_perso").insert({ id, nom: nom.trim(), styles, video_url: url(`${id}.${ext}`), poster_url: url(`${id}-poster.webp`), duree_ms: duree });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error("L'ajout dans la liste a échoué. Réessayez ; si cela continue, prévenez le développeur.");
       await chargerOuverturesPerso(true);
       setEtat({ type: "ok", texte: "Ajoutée et sélectionnée : voir l'aperçu." });
       setNom(""); setFichier(null); setStyles([]); onAjoutee(id);

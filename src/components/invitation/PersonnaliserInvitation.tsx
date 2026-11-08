@@ -45,10 +45,10 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         <section>
           <h3 className="font-serif text-xl mb-1">1. Comment l'invitation s'ouvre</h3>
           <p className="text-sm text-[#5E554A] mb-3">Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu.</p>
-          <div className="flex gap-5 overflow-x-auto border-b border-[#EADFC8] mb-4" role="group" aria-label="Filtrer par style">
+          <div className="flex gap-3 overflow-x-auto border-b border-[#EADFC8] mb-4" role="group" aria-label="Filtrer par style">
             {[null, ...STYLES_OUVERTURE].map((st) => (
               <button key={st ?? "tous"} type="button" onClick={() => setFiltre(st)} aria-pressed={filtre === st}
-                className={`shrink-0 min-h-11 px-0.5 text-[13px] tracking-[.12em] uppercase border-b-2 ${filtre === st ? "text-[#141414] border-[#8C6D22]" : "text-[#5E554A] border-transparent"}`}>{st ?? "Toutes"}</button>
+                className={`shrink-0 min-h-11 px-0.5 text-xs tracking-[.08em] uppercase border-b-2 ${filtre === st ? "text-[#141414] border-[#8C6D22]" : "text-[#5E554A] border-transparent"}`}>{st ?? "Toutes"}</button>
             ))}
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-x-3 gap-y-5 items-start" role="group" aria-label="Ouverture">
@@ -65,7 +65,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
                   {choisie && <span className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-[#141414] text-[#E4D49A] text-xs">✓</span>}
                 </span>
                 <span className={`mt-1.5 block font-serif text-[15px] leading-tight ${choisie ? "text-[#8C6D22]" : ""}`}>{o.nom}</span>
-                <span className="block text-[11px] tracking-[.14em] uppercase text-[#6B6154]">{o.video ? "Film" : "Animation"} · {Math.round(o.duree / 1000)} s</span>
+                <span className="block whitespace-nowrap text-[11px] tracking-[.1em] uppercase text-[#6B6154]">{o.video ? "Film" : "Animation"} · {String(Math.round(o.duree / 100) / 10).replace(".", ",")} s</span>
               </button>
               );
             })}
