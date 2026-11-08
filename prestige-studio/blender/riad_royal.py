@@ -215,22 +215,42 @@ def mat_cedre(nom="cedre", sombre=False, ton=1.0):
     l.new(add_p.outputs["Value"], var.inputs[0])
     cr = n.new("ShaderNodeValToRGB")
     f = 0.55 if sombre else 1.0
-    cr.color_ramp.elements[0].color = (0.028 * f * ton, 0.0105 * f * ton, 0.0042 * f, 1)
-    cr.color_ramp.elements[1].color = (0.150 * f * ton, 0.066 * f * ton, 0.026 * f, 1)
+    cr.color_ramp.elements[0].color = (0.020 * f * ton, 0.0070 * f * ton, 0.0026 * f, 1)
+    cr.color_ramp.elements[1].color = (0.205 * f * ton, 0.090 * f * ton, 0.034 * f, 1)
+    em_ = cr.color_ramp.elements.new(0.52); em_.color = (0.085 * f * ton, 0.034 * f * ton, 0.011 * f, 1)
     l.new(var.outputs["Value"], cr.inputs["Fac"])
     teinte = n.new("ShaderNodeMix"); teinte.data_type = "RGBA"; teinte.blend_type = "MULTIPLY"
     teinte.inputs[0].default_value = 0.8
     l.new(cr.outputs["Color"], teinte.inputs[6])
     cl = n.new("ShaderNodeValToRGB"); cl.color_ramp.elements[0].color = (0.78, 0.74, 0.70, 1); cl.color_ramp.elements[1].color = (1.12, 1.06, 1.0, 1)
     l.new(lames.outputs["Distance"], cl.inputs["Fac"]); l.new(cl.outputs["Color"], teinte.inputs[7])
-    l.new(teinte.outputs[2], b.inputs["Base Color"])
-    rg = n.new("ShaderNodeMapRange"); rg.inputs["To Min"].default_value = 0.30; rg.inputs["To Max"].default_value = 0.58
+    # nuances larges : zones plus rousses / plus brunes, comme un cœur de cèdre réel
+    mpn = n.new("ShaderNodeMapping"); mpn.inputs["Scale"].default_value = (2.2, 2.2, 0.55)
+    l.new(tc.outputs["Object"], mpn.inputs["Vector"])
+    nua = n.new("ShaderNodeTexNoise"); nua.inputs["Scale"].default_value = 1.4; nua.inputs["Detail"].default_value = 5; nua.inputs["Roughness"].default_value = 0.6
+    l.new(mpn.outputs["Vector"], nua.inputs["Vector"])
+    nuc = n.new("ShaderNodeValToRGB"); nuc.color_ramp.elements[0].color = (0.70, 0.60, 0.52, 1); nuc.color_ramp.elements[1].color = (1.30, 1.04, 0.86, 1)
+    l.new(nua.outputs["Fac"], nuc.inputs["Fac"])
+    teinte2 = n.new("ShaderNodeMix"); teinte2.data_type = "RGBA"; teinte2.blend_type = "MULTIPLY"; teinte2.inputs[0].default_value = 0.85
+    l.new(teinte.outputs[2], teinte2.inputs[6]); l.new(nuc.outputs["Color"], teinte2.inputs[7])
+    # patine du bas : poussière et frottements, plus claire à hauteur de main
+    sepz = n.new("ShaderNodeSeparateXYZ"); l.new(tc.outputs["Object"], sepz.inputs["Vector"])
+    gz = n.new("ShaderNodeMapRange"); gz.inputs["From Min"].default_value = 0.0; gz.inputs["From Max"].default_value = 0.65
+    gz.inputs["To Min"].default_value = 0.52; gz.inputs["To Max"].default_value = 1.0; gz.clamp = True
+    l.new(sepz.outputs["Z"], gz.inputs["Value"])
+    gzc = n.new("ShaderNodeCombineColor")
+    for i_ in range(3):
+        l.new(gz.outputs["Result"], gzc.inputs[i_])
+    teinte3 = n.new("ShaderNodeMix"); teinte3.data_type = "RGBA"; teinte3.blend_type = "MULTIPLY"; teinte3.inputs[0].default_value = 1.0
+    l.new(teinte2.outputs[2], teinte3.inputs[6]); l.new(gzc.outputs["Color"], teinte3.inputs[7])
+    l.new(teinte3.outputs[2], b.inputs["Base Color"])
+    rg = n.new("ShaderNodeMapRange"); rg.inputs["To Min"].default_value = 0.24; rg.inputs["To Max"].default_value = 0.60
     l.new(var.outputs["Value"], rg.inputs["Value"]); l.new(rg.outputs["Result"], b.inputs["Roughness"])
     bp = n.new("ShaderNodeBump"); bp.inputs["Strength"].default_value = 0.45; bp.inputs["Distance"].default_value = 0.0035
     add_b = n.new("ShaderNodeMath"); add_b.operation = "ADD"
     l.new(wv.outputs["Fac"], add_b.inputs[0]); l.new(pores.outputs["Fac"], add_b.inputs[1])
     l.new(add_b.outputs["Value"], bp.inputs["Height"]); l.new(bp.outputs["Normal"], b.inputs["Normal"])
-    champ(b, "Coat Weight", 0.18); champ(b, "Coat Roughness", 0.30); champ(b, "Specular IOR Level", 0.40)
+    champ(b, "Coat Weight", 0.26); champ(b, "Coat Roughness", 0.22); champ(b, "Specular IOR Level", 0.45)
     return m
 
 def mat_laiton(nom="laiton", ancien=True):
@@ -249,14 +269,14 @@ def mat_laiton(nom="laiton", ancien=True):
     add = n.new("ShaderNodeMath"); add.operation = "ADD"; l.new(inv.outputs["Value"], add.inputs[0]); l.new(ns2.outputs["Fac"], add.inputs[1])
     mul = n.new("ShaderNodeMath"); mul.operation = "MULTIPLY"; mul.inputs[1].default_value = 0.85; l.new(add.outputs["Value"], mul.inputs[0])
     cr = n.new("ShaderNodeValToRGB")
-    cr.color_ramp.elements[0].position = 0.35; cr.color_ramp.elements[0].color = (0.56, 0.40, 0.19, 1)   # laiton satiné
-    cr.color_ramp.elements[1].position = 0.95; cr.color_ramp.elements[1].color = (0.15, 0.085, 0.034, 1)  # laiton oxydé
+    cr.color_ramp.elements[0].position = 0.35; cr.color_ramp.elements[0].color = (0.47, 0.35, 0.19, 1)   # laiton satiné, champagne
+    cr.color_ramp.elements[1].position = 0.95; cr.color_ramp.elements[1].color = (0.12, 0.075, 0.036, 1)  # laiton oxydé
     l.new(mul.outputs["Value"], cr.inputs["Fac"])
     l.new(cr.outputs["Color"], b.inputs["Base Color"])
     champ(b, "Metallic", 1.0)
-    rg = n.new("ShaderNodeMapRange"); rg.inputs["To Min"].default_value = 0.30; rg.inputs["To Max"].default_value = 0.66
+    rg = n.new("ShaderNodeMapRange"); rg.inputs["To Min"].default_value = 0.34; rg.inputs["To Max"].default_value = 0.74
     l.new(mul.outputs["Value"], rg.inputs["Value"]); l.new(rg.outputs["Result"], b.inputs["Roughness"])
-    bp = n.new("ShaderNodeBump"); bp.inputs["Strength"].default_value = 0.14; bp.inputs["Distance"].default_value = 0.0015
+    bp = n.new("ShaderNodeBump"); bp.inputs["Strength"].default_value = 0.20; bp.inputs["Distance"].default_value = 0.0015
     l.new(ns.outputs["Fac"], bp.inputs["Height"]); l.new(bv.outputs["Normal"], bp.inputs["Normal"]); l.new(bp.outputs["Normal"], b.inputs["Normal"])
     return m
 
@@ -273,13 +293,31 @@ def mat_platre(nom="platre", teinte=(0.80, 0.69, 0.53), rugosite=0.72, relief=0.
     cr.color_ramp.elements[1].color = (min(teinte[0] * 1.08, 1), min(teinte[1] * 1.06, 1), min(teinte[2] * 1.05, 1), 1)
     sm = n.new("ShaderNodeMath"); sm.operation = "ADD"; l.new(ns2.outputs["Fac"], sm.inputs[0]); l.new(ns3.outputs["Fac"], sm.inputs[1])
     sm2 = n.new("ShaderNodeMath"); sm2.operation = "MULTIPLY"; sm2.inputs[1].default_value = 0.5; l.new(sm.outputs["Value"], sm2.inputs[0])
-    l.new(sm2.outputs["Value"], cr.inputs["Fac"]); l.new(cr.outputs["Color"], b.inputs["Base Color"])
+    l.new(sm2.outputs["Value"], cr.inputs["Fac"])
+    # traînées verticales (ruissellement), mouchetures de chaux, humidité remontant du sol
+    mps = n.new("ShaderNodeMapping"); mps.inputs["Scale"].default_value = (7.0, 7.0, 0.7); l.new(tc.outputs["Object"], mps.inputs["Vector"])
+    strk = n.new("ShaderNodeTexNoise"); strk.inputs["Scale"].default_value = 2.4; strk.inputs["Detail"].default_value = 6; strk.inputs["Roughness"].default_value = 0.68
+    l.new(mps.outputs["Vector"], strk.inputs["Vector"])
+    sk = n.new("ShaderNodeMapRange"); sk.inputs["From Min"].default_value = 0.35; sk.inputs["From Max"].default_value = 0.75; sk.inputs["To Min"].default_value = 0.80; sk.inputs["To Max"].default_value = 1.08
+    l.new(strk.outputs["Fac"], sk.inputs["Value"])
+    sepz = n.new("ShaderNodeSeparateXYZ"); l.new(tc.outputs["Object"], sepz.inputs["Vector"])
+    hum = n.new("ShaderNodeMapRange"); hum.inputs["From Min"].default_value = 0.0; hum.inputs["From Max"].default_value = 1.1
+    hum.inputs["To Min"].default_value = 0.66; hum.inputs["To Max"].default_value = 1.0; hum.clamp = True
+    l.new(sepz.outputs["Z"], hum.inputs["Value"])
+    pm = n.new("ShaderNodeMath"); pm.operation = "MULTIPLY"; l.new(sk.outputs["Result"], pm.inputs[0]); l.new(hum.outputs["Result"], pm.inputs[1])
+    gc = n.new("ShaderNodeCombineColor")
+    for i_ in range(3):
+        l.new(pm.outputs["Value"], gc.inputs[i_])
+    mxp = n.new("ShaderNodeMix"); mxp.data_type = "RGBA"; mxp.blend_type = "MULTIPLY"; mxp.inputs[0].default_value = 1.0
+    l.new(cr.outputs["Color"], mxp.inputs[6]); l.new(gc.outputs["Color"], mxp.inputs[7])
+    l.new(mxp.outputs[2], b.inputs["Base Color"])
     champ(b, "Roughness", rugosite)
-    bp = n.new("ShaderNodeBump"); bp.inputs["Strength"].default_value = relief; bp.inputs["Distance"].default_value = 0.012
-    l.new(ns.outputs["Fac"], bp.inputs["Height"]); l.new(bp.outputs["Normal"], b.inputs["Normal"])
+    bp = n.new("ShaderNodeBump"); bp.inputs["Strength"].default_value = relief * 1.35; bp.inputs["Distance"].default_value = 0.014
+    hb = n.new("ShaderNodeMath"); hb.operation = "ADD"; l.new(ns.outputs["Fac"], hb.inputs[0]); l.new(ns2.outputs["Fac"], hb.inputs[1])
+    l.new(hb.outputs["Value"], bp.inputs["Height"]); l.new(bp.outputs["Normal"], b.inputs["Normal"])
     return m
 
-def mat_ceramique(nom, rgb, rugosite=0.09, variation=0.30):
+def mat_ceramique(nom, rgb, rugosite=0.09, variation=0.46):
     """Émail de zellige : surface légèrement ondulée, brillance vive, couleur qui varie d'un carreau à l'autre."""
     m, n, l, b = mat_nouveau(nom)
     geo = n.new("ShaderNodeNewGeometry")
@@ -298,8 +336,14 @@ def mat_ceramique(nom, rgb, rugosite=0.09, variation=0.30):
     mx2 = n.new("ShaderNodeMix"); mx2.data_type = "RGBA"; mx2.blend_type = "MULTIPLY"; mx2.inputs[0].default_value = 0.22
     l.new(mx.outputs[2], mx2.inputs[6]); mx2.inputs[7].default_value = (0.55, 0.52, 0.48, 1)
     l.new(ns.outputs["Fac"], mx2.inputs[0])
-    l.new(mx2.outputs[2], b.inputs["Base Color"])
-    rg = n.new("ShaderNodeMapRange"); rg.inputs["To Min"].default_value = rugosite; rg.inputs["To Max"].default_value = rugosite + 0.12
+    hs = n.new("ShaderNodeHueSaturation")
+    hrnd = n.new("ShaderNodeMath"); hrnd.operation = "MULTIPLY_ADD"; hrnd.inputs[1].default_value = 0.07; hrnd.inputs[2].default_value = 0.465
+    l.new(geo.outputs["Random Per Island"], hrnd.inputs[0]); l.new(hrnd.outputs["Value"], hs.inputs["Hue"])
+    hsat = n.new("ShaderNodeMath"); hsat.operation = "MULTIPLY_ADD"; hsat.inputs[1].default_value = 0.35; hsat.inputs[2].default_value = 0.85
+    l.new(geo.outputs["Random Per Island"], hsat.inputs[0]); l.new(hsat.outputs["Value"], hs.inputs["Saturation"])
+    l.new(mx2.outputs[2], hs.inputs["Color"])
+    l.new(hs.outputs["Color"], b.inputs["Base Color"])
+    rg = n.new("ShaderNodeMapRange"); rg.inputs["To Min"].default_value = rugosite; rg.inputs["To Max"].default_value = rugosite + 0.16
     l.new(ns.outputs["Fac"], rg.inputs["Value"]); l.new(rg.outputs["Result"], b.inputs["Roughness"])
     bp = n.new("ShaderNodeBump"); bp.inputs["Strength"].default_value = 0.18; bp.inputs["Distance"].default_value = 0.0015
     ns2 = n.new("ShaderNodeTexNoise"); ns2.inputs["Scale"].default_value = 14; ns2.inputs["Detail"].default_value = 2
@@ -513,7 +557,7 @@ def anneau_corde(mb, c, R, r, n=46, y_decal=0.0):
         dy = r * 0.38 * (1 if i % 2 == 0 else -1)
         mb.sph((c[0] + R * math.cos(a), c[1] + y_decal + dy, c[2] + R * math.sin(a)), r, sc=(1.0, 0.9, 1.0), seg=10)
 
-def penture(mb, s, u0, L, z, y, h=0.034, ep=0.010):
+def penture(mb, s, u0, L, z, y, h=0.022, ep=0.0075):
     """Penture ornementale : lanière fine terminée par une palmette à trois feuilles, rosaces de rivets."""
     mb.box((s * (u0 + L / 2), y - ep / 2, z), (L, ep, 2 * h))
     palmette(mb, (s * (u0 + L), z), 0.0 if s > 0 else math.pi, 0.115, y, y - ep, eventail=(-38, 0, 38), longueurs=(0.78, 1.0, 0.78))
@@ -765,7 +809,7 @@ def construire_battant(M, cote):
     mb = MB()
     for zc in (0.50, 1.35, 2.34):
         penture(mb, s, 0.0, jx * 0.80, zc, f - 0.0295 if zc != 1.35 else f - 0.0295)
-        mb.cyl((0.0, 0.0, zc), 0.030, 0.17, seg=18); mb.tor((0.0, 0.0, zc + 0.10), 0.030, 0.007, seg=20); mb.tor((0.0, 0.0, zc - 0.10), 0.030, 0.007, seg=20)
+        mb.cyl((0.0, 0.0, zc), 0.024, 0.17, seg=18); mb.tor((0.0, 0.0, zc + 0.10), 0.025, 0.0055, seg=20); mb.tor((0.0, 0.0, zc - 0.10), 0.025, 0.0055, seg=20)
     mb.objet(f"ferrures_{nom}", M["laiton"], parent=corps, bevel=0.0012)
     # heurtoir : platine à seize lobes, cordon torsadé, goutte pendante
     mb = MB(); hx = s * (jx - 0.215); hz = 1.52
@@ -777,8 +821,13 @@ def construire_battant(M, cote):
     mb.cyl((hx, f - 0.058, hz), 0.054, 0.012, rot=(math.pi / 2, 0, 0), seg=40)
     mb.cyl((hx, f - 0.066, hz), 0.032, 0.012, rot=(math.pi / 2, 0, 0), seg=32)
     mb.sph((hx, f - 0.078, hz), 0.022, sc=(1, 0.8, 1), seg=14)
-    anneau_corde(mb, (hx, f - 0.092, hz - 0.095), 0.092, 0.0105, n=52)
-    mb.sph((hx, f - 0.092, hz - 0.190), 0.026, sc=(0.8, 0.8, 1.5), seg=14)
+    for ra_, rr_ in ((0.068, 0.0030), (0.044, 0.0026), (0.100, 0.0034)):                 # filets ciselés concentriques
+        mb.tor((hx, f - 0.060, hz), ra_, rr_, rot=(math.pi / 2, 0, 0), seg=64, seg2=6)
+    for k in range(24):                                                                 # chapelet de perles fines
+        a = 2 * math.pi * k / 24
+        mb.sph((hx + 0.0565 * math.cos(a), f - 0.0625, hz + 0.0565 * math.sin(a)), 0.0042, seg=8)
+    anneau_corde(mb, (hx, f - 0.092, hz - 0.095), 0.092, 0.0085, n=64)
+    mb.sph((hx, f - 0.092, hz - 0.190), 0.021, sc=(0.8, 0.8, 1.7), seg=14); mb.sph((hx, f - 0.092, hz - 0.218), 0.0085, seg=8)
     mb.box((hx, f - 0.070, hz - 0.086), (0.032, 0.020, 0.040))
     mb.objet(f"heurtoir_{nom}", M["laiton"], parent=corps, bevel=0.0010)
     # couvre-joint central sur le battant droit
@@ -856,9 +905,18 @@ def lumieres(ouverture):
     # soleil bas de fin d'après-midi : ombres allongées qui creusent chaque relief
     sol = bpy.data.lights.new("soleil", "SUN"); sol.energy = 6.4; sol.angle = math.radians(1.8); sol.color = (1.0, 0.74, 0.48)
     so = bpy.data.objects.new("soleil", sol); bpy.context.collection.objects.link(so); so.rotation_euler = (math.radians(73), 0, math.radians(-50))
-    aire("ciel_doux", (3.0, -9.0, 9.0), (0, 0, 3.4), 9.0, 300, (0.80, 0.86, 1.0))
-    aire("remplissage", (6.5, -9.0, 2.0), (0, 0, 2.6), 6.0, 120, (1.0, 0.82, 0.62))
-    aire("contour", (0.0, 5.0, 12.0), (0, -0.4, 6.0), 6.0, 700, (1.0, 0.78, 0.5))
+    aire("ciel_doux", (3.0, -9.0, 9.0), (0, 0, 3.4), 9.0, 190, (0.80, 0.86, 1.0))
+    aire("remplissage", (6.5, -9.0, 2.0), (0, 0, 2.6), 6.0, 80, (1.0, 0.82, 0.62))
+    # projecteur doux sur les portes : rasant, chaud, il fait vivre les reliefs et laisse la façade tomber dans l'ombre
+    sp = bpy.data.lights.new("projecteur_portes", "SPOT"); sp.energy = 2600; sp.color = (1.0, 0.70, 0.40)
+    sp.spot_size = math.radians(30); sp.spot_blend = 0.85; sp.shadow_soft_size = 0.5
+    spo = bpy.data.objects.new("projecteur_portes", sp); bpy.context.collection.objects.link(spo)
+    spo.location = (3.4, -6.5, 4.6); spo.rotation_euler = (Vector((0, 0.4, 1.7)) - Vector(spo.location)).to_track_quat("-Z", "Y").to_euler()
+    # lueur d'intérieur qui filtre par l'imposte : l'entrée donne envie d'avancer
+    lg = bpy.data.lights.new("lueur_imposte", "AREA"); lg.shape = "RECTANGLE"; lg.size = 1.8; lg.size_y = 1.0; lg.energy = 900; lg.color = (1.0, 0.62, 0.28)
+    lgo = bpy.data.objects.new("lueur_imposte", lg); bpy.context.collection.objects.link(lgo)
+    lgo.location = (0, 1.4, 3.6); lgo.rotation_euler = (Vector((0, -6, 2.2)) - Vector(lgo.location)).to_track_quat("-Z", "Y").to_euler()
+    aire("contour", (0.0, 5.0, 12.0), (0, -0.4, 6.0), 6.0, 520, (1.0, 0.78, 0.5))
     p = bpy.data.lights.new("patio", "POINT"); p.energy = 3500 + 8000 * (ouverture / 100.0) ** 2; p.color = (1.0, 0.56, 0.22); p.shadow_soft_size = 0.7
     po = bpy.data.objects.new("patio", p); bpy.context.collection.objects.link(po); po.location = (0, 3.6, 3.2)
     p2 = bpy.data.lights.new("patio2", "POINT"); p2.energy = 2200; p2.color = (1.0, 0.7, 0.4); p2.shadow_soft_size = 1.2
@@ -915,7 +973,7 @@ def construire(ouverture):
         "cedre": mat_cedre("cedre"), "cedre_sombre": mat_cedre("cedre_sombre", True),
         "laiton": mat_laiton(),
         "emeraude": mat_emeraude(), "eau": mat_eau(), "feuille": mat_feuille(),
-        "lumiere_chaude": mat_lumiere("alcove", (1.0, 0.62, 0.26), 5.5),
+        "lumiere_chaude": mat_lumiere("alcove", (1.0, 0.60, 0.22), 9.0),
         "lumiere_douce": mat_lumiere("niche", (1.0, 0.66, 0.32), 2.4),
         "lumiere_vive": mat_lumiere("verre", (1.0, 0.6, 0.2), 14.0),
         "sol_zellige": mat_ceramique("sol_zellige", (0.46, 0.34, 0.20), 0.18, 0.4),
