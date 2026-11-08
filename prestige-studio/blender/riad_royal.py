@@ -215,11 +215,11 @@ def mat_cedre(nom="cedre", sombre=False, ton=1.0):
     l.new(add_p.outputs["Value"], var.inputs[0])
     cr = n.new("ShaderNodeValToRGB")
     f = 0.55 if sombre else 1.0
-    cr.color_ramp.elements[0].color = (0.055 * f * ton, 0.020 * f * ton, 0.0075 * f, 1)
-    cr.color_ramp.elements[1].color = (0.30 * f * ton, 0.125 * f * ton, 0.045 * f, 1)
+    cr.color_ramp.elements[0].color = (0.028 * f * ton, 0.0105 * f * ton, 0.0042 * f, 1)
+    cr.color_ramp.elements[1].color = (0.150 * f * ton, 0.066 * f * ton, 0.026 * f, 1)
     l.new(var.outputs["Value"], cr.inputs["Fac"])
     teinte = n.new("ShaderNodeMix"); teinte.data_type = "RGBA"; teinte.blend_type = "MULTIPLY"
-    teinte.inputs[0].default_value = 0.55
+    teinte.inputs[0].default_value = 0.8
     l.new(cr.outputs["Color"], teinte.inputs[6])
     cl = n.new("ShaderNodeValToRGB"); cl.color_ramp.elements[0].color = (0.78, 0.74, 0.70, 1); cl.color_ramp.elements[1].color = (1.12, 1.06, 1.0, 1)
     l.new(lames.outputs["Distance"], cl.inputs["Fac"]); l.new(cl.outputs["Color"], teinte.inputs[7])
@@ -230,7 +230,7 @@ def mat_cedre(nom="cedre", sombre=False, ton=1.0):
     add_b = n.new("ShaderNodeMath"); add_b.operation = "ADD"
     l.new(wv.outputs["Fac"], add_b.inputs[0]); l.new(pores.outputs["Fac"], add_b.inputs[1])
     l.new(add_b.outputs["Value"], bp.inputs["Height"]); l.new(bp.outputs["Normal"], b.inputs["Normal"])
-    champ(b, "Coat Weight", 0.35); champ(b, "Coat Roughness", 0.22); champ(b, "Specular IOR Level", 0.45)
+    champ(b, "Coat Weight", 0.18); champ(b, "Coat Roughness", 0.30); champ(b, "Specular IOR Level", 0.40)
     return m
 
 def mat_laiton(nom="laiton", ancien=True):
@@ -620,7 +620,7 @@ def construire_battant(M, cote):
     mb.box((s * bord / 2, f - 0.014, ZH / 2), (bord, 0.030, ZH))
     mb.box((s * (jx - bord / 2), f - 0.014, ZH / 2), (bord, 0.030, ZH))
     for zc, hh in ((0.08, 0.16), (1.30, 0.14), (2.55, 0.10)):
-        mb.box((s * jx / 2, f - 0.014, zc), (jx, 0.030, hh))
+        mb.box((s * jx / 2, f - 0.014, zc), (jx - 2 * bord, 0.030, hh))
     mb.objet(f"cadres_{nom}", M["cedre"], parent=corps, bevel=0.004)
     # filets de laiton le long du cadre intérieur (marqueterie)
     mb = MB()
@@ -735,8 +735,15 @@ def ciel_fin_d_apres_midi():
     e2 = cr.color_ramp.elements.new(0.62); e2.color = (0.62, 0.70, 0.80, 1)
     cr.color_ramp.elements[-1].position = 1.0; cr.color_ramp.elements[-1].color = (0.36, 0.52, 0.76, 1)
     l.new(rg.outputs["Result"], cr.inputs["Fac"])
+    nu = n.new("ShaderNodeTexNoise"); nu.inputs["Scale"].default_value = 3.0; nu.inputs["Detail"].default_value = 6; nu.inputs["Distortion"].default_value = 0.6
+    mpn = n.new("ShaderNodeMapping"); mpn.inputs["Scale"].default_value = (0.05, 0.05, 0.16)
+    l.new(tc.outputs["Object"], mpn.inputs["Vector"]); l.new(mpn.outputs["Vector"], nu.inputs["Vector"])
+    nr = n.new("ShaderNodeMapRange"); nr.inputs["From Min"].default_value = 0.52; nr.inputs["From Max"].default_value = 0.72
+    l.new(nu.outputs["Fac"], nr.inputs["Value"])
+    mxc = n.new("ShaderNodeMix"); mxc.data_type = "RGBA"; mxc.inputs[7].default_value = (1.0, 0.86, 0.70, 1)
+    l.new(nr.outputs["Result"], mxc.inputs[0]); l.new(cr.outputs["Color"], mxc.inputs[6])
     em = n.new("ShaderNodeEmission"); em.inputs["Strength"].default_value = 0.85
-    l.new(cr.outputs["Color"], em.inputs["Color"])
+    l.new(mxc.outputs[2], em.inputs["Color"])
     l.new(em.outputs["Emission"], n["Material Output"].inputs["Surface"])
     mb = MB(); mb.box((0, 40, 16), (180, 0.5, 70)); mb.objet("ciel_plan", m)
 
@@ -748,7 +755,7 @@ def lumieres(ouverture):
         ob = bpy.data.objects.new(nom, d); bpy.context.collection.objects.link(ob)
         ob.location = loc; ob.rotation_euler = (Vector(cible) - Vector(loc)).to_track_quat("-Z", "Y").to_euler()
     # soleil bas de fin d'après-midi : ombres allongées qui creusent chaque relief
-    sol = bpy.data.lights.new("soleil", "SUN"); sol.energy = 6.2; sol.angle = math.radians(1.8); sol.color = (1.0, 0.68, 0.40)
+    sol = bpy.data.lights.new("soleil", "SUN"); sol.energy = 6.2; sol.angle = math.radians(1.8); sol.color = (1.0, 0.74, 0.48)
     so = bpy.data.objects.new("soleil", sol); bpy.context.collection.objects.link(so); so.rotation_euler = (math.radians(68), 0, math.radians(-48))
     aire("ciel_doux", (3.0, -9.0, 9.0), (0, 0, 3.4), 9.0, 520, (0.80, 0.86, 1.0))
     aire("remplissage", (6.5, -9.0, 2.0), (0, 0, 2.6), 6.0, 120, (1.0, 0.82, 0.62))
@@ -780,9 +787,9 @@ def reglages(qualite):
     sc = bpy.context.scene
     sc.render.engine = "CYCLES"; sc.cycles.device = "CPU"
     haute = qualite == "haute"
-    sc.render.resolution_x, sc.render.resolution_y = (1080, 1920) if haute else (576, 1024)
+    sc.render.resolution_x, sc.render.resolution_y = (810, 1440) if haute else (576, 1024)
     sc.render.resolution_percentage = 100
-    sc.cycles.samples = 144 if haute else 40
+    sc.cycles.samples = 96 if haute else 40
     sc.cycles.use_adaptive_sampling = True; sc.cycles.adaptive_threshold = 0.02
     sc.cycles.use_denoising = True
     try:
@@ -803,7 +810,7 @@ def construire(ouverture):
     M = {
         "platre": mat_platre("platre", (0.86, 0.76, 0.60), 0.66, 0.42, 26),
         "platre_clair": mat_platre("platre_clair", (0.90, 0.82, 0.68), 0.70, 0.30, 26),
-        "tadelakt": mat_platre("tadelakt", (0.62, 0.40, 0.22), 0.30, 0.20, 9),
+        "tadelakt": mat_platre("tadelakt", (0.58, 0.41, 0.22), 0.30, 0.20, 9),
         "pierre": mat_platre("pierre", (0.58, 0.51, 0.40), 0.82, 0.5, 30),
         "pierre_sombre": mat_platre("pierre_sombre", (0.26, 0.22, 0.18), 0.38, 0.32, 12),
         "cedre": mat_cedre("cedre"), "cedre_sombre": mat_cedre("cedre_sombre", True),
