@@ -1,0 +1,12 @@
+{
+  "id": "riad-royal",
+  "nom": "Riad Royal — Heavent Prestige",
+  "categorie": "architecturale-3d",
+  "mecanisme": "portes-battantes",
+  "dureeIntroductionSecondes": null,
+  "fichiers": { "blend": "prestige-studio/blender/riad_royal.blend", "script": "prestige-studio/blender/riad_royal.py" },
+  "themeCarte": "ivoire-cedre-or",
+  "compatibilite": ["Safari iOS", "Chrome Android"],
+  "version": "0.1.0",
+  "validation": { "directionArtistique": "en-attente", "rendusFixes": "en-attente", "animation": "non-commencee", "integration": "non-commencee", "publication": "interdite-sans-accord" }
+}
