@@ -92,7 +92,7 @@
 .inv[dir="rtl"] .inv-rev-bouton { letter-spacing: 0; text-transform: none; font-size: 15px; }
 .inv-page .inv-rev-aide { position: static; color: var(--inv-sur-fond); }
 .inv-page .inv-scene:has(.inv-porte) { justify-content: center; }
-.inv-page .inv-porte + .inv-aide { color: var(--inv-sur-env); }
+.inv-page .inv-porte + .inv-aide { color: var(--inv-sur-fond); }
 .inv-o-florale .inv-o-cartouche { top: 62%; }
 .inv-o-marocaine .inv-o-cadre .inv-o-g { background-image: url("/ouvertures/marocaine-g.webp"); }
 .inv-o-marocaine .inv-o-cadre .inv-o-d { background-image: url("/ouvertures/marocaine-d.webp"); }
@@ -163,18 +163,19 @@
 @media (prefers-reduced-motion: reduce) { .inv-o-video .inv-ov-film { display: none; } }
 /* Lisibilité du sceau et du bouton sur les affiches très claires ou très sombres */
 .inv-o-video .inv-o-sceau { top: var(--ov-y, 50%); box-shadow: 0 0 0 1.5px rgba(40, 26, 4, .6), 0 7px 16px rgba(0, 0, 0, .5); }
-.inv-o-video .inv-o-ouvrir { top: calc(var(--ov-y, 50%) + 64px); font-size: 12px; padding: 11px 20px; background: rgba(20, 16, 10, .86); border: 1px solid #E4D49A; color: #FBF6E9; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.inv-o-video .inv-o-ouvrir { top: calc(var(--ov-y, 50%) + 64px); font-size: 12px; padding: 11px 20px; background: rgba(20, 16, 10, .92); border: 1px solid #E4D49A; color: #FBF6E9; }
 .inv-o-video[data-ouverture="v-neige"], .inv-o-video[data-ouverture="v-minuit"] { --ov-y: 20%; }
 .inv-o-video[data-ouverture="v-neige"], .inv-o-video[data-ouverture="v-glasshouse"] { background: #EADFC8; }
 
 /* Fondu entre le film et la carte : l'image finale du film reste en place et s'estompe sous la carte qui apparaît */
-.inv-film-sortie { position: fixed; z-index: 30; pointer-events: none; animation: inv-film-sortie 1.3s ease .25s forwards; }
+.inv-film-sortie { position: fixed; z-index: 30; pointer-events: none; transform-origin: 0 0; will-change: opacity, transform; animation: inv-film-sortie .7s cubic-bezier(.4, 0, .2, 1) .15s forwards; }
+.inv-film-sortie.inv-fs-carte { animation-duration: .9s; animation-delay: .4s; }
 .inv-film-sortie .inv-film-img { display: block; width: 100%; height: 100%; object-fit: cover; }
 @keyframes inv-film-sortie { to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .inv-film-sortie { display: none; } }
 
 /* Vidéos finissant sur une carte vierge : la dernière image EST la carte, le texte s'écrit directement dessus */
-.inv-carte.inv-carte-film { container-type: inline-size; --inv-texte: #3f352b; --inv-accent: #8a6a25; color: #3f352b; padding: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+.inv-carte.inv-carte-film { position: relative; animation: none !important; --inv-texte: #2e251c; container-type: inline-size; --inv-texte: #3f352b; --inv-accent: #8a6a25; color: #3f352b; padding: 0 !important; border-radius: 0 !important; box-shadow: none !important;
   background-color: var(--film-fond) !important; background-image: var(--film-fin) !important; background-size: 100% auto !important; background-position: top center !important; background-repeat: no-repeat !important; background-blend-mode: normal !important; }
 .inv-carte-film::before, .inv-carte-film > .inv-motif, .inv-carte-film > .inv-ornement, .inv-carte-film > .inv-etincelles { display: none; }
 .inv-carte-film > :is(.inv-petit, .inv-noms, .inv-trait, .inv-date, .inv-heure, .inv-lieu, .inv-maps, .inv-message, .inv-defiler, .inv-repondre, .inv-suite) {
@@ -193,3 +194,14 @@
 .inv-cf-v-porte-blanche > .inv-repondre { margin-top: 8px; background: rgba(244, 238, 228, .94); padding-inline: 8px; font-size: 2.8cqw; }
 .inv-cf-v-porte-blanche > .inv-petit { font-size: 2.5cqw; letter-spacing: .08em; }
 .inv-cf-v-porte-blanche > .inv-trait { width: auto; max-width: 100%; }
+
+/* Contrôle design + motion : lisibilité, raccord, arrivée du texte après la levée du voile */
+.inv-carte-film > :is(.inv-petit, .inv-lieu, .inv-heure) { opacity: 1; }
+.inv-carte-film > .inv-defiler { margin-top: 6px; }
+.inv-carte-film > .inv-repondre { background: #f4eee4; border: 1px solid #8a6a25; box-shadow: 0 0 0 3px #f4eee4, 0 0 0 4px rgba(138, 106, 37, .55); border-radius: 0; min-height: 44px; margin-top: 20px; }
+.inv-carte-film::after { content: ""; position: absolute; left: 0; right: 0; top: calc(180cqw - 56px); height: 56px; background: linear-gradient(to bottom, transparent, var(--film-fond)); pointer-events: none; }
+.inv-cf-v-porte-blanche > .inv-petit { font-size: max(10px, 2.7cqw); letter-spacing: .1em; line-height: 1.5; text-wrap: balance; overflow-wrap: anywhere; }
+.inv-cf-v-porte-blanche > :is(.inv-heure, .inv-lieu) { font-size: max(11.5px, 3.1cqw); }
+.inv-cf-v-porte-blanche > .inv-repondre { font-size: max(11px, 2.9cqw); letter-spacing: .1em; margin-top: 10px; }
+.inv-page .inv-carte.inv-carte-film .inv-lettre { animation-delay: calc(.6s + var(--i) * 45ms); }
+.inv-page .inv-carte.inv-carte-film > :is(.inv-petit, .inv-date, .inv-heure, .inv-lieu, .inv-repondre, .inv-defiler) { animation-delay: .85s; }

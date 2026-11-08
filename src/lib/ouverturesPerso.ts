@@ -7,9 +7,10 @@ export function chargerOuverturesPerso(force = false): Promise<void> {
   if (chargement && !force) return chargement;
   chargement = (async () => {
     try {
-      const { data } = await (supabase as any).from("ouvertures_perso").select("id, nom, description, styles, video_url, poster_url, duree_ms").eq("actif", true).order("cree_le");
+      const { data, error } = await (supabase as any).from("ouvertures_perso").select("id, nom, description, styles, video_url, poster_url, duree_ms").eq("actif", true).order("cree_le");
+      if (error) { chargement = null; return; }
       for (const r of (data ?? []) as any[]) {
-        const def: OuvertureDef = { id: r.id, nom: r.nom, description: r.description, duree: r.duree_ms, video: r.video_url, poster: r.poster_url, styles: r.styles ?? [], licence: "Ajoutée par l'administration" };
+        const def: OuvertureDef = { id: r.id, nom: r.nom, description: r.description, duree: Math.min(15000, Math.max(1000, Number(r.duree_ms) || 5000)), video: r.video_url, poster: r.poster_url, styles: Array.isArray(r.styles) ? r.styles : [], licence: "Ajoutée par l'administration" };
         const i = OUVERTURES.findIndex((o) => o.id === r.id);
         if (i >= 0) OUVERTURES[i] = def; else OUVERTURES.push(def);
       }
@@ -34,6 +35,7 @@ export async function controlerVideo(f: File): Promise<{ duree: number; affiche:
     await attendre((ok, ko) => { v.onloadeddata = () => ok(); v.onerror = () => ko(new Error(illisible)); });
     if (!Number.isFinite(v.duration)) throw new Error(illisible);
     if (!(v.duration >= 1 && v.duration <= DUREE_MAX_S)) throw new Error(`Votre vidéo dure ${String(Math.round(v.duration * 10) / 10).replace(".", ",")} s : elle doit durer entre 1 et ${DUREE_MAX_S} s.`);
+    if (v.videoHeight < v.videoWidth * 1.3) throw new Error("La vidéo doit être verticale (format 9/16).");
     if (v.videoWidth > 1100) throw new Error(`Votre vidéo fait ${v.videoWidth} px de large : réduisez-la à 1100 px maximum.`);
     await attendre((ok) => { v.onseeked = () => ok(); v.currentTime = 0.1; });
     const c = document.createElement("canvas"); const k = Math.min(1, 540 / v.videoWidth);

@@ -14,6 +14,8 @@ interface Props {
   /** Initiales des mariés, affichées dans le sceau de cire. */
   initiales: string;
   libelleBouton: string;
+  /** Événements du film : la fin réelle pilote le passage à la carte. */
+  onFilm?: (e: "ended" | "echec") => void;
 }
 
 /** Ouverture de chaque décor (en proportions de l'image) : seuls les battants s'ouvrent, le cadre reste fixe. */
@@ -39,21 +41,21 @@ function Defs() {
   );
 }
 
-export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, noms, initiales, libelleBouton }: Props) {
+export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, noms, initiales, libelleBouton, onFilm }: Props) {
   const def = ouvertureDe(type);
   const [echec, setEchec] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     if (phase !== "ouverture" || !def.video) return;
     // Lecture au toucher (autorisée car déclenchée par le geste) ; si le navigateur la refuse, l'affiche s'estompe simplement.
-    video.current?.play().catch(() => setEchec(true));
+    video.current?.play().catch(() => { setEchec(true); onFilm?.("echec"); });
   }, [phase, def.video]);
   if (def.video) {
     return (
       <div className="inv-scene">
         <button type="button" className={`inv-porte inv-o-video${echec ? " inv-o-video-secours" : ""}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={libelle} data-testid="invitation-ouvrir" data-ouverture={type}>
           <img className="inv-ov-affiche" src={def.poster} alt="" decoding="async" />
-          <video ref={video} className="inv-ov-film" src={phase === "fermee" ? undefined : def.video} poster={def.poster} muted playsInline preload="none" aria-hidden="true" onError={() => setEchec(true)} />
+          <video ref={video} className="inv-ov-film" src={def.video} poster={def.poster} muted playsInline preload="auto" aria-hidden="true" onEnded={() => onFilm?.("ended")} onError={() => { setEchec(true); onFilm?.("echec"); }} />
           <span className="inv-o-sceau" aria-hidden="true"><em ref={nomsRef}>{initiales}</em></span>
           <span className="inv-o-ouvrir">{libelleBouton}</span>
           <span className="inv-sr-seul">{noms}</span>

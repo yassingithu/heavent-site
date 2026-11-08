@@ -182,6 +182,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   /* Fondu de sortie : la dernière image du film reste à sa place et s'estompe pendant que la carte apparaît (aucune coupure). */
   const [sortie, setSortie] = useState<{ canvas: HTMLCanvasElement; r: { top: number; left: number; width: number; height: number } } | null>(null);
   useEffect(() => { if (phase === "fermee") setSortie(null); }, [phase, rejouer]);
+  useEffect(() => { if (!sortie) return; const id = window.setTimeout(() => setSortie(null), 2500); return () => window.clearTimeout(id); }, [sortie]);
   const capturerFilm = () => {
     if (sansAnimation()) return;
     try {
@@ -218,11 +219,28 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     h.classList.add("inv-glisse");
     h.animate([{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }], { duration: 1000, delay: 250, easing: "cubic-bezier(.2,.7,.2,1)", fill: "backwards" });
   }, [phase]);
+  const phaseRef = useRef(phase); phaseRef.current = phase;
+  /* Passage à la carte : à la fin réelle du film (ou au minuteur de secours), jamais avant. */
+  const terminer = () => {
+    if (phaseRef.current !== "ouverture") return;
+    depart.current = avecRevelation || ouv.video ? null : (emRef.current?.getBoundingClientRect() ?? null);
+    if (!avecRevelation) capturerFilm();
+    setPhase(avecRevelation ? "revelation" : "ouverte");
+  };
+  const terminerRef = useRef(terminer); terminerRef.current = terminer;
   useEffect(() => {
     if (phase !== "ouverture") return;
-    const id = window.setTimeout(() => { depart.current = avecRevelation ? null : (emRef.current?.getBoundingClientRect() ?? null); if (!avecRevelation) capturerFilm(); setPhase(avecRevelation ? "revelation" : "ouverte"); }, sansAnimation() ? 0 : ouv.duree);
+    const id = window.setTimeout(() => terminerRef.current(), sansAnimation() ? 0 : ouv.duree + (ouv.video ? 3000 : 0));
     return () => window.clearTimeout(id);
-  }, [phase, ouv.duree, avecRevelation]);
+  }, [phase, ouv.duree, ouv.video]);
+  /* La carte écrite sur le film : l'image finale glisse et s'ajuste sur la carte (FLIP) pendant qu'elle s'estompe. */
+  useLayoutEffect(() => {
+    if (phase !== "ouverte" || !sortie || !ouv.carte) return;
+    const carte = document.querySelector(".inv-carte-film"); const el = document.querySelector<HTMLElement>(".inv-film-sortie");
+    if (!carte || !el || typeof el.animate !== "function") return;
+    const c = carte.getBoundingClientRect(), r = sortie.r;
+    el.animate([{ transform: "none" }, { transform: `translate(${c.left - r.left}px,${c.top - r.top}px) scale(${c.width / r.width})` }], { duration: 700, easing: "cubic-bezier(.2,.7,.2,1)", fill: "forwards" });
+  }, [phase, sortie, ouv.carte]);
   useEffect(() => {
     const saute = () => { if (document.visibilityState === "hidden") setPhase((p) => (p === "ouverture" ? "ouverte" : p)); };
     document.addEventListener("visibilitychange", saute);
@@ -262,7 +280,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       <div className="inv-colonne">
       {haut}
       {(phase === "fermee" || phase === "ouverture") && ouv.id !== "enveloppe" && (
-        <Ouverture type={ouv.id} phase={phase} libelle={t.ouvrir} libelleBouton={t.ouvrirBouton} initiales={initiales(nomsA)} nomsRef={emRef}
+        <Ouverture key={ouv.id} type={ouv.id} phase={phase} libelle={t.ouvrir} libelleBouton={t.ouvrirBouton} initiales={initiales(nomsA)} nomsRef={emRef} onFilm={(e) => { if (e === "ended") terminerRef.current(); else window.setTimeout(() => terminerRef.current(), 400); }}
           noms={lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}
           onOuvrir={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); lancerMusique(); setPhase("ouverture"); }} />
       )}
@@ -282,7 +300,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
         </div>
       )}
       {sortie && phase === "ouverte" && (
-        <div className="inv-film-sortie" aria-hidden="true" style={sortie.r} onAnimationEnd={() => setSortie(null)}
+        <div className={`inv-film-sortie${ouv.carte ? " inv-fs-carte" : ""}`} aria-hidden="true" style={sortie.r} onAnimationEnd={() => setSortie(null)}
           ref={(el) => { if (el && !el.firstChild) { sortie.canvas.className = "inv-film-img"; el.appendChild(sortie.canvas); } }} />
       )}
       {phase === "revelation" && (
