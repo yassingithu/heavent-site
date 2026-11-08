@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Carte d'invitation — raccord avec le film 3D (maquette)</title>
+<style>
+/* Maquette du raccord : même cadrage 9:16, même papier, mêmes filets d'or que la dernière image du film.
+   Le texte ci-dessous est un EXEMPLE : en production il vient des réglages de l'invitation (React). */
+@font-face{font-family:"Pinyon Script";src:url(pinyon-script-latin-400-normal.woff2) format("woff2")}
+:root{--p:1;--or:#e2b48a;--encre:#4a3020}
+html,body{margin:0;height:100%;background:#d4ad8c}
+.carte{container-type:size;position:relative;width:100vw;height:100vh;overflow:hidden;
+  background:
+   radial-gradient(120% 70% at 85% 0%,rgba(255,236,214,.35),transparent 60%),
+   linear-gradient(180deg,#dfbda2 0%,#d4ad8c 52%,#cca381 100%)}
+.carte::after{content:"";position:absolute;inset:0;opacity:.16;mix-blend-mode:multiply;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' seed='4'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .42  0 0 0 0 .33  0 0 0 .9 0'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>")}
+.filet{position:absolute;border:solid var(--or);box-sizing:border-box;pointer-events:none}
+.f1{inset:3.333cqw;border-width:.55cqw}
+.f2{inset:4.667cqw;border-width:.2cqw}
+.coin{position:absolute;width:6.2cqw;height:6.2cqw;color:var(--or)}
+.coin.h{top:5.2cqw}.coin.b{bottom:5.2cqw}.coin.g{left:5.2cqw}.coin.d{right:5.2cqw}
+.corps{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--encre);
+  font-family:"Cormorant Garamond","Liberation Serif","DejaVu Serif",Georgia,serif;padding:0 14cqw}
+.corps>*{opacity:var(--p);transform:translateY(calc((1 - var(--p)) * 1.2cqw))}
+.medaillon{width:15cqw;color:var(--or);margin-bottom:6cqw}
+.pre{font-size:3.3cqw;letter-spacing:.34em;text-transform:uppercase;margin:0 0 5cqw}
+.noms{font-family:"Pinyon Script",cursive;font-size:15cqw;line-height:1.04;margin:0;color:#3d2616}
+.et{font-size:6cqw;font-style:italic;display:block;margin:.4cqw 0}
+.sep{width:36cqw;height:.25cqw;background:linear-gradient(90deg,transparent,var(--or),transparent);margin:6cqw 0}
+.txt{font-size:4.4cqw;line-height:1.5;margin:0 0 5cqw;font-style:italic}
+.date{font-size:5.4cqw;letter-spacing:.14em;text-transform:uppercase;margin:0}
+.lieu{font-size:3.8cqw;letter-spacing:.22em;text-transform:uppercase;margin:2.4cqw 0 0;opacity:.8}
+.rsvp{margin-top:9cqw;font-size:3.2cqw;letter-spacing:.32em;text-transform:uppercase;border:.25cqw solid var(--or);padding:2.4cqw 6cqw}
+</style>
+<div class="carte" id="carte">
+  <div class="filet f1"></div><div class="filet f2"></div>
+  <svg class="coin h g" viewBox="-10 -10 20 20"><g fill="none" stroke="currentColor" stroke-width=".6"><circle r="9"/><path d="M0-8 2-2 8 0 2 2 0 8-2 2-8 0-2-2z"/></g></svg>
+  <svg class="coin h d" viewBox="-10 -10 20 20"><g fill="none" stroke="currentColor" stroke-width=".6"><circle r="9"/><path d="M0-8 2-2 8 0 2 2 0 8-2 2-8 0-2-2z"/></g></svg>
+  <svg class="coin b g" viewBox="-10 -10 20 20"><g fill="none" stroke="currentColor" stroke-width=".6"><circle r="9"/><path d="M0-8 2-2 8 0 2 2 0 8-2 2-8 0-2-2z"/></g></svg>
+  <svg class="coin b d" viewBox="-10 -10 20 20"><g fill="none" stroke="currentColor" stroke-width=".6"><circle r="9"/><path d="M0-8 2-2 8 0 2 2 0 8-2 2-8 0-2-2z"/></g></svg>
+  <div class="corps">
+    <svg class="medaillon" viewBox="-20 -20 40 40"><g fill="none" stroke="currentColor" stroke-width=".5"><circle r="18"/><circle r="16.6"/><path id="e" d="M0-14 2.4-7.2 9.9-9.9 7.2-2.4 14 0 7.2 2.4 9.9 9.9 2.4 7.2 0 14-2.4 7.2-9.9 9.9-7.2 2.4-14 0-7.2-2.4-9.9-9.9-2.4-7.2z"/><circle r="4"/></g></svg>
+    <p class="pre">Ensemble avec leurs familles</p>
+    <h1 class="noms">Sarah<span class="et">&amp;</span>Karim</h1>
+    <div class="sep"></div>
+    <p class="txt">vous convient à la célébration<br>de leur mariage</p>
+    <p class="date">Samedi 12 septembre</p>
+    <p class="lieu">Riad Royal · Marrakech</p>
+    <div class="rsvp">Répondre</div>
+  </div>
+</div>
+<script>const q=new URLSearchParams(location.search);document.documentElement.style.setProperty('--p',q.get('p')??'1');</script>
