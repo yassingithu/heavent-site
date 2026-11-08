@@ -323,3 +323,5 @@
 .inv-pag-bas[data-rep] .inv-pag-btn > span { display: none; }
 .inv-pag-bas[data-rep] .inv-pag-btn { justify-content: center; width: 44px; border: 1px solid color-mix(in srgb, var(--inv-accent) 70%, transparent); border-radius: 50%; }
 .inv-pag-bas[data-rep] .inv-pag-chev { font-size: 2.2em; }
+.inv-pag-page:focus { outline: none; }
+.inv-pag[data-nav] .inv-lettre { animation-delay: calc(.05s + var(--i, 0) * 30ms) !important; }

@@ -184,7 +184,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           )}
           {message && (
             <label className="block text-sm">Votre message
-              <ChampMessage rtl libelle="Message en arabe" valeur={valeur.message_ar ?? ""} onChange={(v) => onChange({ ...valeur, message_ar: v })} className={`${champ} mt-1 py-2`} placeholder="ترجمة رسالتكم بالعربية" testId="invitation-message-ar" />
+              <ChampMessage rtl pagine={!!ouvertureDe(valeur.ouverture).carte} libelle="Message en arabe" valeur={valeur.message_ar ?? ""} onChange={(v) => onChange({ ...valeur, message_ar: v })} className={`${champ} mt-1 py-2`} placeholder="ترجمة رسالتكم بالعربية" testId="invitation-message-ar" />
             </label>
           )}
         </section>

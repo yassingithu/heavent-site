@@ -48,6 +48,7 @@ export default function PagesCarte({ unites, signature, ar, textes, repondre, ha
   const [scindes, setScindes] = useState<string[]>([]);
   const effectives = useMemo<UnitePage[]>(() => unites.flatMap((u) => (u.parties && scindes.includes(u.cle) ? u.parties.map((q) => ({ ...q, groupe: u.cle, saut: q === u.parties![0] ? u.saut : undefined })) : [u])), [unites, scindes]);
   const unitesRef = useRef(effectives); unitesRef.current = effectives;
+  const scindesRef = useRef(scindes); scindesRef.current = scindes;
   const aRepondre = !!repondre;
 
   const calculer = useCallback(() => {
@@ -63,8 +64,8 @@ export default function PagesCarte({ unites, signature, ar, textes, repondre, ha
     const seule = empaqueter(u, (total - (aRepondre ? hauteurBas : 0)) * confort, gap);
     const res = seule.length === 1 ? seule : empaqueter(u, (total - hauteurBas) * confort, gap);
     // une unité seule plus haute que la page : on la découpe en phrases entières, puis on remesure
-    const trop = res.find((pg) => pg.defile && pg.indices.length === 1 && unitesRef.current[pg.indices[0]].parties);
-    if (trop) { setScindes((a) => (a.includes(unitesRef.current[trop.indices[0]].cle) ? a : [...a, unitesRef.current[trop.indices[0]].cle])); return; }
+    const trop = res.find((pg) => pg.defile && pg.indices.some((k) => unitesRef.current[k].parties && !scindesRef.current.includes(unitesRef.current[k].cle)));
+    if (trop) { const cle = unitesRef.current[trop.indices.find((k) => unitesRef.current[k].parties && !scindesRef.current.includes(unitesRef.current[k].cle))!].cle; setScindes((a) => (a.includes(cle) ? a : [...a, cle])); return; }
     setPages((ancien) => (JSON.stringify(ancien) === JSON.stringify(res) ? ancien : res));
   }, [aRepondre, hauteurBas]);
 
@@ -97,6 +98,12 @@ export default function PagesCarte({ unites, signature, ar, textes, repondre, ha
     return () => window.clearTimeout(t);
   }, [courante, pages, signature, scindes]);
 
+  // après un changement de page demandé par l'invité : défilement remis en haut et focus sur la page (les flèches du clavier continuent de marcher)
+  useLayoutEffect(() => {
+    const v = vue.current; if (!v) return;
+    v.scrollTop = 0;
+    if (navigue) (v.firstElementChild as HTMLElement | null)?.focus({ preventScroll: true });
+  }, [courante, navigue]);
   const aller = (n: number) => { if (n < 0 || n > total - 1 || n === courante) return; setSens(n > courante ? 1 : -1); setNavigue(true); setPage(n); };
   const suivant = () => aller(courante + 1);
   const precedent = () => aller(courante - 1);
@@ -139,7 +146,7 @@ export default function PagesCarte({ unites, signature, ar, textes, repondre, ha
           if (Math.abs(dx) < 55 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
           (dx < 0) === !ar ? suivant() : precedent();
         }}>
-        <div className="inv-pag-page" key={courante} data-sens={sens} role="group" aria-label={multi ? textes.pageSur.replace("{n}", String(courante + 1)).replace("{m}", String(total)) : undefined}>
+        <div className="inv-pag-page" tabIndex={-1} key={courante} data-sens={sens} role="group" aria-label={multi ? textes.pageSur.replace("{n}", String(courante + 1)).replace("{m}", String(total)) : undefined}>
           {blocs.map((b, k) => <div className="inv-pag-u" key={b.cle} style={{ "--k": k } as CSSProperties}>{b.rendu}</div>)}
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Copy, Loader2, MessageCircle, Plus, Trash2, ArrowLeft, BadgeCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ouvertureDe } from "@/lib/invitation";
 import ChampMessage from "@/components/invitation/ChampMessage";
 import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvitation";
 import type { InvitationReglages } from "@/lib/invitation";
@@ -124,7 +125,7 @@ export default function InvitationsAdmin() {
             </select>
           </label>
           <label className="text-sm sm:col-span-2">Lieu affiché<input className={`${champ} mt-1`} value={edit.lieu ?? ""} onChange={(e) => setEdit({ ...edit, lieu: e.target.value })} /></label>
-          <div className="text-sm sm:col-span-2"><span id="lib-message">Petit mot (facultatif)</span><div className="mt-1"><ChampMessage valeur={edit.message ?? ""} onChange={(v) => setEdit({ ...edit, message: v })} className={`${champ} py-2`} testId="invitation-message" /></div></div>
+          <div className="text-sm sm:col-span-2"><label htmlFor="champ-message">Petit mot (facultatif)</label><div className="mt-1"><ChampMessage id="champ-message" pagine={!!ouvertureDe(edit.invitation?.ouverture).carte} valeur={edit.message ?? ""} onChange={(v) => setEdit({ ...edit, message: v })} className={`${champ} py-2`} testId="invitation-message" /></div></div>
         </div>
         <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 sm:p-6">
           <PersonnaliserInvitation estAdmin noms={edit.noms || "Prénom & Prénom"} date={edit.date_evenement} lieu={edit.lieu} message={edit.message} valeur={edit.invitation} onChange={(v) => setEdit({ ...edit, invitation: v })} />

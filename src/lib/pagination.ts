@@ -10,12 +10,12 @@ const EST_SAUT = /^\s*-{3,}\s*$/;
 export interface Morceau { texte: string; /** vrai : une nouvelle page doit commencer avant ce morceau */ saut: boolean }
 
 /** Ouvrants/fermants qu'on ne coupe jamais : versets ﴿ ﴾, guillemets « », parenthèses, crochets. */
-const PAIRES: Record<string, string> = { "﴿": "﴾", "«": "»", "(": ")", "[": "]", "“": "”" };
+const PAIRES: Record<string, string> = { "﴿": "﴾", "﴾": "﴿", "«": "»", "(": ")", "[": "]", "“": "”" };
 const FINS = new Set([".", "!", "?", "…", "؟", "؛", "۔", "。"]);
 const FERMANTS = new Set(Object.values(PAIRES));
 
 /** Coupe un paragraphe en phrases entières ; jamais à l'intérieur d'un verset, d'une citation ou d'une parenthèse. */
-export function phrases(p: string): string[] {
+export function phrases(p: string, suivreCitations = true): string[] {
   const t = p.replace(/\s+/g, " ").trim();
   if (!t) return [];
   const sortie: string[] = [];
@@ -23,8 +23,9 @@ export function phrases(p: string): string[] {
   let debut = 0;
   for (let i = 0; i < t.length; i++) {
     const c = t[i];
-    if (PAIRES[c]) pile.push(PAIRES[c]);
-    else if (FERMANTS.has(c) && pile[pile.length - 1] === c) pile.pop();
+    if (suivreCitations && c === '"') { if (pile[pile.length - 1] === '"') pile.pop(); else pile.push('"'); }
+    else if (suivreCitations && FERMANTS.has(c) && pile[pile.length - 1] === c) pile.pop();
+    else if (suivreCitations && PAIRES[c]) pile.push(PAIRES[c]);
     else if (!pile.length && FINS.has(c)) {
       // fin de phrase : on absorbe la ponctuation et les fermants qui suivent (« Fin ! »), puis on exige un espace
       let j = i + 1;
@@ -37,6 +38,8 @@ export function phrases(p: string): string[] {
     }
   }
   if (debut < t.length) sortie.push(t.slice(debut).trim());
+  // signe ouvert jamais refermé : on recommence sans suivre les citations plutôt que d'avaler tout le paragraphe
+  if (suivreCitations && pile.length) return phrases(p, false);
   return sortie.filter(Boolean);
 }
 
@@ -78,6 +81,8 @@ export function empaqueter(unites: Unite[], dispo: number, gap: number): PageCal
       // les unités « avecSuivante » en fin de page suivent leur suite sur la page d'après
       const reste: number[] = [];
       while (cour.length > 1 && unites[cour[cour.length - 1]].avecSuivante) reste.unshift(cour.pop()!);
+      // toute la page n'est qu'une chaîne « avecSuivante » (accueil + prénoms…) : on la garde ensemble plutôt que d'isoler le premier maillon
+      if (cour.every((k) => unites[k].avecSuivante)) { cour.push(...reste); reste.length = 0; }
       pages.push(cour); cour = reste; haut = reste.reduce((s, k, n) => s + unites[k].h + (n ? gap : 0), 0);
     }
     haut += (cour.length ? gap : 0) + u.h;

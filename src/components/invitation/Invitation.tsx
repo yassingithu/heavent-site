@@ -267,6 +267,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const nomsA = ar ? (reglages?.noms_ar?.trim() || noms_ar(noms)) : noms;
   const lieuA = ar && lieu ? (reglages?.lieu_ar?.trim() || lieu_ar(lieu)) : lieu;
   const messageA = ar && message ? (reglages?.message_ar?.trim() || message) : message;
+  const messageSimple = messageA ? morceauxDeTexte(messageA).map((m) => m.texte).join("\n") : messageA; // hors cadre fixe : les lignes --- ne s'affichent pas
   const inviteA = ar && invite ? nomInvite_ar(invite) : invite;
   const dp = date ? new Intl.DateTimeFormat(t.locale, { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" }).formatToParts(new Date(date + "T00:00:00Z")) : null;
   const part = (k: string) => dp?.find((x) => x.type === k)?.value ?? "";
@@ -378,7 +379,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           {!pleinePage && carte && (
             <a className="inv-maps" href={carte} target="_blank" rel="noopener noreferrer"><MapPin className="h-4 w-4" aria-hidden="true" /> {t.maps}</a>
           )}
-          {!pleinePage && messageA && <p className="inv-message" dir="auto">{messageA}</p>}
+          {!pleinePage && messageSimple && <p className="inv-message" dir="auto">{messageSimple}</p>}
           {pleinePage && <p className="inv-defiler" aria-hidden="true"><span>{t.defiler}</span><i /></p>}
           {pleinePage && children && <a className="inv-repondre" href="#inv-reponse" onClick={(e) => { e.preventDefault(); document.getElementById("inv-reponse")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>{t.repondre}</a>}
           {!pleinePage && children && <div className="inv-suite">{children}</div>}
@@ -399,7 +400,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
                 <ol className="inv-programme">{programme.map((l, k) => <li key={k} style={{ ["--k" as string]: k } as CSSProperties}><b>{ar ? heure_ar(l.heure) : l.heure}</b><span dir="auto">{ar ? (l.titre_ar?.trim() || titre_ar(l.titre)) : l.titre}</span></li>)}</ol>
               </Section>
             )}
-            {messageA && !ouv.carte && <Section><p className="inv-message" dir="auto" style={{ border: 0, padding: 0, margin: 0 }}>{messageA}</p></Section>}
+            {messageSimple && !ouv.carte && <Section><p className="inv-message" dir="auto" style={{ border: 0, padding: 0, margin: 0 }}>{messageSimple}</p></Section>}
             {children && <Section id="inv-reponse" titre={t.reponseTitre} className="inv-sec-reponse">{children}</Section>}
           </div>
         )}
