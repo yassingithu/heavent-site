@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import ChampMessage from "./ChampMessage";
 import ImportOuverture from "./ImportOuverture";
 import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import { RotateCcw, Play } from "lucide-react";
@@ -183,7 +184,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           )}
           {message && (
             <label className="block text-sm">Votre message
-              <textarea dir="rtl" rows={2} className={`${champ} mt-1 py-2`} value={valeur.message_ar ?? ""} maxLength={300} placeholder="ترجمة رسالتكم بالعربية" onChange={(e) => onChange({ ...valeur, message_ar: e.target.value })} data-testid="invitation-message-ar" />
+              <ChampMessage rtl libelle="Message en arabe" valeur={valeur.message_ar ?? ""} onChange={(v) => onChange({ ...valeur, message_ar: v })} className={`${champ} mt-1 py-2`} placeholder="ترجمة رسالتكم بالعربية" testId="invitation-message-ar" />
             </label>
           )}
         </section>

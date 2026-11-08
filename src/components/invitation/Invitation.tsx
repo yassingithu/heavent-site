@@ -4,6 +4,8 @@ import { MapPin } from "lucide-react";
 import Ouverture from "./Ouverture";
 import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import Revelation from "./Revelation";
+import PagesCarte, { type UnitePage } from "./PagesCarte";
+import { morceauxDeTexte, phrases } from "@/lib/pagination";
 import { couleursDe, initiales, lienMaps, modeleDe, ouvertureDe, revelationDe, surCouleur, TEXTES, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
 import "@fontsource/pinyon-script/latin-400.css";
 import "@fontsource/pinyon-script/latin-ext-400.css";
@@ -180,18 +182,24 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   }, [ouverte, rejouer, autoOuvrir]);
   const emRef = useRef<HTMLElement>(null);
   /* Fondu de sortie : la dernière image du film reste à sa place et s'estompe pendant que la carte apparaît (aucune coupure). */
-  const [sortie, setSortie] = useState<{ canvas: HTMLCanvasElement; r: { top: number; left: number; width: number; height: number } } | null>(null);
+  const [sortie, setSortie] = useState<{ canvas: HTMLElement; r: { top: number; left: number; width: number; height: number } } | null>(null);
   useEffect(() => { if (phase === "fermee") setSortie(null); }, [phase, rejouer]);
   useEffect(() => { if (!sortie) return; const id = window.setTimeout(() => setSortie(null), 2500); return () => window.clearTimeout(id); }, [sortie]);
   const capturerFilm = () => {
     if (sansAnimation()) return;
     try {
       const f = document.querySelector<HTMLVideoElement>(".inv-o-video:not(.inv-o-video-secours) .inv-ov-film");
-      if (!f || f.readyState < 2 || !f.videoWidth) return;
-      const b = f.getBoundingClientRect();
-      const cv = document.createElement("canvas"); cv.width = f.videoWidth; cv.height = f.videoHeight;
-      cv.getContext("2d")!.drawImage(f, 0, 0);
-      setSortie({ canvas: cv, r: { top: b.top, left: b.left, width: b.width, height: b.height } });
+      if (f && f.readyState >= 2 && f.videoWidth) {
+        const b = f.getBoundingClientRect();
+        const cv = document.createElement("canvas"); cv.width = f.videoWidth; cv.height = f.videoHeight;
+        cv.getContext("2d")!.drawImage(f, 0, 0);
+        setSortie({ canvas: cv, r: { top: b.top, left: b.left, width: b.width, height: b.height } });
+      } else if (ouv.carte) {
+        /* décors à carte intégrée : la scène intérieure reste en place puis glisse sur la carte */
+        const porte = document.querySelector<HTMLElement>(".inv-porte"); if (!porte) return;
+        const b = porte.getBoundingClientRect(); const im = new Image(); im.src = ouv.carte.fin; im.alt = "";
+        setSortie({ canvas: im, r: { top: b.top, left: b.left, width: b.width, height: b.height } });
+      }
     } catch { /* sans fondu : la carte apparaît directement */ }
   };
   /* Musique d'ouverture (facultative) : démarre au toucher, avec un bouton pour la couper. */
@@ -275,6 +283,40 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   })();
   const lignes = nomsA.split(/\s+(?:et|and|و)\s+|\s*&\s*/i).map((x) => x.trim()).filter(Boolean);
 
+  /* Carte à cadre fixe : le contenu est réparti en pages d'après la hauteur mesurée (voir PagesCarte). */
+  const unitesCarte: UnitePage[] = [];
+  if (ouv.carte) {
+    const accueil = (m: boolean) => (<>
+      {invite && <p className="inv-petit">{t.cher} {inviteA},</p>}
+      <p className="inv-petit">{invite ? t.invites : t.invite}</p>
+    </>);
+    unitesCarte.push({ cle: "accueil", avecSuivante: true, rendre: accueil });
+    unitesCarte.push({ cle: "noms", avecSuivante: true, rendre: (m) => (
+      <h1 {...(m ? {} : { ref: nomsRef, tabIndex: -1, "data-testid": "rsvp-noms" })} className="inv-noms" aria-label={nomsA} style={{ "--nl": Math.max(6, ...lignes.map((l) => l.length)) } as CSSProperties}>
+        {lignes.length === 2 ? (<><Lettres texte={lignes[0]} base={0} ar={ar} /><span className="inv-et" aria-hidden="true">{ar ? "و" : "&"}</span><Lettres texte={lignes[1]} base={lignes[0].length + 2} ar={ar} /></>) : <Lettres texte={nomsA} base={0} ar={ar} />}
+      </h1>) });
+    unitesCarte.push({ cle: "trait", avecSuivante: true, rendre: () => <svg className="inv-trait" viewBox="0 0 220 14" aria-hidden="true"><path pathLength="1" d="M4 8c30-9 58 6 92-1s58-6 78 0c14 4 28 3 42-2" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg> });
+    if (dp) unitesCarte.push({ cle: "date", rendre: (m) => (
+      <div className="inv-date" {...(m ? {} : { "data-testid": "invitation-date" })}>
+        <bdi className="inv-date-cote">{maj(part("weekday"))}</bdi><span className="inv-date-jour">{part("day")}</span><bdi className="inv-date-cote">{part("month")} {part("year")}</bdi>
+      </div>) });
+    if (heure) unitesCarte.push({ cle: "heure", rendre: () => <p className="inv-heure" dir="auto">{heure}</p> });
+    if (lieuA) unitesCarte.push({ cle: "lieu", rendre: () => <p className="inv-lieu" dir="auto">{lieuA}</p> });
+    if (carte) unitesCarte.push({ cle: "maps", rendre: () => <a className="inv-maps" href={carte} target="_blank" rel="noopener noreferrer"><MapPin className="h-4 w-4" aria-hidden="true" /> {t.itineraire}</a> });
+    // texte libre : un paragraphe par unité ; trop long pour une page, il se répartit par phrases entières (jamais au milieu d'un verset)
+    morceauxDeTexte(messageA).forEach((mo, k) => {
+      const ph = phrases(mo.texte);
+      const classe = (debut: boolean) => `inv-message inv-pag-msg${k === 0 && debut ? " inv-pag-msg-tete" : ""}`;
+      unitesCarte.push({ cle: `msg-${k}`, saut: mo.saut, rendre: () => <p className={classe(true)} dir="auto">{mo.texte}</p>,
+        ...(ph.length > 1 ? {
+          fusion: (rendus, debut) => <p className={classe(debut)} dir="auto">{rendus}</p>,
+          parties: ph.map((tx, j) => ({ cle: `msg-${k}-${j}`, rendre: (m: boolean) => (m ? <p className={classe(false)} dir="auto">{tx}</p> : <span>{tx}</span>) })),
+        } : {}) });
+    });
+    if (!pleinePage && children) unitesCarte.push({ cle: "suite", rendre: () => <div className="inv-suite">{children}</div> });
+  }
+  const repondreCarte = pleinePage && children ? <a className="inv-repondre" href="#inv-reponse" onClick={(e) => { e.preventDefault(); document.getElementById("inv-reponse")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>{t.repondre}</a> : undefined;
+
   return (
     <div className={`inv ${pleinePage ? "inv-page" : "inv-bloc"}`} style={style} dir={langue === "ar" ? "rtl" : "ltr"} lang={langue} data-phase={phase} data-testid="invitation">
       <div className="inv-particules" aria-hidden="true">{PARTICULES.map((q, i) => <span key={i} style={{ left: `${q.x}%`, width: q.s, height: q.s, animationDelay: `-${q.d}ms`, animationDuration: `${q.t}ms` }} />)}</div>
@@ -311,10 +353,14 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       {audioRef.current && phase !== "fermee" && (<button type="button" className="inv-musique" onClick={basculerSon} aria-pressed={son} aria-label={son ? "Couper la musique" : "Activer la musique"} data-testid="invitation-musique">{son ? "♪" : "♪̸"}</button>)}
       {phase === "ouverte" && (<>
         <article className={`inv-carte inv-orn-${ornement}${ouv.carte ? ` inv-carte-film inv-cf-${ouv.id}` : ""}`} data-testid="invitation-carte"
-          style={ouv.carte ? ({ "--film-fin": `url(${ouv.carte.fin})`, "--film-x": ouv.carte.x, "--film-y": ouv.carte.y, "--film-l": ouv.carte.l, "--film-h": ouv.carte.h, "--film-fond": ouv.carte.fond } as CSSProperties) : undefined}>
+          style={ouv.carte ? ({ "--film-r": ouv.carte.r ?? 180, "--film-fin": `url(${ouv.carte.fin})`, "--film-x": ouv.carte.x, "--film-y": ouv.carte.y, "--film-l": ouv.carte.l, "--film-h": ouv.carte.h, "--film-fond": ouv.carte.fond } as CSSProperties) : undefined}>
           <div className="inv-etincelles" aria-hidden="true">{ETINCELLES.map((e, i) => <span key={i} style={{ left: `${e.x}%`, animationDelay: `${e.d}ms`, animationDuration: `${e.t + 900}ms`, width: e.s, height: e.s }} />)}</div>
           <div className="inv-motif" aria-hidden="true" />
           <div className="inv-ornement"><Ornement type={ornement} /></div>
+          {ouv.carte ? (
+            <div className="inv-film-zone"><PagesCarte unites={unitesCarte} ar={ar} textes={t} repondre={repondreCarte}
+              signature={[langue, noms, date, lieu, heure, messageA, invite, reglages?.noms_ar, reglages?.lieu_ar, !!carte].join("¤")} /></div>
+          ) : <>
           {invite && <p className="inv-petit">{t.cher} {inviteA},</p>}
           <p className="inv-petit">{invite ? t.invites : t.invite}</p>
           <h1 ref={nomsRef} tabIndex={-1} className="inv-noms" data-testid="rsvp-noms" aria-label={nomsA}>
@@ -336,6 +382,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           {pleinePage && <p className="inv-defiler" aria-hidden="true"><span>{t.defiler}</span><i /></p>}
           {pleinePage && children && <a className="inv-repondre" href="#inv-reponse" onClick={(e) => { e.preventDefault(); document.getElementById("inv-reponse")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>{t.repondre}</a>}
           {!pleinePage && children && <div className="inv-suite">{children}</div>}
+          </>}
         {pleinePage && (
           <div className="inv-histoire">
             <Section nuit className="inv-sec-anneaux"><Anneaux /><p className="inv-sec-mot">{t.alliances}</p></Section>
@@ -352,12 +399,14 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
                 <ol className="inv-programme">{programme.map((l, k) => <li key={k} style={{ ["--k" as string]: k } as CSSProperties}><b>{ar ? heure_ar(l.heure) : l.heure}</b><span dir="auto">{ar ? (l.titre_ar?.trim() || titre_ar(l.titre)) : l.titre}</span></li>)}</ol>
               </Section>
             )}
-            {messageA && <Section><p className="inv-message" dir="auto" style={{ border: 0, padding: 0, margin: 0 }}>{messageA}</p></Section>}
+            {messageA && !ouv.carte && <Section><p className="inv-message" dir="auto" style={{ border: 0, padding: 0, margin: 0 }}>{messageA}</p></Section>}
             {children && <Section id="inv-reponse" titre={t.reponseTitre} className="inv-sec-reponse">{children}</Section>}
           </div>
         )}
         </article>
+        {pleinePage && !sansAnimation() && <button type="button" className="inv-rejouer" onClick={() => { setSortie(null); setPhase("fermee"); window.scrollTo({ top: 0 }); }} data-testid="invitation-rejouer">↺ {t.rejouer}</button>}
       </>)}
+      {phase === "ouverture" && <button type="button" className="inv-passer" onClick={() => terminerRef.current()} data-testid="invitation-passer">{t.passer}</button>}
       {bas}
       </div>
     </div>
