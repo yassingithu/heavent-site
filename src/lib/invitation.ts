@@ -112,6 +112,8 @@ export interface OuvertureDef {
   /** Ouverture vidéo : fichier, affiche d'attente (1re image) et licence. Ajouter une entrée ici suffit : elle apparaît dans l'éditeur. */
   video?: string; poster?: string; licence?: string;
   /** Vidéos qui finissent sur une carte vierge : la dernière image devient la carte et le texte s'écrit directement dessus (zone du texte en fractions de l'image). */
+  /** Position verticale du sceau et du bouton sur un film, en % de la hauteur (50 par défaut). */
+  sceauY?: number;
   carte?: { fin: string; x: number; y: number; l: number; h: number; fond: string };
   /** Styles pour filtrer la bibliothèque. */
   styles: string[];
@@ -125,6 +127,7 @@ export const OUVERTURES: OuvertureDef[] = [
   { id: "artdeco", nom: "Portes Art déco", description: "Portes noires et or, éventail rayonnant, un rai de lumière entre les battants.", duree: 1800, styles: ["Luxe", "Moderne"] },
   { id: "florale", nom: "Couverture florale", description: "Deux volets en papier aquarellé, scellés d'un cachet de cire, qui s'ouvrent en livre.", duree: 1750, styles: ["Floral", "Moderne"] },
   { id: "moucharabieh", nom: "Moucharabieh", description: "Deux panneaux de bois ajouré aux étoiles de laiton coulissent et laissent passer la lumière.", duree: 1800, styles: ["Marocain", "Luxe"] },
+  { id: "zellige", nom: "Zellige", description: "Deux panneaux de zellige bleu, vert et terre cuite s'écartent sur une lumière dorée.", duree: 1800, styles: ["Marocain", "Moderne"] },
   { id: "rideaux", nom: "Rideaux", description: "Deux pans de tissu drapé qui s'écartent comme au théâtre.", duree: 1800, styles: ["Luxe", "Marocain"] },
   { id: "v-porte-blanche", nom: "Portes blanches", description: "Deux portes de dentelle et de roses en relief, nouées d'un ruban, qui s'ouvrent sur un décor de fête. 6 s.", duree: 5700, video: "/ouvertures/video/porte-blanche.mp4", carte: { fin: "/ouvertures/video/porte-blanche-fin.webp", x: 0.29, y: 0.42, l: 0.43, h: 0.41, fond: "#d8d0c4" }, poster: "/ouvertures/video/porte-blanche-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Luxe", "Floral"] },
   { id: "v-alhambra", nom: "Porte andalouse", description: "Une porte cloutée sous un arc en fer à cheval s'ouvre sur un patio et son bassin. 8 s.", duree: 8000, video: "/ouvertures/video/alhambra.mp4", poster: "/ouvertures/video/alhambra-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Marocain", "Luxe"] },

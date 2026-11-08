@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload } from "lucide-react";
 import { STYLES_OUVERTURE } from "@/lib/invitation";
@@ -11,6 +11,9 @@ export default function ImportOuverture({ onAjoutee }: { onAjoutee: (id: string)
   const [nom, setNom] = useState("");
   const [styles, setStyles] = useState<string[]>([]);
   const [fichier, setFichier] = useState<File | null>(null);
+  const [sceauY, setSceauY] = useState(50);
+  const [apercu, setApercu] = useState<string | null>(null);
+  useEffect(() => { if (!fichier) { setApercu(null); return; } const u = URL.createObjectURL(fichier); setApercu(u); return () => URL.revokeObjectURL(u); }, [fichier]);
   const [etat, setEtat] = useState<{ type: "ok" | "err" | "cours"; texte: string } | null>(null);
 
   const envoyer = async () => {
@@ -28,11 +31,11 @@ export default function ImportOuverture({ onAjoutee }: { onAjoutee: (id: string)
       const nettoyer = () => supabase.storage.from("ouvertures").remove([`${id}.${ext}`, `${id}-poster.webp`]);
       if (a.error) { await nettoyer(); throw new Error("L'envoi de l'affiche a échoué. Réessayez. "); }
       const url = (p: string) => supabase.storage.from("ouvertures").getPublicUrl(p).data.publicUrl;
-      const { error } = await (supabase as any).from("ouvertures_perso").insert({ id, nom: nom.trim(), styles, video_url: url(`${id}.${ext}`), poster_url: url(`${id}-poster.webp`), duree_ms: duree });
+      const { error } = await (supabase as any).from("ouvertures_perso").insert({ id, nom: nom.trim(), styles, video_url: url(`${id}.${ext}`), poster_url: url(`${id}-poster.webp`), duree_ms: duree, sceau_y: sceauY });
       if (error) { await nettoyer(); throw new Error("L'ajout dans la liste a échoué. Réessayez ; si cela continue, prévenez le développeur."); }
       await chargerOuverturesPerso(true);
       setEtat({ type: "ok", texte: "Ajoutée et sélectionnée : voir l'aperçu." });
-      setNom(""); setFichier(null); setStyles([]); onAjoutee(id);
+      setNom(""); setFichier(null); setStyles([]); setSceauY(50); onAjoutee(id);
     } catch (e: any) { setEtat({ type: "err", texte: e.message || "Échec de l'ajout." }); }
   };
 
@@ -43,6 +46,18 @@ export default function ImportOuverture({ onAjoutee }: { onAjoutee: (id: string)
       <div className="grid gap-2 mt-2">
         <input className="rounded-lg border border-[#E3D6BA] px-3 py-2 min-h-11" placeholder="Nom (ex. Porte du riad)" value={nom} onChange={(e) => setNom(e.target.value)} maxLength={60} aria-label="Nom de l'ouverture" />
         <input type="file" accept="video/mp4,video/webm" onChange={(e) => setFichier(e.target.files?.[0] ?? null)} aria-label="Fichier vidéo" />
+        {apercu && (
+          <div className="flex items-start gap-3">
+            <div className="relative w-24 shrink-0 overflow-hidden rounded-md bg-black" style={{ aspectRatio: "9 / 16" }} aria-hidden="true">
+              <video src={apercu} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+              <span className="absolute left-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#E4D49A] ring-2 ring-black/50" style={{ top: `${sceauY}%` }} />
+            </div>
+            <label className="text-xs text-[#5E554A] grow">Position du sceau et du bouton : {sceauY} % depuis le haut
+              <input type="range" min={15} max={85} value={sceauY} onChange={(e) => setSceauY(Number(e.target.value))} className="mt-2 block w-full min-h-11" aria-label="Position du sceau" />
+              <span className="block mt-1">Placez-le sur une zone calme de l'image.</span>
+            </label>
+          </div>
+        )}
         <p className="text-xs text-[#6B6154]">Styles (facultatif) : pour la retrouver dans les filtres.</p>
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Styles (facultatif)">
           {STYLES_OUVERTURE.map((st) => (

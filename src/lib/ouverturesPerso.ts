@@ -7,10 +7,10 @@ export function chargerOuverturesPerso(force = false): Promise<void> {
   if (chargement && !force) return chargement;
   chargement = (async () => {
     try {
-      const { data, error } = await (supabase as any).from("ouvertures_perso").select("id, nom, description, styles, video_url, poster_url, duree_ms").eq("actif", true).order("cree_le");
+      const { data, error } = await (supabase as any).from("ouvertures_perso").select("id, nom, description, styles, video_url, poster_url, duree_ms, sceau_y").eq("actif", true).order("cree_le");
       if (error) { chargement = null; return; }
       for (const r of (data ?? []) as any[]) {
-        const def: OuvertureDef = { id: r.id, nom: r.nom, description: r.description, duree: Math.min(15000, Math.max(1000, Number(r.duree_ms) || 5000)), video: r.video_url, poster: r.poster_url, styles: Array.isArray(r.styles) ? r.styles : [], licence: "Ajoutée par l'administration" };
+        const def: OuvertureDef = { id: r.id, nom: r.nom, description: r.description, duree: Math.min(15000, Math.max(1000, Number(r.duree_ms) || 5000)), video: r.video_url, poster: r.poster_url, styles: Array.isArray(r.styles) ? r.styles : [], sceauY: Math.min(85, Math.max(15, Number(r.sceau_y) || 50)), licence: "Ajoutée par l'administration" };
         const i = OUVERTURES.findIndex((o) => o.id === r.id);
         if (i >= 0) OUVERTURES[i] = def; else OUVERTURES.push(def);
       }

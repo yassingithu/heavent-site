@@ -1,3 +1,4 @@
+import type React from "react";
 import { useEffect, useRef, useState, type Ref, type ReactNode } from "react";
 import { ouvertureDe } from "@/lib/invitation";
 
@@ -53,7 +54,7 @@ export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, nom
   if (def.video) {
     return (
       <div className="inv-scene">
-        <button type="button" className={`inv-porte inv-o-video${echec ? " inv-o-video-secours" : ""}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={`${libelleBouton}. ${libelle}`} data-testid="invitation-ouvrir" data-ouverture={type}
+        <button type="button" className={`inv-porte inv-o-video${echec ? " inv-o-video-secours" : ""}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={`${libelleBouton}. ${libelle}`} data-testid="invitation-ouvrir" data-ouverture={type} style={def.sceauY ? ({ "--ov-y": `${def.sceauY}%` } as React.CSSProperties) : undefined}
           onPointerMove={(e) => { if (phase !== "fermee" || e.pointerType === "mouse") return; const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--px", `${((e.clientX - b.left) / b.width - .5) * -12}px`); e.currentTarget.style.setProperty("--py", `${((e.clientY - b.top) / b.height - .5) * -12}px`); }}>
           <img className="inv-ov-affiche" src={def.poster} alt="" decoding="async" />
           <video ref={video} className="inv-ov-film" src={def.video} poster={def.poster} muted playsInline preload="auto" aria-hidden="true" onEnded={() => onFilm?.("ended")} onError={() => { setEchec(true); onFilm?.("echec"); }} />
@@ -68,7 +69,8 @@ export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, nom
   return (
     <div className="inv-scene">
       <Defs />
-      <button type="button" className={`inv-porte inv-o-${type}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={`${libelleBouton}. ${libelle}`} data-testid="invitation-ouvrir" data-ouverture={type}>
+      <button type="button" className={`inv-porte inv-o-${type}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={`${libelleBouton}. ${libelle}`} data-testid="invitation-ouvrir" data-ouverture={type}
+        onPointerMove={(e) => { if (phase !== "fermee" || e.pointerType === "mouse") return; const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--px", `${((e.clientX - b.left) / b.width - .5) * -12}px`); e.currentTarget.style.setProperty("--py", `${((e.clientY - b.top) / b.height - .5) * -12}px`); }}>
         <span className="inv-o-monde" aria-hidden="true">
         <span className="inv-o-lueur" />
         <span className="inv-o-battants" aria-hidden="true">
