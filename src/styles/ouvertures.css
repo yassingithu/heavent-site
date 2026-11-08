@@ -368,5 +368,5 @@
 @media (prefers-reduced-motion: reduce) { .inv-o-video .inv-ov-film[data-zoom] { transform: none; } }
 /* Sans cachet : pas de sceau, un petit bouton translucide et discret */
 .inv-o-sans-cachet .inv-o-sceau { display: none; }
-.inv-o-sans-cachet .inv-o-ouvrir { background: rgba(255, 255, 255, .14); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, .55); color: rgba(255, 255, 255, .95); text-shadow: 0 1px 6px rgba(0, 0, 0, .55); box-shadow: none; font-size: 11px; padding: 9px 18px; top: calc(var(--ov-y, 50%) + 6px); }
+.inv-o-sans-cachet .inv-o-ouvrir { min-height: 44px; display: inline-flex; align-items: center; background: rgba(20, 16, 10, .42); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, .55); color: rgba(255, 255, 255, .95); text-shadow: 0 1px 6px rgba(0, 0, 0, .55); box-shadow: none; font-size: 13px; padding: 0 22px; top: calc(var(--ov-y, 50%) + 6px); }
 .inv-o-sans-cachet.inv-o-video[data-ouverture="v-neige"] .inv-o-ouvrir, .inv-o-sans-cachet.inv-o-video[data-ouverture="v-glasshouse"] .inv-o-ouvrir { color: #fff; }

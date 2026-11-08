@@ -75,7 +75,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           {ouv.id !== "enveloppe" && !ouv.cadre && ouv.id !== "rose-imperiale" && (
             <label className="mt-3 flex items-center gap-2 min-h-10 text-sm cursor-pointer">
               <input type="checkbox" className="h-5 w-5 accent-[#8C6D22]" checked={valeur.cachet !== false} onChange={(e) => { onChange({ ...valeur, cachet: e.target.checked ? undefined : false }); setRejouer((n) => n + 1); }} data-testid="option-cachet" />
-              <span>Cachet de cire sur l'ouverture <span className="text-[#6B6154]">(sinon, un petit bouton discret « Ouvrir »)</span></span>
+              <span>Cachet de cire doré<span className="block text-xs text-[#6B6154]">Décochez pour un simple bouton « Ouvrir »</span></span>
             </label>
           )}
           <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[#DCCBA6] bg-white px-4 min-h-11 text-sm lg:hidden" data-testid="voir-apercu"><Play className="h-4 w-4" /> Voir l'aperçu</button>
