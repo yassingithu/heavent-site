@@ -201,7 +201,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     try {
       const f = document.querySelector<HTMLVideoElement>(".inv-o-video:not(.inv-o-video-secours) .inv-ov-film");
       if (f && f.readyState >= 2 && f.videoWidth) {
-        const b = f.getBoundingClientRect();
+        const b = (f.parentElement ?? f).getBoundingClientRect(); // le cadre du film, hors zoom
         const cv = document.createElement("canvas"); cv.width = f.videoWidth; cv.height = f.videoHeight;
         cv.getContext("2d")!.drawImage(f, 0, 0);
         const tr = getComputedStyle(f).transform; if (tr && tr !== "none") cv.style.transform = tr; // zoom en cours : l'image figée reprend exactement le cadrage
