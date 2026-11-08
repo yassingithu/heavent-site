@@ -177,7 +177,7 @@
 /* Fondu entre le film et la carte : l'image finale du film reste en place et s'estompe sous la carte qui apparaît */
 .inv-film-sortie { position: fixed; z-index: 30; pointer-events: none; transform-origin: 0 0; will-change: opacity, transform; animation: inv-film-sortie .7s cubic-bezier(.4, 0, .2, 1) .15s forwards; }
 .inv-film-sortie { overflow: hidden; }
-.inv-film-sortie.inv-fs-film { animation-duration: .6s; animation-timing-function: ease-out; }
+.inv-film-sortie.inv-fs-film { animation-duration: .5s; animation-delay: .3s; animation-timing-function: ease-out; }
 .inv-film-sortie.inv-fs-carte { animation-duration: .9s; animation-delay: .4s; }
 .inv-film-sortie .inv-film-img { display: block; width: 100%; height: 100%; object-fit: cover; }
 @keyframes inv-film-sortie { to { opacity: 0; } }
