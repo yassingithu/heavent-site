@@ -166,3 +166,30 @@
 .inv-o-video .inv-o-ouvrir { top: calc(var(--ov-y, 50%) + 64px); font-size: 12px; padding: 11px 20px; background: rgba(20, 16, 10, .86); border: 1px solid #E4D49A; color: #FBF6E9; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .inv-o-video[data-ouverture="v-neige"], .inv-o-video[data-ouverture="v-minuit"] { --ov-y: 20%; }
 .inv-o-video[data-ouverture="v-neige"], .inv-o-video[data-ouverture="v-glasshouse"] { background: #EADFC8; }
+
+/* Fondu entre le film et la carte : l'image finale du film reste en place et s'estompe sous la carte qui apparaît */
+.inv-film-sortie { position: fixed; z-index: 30; pointer-events: none; animation: inv-film-sortie 1.3s ease .25s forwards; }
+.inv-film-sortie .inv-film-img { display: block; width: 100%; height: 100%; object-fit: cover; }
+@keyframes inv-film-sortie { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .inv-film-sortie { display: none; } }
+
+/* Vidéos finissant sur une carte vierge : la dernière image EST la carte, le texte s'écrit directement dessus */
+.inv-carte.inv-carte-film { container-type: inline-size; --inv-texte: #3f352b; --inv-accent: #8a6a25; color: #3f352b; padding: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+  background-color: var(--film-fond) !important; background-image: var(--film-fin) !important; background-size: 100% auto !important; background-position: top center !important; background-repeat: no-repeat !important; background-blend-mode: normal !important; }
+.inv-carte-film::before, .inv-carte-film > .inv-motif, .inv-carte-film > .inv-ornement, .inv-carte-film > .inv-etincelles { display: none; }
+.inv-carte-film > :is(.inv-petit, .inv-noms, .inv-trait, .inv-date, .inv-heure, .inv-lieu, .inv-maps, .inv-message, .inv-defiler, .inv-repondre, .inv-suite) {
+  margin-left: calc(100cqw * var(--film-x)); margin-right: calc(100cqw * (1 - var(--film-x) - var(--film-l))); width: auto; }
+.inv-carte-film > .inv-petit { margin-top: calc(180cqw * var(--film-y)); font-size: 3.4cqw; max-width: none; }
+.inv-carte-film > .inv-noms { font-size: min(9cqw, calc(100cqw * var(--film-l) / 5)); line-height: 1.05; }
+.inv-carte-film > :is(.inv-heure, .inv-lieu) { font-size: 3.6cqw; }
+.inv-carte-film > .inv-date { transform: scale(.8); transform-origin: top center; }
+.inv-carte-film > .inv-histoire { margin-top: calc(180cqw * (1 - var(--film-y) - var(--film-h))); }
+/* Panneau étroit des portes blanches : texte plus compact, le bouton de réponse repose sur un fond clair */
+.inv-cf-v-porte-blanche > .inv-defiler { display: none; }
+.inv-cf-v-porte-blanche > .inv-petit { font-size: 2.9cqw; }
+.inv-cf-v-porte-blanche > .inv-noms { font-size: 7.2cqw; margin: 4px 0 2px; }
+.inv-cf-v-porte-blanche > .inv-date { transform: scale(.68); margin-block: -10px; }
+.inv-cf-v-porte-blanche > :is(.inv-heure, .inv-lieu) { font-size: 3cqw; margin-block: 2px; }
+.inv-cf-v-porte-blanche > .inv-repondre { margin-top: 8px; background: rgba(244, 238, 228, .94); padding-inline: 8px; font-size: 2.8cqw; }
+.inv-cf-v-porte-blanche > .inv-petit { font-size: 2.5cqw; letter-spacing: .08em; }
+.inv-cf-v-porte-blanche > .inv-trait { width: auto; max-width: 100%; }

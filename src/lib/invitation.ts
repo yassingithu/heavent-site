@@ -111,6 +111,8 @@ export interface OuvertureDef {
   id: string; nom: string; description: string; duree: number;
   /** Ouverture vidéo : fichier, affiche d'attente (1re image) et licence. Ajouter une entrée ici suffit : elle apparaît dans l'éditeur. */
   video?: string; poster?: string; licence?: string;
+  /** Vidéos qui finissent sur une carte vierge : la dernière image devient la carte et le texte s'écrit directement dessus (zone du texte en fractions de l'image). */
+  carte?: { fin: string; x: number; y: number; l: number; h: number; fond: string };
   /** Styles pour filtrer la bibliothèque. */
   styles: string[];
 }
@@ -123,10 +125,10 @@ export const OUVERTURES: OuvertureDef[] = [
   { id: "artdeco", nom: "Portes Art déco", description: "Portes noires et or, éventail rayonnant, un rai de lumière entre les battants.", duree: 1800, styles: ["Luxe", "Moderne"] },
   { id: "florale", nom: "Couverture florale", description: "Deux volets en papier aquarellé, scellés d'un cachet de cire, qui s'ouvrent en livre.", duree: 1750, styles: ["Floral", "Moderne"] },
   { id: "rideaux", nom: "Rideaux", description: "Deux pans de tissu drapé qui s'écartent comme au théâtre.", duree: 1800, styles: ["Luxe", "Marocain"] },
-  { id: "v-porte-blanche", nom: "Portes blanches", description: "Deux portes de dentelle et de roses en relief, nouées d'un ruban, qui s'ouvrent sur un décor de fête. 6 s.", duree: 5700, video: "/ouvertures/video/porte-blanche.mp4", poster: "/ouvertures/video/porte-blanche-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Luxe", "Floral"] },
+  { id: "v-porte-blanche", nom: "Portes blanches", description: "Deux portes de dentelle et de roses en relief, nouées d'un ruban, qui s'ouvrent sur un décor de fête. 6 s.", duree: 5700, video: "/ouvertures/video/porte-blanche.mp4", carte: { fin: "/ouvertures/video/porte-blanche-fin.webp", x: 0.3, y: 0.4, l: 0.4, h: 0.43, fond: "#948a80" }, poster: "/ouvertures/video/porte-blanche-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Luxe", "Floral"] },
   { id: "v-alhambra", nom: "Porte andalouse", description: "Une porte cloutée sous un arc en fer à cheval s'ouvre sur un patio et son bassin. 8 s.", duree: 8000, video: "/ouvertures/video/alhambra.mp4", poster: "/ouvertures/video/alhambra-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Marocain", "Luxe"] },
   { id: "v-lakeside", nom: "Grille sur le lac", description: "Une grille en fer sous une glycine s'ouvre sur un jardin et le lac. 8 s.", duree: 8000, video: "/ouvertures/video/lakeside.mp4", poster: "/ouvertures/video/lakeside-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Moderne", "Luxe"] },
-  { id: "v-gardenia", nom: "Pétales de papier", description: "Des pétales blancs en relief s'écartent sur un fond crème. 5 s.", duree: 5100, video: "/ouvertures/video/gardenia.mp4", poster: "/ouvertures/video/gardenia-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Floral", "Moderne"] },
+  { id: "v-gardenia", nom: "Pétales de papier", description: "Des pétales blancs en relief s'écartent sur un fond crème. 5 s.", duree: 5100, video: "/ouvertures/video/gardenia.mp4", carte: { fin: "/ouvertures/video/gardenia-fin.webp", x: 0.14, y: 0.14, l: 0.72, h: 0.7, fond: "#f4ebe0" }, poster: "/ouvertures/video/gardenia-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Floral", "Moderne"] },
   { id: "v-shoreline", nom: "Étoile de mer", description: "Le cachet étoile de mer se détache et l'enveloppe s'ouvre. 2,5 s.", duree: 2500, video: "/ouvertures/video/shoreline.mp4", poster: "/ouvertures/video/shoreline-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Moderne"] },
   { id: "v-chateau-soir", nom: "Château au crépuscule", description: "Une grille en fer s'ouvre sur les jardins d'un château illuminé. 8 s.", duree: 8000, video: "/ouvertures/video/chateau-soir.mp4", poster: "/ouvertures/video/chateau-soir-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Luxe", "Moderne"] },
   { id: "v-palace", nom: "Portail du palais", description: "Un portail doré s'ouvre sur un château et son miroir d'eau. 4 s.", duree: 4100, video: "/ouvertures/video/palace.mp4", poster: "/ouvertures/video/palace-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Luxe", "Moderne"] },

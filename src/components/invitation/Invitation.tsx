@@ -179,6 +179,20 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     return () => window.clearTimeout(id);
   }, [ouverte, rejouer, autoOuvrir]);
   const emRef = useRef<HTMLElement>(null);
+  /* Fondu de sortie : la dernière image du film reste à sa place et s'estompe pendant que la carte apparaît (aucune coupure). */
+  const [sortie, setSortie] = useState<{ canvas: HTMLCanvasElement; r: { top: number; left: number; width: number; height: number } } | null>(null);
+  useEffect(() => { if (phase === "fermee") setSortie(null); }, [phase, rejouer]);
+  const capturerFilm = () => {
+    if (sansAnimation()) return;
+    try {
+      const f = document.querySelector<HTMLVideoElement>(".inv-o-video:not(.inv-o-video-secours) .inv-ov-film");
+      if (!f || f.readyState < 2 || !f.videoWidth) return;
+      const b = f.getBoundingClientRect();
+      const cv = document.createElement("canvas"); cv.width = f.videoWidth; cv.height = f.videoHeight;
+      cv.getContext("2d")!.drawImage(f, 0, 0);
+      setSortie({ canvas: cv, r: { top: b.top, left: b.left, width: b.width, height: b.height } });
+    } catch { /* sans fondu : la carte apparaît directement */ }
+  };
   /* Musique d'ouverture (facultative) : démarre au toucher, avec un bouton pour la couper. */
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [son, setSon] = useState(false);
@@ -206,7 +220,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   }, [phase]);
   useEffect(() => {
     if (phase !== "ouverture") return;
-    const id = window.setTimeout(() => { depart.current = avecRevelation ? null : (emRef.current?.getBoundingClientRect() ?? null); setPhase(avecRevelation ? "revelation" : "ouverte"); }, sansAnimation() ? 0 : ouv.duree);
+    const id = window.setTimeout(() => { depart.current = avecRevelation ? null : (emRef.current?.getBoundingClientRect() ?? null); if (!avecRevelation) capturerFilm(); setPhase(avecRevelation ? "revelation" : "ouverte"); }, sansAnimation() ? 0 : ouv.duree);
     return () => window.clearTimeout(id);
   }, [phase, ouv.duree, avecRevelation]);
   useEffect(() => {
@@ -267,13 +281,18 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           <p className="inv-aide" aria-hidden={phase !== "fermee"}>{t.ouvrir}</p>
         </div>
       )}
+      {sortie && phase === "ouverte" && (
+        <div className="inv-film-sortie" aria-hidden="true" style={sortie.r} onAnimationEnd={() => setSortie(null)}
+          ref={(el) => { if (el && !el.firstChild) { sortie.canvas.className = "inv-film-img"; el.appendChild(sortie.canvas); } }} />
+      )}
       {phase === "revelation" && (
         <Revelation noms={nomsA} titre={t.gratter} bouton={t.decouvrir} onFini={() => setPhase("ouverte")}
           sous={dp ? { haut: maj(part("weekday")), jour: part("day"), bas: `${part("month")} ${part("year")}` } : { haut: "", jour: initiales(nomsA), bas: "" }} />
       )}
       {audioRef.current && phase !== "fermee" && (<button type="button" className="inv-musique" onClick={basculerSon} aria-pressed={son} aria-label={son ? "Couper la musique" : "Activer la musique"} data-testid="invitation-musique">{son ? "♪" : "♪̸"}</button>)}
       {phase === "ouverte" && (<>
-        <article className={`inv-carte inv-orn-${ornement}`} data-testid="invitation-carte">
+        <article className={`inv-carte inv-orn-${ornement}${ouv.carte ? ` inv-carte-film inv-cf-${ouv.id}` : ""}`} data-testid="invitation-carte"
+          style={ouv.carte ? ({ "--film-fin": `url(${ouv.carte.fin})`, "--film-x": ouv.carte.x, "--film-y": ouv.carte.y, "--film-l": ouv.carte.l, "--film-h": ouv.carte.h, "--film-fond": ouv.carte.fond } as CSSProperties) : undefined}>
           <div className="inv-etincelles" aria-hidden="true">{ETINCELLES.map((e, i) => <span key={i} style={{ left: `${e.x}%`, animationDelay: `${e.d}ms`, animationDuration: `${e.t + 900}ms`, width: e.s, height: e.s }} />)}</div>
           <div className="inv-motif" aria-hidden="true" />
           <div className="inv-ornement"><Ornement type={ornement} /></div>
