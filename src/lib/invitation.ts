@@ -111,20 +111,27 @@ export interface OuvertureDef {
   id: string; nom: string; description: string; duree: number;
   /** Ouverture vidéo : fichier, affiche d'attente (1re image) et licence. Ajouter une entrée ici suffit : elle apparaît dans l'éditeur. */
   video?: string; poster?: string; licence?: string;
+  /** Styles pour filtrer la bibliothèque. */
+  styles: string[];
 }
+export const STYLES_OUVERTURE = ["Marocain", "Traditionnel", "Luxe", "Floral", "Moderne", "International", "Minimaliste"];
 const LICENCE_PARTENAIRE = "Ressource tierce, utilisée avec l'accord de son propriétaire";
 export const OUVERTURES: OuvertureDef[] = [
-  { id: "enveloppe", nom: "Enveloppe", description: "Le faire-part sort de son enveloppe cachetée.", duree: 2450 },
-  { id: "marocaine", nom: "Porte marocaine", description: "Deux battants en bois sculpté sous un arc, cloutés de laiton.", duree: 1750 },
-  { id: "fer", nom: "Portail en fer forgé", description: "Un portail ajouré à arabesques : on devine déjà la fête derrière.", duree: 1750 },
-  { id: "artdeco", nom: "Portes Art déco", description: "Portes noires et or, éventail rayonnant, un rai de lumière entre les battants.", duree: 1800 },
-  { id: "florale", nom: "Couverture florale", description: "Deux volets en papier aquarellé, scellés d'un cachet de cire, qui s'ouvrent en livre.", duree: 1750 },
-  { id: "rideaux", nom: "Rideaux", description: "Deux pans de tissu drapé qui s'écartent comme au théâtre.", duree: 1800 },
-  { id: "v-porte-blanche", nom: "Portes blanches brodées (vidéo)", description: "Deux portes de dentelle et de roses en relief, nouées d'un ruban, qui s'ouvrent sur un décor de fête. 6 s.", duree: 5700, video: "/ouvertures/video/porte-blanche.mp4", poster: "/ouvertures/video/porte-blanche-poster.webp", licence: LICENCE_PARTENAIRE },
-  { id: "v-minuit", nom: "Salle de bal (vidéo)", description: "Un dessin au trait doré s'éclaire : lustre, escaliers, lumières. 5 s.", duree: 5000, video: "/ouvertures/video/minuit.mp4", poster: "/ouvertures/video/minuit-poster.webp", licence: LICENCE_PARTENAIRE },
-  { id: "v-neige", nom: "Chalet sous la neige (vidéo)", description: "Une aquarelle d'hiver se peint sous vos yeux. 5 s.", duree: 5000, video: "/ouvertures/video/neige.mp4", poster: "/ouvertures/video/neige-poster.webp", licence: LICENCE_PARTENAIRE },
-  { id: "v-oliveto", nom: "Oliveraie (vidéo)", description: "Un chemin d'oliviers se colore, aquarelle méditerranéenne. 5 s.", duree: 5000, video: "/ouvertures/video/oliveto.mp4", poster: "/ouvertures/video/oliveto-poster.webp", licence: LICENCE_PARTENAIRE },
-  { id: "v-azure", nom: "Côte bleue (vidéo)", description: "Une arche donne sur la mer et les coupoles bleues. 5 s.", duree: 5000, video: "/ouvertures/video/azure.mp4", poster: "/ouvertures/video/azure-poster.webp", licence: LICENCE_PARTENAIRE },
+  { id: "enveloppe", nom: "Enveloppe", description: "Le faire-part sort de son enveloppe cachetée.", duree: 2450, styles: ["Traditionnel", "Minimaliste"] },
+  { id: "marocaine", nom: "Porte marocaine", description: "Deux battants en bois sculpté sous un arc, cloutés de laiton.", duree: 1750, styles: ["Marocain", "Traditionnel"] },
+  { id: "fer", nom: "Portail en fer forgé", description: "Un portail ajouré à arabesques : on devine déjà la fête derrière.", duree: 1750, styles: ["Marocain", "Luxe"] },
+  { id: "artdeco", nom: "Portes Art déco", description: "Portes noires et or, éventail rayonnant, un rai de lumière entre les battants.", duree: 1800, styles: ["Luxe", "Moderne"] },
+  { id: "florale", nom: "Couverture florale", description: "Deux volets en papier aquarellé, scellés d'un cachet de cire, qui s'ouvrent en livre.", duree: 1750, styles: ["Floral", "Minimaliste"] },
+  { id: "rideaux", nom: "Rideaux", description: "Deux pans de tissu drapé qui s'écartent comme au théâtre.", duree: 1800, styles: ["Luxe", "Traditionnel"] },
+  { id: "v-porte-blanche", nom: "Portes blanches brodées (vidéo)", description: "Deux portes de dentelle et de roses en relief, nouées d'un ruban, qui s'ouvrent sur un décor de fête. 6 s.", duree: 5700, video: "/ouvertures/video/porte-blanche.mp4", poster: "/ouvertures/video/porte-blanche-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Luxe", "Floral"] },
+  { id: "v-alhambra", nom: "Porte andalouse en bois (vidéo)", description: "Une porte cloutée sous un arc en fer à cheval s'ouvre sur un patio et son bassin. 8 s.", duree: 8000, video: "/ouvertures/video/alhambra.mp4", poster: "/ouvertures/video/alhambra-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Marocain", "Traditionnel", "Luxe"] },
+  { id: "v-lakeside", nom: "Grille de jardin sur le lac (vidéo)", description: "Une grille en fer sous une glycine s'ouvre sur un jardin et le lac. 8 s.", duree: 8000, video: "/ouvertures/video/lakeside.mp4", poster: "/ouvertures/video/lakeside-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["International", "Luxe"] },
+  { id: "v-gardenia", nom: "Pétales de papier (vidéo)", description: "Des pétales blancs en relief s'écartent sur un fond crème. 5 s.", duree: 5100, video: "/ouvertures/video/gardenia.mp4", poster: "/ouvertures/video/gardenia-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Floral", "Minimaliste"] },
+  { id: "v-shoreline", nom: "Enveloppe bleue, étoile de mer (vidéo)", description: "Le cachet étoile de mer se détache et l'enveloppe s'ouvre. 2,5 s.", duree: 2500, video: "/ouvertures/video/shoreline.mp4", poster: "/ouvertures/video/shoreline-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["International", "Minimaliste"] },
+  { id: "v-minuit", nom: "Salle de bal (vidéo)", description: "Un dessin au trait doré s'éclaire : lustre, escaliers, lumières. 5 s.", duree: 5000, video: "/ouvertures/video/minuit.mp4", poster: "/ouvertures/video/minuit-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Luxe", "Moderne"] },
+  { id: "v-neige", nom: "Chalet sous la neige (vidéo)", description: "Une aquarelle d'hiver se peint sous vos yeux. 5 s.", duree: 5000, video: "/ouvertures/video/neige.mp4", poster: "/ouvertures/video/neige-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["International", "Minimaliste"] },
+  { id: "v-oliveto", nom: "Oliveraie (vidéo)", description: "Un chemin d'oliviers se colore, aquarelle méditerranéenne. 5 s.", duree: 5000, video: "/ouvertures/video/oliveto.mp4", poster: "/ouvertures/video/oliveto-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["International", "Floral"] },
+  { id: "v-azure", nom: "Côte bleue (vidéo)", description: "Une arche donne sur la mer et les coupoles bleues. 5 s.", duree: 5000, video: "/ouvertures/video/azure.mp4", poster: "/ouvertures/video/azure-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["International", "Moderne"] },
 ];
 export const REVELATIONS: { id: string; nom: string; description: string }[] = [
   { id: "aucune", nom: "Aucune", description: "L'invitation s'affiche juste après l'ouverture." },

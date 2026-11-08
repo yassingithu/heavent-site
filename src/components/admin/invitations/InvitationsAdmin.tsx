@@ -126,7 +126,7 @@ export default function InvitationsAdmin() {
           <label className="text-sm sm:col-span-2">Petit mot (facultatif)<textarea rows={2} maxLength={300} className={`${champ} mt-1 py-2`} value={edit.message ?? ""} onChange={(e) => setEdit({ ...edit, message: e.target.value })} /></label>
         </div>
         <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 sm:p-6">
-          <PersonnaliserInvitation noms={edit.noms || "Prénom & Prénom"} date={edit.date_evenement} lieu={edit.lieu} message={edit.message} valeur={edit.invitation} onChange={(v) => setEdit({ ...edit, invitation: v })} />
+          <PersonnaliserInvitation estAdmin noms={edit.noms || "Prénom & Prénom"} date={edit.date_evenement} lieu={edit.lieu} message={edit.message} valeur={edit.invitation} onChange={(v) => setEdit({ ...edit, invitation: v })} />
         </div>
         <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 space-y-3" data-testid="invitation-etat">
           <p className="text-sm flex items-center gap-2">{edit.mode === "final" ? <><BadgeCheck className="h-4 w-4 text-[#1F5A4C]" /> <b>Version finale</b> : sans filigrane, le lien peut être utilisé par le client.</> : <><b>Version test</b> : un filigrane « Aperçu » recouvre la page, la réponse est une démonstration.</>}</p>

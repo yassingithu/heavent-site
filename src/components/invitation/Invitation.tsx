@@ -2,6 +2,7 @@ import { noms_ar, nomInvite_ar, lieu_ar, heure_ar, titre_ar } from "@/lib/arabe"
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { MapPin } from "lucide-react";
 import Ouverture from "./Ouverture";
+import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import Revelation from "./Revelation";
 import { couleursDe, initiales, lienMaps, modeleDe, ouvertureDe, revelationDe, surCouleur, TEXTES, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
 import "@fontsource/pinyon-script/latin-400.css";
@@ -162,6 +163,8 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const modele = reglages?.modele;
   const ornement = modeleDe(modele).ornement;
   const t = TEXTES[langue];
+  const [, majOuv] = useState(0);
+  useEffect(() => { if (String(reglages?.ouverture ?? "").startsWith("perso-")) chargerOuverturesPerso().then(() => majOuv((n) => n + 1)); }, [reglages?.ouverture]);
   const ouv = ouvertureDe(reglages?.ouverture);
   const avecRevelation = revelationDe(reglages?.revelation).id === "coeur" && !sansAnimation();
   const [phase, setPhase] = useState<"fermee" | "ouverture" | "revelation" | "ouverte">(ouverte || sansAnimation() ? "ouverte" : "fermee");

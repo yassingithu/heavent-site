@@ -1,10 +1,14 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import ImportOuverture from "./ImportOuverture";
+import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import { RotateCcw, Play } from "lucide-react";
 import Invitation from "./Invitation";
 import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
-import { CHAMPS_COULEUR, MODELES, OUVERTURES, PALETTES, REVELATIONS, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
+import { CHAMPS_COULEUR, MODELES, OUVERTURES, STYLES_OUVERTURE, PALETTES, REVELATIONS, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
 
 interface Props {
+  /** Affiche l'outil d'ajout d'ouvertures vidéo (administration seulement). */
+  estAdmin?: boolean;
   noms: string; date?: string | null; lieu?: string | null; message?: string | null;
   valeur: InvitationReglages; onChange: (v: InvitationReglages) => void;
 }
@@ -13,7 +17,7 @@ const LANGUES: [Langue, string][] = [["fr", "FR"], ["en", "EN"], ["ar", "عرب�
 const egal = (a: Couleurs, b: Couleurs) => (Object.keys(a) as (keyof Couleurs)[]).every((k) => a[k].toLowerCase() === b[k].toLowerCase());
 
 /** Choix du modèle, des couleurs (modifiables à tout moment) et aperçu en direct. */
-export default function PersonnaliserInvitation({ noms, date, lieu, message, valeur, onChange }: Props) {
+export default function PersonnaliserInvitation({ noms, date, lieu, message, valeur, onChange, estAdmin }: Props) {
   const [rejouer, setRejouer] = useState(0);
   const [langue, setLangue] = useState<Langue>("fr");
   const modele = modeleDe(valeur.modele);
@@ -21,7 +25,11 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
 
   const apercuRef = useRef<HTMLElement>(null);
   const montrer = () => { if (window.matchMedia("(max-width: 1023px)").matches) apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  const [, forcer] = useState(0);
+  useEffect(() => { chargerOuverturesPerso().then(() => forcer((n) => n + 1)); }, []);
+  const [filtre, setFiltre] = useState<string | null>(null);
   const ouv = ouvertureDe(valeur.ouverture);
+  const visibles = OUVERTURES.filter((o) => !filtre || o.styles.includes(filtre) || o.id === ouv.id);
   const rev = revelationDe(valeur.revelation);
   const choisirOuverture = (id: string) => { onChange({ ...valeur, ouverture: id }); setRejouer((n) => n + 1); montrer(); };
   const choisirRevelation = (id: string) => { onChange({ ...valeur, revelation: id }); setRejouer((n) => n + 1); montrer(); };
@@ -38,8 +46,14 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         <section>
           <h3 className="font-serif text-xl mb-1">1. Comment l'invitation s'ouvre</h3>
           <p className="text-sm text-[#5E554A] mb-3">Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu.</p>
+          <div className="flex flex-wrap gap-1.5 mb-3" role="group" aria-label="Filtrer par style">
+            {[null, ...STYLES_OUVERTURE].map((st) => (
+              <button key={st ?? "tous"} type="button" onClick={() => setFiltre(st)} aria-pressed={filtre === st}
+                className={`rounded-full border px-3 py-1.5 text-xs min-h-9 ${filtre === st ? "bg-[#141414] text-white border-[#141414]" : "border-[#E3D6BA] hover:border-[#C8B560]"}`}>{st ?? "Toutes"}</button>
+            ))}
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2" role="group" aria-label="Ouverture">
-            {OUVERTURES.map((o) => (
+            {visibles.map((o) => (
               <button key={o.id} type="button" onClick={() => choisirOuverture(o.id)} aria-pressed={ouv.id === o.id} data-testid={`ouverture-${o.id}`}
                 className={`text-left rounded-2xl border p-2 transition ${ouv.id === o.id ? "border-[#141414] ring-2 ring-[#141414]/15" : "border-[#E3D6BA] hover:border-[#C8B560]"}`}>
                 <span className="flex h-24 rounded-lg overflow-hidden mb-1.5 bg-[#EFE6D2]" aria-hidden="true">
@@ -54,6 +68,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             ))}
           </div>
           <p className="text-xs text-[#6B6154] mt-2">{ouv.description}</p>
+          {estAdmin && <ImportOuverture onAjoutee={(id) => choisirOuverture(id)} />}
         </section>
 
         <section>
