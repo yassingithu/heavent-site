@@ -214,7 +214,7 @@ def mat_cedre(nom="cedre", sombre=False, ton=1.0):
     var = n.new("ShaderNodeMath"); var.operation = "MULTIPLY"; var.inputs[1].default_value = 0.5
     l.new(add_p.outputs["Value"], var.inputs[0])
     cr = n.new("ShaderNodeValToRGB")
-    f = 0.55 if sombre else 1.0
+    f = 0.55 if sombre else 0.86
     cr.color_ramp.elements[0].color = (0.020 * f * ton, 0.0070 * f * ton, 0.0026 * f, 1)
     cr.color_ramp.elements[1].color = (0.205 * f * ton, 0.090 * f * ton, 0.034 * f, 1)
     em_ = cr.color_ramp.elements.new(0.52); em_.color = (0.085 * f * ton, 0.034 * f * ton, 0.011 * f, 1)
@@ -908,7 +908,7 @@ def lumieres(ouverture):
     aire("ciel_doux", (3.0, -9.0, 9.0), (0, 0, 3.4), 9.0, 190, (0.80, 0.86, 1.0))
     aire("remplissage", (6.5, -9.0, 2.0), (0, 0, 2.6), 6.0, 80, (1.0, 0.82, 0.62))
     # projecteur doux sur les portes : rasant, chaud, il fait vivre les reliefs et laisse la façade tomber dans l'ombre
-    sp = bpy.data.lights.new("projecteur_portes", "SPOT"); sp.energy = 2600; sp.color = (1.0, 0.70, 0.40)
+    sp = bpy.data.lights.new("projecteur_portes", "SPOT"); sp.energy = 1500; sp.color = (1.0, 0.70, 0.40)
     sp.spot_size = math.radians(30); sp.spot_blend = 0.85; sp.shadow_soft_size = 0.5
     spo = bpy.data.objects.new("projecteur_portes", sp); bpy.context.collection.objects.link(spo)
     spo.location = (3.4, -6.5, 4.6); spo.rotation_euler = (Vector((0, 0.4, 1.7)) - Vector(spo.location)).to_track_quat("-Z", "Y").to_euler()
