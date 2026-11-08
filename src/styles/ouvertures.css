@@ -408,6 +408,14 @@
 /* sélecteur de langue lisible sur tous les décors (téléphone, ouverture fermée) */
 @media (max-width: 700px) {
   .inv-page[data-phase="fermee"]:has(.inv-porte) .inv-langues { display: flex; justify-content: center; }
-  .inv-page[data-phase="fermee"]:has(.inv-porte) .inv-langues button { background: rgba(20, 16, 10, .5); color: #fbf6e9; opacity: 1; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
-  .inv-page[data-phase="fermee"]:has(.inv-porte) .inv-langues button[aria-pressed="true"] { background: #fbf6e9; color: #1a140a; }
+  .inv-page[data-phase="fermee"]:has(.inv-porte) .inv-langues { direction: ltr; }
+  .inv-page[data-phase="fermee"]:has(.inv-porte) .inv-langues button { min-height: 44px; min-width: 44px; background: rgba(20, 16, 10, .68); color: #fbf6e9; opacity: 1; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .inv-page[data-phase="fermee"]:has(.inv-porte) .inv-langues button[aria-pressed="true"] { background: #fbf6e9; color: #1a140a; border: 1px solid rgba(20, 16, 10, .45); box-shadow: 0 1px 6px rgba(0, 0, 0, .3); }
+  .inv-page .inv-o-ouvrir { min-height: 44px; display: inline-flex; align-items: center; font-size: 12.5px; }
 }
+
+/* relecture ergonome : cachets intégrés au décor, art déco, olive */
+[data-ouverture="florale"] .inv-o-ouvrir, [data-ouverture="v-shoreline"] .inv-o-ouvrir { top: calc(var(--ov-y, 50%) + 86px); }
+[data-ouverture="artdeco"] .inv-o-ouvrir { background: rgba(20, 16, 10, .9); border-color: #E4D49A; color: #FBF6E9; }
+[data-ouverture="artdeco"] .inv-o-sceau { box-shadow: 0 0 0 2px rgba(40, 26, 4, .75), 0 7px 16px rgba(0, 0, 0, .5), inset 0 2px 3px rgba(255, 255, 255, .55), inset 0 -3px 7px rgba(70, 45, 5, .55); }
+[data-ouverture="v-oliveto"] .inv-o-sceau { --sc-2: #6a7742; --sc-3: #46512c; }
