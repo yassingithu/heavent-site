@@ -419,3 +419,41 @@
 [data-ouverture="artdeco"] .inv-o-ouvrir { background: rgba(20, 16, 10, .9); border-color: #E4D49A; color: #FBF6E9; }
 [data-ouverture="artdeco"] .inv-o-sceau { box-shadow: 0 0 0 2px rgba(40, 26, 4, .75), 0 7px 16px rgba(0, 0, 0, .5), inset 0 2px 3px rgba(255, 255, 255, .55), inset 0 -3px 7px rgba(70, 45, 5, .55); }
 [data-ouverture="v-oliveto"] .inv-o-sceau { --sc-2: #6a7742; --sc-3: #46512c; }
+
+/* ── Relecture designer + motion ──────────────────────────────────────────────────────── */
+/* 1. Derrière les battants : plus de dégradé nu. Une étoile à huit branches (filet de la signature Heavent) et les prénoms-papier
+   se révèlent, dans la palette du couple, pour que l'ouverture donne sur quelque chose. */
+:is(.inv-o-marocaine, .inv-o-fer, .inv-o-artdeco, .inv-o-rideaux, .inv-o-florale) .inv-o-lueur::before {
+  content: ""; position: absolute; left: 50%; top: 46%; width: 64%; aspect-ratio: 1; transform: translate(-50%, -50%) rotate(0deg); opacity: 0;
+  background: var(--inv-accent);
+  -webkit-mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-50 -50 100 100'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.1'%3E%3Cpath d='M0-46L13-31 31-31 31-13 46 0 31 13 31 31 13 31 0 46-13 31-31 31-31 13-46 0-31-13-31-31-13-31Z'/%3E%3Cpath d='M0-30L21-21 30 0 21 21 0 30-21 21-30 0-21-21Z'/%3E%3Ccircle r='7'/%3E%3C/g%3E%3C/svg%3E");
+  mask: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-50 -50 100 100'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.1'%3E%3Cpath d='M0-46L13-31 31-31 31-13 46 0 31 13 31 31 13 31 0 46-13 31-31 31-31 13-46 0-31-13-31-31-13-31Z'/%3E%3Cpath d='M0-30L21-21 30 0 21 21 0 30-21 21-30 0-21-21Z'/%3E%3Ccircle r='7'/%3E%3C/g%3E%3C/svg%3E"); }
+.inv[data-phase="ouverture"] :is(.inv-o-marocaine, .inv-o-fer, .inv-o-artdeco, .inv-o-rideaux, .inv-o-florale) .inv-o-lueur::before { animation: o-etoile .9s cubic-bezier(.2, .7, .2, 1) .2s both; }
+@keyframes o-etoile { from { opacity: 0; transform: translate(-50%, -50%) rotate(-22deg) scale(.82); } to { opacity: .55; transform: translate(-50%, -50%) rotate(0deg) scale(1); } }
+
+/* 2. Bug de transition : le sceau de moucharabieh, zellige et riad disparaissait d'un coup */
+:is(.inv-o-moucharabieh, .inv-o-zellige, .inv-o-riad) .inv-o-sceau { transition: translate .35s ease, opacity .2s ease-out, transform .25s ease-out; }
+/* 3. Retour au toucher : pas de grossissement collé sur iPhone */
+.inv-porte:not(:disabled):hover .inv-o-sceau { transform: none; }
+@media (hover: hover) { .inv-porte:not(:disabled):hover .inv-o-sceau { transform: scale(1.04); } }
+.inv-porte:not(:disabled):active .inv-o-sceau { transform: scale(.95); transition-duration: .1s; }
+
+/* 4. Cire plutôt que bille : reflet réduit, double bord, ombre portée courte, esperluette plus discrète */
+.inv-o-sceau { background: radial-gradient(circle at 36% 30%, color-mix(in srgb, var(--sc-1) 55%, var(--sc-2)) 0, var(--sc-2) 34%, var(--sc-3) 66%, var(--sc-4) 100%);
+  box-shadow: 0 4px 7px rgba(0, 0, 0, .42), 0 12px 22px rgba(0, 0, 0, .25), inset 0 0 0 3px color-mix(in srgb, var(--sc-4) 70%, transparent), inset 0 3px 5px color-mix(in srgb, var(--sc-4) 85%, transparent), inset 0 -2px 3px color-mix(in srgb, var(--sc-1) 55%, transparent); border-radius: 50% 47% 52% 49% / 48% 52% 48% 51%; }
+.inv-o-sceau em { text-shadow: 0 -1px 0 color-mix(in srgb, var(--sc-4) 90%, transparent), 0 1px 0 color-mix(in srgb, var(--sc-1) 70%, transparent); }
+.inv-o-sceau em i { font-style: normal; font-size: .72em; opacity: .85; }
+/* olive : contraste du monogramme */
+[data-ouverture="v-oliveto"] .inv-o-sceau { --sc-2: #5f6c3a; --sc-3: #424c29; --sc-4: #262d17; --sc-encre: #fbfbef; }
+
+/* 5. Bouton : coins taillés et double filet, plus étroit */
+.inv-o-ouvrir { border-radius: 0; background: rgba(20, 20, 20, .88); border: 0; color: #FBF6E9; font-size: 11px; letter-spacing: .22em; padding: 0 20px; margin-top: 6px;
+  box-shadow: 0 0 0 2px #141414, 0 0 0 3px #A8933F;  }
+.inv-o-video .inv-o-ouvrir, [data-ouverture="artdeco"] .inv-o-ouvrir { background: rgba(20, 20, 20, .88); border: 0; }
+
+/* bandes laissées par le plafond de largeur : couleur du décor, plus d'anthracite neutre */
+@media (max-width: 700px) {
+  .inv-scene:has(.inv-o-riad-cedre) { background: #3a2412; }
+  .inv-scene:has(.inv-o-palais-fer) { background: #1c1814; }
+  .inv-scene:has(.inv-o-florale) { background: #EADFC8; }
+}
