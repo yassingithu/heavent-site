@@ -18,7 +18,7 @@ export default function ImportOuverture({ onAjoutee }: { onAjoutee: (id: string)
     setEtat({ type: "cours", texte: "Contrôle de la vidéo…" });
     try {
       const { duree, affiche } = await controlerVideo(fichier);
-      const id = `perso-${slug(nom)}-${Date.now().toString(36).slice(-3)}`;
+      const id = `perso-${slug(nom) || "ouverture"}-${Date.now().toString(36).slice(-3)}`;
       const ext = fichier.type === "video/webm" ? "webm" : "mp4";
       setEtat({ type: "cours", texte: "Envoi…" });
       const cache = "31536000";
