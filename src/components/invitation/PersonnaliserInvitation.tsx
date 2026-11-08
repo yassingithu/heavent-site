@@ -5,7 +5,7 @@ import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import { RotateCcw, Play } from "lucide-react";
 import Invitation from "./Invitation";
 import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
-import { POLICES, CHAMPS_COULEUR, MODELES, OUVERTURES, STYLES_OUVERTURE, PALETTES, REVELATIONS, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
+import { POLICES, CHAMPS_COULEUR, MODELES, OUVERTURES, STYLES_OUVERTURE, PALETTES, REVELATIONS, couleursDe, modeleDe, ouvertureDe, revelationDe, accordDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
 
 interface Props {
   /** Affiche l'outil d'ajout d'ouvertures vidéo (administration seulement). */
@@ -31,7 +31,13 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
   const ouv = ouvertureDe(valeur.ouverture);
   const visibles = OUVERTURES.filter((o) => !filtre || o.styles.includes(filtre) || o.id === ouv.id);
   const rev = revelationDe(valeur.revelation);
-  const choisirOuverture = (id: string) => { onChange({ ...valeur, ouverture: id }); setRejouer((n) => n + 1); };
+  const choisirOuverture = (id: string) => {
+    // une palette accordée au décor est proposée d'office, sauf si les mariés ont déjà personnalisé leurs couleurs
+    const accord = Object.keys(valeur.couleurs ?? {}).length === 0 ? accordDe(id) : undefined;
+    onChange({ ...valeur, ouverture: id, ...(accord ? { couleurs: { ...accord.couleurs } } : {}) });
+    setRejouer((n) => n + 1);
+  };
+  const accorder = () => { const a = accordDe(valeur.ouverture); if (a) onChange({ ...valeur, couleurs: { ...a.couleurs } }); };
   const choisirRevelation = (id: string) => { onChange({ ...valeur, revelation: id }); setRejouer((n) => n + 1); };
   const choisirModele = (id: string) => onChange({ ...valeur, modele: id });
   const appliquerPalette = (c: Couleurs) => onChange({ ...valeur, couleurs: { ...c } });
@@ -214,6 +220,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             ))}
           </div>
           <button type="button" className={bouton} onClick={() => setRejouer((n) => n + 1)} data-testid="invitation-rejouer"><Play className="h-4 w-4" /> Voir l'ouverture</button>
+          {accordDe(valeur.ouverture) && <button type="button" className={bouton} onClick={accorder} data-testid="invitation-accorder">Accorder la carte au décor</button>}
         </div>
         <Invitation noms={noms || "Prénom & Prénom"} date={date} lieu={lieu} message={message} reglages={valeur} langue={langue} pleinePage={false} rejouer={rejouer} ouverte={rejouer === 0} autoOuvrir />
       </aside>

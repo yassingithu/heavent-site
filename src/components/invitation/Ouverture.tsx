@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useRef, useState, type Ref, type ReactNode, type CSSProperties } from "react";
-import { ouvertureDe } from "@/lib/invitation";
+import { ouvertureDe, SCENES_OUVERTURE } from "@/lib/invitation";
+import SceneOuverture from "./SceneOuverture";
 
 /** Ouvertures animées de l'invitation : de vraies photos coupées en deux battants (public/ouvertures/<type>-g|d.webp),
  *  animées en CSS 3D. Chaque type partage la même structure (battants, cartouche des prénoms, lueur) pour rester interchangeable. */
@@ -89,6 +90,7 @@ export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, nom
         onPointerMove={(e) => { if (phase !== "fermee" || e.pointerType === "mouse") return; const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--px", `${((e.clientX - b.left) / b.width - .5) * -12}px`); e.currentTarget.style.setProperty("--py", `${((e.clientY - b.top) / b.height - .5) * -12}px`); }}>
         <span className="inv-o-monde" aria-hidden="true">
         <span className="inv-o-lueur" />
+        {SCENES_OUVERTURE[type] && <SceneOuverture scene={SCENES_OUVERTURE[type]} />}
         <span className="inv-o-battants" aria-hidden="true">
           <span className="inv-o-battant inv-o-g" />
           <span className="inv-o-battant inv-o-d" />

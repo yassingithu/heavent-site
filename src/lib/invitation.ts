@@ -171,3 +171,19 @@ export const REVELATIONS: { id: string; nom: string; description: string }[] = [
 ];
 export const ouvertureDe = (id?: string) => OUVERTURES.find((o) => o.id === id) ?? OUVERTURES[0];
 export const revelationDe = (id?: string) => REVELATIONS.find((r) => r.id === id) ?? REVELATIONS[0];
+
+/** Palette qui accorde la carte au décor de chaque ouverture (id de PALETTES). Sert de suggestion dans l'éditeur ; les invitations déjà faites ne changent pas. */
+export const ACCORDS_OUVERTURE: Record<string, string> = {
+  enveloppe: "noir-or", marocaine: "terre", fer: "vert", artdeco: "noir-or", florale: "poudre", moucharabieh: "noir-or", zellige: "vert", riad: "bleu",
+  "rose-imperiale": "poudre", "riad-cedre": "terre", "palais-fer": "ivoire", rideaux: "grenat",
+  "v-porte-blanche": "poudre", "v-alhambra": "terre", "v-lakeside": "lavande", "v-gardenia": "ivoire", "v-shoreline": "marine", "v-chateau-soir": "marine",
+  "v-palace": "ivoire", "v-glasshouse": "sauge", "v-minuit": "noir-or", "v-neige": "marine", "v-oliveto": "sauge", "v-azure": "bleu",
+};
+export const accordDe = (ouvertureId?: string) => PALETTES.find((p) => p.id === ACCORDS_OUVERTURE[ouvertureId ?? ""]);
+
+/** Poussière d'or qui monte derrière les battants (au lieu d'un fond vide). */
+export type SceneOuverture = "etincelles";
+export const SCENES_OUVERTURE: Record<string, SceneOuverture> = {
+  marocaine: "etincelles", fer: "etincelles", artdeco: "etincelles", florale: "etincelles", moucharabieh: "etincelles", zellige: "etincelles",
+  "riad-cedre": "etincelles", "palais-fer": "etincelles", rideaux: "etincelles",
+};
