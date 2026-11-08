@@ -513,11 +513,10 @@ def anneau_corde(mb, c, R, r, n=46, y_decal=0.0):
         dy = r * 0.38 * (1 if i % 2 == 0 else -1)
         mb.sph((c[0] + R * math.cos(a), c[1] + y_decal + dy, c[2] + R * math.sin(a)), r, sc=(1.0, 0.9, 1.0), seg=10)
 
-def penture(mb, s, u0, L, z, y, h=0.036, ep=0.010):
-    """Penture ornementale : lanière à extrémité en ogive festonnée + rosaces de rivets."""
-    pts = [(0, -h), (L - 0.07, -h), (L - 0.045, -h * 1.8), (L - 0.018, -h * 1.15), (L + 0.025, -h * 0.55), (L + 0.075, 0),
-           (L + 0.025, h * 0.55), (L - 0.018, h * 1.15), (L - 0.045, h * 1.8), (L - 0.07, h), (0, h)]
-    mb.prisme([(s * (u0 + u), z + dz) for u, dz in pts], y, y - ep)
+def penture(mb, s, u0, L, z, y, h=0.034, ep=0.010):
+    """Penture ornementale : lanière fine terminée par une palmette à trois feuilles, rosaces de rivets."""
+    mb.box((s * (u0 + L / 2), y - ep / 2, z), (L, ep, 2 * h))
+    palmette(mb, (s * (u0 + L), z), 0.0 if s > 0 else math.pi, 0.115, y, y - ep, eventail=(-38, 0, 38), longueurs=(0.78, 1.0, 0.78))
     for i in range(int(L / 0.17)):
         u = u0 + 0.08 + i * 0.17
         mb.cyl((s * u, y - ep - 0.003, z), 0.016, 0.006, rot=(math.pi / 2, 0, 0), seg=16)
@@ -855,9 +854,9 @@ def lumieres(ouverture):
         ob = bpy.data.objects.new(nom, d); bpy.context.collection.objects.link(ob)
         ob.location = loc; ob.rotation_euler = (Vector(cible) - Vector(loc)).to_track_quat("-Z", "Y").to_euler()
     # soleil bas de fin d'après-midi : ombres allongées qui creusent chaque relief
-    sol = bpy.data.lights.new("soleil", "SUN"); sol.energy = 7.4; sol.angle = math.radians(1.8); sol.color = (1.0, 0.74, 0.48)
+    sol = bpy.data.lights.new("soleil", "SUN"); sol.energy = 6.4; sol.angle = math.radians(1.8); sol.color = (1.0, 0.74, 0.48)
     so = bpy.data.objects.new("soleil", sol); bpy.context.collection.objects.link(so); so.rotation_euler = (math.radians(73), 0, math.radians(-50))
-    aire("ciel_doux", (3.0, -9.0, 9.0), (0, 0, 3.4), 9.0, 520, (0.80, 0.86, 1.0))
+    aire("ciel_doux", (3.0, -9.0, 9.0), (0, 0, 3.4), 9.0, 300, (0.80, 0.86, 1.0))
     aire("remplissage", (6.5, -9.0, 2.0), (0, 0, 2.6), 6.0, 120, (1.0, 0.82, 0.62))
     aire("contour", (0.0, 5.0, 12.0), (0, -0.4, 6.0), 6.0, 700, (1.0, 0.78, 0.5))
     p = bpy.data.lights.new("patio", "POINT"); p.energy = 3500 + 8000 * (ouverture / 100.0) ** 2; p.color = (1.0, 0.56, 0.22); p.shadow_soft_size = 0.7
@@ -866,12 +865,12 @@ def lumieres(ouverture):
     po2 = bpy.data.objects.new("patio2", p2); bpy.context.collection.objects.link(po2); po2.location = (0, 9.5, 3.8)
     w = bpy.data.worlds.new("ciel"); bpy.context.scene.world = w; w.use_nodes = True
     n = w.node_tree.nodes; l = w.node_tree.links
-    bg = n["Background"]; bg.inputs["Color"].default_value = (0.95, 0.78, 0.58, 1); bg.inputs["Strength"].default_value = 0.22
+    bg = n["Background"]; bg.inputs["Color"].default_value = (0.95, 0.78, 0.58, 1); bg.inputs["Strength"].default_value = 0.12
 
 VUES = {
-    "frontal":      ((0.0, -10.4, 3.45), (0.0, 0.0, 3.40), 54, 0.0),
+    "frontal":      ((0.0, -10.4, 3.20), (0.0, 0.0, 3.15), 64, 0.0),
     "trois-quarts": ((4.6, -7.2, 2.3), (-0.15, 0.0, 2.9), 46, 0.0),
-    "detail":       ((0.78, -2.15, 1.45), (-0.02, 0.3, 1.45), 56, 0.0),
+    "detail":       ((0.55, -2.4, 1.55), (0.0, 0.3, 1.50), 56, 0.0),
     "arche":        ((0.0, -5.2, 3.9), (0.0, 0.0, 3.9), 50, 0.0),
 }
 
@@ -908,9 +907,9 @@ def reglages(qualite):
 def construire(ouverture):
     vider()
     M = {
-        "platre": mat_platre("platre", (0.86, 0.76, 0.60), 0.66, 0.42, 26),
-        "platre_clair": mat_platre("platre_clair", (0.90, 0.82, 0.68), 0.70, 0.30, 26),
-        "tadelakt": mat_platre("tadelakt", (0.58, 0.41, 0.22), 0.30, 0.20, 9),
+        "platre": mat_platre("platre", (0.78, 0.66, 0.50), 0.66, 0.42, 26),
+        "platre_clair": mat_platre("platre_clair", (0.80, 0.69, 0.53), 0.70, 0.30, 26),
+        "tadelakt": mat_platre("tadelakt", (0.47, 0.30, 0.16), 0.30, 0.22, 9),
         "pierre": mat_platre("pierre", (0.58, 0.51, 0.40), 0.82, 0.5, 30),
         "pierre_sombre": mat_platre("pierre_sombre", (0.20, 0.16, 0.12), 0.16, 0.18, 12),
         "cedre": mat_cedre("cedre"), "cedre_sombre": mat_cedre("cedre_sombre", True),
