@@ -370,3 +370,44 @@
 .inv-o-sans-cachet .inv-o-sceau { display: none; }
 .inv-o-sans-cachet .inv-o-ouvrir { min-height: 44px; display: inline-flex; align-items: center; background: rgba(20, 16, 10, .42); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, .55); color: rgba(255, 255, 255, .95); text-shadow: 0 1px 6px rgba(0, 0, 0, .55); box-shadow: none; font-size: 13px; padding: 0 22px; top: calc(var(--ov-y, 50%) + 6px); }
 .inv-o-sans-cachet.inv-o-video[data-ouverture="v-neige"] .inv-o-ouvrir, .inv-o-sans-cachet.inv-o-video[data-ouverture="v-glasshouse"] .inv-o-ouvrir { color: #fff; }
+
+/* ── Plein écran des ouvertures (téléphone) ─────────────────────────────────────────────
+   La porte couvre tout l'écran : même proportions d'image, mise à l'échelle pour déborder (cover). Rien ne change sur grand écran.
+   --ov-ar = largeur / hauteur de l'image ; --ov-max = débordement maximal en largeur (les décors à arche large gardent leurs bords). */
+.inv-porte { --ov-ar: .558; --ov-max: 1.45; }
+.inv-o-video, .inv-o-rose-imperiale { --ov-ar: .5625; }
+.inv-o-rose-imperiale { --ov-ar: .563; }
+.inv-o-florale, :is(.inv-o-riad-cedre, .inv-o-palais-fer) { --ov-ar: .667; --ov-max: 1.16; }
+.inv-o-florale { --ov-max: 1.32; }
+@media (max-width: 700px) {
+  .inv-page:is([data-phase="fermee"], [data-phase="ouverture"]) .inv-scene:has(.inv-porte) { container-type: size; }
+  .inv-page:is([data-phase="fermee"], [data-phase="ouverture"]) .inv-porte {
+    flex: none; width: min(max(100cqw, calc(100cqh * var(--ov-ar))), calc(100cqw * var(--ov-max))); aspect-ratio: var(--ov-ar);
+    border-radius: 0; box-shadow: none; max-width: none;
+  }
+}
+
+/* ── Sceau : monogramme lisible + teinte par famille de décor ───────────────────────────
+   Le script manuscrit était illisible à 31 px : capitales à empattements, plus petites, espacées.
+   La cire change de couleur selon le décor (or sur fond sombre, cire colorée sur fond clair). */
+.inv-o-sceau { --sc-1: #fbeab0; --sc-2: #e0be6a; --sc-3: #b88f35; --sc-4: #7d5d1c; --sc-encre: #4a3207; --sc-relief: rgba(255, 238, 180, .8); --sc-liseré: rgba(80, 52, 8, .55);
+  background: radial-gradient(circle at 34% 28%, var(--sc-1) 0, var(--sc-2) 30%, var(--sc-3) 62%, var(--sc-4) 100%); }
+.inv-o-sceau::before { border-color: var(--sc-liseré); }
+.inv-o-sceau em { font-family: "Gloock", "Cormorant Garamond", Georgia, serif; font-size: 21px; letter-spacing: .06em; color: var(--sc-encre); text-shadow: 0 1px 0 var(--sc-relief); }
+.inv[dir="rtl"] .inv-o-sceau em { font-family: "Amiri", serif; font-size: 26px; letter-spacing: 0; }
+/* cire bordeaux : décors clairs et romantiques */
+:is([data-ouverture="v-gardenia"], [data-ouverture="v-glasshouse"], [data-ouverture="v-porte-blanche"], [data-ouverture="v-neige"]) .inv-o-sceau {
+ --sc-1: #d9707c; --sc-2: #b2394c; --sc-3: #84213a; --sc-4: #511326; --sc-encre: #f8e3e2; --sc-relief: rgba(60, 8, 22, .7); --sc-liseré: rgba(255, 220, 220, .45); }
+/* cire bleu nuit : mer et lac */
+:is([data-ouverture="v-azure"], [data-ouverture="v-lakeside"]) .inv-o-sceau { --sc-1: #7f9cc8; --sc-2: #4d6c9f; --sc-3: #2d4872; --sc-4: #16294a; --sc-encre: #eef3fc; --sc-relief: rgba(10, 20, 45, .7); --sc-liseré: rgba(230, 240, 255, .45); }
+/* cire vert olive : oliveraie */
+[data-ouverture="v-oliveto"] .inv-o-sceau { --sc-1: #a9b27c; --sc-2: #7d8a52; --sc-3: #55603a; --sc-4: #323a21; --sc-encre: #f3f4e4; --sc-relief: rgba(30, 38, 15, .7); --sc-liseré: rgba(240, 245, 215, .45); }
+/* le décor porte déjà son propre cachet : on n'en superpose pas un second */
+:is([data-ouverture="florale"], [data-ouverture="v-shoreline"]) .inv-o-sceau { display: none; }
+
+/* sélecteur de langue lisible sur tous les décors (téléphone, ouverture fermée) */
+@media (max-width: 700px) {
+  .inv-page[data-phase="fermee"]:has(.inv-porte) .inv-langues { display: flex; justify-content: center; }
+  .inv-page[data-phase="fermee"]:has(.inv-porte) .inv-langues button { background: rgba(20, 16, 10, .5); color: #fbf6e9; opacity: 1; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .inv-page[data-phase="fermee"]:has(.inv-porte) .inv-langues button[aria-pressed="true"] { background: #fbf6e9; color: #1a140a; }
+}
