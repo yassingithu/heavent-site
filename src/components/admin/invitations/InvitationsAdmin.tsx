@@ -113,7 +113,7 @@ export default function InvitationsAdmin() {
       <div className="space-y-5" data-testid="invitation-edition">
         <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => setEdit(null)}><ArrowLeft className="h-4 w-4" /> Tous les aperçus</button>
         <div className="grid sm:grid-cols-2 gap-3 rounded-3xl bg-white border border-[#EADFC8] p-4">
-          <label className="text-sm">Prénoms des mariés<input className={`${champ} mt-1`} value={edit.noms} placeholder="Sara & Yassine" onChange={(e) => setEdit({ ...edit, noms: e.target.value })} data-testid="apercu-noms" /></label>
+          <label className="text-sm">Prénoms des mariés<input className={`${champ} mt-1`} value={edit.noms} placeholder="Lina & Adam" onChange={(e) => setEdit({ ...edit, noms: e.target.value })} data-testid="apercu-noms" /></label>
           <label className="text-sm">Pour qui (note interne)<input className={`${champ} mt-1`} value={edit.prospect ?? ""} placeholder="Ex. couple rencontré au salon" onChange={(e) => setEdit({ ...edit, prospect: e.target.value })} /></label>
           <label className="text-sm">Date<input type="date" className={`${champ} mt-1`} value={edit.date_evenement ?? ""} onChange={(e) => setEdit({ ...edit, date_evenement: e.target.value })} /></label>
           <label className="text-sm">Salle (liste Heavent)
