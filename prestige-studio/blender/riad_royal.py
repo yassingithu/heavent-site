@@ -249,12 +249,12 @@ def mat_laiton(nom="laiton", ancien=True):
     add = n.new("ShaderNodeMath"); add.operation = "ADD"; l.new(inv.outputs["Value"], add.inputs[0]); l.new(ns2.outputs["Fac"], add.inputs[1])
     mul = n.new("ShaderNodeMath"); mul.operation = "MULTIPLY"; mul.inputs[1].default_value = 0.85; l.new(add.outputs["Value"], mul.inputs[0])
     cr = n.new("ShaderNodeValToRGB")
-    cr.color_ramp.elements[0].position = 0.35; cr.color_ramp.elements[0].color = (0.78, 0.54, 0.22, 1)   # laiton brillant
-    cr.color_ramp.elements[1].position = 0.95; cr.color_ramp.elements[1].color = (0.20, 0.115, 0.045, 1)  # laiton oxydé
+    cr.color_ramp.elements[0].position = 0.35; cr.color_ramp.elements[0].color = (0.56, 0.40, 0.19, 1)   # laiton satiné
+    cr.color_ramp.elements[1].position = 0.95; cr.color_ramp.elements[1].color = (0.15, 0.085, 0.034, 1)  # laiton oxydé
     l.new(mul.outputs["Value"], cr.inputs["Fac"])
     l.new(cr.outputs["Color"], b.inputs["Base Color"])
     champ(b, "Metallic", 1.0)
-    rg = n.new("ShaderNodeMapRange"); rg.inputs["To Min"].default_value = 0.20; rg.inputs["To Max"].default_value = 0.62
+    rg = n.new("ShaderNodeMapRange"); rg.inputs["To Min"].default_value = 0.30; rg.inputs["To Max"].default_value = 0.66
     l.new(mul.outputs["Value"], rg.inputs["Value"]); l.new(rg.outputs["Result"], b.inputs["Roughness"])
     bp = n.new("ShaderNodeBump"); bp.inputs["Strength"].default_value = 0.14; bp.inputs["Distance"].default_value = 0.0015
     l.new(ns.outputs["Fac"], bp.inputs["Height"]); l.new(bv.outputs["Normal"], bp.inputs["Normal"]); l.new(bp.outputs["Normal"], b.inputs["Normal"])
@@ -443,6 +443,86 @@ def hors_arche(marge):
         return d > R_ARCHE + marge
     return f
 
+
+def petale_pts(c, ang, L, Wd, n=14):
+    """Feuille / pétale pointu : polygone (x, z) dont la base est en c, orienté selon `ang` (0 = vers +x)."""
+    up, dn = [], []
+    for i in range(n + 1):
+        t = i / n
+        w = Wd / 2 * (math.sin(math.pi * t) ** 0.75) * (1 - 0.15 * t)
+        up.append((t * L, w)); dn.append((t * L, -w))
+    pts = up + list(reversed(dn[1:-1]))
+    ca, sa = math.cos(ang), math.sin(ang)
+    return [(c[0] + x * ca - z * sa, c[1] + x * sa + z * ca) for x, z in pts]
+
+def palmette(mb, c, ang, L, y0, y1, eventail=(-52, -26, 0, 26, 52), longueurs=(0.62, 0.86, 1.0, 0.86, 0.62)):
+    for da, k in zip(eventail, longueurs):
+        mb.prisme(petale_pts(c, ang + math.radians(da), L * k, L * 0.34 * (0.7 + 0.3 * k)), y0, y1)
+    mb.sph((c[0], (y0 + y1) / 2, c[1]), L * 0.13, sc=(1, 0.5, 1), seg=10)
+
+def rinceau(mb, depart, fin, amp, pas, y0, y1, largeur=0.0075, taille_feuille=0.045, vertical=True):
+    """Rinceau : tige sinueuse avec feuilles alternées (bandeau sculpté). depart/fin : points (x, z)."""
+    (xa, za), (xb, zb) = depart, fin
+    L = math.hypot(xb - xa, zb - za); ux, uz = (xb - xa) / L, (zb - za) / L
+    nx, nz = -uz, ux
+    N = max(8, int(L / 0.01))
+    tige = []
+    for i in range(N + 1):
+        t = i / N * L
+        d = amp * math.sin(2 * math.pi * t / pas)
+        tige.append((xa + ux * t + nx * d, za + uz * t + nz * d))
+    _barre(mb, tige, largeur, y0, y1)
+    k = 0; t = pas / 4
+    while t < L - taille_feuille:
+        d = amp * math.sin(2 * math.pi * t / pas)
+        base = (xa + ux * t + nx * d, za + uz * t + nz * d)
+        cote = 1 if k % 2 == 0 else -1
+        ang = math.atan2(uz, ux) + cote * math.radians(62)
+        mb.prisme(petale_pts(base, ang, taille_feuille, taille_feuille * 0.46), y0, y1)
+        mb.sph((base[0], (y0 + y1) / 2, base[1]), 0.0075, sc=(1, 0.6, 1), seg=8)
+        k += 1; t += pas / 2
+
+def frise_palmettes_arche(mb, off, n, L, y0, y1, alternance=True):
+    pts = arche(off, n=n)[1:-1]
+    for i, (x, z) in enumerate(pts):
+        if z <= H_RETOMBEE + 0.05:
+            continue
+        dx, dz = x, z - H_RETOMBEE
+        ang = math.atan2(dz, dx)
+        if i % 2 == 0:
+            palmette(mb, (x, z), ang, L, y0, y1)
+        else:
+            mb.sph((x + math.cos(ang) * L * 0.4, (y0 + y1) / 2, z + math.sin(ang) * L * 0.4), L * 0.15, sc=(1, 0.55, 1), seg=10)
+
+def bordure_zellige(Z, x0, x1, z0, z1, taille=0.052, y=-0.016, ep=0.011, rangs=2):
+    cols = ["cobalt", "ivoire", "emeraude", "ivoire", "ocre", "ivoire"]
+    nx = int((x1 - x0) / taille)
+    for r in range(rangs):
+        for zc in (z0 + taille * (r + 0.5), z1 - taille * (r + 0.5)):
+            for i in range(nx):
+                xc = x0 + taille * (i + 0.5) + (taille / 2 if r % 2 else 0)
+                if xc + taille / 2 > x1 + 1e-6:
+                    continue
+                h = taille / 2 - 0.0032
+                Z[cols[(i + r * 3) % len(cols)]].prisme([(xc - h, zc - h), (xc + h, zc - h), (xc + h, zc + h), (xc - h, zc + h)], y, y - ep)
+
+def anneau_corde(mb, c, R, r, n=46, y_decal=0.0):
+    """Anneau en cordon torsadé (heurtoir) : perles allongées alternées autour d'un cercle dans le plan x-z."""
+    for i in range(n):
+        a = 2 * math.pi * i / n
+        dy = r * 0.38 * (1 if i % 2 == 0 else -1)
+        mb.sph((c[0] + R * math.cos(a), c[1] + y_decal + dy, c[2] + R * math.sin(a)), r, sc=(1.0, 0.9, 1.0), seg=10)
+
+def penture(mb, s, u0, L, z, y, h=0.036, ep=0.010):
+    """Penture ornementale : lanière à extrémité en ogive festonnée + rosaces de rivets."""
+    pts = [(0, -h), (L - 0.07, -h), (L - 0.045, -h * 1.8), (L - 0.018, -h * 1.15), (L + 0.025, -h * 0.55), (L + 0.075, 0),
+           (L + 0.025, h * 0.55), (L - 0.018, h * 1.15), (L - 0.045, h * 1.8), (L - 0.07, h), (0, h)]
+    mb.prisme([(s * (u0 + u), z + dz) for u, dz in pts], y, y - ep)
+    for i in range(int(L / 0.17)):
+        u = u0 + 0.08 + i * 0.17
+        mb.cyl((s * u, y - ep - 0.003, z), 0.016, 0.006, rot=(math.pi / 2, 0, 0), seg=16)
+        mb.sph((s * u, y - ep - 0.007, z), 0.0085, sc=(1, 0.7, 1), seg=8)
+
 def facade(M, Z):
     W, H, E = LARGEUR_MUR, HAUTEUR_MUR, EPAISSEUR
     # Mur épais en tadelakt, percé de l'ouverture en fer à cheval
@@ -472,6 +552,13 @@ def facade(M, Z):
     for o0, o1, sail, mat in couches:
         mb = MB(); mb.anneau(arche(o0, n=96), arche(o1, n=96), -sail, 0.001)
         mb.objet(f"moulure_{o0:.3f}", M[mat], bevel=0.0035)
+    # --- Frise de palmettes sculptée dans la large bande de l'arche, perles sur la bande intermédiaire
+    mb = MB(); frise_palmettes_arche(mb, 0.412, 58, 0.115, -0.018, -0.045); mb.objet("frise_palmettes", M["platre_clair"], bevel=0.0012)
+    mb = MB()
+    for (x, z) in arche(0.157, n=120)[1:-1]:
+        if z > H_RETOMBEE:
+            mb.sph((x, -0.030, z), 0.021, sc=(1, 0.55, 1), seg=8)
+    mb.objet("perles_arche", M["platre"])
     # --- Intrados festonné (lobes) : bande de plâtre découpée
     mb = MB(); mb.anneau(arche_festonnee(0.0), arche_festonnee(0.095, creux=0.0), -0.03, 0.12)
     mb.objet("intrados_festonne", M["platre"], bevel=0.0025)
@@ -520,7 +607,8 @@ def facade(M, Z):
         xa = R_ARCHE * math.cos(DELTA) + 0.62; xb = W / 2 - 0.05
         x0, x1 = (xa, xb) if s > 0 else (-xb, -xa)
         mb = MB(); mb.box(((x0 + x1) / 2, 0.0, 0.63), (x1 - x0, 0.03, 1.26)); mb.objet(f"lit_ciment_{s}", M["pierre_sombre"])
-        panneau_zellige(Z, x0, x1, 0.04, 1.24, pas=0.185, y=-0.016, decalage=(0 if s > 0 else 1))
+        bordure_zellige(Z, x0, x1, 0.04, 1.24)
+        panneau_zellige(Z, x0 + 0.02, x1 - 0.02, 0.04 + 0.104, 1.24 - 0.104, pas=0.1, y=-0.016, joint=0.0045, decalage=(0 if s > 0 else 1))
         mb = MB(); mb.box(((x0 + x1) / 2, -0.03, 1.285), (x1 - x0 + 0.02, 0.10, 0.065)); mb.objet(f"corniche_soub_{s}", M["pierre"], bevel=0.006)
 
     # --- Frise de muqarnas (stalactites de plâtre) sous la corniche
@@ -601,91 +689,103 @@ def impostes_et_grille(M):
     mb.objet("clous_claustra", M["laiton"])
 
 def construire_battant(M, cote):
-    """Battant rectangulaire (jusqu'au tympan) : planches, cadre mouluré, panneaux en tronc de pyramide gravés d'étoiles fines, ferrures."""
+    """Battant de cèdre sculpté : cadre à rinceaux, panneaux étagés, médaillons en pétales, marqueterie de laiton, pentures ornementales, heurtoir à cordon."""
     jx = (R_ARCHE - 0.012) * math.cos(DELTA)
     ZH = 2.60
-    s = -cote                     # battant gauche (cote = -1) s'étend vers +x
+    s = -cote
     ep = 0.085
     nom = "g" if cote < 0 else "d"
+    f = -ep / 2
     mb = MB(); mb.box((s * jx / 2, 0, ZH / 2), (jx, ep, ZH))
     corps = mb.objet(f"battant_{nom}", M["cedre"], loc=(cote * jx, 0.42, 0.0), bevel=0.003)
-    # planches : rainures fines
     mb = MB()
     for k in range(1, 5):
-        mb.box((s * jx * k / 5, -ep / 2 - 0.0005, ZH / 2), (0.005, 0.003, ZH - 0.1))
+        mb.box((s * jx * k / 5, f - 0.0005, ZH / 2), (0.004, 0.003, ZH - 0.1))
     mb.objet(f"rainures_{nom}", M["cedre_sombre"], parent=corps)
-    # cadre
-    bord = 0.085; f = -ep / 2
+    # cadre : montants larges, traverse médiane haute
+    bord = 0.115
     mb = MB()
     mb.box((s * bord / 2, f - 0.014, ZH / 2), (bord, 0.030, ZH))
     mb.box((s * (jx - bord / 2), f - 0.014, ZH / 2), (bord, 0.030, ZH))
-    for zc, hh in ((0.08, 0.16), (1.30, 0.14), (2.55, 0.10)):
-        mb.box((s * jx / 2, f - 0.014, zc), (jx - 2 * bord, 0.030, hh))
+    pw = jx - 2 * bord
+    for zc, hh in ((0.105, 0.21), (1.35, 0.30), (2.535, 0.13)):
+        mb.box((s * jx / 2, f - 0.014, zc), (pw, 0.030, hh))
     mb.objet(f"cadres_{nom}", M["cedre"], parent=corps, bevel=0.004)
-    # filets de laiton le long du cadre intérieur (marqueterie)
+    # moulure intérieure (quart-de-rond) autour de chaque champ
+    panneaux = ((0.23, 1.20), (1.50, 2.47))
     mb = MB()
-    for (z0_, z1_) in ((0.17, 1.23), (1.37, 2.49)):
-        u0, u1 = bord + 0.012, jx - bord - 0.012
-        for (a, b, c, d) in ((u0, z0_, u1, z0_), (u0, z1_, u1, z1_)):
-            mb.box((s * (a + c) / 2, f - 0.031, (b + d) / 2), (abs(c - a), 0.003, 0.008))
-        for u in (u0, u1):
-            mb.box((s * u, f - 0.031, (z0_ + z1_) / 2), (0.008, 0.003, z1_ - z0_))
-    mb.objet(f"filets_laiton_{nom}", M["laiton"], parent=corps)
-    # panneaux en tronc de pyramide
-    pw = jx - 2 * bord - 0.05
-    for (z0_, z1_) in ((0.17, 1.23), (1.37, 2.49)):
-        mb = MB(); mb.frustum((s * jx / 2, f - 0.012, (z0_ + z1_) / 2 + 0.0), pw, z1_ - z0_ - 0.07, pw - 0.14, z1_ - z0_ - 0.21, 0.020)
-        mb.objet(f"panneau_{nom}_{z0_}", M["cedre"], parent=corps, bevel=0.0025)
-    # gravures : étoiles à huit branches concentriques (fines lignes) + rosace de cercles
+    for (z0_, z1_) in panneaux:
+        zc = (z0_ + z1_) / 2
+        mb.box((s * jx / 2, f - 0.034, z0_), (pw, 0.014, 0.014)); mb.box((s * jx / 2, f - 0.034, z1_), (pw, 0.014, 0.014))
+        mb.box((s * bord, f - 0.034, zc), (0.014, 0.014, z1_ - z0_)); mb.box((s * (jx - bord), f - 0.034, zc), (0.014, 0.014, z1_ - z0_))
+    mb.objet(f"moulures_{nom}", M["cedre"], parent=corps, bevel=0.004)
+    # panneaux étagés (deux tronc de pyramide)
+    for (z0_, z1_) in panneaux:
+        h = z1_ - z0_
+        mb = MB(); mb.frustum((s * jx / 2, f - 0.014, (z0_ + z1_) / 2), pw - 0.03, h - 0.03, pw - 0.10, h - 0.10, 0.016)
+        mb.frustum((s * jx / 2, f - 0.030, (z0_ + z1_) / 2), pw - 0.12, h - 0.12, pw - 0.20, h - 0.20, 0.012)
+        mb.objet(f"champ_{nom}_{z0_}", M["cedre"], parent=corps, bevel=0.002)
+    # gravures : médaillon de pétales, étoiles concentriques, rinceaux, palmettes d'angle
     mb = MB(); mb2 = MB()
-    for zc in (0.70, 1.93):
-        cu = s * jx / 2; y = f - 0.034
-        ligne_etoile(mb, (cu, 0, zc), 0.255, 0.014, y + 0.0, y - 0.011, creux=0.60)
-        ligne_etoile(mb, (cu, 0, zc), 0.170, 0.010, y + 0.0, y - 0.013, creux=0.58, rot=math.pi / 8)
-        ligne_cercle(mb, (cu, 0, zc), 0.29, 0.010, y + 0.0, y - 0.009, n=64)
-        ligne_cercle(mb, (cu, 0, zc), 0.082, 0.010, y + 0.0, y - 0.013, n=40)
-        ligne_etoile(mb2, (cu, 0, zc), 0.215, 0.006, y - 0.009, y - 0.016, creux=0.60)        # filet de laiton incrusté
-        mb2.sph((cu, y - 0.012, zc), 0.020, sc=(1, 0.5, 1), seg=12)
-        for k in range(8):
-            a = 2 * math.pi * k / 8 + math.pi / 8
-            mb2.sph((cu + 0.325 * math.cos(a), y - 0.011, zc + 0.325 * math.sin(a)), 0.0125, sc=(1, 0.55, 1), seg=8)
-    mb.objet(f"gravures_{nom}", M["cedre"], parent=corps, bevel=0.0015)
+    y = f - 0.043
+    for (z0_, z1_) in panneaux:
+        zc = (z0_ + z1_) / 2; cu = s * jx / 2
+        ligne_cercle(mb, (cu, 0, zc), 0.245, 0.010, y + 0.004, y - 0.008, n=72)
+        ligne_cercle(mb, (cu, 0, zc), 0.215, 0.006, y + 0.004, y - 0.006, n=72)
+        for k in range(16):                                                            # couronne de 16 pétales
+            ang = 2 * math.pi * k / 16
+            mb.prisme(petale_pts((cu + 0.088 * math.cos(ang), zc + 0.088 * math.sin(ang)), ang, 0.092, 0.050), y + 0.004, y - 0.011)
+        ligne_etoile(mb, (cu, 0, zc), 0.150, 0.011, y + 0.004, y - 0.013, pointes=12, creux=0.80, rot=0.0)
+        ligne_etoile(mb, (cu, 0, zc), 0.088, 0.009, y + 0.004, y - 0.014, pointes=8, creux=0.58, rot=math.pi / 8)
+        mb.sph((cu, y - 0.012, zc), 0.030, sc=(1, 0.55, 1), seg=14)
+        ligne_etoile(mb2, (cu, 0, zc), 0.120, 0.0045, y - 0.013, y - 0.019, pointes=12, creux=0.80)
+        ligne_cercle(mb2, (cu, 0, zc), 0.262, 0.0045, y - 0.005, y - 0.011, n=72)
+        mb2.sph((cu, y - 0.021, zc), 0.0125, sc=(1, 0.55, 1), seg=10)
+        # palmettes d'angle
+        for (dx, dz, a0) in ((1, 1, 45), (-1, 1, 135), (-1, -1, 225), (1, -1, 315)):
+            cx_ = cu + dx * (pw / 2 - 0.12); cz_ = zc + dz * ((z1_ - z0_) / 2 - 0.12)
+            palmette(mb, (cx_, cz_), math.radians(a0 + 180), 0.085, y + 0.004, y - 0.010)
+        # rinceau horizontal haut et bas du champ
+        for zr in (z0_ + 0.062, z1_ - 0.062):
+            rinceau(mb, (s * (bord + 0.07), zr), (s * (jx - bord - 0.07), zr), 0.012, 0.115, y + 0.004, y - 0.007, taille_feuille=0.036)
+    # rinceaux verticaux sur les montants et traverses
+    for ux in (bord / 2, jx - bord / 2):
+        rinceau(mb, (s * ux, 0.30), (s * ux, 2.40), 0.017, 0.20, f - 0.0285, f - 0.040, taille_feuille=0.046)
+    rinceau(mb, (s * (bord + 0.02), 1.35), (s * (jx - bord - 0.02), 1.35), 0.026, 0.18, f - 0.0285, f - 0.040, taille_feuille=0.05)
+    mb.objet(f"gravures_{nom}", M["cedre"], parent=corps, bevel=0.0012)
     mb2.objet(f"incrustations_{nom}", M["laiton"], parent=corps)
-    # clous de laiton à tête bombée : le long des montants et de la traverse médiane
+    # clous fins sur les traverses
     mb = MB()
-    for zc in [0.25 + 0.2 * k for k in range(13)]:
-        for u in (bord / 2, jx - bord / 2):
-            if zc < ZH - 0.1:
-                mb.sph((s * u, f - 0.032, zc), 0.0165, sc=(1, 0.55, 1), seg=10)
     for i in range(7):
-        mb.sph((s * jx * (i + 0.5) / 7, f - 0.032, 1.30), 0.0165, sc=(1, 0.55, 1), seg=10)
-        mb.sph((s * jx * (i + 0.5) / 7, f - 0.032, 0.08), 0.0165, sc=(1, 0.55, 1), seg=10)
+        u = jx * (i + 0.5) / 7
+        mb.sph((s * u, f - 0.034, 1.35 + 0.115), 0.0105, sc=(1, 0.55, 1), seg=10)
+        mb.sph((s * u, f - 0.034, 1.35 - 0.115), 0.0105, sc=(1, 0.55, 1), seg=10)
+        mb.sph((s * u, f - 0.034, 0.20), 0.0105, sc=(1, 0.55, 1), seg=10)
     mb.objet(f"clous_{nom}", M["laiton"], parent=corps)
-    # pentures : lanières fines à extrémités en palmette, nœud de charnière sur l'axe
+    # pentures ornementales (rosaces de rivets) + noeuds de charnière
     mb = MB()
-    for zc in (0.46, 1.58, 2.36):
-        L = jx * 0.80
-        mb.box((s * L / 2, f - 0.042, zc), (L, 0.010, 0.040))
-        mb.box((s * L / 2, f - 0.042, zc), (L, 0.012, 0.012))
-        for dz in (-0.034, 0.0, 0.034):
-            mb.sph((s * (L + 0.012), f - 0.043, zc + dz), 0.020 if dz == 0 else 0.014, sc=(1.1, 0.5, 1.0), seg=10)
-        mb.cyl((0.0, 0.0, zc), 0.030, 0.17, seg=18); mb.tor((0.0, 0.0, zc + 0.10), 0.030, 0.007, seg=20)
-    mb.objet(f"ferrures_{nom}", M["laiton"], parent=corps, bevel=0.0015)
-    # heurtoir : platine festonnée, anneau épais, marteau
-    mb = MB(); hx = s * (jx - 0.20); hz = 1.12
-    mb.cyl((hx, f - 0.050, hz + 0.08), 0.075, 0.016, rot=(math.pi / 2, 0, 0), seg=40)
-    for k in range(12):
-        a = 2 * math.pi * k / 12
-        mb.sph((hx + 0.075 * math.cos(a), f - 0.050, hz + 0.08 + 0.075 * math.sin(a)), 0.016, sc=(1, 0.45, 1), seg=8)
-    mb.cyl((hx, f - 0.062, hz + 0.08), 0.040, 0.014, rot=(math.pi / 2, 0, 0), seg=28)
-    mb.sph((hx, f - 0.072, hz + 0.08), 0.022, sc=(1, 0.8, 1), seg=14)
-    mb.tor((hx, f - 0.078, hz + 0.0), 0.080, 0.0105, rot=(math.pi / 2, 0, 0), seg=64, seg2=14)
-    mb.cyl((hx, f - 0.078, hz + 0.082), 0.020, 0.04, seg=14, rot=(0, 0, 0))
-    mb.objet(f"heurtoir_{nom}", M["laiton"], parent=corps, bevel=0.0012)
+    for zc in (0.50, 1.35, 2.34):
+        penture(mb, s, 0.0, jx * 0.80, zc, f - 0.0295 if zc != 1.35 else f - 0.0295)
+        mb.cyl((0.0, 0.0, zc), 0.030, 0.17, seg=18); mb.tor((0.0, 0.0, zc + 0.10), 0.030, 0.007, seg=20); mb.tor((0.0, 0.0, zc - 0.10), 0.030, 0.007, seg=20)
+    mb.objet(f"ferrures_{nom}", M["laiton"], parent=corps, bevel=0.0012)
+    # heurtoir : platine à seize lobes, cordon torsadé, goutte pendante
+    mb = MB(); hx = s * (jx - 0.215); hz = 1.52
+    cc = (hx, f - 0.060, hz)
+    mb.cyl((hx, f - 0.050, hz), 0.082, 0.014, rot=(math.pi / 2, 0, 0), seg=48)
+    for k in range(16):
+        a = 2 * math.pi * k / 16
+        mb.sph((hx + 0.082 * math.cos(a), f - 0.050, hz + 0.082 * math.sin(a)), 0.014, sc=(1, 0.5, 1), seg=8)
+    mb.cyl((hx, f - 0.058, hz), 0.054, 0.012, rot=(math.pi / 2, 0, 0), seg=40)
+    mb.cyl((hx, f - 0.066, hz), 0.032, 0.012, rot=(math.pi / 2, 0, 0), seg=32)
+    mb.sph((hx, f - 0.078, hz), 0.022, sc=(1, 0.8, 1), seg=14)
+    anneau_corde(mb, (hx, f - 0.092, hz - 0.095), 0.092, 0.0105, n=52)
+    mb.sph((hx, f - 0.092, hz - 0.190), 0.026, sc=(0.8, 0.8, 1.5), seg=14)
+    mb.box((hx, f - 0.070, hz - 0.086), (0.032, 0.020, 0.040))
+    mb.objet(f"heurtoir_{nom}", M["laiton"], parent=corps, bevel=0.0010)
     # couvre-joint central sur le battant droit
     if cote > 0:
         mb = MB(); mb.box((-jx + 0.012, f - 0.020, ZH / 2), (0.040, 0.026, ZH)); mb.objet("couvre_joint", M["cedre"], parent=corps, bevel=0.005)
-        mb = MB(); mb.box((-jx + 0.012, f - 0.036, ZH / 2), (0.014, 0.005, ZH - 0.1)); mb.objet("couvre_joint_laiton", M["laiton"], parent=corps)
+        mb = MB(); mb.box((-jx + 0.012, f - 0.036, ZH / 2), (0.012, 0.005, ZH - 0.1)); mb.objet("couvre_joint_laiton", M["laiton"], parent=corps)
     return corps
 
 def patio(M):
@@ -755,8 +855,8 @@ def lumieres(ouverture):
         ob = bpy.data.objects.new(nom, d); bpy.context.collection.objects.link(ob)
         ob.location = loc; ob.rotation_euler = (Vector(cible) - Vector(loc)).to_track_quat("-Z", "Y").to_euler()
     # soleil bas de fin d'après-midi : ombres allongées qui creusent chaque relief
-    sol = bpy.data.lights.new("soleil", "SUN"); sol.energy = 6.2; sol.angle = math.radians(1.8); sol.color = (1.0, 0.74, 0.48)
-    so = bpy.data.objects.new("soleil", sol); bpy.context.collection.objects.link(so); so.rotation_euler = (math.radians(68), 0, math.radians(-48))
+    sol = bpy.data.lights.new("soleil", "SUN"); sol.energy = 7.4; sol.angle = math.radians(1.8); sol.color = (1.0, 0.74, 0.48)
+    so = bpy.data.objects.new("soleil", sol); bpy.context.collection.objects.link(so); so.rotation_euler = (math.radians(73), 0, math.radians(-50))
     aire("ciel_doux", (3.0, -9.0, 9.0), (0, 0, 3.4), 9.0, 520, (0.80, 0.86, 1.0))
     aire("remplissage", (6.5, -9.0, 2.0), (0, 0, 2.6), 6.0, 120, (1.0, 0.82, 0.62))
     aire("contour", (0.0, 5.0, 12.0), (0, -0.4, 6.0), 6.0, 700, (1.0, 0.78, 0.5))
@@ -769,9 +869,9 @@ def lumieres(ouverture):
     bg = n["Background"]; bg.inputs["Color"].default_value = (0.95, 0.78, 0.58, 1); bg.inputs["Strength"].default_value = 0.22
 
 VUES = {
-    "frontal":      ((0.0, -12.5, 3.55), (0.0, 0.0, 3.55), 48, 0.0),
-    "trois-quarts": ((5.6, -9.0, 2.7), (-0.4, 0.0, 3.1), 44, 0.0),
-    "detail":       ((1.05, -2.6, 1.7), (-0.10, 0.3, 1.55), 52, 0.0),
+    "frontal":      ((0.0, -10.4, 3.45), (0.0, 0.0, 3.40), 54, 0.0),
+    "trois-quarts": ((4.6, -7.2, 2.3), (-0.15, 0.0, 2.9), 46, 0.0),
+    "detail":       ((0.78, -2.15, 1.45), (-0.02, 0.3, 1.45), 56, 0.0),
     "arche":        ((0.0, -5.2, 3.9), (0.0, 0.0, 3.9), 50, 0.0),
 }
 
@@ -812,7 +912,7 @@ def construire(ouverture):
         "platre_clair": mat_platre("platre_clair", (0.90, 0.82, 0.68), 0.70, 0.30, 26),
         "tadelakt": mat_platre("tadelakt", (0.58, 0.41, 0.22), 0.30, 0.20, 9),
         "pierre": mat_platre("pierre", (0.58, 0.51, 0.40), 0.82, 0.5, 30),
-        "pierre_sombre": mat_platre("pierre_sombre", (0.26, 0.22, 0.18), 0.38, 0.32, 12),
+        "pierre_sombre": mat_platre("pierre_sombre", (0.20, 0.16, 0.12), 0.16, 0.18, 12),
         "cedre": mat_cedre("cedre"), "cedre_sombre": mat_cedre("cedre_sombre", True),
         "laiton": mat_laiton(),
         "emeraude": mat_emeraude(), "eau": mat_eau(), "feuille": mat_feuille(),
