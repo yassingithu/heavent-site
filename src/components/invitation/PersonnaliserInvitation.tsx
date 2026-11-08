@@ -5,7 +5,7 @@ import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import { RotateCcw, Play } from "lucide-react";
 import Invitation from "./Invitation";
 import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
-import { CHAMPS_COULEUR, MODELES, OUVERTURES, STYLES_OUVERTURE, PALETTES, REVELATIONS, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
+import { POLICES, CHAMPS_COULEUR, MODELES, OUVERTURES, STYLES_OUVERTURE, PALETTES, REVELATIONS, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
 
 interface Props {
   /** Affiche l'outil d'ajout d'ouvertures vidéo (administration seulement). */
@@ -72,6 +72,12 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             })}
           </div>
           <p className="text-xs text-[#6B6154] mt-3"><strong className="font-medium">{ouv.nom}.</strong> {ouv.description}</p>
+          {ouv.id !== "enveloppe" && !ouv.cadre && ouv.id !== "rose-imperiale" && (
+            <label className="mt-3 flex items-center gap-2 min-h-10 text-sm cursor-pointer">
+              <input type="checkbox" className="h-5 w-5 accent-[#8C6D22]" checked={valeur.cachet !== false} onChange={(e) => { onChange({ ...valeur, cachet: e.target.checked ? undefined : false }); setRejouer((n) => n + 1); }} data-testid="option-cachet" />
+              <span>Cachet de cire sur l'ouverture <span className="text-[#6B6154]">(sinon, un petit bouton discret « Ouvrir »)</span></span>
+            </label>
+          )}
           <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[#DCCBA6] bg-white px-4 min-h-11 text-sm lg:hidden" data-testid="voir-apercu"><Play className="h-4 w-4" /> Voir l'aperçu</button>
           {estAdmin && <ImportOuverture onAjoutee={(id) => choisirOuverture(id)} />}
         </section>
@@ -131,6 +137,15 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             ))}
           </div>
           <div className="grid sm:grid-cols-2 gap-2">
+            <div className="sm:col-span-2" role="group" aria-label="Police des prénoms">
+              <p className="text-sm font-medium">Police des prénoms (version française)</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {POLICES.map((p) => (
+                  <button key={p.id} type="button" aria-pressed={(valeur.police ?? "calligraphie") === p.id} onClick={() => onChange({ ...valeur, police: p.id })} data-testid={`police-${p.id}`}
+                    className={`min-h-11 rounded-full border px-4 text-lg ${(valeur.police ?? "calligraphie") === p.id ? "bg-[#141414] text-white border-[#141414]" : "border-[#E3D6BA]"}`} style={{ fontFamily: p.css }}>{p.nom}</button>
+                ))}
+              </div>
+            </div>
             {CHAMPS_COULEUR.map(({ cle, libelle, aide }) => (
               <label key={cle} className="flex items-center gap-3 rounded-xl border border-[#E3D6BA] bg-white p-2.5">
                 <input type="color" value={actuelles[cle]} onChange={(e) => changer(cle, e.target.value)} className="h-10 w-12 shrink-0 cursor-pointer rounded-lg border-0 bg-transparent p-0" data-testid={`couleur-${cle}`} />

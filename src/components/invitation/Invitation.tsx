@@ -6,7 +6,7 @@ import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import Revelation from "./Revelation";
 import PagesCarte, { type UnitePage } from "./PagesCarte";
 import { morceauxDeTexte, phrases } from "@/lib/pagination";
-import { couleursDe, initiales, lienMaps, modeleDe, ouvertureDe, revelationDe, surCouleur, TEXTES, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
+import { couleursDe, imagesOuverture, policeDe, initiales, lienMaps, modeleDe, ouvertureDe, revelationDe, surCouleur, TEXTES, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
 import "@fontsource/pinyon-script/latin-400.css";
 import "@fontsource/pinyon-script/latin-ext-400.css";
 import "@fontsource/amiri/arabic-400.css";
@@ -167,7 +167,18 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const t = TEXTES[langue];
   const [, majOuv] = useState(0);
   useEffect(() => { if (String(reglages?.ouverture ?? "").startsWith("perso-")) chargerOuverturesPerso().then(() => majOuv((n) => n + 1)); }, [reglages?.ouverture]);
-  const ouv = ouvertureDe(reglages?.ouverture);
+  // préchargement des images de l'ouverture choisie ; si l'une échoue (réseau, fichier absent), on bascule sur l'ouverture de secours sans animation d'images
+  const [secours, setSecours] = useState(false);
+  const ouvChoisie = ouvertureDe(reglages?.ouverture);
+  useEffect(() => {
+    setSecours(false);
+    const liste = imagesOuverture(ouvChoisie); if (!liste.length) return;
+    let vivant = true;
+    const t = window.setTimeout(() => { /* connexion très lente : on laisse l'animation démarrer quand même */ }, 8000);
+    liste.forEach((u) => { const im = new Image(); im.onerror = () => { if (vivant) setSecours(true); }; im.decoding = "async"; im.src = u; });
+    return () => { vivant = false; window.clearTimeout(t); };
+  }, [ouvChoisie.id]);
+  const ouv = secours ? ouvertureDe(undefined) : ouvChoisie;
   const avecRevelation = revelationDe(reglages?.revelation).id === "coeur" && !sansAnimation();
   const [phase, setPhase] = useState<"fermee" | "ouverture" | "revelation" | "ouverte">(ouverte || sansAnimation() ? "ouverte" : "fermee");
 
@@ -193,6 +204,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
         const b = f.getBoundingClientRect();
         const cv = document.createElement("canvas"); cv.width = f.videoWidth; cv.height = f.videoHeight;
         cv.getContext("2d")!.drawImage(f, 0, 0);
+        const tr = getComputedStyle(f).transform; if (tr && tr !== "none") cv.style.transform = tr; // zoom en cours : l'image figée reprend exactement le cadrage
         setSortie({ canvas: cv, r: { top: b.top, left: b.left, width: b.width, height: b.height } });
       } else if (ouv.carte) {
         /* décors à carte intégrée : la scène intérieure reste en place puis glisse sur la carte */
@@ -257,7 +269,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   }, []);
 
   const style = {
-    "--inv-fond": c.fond, "--inv-env": c.enveloppe, "--inv-papier": c.papier, "--inv-texte": c.texte, "--inv-accent": c.accent,
+    "--inv-fond": c.fond, "--inv-env": c.enveloppe, "--inv-papier": c.papier, "--inv-texte": c.texte, "--inv-accent": c.accent, ...(reglages?.police ? { "--inv-police-noms": policeDe(reglages.police).css } : {}),
     "--inv-sur-env": surCouleur(c.enveloppe), "--inv-sur-fond": surCouleur(c.fond), "--inv-sur-accent": surCouleur(c.accent),
   } as CSSProperties;
   const ar = langue === "ar";
@@ -324,7 +336,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       <div className="inv-colonne">
       {haut}
       {(phase === "fermee" || phase === "ouverture") && ouv.id !== "enveloppe" && (
-        <Ouverture key={ouv.id} type={ouv.id} phase={phase} libelle={t.ouvrir} libelleBouton={t.ouvrirBouton} initiales={initiales(nomsA)} nomsRef={emRef} onFilm={(e) => { if (e === "ended") terminerRef.current(); else window.setTimeout(() => terminerRef.current(), 400); }}
+        <Ouverture key={ouv.id} sansCachet={reglages?.cachet === false} type={ouv.id} phase={phase} libelle={t.ouvrir} libelleBouton={t.ouvrirBouton} initiales={initiales(nomsA)} nomsRef={emRef} onFilm={(e) => { if (e === "ended") terminerRef.current(); else window.setTimeout(() => terminerRef.current(), 400); }}
           noms={lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}
           onOuvrir={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); lancerMusique(); setPhase("ouverture"); }} />
       )}
@@ -344,7 +356,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
         </div>
       )}
       {sortie && phase === "ouverte" && (
-        <div className={`inv-film-sortie${ouv.carte ? " inv-fs-carte" : ""}`} aria-hidden="true" style={sortie.r} onAnimationEnd={() => setSortie(null)}
+        <div className={`inv-film-sortie${ouv.carte ? " inv-fs-carte" : ""}${ouv.video ? " inv-fs-film" : ""}`} aria-hidden="true" style={sortie.r} onAnimationEnd={() => setSortie(null)}
           ref={(el) => { if (el && !el.firstChild) { sortie.canvas.className = "inv-film-img"; el.appendChild(sortie.canvas); } }} />
       )}
       {phase === "revelation" && (

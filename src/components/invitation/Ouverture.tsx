@@ -1,11 +1,13 @@
 import type React from "react";
-import { useEffect, useRef, useState, type Ref, type ReactNode } from "react";
+import { useEffect, useRef, useState, type Ref, type ReactNode, type CSSProperties } from "react";
 import { ouvertureDe } from "@/lib/invitation";
 
 /** Ouvertures animées de l'invitation : de vraies photos coupées en deux battants (public/ouvertures/<type>-g|d.webp),
  *  animées en CSS 3D. Chaque type partage la même structure (battants, cartouche des prénoms, lueur) pour rester interchangeable. */
 
 interface Props {
+  /** pas de cachet de cire : seul un petit bouton discret invite à ouvrir */
+  sansCachet?: boolean;
   type: string;
   phase: "fermee" | "ouverture";
   onOuvrir: () => void;
@@ -42,22 +44,36 @@ function Defs() {
   );
 }
 
-export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, noms, initiales, libelleBouton, onFilm }: Props) {
+export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, noms, initiales, libelleBouton, onFilm, sansCachet }: Props) {
   const def = ouvertureDe(type);
   const [echec, setEchec] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     if (phase !== "ouverture" || !def.video) return;
     // Lecture au toucher (autorisée car déclenchée par le geste) ; si le navigateur la refuse, l'affiche s'estompe simplement.
-    video.current?.play().catch(() => { setEchec(true); onFilm?.("echec"); });
+    const v = video.current;
+    v?.play().catch(() => { setEchec(true); onFilm?.("echec"); });
+    // fin anticipée : on passe à la carte ~0,4 s avant la dernière image (fondu rapide, la carte du film ne se remarque pas) ; zoom des films qui finissent sur une carte vierge
+    let fini = false, raf = 0;
+    const suivre = () => {
+      if (v && !fini) {
+        const t = v.currentTime, d = v.duration;
+        if (def.zoom && t >= def.zoom.de && !v.dataset.zoom) v.dataset.zoom = "1";
+        if ((def.zoom && t >= def.zoom.fin) || (d && isFinite(d) && t > 0.5 && d - t < 0.4)) { fini = true; onFilm?.("ended"); return; }
+      }
+      raf = requestAnimationFrame(suivre);
+    };
+    raf = requestAnimationFrame(suivre);
+    return () => { cancelAnimationFrame(raf); };
   }, [phase, def.video]);
+  useEffect(() => { if (phase === "fermee" && video.current) delete video.current.dataset.zoom; }, [phase]);
   if (def.video) {
     return (
       <div className="inv-scene">
-        <button type="button" className={`inv-porte inv-o-video${echec ? " inv-o-video-secours" : ""}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={`${libelleBouton}. ${libelle}`} data-testid="invitation-ouvrir" data-ouverture={type} style={def.sceauY ? ({ "--ov-y": `${def.sceauY}%` } as React.CSSProperties) : undefined}
+        <button type="button" className={`inv-porte inv-o-video${echec ? " inv-o-video-secours" : ""}${sansCachet ? " inv-o-sans-cachet" : ""}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={`${libelleBouton}. ${libelle}`} data-testid="invitation-ouvrir" data-ouverture={type} style={def.sceauY ? ({ "--ov-y": `${def.sceauY}%` } as React.CSSProperties) : undefined}
           onPointerMove={(e) => { if (phase !== "fermee" || e.pointerType === "mouse") return; const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--px", `${((e.clientX - b.left) / b.width - .5) * -12}px`); e.currentTarget.style.setProperty("--py", `${((e.clientY - b.top) / b.height - .5) * -12}px`); }}>
           <img className="inv-ov-affiche" src={def.poster} alt="" decoding="async" />
-          <video ref={video} className="inv-ov-film" src={def.video} poster={def.poster} muted playsInline preload="auto" aria-hidden="true" onEnded={() => onFilm?.("ended")} onError={() => { setEchec(true); onFilm?.("echec"); }} />
+          <video ref={video} className="inv-ov-film" src={def.video} poster={def.poster} muted playsInline preload="auto" aria-hidden="true" style={def.zoom ? ({ "--zs": def.zoom.s, "--zx": `${(0.5 - def.zoom.x) * 100}%`, "--zy": `${(0.5 - def.zoom.y) * 100}%` } as CSSProperties) : undefined} onEnded={() => onFilm?.("ended")} onError={() => { setEchec(true); onFilm?.("echec"); }} />
           <span className="inv-o-sceau" aria-hidden="true"><em ref={nomsRef}>{initiales}</em></span>
           <span className="inv-o-ouvrir">{libelleBouton}</span>
           <span className="inv-sr-seul">{noms}</span>
@@ -69,7 +85,7 @@ export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, nom
   return (
     <div className="inv-scene">
       <Defs />
-      <button type="button" className={`inv-porte inv-o-${type}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={`${libelleBouton}. ${libelle}`} data-testid="invitation-ouvrir" data-ouverture={type}
+      <button type="button" className={`inv-porte inv-o-${type}${sansCachet ? " inv-o-sans-cachet" : ""}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={`${libelleBouton}. ${libelle}`} data-testid="invitation-ouvrir" data-ouverture={type}
         onPointerMove={(e) => { if (phase !== "fermee" || e.pointerType === "mouse") return; const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--px", `${((e.clientX - b.left) / b.width - .5) * -12}px`); e.currentTarget.style.setProperty("--py", `${((e.clientY - b.top) / b.height - .5) * -12}px`); }}>
         <span className="inv-o-monde" aria-hidden="true">
         <span className="inv-o-lueur" />

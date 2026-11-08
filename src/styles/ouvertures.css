@@ -176,6 +176,8 @@
 
 /* Fondu entre le film et la carte : l'image finale du film reste en place et s'estompe sous la carte qui apparaît */
 .inv-film-sortie { position: fixed; z-index: 30; pointer-events: none; transform-origin: 0 0; will-change: opacity, transform; animation: inv-film-sortie .7s cubic-bezier(.4, 0, .2, 1) .15s forwards; }
+.inv-film-sortie { overflow: hidden; }
+.inv-film-sortie.inv-fs-film { animation-duration: .45s; animation-timing-function: ease-in-out; }
 .inv-film-sortie.inv-fs-carte { animation-duration: .9s; animation-delay: .4s; }
 .inv-film-sortie .inv-film-img { display: block; width: 100%; height: 100%; object-fit: cover; }
 @keyframes inv-film-sortie { to { opacity: 0; } }
@@ -325,3 +327,46 @@
 .inv-pag-bas[data-rep] .inv-pag-chev { font-size: 2.2em; }
 .inv-pag-page:focus { outline: none; }
 .inv-pag[data-nav] .inv-lettre { animation-delay: calc(.05s + var(--i, 0) * 30ms) !important; }
+
+/* ───────── Portes à calques (Riad de cèdre, Palais de fer forgé) : cadre fixe, deux battants réels, carte intérieure, travelling avant ───────── */
+.inv-o-riad-cedre { --od-h: .6875; --od-gx: 50.8%; --od-dx: 49.4%; --od-nuit: #3a2412; }
+.inv-o-palais-fer { --od-h: .746; --od-gx: 44.5%; --od-dx: 55.7%; --od-nuit: #1c1814; }
+:is(.inv-o-riad-cedre, .inv-o-palais-fer) { aspect-ratio: 2 / 3; background: var(--od-nuit); }
+.inv-o-riad-cedre .inv-o-g { background-image: url("/ouvertures/riad-cedre-g.webp"); } .inv-o-riad-cedre .inv-o-d { background-image: url("/ouvertures/riad-cedre-d.webp"); }
+.inv-o-palais-fer .inv-o-g { background-image: url("/ouvertures/palais-fer-g.webp"); } .inv-o-palais-fer .inv-o-d { background-image: url("/ouvertures/palais-fer-d.webp"); }
+:is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-battant { background-color: transparent; }
+:is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-g { transform-origin: var(--od-gx) 50%; }
+:is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-d { transform-origin: var(--od-dx) 50%; }
+:is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-rai, :is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-cartouche { display: none; }
+.inv[data-phase] :is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-lueur { background: var(--od-nuit); }
+/* carte intérieure vue par l'arche : même image que la carte finale, cadrée pour que le travelling la ramène plein écran */
+:is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-lueur::before { content: ""; position: absolute; left: 50%; top: 50%; height: calc(var(--od-h) * 100%); aspect-ratio: 2 / 3; transform: translate(-50%, -50%); background: center / 100% 100% no-repeat; opacity: 0; transition: opacity .35s .1s; }
+.inv-o-riad-cedre .inv-o-lueur::before { background-image: url("/ouvertures/riad-cedre-fond.webp"); }
+.inv-o-palais-fer .inv-o-lueur::before { background-image: url("/ouvertures/palais-fer-fond.webp"); }
+.inv[data-phase="ouverture"] :is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-lueur::before { opacity: 1; }
+/* cadre architectural fixe : toujours devant les battants */
+:is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-battants { perspective: 1500px; perspective-origin: 50% 50%; }
+:is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-battants::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; background: center / 100% 100% no-repeat; }
+.inv-o-riad-cedre .inv-o-battants::after { background-image: url("/ouvertures/riad-cedre-cadre.webp"); }
+.inv-o-palais-fer .inv-o-battants::after { background-image: url("/ouvertures/palais-fer-cadre.webp"); }
+:is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-battant::after { background: linear-gradient(90deg, rgba(20, 10, 4, 0), rgba(20, 10, 4, .5)); }
+.inv[data-phase="ouverture"] :is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-g { animation: o-od-g 1.9s cubic-bezier(.55, .05, .2, 1) .25s both; }
+.inv[data-phase="ouverture"] :is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-d { animation: o-od-d 1.9s cubic-bezier(.55, .05, .2, 1) .25s both; }
+@keyframes o-od-g { 70% { transform: rotateY(98deg); } to { transform: rotateY(94deg); } }
+@keyframes o-od-d { 70% { transform: rotateY(-98deg); } to { transform: rotateY(-94deg); } }
+/* travelling : à ~75 % d'ouverture la caméra avance ; cadre et portes s'effacent, la carte remplit l'écran */
+.inv[data-phase="ouverture"] :is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-monde { will-change: transform; animation: o-od-camera 3.2s cubic-bezier(.5, 0, .25, 1) .3s both; }
+.inv[data-phase="ouverture"] :is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-battants { animation: o-od-fondu 3.2s linear .3s both; }
+.inv-o-riad-cedre { --od-cam: 1.4545; } .inv-o-palais-fer { --od-cam: 1.3405; }
+@keyframes o-od-camera { 40% { transform: scale(1); } to { transform: scale(var(--od-cam)); } }
+@keyframes o-od-fondu { 72% { opacity: 1; } to { opacity: 0; } }
+:is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-sceau { opacity: 0; pointer-events: none; }
+:is(.inv-o-riad-cedre, .inv-o-palais-fer) .inv-o-ouvrir { top: 87%; background: rgba(28, 18, 10, .62); color: #f3e3b8; border-color: rgba(243, 227, 184, .65); }
+
+/* Film qui finit sur une carte vierge : le cadre se resserre sur la carte avant le fondu vers la nôtre */
+.inv-o-video .inv-ov-film[data-zoom] { transform: scale(var(--zs, 1)) translate(var(--zx, 0), var(--zy, 0)); transition: opacity .25s, transform 1.6s cubic-bezier(.45, 0, .25, 1); }
+@media (prefers-reduced-motion: reduce) { .inv-o-video .inv-ov-film[data-zoom] { transform: none; } }
+/* Sans cachet : pas de sceau, un petit bouton translucide et discret */
+.inv-o-sans-cachet .inv-o-sceau { display: none; }
+.inv-o-sans-cachet .inv-o-ouvrir { background: rgba(255, 255, 255, .14); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, .55); color: rgba(255, 255, 255, .95); text-shadow: 0 1px 6px rgba(0, 0, 0, .55); box-shadow: none; font-size: 11px; padding: 9px 18px; top: calc(var(--ov-y, 50%) + 6px); }
+.inv-o-sans-cachet.inv-o-video[data-ouverture="v-neige"] .inv-o-ouvrir, .inv-o-sans-cachet.inv-o-video[data-ouverture="v-glasshouse"] .inv-o-ouvrir { color: #fff; }

@@ -2,7 +2,22 @@
 export type Langue = "fr" | "en" | "ar";
 export type Ornement = "khatam" | "arche" | "cadre" | "fleur" | "filet" | "zellige";
 export interface Couleurs { fond: string; enveloppe: string; papier: string; texte: string; accent: string }
-export interface InvitationReglages { musique?: string; ouverture?: string; revelation?: string; modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; programme?: { heure: string; titre: string; titre_ar?: string }[]; noms_ar?: string; lieu_ar?: string; message_ar?: string }
+export interface InvitationReglages { cachet?: boolean; musique?: string; ouverture?: string; revelation?: string; modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; programme?: { heure: string; titre: string; titre_ar?: string }[]; noms_ar?: string; lieu_ar?: string; message_ar?: string; police?: string }
+/** Polices des prénoms au choix (toutes déjà hébergées : aucun chargement en plus) */
+export const POLICES: { id: string; nom: string; css: string }[] = [
+  { id: "calligraphie", nom: "Calligraphie", css: '"Pinyon Script", "Snell Roundhand", cursive' },
+  { id: "classique", nom: "Classique", css: '"Gloock", Didot, Georgia, serif' },
+  { id: "elegante", nom: "Élégante", css: '"Cormorant Garamond", Georgia, serif' },
+];
+export const policeDe = (id?: string) => POLICES.find((p) => p.id === id) ?? POLICES[0];
+
+/** Images à précharger pour qu'une ouverture à calques démarre sans à-coup (la carte finale comprise). */
+export function imagesOuverture(o: OuvertureDef): string[] {
+  if (o.video || /^perso-/.test(o.id)) return [];
+  const base = `/ouvertures/${o.id}`;
+  return [`${base}-g.webp`, `${base}-d.webp`, ...(o.cadre ? [`${base}-cadre.webp`] : []), ...(o.carte ? [o.carte.fin] : [])];
+}
+
 export interface Modele { id: string; nom: string; description: string; ornement: Ornement; couleurs: Couleurs }
 
 export const MODELES: Modele[] = [
@@ -114,6 +129,10 @@ export interface OuvertureDef {
   /** Vidéos qui finissent sur une carte vierge : la dernière image devient la carte et le texte s'écrit directement dessus (zone du texte en fractions de l'image). */
   /** Position verticale du sceau et du bouton sur un film, en % de la hauteur (50 par défaut). */
   sceauY?: number;
+  /** décor à cadre fixe : image `<id>-cadre.webp` posée devant les battants */
+  cadre?: boolean;
+  /** film qui finit sur une carte vierge : zoom progressif (centre x,y en fractions, échelle s, début `de` en secondes) avant le fondu vers notre carte */
+  zoom?: { x: number; y: number; s: number; de: number; /** secondes : on passe à la carte à ce moment du film (sans attendre la fin) */ fin: number };
   carte?: { fin: string; x: number; y: number; l: number; h: number; fond: string; r?: number };
   /** Styles pour filtrer la bibliothèque. */
   styles: string[];
@@ -130,11 +149,13 @@ export const OUVERTURES: OuvertureDef[] = [
   { id: "zellige", nom: "Zellige", description: "Deux panneaux de zellige bleu, vert et terre cuite s'écartent sur une lumière dorée.", duree: 1800, styles: ["Marocain", "Moderne"] },
   { id: "riad", nom: "Riad", description: "Une porte de cèdre sculpté aux clous de laiton s'ouvre sur le patio du riad : fontaine, orangers et lanternes au crépuscule.", duree: 2200, styles: ["Marocain", "Luxe"] },
   { id: "rose-imperiale", nom: "Rose Impériale", description: "Deux battants de nacre rose poudré, brodés de fleurs, s'ouvrent sur le cadre intérieur où s'écrit votre invitation.", duree: 2600, styles: ["Floral", "Luxe"], carte: { fin: "/ouvertures/rose-fond.webp", x: 0.315, y: 0.23, l: 0.37, h: 0.515, fond: "#f4e3e2", r: 177.7 } },
+  { id: "riad-cedre", cadre: true, nom: "Porte du riad de cèdre", description: "Deux battants de cèdre sculpté s'ouvrent sous l'arche de zellige, puis la caméra avance jusqu'à la carte.", duree: 3500, styles: ["Marocain","Floral"], carte: { fin: "/ouvertures/riad-cedre-fond.webp", x: 0.14, y: 0.16, l: 0.72, h: 0.68, fond: "#f8eddd", r: 150 } },
+  { id: "palais-fer", cadre: true, nom: "Palais de fer forgé", description: "Un portail de fer noir et d'or s'ouvre entre les colonnes de marbre ; la caméra avance jusqu'à la carte.", duree: 3500, styles: ["Luxe","Floral"], carte: { fin: "/ouvertures/palais-fer-fond.webp", x: 0.14, y: 0.16, l: 0.72, h: 0.68, fond: "#f9f4ed", r: 150 } },
   { id: "rideaux", nom: "Rideaux", description: "Deux pans de tissu drapé qui s'écartent comme au théâtre.", duree: 1800, styles: ["Luxe", "Marocain"] },
-  { id: "v-porte-blanche", nom: "Portes blanches", description: "Deux portes de dentelle et de roses en relief, nouées d'un ruban, qui s'ouvrent sur un décor de fête. 6 s.", duree: 5700, video: "/ouvertures/video/porte-blanche.mp4", poster: "/ouvertures/video/porte-blanche-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Luxe", "Floral"] },
+  { id: "v-porte-blanche", nom: "Portes blanches", description: "Deux portes de dentelle et de roses en relief, nouées d'un ruban, qui s'ouvrent sur un décor de fête. 6 s.", duree: 5700, zoom: { x: 0.51, y: 0.56, s: 2.6, de: 2.9, fin: 4.7 }, video: "/ouvertures/video/porte-blanche.mp4", poster: "/ouvertures/video/porte-blanche-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Luxe", "Floral"] },
   { id: "v-alhambra", nom: "Porte andalouse", description: "Une porte cloutée sous un arc en fer à cheval s'ouvre sur un patio et son bassin. 8 s.", duree: 8000, video: "/ouvertures/video/alhambra.mp4", poster: "/ouvertures/video/alhambra-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Marocain", "Luxe"] },
   { id: "v-lakeside", nom: "Grille sur le lac", description: "Une grille en fer sous une glycine s'ouvre sur un jardin et le lac. 8 s.", duree: 8000, video: "/ouvertures/video/lakeside.mp4", poster: "/ouvertures/video/lakeside-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Moderne", "Luxe"] },
-  { id: "v-gardenia", nom: "Pétales de papier", description: "Des pétales blancs en relief s'écartent sur un fond crème. 5 s.", duree: 5100, video: "/ouvertures/video/gardenia.mp4", poster: "/ouvertures/video/gardenia-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Floral", "Moderne"] },
+  { id: "v-gardenia", nom: "Pétales de papier", description: "Des pétales blancs en relief s'écartent sur un fond crème. 5 s.", duree: 5100, zoom: { x: 0.48, y: 0.5, s: 1.55, de: 2.2, fin: 3.7 }, video: "/ouvertures/video/gardenia.mp4", poster: "/ouvertures/video/gardenia-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Floral", "Moderne"] },
   { id: "v-shoreline", nom: "Étoile de mer", description: "Le cachet étoile de mer se détache et l'enveloppe s'ouvre. 2,5 s.", duree: 2500, video: "/ouvertures/video/shoreline.mp4", poster: "/ouvertures/video/shoreline-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Moderne"] },
   { id: "v-chateau-soir", nom: "Château au crépuscule", description: "Une grille en fer s'ouvre sur les jardins d'un château illuminé. 8 s.", duree: 8000, video: "/ouvertures/video/chateau-soir.mp4", poster: "/ouvertures/video/chateau-soir-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Luxe", "Moderne"] },
   { id: "v-palace", nom: "Portail du palais", description: "Un portail doré s'ouvre sur un château et son miroir d'eau. 4 s.", duree: 4100, video: "/ouvertures/video/palace.mp4", poster: "/ouvertures/video/palace-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Luxe", "Moderne"] },
