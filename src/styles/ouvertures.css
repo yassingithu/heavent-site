@@ -161,3 +161,8 @@
 .inv-o-video .inv-o-sceau, .inv-o-video .inv-o-ouvrir { z-index: 3; }
 .inv[data-phase="ouverture"] .inv-o-video .inv-o-sceau, .inv[data-phase="ouverture"] .inv-o-video .inv-o-ouvrir { opacity: 0; transition: opacity .3s; }
 @media (prefers-reduced-motion: reduce) { .inv-o-video .inv-ov-film { display: none; } }
+/* Lisibilité du sceau et du bouton sur les affiches très claires ou très sombres */
+.inv-o-video .inv-o-sceau { top: var(--ov-y, 50%); box-shadow: 0 0 0 1.5px rgba(40, 26, 4, .6), 0 7px 16px rgba(0, 0, 0, .5); }
+.inv-o-video .inv-o-ouvrir { top: calc(var(--ov-y, 50%) + 64px); font-size: 12px; padding: 11px 20px; background: rgba(20, 16, 10, .86); border: 1px solid #E4D49A; color: #FBF6E9; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.inv-o-video[data-ouverture="v-neige"], .inv-o-video[data-ouverture="v-minuit"] { --ov-y: 20%; }
+.inv-o-video[data-ouverture="v-neige"], .inv-o-video[data-ouverture="v-glasshouse"] { background: #EADFC8; }

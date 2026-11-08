@@ -24,15 +24,14 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
   const actuelles = couleursDe(valeur);
 
   const apercuRef = useRef<HTMLElement>(null);
-  const montrer = () => { if (window.matchMedia("(max-width: 1023px)").matches) apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); };
   const [, forcer] = useState(0);
   useEffect(() => { chargerOuverturesPerso().then(() => forcer((n) => n + 1)); }, []);
   const [filtre, setFiltre] = useState<string | null>(null);
   const ouv = ouvertureDe(valeur.ouverture);
   const visibles = OUVERTURES.filter((o) => !filtre || o.styles.includes(filtre) || o.id === ouv.id);
   const rev = revelationDe(valeur.revelation);
-  const choisirOuverture = (id: string) => { onChange({ ...valeur, ouverture: id }); setRejouer((n) => n + 1); montrer(); };
-  const choisirRevelation = (id: string) => { onChange({ ...valeur, revelation: id }); setRejouer((n) => n + 1); montrer(); };
+  const choisirOuverture = (id: string) => { onChange({ ...valeur, ouverture: id }); setRejouer((n) => n + 1); };
+  const choisirRevelation = (id: string) => { onChange({ ...valeur, revelation: id }); setRejouer((n) => n + 1); };
   const choisirModele = (id: string) => onChange({ ...valeur, modele: id });
   const appliquerPalette = (c: Couleurs) => onChange({ ...valeur, couleurs: { ...c } });
   const changer = (k: keyof Couleurs, v: string) => onChange({ ...valeur, couleurs: { ...(valeur.couleurs ?? {}), [k]: v } });
@@ -46,28 +45,33 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         <section>
           <h3 className="font-serif text-xl mb-1">1. Comment l'invitation s'ouvre</h3>
           <p className="text-sm text-[#5E554A] mb-3">Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu.</p>
-          <div className="flex flex-wrap gap-1.5 mb-3" role="group" aria-label="Filtrer par style">
+          <div className="flex gap-5 overflow-x-auto border-b border-[#EADFC8] mb-4" role="group" aria-label="Filtrer par style">
             {[null, ...STYLES_OUVERTURE].map((st) => (
               <button key={st ?? "tous"} type="button" onClick={() => setFiltre(st)} aria-pressed={filtre === st}
-                className={`rounded-full border px-3 py-1.5 text-xs min-h-9 ${filtre === st ? "bg-[#141414] text-white border-[#141414]" : "border-[#E3D6BA] hover:border-[#C8B560]"}`}>{st ?? "Toutes"}</button>
+                className={`shrink-0 min-h-11 px-0.5 text-[13px] tracking-[.12em] uppercase border-b-2 ${filtre === st ? "text-[#141414] border-[#8C6D22]" : "text-[#5E554A] border-transparent"}`}>{st ?? "Toutes"}</button>
             ))}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2" role="group" aria-label="Ouverture">
-            {visibles.map((o) => (
-              <button key={o.id} type="button" onClick={() => choisirOuverture(o.id)} aria-pressed={ouv.id === o.id} data-testid={`ouverture-${o.id}`}
-                className={`text-left rounded-2xl border p-2 transition ${ouv.id === o.id ? "border-[#141414] ring-2 ring-[#141414]/15" : "border-[#E3D6BA] hover:border-[#C8B560]"}`}>
-                <span className="flex h-24 rounded-lg overflow-hidden mb-1.5 bg-[#EFE6D2]" aria-hidden="true">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-x-3 gap-y-5 items-start" role="group" aria-label="Ouverture">
+            {visibles.map((o) => {
+              const choisie = ouv.id === o.id;
+              return (
+              <button key={o.id} type="button" onClick={() => choisirOuverture(o.id)} aria-pressed={choisie} data-testid={`ouverture-${o.id}`} className="text-left group">
+                <span className={`relative flex aspect-[9/16] w-full overflow-hidden bg-[#EFE6D2] outline outline-2 outline-offset-2 ${choisie ? "outline-[#8C6D22]" : "outline-transparent group-hover:outline-[#E4D49A]"}`} aria-hidden="true">
                   {o.id === "enveloppe"
-                    ? <span className="relative m-auto h-14 w-20 rounded-sm bg-[#F7F1E3] border border-[#C8B560] grid place-items-center"><span className="h-5 w-5 rounded-full bg-[#B8963E] shadow-[0_0_0_2px_#8A6D24_inset]" /></span>
+                    ? <span className="m-auto grid h-full w-full place-items-center bg-[#141414]"><span className="grid h-16 w-16 place-items-center border border-[#A8933F] font-serif italic text-[#E4D49A] text-lg">A &amp; B</span></span>
                     : o.poster
-                    ? <span className="w-full bg-cover bg-center" style={{ backgroundImage: `url(${o.poster})` }} />
+                    ? <img src={o.poster} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                     : <><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-g.webp)` }} /><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-d.webp)` }} /></>}
+                  {choisie && <span className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-[#141414] text-[#E4D49A] text-xs">✓</span>}
                 </span>
-                <span className="block text-xs font-medium leading-tight">{o.nom}</span>
+                <span className={`mt-1.5 block font-serif text-[15px] leading-tight ${choisie ? "text-[#8C6D22]" : ""}`}>{o.nom}</span>
+                <span className="block text-[11px] tracking-[.14em] uppercase text-[#6B6154]">{o.video ? "Film" : "Animation"} · {Math.round(o.duree / 1000)} s</span>
               </button>
-            ))}
+              );
+            })}
           </div>
-          <p className="text-xs text-[#6B6154] mt-2">{ouv.description}</p>
+          <p className="text-xs text-[#6B6154] mt-3"><strong className="font-medium">{ouv.nom}.</strong> {ouv.description}</p>
+          <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[#DCCBA6] bg-white px-4 min-h-11 text-sm lg:hidden" data-testid="voir-apercu"><Play className="h-4 w-4" /> Voir l'aperçu</button>
           {estAdmin && <ImportOuverture onAjoutee={(id) => choisirOuverture(id)} />}
         </section>
 

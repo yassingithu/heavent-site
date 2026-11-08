@@ -29,11 +29,13 @@ export async function controlerVideo(f: File): Promise<{ duree: number; affiche:
   try {
     const v = document.createElement("video");
     v.muted = true; v.playsInline = true; v.preload = "auto"; v.src = url;
-    await new Promise<void>((ok, ko) => { v.onloadeddata = () => ok(); v.onerror = () => ko(new Error("Vidéo illisible dans ce navigateur.")); });
-    if (!(v.duration >= 1 && v.duration <= DUREE_MAX_S)) throw new Error(`Durée de ${Math.round(v.duration)} s : entre 1 et ${DUREE_MAX_S} s attendues.`);
-    if (v.videoWidth > 1100) throw new Error("Vidéo trop large : 1080 px maximum.");
-    v.currentTime = 0.1;
-    await new Promise<void>((ok) => { v.onseeked = () => ok(); });
+    const illisible = "Impossible de lire cette vidéo. Exportez-la en MP4 (H.264) et réessayez.";
+    const attendre = (poser: (ok: () => void, ko: (e: Error) => void) => void) => new Promise<void>((ok, ko) => { const t = setTimeout(() => ko(new Error(illisible)), 8000); poser(() => { clearTimeout(t); ok(); }, (e) => { clearTimeout(t); ko(e); }); });
+    await attendre((ok, ko) => { v.onloadeddata = () => ok(); v.onerror = () => ko(new Error(illisible)); });
+    if (!Number.isFinite(v.duration)) throw new Error(illisible);
+    if (!(v.duration >= 1 && v.duration <= DUREE_MAX_S)) throw new Error(`Votre vidéo dure ${Math.round(v.duration)} s : elle doit durer entre 1 et ${DUREE_MAX_S} s.`);
+    if (v.videoWidth > 1100) throw new Error(`Votre vidéo fait ${v.videoWidth} px de large : réduisez-la à 1080 px maximum.`);
+    await attendre((ok) => { v.onseeked = () => ok(); v.currentTime = 0.1; });
     const c = document.createElement("canvas"); const k = Math.min(1, 540 / v.videoWidth);
     c.width = Math.round(v.videoWidth * k); c.height = Math.round(v.videoHeight * k);
     c.getContext("2d")!.drawImage(v, 0, 0, c.width, c.height);
