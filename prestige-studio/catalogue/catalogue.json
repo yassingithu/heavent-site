@@ -1,26 +1,189 @@
 {
-  "genere_le": "2026-11-08",
-  "methode": "Licences lues sur les pages officielles, les fichiers LICENSE bruts (raw.githubusercontent.com) et le registre npm. Rien de téléchargé en masse. Aucun code tiers copié dans le dépôt Heavent.",
-  "avertissement": "Ce n'est pas un avis juridique. Un dépôt public sans licence n'est PAS réutilisable. Toujours revérifier la licence au moment de l'intégration.",
-  "retenues": [
-    {"rang":1,"nom":"Motion (ex Framer Motion)","type":"animation web React","licence":"MIT","verifie":"npm + page GitHub","lien":"https://github.com/motiondivision/motion","interet":"Déjà dans Heavent (framer-motion 12). Ressorts, gestes, transitions de mise en page, défilement : pagination de carte, révélations, glissement du texte.","risque":"Aucun. Le paquet s'appelle désormais « motion » (import motion/react)."},
-    {"rang":2,"nom":"three.js + React Three Fiber + drei","type":"3D temps réel dans le navigateur","licence":"MIT (les trois)","verifie":"npm","lien":"https://github.com/pmndrs/react-three-fiber","interet":"Jouer le Riad Royal en temps réel dans l'invitation (portes qui s'ouvrent, travelling) au lieu d'une vidéo : plus net, plus léger, interactif.","risque":"Scène à optimiser pour iPhone ; nos matériaux Blender procéduraux ne s'exportent pas en glTF : il faut les « cuire » en textures."},
-    {"rang":3,"nom":"glTF-Transform + gltfpack (meshoptimizer)","type":"outils d'optimisation GLB","licence":"MIT","verifie":"npm","lien":"https://gltf-transform.dev/","interet":"Passer un modèle Blender (dizaines de Mo) à quelques Mo : simplification, compression Meshopt/Draco, textures KTX2. Indispensable pour le web mobile.","risque":"Aucun côté licence."},
-    {"rang":4,"nom":"Poly Haven","type":"HDRI, textures PBR, modèles","licence":"CC0 (usage commercial libre, attribution facultative)","verifie":"page de licence officielle","lien":"https://polyhaven.com/license","interet":"HDRI de lumière dorée pour l'éclairage, textures de plâtre, bois, métal. Remplace nos approximations procédurales par des matières photographiques.","risque":"Logos, rendus d'exemple et textes du site ne sont pas CC0. Le shell cloud ne peut pas y accéder : à télécharger depuis le Mac."},
-    {"rang":5,"nom":"ambientCG","type":"textures PBR (bois, plâtre, carrelage, métal)","licence":"CC0","verifie":"docs.ambientcg.com/license","lien":"https://docs.ambientcg.com/license","interet":"Textures prêtes pour cèdre, tadelakt, laiton, sols. Complète Poly Haven.","risque":"Aucun. Même remarque d'accès que Poly Haven."},
-    {"rang":6,"nom":"GSAP (tous les plugins)","type":"animation chronologique, SplitText, ScrollTrigger, MorphSVG","licence":"« Standard No Charge » (propriétaire, gratuite, usage commercial autorisé)","verifie":"gsap.com/community/standard-license + npm","lien":"https://gsap.com/community/standard-license/","interet":"Orchestrer l'enveloppe, le sceau, l'apparition lettre par lettre des noms, le dessin de filets en SVG. Le plus fin pour la chorégraphie.","risque":"Pas open source. Interdit dans un outil visuel d'animation sans code concurrent de Webflow, et la licence peut changer. À éviter si Prestige Studio devient un éditeur d'animations pour clients ; sinon Motion suffit."},
-    {"rang":7,"nom":"Theatre.js","type":"éditeur de timeline pour 3D et DOM","licence":"Apache-2.0 (@theatre/core)","verifie":"npm","lien":"https://www.theatrejs.com/","interet":"Régler visuellement la caméra, l'ouverture des portes et leurs courbes d'accélération dans le navigateur, puis exporter en JSON. Résout directement le sujet « mouvement de caméra plus fluide ».","risque":"Licence compatible ; vérifier la licence de chaque paquet (studio vs core) à l'installation."},
-    {"rang":8,"nom":"Lottie (lottie-web, dotLottie) + animations LottieFiles","type":"animations vectorielles légères (étincelles, pétales, confettis)","licence":"MIT (runtimes) ; animations gratuites LottieFiles : Lottie Simple License, usage commercial autorisé","verifie":"npm + page LottieFiles « commercial use »","lien":"https://github.com/airbnb/lottie-web","interet":"Effets d'ambiance prêts à l'emploi, quelques Ko, parfaits en surimpression sur la carte.","risque":"Vérifier la licence animation par animation. Style parfois générique : à recolorer en noir/or/ivoire."},
-    {"rang":9,"nom":"Lenis + canvas-confetti + tsParticles","type":"défilement fluide, particules","licence":"MIT / ISC / MIT","verifie":"npm","lien":"https://github.com/darkroomengineering/lenis","interet":"Poussière d'or, pétales, défilement soyeux des pages de la carte. Petits, sans risque.","risque":"Garder la sobriété : Heavent évite le « générique »."},
-    {"rang":10,"nom":"juhonamnam/wedding-invitation (référence de structure)","type":"invitation mobile React + TypeScript + Vite","licence":"MIT (fichier LICENSE confirmé)","verifie":"fichier LICENSE brut","lien":"https://github.com/juhonamnam/wedding-invitation","interet":"Même pile que Heavent. Utile pour s'inspirer de l'architecture (galerie, RSVP, carte, musique), pas pour le visuel.","risque":"Photos et textes du couple d'origine : ne rien reprendre du contenu. Code MIT : conserver la mention de copyright si du code est copié."}
-  ],
-  "examinees_non_retenues": [
-    {"nom":"TheDanielOkpara/wedding-invitation","licence":"AUCUN fichier LICENSE","decision":"NON réutilisable (tous droits réservés par défaut). Inspiration d'idées uniquement (porte-enveloppe, rideaux, texte lettre par lettre).","lien":"https://github.com/TheDanielOkpara/wedding-invitation"},
-    {"nom":"thrinathpolanki/wedding-invitation-site","licence":"LICENSE MIT, mais le README annonce « Personal / Family Use » : contradiction","decision":"À ne pas utiliser : licence ambiguë, contient des photos personnelles d'un couple et une police (Candlescript.otf) de licence inconnue.","lien":"https://github.com/thrinathpolanki/wedding-invitation-site"},
-    {"nom":"ToxSam/open-source-3D-assets","licence":"Registre : CC0. Assets : CC0 (Polygonal Mind, 18 collections, 991 modèles GLB)","decision":"Licence parfaite, qualité inadaptée : style jeu vidéo low-poly. Réserve pour de petits accessoires (torches, vases, fleurs). Aucune porte ni arche de niveau premium.","lien":"https://github.com/ToxSam/open-source-3D-assets"},
-    {"nom":"Hidencod/tge-assets","licence":"CC0 (Kenney)","decision":"Licence parfaite, mais 1 883 modèles de jeu (voitures, plateformes, nature) : aucun intérêt pour un palais marocain.","lien":"https://github.com/Hidencod/tge-assets"},
-    {"nom":"glbkit-tools/awesome-3d-assets","licence":"Liste sous CC0 ; le fichier LICENSE brut est malformé (texte répété)","decision":"Utile seulement comme annuaire (Poly Haven, Kenney, outils glTF). Les ressources listées gardent leur licence propre. Pas de ressources en propre.","lien":"https://github.com/glbkit-tools/awesome-3d-assets"},
-    {"nom":"nirholas/assets-cli","licence":"Apache-2.0 (outil) ; assets three.ws : accessoires CC0, personnages et clips à licence propre","decision":"Outil pratique pour récupérer des GLB, mais le catalogue est orienté accessoires et personnages. Peu pertinent pour nous.","lien":"https://github.com/nirholas/assets-cli"}
-  ],
-  "non_trouve": "Aucune porte marocaine 3D sous CC0 de qualité palais n'a été trouvée dans la recherche (les modèles trouvés sont sur CGTrader/TurboSquid, payants ou à licence propre). Aucun motif de zellige sous licence libre vérifié : à créer en interne (nous avons déjà le générateur) ou à vérifier fichier par fichier sur Wikimedia Commons."
+ "genere_le": "2026-11-08",
+ "methode": "Licences lues sur les pages officielles, les fichiers LICENSE bruts (raw.githubusercontent.com) et le registre npm. Rien de téléchargé en masse. Aucun code tiers copié dans le dépôt Heavent.",
+ "avertissement": "Ce n'est pas un avis juridique. Un dépôt public sans licence n'est PAS réutilisable. Toujours revérifier la licence au moment de l'intégration.",
+ "retenues": [
+  {
+   "rang": 1,
+   "nom": "Motion (ex Framer Motion)",
+   "type": "animation web React",
+   "licence": "MIT",
+   "verifie": "npm + page GitHub",
+   "lien": "https://github.com/motiondivision/motion",
+   "interet": "Déjà dans Heavent (framer-motion 12). Ressorts, gestes, transitions de mise en page, défilement : pagination de carte, révélations, glissement du texte.",
+   "risque": "Aucun. Le paquet s'appelle désormais « motion » (import motion/react)."
+  },
+  {
+   "rang": 2,
+   "nom": "three.js + React Three Fiber + drei",
+   "type": "3D temps réel dans le navigateur",
+   "licence": "MIT (les trois)",
+   "verifie": "npm",
+   "lien": "https://github.com/pmndrs/react-three-fiber",
+   "interet": "Jouer le Riad Royal en temps réel dans l'invitation (portes qui s'ouvrent, travelling) au lieu d'une vidéo : plus net, plus léger, interactif.",
+   "risque": "Scène à optimiser pour iPhone ; nos matériaux Blender procéduraux ne s'exportent pas en glTF : il faut les « cuire » en textures."
+  },
+  {
+   "rang": 3,
+   "nom": "glTF-Transform + gltfpack (meshoptimizer)",
+   "type": "outils d'optimisation GLB",
+   "licence": "MIT",
+   "verifie": "npm",
+   "lien": "https://gltf-transform.dev/",
+   "interet": "Passer un modèle Blender (dizaines de Mo) à quelques Mo : simplification, compression Meshopt/Draco, textures KTX2. Indispensable pour le web mobile.",
+   "risque": "Aucun côté licence."
+  },
+  {
+   "rang": 4,
+   "nom": "Poly Haven",
+   "type": "HDRI, textures PBR, modèles",
+   "licence": "CC0 (usage commercial libre, attribution facultative)",
+   "verifie": "page de licence officielle",
+   "lien": "https://polyhaven.com/license",
+   "interet": "HDRI de lumière dorée pour l'éclairage, textures de plâtre, bois, métal. Remplace nos approximations procédurales par des matières photographiques.",
+   "risque": "Logos, rendus d'exemple et textes du site ne sont pas CC0. Le shell cloud ne peut pas y accéder : à télécharger depuis le Mac."
+  },
+  {
+   "rang": 5,
+   "nom": "ambientCG",
+   "type": "textures PBR (bois, plâtre, carrelage, métal)",
+   "licence": "CC0",
+   "verifie": "docs.ambientcg.com/license",
+   "lien": "https://docs.ambientcg.com/license",
+   "interet": "Textures prêtes pour cèdre, tadelakt, laiton, sols. Complète Poly Haven.",
+   "risque": "Aucun. Même remarque d'accès que Poly Haven."
+  },
+  {
+   "rang": 6,
+   "nom": "GSAP (tous les plugins)",
+   "type": "animation chronologique, SplitText, ScrollTrigger, MorphSVG",
+   "licence": "« Standard No Charge » (propriétaire, gratuite, usage commercial autorisé)",
+   "verifie": "gsap.com/community/standard-license + npm",
+   "lien": "https://gsap.com/community/standard-license/",
+   "interet": "Orchestrer l'enveloppe, le sceau, l'apparition lettre par lettre des noms, le dessin de filets en SVG. Le plus fin pour la chorégraphie.",
+   "risque": "Pas open source. Interdit dans un outil visuel d'animation sans code concurrent de Webflow, et la licence peut changer. À éviter si Prestige Studio devient un éditeur d'animations pour clients ; sinon Motion suffit."
+  },
+  {
+   "rang": 7,
+   "nom": "Theatre.js",
+   "type": "éditeur de timeline pour 3D et DOM",
+   "licence": "Apache-2.0 (@theatre/core)",
+   "verifie": "npm",
+   "lien": "https://www.theatrejs.com/",
+   "interet": "Régler visuellement la caméra, l'ouverture des portes et leurs courbes d'accélération dans le navigateur, puis exporter en JSON. Résout directement le sujet « mouvement de caméra plus fluide ».",
+   "risque": "Licence compatible ; vérifier la licence de chaque paquet (studio vs core) à l'installation."
+  },
+  {
+   "rang": 8,
+   "nom": "Lottie (lottie-web, dotLottie) + animations LottieFiles",
+   "type": "animations vectorielles légères (étincelles, pétales, confettis)",
+   "licence": "MIT (runtimes) ; animations gratuites LottieFiles : Lottie Simple License, usage commercial autorisé",
+   "verifie": "npm + page LottieFiles « commercial use »",
+   "lien": "https://github.com/airbnb/lottie-web",
+   "interet": "Effets d'ambiance prêts à l'emploi, quelques Ko, parfaits en surimpression sur la carte.",
+   "risque": "Vérifier la licence animation par animation. Style parfois générique : à recolorer en noir/or/ivoire."
+  },
+  {
+   "rang": 9,
+   "nom": "Lenis + canvas-confetti + tsParticles",
+   "type": "défilement fluide, particules",
+   "licence": "MIT / ISC / MIT",
+   "verifie": "npm",
+   "lien": "https://github.com/darkroomengineering/lenis",
+   "interet": "Poussière d'or, pétales, défilement soyeux des pages de la carte. Petits, sans risque.",
+   "risque": "Garder la sobriété : Heavent évite le « générique »."
+  },
+  {
+   "rang": 10,
+   "nom": "juhonamnam/wedding-invitation (référence de structure)",
+   "type": "invitation mobile React + TypeScript + Vite",
+   "licence": "MIT (fichier LICENSE confirmé)",
+   "verifie": "fichier LICENSE brut",
+   "lien": "https://github.com/juhonamnam/wedding-invitation",
+   "interet": "Même pile que Heavent. Utile pour s'inspirer de l'architecture (galerie, RSVP, carte, musique), pas pour le visuel.",
+   "risque": "Photos et textes du couple d'origine : ne rien reprendre du contenu. Code MIT : conserver la mention de copyright si du code est copié."
+  }
+ ],
+ "examinees_non_retenues": [
+  {
+   "nom": "TheDanielOkpara/wedding-invitation",
+   "licence": "AUCUN fichier LICENSE",
+   "decision": "NON réutilisable (tous droits réservés par défaut). Inspiration d'idées uniquement (porte-enveloppe, rideaux, texte lettre par lettre).",
+   "lien": "https://github.com/TheDanielOkpara/wedding-invitation"
+  },
+  {
+   "nom": "thrinathpolanki/wedding-invitation-site",
+   "licence": "LICENSE MIT, mais le README annonce « Personal / Family Use » : contradiction",
+   "decision": "À ne pas utiliser : licence ambiguë, contient des photos personnelles d'un couple et une police (Candlescript.otf) de licence inconnue.",
+   "lien": "https://github.com/thrinathpolanki/wedding-invitation-site"
+  },
+  {
+   "nom": "ToxSam/open-source-3D-assets",
+   "licence": "Registre : CC0. Assets : CC0 (Polygonal Mind, 18 collections, 991 modèles GLB)",
+   "decision": "Licence parfaite, qualité inadaptée : style jeu vidéo low-poly. Réserve pour de petits accessoires (torches, vases, fleurs). Aucune porte ni arche de niveau premium.",
+   "lien": "https://github.com/ToxSam/open-source-3D-assets"
+  },
+  {
+   "nom": "Hidencod/tge-assets",
+   "licence": "CC0 (Kenney)",
+   "decision": "Licence parfaite, mais 1 883 modèles de jeu (voitures, plateformes, nature) : aucun intérêt pour un palais marocain.",
+   "lien": "https://github.com/Hidencod/tge-assets"
+  },
+  {
+   "nom": "glbkit-tools/awesome-3d-assets",
+   "licence": "Liste sous CC0 ; le fichier LICENSE brut est malformé (texte répété)",
+   "decision": "Utile seulement comme annuaire (Poly Haven, Kenney, outils glTF). Les ressources listées gardent leur licence propre. Pas de ressources en propre.",
+   "lien": "https://github.com/glbkit-tools/awesome-3d-assets"
+  },
+  {
+   "nom": "nirholas/assets-cli",
+   "licence": "Apache-2.0 (outil) ; assets three.ws : accessoires CC0, personnages et clips à licence propre",
+   "decision": "Outil pratique pour récupérer des GLB, mais le catalogue est orienté accessoires et personnages. Peu pertinent pour nous.",
+   "lien": "https://github.com/nirholas/assets-cli"
+  }
+ ],
+ "non_trouve": "Aucune porte marocaine 3D sous CC0 de qualité palais n'a été trouvée dans la recherche (les modèles trouvés sont sur CGTrader/TurboSquid, payants ou à licence propre). Aucun motif de zellige sous licence libre vérifié : à créer en interne (nous avons déjà le générateur) ou à vérifier fichier par fichier sur Wikimedia Commons.",
+ "deuxieme_recherche": [
+  {
+   "nom": "TheBeachLab/islamic-geometry",
+   "licence": "MIT (LICENSE confirmé)",
+   "etoiles": 56,
+   "interet": "Génération de motifs géométriques islamiques : piste pour des zellige/rosaces plus riches et variés que nos motifs actuels. Langage et formats de sortie NON vérifiés : à inspecter avant toute décision.",
+   "lien": "https://github.com/TheBeachLab/islamic-geometry"
+  },
+  {
+   "nom": "mrofisr/islamic-wedding-invitation",
+   "licence": "Apache-2.0 (LICENSE confirmé ; GitHub l'affiche « other »)",
+   "etoiles": 77,
+   "interet": "Invitation islamique React + Vite + Tailwind + Motion + confettis : même pile que Heavent, utile pour la structure et les transitions. Visuel à ne pas reprendre. Dernier push mars 2025.",
+   "lien": "https://github.com/mrofisr/islamic-wedding-invitation"
+  },
+  {
+   "nom": "nguyenhuugiatri/iphone-wedding-invitation",
+   "licence": "Code MIT ; photos, musique et 2 composants React Bits : licences à part (CREDITS.md)",
+   "etoiles": 54,
+   "interet": "Idée de « scène » interactive avec Motion + GSAP. Sert d'exemple d'architecture, pas de visuel.",
+   "lien": "https://github.com/nguyenhuugiatri/iphone-wedding-invitation"
+  },
+  {
+   "nom": "dannycahyo/weddingly-builder",
+   "licence": "MIT (LICENSE confirmé)",
+   "etoiles": 17,
+   "interet": "Générateur de sites de mariage avec RSVP (Astro, React, Prisma). Référence pour le suivi des réponses ; Heavent a déjà son propre système.",
+   "lien": "https://github.com/dannycahyo/weddingly-builder"
+  },
+  {
+   "nom": "uyu423/react-wedding-card, lucianofedericopereira/my-wedding, programmerDH-github/wedding-invitation",
+   "licence": "MIT (LICENSE confirmés)",
+   "etoiles": null,
+   "interet": "Gabarits d'invitation en React. Mêmes réserves : code seulement, jamais les contenus (photos, textes).",
+   "lien": "https://github.com/uyu423/react-wedding-card"
+  }
+ ],
+ "deuxieme_recherche_ecartes_sans_licence": [
+  "mdgeorge4153/stars",
+  "gorenje/islamic_patterns",
+  "AwaisCodeBase/Walima_Card",
+  "hungdev/khan-wedding-invitation"
+ ]
 }

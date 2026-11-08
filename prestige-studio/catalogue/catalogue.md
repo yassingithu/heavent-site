@@ -48,3 +48,15 @@ Aucune porte marocaine 3D sous CC0 de qualité palais n'a été trouvée dans la
 ## Miniatures
 
 Dans `miniatures/` : 4 vignettes Polygonal Mind (CC0) et 2 captures d'exemples three.js (MIT), uniquement pour juger le niveau graphique.
+
+## Deuxième recherche (11 h 40)
+
+| Dépôt | Licence | Intérêt |
+|---|---|---|
+| [TheBeachLab/islamic-geometry](https://github.com/TheBeachLab/islamic-geometry) | MIT (LICENSE confirmé) | Génération de motifs géométriques islamiques : piste pour des zellige/rosaces plus riches et variés que nos motifs actuels. Langage et formats de sortie NON vérifiés : à inspecter avant toute décision. |
+| [mrofisr/islamic-wedding-invitation](https://github.com/mrofisr/islamic-wedding-invitation) | Apache-2.0 (LICENSE confirmé ; GitHub l'affiche « other ») | Invitation islamique React + Vite + Tailwind + Motion + confettis : même pile que Heavent, utile pour la structure et les transitions. Visuel à ne pas reprendre. Dernier push mars 2025. |
+| [nguyenhuugiatri/iphone-wedding-invitation](https://github.com/nguyenhuugiatri/iphone-wedding-invitation) | Code MIT ; photos, musique et 2 composants React Bits : licences à part (CREDITS.md) | Idée de « scène » interactive avec Motion + GSAP. Sert d'exemple d'architecture, pas de visuel. |
+| [dannycahyo/weddingly-builder](https://github.com/dannycahyo/weddingly-builder) | MIT (LICENSE confirmé) | Générateur de sites de mariage avec RSVP (Astro, React, Prisma). Référence pour le suivi des réponses ; Heavent a déjà son propre système. |
+| [uyu423/react-wedding-card, lucianofedericopereira/my-wedding, programmerDH-github/wedding-invitation](https://github.com/uyu423/react-wedding-card) | MIT (LICENSE confirmés) | Gabarits d'invitation en React. Mêmes réserves : code seulement, jamais les contenus (photos, textes). |
+
+**Sans fichier LICENSE, donc non réutilisables** : mdgeorge4153/stars, gorenje/islamic_patterns, AwaisCodeBase/Walima_Card, hungdev/khan-wedding-invitation.
