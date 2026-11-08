@@ -26,6 +26,8 @@ export const DUREE_MAX_S = 15;
 export async function controlerVideo(f: File): Promise<{ duree: number; affiche: Blob }> {
   if (!["video/mp4", "video/webm"].includes(f.type)) throw new Error("Format refusé : MP4 ou WebM uniquement.");
   if (f.size > TAILLE_MAX) throw new Error(`Fichier trop lourd (${(f.size / 1048576).toFixed(1)} Mo) : 4 Mo maximum. Compressez la vidéo (540 px de large suffit).`);
+  const tete = new TextDecoder("latin1").decode(new Uint8Array(await f.slice(0, 262144).arrayBuffer()));
+  if (/hvc1|hev1|av01/.test(tete)) throw new Error("Cette vidéo est en HEVC ou AV1 : exportez-la en MP4 H.264 pour qu'elle se lise sur tous les téléphones.");
   const url = URL.createObjectURL(f);
   try {
     const v = document.createElement("video");

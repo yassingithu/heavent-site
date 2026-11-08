@@ -199,7 +199,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const [son, setSon] = useState(false);
   const lancerMusique = () => {
     const u = reglages?.musique?.trim();
-    if (!u || !/^(https:\/\/|\/)/.test(u) || audioRef.current) return;
+    if (!u || !/^(https:\/\/|\/(?!\/))/.test(u) || audioRef.current) return;
     try { const a = new Audio(u); a.loop = true; a.volume = 0.6; audioRef.current = a; void a.play().then(() => setSon(true)).catch(() => undefined); } catch { /* sans musique */ }
   };
   useEffect(() => () => { audioRef.current?.pause(); audioRef.current = null; }, []);
@@ -234,6 +234,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     return () => window.clearTimeout(id);
   }, [phase, ouv.duree, ouv.video]);
   /* La carte écrite sur le film : l'image finale glisse et s'ajuste sur la carte (FLIP) pendant qu'elle s'estompe. */
+  useEffect(() => { if (phase === "ouverte" && pleinePage && !sansAnimation()) window.setTimeout(() => nomsRef.current?.focus({ preventScroll: true }), 50); }, [phase, pleinePage]);
   useLayoutEffect(() => {
     if (phase !== "ouverte" || !sortie || !ouv.carte) return;
     const carte = document.querySelector(".inv-carte-film"); const el = document.querySelector<HTMLElement>(".inv-film-sortie");
@@ -275,7 +276,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const lignes = nomsA.split(/\s+(?:et|and|و)\s+|\s*&\s*/i).map((x) => x.trim()).filter(Boolean);
 
   return (
-    <div className={`inv ${pleinePage ? "inv-page" : "inv-bloc"}`} style={style} dir={langue === "ar" ? "rtl" : "ltr"} data-phase={phase} data-testid="invitation">
+    <div className={`inv ${pleinePage ? "inv-page" : "inv-bloc"}`} style={style} dir={langue === "ar" ? "rtl" : "ltr"} lang={langue} data-phase={phase} data-testid="invitation">
       <div className="inv-particules" aria-hidden="true">{PARTICULES.map((q, i) => <span key={i} style={{ left: `${q.x}%`, width: q.s, height: q.s, animationDelay: `-${q.d}ms`, animationDuration: `${q.t}ms` }} />)}</div>
       <div className="inv-colonne">
       {haut}
@@ -316,7 +317,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           <div className="inv-ornement"><Ornement type={ornement} /></div>
           {invite && <p className="inv-petit">{t.cher} {inviteA},</p>}
           <p className="inv-petit">{invite ? t.invites : t.invite}</p>
-          <h1 ref={nomsRef} className="inv-noms" data-testid="rsvp-noms" aria-label={nomsA}>
+          <h1 ref={nomsRef} tabIndex={-1} className="inv-noms" data-testid="rsvp-noms" aria-label={nomsA}>
             {lignes.length === 2 ? (<><Lettres texte={lignes[0]} base={0} ar={langue === "ar"} /><span className="inv-et" aria-hidden="true">{langue === "ar" ? "و" : "&"}</span><Lettres texte={lignes[1]} base={lignes[0].length + 2} ar={langue === "ar"} /></>) : <Lettres texte={nomsA} base={0} ar={langue === "ar"} />}</h1>
           <svg className="inv-trait" viewBox="0 0 220 14" aria-hidden="true"><path pathLength="1" d="M4 8c30-9 58 6 92-1s58-6 78 0c14 4 28 3 42-2" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
           {dp && (
