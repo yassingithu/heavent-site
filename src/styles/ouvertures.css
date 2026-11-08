@@ -240,7 +240,7 @@
 .inv[data-phase] .inv-o-riad .inv-o-lueur { background: url("/ouvertures/riad-fond.webp") center / cover no-repeat; }
 
 /* Passer l'animation / revoir l'ouverture */
-.inv-passer { position: fixed; z-index: 40; right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom)); min-height: 44px; padding: 0 16px; border: 1px solid rgba(255, 255, 255, .55); border-radius: 999px; background: rgba(20, 16, 10, .7); color: #fff; font: 12px/1 "Jost", system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.inv-passer { position: fixed; z-index: 60; right: max(14px, env(safe-area-inset-right)); bottom: max(46px, calc(env(safe-area-inset-bottom) + 34px)); min-height: 44px; padding: 0 16px; border: 1px solid rgba(255, 255, 255, .55); border-radius: 999px; background: rgba(20, 16, 10, .7); color: #fff; font: 12px/1 "Jost", system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
 .inv-rejouer { display: block; margin: 18px auto 6px; min-height: 44px; padding: 0 14px; background: none; border: 0; color: var(--inv-sur-fond, #666); opacity: .75; font: 12px/1 "Jost", system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
 
 /* ───── Rose Impériale : deux battants de nacre découpés dans la couverture elle-même, cadre intérieur derrière ───── */
