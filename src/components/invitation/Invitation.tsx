@@ -310,12 +310,12 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       unitesCarte.push({ cle: `msg-${k}`, saut: mo.saut, rendre: () => <p className={classe(true)} dir="auto">{mo.texte}</p>,
         ...(ph.length > 1 ? {
           fusion: (rendus, debut) => <p className={classe(debut)} dir="auto">{rendus}</p>,
-          parties: ph.map((tx, j) => ({ cle: `msg-${k}-${j}`, rendre: (m: boolean) => (m ? <p className={classe(false)} dir="auto">{tx}</p> : <span>{tx}</span>) })),
+          parties: ph.map((tx, j) => ({ cle: `msg-${k}-${j}`, rendre: (m: boolean) => (m ? <p className={classe(j === 0)} dir="auto">{tx}</p> : <span>{tx}</span>) })),
         } : {}) });
     });
     if (!pleinePage && children) unitesCarte.push({ cle: "suite", rendre: () => <div className="inv-suite">{children}</div> });
   }
-  const repondreCarte = pleinePage && children ? <a className="inv-repondre" href="#inv-reponse" onClick={(e) => { e.preventDefault(); document.getElementById("inv-reponse")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>{t.repondre}</a> : undefined;
+  const repondreCarte = pleinePage && children ? <a className="inv-repondre" href="#inv-reponse" onClick={(e) => { e.preventDefault(); document.getElementById("inv-reponse")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>{t.repondreCourt}</a> : undefined;
 
   return (
     <div className={`inv ${pleinePage ? "inv-page" : "inv-bloc"}`} style={style} dir={langue === "ar" ? "rtl" : "ltr"} lang={langue} data-phase={phase} data-testid="invitation">

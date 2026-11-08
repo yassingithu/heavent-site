@@ -8,6 +8,7 @@ export default function ChampMessage({ valeur, onChange, rtl = false, placeholde
   const ref = useRef<HTMLTextAreaElement>(null);
   const inserer = () => {
     const el = ref.current; const pos = el?.selectionStart ?? valeur.length;
+    if (!valeur.slice(0, pos).trim()) return; // un saut tout au début ne ferait rien
     const avant = valeur.slice(0, pos).replace(/[ \t]*\n?$/, ""), apres = valeur.slice(el?.selectionEnd ?? pos).replace(/^\n?/, "");
     const suite = `${avant}${avant ? "\n" : ""}${SAUT_PAGE}\n${apres}`;
     if (suite.length > 1500) return;
@@ -19,10 +20,10 @@ export default function ChampMessage({ valeur, onChange, rtl = false, placeholde
     <div>
       <textarea ref={ref} dir={rtl ? "rtl" : undefined} rows={rows} maxLength={1500} className={className} aria-label={libelle} value={valeur} placeholder={placeholder} data-testid={testId} onChange={(e) => onChange(e.target.value)} />
       <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-[#6B6154]">
-        <button type="button" onClick={inserer} className="rounded-full border border-[#E3D6BA] px-3 min-h-11 text-[#2A2420] hover:bg-[#F7F1E3]" data-testid="inserer-saut-page">Insérer un saut de page ici</button>
-        <span>{pages > 0 ? `${pages} saut${pages > 1 ? "s" : ""} manuel${pages > 1 ? "s" : ""} · ` : ""}{valeur.length} / 1500</span>
+        <button type="button" onClick={inserer} disabled={valeur.length > 1490} className="rounded-full border border-[#E3D6BA] px-3 min-h-11 text-[#2A2420] hover:bg-[#F7F1E3]" data-testid="inserer-saut-page">Couper la page ici</button>
+        <span>{pages > 0 ? `${pages} coupure${pages > 1 ? "s" : ""} de page · ` : ""}{valeur.length} / 1500</span>
       </div>
-      <p className="mt-1 text-xs text-[#6B6154]">Le texte se répartit tout seul sur plusieurs pages s'il est long. Pour choisir où une page s'arrête, utilisez le bouton (une ligne « {SAUT_PAGE} »).</p>
+      <p className="mt-1 text-xs text-[#6B6154]">Un texte long se répartit tout seul sur plusieurs pages. Placez le curseur après un paragraphe puis « Couper la page ici » pour choisir où une page s'arrête (une ligne « {SAUT_PAGE} » apparaît : ne l'effacez pas à la main).</p>
     </div>
   );
 }

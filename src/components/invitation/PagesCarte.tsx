@@ -144,12 +144,14 @@ export default function PagesCarte({ unites, signature, ar, textes, repondre, ha
         </div>
       </div>
       {(multi || repondre) && (
-        <nav className="inv-pag-bas" aria-label={multi ? textes.pageSur.replace("{n}", String(courante + 1)).replace("{m}", String(total)) : undefined}>
+        <nav className="inv-pag-bas" data-rep={(repondre && multi && (courante === 0 || derniere)) || undefined} aria-label={multi ? textes.pageSur.replace("{n}", String(courante + 1)).replace("{m}", String(total)) : undefined}>
           {multi ? (
             <>
-              <button type="button" className="inv-pag-btn" onClick={precedent} style={{ visibility: courante === 0 ? "hidden" : "visible" }} aria-hidden={courante === 0} tabIndex={courante === 0 ? -1 : 0} aria-label={textes.precedent} data-testid="pagination-precedent">
-                <i className="inv-pag-chev" aria-hidden="true">‹</i><span>{textes.precedent}</span>
-              </button>
+              {courante === 0 && repondre ? <span className="inv-pag-fin">{repondre}</span> : (
+                <button type="button" className="inv-pag-btn" onClick={precedent} style={{ visibility: courante === 0 ? "hidden" : "visible" }} aria-hidden={courante === 0} tabIndex={courante === 0 ? -1 : 0} aria-label={textes.precedent} data-testid="pagination-precedent">
+                  <i className="inv-pag-chev" aria-hidden="true">‹</i><span>{textes.precedent}</span>
+                </button>
+              )}
               <span className="inv-pag-compte" aria-live="polite" data-testid="pagination-compte"><bdi>{courante + 1} / {total}</bdi></span>
               {derniere ? <span className="inv-pag-fin">{repondre}</span> : (
                 <button type="button" className="inv-pag-btn" onClick={suivant} aria-label={textes.suivant} data-testid="pagination-suivant"><span>{textes.suivant}</span><i className="inv-pag-chev" aria-hidden="true">›</i></button>

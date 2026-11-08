@@ -84,19 +84,19 @@ export const TEXTES = {
   fr: {
     gratter: "Grattez le cœur pour découvrir la date", decouvrir: "Découvrir", ouvrir: "Touchez pour ouvrir", ouvrirBouton: "Ouvrir l'invitation", suivant: "Suivant", precedent: "Précédent", pageSur: "Page {n} sur {m}", defilable: "Texte à faire défiler", passer: "Passer l'animation", rejouer: "Revoir l'ouverture", invite: "Ont la joie de vous convier à leur mariage", invites: "Vous êtes invité(e) au mariage de",
     cher: "Bonjour", a: "à", maps: "Voir le lieu sur Google Maps", locale: "fr-FR",
-    defiler: "Faites défiler", repondre: "Répondre maintenant", alliances: "Nous allons nous dire oui", compte: "Le grand jour approche", aujourdhui: "C'est aujourd'hui !", jours: "jours", heures: "heures", minutes: "minutes", secondes: "secondes",
+    defiler: "Faites défiler", repondre: "Répondre maintenant", repondreCourt: "Répondre", alliances: "Nous allons nous dire oui", compte: "Le grand jour approche", aujourdhui: "C'est aujourd'hui !", jours: "jours", heures: "heures", minutes: "minutes", secondes: "secondes",
     lieuTitre: "Le lieu", itineraire: "Itinéraire", programmeTitre: "Le programme", reponseTitre: "Votre réponse", avecVous: "Nous avons hâte de partager ce moment avec vous", pour: "Une invitation pour",
   },
   en: {
     gratter: "Scratch the heart to reveal the date", decouvrir: "Reveal", ouvrir: "Tap to open", ouvrirBouton: "Open the invitation", suivant: "Next", precedent: "Back", pageSur: "Page {n} of {m}", defilable: "Scrollable text", passer: "Skip the animation", rejouer: "Replay the opening", invite: "Joyfully invite you to their wedding", invites: "You are invited to the wedding of",
     cher: "Dear", a: "at", maps: "View the venue on Google Maps", locale: "en-GB",
-    defiler: "Scroll down", repondre: "Reply now", alliances: "We are about to say yes", compte: "The big day is coming", aujourdhui: "It's today!", jours: "days", heures: "hours", minutes: "minutes", secondes: "seconds",
+    defiler: "Scroll down", repondre: "Reply now", repondreCourt: "Reply", alliances: "We are about to say yes", compte: "The big day is coming", aujourdhui: "It's today!", jours: "days", heures: "hours", minutes: "minutes", secondes: "seconds",
     lieuTitre: "The venue", itineraire: "Directions", programmeTitre: "The programme", reponseTitre: "Your reply", avecVous: "We can't wait to share this moment with you", pour: "An invitation for",
   },
   ar: {
     gratter: "اخدشوا القلب لاكتشاف التاريخ", decouvrir: "اكتشفوا", ouvrir: "المسوا لفتح الدعوة", ouvrirBouton: "افتحوا الدعوة", suivant: "التالي", precedent: "السابق", pageSur: "الصفحة {n} من {m}", defilable: "نص قابل للتمرير", passer: "تخطّي العرض", rejouer: "إعادة الفتح", invite: "يتشرفان بدعوتكم لحضور حفل زفافهما", invites: "يسعدنا دعوتكم لحضور حفل زفاف",
     cher: "مرحباً", a: "في", maps: "عرض المكان على خرائط جوجل", locale: "ar-MA-u-nu-latn-ca-gregory",
-    defiler: "مرروا للأسفل", repondre: "الرد الآن", alliances: "سنقول نعم قريباً", compte: "اليوم الكبير يقترب", aujourdhui: "إنه اليوم!", jours: "أيام", heures: "ساعات", minutes: "دقائق", secondes: "ثوان",
+    defiler: "مرروا للأسفل", repondre: "الرد الآن", repondreCourt: "الرد", alliances: "سنقول نعم قريباً", compte: "اليوم الكبير يقترب", aujourdhui: "إنه اليوم!", jours: "أيام", heures: "ساعات", minutes: "دقائق", secondes: "ثوان",
     lieuTitre: "المكان", itineraire: "الاتجاهات", programmeTitre: "البرنامج", reponseTitre: "ردكم", avecVous: "نتطلع لمشاركتكم هذه اللحظة", pour: "دعوة إلى",
   },
 } as const;
