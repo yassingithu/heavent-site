@@ -273,7 +273,7 @@ def facade(M):
     W, H, E = LARGEUR_MUR, HAUTEUR_MUR, EPAISSEUR
     # Mur principal en plâtre : bloc percé de l'ouverture en fer à cheval
     mb = MB(); mb.box((0, E / 2, H / 2), (W, E, H))
-    mur = mb.objet("mur", M["platre"])
+    mur = mb.objet("mur", M["tadelakt"])
     cut = MB(); cut.prisme(arche(0.0, bas=-0.05), -0.2, E + 0.3)
     c = cut.objet("decoupe", None)
     booleen(mur, c)
@@ -494,7 +494,26 @@ def patio(M):
             mb.sph((x + random.uniform(-0.45, 0.45), y + random.uniform(-0.45, 0.45), 1.75 + random.uniform(-0.3, 0.4)), 0.055, seg=8)
         mb.objet(f"oranges_{x}_{y}", M["orange"])
 
+def ciel_crepuscule():
+    m, n, l, b = mat_nouveau("ciel_plan")
+    for x in list(n):
+        if x.name != "Material Output":
+            n.remove(x)
+    tc = n.new("ShaderNodeTexCoord"); sep = n.new("ShaderNodeSeparateXYZ"); l.new(tc.outputs["Object"], sep.inputs["Vector"])
+    rg = n.new("ShaderNodeMapRange"); rg.inputs["From Min"].default_value = 5.0; rg.inputs["From Max"].default_value = 26.0
+    l.new(sep.outputs["Z"], rg.inputs["Value"])
+    cr = n.new("ShaderNodeValToRGB")
+    cr.color_ramp.elements[0].position = 0.0; cr.color_ramp.elements[0].color = (0.95, 0.42, 0.14, 1)
+    e = cr.color_ramp.elements.new(0.35); e.color = (0.55, 0.20, 0.20, 1)
+    cr.color_ramp.elements[-1].position = 1.0; cr.color_ramp.elements[-1].color = (0.04, 0.05, 0.16, 1)
+    l.new(rg.outputs["Result"], cr.inputs["Fac"])
+    em = n.new("ShaderNodeEmission"); em.inputs["Strength"].default_value = 1.4
+    l.new(cr.outputs["Color"], em.inputs["Color"])
+    out = n["Material Output"]; l.new(em.outputs["Emission"], out.inputs["Surface"])
+    mb = MB(); mb.box((0, 34, 14), (140, 0.5, 60)); mb.objet("ciel_plan", m)
+
 def lumieres(ouverture):
+    ciel_crepuscule()
     def aire(nom, loc, cible, taille, puissance, couleur, forme="RECTANGLE"):
         d = bpy.data.lights.new(nom, "AREA"); d.shape = forme; d.size = taille; d.size_y = taille * (0.6 if forme == "RECTANGLE" else 1)
         d.energy = puissance; d.color = couleur
@@ -573,13 +592,14 @@ def reglages(qualite):
 def construire(ouverture):
     vider()
     M = {
-        "platre": mat_platre("platre", (0.80, 0.70, 0.55), 0.70, 0.38),
+        "platre": mat_platre("platre", (0.86, 0.76, 0.60), 0.68, 0.40),
+        "tadelakt": mat_platre("tadelakt", (0.60, 0.40, 0.23), 0.34, 0.18),
         "platre_clair": mat_platre("platre_clair", (0.86, 0.77, 0.62), 0.75, 0.25),
         "pierre": mat_pierre("pierre"),
         "pierre_sombre": mat_platre("pierre_sombre", (0.22, 0.19, 0.16), 0.38, 0.30),
         "cedre": mat_cedre("cedre"), "cedre_sombre": mat_cedre("cedre_sombre", True),
         "laiton": mat_laiton(),
-        "zellige_mur": mat_zellige("zellige_mur", echelle=3.2, plan="xz"),
+        "zellige_mur": mat_zellige("zellige_mur", echelle=4.6, plan="xz"),
         "zellige_col": mat_zellige("zellige_col", echelle=5.0, plan="xz"),
         "zellige_sol": mat_zellige("zellige_sol", echelle=2.0, plan="xy"),
         "emeraude": mat_emeraude(), "eau": mat_eau(), "feuille": mat_feuille(),
