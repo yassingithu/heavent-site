@@ -802,8 +802,18 @@ const Admin = () => {
       return;
     }
     setStaff((prev) => prev.map((x) => (x.id === staffId ? { ...x, statut_candidature: statut } : x)));
+    if (statut === "approuve") {
+      const { data, error: errMail } = await supabase.functions.invoke("candidature-approuvee", { body: { staffId } });
+      const msg = (data as any)?.error || errMail?.message;
+      toast(msg
+        ? { title: "Candidat approuvé, mais e-mail non envoyé", description: `${msg}. Repasse-le en attente puis en approuvé pour réessayer.`, variant: "destructive" }
+        : (data as any)?.dejaEnvoye
+          ? { title: "Candidat approuvé", description: "Il a déjà reçu l'e-mail d'approbation." }
+          : { title: "Candidat approuvé", description: "Un e-mail « candidature approuvée » vient de lui être envoyé." });
+      return;
+    }
     toast({
-      title: statut === "approuve" ? "Candidat approuvé" : statut === "refuse" ? "Candidat refusé" : "Remis en attente",
+      title: statut === "refuse" ? "Candidat refusé" : "Remis en attente",
       description: statut === "refuse" ? "Aucun message envoyé. Il n'apparaît plus dans le choix des équipes." : "Aucun message envoyé au candidat.",
     });
   };

@@ -723,6 +723,7 @@ export type Database = {
         Row: {
           taux_horaire: number
           statut_candidature: string
+          mail_approbation_le: string | null
           banni: boolean
           banni_le: string | null
           motif_bannissement: string | null
@@ -852,6 +853,8 @@ export type Database = {
           telephone?: string | null
           telephone_urgence?: string | null
           ville?: string | null
+          statut_candidature?: string
+          mail_approbation_le?: string | null
         }
         Relationships: []
       }
