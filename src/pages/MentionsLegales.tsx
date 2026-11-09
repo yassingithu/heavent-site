@@ -21,10 +21,10 @@ const MentionsLegales = () => {
     <section className="s-platre">
     <div className="s-section s-wrap s-prose s-legal" style={{ maxWidth: 860 }}>
       <Bloc titre="Éditeur du site">
-        <p><strong>{x("Heavent People Agency")}</strong> {x("— agence d'hôtes et hôtesses d'accueil, de staffing et d'organisation d'événements.")}</p>
+        <p><strong>{x("HEAVENT AGENCY SARL AU")}</strong> {x("(société à responsabilité limitée à associé unique, capital de 100 000 dirhams), exerçant sous le nom commercial Heavent People Agency — agence d'hôtes et hôtesses d'accueil, de staffing et d'organisation d'événements.")}</p>
         <p>{x("Siège : Rue Dakar, Imm. N°5, Apt N°1, Océan — Rabat, Maroc")}</p>
         <p>{x("RC 183001 (Tribunal de Rabat) · ICE 003617071000041")}</p>
-        <p>{x("Directrice de la publication : Imane CHAIGARI, CEO")}</p>
+        <p>{x("Directrice de la publication : Imane CHAIGARI, gérante")}</p>
         <p>{x("Téléphone : +212 6 10 93 96 55 · Email : i.chaigari@heaventagency.com")}</p>
       </Bloc>
       <Bloc titre="Hébergement">

@@ -87,7 +87,7 @@ function pageContrat(c: any, s: any, ev: Evenement, agence: InfosAgence | null, 
       <div class="nom">${esc(agence?.raison_sociale ?? "Heavent People Agency")}</div>
       ${adresse ? `<div>${esc(adresse)}</div>` : ""}
       <div>${[agence?.rc && `RC ${esc(agence.rc)}`, agence?.ice && `ICE ${esc(agence.ice)}`].filter(Boolean).join(" · ")}</div>
-      <div>Représentée par Mme Imane CHAIGARI, CEO — Heavent Agency SARL</div>
+      <div>Représentée par Mme Imane CHAIGARI, gérante — HEAVENT AGENCY SARL AU</div>
     </div>
     <div class="partie client">
       <div class="etiquette">Le / la salarié(e)</div>
