@@ -56,7 +56,7 @@ export default function RemarquesContrat({ contrat, staffId }: { contrat: any; s
         );
       })}
       {!ouvert ? (
-        <Button variant="ghost" size="sm" className="text-xs" onClick={() => setOuvert(true)}><MessageSquarePlus className="h-4 w-4 mr-1" /> Ajouter une remarque (heures en plus, frais…)</Button>
+        <Button variant="ghost" size="sm" className="h-auto min-h-11 max-w-full whitespace-normal text-left text-xs" onClick={() => setOuvert(true)}><MessageSquarePlus className="h-4 w-4 mr-1" /> Ajouter une remarque (heures en plus, frais…)</Button>
       ) : (
         <div className="rounded-md border p-3 space-y-2 text-sm">
           <div className="flex flex-wrap gap-1">

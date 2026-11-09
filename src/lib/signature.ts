@@ -47,9 +47,9 @@ export const dateHeureFr = (d: Date | string) =>
 
 /** Petit badge texte + couleurs pour les listes. */
 export const BADGE_SIGNATURE: Record<EtatSignature, { texte: string; classe: string }> = {
-  signe: { texte: "Signé ✓", classe: "bg-emerald-100 text-emerald-800" },
-  a_signer: { texte: "À signer", classe: "bg-amber-100 text-amber-800" },
-  en_retard: { texte: "À signer — en retard", classe: "bg-orange-100 text-orange-800" },
-  ferme: { texte: "Non signé — délai dépassé", classe: "bg-red-100 text-red-700" },
-  annule: { texte: "Annulé", classe: "bg-muted text-muted-foreground" },
+  signe: { texte: "Signé ✓", classe: "text-[#1F5A4C]" },
+  a_signer: { texte: "À signer", classe: "text-[#7A5F1F]" },
+  en_retard: { texte: "À signer — en retard", classe: "text-[#7A5F1F]" },
+  ferme: { texte: "Non signé — délai dépassé", classe: "text-[#9C4A2C]" },
+  annule: { texte: "Annulé", classe: "text-[#5A5146]" },
 };

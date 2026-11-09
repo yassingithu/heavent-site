@@ -68,7 +68,7 @@ export default function ContratsManuels() {
                     <div className="font-medium">
                       {c.staff?.prenom} {c.staff?.nom} <span className="text-muted-foreground font-normal">· {c.titre}</span>
                       {c.statut === "termine" && <Badge variant="secondary" className="ml-2">Terminé</Badge>}
-                      {(() => { const b = BADGE_SIGNATURE[etatSignature(c)]; return <span className={`ml-2 text-[11px] font-medium rounded-full px-2 py-0.5 ${b.classe}`}>{b.texte}</span>; })()}
+                      {(() => { const b = BADGE_SIGNATURE[etatSignature(c)]; return <span className={`ml-2 text-[11px] font-medium a-st ${b.classe}`}>{b.texte}</span>; })()}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {c.evenement ? `${c.evenement} · ` : ""}{dateFr(c.date_debut)}{c.date_fin && c.date_fin !== c.date_debut ? ` → ${dateFr(c.date_fin)}` : ""}

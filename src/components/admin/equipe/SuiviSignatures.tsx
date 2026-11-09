@@ -50,7 +50,7 @@ export default function SuiviSignatures() {
               <button key={f.id} onClick={() => setFiltre(f.id as EtatSignature)}
                 className={`rounded-md border p-2 text-left transition ${filtre === f.id ? "ring-2 ring-[#C8B560] border-[#C8B560]" : "hover:bg-muted/50"}`}>
                 <div className="text-2xl font-semibold">{compte(f.id as EtatSignature)}</div>
-                <span className={`text-[11px] font-medium rounded-full px-2 py-0.5 ${b.classe}`}>{f.texte}</span>
+                <span className={`text-[11px] font-medium a-st ${b.classe}`}>{f.texte}</span>
               </button>
             );
           })}

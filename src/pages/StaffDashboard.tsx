@@ -535,7 +535,7 @@ const StaffDashboard = () => {
                               <h3 className="font-semibold text-sm sm:text-base">{contrat.evenement || contrat.titre}</h3>
                               <p className="text-xs text-muted-foreground">{[contrat.titre, contrat.lieu, contrat.devis_numero].filter(Boolean).join(" · ")}</p>
                             </div>
-                            {(() => { const b = BADGE_SIGNATURE[etatSignature(contrat)]; return <span className={`text-xs font-medium rounded-full px-2.5 py-1 ${b.classe}`}>{b.texte}</span>; })()}
+                            {(() => { const b = BADGE_SIGNATURE[etatSignature(contrat)]; return <span className={`a-st text-xs font-medium ${b.classe}`}>{b.texte}</span>; })()}
                           </div>
                           <div className="space-y-1 text-sm">
                             {lignes.length > 0 ? (

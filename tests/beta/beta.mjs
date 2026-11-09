@@ -25,7 +25,7 @@ async function scenario(nom, fn) {
 }
 
 /** Ouvre une rubrique de l'admin : menu latéral sur ordinateur, « Plus » de la barre du bas sur téléphone. */
-async function clicOnglet(page, nom) {
+async function ouvrirRubrique(page, nom) {
   const t = page.getByRole("tab", { name: nom }).first();
   if (await t.waitFor({ state: "visible", timeout: 4000 }).then(() => true).catch(() => false)) return t.click();
   const plus = page.getByTestId("bas-plus");
@@ -36,6 +36,25 @@ async function clicOnglet(page, nom) {
     return page.getByRole("dialog").getByRole("button", { name: nomPlus }).first().click();
   }
   return t.click();
+}
+/** Anciens libellés d'onglets -> [rubrique du menu, sous-onglet] depuis le regroupement en 14 rubriques. */
+const REGROUPES = {
+  "Demandes entreprise": [/Demandes$/, "Entreprise"], "Demandes événement": [/Demandes$/, "Événement"],
+  "Devis envoyés": [/Demandes$/, "Réponses envoyées"], "Envoyer un devis": [/Devis$/, "Réponse rapide"],
+  "Disponibilités": [/Personnel$/, "Disponibilités"], "Prestataires": [/Prestataires et lieux$/, "Prestataires"],
+  "Salles & palais": [/Prestataires et lieux$/, "Salles & palais"], "Instagram": [/Publications$/, "Instagram"],
+  "Newsletter": [/Publications$/, "Newsletter"], "Invitations digitales": [/Publications$/, "Invitations digitales"],
+  "Démos agences": [/Heavent Studio$/, null],
+};
+async function clicOnglet(page, nom) {
+  const cle = nom instanceof RegExp ? nom.source.replace(/^\^/, "").replace(/\$$/, "") : nom;
+  const reg = REGROUPES[cle];
+  if (!reg) return ouvrirRubrique(page, nom);
+  await ouvrirRubrique(page, reg[0]);
+  if (!reg[1]) return;
+  const sous = page.getByTestId("sous-onglets").getByRole("tab", { name: new RegExp("^" + reg[1].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(\\s*\\(\\d+\\))?$") });
+  await sous.waitFor({ state: "visible", timeout: 5000 });
+  return sous.click();
 }
 const toasts = async (page) => (await page.locator("li[data-state]").allInnerTexts()).join(" | ");
 
@@ -262,8 +281,8 @@ await scenario("Crew : signer contrat + conditions (contresignés par l'employeu
   await connecter(page, BASE, crew.email, "/staff-dashboard");
   verifier(await page.getByText("À signer — en retard").count(), "le contrat en retard (encore signable) n'est pas signalé");
   verifier(await page.getByText("Non signé — délai dépassé").count(), "le contrat d'un mois passé n'est pas fermé");
-  verifier(await page.getByRole("button", { name: /Lire et signer/ }).count() === 2, "il faut 2 contrats signables (à temps + en retard)");
-  await page.getByRole("button", { name: /Lire et signer/ }).first().click(); await page.waitForTimeout(1000);
+  verifier(await page.getByRole("button", { name: /Signer mon contrat/ }).count() === 2, "il faut 2 contrats signables (à temps + en retard)");
+  await page.getByRole("button", { name: /Signer mon contrat/ }).first().click(); await page.waitForTimeout(1000);
   await page.getByTestId("conditions-mission").locator("summary").click(); await page.waitForTimeout(300);
   verifier((await page.getByTestId("conditions-mission").innerText()).includes("Confidentialité"), "les conditions ne sont pas lisibles avant de signer");
   await page.screenshot({ path: `${CAPTURES}/3-signature-fenetre.png` });
@@ -934,10 +953,13 @@ await scenario("Cohérence : devis signé/facturé archivable (pas supprimable),
   // Supprimer le brouillon
   await ligne("Brouillon Test").getByTestId("supprimer-devis").click(); await page.waitForTimeout(800);
   verifier(!base.devis.some((d) => d.id === "dvB"), "le brouillon n'est pas supprimé");
-  // Crew avec fiche de paie : bouton supprimer désactivé
+  // Crew avec fiche de paie : la suppression ne détruit pas contrats ni fiches de paie (obligation légale), elle l'annonce avant
   await clicOnglet(page, /Personnel$/); await page.waitForTimeout(1000);
-  const btn = page.locator("tr", { hasText: s1.nom }).locator("button[title*='Contrats signés']");
-  verifier(await btn.count() && await btn.first().isDisabled(), "on peut encore supprimer un crew qui a des fiches de paie");
+  await page.locator("tr", { hasText: s1.nom }).getByRole("button", { name: /Supprimer/ }).first().click(); await page.waitForTimeout(500);
+  const fenetre = await page.getByRole("alertdialog").innerText();
+  verifier(/Conservés/.test(fenetre) && /fiches de paie/.test(fenetre) && /Effacer les données/.test(fenetre), "la suppression d'un crew avec fiches de paie n'annonce pas ce qui est conservé");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(300);
+  verifier(base.staff.some((x) => x.id === s1.id) && base.fiches_paie.length > 0, "le crew ou ses fiches de paie ont disparu sans confirmation");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
 
@@ -1172,7 +1194,7 @@ await scenario("Espace de Nawar : lettre de papa, mot du jour signé Papa, Insta
   const carte = await page.getByTestId("carte-mot-papa").innerText();
   verifier(/Nawar/.test(carte) && /frites/.test(carte) && /Papa/.test(carte), "mot du jour manquant : " + carte);
   verifier(!(await page.getByRole("tab", { name: /Devis|Personnel|Paie|Contrats/ }).count()), "Nawar ne doit pas voir les onglets de l'agence");
-  await clicOnglet(page, /Instagram/); await page.waitForTimeout(800);
+  await ouvrirRubrique(page, /Instagram/); await page.waitForTimeout(800);
   verifier(await page.getByTestId("carte-post").count() === 1 && !(await page.getByTestId("cle-pixabay").count()) && !(await page.getByTestId("jeton-instagram").count()), "onglet Instagram incorrect pour Nawar");
   verifier(!(await page.getByTestId("choix-compte").count()), "la famille ne doit voir que le compte Nawar");
   verifier(await page.getByTestId("pastille-retard").count() === 1 && await page.getByTestId("bandeau-retard").count() === 1, "le post en retard n'est pas signalé");
@@ -1288,6 +1310,7 @@ await scenario("Instagram : intercaler une publication de fête oubliée", async
   base.posts_instagram = [mk("a", "2026-11-05T19:30:00.000Z", "publie"), mk("b", "2026-11-06T10:30:00.000Z"), mk("c", "2026-11-06T19:30:00.000Z"), mk("d", "2026-11-07T10:30:00.000Z"),
     { ...mk("h", "2026-11-06T10:30:00.000Z"), compte: "heavent" }];
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
+  await ctx.clock.setFixedTime(new Date("2026-11-03T10:00:00Z")); // la Marche verte (6/11) doit être « à venir » quel que soit le jour du test
   await connecter(page, BASE, ADMIN, "/admin");
   await clicOnglet(page, /Instagram$/); await page.waitForTimeout(1000);
   await page.getByTestId("compte-nawar").click(); await page.waitForTimeout(1000);
@@ -1452,17 +1475,18 @@ await scenario("Heavent Studio : démo concession automobile avec logo, site vit
 
   const p = await contexte(navigateur, base, "prospect@atlas.test");
   await p.page.goto(BASE + "/studio/demo/" + demo.jeton); await p.page.waitForTimeout(3500);
+  await clicOnglet(p.page, /Demandes$/);
   const texte = await p.page.locator("body").innerText();
   verifier(/Demandes clients/.test(texte) && /Flottes/.test(texte) && !/Instagram/.test(await p.page.locator("[role=tablist]").first().innerText()), "le menu n'est pas adapté à la concession");
   verifier(await p.page.getByTestId("logo-demo").count(), "le logo n'apparaît pas dans l'administration de la démo");
-  await clicOnglet(p.page, /Demandes clients$/); await p.page.waitForTimeout(800);
+  await clicOnglet(p.page, /Demandes$/); await clicOnglet(p.page, /Demandes clients(\s*\(\d+\))?$/); await p.page.waitForTimeout(800);
   verifier(/Essai routier/.test(await p.page.locator("body").innerText()), "les demandes ne sont pas celles d'une concession");
   // Le site vitrine : une demande envoyée arrive dans l'administration
   await p.page.getByTestId("vue-site").click(); await p.page.waitForTimeout(1500);
   verifier(/Votre prochaine voiture vous attend/.test(await p.page.locator("body").innerText()), "le site vitrine n'est pas celui d'une concession");
   await p.page.getByTestId("demo-site-nom").fill("Client Test"); await p.page.getByTestId("demo-site-envoyer").click(); await p.page.waitForTimeout(800);
   await p.page.getByTestId("demo-voir-admin").click(); await p.page.waitForTimeout(2500);
-  await clicOnglet(p.page, /Demandes clients$/); await p.page.waitForTimeout(800);
+  await clicOnglet(p.page, /Demandes$/); await clicOnglet(p.page, /Demandes clients(\s*\(\d+\))?$/); await p.page.waitForTimeout(800);
   verifier(/Client/.test(await p.page.locator("body").innerText()), "la demande du site n'arrive pas dans l'administration");
   notes.push("métier « Concession automobile » + logo : menu, demandes et site adaptés ; une demande envoyée sur le site arrive dans l'admin");
   // L'administrateur supprime la démo : son lien ne fonctionne plus

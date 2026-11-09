@@ -55,7 +55,7 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
                     <button key={valeur} onClick={() => choisir(valeur)} data-testid={`plus-${valeur}`}
                       className={`relative flex items-center gap-2.5 border px-3 min-h-12 text-left text-[13px] transition-colors ${(fils?.some((f) => f.valeur === onglet) || onglet === valeur) ? "bg-[#141414] text-[#E4D49A] border-[#141414]" : "bg-[#FAF6EC] text-[#141414] border-[#DCCDAA] active:bg-[#EBE2CF]"}`}>
                       <Icone className="h-4 w-4 shrink-0" /><span className="leading-tight">{libelle}</span>
-                      {!!badge && <span className="ml-auto font-serif text-[17px] leading-none text-[#9C4A2C] tabular-nums">{badge}</span>}
+                      {!!badge && <span className={`ml-auto font-serif text-[17px] leading-none tabular-nums ${(fils?.some((f) => f.valeur === onglet) || onglet === valeur) ? "text-[#E4D49A]" : "text-[#9C4A2C]"}`}>{badge}</span>}
                     </button>
                   ))}
                 </div>

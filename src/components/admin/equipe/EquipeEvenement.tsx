@@ -374,7 +374,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
               {equipe.map(({ staff_id, lignes }) => (
                 <div key={staff_id} className="border rounded-md p-3 space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="font-medium">{nomStaff(staff_id)} {badgeNote(notes[staff_id])} {signatures[staff_id] && (() => { const c = signatures[staff_id]; const b = BADGE_SIGNATURE[etatSignature(c)]; return <span title={c.signe_le ? `Signé le ${dateHeureFr(c.signe_le)}` : undefined} className={`ml-1 text-[11px] font-medium rounded-full px-2 py-0.5 ${b.classe}`}>{b.texte}</span>; })()}</div>
+                    <div className="font-medium">{nomStaff(staff_id)} {badgeNote(notes[staff_id])} {signatures[staff_id] && (() => { const c = signatures[staff_id]; const b = BADGE_SIGNATURE[etatSignature(c)]; return <span title={c.signe_le ? `Signé le ${dateHeureFr(c.signe_le)}` : undefined} className={`ml-1 text-[11px] font-medium a-st ${b.classe}`}>{b.texte}</span>; })()}</div>
                     <Button size="sm" variant="ghost" disabled={enCours} onClick={() => telechargerUn(staff_id)}><FileSignature className="h-4 w-4 mr-1" /> Contrat</Button>
                   </div>
                   <div className="flex flex-wrap gap-1">

@@ -64,7 +64,7 @@ export default function ContratsEvenements() {
             <div className="divide-y">
               {liste.map((c) => (
                 <div key={c.id} className="flex items-center justify-between gap-2 py-1.5 text-sm">
-                  <div>{c.staff?.prenom} {c.staff?.nom} {(() => { const b = BADGE_SIGNATURE[etatSignature(c)]; return <span className={`text-[11px] font-medium rounded-full px-2 py-0.5 ${b.classe}`}>{b.texte}</span>; })()} <span className="text-muted-foreground">· {(c.dates ?? []).length} date(s) · {dateFr(c.date_debut)}{c.date_fin && c.date_fin !== c.date_debut ? ` → ${dateFr(c.date_fin)}` : ""} · {c.total_heures} h · {mad(c.salaire_brut)}</span>
+                  <div>{c.staff?.prenom} {c.staff?.nom} {(() => { const b = BADGE_SIGNATURE[etatSignature(c)]; return <span className={`text-[11px] font-medium a-st ${b.classe}`}>{b.texte}</span>; })()} <span className="text-muted-foreground">· {(c.dates ?? []).length} date(s) · {dateFr(c.date_debut)}{c.date_fin && c.date_fin !== c.date_debut ? ` → ${dateFr(c.date_fin)}` : ""} · {c.total_heures} h · {mad(c.salaire_brut)}</span>
                     {c.signe_le && <div className="text-xs text-[#1F5A4C]">Signé le {dateHeureFr(c.signe_le)}{c.signature_nom ? ` par ${c.signature_nom}` : ""} · contresigné par l'employeur</div>}</div>
                   <div className="flex gap-1 shrink-0">
                     <Button size="icon" variant="ghost" title="Modifier les dates, horaires et heures (dans le devis)" onClick={() => ouvrirDevis(c.devis_id)}><Pencil className="h-4 w-4" /></Button>

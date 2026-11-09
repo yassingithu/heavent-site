@@ -1068,16 +1068,16 @@ const Admin = () => {
     );
   }
 
-  const masque = (v: string) => estDemo() && (ongletMasque(v) || v === "depenses");
+  const masque = (v: string) => estDemo() && (ongletMasque(v) || v === "depenses" || v === "studio");
   const groupesVisibles = MENU_ADMIN
-    .filter((g) => !(estDemo() && (g.titre === "Heavent Studio" || g.items.every(([v]) => masque(v)))))
+    .filter((g) => !g.items.every(([v]) => masque(v)))
     .map((g) => ({
       titre: g.titre,
       items: g.items.filter(([v]) => !masque(v)).map(([valeur, libelleBase, Icone, fils]) => {
-        const sousOnglets = (fils ?? []).filter(([v]) => !masque(v)).map(([v, l]) => ({ valeur: v, libelle: l }));
+        const sousOnglets = (fils ?? []).filter(([v]) => !masque(v)).map(([v, l]) => ({ valeur: v, libelle: estDemo() ? libelleOnglet(v, l) : l }));
         return {
           valeur, Icone,
-          libelle: estDemo() ? libelleOnglet(valeur, libelleBase) : libelleBase,
+          libelle: estDemo() && !fils ? libelleOnglet(valeur, libelleBase) : libelleBase,
           fils: sousOnglets.length > 1 ? sousOnglets : undefined,
           badge: valeur === "entreprise" ? nouvellesEntreprise + nouvellesMariage : 0,
         };
