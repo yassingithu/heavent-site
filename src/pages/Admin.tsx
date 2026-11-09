@@ -792,8 +792,11 @@ const Admin = () => {
   const [dossierASupprimer, setDossierASupprimer] = useState<{ id: string; nom: string } | null>(null);
   const [suppressionEnCours, setSuppressionEnCours] = useState(false);
 
+  const [statutEnCours, setStatutEnCours] = useState<string | null>(null);
   const changerStatutCandidat = async (staffId: string, statut: string) => {
-    const { error } = await supabase.from('staff').update({ statut_candidature: statut } as any).eq('id', staffId);
+    setStatutEnCours(staffId);
+    const { error } = await supabase.from('staff').update({ statut_candidature: statut }).eq('id', staffId);
+    setStatutEnCours(null);
     if (error) {
       toast({ title: "Statut non enregistré", description: error.message, variant: "destructive" });
       return;
@@ -818,8 +821,8 @@ const Admin = () => {
           ? `${dossierASupprimer.nom} : fiche, photos, pièce d'identité et compte supprimés.`
           : `${dossierASupprimer.nom} : photos, pièce d'identité, contact d'urgence et compte supprimés. Contrats et fiches de paie conservés.`,
       });
+      if ((data as any).mode === "complet") setStaff((prev) => prev.filter((x) => x.id !== dossierASupprimer.id));
       setDossierASupprimer(null);
-      fetchData();
     } catch (error) {
       toast({ title: "Suppression impossible", description: (error as any)?.message || "Réessaie dans un instant", variant: "destructive" });
     } finally {
@@ -1547,7 +1550,7 @@ const Admin = () => {
                          </Badge>
                        </TableCell>
                        <TableCell>
-                         <Select value={person.statut_candidature || "en_attente"} onValueChange={(v) => changerStatutCandidat(person.id, v)}>
+                         <Select disabled={statutEnCours === person.id} value={person.statut_candidature || "en_attente"} onValueChange={(v) => changerStatutCandidat(person.id, v)}>
                            <SelectTrigger className={`h-9 w-[140px] rounded-none gap-2 before:h-2 before:w-2 before:shrink-0 before:rotate-45 before:border before:border-current ${person.statut_candidature === "approuve" ? "border-[#2f6b3d] bg-[#2f6b3d]/10 text-[#2f6b3d] before:bg-current" : person.statut_candidature === "refuse" ? "border-[#9b3b2f] bg-[#9b3b2f]/10 text-[#9b3b2f] before:bg-current" : "border-[#A8933F] bg-[#FBF6E9] text-[#8C6D22]"}`}><SelectValue /></SelectTrigger>
                            <SelectContent>
                              <SelectItem value="en_attente" className="text-[#8C6D22]">En attente</SelectItem>
@@ -1617,7 +1620,7 @@ const Admin = () => {
                       <>
                         <p>Cette personne a des contrats signés ou des fiches de paie, que la loi oblige à conserver.</p>
                         <div className="border-t border-[#EADFC8] pt-2"><p><strong>Supprimés :</strong> photos, copie de la pièce d'identité, contact d'urgence, compte de connexion.</p></div>
-                        <div className="border-t border-[#EADFC8] pt-2"><p><strong>Conservés :</strong> sa fiche, ses contrats, ses fiches de paie.</p></div>
+                        <div className="border-t border-[#EADFC8] pt-2"><p><strong>Conservés :</strong> sa fiche (identité, numéro de pièce, adresse, IBAN, nécessaires aux contrats et à la paie), ses contrats, ses fiches de paie.</p></div>
                       </>
                     ) : (
                       <>

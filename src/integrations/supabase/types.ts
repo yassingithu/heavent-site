@@ -722,6 +722,7 @@ export type Database = {
       staff: {
         Row: {
           taux_horaire: number
+          statut_candidature: string
           banni: boolean
           banni_le: string | null
           motif_bannissement: string | null
