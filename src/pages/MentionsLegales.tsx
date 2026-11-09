@@ -35,6 +35,7 @@ const MentionsLegales = () => {
       </Bloc>
       <Bloc titre="Données personnelles">
         <p>{x("Les informations transmises via les formulaires (demandes de devis, inscription du personnel) sont traitées conformément à la loi marocaine n° 09-08 relative à la protection des personnes physiques à l'égard du traitement des données à caractère personnel. Vous disposez d'un droit d'accès, de rectification et d'opposition en écrivant à i.chaigari@heaventagency.com.")}</p>
+        <p>{x("Pour l'inscription des hôtes et hôtesses, nous collectons votre identité, vos coordonnées, votre pièce d'identité (numéro et copie), vos photos, votre apparence et vos tailles de tenue, vos compétences et votre expérience, vos disponibilités, un contact d'urgence et, si vous le souhaitez, votre IBAN. Ces données servent uniquement à étudier votre candidature, établir votre contrat, vous payer et assurer votre sécurité pendant les missions. Vous pouvez demander leur suppression à tout moment à la même adresse.")}</p>
         <p>{x("Détails dans notre")} <a href="/politique-confidentialite">{x("politique de confidentialité")}</a>.</p>
       </Bloc>
     </div>

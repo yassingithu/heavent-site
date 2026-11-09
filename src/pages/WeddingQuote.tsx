@@ -412,7 +412,7 @@ const WeddingQuote = () => {
                     <a href="/politique-confidentialite" className="text-primary hover:underline ml-1">
                       {x("politique de confidentialité")}
                     </a>{" "}
-                    {x("et au RGPD. Ces données seront utilisées uniquement pour traiter ma demande de devis événement.")}
+                    {x("et à la loi marocaine n° 09-08. Ces données seront utilisées uniquement pour traiter ma demande de devis événement.")}
                   </Label>
                 </div>
                 {errors.rgpdConsent && (

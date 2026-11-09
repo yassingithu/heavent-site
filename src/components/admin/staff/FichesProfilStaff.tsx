@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Download, Eye, FileUser, Pencil, Search } from "lucide-react";
 import EditionStaff from "./EditionStaff";
-import { COULEURS, dateFr, enDataUrl, enteteDoc, esc, logo, nomFichier, photoUrl, piedAgence, telechargerPdf, InfosAgence } from "@/lib/pdf";
+import { COULEURS, dateFr, enDataUrl, enteteDoc, esc, logo, nomFichier, photoCrewUrl, piedAgence, telechargerPdf, InfosAgence } from "@/lib/pdf";
 import { aujourdhuiMaroc } from "@/lib/dateMaroc";
 
 type StaffComplet = Record<string, any> & { id: string; nom: string; prenom: string; email: string };
@@ -17,6 +17,13 @@ const CHAMPS_PROFIL: [string, string][] = [
   ["age", "Âge"], ["genre", "Genre"], ["ville", "Ville"], ["telephone", "Téléphone"], ["email", "Email"],
   ["nationalite", "Nationalité"], ["langues", "Langues"], ["niveau_etudes", "Études"], ["permis", "Permis"],
 ];
+/** Photo d'un candidat : lue par lien temporaire dans l'espace privé. */
+function PhotoCrew({ fichier, alt, className }: { fichier: string; alt: string; className?: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => { let actif = true; photoCrewUrl(fichier).then((u) => { if (actif) setUrl(u); }); return () => { actif = false; }; }, [fichier]);
+  return url ? <img src={url} alt={alt} className={className} /> : <div className={className} />;
+}
+
 const CHAMPS_TAILLES: [string, string][] = [
   ["taille", "Taille (cm)"], ["taille_haut", "Haut"], ["taille_pantalon", "Pantalon"], ["taille_confection", "Confection"],
   ["pointure", "Pointure"], ["couleur_cheveux", "Cheveux"], ["couleur_yeux", "Yeux"],
@@ -40,7 +47,7 @@ const cssFiche = `
 `;
 
 async function pageProfil(s: StaffComplet, logoSrc: string, agence: InfosAgence | null) {
-  const [photo, pleinPied] = await Promise.all([enDataUrl(photoUrl(s.photo)), enDataUrl(photoUrl(s.photo_plein_pied))]);
+  const [photo, pleinPied] = await Promise.all([photoCrewUrl(s.photo).then(enDataUrl), photoCrewUrl(s.photo_plein_pied).then(enDataUrl)]);
   const cases = (champs: [string, string][]) =>
     champs.filter(([k]) => valeur(s, k) !== "").map(([k, l]) => `<div class="case"><div class="etiquette">${l}</div><div class="v">${esc(valeur(s, k))}</div></div>`).join("");
   return `<div class="doc-heavent">
@@ -100,7 +107,7 @@ const LIGNES_CLIENT: [string, string][] = [
 
 /** Fiche à montrer aux clients : photo entière en vedette, prénom, âge, taille et mensurations. Ni contact, ni bio, ni données administratives (pied de page sans RC/ICE/IF). */
 async function pageClient(s: StaffComplet, logoSrc: string, agence: InfosAgence | null) {
-  const [photo, pleinPied] = await Promise.all([enDataUrl(photoUrl(s.photo)), enDataUrl(photoUrl(s.photo_plein_pied))]);
+  const [photo, pleinPied] = await Promise.all([photoCrewUrl(s.photo).then(enDataUrl), photoCrewUrl(s.photo_plein_pied).then(enDataUrl)]);
   const lignes = LIGNES_CLIENT.filter(([k]) => valeur(s, k) !== "")
     .map(([k, l]) => `<div class="cl-ligne"><span class="e">${l}</span><span class="v">${esc(valeur(s, k))}</span></div>`).join("");
   const pied = agence && { raison_sociale: agence.raison_sociale, ville: agence.ville, telephone: agence.telephone, email: agence.email };
@@ -251,8 +258,8 @@ export default function FichesProfilStaff() {
               <DialogHeader><DialogTitle>{consulte.prenom} {consulte.nom}</DialogTitle></DialogHeader>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex sm:flex-col gap-2 sm:w-44 flex-none">
-                  {consulte.photo ? <img src={photoUrl(consulte.photo)} alt={`Portrait de ${consulte.prenom}`} className="w-1/2 sm:w-44 aspect-[3/4] object-cover rounded-md border" /> : <div className="w-1/2 sm:w-44 aspect-[3/4] grid place-items-center rounded-md border border-dashed text-xs text-muted-foreground">Pas de photo</div>}
-                  {consulte.photo_plein_pied && <img src={photoUrl(consulte.photo_plein_pied)} alt="Photo en pied" className="w-1/2 sm:w-44 aspect-[3/4] object-cover rounded-md border" />}
+                  {consulte.photo ? <PhotoCrew fichier={consulte.photo} alt={`Portrait de ${consulte.prenom}`} className="w-1/2 sm:w-44 aspect-[3/4] object-cover rounded-md border" /> : <div className="w-1/2 sm:w-44 aspect-[3/4] grid place-items-center rounded-md border border-dashed text-xs text-muted-foreground">Pas de photo</div>}
+                  {consulte.photo_plein_pied && <PhotoCrew fichier={consulte.photo_plein_pied} alt="Photo en pied" className="w-1/2 sm:w-44 aspect-[3/4] object-cover rounded-md border" />}
                 </div>
                 <div className="flex-1 min-w-0 space-y-3 text-sm">
                   {[["Profil", CHAMPS_PROFIL], ["Mensurations", CHAMPS_TAILLES]].map(([titre, champs]) => (

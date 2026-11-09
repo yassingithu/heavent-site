@@ -61,7 +61,7 @@ const formSchema = z.object({
   photoPortrait: z.string().optional(),
   photoPleinPied: z.string().optional(),
   carteIdentite: z.string().optional(),
-  rgpdConsent: z.boolean().refine(val => val === true, "Vous devez accepter les conditions RGPD"),
+  rgpdConsent: z.boolean().refine(val => val === true, "Vous devez accepter le traitement de vos données personnelles"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
   path: ["confirmPassword"],
@@ -256,7 +256,7 @@ const StaffRegistration = () => {
       // Validation spéciale pour rgpdConsent
       if (field === 'rgpdConsent') {
         if (value !== true) {
-          missingFields.push('conditions RGPD');
+          missingFields.push('consentement données');
         }
         continue;
       }
@@ -956,13 +956,13 @@ const StaffRegistration = () => {
                     <div className="grid gap-4">
                       <FileUpload
                         label={x("Photo portrait")}
-                        bucket="photos"
+                        bucket="photos-crew"
                         onFileUploaded={(fileName) => setValue('photoPortrait', fileName)}
                         uploadedFile={watch('photoPortrait')}
                       />
                       <FileUpload
                         label={x("Photo plein pied")}
-                        bucket="photos"
+                        bucket="photos-crew"
                         onFileUploaded={(fileName) => setValue('photoPleinPied', fileName)}
                         uploadedFile={watch('photoPleinPied')}
                       />
@@ -1014,7 +1014,7 @@ const StaffRegistration = () => {
                         <p className="text-sm text-destructive mt-1">{x(String(errors.password.message ?? ""))}</p>
                       )}
                       <p className="text-xs text-muted-foreground mt-1">
-                        {x("Minimum 6 caractères")}
+                        {x("Minimum 8 caractères")}
                       </p>
                     </div>
                     
@@ -1044,8 +1044,8 @@ const StaffRegistration = () => {
                       {x("J'accepte que mes données personnelles soient traitées conformément à la")} 
                       <a href="/politique-confidentialite" className="text-primary hover:underline ml-1">
                         {x("politique de confidentialité")}
-                      </a> 
-                      {x("et au RGPD. Ces données seront utilisées uniquement dans le cadre de ma candidature.")}
+                      </a>{" "}
+                      {x("et à la loi marocaine n° 09-08. Ces données seront utilisées uniquement pour ma candidature, mon contrat, ma paie et ma sécurité (contact d'urgence).")}
                     </Label>
                   </div>
                   {errors.rgpdConsent && (

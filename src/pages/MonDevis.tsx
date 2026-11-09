@@ -12,7 +12,6 @@ import { telechargerDevisPdf, telechargerFacturePdf } from "@/components/admin/d
 import { Facture, TYPES_FACTURE } from "@/components/admin/devis/factureUtils";
 import ChoisirRendezVous from "@/components/rendez-vous/ChoisirRendezVous";
 import { ArrowRight, CalendarClock, CheckCircle2, Download, FileText, Heart, Loader2, MessageCircle, Receipt, Star } from "lucide-react";
-import { photoUrl } from "@/lib/pdf";
 import { aujourdhuiMaroc } from "@/lib/dateMaroc";
 
 type Etat = "chargement" | "introuvable" | "pret";
@@ -213,7 +212,7 @@ export default function MonDevis() {
   );
 }
 
-interface MembreEquipe { id: string; prenom: string; initiale: string; photo: string | null; poste: string; note: number | null }
+interface MembreEquipe { id: string; prenom: string; initiale: string; poste: string; note: number | null }
 
 function Etoiles({ valeur, onChange, taille = 28, libelle }: { valeur: number; onChange: (n: number) => void; taille?: number; libelle: string }) {
   return (
@@ -281,7 +280,7 @@ function AvisEvenement({ token, equipe, dejaNote, lienGoogle, onEnvoye }: { toke
               <div className="grid gap-3 sm:grid-cols-2">
                 {equipe.map((m) => (
                   <div key={m.id} className="flex items-center gap-3 rounded-2xl border border-[#F1ECDD] p-3" data-testid="membre-equipe">
-                    {m.photo ? <img src={photoUrl(m.photo)!} alt="" className="h-14 w-14 rounded-full object-cover" /> : <div className="h-14 w-14 rounded-full bg-[#FAF7EE] flex items-center justify-center font-serif text-xl text-[#8C6D22]">{m.prenom.charAt(0)}</div>}
+                    <div className="h-14 w-14 rounded-full bg-[#FAF7EE] flex items-center justify-center font-serif text-xl text-[#8C6D22]">{m.prenom.charAt(0)}</div>
                     <div className="min-w-0">
                       <div className="font-medium">{m.prenom} {m.initiale}.</div>
                       <div className="text-xs text-[#6B6155] mb-1">{m.poste}</div>
