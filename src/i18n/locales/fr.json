@@ -179,7 +179,7 @@
       "hipsRequired": "Le tour de hanches est requis",
       "experienceMin": "L'expérience doit être détaillée (minimum 10 caractères)",
       "availabilityMin": "Sélectionnez au moins un jour de disponibilité",
-      "gdprRequired": "Vous devez accepter les conditions RGPD"
+      "gdprRequired": "Vous devez accepter le traitement de vos données personnelles"
     }
   },
   "common": {

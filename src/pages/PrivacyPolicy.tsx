@@ -49,15 +49,14 @@ const PrivacyPolicy = () => {
                 </p>
             </section>
             <section>
-              <h2>{x("4. Vos droits RGPD")}</h2>
-                <p>{x("Conformément au RGPD, vous disposez des droits suivants :")}</p>
+              <h2>{x("4. Vos droits")}</h2>
+                <p>{x("Conformément à la loi marocaine n° 09-08, vous disposez des droits suivants :")}</p>
                 <ul>
+                  <li>{x("Droit d'information sur le traitement de vos données")}</li>
                   <li>{x("Droit d'accès à vos données personnelles")}</li>
                   <li>{x("Droit de rectification")}</li>
-                  <li>{x("Droit à l'effacement")}</li>
-                  <li>{x("Droit à la limitation du traitement")}</li>
-                  <li>{x("Droit à la portabilité")}</li>
                   <li>{x("Droit d'opposition")}</li>
+                  <li>{x("Suppression de vos données sur simple demande")}</li>
                 </ul>
                 <p>
                   {x("Pour exercer ces droits, contactez-nous à :")} 

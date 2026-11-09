@@ -61,7 +61,7 @@ const formSchema = z.object({
   photoPortrait: z.string().optional(),
   photoPleinPied: z.string().optional(),
   carteIdentite: z.string().optional(),
-  rgpdConsent: z.boolean().refine(val => val === true, "Vous devez accepter les conditions RGPD"),
+  rgpdConsent: z.boolean().refine(val => val === true, "Vous devez accepter le traitement de vos données personnelles"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
   path: ["confirmPassword"],
@@ -256,7 +256,7 @@ const StaffRegistration = () => {
       // Validation spéciale pour rgpdConsent
       if (field === 'rgpdConsent') {
         if (value !== true) {
-          missingFields.push('conditions RGPD');
+          missingFields.push('consentement données');
         }
         continue;
       }
