@@ -294,16 +294,18 @@ const Admin = () => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+        // Supabase renvoie un nouvel objet session à chaque retour sur l'onglet ou renouvellement du jeton :
+        // on ne met à jour que si la personne connectée change, sinon toute l'administration se rechargeait.
+        setSession((avant) => (avant?.user?.id === session?.user?.id && !!avant === !!session ? avant : session));
+        setUser((avant) => (avant?.id === session?.user?.id ? avant : session?.user ?? null));
         setAuthLoading(false);
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      setSession((avant) => (avant?.user?.id === session?.user?.id && !!avant === !!session ? avant : session));
+      setUser((avant) => (avant?.id === session?.user?.id ? avant : session?.user ?? null));
       setAuthLoading(false);
     });
 
@@ -328,7 +330,7 @@ const Admin = () => {
         fetchData();
       });
     }
-  }, [user, session, authLoading, navigate]);
+  }, [user?.id, !!session, authLoading, navigate]);
 
   const fetchData = async () => {
     try {
