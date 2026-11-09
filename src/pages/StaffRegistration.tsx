@@ -1045,7 +1045,7 @@ const StaffRegistration = () => {
                       <a href="/politique-confidentialite" className="text-primary hover:underline ml-1">
                         {x("politique de confidentialité")}
                       </a> 
-                      {x("et au RGPD. Ces données seront utilisées uniquement dans le cadre de ma candidature.")}
+                      {x("et à la loi marocaine n° 09-08. Ces données seront utilisées uniquement pour ma candidature, mon contrat, ma paie et ma sécurité (contact d'urgence).")}
                     </Label>
                   </div>
                   {errors.rgpdConsent && (
