@@ -1045,7 +1045,8 @@ const StaffRegistration = () => {
                       <a href="/politique-confidentialite" className="text-primary hover:underline ml-1">
                         {x("politique de confidentialité")}
                       </a>{" "}
-                      {x("et à la loi marocaine n° 09-08. Ces données seront utilisées uniquement pour ma candidature, mon contrat, ma paie et ma sécurité (contact d'urgence).")}
+                      {x("et à la loi marocaine n° 09-08. Ces données seront utilisées uniquement pour ma candidature, mon contrat, ma paie et ma sécurité (contact d'urgence).")}{" "}
+                      {x("Elles sont hébergées en Irlande, hors du Maroc, chez notre sous-traitant Supabase.")}
                     </Label>
                   </div>
                   {errors.rgpdConsent && (
