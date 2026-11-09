@@ -128,11 +128,11 @@ export default function MesMissions() {
                 {m.lieu && <div className="text-sm text-muted-foreground">{m.lieu}</div>}
               </div>
               <div className="text-xs font-medium">
-                {m.depart_le ? <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-1">Terminé · {m.heures_pointees} h</span>
-                  : m.arrivee_le ? <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-1">Arrivé(e) à {heure(m.arrivee_le)}</span>
-                  : m.empechement_le ? <span className="rounded-full bg-red-100 text-red-800 px-2.5 py-1">Empêchement signalé</span>
-                  : m.presence_confirmee_le ? <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-1">Présence confirmée</span>
-                  : <span className="rounded-full bg-amber-100 text-amber-900 px-2.5 py-1">À confirmer</span>}
+                {m.depart_le ? <span className="rounded-full bg-[#1F5A4C]/10 text-[#1F5A4C] px-2.5 py-1">Terminé · {m.heures_pointees} h</span>
+                  : m.arrivee_le ? <span className="rounded-full bg-[#1F5A4C]/10 text-[#1F5A4C] px-2.5 py-1">Arrivé(e) à {heure(m.arrivee_le)}</span>
+                  : m.empechement_le ? <span className="rounded-full bg-[#9C4A2C]/10 text-[#9C4A2C] px-2.5 py-1">Empêchement signalé</span>
+                  : m.presence_confirmee_le ? <span className="rounded-full bg-[#1F5A4C]/10 text-[#1F5A4C] px-2.5 py-1">Présence confirmée</span>
+                  : <span className="rounded-full bg-[#A8933F]/15 text-[#7A5F1F] px-2.5 py-1">À confirmer</span>}
               </div>
             </div>
 

@@ -58,7 +58,7 @@
 @keyframes a-monte { from { transform: translateY(105%); } to { transform: none; } }
 
 /* Navigation : trait sous l'onglet actif */
-.a-trait-nav { position: absolute; top: 0; left: 0; width: 25%; height: 1px; display: flex; justify-content: center; pointer-events: none; transition: transform .22s var(--s-courbe); }
+.a-trait-nav { position: absolute; top: 0; left: 0; width: 20%; height: 1px; display: flex; justify-content: center; pointer-events: none; transition: transform .22s var(--s-courbe); }
 .a-trait-nav::before { content: ""; width: 18px; height: 1px; background: var(--s-laiton-clair); }
 
 /* ———————— Instagram (onglet admin, et espace Nawar en mode famille) ———————— */
@@ -287,3 +287,10 @@
 .lx-signe::after { transform: rotate(90deg); }
 .lx-signe[data-ferme="false"]::after { transform: rotate(0deg); }
 @media (prefers-reduced-motion: reduce) { .lx-corps, .lx-corps > div, .lx-signe::before, .lx-signe::after { transition: none; } }
+
+/* Espace staff sur téléphone : les trois rubriques sont en bas de l'écran, sous le pouce */
+@media (max-width: 639px) {
+  .st-corps { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .st-onglets { position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 40; width: 100%; background: var(--s-papier) !important; border-bottom: 0 !important; border-top: 1px solid var(--s-filet); padding-bottom: env(safe-area-inset-bottom) !important; box-shadow: 0 -12px 30px -24px rgba(60,40,10,.5); }
+  .st-onglets [role="tab"]::after { top: -1px; bottom: auto; }
+}

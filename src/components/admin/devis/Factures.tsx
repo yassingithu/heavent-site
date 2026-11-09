@@ -87,7 +87,7 @@ export function useActionsFacture(params: Parametres | null, apres: () => void) 
       {f.statut !== "annulee" && <Button size="icon" variant="ghost" title={f.envoyee_le ? "Renvoyer au client" : "Envoyer au client"} disabled={occupe === f.id} onClick={() => envoyer(f)} data-testid="facture-envoyer"><Mail className="h-4 w-4" /></Button>}
       {f.statut === "a_payer" && <Button size="sm" variant="outline" className="h-8" onClick={() => setPaiement({ f, mode: "Virement", date: today() })} data-testid="facture-payee"><CheckCircle2 className="h-4 w-4 mr-1" /> Payée</Button>}
       {f.statut === "payee" && <Button size="icon" variant="ghost" title="Remettre « à payer »" onClick={() => changer(f, { statut: "a_payer" }, "Facture remise à payer")}><RotateCcw className="h-4 w-4" /></Button>}
-      {f.statut !== "annulee" && <Button size="icon" variant="ghost" title="Annuler la facture" onClick={() => annuler(f)}><Ban className="h-4 w-4 text-red-600" /></Button>}
+      {f.statut !== "annulee" && <Button size="icon" variant="ghost" title="Annuler la facture" onClick={() => annuler(f)}><Ban className="h-4 w-4 text-[#9C4A2C]" /></Button>}
     </div>
   );
   const demanderPaiement = (f: Facture) => setPaiement({ f, mode: "Virement", date: today() });
@@ -169,7 +169,7 @@ export function FacturesDevis({ devis, params, avantCreation }: { devis: DevisFo
                 <Receipt className="h-4 w-4 mr-1" /> {acompte ? "Facturer le solde" : Number(devis.acompte_pct) > 0 ? "Facturer la totalité (sans acompte)" : "Créer la facture"}
               </Button>
             )}
-            {finale && <p className="text-xs text-green-700">✅ Devis entièrement facturé.</p>}
+            {finale && <p className="text-xs text-[#1F5A4C]">✅ Devis entièrement facturé.</p>}
             {!finale && <p className="text-[11px] text-muted-foreground">La facture d'acompte est créée automatiquement à la signature en ligne, et celle du solde 2 jours après l'événement (tu as la veille pour ajouter d'éventuelles heures en plus au devis).</p>}
           </div>
         )}

@@ -168,8 +168,8 @@ export default function RealisationsAdmin() {
                   </div>
                 </button>
                 <div className="flex items-center justify-between px-3 pb-3">
-                  <span className={`text-xs rounded-full px-2 py-0.5 ${r.publie ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-700"}`}>{r.publie ? "Publiée" : "Brouillon"}</span>
-                  <Button variant="ghost" size="icon" onClick={() => supprimer(r)} aria-label="Supprimer"><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                  <span className={`text-xs rounded-full px-2 py-0.5 ${r.publie ? "bg-[#1F5A4C]/10 text-[#1F5A4C]" : "bg-[#DCCDAA]/40 text-[#5A5146]"}`}>{r.publie ? "Publiée" : "Brouillon"}</span>
+                  <Button variant="ghost" size="icon" onClick={() => supprimer(r)} aria-label="Supprimer"><Trash2 className="h-4 w-4 text-[#9C4A2C]" /></Button>
                 </div>
               </div>
             ))}

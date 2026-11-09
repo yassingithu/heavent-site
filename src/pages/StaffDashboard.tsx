@@ -564,18 +564,18 @@ const StaffDashboard = () => {
                             <div className="mt-3 border border-[#9C4A2C]/40 border-l-[3px] border-l-[#9C4A2C] bg-[#9C4A2C]/5 p-3 text-sm">
                               <div className="font-medium text-[#9C4A2C]">Ce contrat attend ta signature</div>
                               <div className="text-[#5A5146] text-xs mb-2">Merci de le signer avant le {dateHeureFr(limiteSignature(contrat))} (24 h avant la mission). Dernier délai : {dateHeureFr(finSignature(contrat))}.</div>
-                              <Button size="sm" onClick={() => setASigner(contrat)}>Lire et signer mon contrat</Button>
+                              <Button size="sm" onClick={() => setASigner(contrat)}>Signer mon contrat</Button>
                             </div>
                           )}
                           {etatSignature(contrat) === "en_retard" && (
-                            <div className="mt-3 rounded-md border border-orange-300 bg-orange-50 p-3 text-sm">
-                              <div className="font-medium text-orange-900">⏰ Signature en retard</div>
-                              <div className="text-orange-800 text-xs mb-2">Ce contrat devait être signé 24 h avant la mission. Tu peux encore le signer jusqu'au {dateHeureFr(finSignature(contrat))} — un rappel t'est envoyé par e-mail tous les 2 jours.</div>
-                              <Button size="sm" onClick={() => setASigner(contrat)}>Lire et signer mon contrat</Button>
+                            <div className="mt-3 rounded-md border border-[#A8933F]/40 bg-[#A8933F]/15 p-3 text-sm">
+                              <div className="font-medium text-[#7A5F1F]">⏰ Signature en retard</div>
+                              <div className="text-[#7A5F1F] text-xs mb-2">Ce contrat devait être signé 24 h avant la mission. Tu peux encore le signer jusqu'au {dateHeureFr(finSignature(contrat))} — un rappel t'est envoyé par e-mail tous les 2 jours.</div>
+                              <Button size="sm" onClick={() => setASigner(contrat)}>Signer mon contrat</Button>
                             </div>
                           )}
                           {etatSignature(contrat) === "ferme" && (
-                            <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-800">Le délai de signature (fin du mois de la mission) est dépassé. Contacte l'agence.</div>
+                            <div className="mt-3 rounded-md border border-[#9C4A2C]/30 bg-[#9C4A2C]/10 p-3 text-xs text-[#9C4A2C]">Le délai de signature (fin du mois de la mission) est dépassé. Contacte l'agence.</div>
                           )}
                           {contrat.signe_le && (
                             <div className="mt-3 a-st vert">Signé le {dateHeureFr(contrat.signe_le)}{contrat.signature_nom ? ` par ${contrat.signature_nom}` : ""}.</div>
@@ -789,7 +789,7 @@ const StaffDashboard = () => {
                                 } ${isToday ? "bg-primary/5 border-primary/30" : ""}`}
                                 onClick={() => isCurrentMonth ? handleDateClick(date) : null}
                               >
-                                <div className={`text-sm font-medium mb-1 ${isToday ? "text-primary" : ""}`}>
+                                <div className={`text-sm font-medium mb-1 ${isToday ? "text-[#7A5F1F]" : ""}`}>
                                   {format(date, "d")}
                                 </div>
                                 
@@ -804,9 +804,9 @@ const StaffDashboard = () => {
                                         <div 
                                           key={creneau}
                                           className={`text-xs px-1 py-0.5 rounded text-center ${
-                                            creneau === 'matin' ? 'bg-yellow-100 text-yellow-800' :
-                                            creneau === 'apres_midi' ? 'bg-orange-100 text-orange-800' :
-                                            'bg-blue-100 text-blue-800'
+                                            creneau === 'matin' ? 'bg-[#A8933F]/15 text-[#7A5F1F]' :
+                                            creneau === 'apres_midi' ? 'bg-[#A8933F]/15 text-[#7A5F1F]' :
+                                            'bg-[#A8933F]/15 text-[#7A5F1F]'
                                           }`}
                                         >
                                           {creneau === 'matin' ? 'M' : 
@@ -827,15 +827,15 @@ const StaffDashboard = () => {
                          <h4 className="font-medium mb-2">{t('dashboard.availability.legend')}</h4>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                            <div className="flex items-center space-x-2">
-                             <div className="w-4 h-4 bg-yellow-100 border border-yellow-300 rounded"></div>
+                             <div className="w-4 h-4 bg-[#A8933F]/15 border border-[#A8933F]/40 rounded"></div>
                              <span>{t('dashboard.availability.morning')}</span>
                            </div>
                            <div className="flex items-center space-x-2">
-                             <div className="w-4 h-4 bg-orange-100 border border-orange-300 rounded"></div>
+                             <div className="w-4 h-4 bg-[#A8933F]/15 border border-[#A8933F]/40 rounded"></div>
                              <span>{t('dashboard.availability.afternoon')}</span>
                            </div>
                            <div className="flex items-center space-x-2">
-                             <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></div>
+                             <div className="w-4 h-4 bg-[#A8933F]/15 border border-[#A8933F]/40 rounded"></div>
                              <span>{t('dashboard.availability.evening')}</span>
                            </div>
                            <div className="text-muted-foreground">

@@ -42,19 +42,19 @@ export default function EtatPointage({ a, plusieursJours, onChange }: { a: Point
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-xs" data-testid="etat-pointage">
       {plusieursJours && <span className="text-muted-foreground w-20">{jourFr(a.date_jour)}</span>}
-      {a.empechement_le ? puce("bg-red-100 text-red-800", "Empêchement", a.empechement_motif ?? undefined)
-        : a.presence_confirmee_le ? puce("bg-emerald-100 text-emerald-800", "Présence confirmée")
-        : !a.arrivee_le && !passe ? puce("bg-amber-100 text-amber-900", "Pas encore confirmé") : null}
-      {a.arrivee_le ? puce(a.arrivee_verifiee === false ? "bg-orange-100 text-orange-900" : "bg-emerald-100 text-emerald-800",
+      {a.empechement_le ? puce("bg-[#9C4A2C]/10 text-[#9C4A2C]", "Empêchement", a.empechement_motif ?? undefined)
+        : a.presence_confirmee_le ? puce("bg-[#1F5A4C]/10 text-[#1F5A4C]", "Présence confirmée")
+        : !a.arrivee_le && !passe ? puce("bg-[#A8933F]/15 text-[#7A5F1F]", "Pas encore confirmé") : null}
+      {a.arrivee_le ? puce(a.arrivee_verifiee === false ? "bg-[#A8933F]/15 text-[#7A5F1F]" : "bg-[#1F5A4C]/10 text-[#1F5A4C]",
         `Arrivée ${heure(a.arrivee_le)}${retard > 5 ? ` (+${retard} min)` : ""}${a.arrivee_verifiee === true ? " ✓" : a.arrivee_verifiee === false ? " hors lieu" : ""}`,
         dist != null ? `À ${dist} m du lieu` : a.arrivee_position ? "Position enregistrée (lieu non localisé)" : "Sans position")
-        : passe && !a.empechement_le ? puce("bg-gray-100 text-gray-700", "Pas de pointage") : null}
+        : passe && !a.empechement_le ? puce("bg-[#DCCDAA]/40 text-[#5A5146]", "Pas de pointage") : null}
       {a.arrivee_photo && <button onClick={voirPhoto} className="inline-flex items-center gap-0.5 text-[#8C6D22] underline" title="Voir le selfie"><Camera className="h-3 w-3" /> photo</button>}
-      {a.depart_le && puce("bg-emerald-100 text-emerald-800", `Départ ${heure(a.depart_le)} · ${a.heures_pointees} h`)}
+      {a.depart_le && puce("bg-[#1F5A4C]/10 text-[#1F5A4C]", `Départ ${heure(a.depart_le)} · ${a.heures_pointees} h`)}
       {a.heures_validees != null && !a.pointage_a_verifier && puce("bg-[#F4E9CF] text-[#7A5F1E]", `Payé : ${a.heures_validees} h`)}
       {a.pointage_a_verifier && (
-        <span className="inline-flex flex-wrap items-center gap-1 rounded-md border border-orange-300 bg-orange-50 px-2 py-1" data-testid="pointage-a-verifier">
-          <b className="text-orange-900">À vérifier :</b>
+        <span className="inline-flex flex-wrap items-center gap-1 rounded-md border border-[#A8933F]/40 bg-[#A8933F]/15 px-2 py-1" data-testid="pointage-a-verifier">
+          <b className="text-[#7A5F1F]">À vérifier :</b>
           {a.heures_pointees != null && <Button size="sm" variant="outline" className="h-6 px-2 text-[11px]" onClick={() => valider(Number(a.heures_pointees))} data-testid="valider-pointees">Valider {a.heures_pointees} h pointées</Button>}
           <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => valider(Number(a.heures))}>Garder {a.heures} h prévues</Button>
           <Input className="h-6 w-14 text-[11px]" type="number" min={0} step="0.25" value={saisie} placeholder="h" onChange={(e) => setSaisie(e.target.value)} />

@@ -327,8 +327,8 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
                     <div className="min-w-0">
                       <div className="font-medium truncate">{nomStaff(id)} {badgeNote(notes[id])}</div>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {ds.map((d) => <span key={d.id} className={`text-xs px-1.5 rounded ${d.creneau ? CRENEAUX[d.creneau]?.classe : "bg-emerald-100 text-emerald-900"}`}>{libelleDispo(d)}</span>)}
-                        {occ.map((o, i) => <span key={i} className="text-xs px-1.5 rounded bg-red-100 text-red-800">Déjà sur {o.numero ?? "un autre événement"}</span>)}
+                        {ds.map((d) => <span key={d.id} className={`text-xs px-1.5 rounded ${d.creneau ? CRENEAUX[d.creneau]?.classe : "bg-[#1F5A4C]/10 text-[#1F5A4C]"}`}>{libelleDispo(d)}</span>)}
+                        {occ.map((o, i) => <span key={i} className="text-xs px-1.5 rounded bg-[#9C4A2C]/10 text-[#9C4A2C]">Déjà sur {o.numero ?? "un autre événement"}</span>)}
                       </div>
                     </div>
                     <div className="flex gap-1 shrink-0">
@@ -381,7 +381,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
                     {lignes.map((l) => (
                       <span key={l.id} className="inline-flex items-center gap-1 text-xs bg-[#FAF7EE] border border-[#ece6d3] rounded px-2 py-0.5">
                         {jourFr(l.date_jour)}
-                        <button className="text-muted-foreground hover:text-red-600" title="Retirer cette date" onClick={() => retirer(l.id)}><X className="h-3 w-3" /></button>
+                        <button className="text-muted-foreground hover:text-[#9C4A2C]" title="Retirer cette date" onClick={() => retirer(l.id)}><X className="h-3 w-3" /></button>
                       </span>
                     ))}
                   </div>

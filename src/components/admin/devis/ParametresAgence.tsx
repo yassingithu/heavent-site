@@ -64,8 +64,8 @@ export default function ParametresAgence({ value, onSaved }: { value: Parametres
               {c.key === "cndp_recepisse" && <p className="text-xs text-muted-foreground mt-1">Affiché sous la case de consentement du formulaire d'inscription des hôtes et hôtesses. Laisser vide tant qu'on n'en a pas.</p>}
               {c.key === "cnss_affiliation_employeur" && (
                 !String(p.cnss_affiliation_employeur ?? "").trim()
-                  ? <p className="text-xs text-amber-700 mt-1" data-testid="cnss-employeur-manquant">Non renseigné : les bulletins de paie restent des aperçus incomplets et ne peuvent pas être validés.</p>
-                  : avertissementsNumero(p.cnss_affiliation_employeur).map((a) => <p key={a} className="text-xs text-amber-700 mt-1">À vérifier : {a} (le numéro est enregistré tel quel).</p>)
+                  ? <p className="text-xs text-[#7A5F1F] mt-1" data-testid="cnss-employeur-manquant">Non renseigné : les bulletins de paie restent des aperçus incomplets et ne peuvent pas être validés.</p>
+                  : avertissementsNumero(p.cnss_affiliation_employeur).map((a) => <p key={a} className="text-xs text-[#7A5F1F] mt-1">À vérifier : {a} (le numéro est enregistré tel quel).</p>)
               )}
             </div>
           ))}

@@ -98,7 +98,7 @@ export default function NewsletterAdmin() {
                   <tr key={a.id} className="border-t border-[#F1ECDD]" data-testid="ligne-abonne">
                     <td className="py-1.5 pr-3">{a.email}</td><td className="pr-3">{a.prenom}</td>
                     <td className="pr-3">{a.themes.map((t) => THEMES_NL[t] ?? t).join(", ")}</td>
-                    <td className="pr-3">{abonneActif(a) ? <span className="text-emerald-700">oui</span> : <span className="text-muted-foreground">{a.desinscrit_le ? "désinscrit" : "non"}</span>}</td>
+                    <td className="pr-3">{abonneActif(a) ? <span className="text-[#1F5A4C]">oui</span> : <span className="text-muted-foreground">{a.desinscrit_le ? "désinscrit" : "non"}</span>}</td>
                     <td>{dateFr(a.cree_le)}</td>
                   </tr>
                 ))}
@@ -198,7 +198,7 @@ function EditeurNewsletter({ initiale, abonnes, onFermer }: { initiale: Newslett
                 <Send className="h-4 w-4" /> Envoyer à {destinataires}
               </button>
             ) : (
-              <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-3 h-10 text-sm">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#A8933F]/15 border border-[#A8933F]/40 px-3 h-10 text-sm">
                 Envoyer maintenant à {destinataires} personne{destinataires > 1 ? "s" : ""} ?
                 <button onClick={envoyer} className="rounded-full bg-[#141414] text-white px-3 h-7" data-testid="nl-confirmer">{occupe === "envoyer" ? "Envoi…" : "Oui, envoyer"}</button>
                 <button onClick={() => setConfirmer(false)} className="underline">Annuler</button>

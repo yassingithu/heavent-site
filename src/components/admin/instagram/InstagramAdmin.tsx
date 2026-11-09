@@ -21,8 +21,8 @@ interface Photo { id: number; apercu: string; grande: string; page: string; aute
 const THEMES: Record<string, string> = { mariage: "Mariage", naissance: "Naissance", fete: "Fêtes", entreprise: "Entreprise", parfum: "Parfum" };
 const COMPTES: Record<Compte, string> = { heavent: "Heavent", nawar: "Nawar — bar à parfums" };
 const STATUTS: Record<Post["statut"], [string, string]> = {
-  brouillon: ["À préparer", "bg-[#F1ECDD] text-[#7A5F1E]"], pret: ["Prêt", "bg-emerald-50 text-emerald-700"],
-  publie: ["Publié", "bg-[#141414] text-white"], erreur: ["Erreur", "bg-red-50 text-red-700"],
+  brouillon: ["À préparer", "bg-[#F1ECDD] text-[#7A5F1E]"], pret: ["Prêt", "bg-[#1F5A4C]/10 text-[#1F5A4C]"],
+  publie: ["Publié", "bg-[#141414] text-white"], erreur: ["Erreur", "bg-[#9C4A2C]/10 text-[#9C4A2C]"],
 };
 /** Pas encore publié alors que son heure est passée de plus de 2 h (au-delà, la publication automatique ne l'envoie plus) */
 const estEnRetard = (p: { statut: string; date_prevue: string | null }) => p.statut !== "publie" && !!p.date_prevue && new Date(p.date_prevue).getTime() < Date.now() - 2 * 3600e3;
@@ -402,7 +402,7 @@ function EditeurPost({ post: initial, pixabay, instagram, famille, onFermer }: {
     <Dialog open onOpenChange={(o) => !o && onFermer()}>
       <DialogContent className="max-w-5xl max-h-[94vh] overflow-y-auto" data-testid="editeur-post" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogTitle className="font-serif text-2xl">Post Instagram · {THEMES[p.theme] ?? p.theme}</DialogTitle>
-        {p.statut === "erreur" && p.erreur && <p className="text-sm rounded-md bg-red-50 text-red-700 px-3 py-2">La publication a échoué : {p.erreur}</p>}
+        {p.statut === "erreur" && p.erreur && <p className="text-sm rounded-md bg-[#9C4A2C]/10 text-[#9C4A2C] px-3 py-2">La publication a échoué : {p.erreur}</p>}
         <div className="grid md:grid-cols-[minmax(0,380px)_1fr] gap-6">
           <div className="space-y-2">
             <div className="aspect-[4/5] rounded-xl overflow-hidden bg-[#F4EFE3] relative">

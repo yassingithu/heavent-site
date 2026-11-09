@@ -57,7 +57,7 @@ export default function ContratsEvenements() {
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
               <div>
                 <div className="font-medium">{liste[0].devis?.titre || "Événement"} <span className="text-xs text-muted-foreground font-mono">{liste[0].devis?.numero}</span></div>
-                <div className="text-xs text-muted-foreground">{liste.length} contrat(s) · <span className="text-emerald-800 font-medium">{liste.filter((c) => c.signe_le && c.statut !== "annule").length}/{liste.filter((c) => c.statut !== "annule").length} signé(s)</span></div>
+                <div className="text-xs text-muted-foreground">{liste.length} contrat(s) · <span className="text-[#1F5A4C] font-medium">{liste.filter((c) => c.signe_le && c.statut !== "annule").length}/{liste.filter((c) => c.statut !== "annule").length} signé(s)</span></div>
               </div>
               <Button size="sm" disabled={enCours} onClick={() => telecharger(liste.map((c) => c.id))}><Download className="h-4 w-4 mr-1" /> Tous (PDF)</Button>
             </div>
@@ -65,13 +65,13 @@ export default function ContratsEvenements() {
               {liste.map((c) => (
                 <div key={c.id} className="flex items-center justify-between gap-2 py-1.5 text-sm">
                   <div>{c.staff?.prenom} {c.staff?.nom} {(() => { const b = BADGE_SIGNATURE[etatSignature(c)]; return <span className={`text-[11px] font-medium rounded-full px-2 py-0.5 ${b.classe}`}>{b.texte}</span>; })()} <span className="text-muted-foreground">· {(c.dates ?? []).length} date(s) · {dateFr(c.date_debut)}{c.date_fin && c.date_fin !== c.date_debut ? ` → ${dateFr(c.date_fin)}` : ""} · {c.total_heures} h · {mad(c.salaire_brut)}</span>
-                    {c.signe_le && <div className="text-xs text-emerald-800">Signé le {dateHeureFr(c.signe_le)}{c.signature_nom ? ` par ${c.signature_nom}` : ""} · contresigné par l'employeur</div>}</div>
+                    {c.signe_le && <div className="text-xs text-[#1F5A4C]">Signé le {dateHeureFr(c.signe_le)}{c.signature_nom ? ` par ${c.signature_nom}` : ""} · contresigné par l'employeur</div>}</div>
                   <div className="flex gap-1 shrink-0">
                     <Button size="icon" variant="ghost" title="Modifier les dates, horaires et heures (dans le devis)" onClick={() => ouvrirDevis(c.devis_id)}><Pencil className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" title="Contrat PDF" disabled={enCours} onClick={() => telecharger([c.id])}><Download className="h-4 w-4" /></Button>
                     {c.statut !== "annule" && (c.signe_le
-                      ? <Button size="icon" variant="ghost" title="Retirer de l'équipe et annuler le contrat (signé : il est conservé)" className="text-red-600 hover:text-red-700" onClick={() => supprimer(c)}><Ban className="h-4 w-4" /></Button>
-                      : <Button size="icon" variant="ghost" title="Retirer de l'équipe et supprimer le contrat" className="text-red-600 hover:text-red-700" onClick={() => supprimer(c)}><Trash2 className="h-4 w-4" /></Button>)}
+                      ? <Button size="icon" variant="ghost" title="Retirer de l'équipe et annuler le contrat (signé : il est conservé)" className="text-[#9C4A2C] hover:text-[#9C4A2C]" onClick={() => supprimer(c)}><Ban className="h-4 w-4" /></Button>
+                      : <Button size="icon" variant="ghost" title="Retirer de l'équipe et supprimer le contrat" className="text-[#9C4A2C] hover:text-[#9C4A2C]" onClick={() => supprimer(c)}><Trash2 className="h-4 w-4" /></Button>)}
                   </div>
                 </div>
               ))}

@@ -101,7 +101,7 @@ export default function StudioAdmin() {
                     className="inline-flex items-center gap-1.5 rounded-full bg-[#141414] text-white px-4 h-9 text-sm" data-testid="generer-demo">
                     {occupe === d.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-[#E4D49A]" />} {demosDe(d.id).length ? "Nouvelle démo" : "Générer la démo"}
                   </button>
-                  {d.telephone && <a href={`https://wa.me/${d.telephone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm"><MessageCircle className="h-4 w-4 text-emerald-600" /> WhatsApp</a>}
+                  {d.telephone && <a href={`https://wa.me/${d.telephone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm"><MessageCircle className="h-4 w-4 text-[#1F5A4C]" /> WhatsApp</a>}
                   <a href={`mailto:${d.email}?subject=${encodeURIComponent("Votre démo Heavent Studio")}`} className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm"><Mail className="h-4 w-4" /> E-mail</a>
                 </div>
                 {demosDe(d.id).map((x) => <LigneDemo key={x.jeton} d={x} tel={d.telephone} email={d.email} onCopier={copier} onDesactiver={desactiver} onProlonger={prolonger} onVoir={voir} onSupprimer={supprimer} />)}
@@ -147,12 +147,12 @@ function LigneDemo({ d, tel, email, onCopier, onDesactiver, onProlonger, onVoir,
         <code className="flex-1 min-w-0 truncate rounded bg-white border px-2 py-1 text-xs" data-testid="lien-demo">{lien}</code>
         <button onClick={() => onCopier(lien)} className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs"><Copy className="h-3.5 w-3.5" /> Lien</button>
         <button onClick={() => onCopier(message(d), "Message copié ✓")} className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs"><Copy className="h-3.5 w-3.5" /> Message</button>
-        {tel && <a href={`https://wa.me/${tel.replace(/\D/g, "")}?text=${encodeURIComponent(message(d))}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs"><MessageCircle className="h-3.5 w-3.5 text-emerald-600" /> Envoyer</a>}
+        {tel && <a href={`https://wa.me/${tel.replace(/\D/g, "")}?text=${encodeURIComponent(message(d))}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs"><MessageCircle className="h-3.5 w-3.5 text-[#1F5A4C]" /> Envoyer</a>}
         {email && <a href={`mailto:${email}?subject=${encodeURIComponent("Votre démo Heavent Studio")}&body=${encodeURIComponent(message(d))}`} className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs"><Mail className="h-3.5 w-3.5" /> E-mail</a>}
         <button onClick={() => onVoir(d)} className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs" data-testid="voir-demo"><Eye className="h-3.5 w-3.5" /> Voir</button>
         {expiree ? <button onClick={() => onProlonger(d.jeton)} className="inline-flex items-center gap-1 rounded-md border bg-white px-2 h-7 text-xs"><Check className="h-3.5 w-3.5" /> Réactiver 30 jours</button>
-          : <button onClick={() => onDesactiver(d.jeton)} className="rounded-md px-2 h-7 text-xs text-muted-foreground hover:text-red-700">Désactiver</button>}
-        <button onClick={() => onSupprimer(d.jeton)} className="inline-flex items-center gap-1 rounded-md px-2 h-7 text-xs text-red-700 hover:bg-red-50" data-testid="supprimer-demo"><Trash2 className="h-3.5 w-3.5" /> Supprimer</button>
+          : <button onClick={() => onDesactiver(d.jeton)} className="rounded-md px-2 h-7 text-xs text-muted-foreground hover:text-[#9C4A2C]">Désactiver</button>}
+        <button onClick={() => onSupprimer(d.jeton)} className="inline-flex items-center gap-1 rounded-md px-2 h-7 text-xs text-[#9C4A2C] hover:bg-[#9C4A2C]/10" data-testid="supprimer-demo"><Trash2 className="h-3.5 w-3.5" /> Supprimer</button>
       </div>
     </div>
   );
@@ -167,7 +167,7 @@ function OptionsDemo({ c, logoProspect, onChange }: { c: Choix; logoProspect?: s
       </select>
       <label className="inline-flex items-center gap-1.5 rounded-full border px-3 h-9 text-sm cursor-pointer bg-white" data-testid="choix-logo">
         <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f && f.size <= 5 * 1024 * 1024) onChange({ logo: f }); }} />
-        {c.logo ? <><Check className="h-3.5 w-3.5 text-emerald-600" /> {c.logo.name.slice(0, 18)}</> : logoProspect ? <><img src={logoProspect} alt="" className="h-5 w-auto max-w-10 object-contain" /> Logo reçu</> : <><ImagePlus className="h-3.5 w-3.5" /> Logo</>}
+        {c.logo ? <><Check className="h-3.5 w-3.5 text-[#1F5A4C]" /> {c.logo.name.slice(0, 18)}</> : logoProspect ? <><img src={logoProspect} alt="" className="h-5 w-auto max-w-10 object-contain" /> Logo reçu</> : <><ImagePlus className="h-3.5 w-3.5" /> Logo</>}
       </label>
     </div>
   );

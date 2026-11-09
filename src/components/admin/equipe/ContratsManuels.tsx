@@ -74,14 +74,14 @@ export default function ContratsManuels() {
                       {c.evenement ? `${c.evenement} · ` : ""}{dateFr(c.date_debut)}{c.date_fin && c.date_fin !== c.date_debut ? ` → ${dateFr(c.date_fin)}` : ""}
                       {" · "}{(c.dates ?? []).length || 1} date(s) · {heures != null ? `${heures} h` : "heures non indiquées"} · {mad(c.salaire_brut)}
                     </div>
-                    {c.signe_le && <div className="text-xs text-emerald-800">Signé le {dateHeureFr(c.signe_le)}{c.signature_nom ? ` par ${c.signature_nom}` : ""} · contresigné par l'employeur</div>}
+                    {c.signe_le && <div className="text-xs text-[#1F5A4C]">Signé le {dateHeureFr(c.signe_le)}{c.signature_nom ? ` par ${c.signature_nom}` : ""} · contresigné par l'employeur</div>}
                   </div>
                   <div className="flex gap-1">
                     {c.statut !== "annule" && <Button size="sm" variant="outline" onClick={() => setEdition(c.id)}><Pencil className="h-4 w-4 mr-1" /> Modifier</Button>}
                     <Button size="icon" variant="ghost" title="Contrat PDF" disabled={enCours} onClick={() => telecharger(c.id)}><Download className="h-4 w-4" /></Button>
                     {c.statut !== "annule" && (c.signe_le
-                      ? <Button size="icon" variant="ghost" title="Annuler le contrat (signé : il est conservé)" className="text-red-600 hover:text-red-700" onClick={() => supprimer(c)}><Ban className="h-4 w-4" /></Button>
-                      : <Button size="icon" variant="ghost" title="Supprimer" className="text-red-600 hover:text-red-700" onClick={() => supprimer(c)}><Trash2 className="h-4 w-4" /></Button>)}
+                      ? <Button size="icon" variant="ghost" title="Annuler le contrat (signé : il est conservé)" className="text-[#9C4A2C] hover:text-[#9C4A2C]" onClick={() => supprimer(c)}><Ban className="h-4 w-4" /></Button>
+                      : <Button size="icon" variant="ghost" title="Supprimer" className="text-[#9C4A2C] hover:text-[#9C4A2C]" onClick={() => supprimer(c)}><Trash2 className="h-4 w-4" /></Button>)}
                   </div>
                 </div>
               );

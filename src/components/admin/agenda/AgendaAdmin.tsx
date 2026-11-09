@@ -161,8 +161,8 @@ export default function AgendaAdmin({ onOuvrirDevis }: { onOuvrirDevis?: (id: st
                       <div className="font-medium">
                         <span className="font-mono">{heure(r.debut)}</span> · {r.client_nom}
                         <Badge variant="outline" className="ml-2">{TYPES[r.type] ?? r.type}</Badge>
-                        {r.statut === "annule" && <Badge className="ml-1 bg-gray-200 text-gray-700">Annulé</Badge>}
-                        {r.statut === "honore" && <Badge className="ml-1 bg-green-100 text-green-800">Fait</Badge>}
+                        {r.statut === "annule" && <Badge className="ml-1 bg-[#DCCDAA]/40 text-[#5A5146]">Annulé</Badge>}
+                        {r.statut === "honore" && <Badge className="ml-1 bg-[#1F5A4C]/10 text-[#1F5A4C]">Fait</Badge>}
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
                         {SOURCES[r.source] ?? r.source}{r.langue !== "fr" ? ` · client en ${r.langue === "ar" ? "arabe" : "anglais"}` : ""}
@@ -170,15 +170,15 @@ export default function AgendaAdmin({ onOuvrirDevis }: { onOuvrirDevis?: (id: st
                       </div>
                       {r.message && <div className="text-sm mt-1 whitespace-pre-line">{r.message}</div>}
                       <div className="flex flex-wrap gap-3 text-xs mt-1">
-                        {r.client_telephone && <a className="inline-flex items-center gap-1 text-primary" href={`tel:${r.client_telephone}`}><Phone className="h-3 w-3" />{r.client_telephone}</a>}
-                        {r.client_telephone && <a className="inline-flex items-center gap-1 text-green-700" href={whatsapp(r.client_telephone)} target="_blank" rel="noreferrer"><MessageCircle className="h-3 w-3" />WhatsApp</a>}
-                        {r.client_email && <a className="inline-flex items-center gap-1 text-primary" href={`mailto:${r.client_email}`}><Mail className="h-3 w-3" />{r.client_email}</a>}
+                        {r.client_telephone && <a className="inline-flex items-center gap-1 text-[#7A5F1F]" href={`tel:${r.client_telephone}`}><Phone className="h-3 w-3" />{r.client_telephone}</a>}
+                        {r.client_telephone && <a className="inline-flex items-center gap-1 text-[#1F5A4C]" href={whatsapp(r.client_telephone)} target="_blank" rel="noreferrer"><MessageCircle className="h-3 w-3" />WhatsApp</a>}
+                        {r.client_email && <a className="inline-flex items-center gap-1 text-[#7A5F1F]" href={`mailto:${r.client_email}`}><Mail className="h-3 w-3" />{r.client_email}</a>}
                       </div>
                     </div>
                     {r.statut !== "annule" && (
                       <div className="flex gap-1">
                         <Button size="sm" variant="outline" className="h-8" onClick={() => honore(r)} title={r.statut === "honore" ? "Remettre à venir" : "Rendez-vous fait"}><Check className="h-4 w-4" /></Button>
-                        <Button size="sm" variant="ghost" className="h-8" onClick={() => annuler(r)} data-testid="rdv-annuler"><Ban className="h-4 w-4 mr-1 text-red-600" />Annuler</Button>
+                        <Button size="sm" variant="ghost" className="h-8" onClick={() => annuler(r)} data-testid="rdv-annuler"><Ban className="h-4 w-4 mr-1 text-[#9C4A2C]" />Annuler</Button>
                       </div>
                     )}
                   </div>
@@ -279,7 +279,7 @@ export default function AgendaAdmin({ onOuvrirDevis }: { onOuvrirDevis?: (id: st
               {indispos.map((i) => (
                 <div key={i.id} className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-2" data-testid="indispo">
                   <div><div className="capitalize">{dateHeure(i.debut)} → {dateHeure(i.fin)}</div>{i.motif && <div className="text-xs text-muted-foreground">{i.motif}</div>}</div>
-                  <Button size="icon" variant="ghost" onClick={() => debloquer(i)} title="Débloquer"><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => debloquer(i)} title="Débloquer"><Trash2 className="h-4 w-4 text-[#9C4A2C]" /></Button>
                 </div>
               ))}
             </CardContent>

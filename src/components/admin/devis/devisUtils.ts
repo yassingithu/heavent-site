@@ -15,11 +15,11 @@ export const UNITES: { value: Unite; label: string; court: string }[] = [
 ];
 
 export const STATUTS: Record<string, { label: string; className: string }> = {
-  brouillon: { label: "Brouillon", className: "bg-gray-100 text-gray-800" },
-  envoye: { label: "Envoyé", className: "bg-blue-100 text-blue-800" },
-  accepte: { label: "Accepté", className: "bg-green-100 text-green-800" },
-  refuse: { label: "Refusé", className: "bg-red-100 text-red-800" },
-  annule: { label: "Annulé", className: "bg-yellow-100 text-yellow-800" },
+  brouillon: { label: "Brouillon", className: "border-transparent bg-transparent text-[#5A5146]" },
+  envoye: { label: "Envoyé", className: "border-transparent bg-transparent text-[#7A5F1F]" },
+  accepte: { label: "Accepté", className: "border-transparent bg-transparent text-[#1F5A4C]" },
+  refuse: { label: "Refusé", className: "border-transparent bg-transparent text-[#9C4A2C]" },
+  annule: { label: "Annulé", className: "border-transparent bg-transparent text-[#5A5146]" },
 };
 
 /**

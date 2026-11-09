@@ -18,8 +18,8 @@ export interface Prestataire {
 }
 const BUCKET = "prestataires";
 const STATUTS: Record<string, [string, string]> = {
-  en_attente: ["À valider", "bg-amber-100 text-amber-900"], valide: ["Validé", "bg-emerald-100 text-emerald-800"],
-  email_a_confirmer: ["E-mail non confirmé", "bg-slate-100 text-slate-700"], refuse: ["Refusé", "bg-red-100 text-red-800"], suspendu: ["Suspendu", "bg-zinc-200 text-zinc-700"],
+  en_attente: ["À valider", "bg-[#A8933F]/15 text-[#7A5F1F]"], valide: ["Validé", "bg-[#1F5A4C]/10 text-[#1F5A4C]"],
+  email_a_confirmer: ["E-mail non confirmé", "bg-slate-100 text-slate-700"], refuse: ["Refusé", "bg-[#9C4A2C]/10 text-[#9C4A2C]"], suspendu: ["Suspendu", "bg-[#DCCDAA]/40 text-[#5A5146]"],
 };
 const FILTRES: [string, string, string[]][] = [["a_valider", "À valider", ["en_attente"]], ["valides", "Validés", ["valide"]], ["attente_mail", "E-mail non confirmé", ["email_a_confirmer"]], ["autres", "Refusés / suspendus", ["refuse", "suspendu"]]];
 const UNITES: Record<string, string> = { forfait: "forfait", jour: "/ jour", heure: "/ heure", personne: "/ personne", unite: "/ unité" };
@@ -155,7 +155,7 @@ function Fiche({ p, ouvert, onOuvrir, onChange }: { p: Prestataire; ouvert: bool
           </div>
           {f.description && <p className="text-sm whitespace-pre-line rounded-lg bg-[#FBF8F1] p-3">{f.description}</p>}
           <div className="flex flex-wrap gap-2 text-sm">
-            {f.telephone && <a className="inline-flex items-center gap-1 rounded-full border px-3 h-8" href={`https://wa.me/${f.telephone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"><MessageCircle className="h-4 w-4 text-emerald-600" /> WhatsApp</a>}
+            {f.telephone && <a className="inline-flex items-center gap-1 rounded-full border px-3 h-8" href={`https://wa.me/${f.telephone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"><MessageCircle className="h-4 w-4 text-[#1F5A4C]" /> WhatsApp</a>}
             <a className="inline-flex items-center gap-1 rounded-full border px-3 h-8" href={`mailto:${f.email}`}><Mail className="h-4 w-4" /> E-mail</a>
             {f.instagram && <a className="inline-flex items-center gap-1 rounded-full border px-3 h-8" href={`https://instagram.com/${f.instagram.replace(/^@/, "")}`} target="_blank" rel="noreferrer">Instagram</a>}
             {f.site_web && <a className="inline-flex items-center gap-1 rounded-full border px-3 h-8" href={/^https?:/.test(f.site_web) ? f.site_web : `https://${f.site_web}`} target="_blank" rel="noreferrer">Site web</a>}
@@ -197,7 +197,7 @@ function Fiche({ p, ouvert, onOuvrir, onChange }: { p: Prestataire; ouvert: bool
                   <select className={champ} value={x.unite} onChange={(e) => setPrest(i, { unite: e.target.value })}>{Object.entries(UNITES).map(([k, v]) => <option key={k} value={k}>{k === "forfait" ? "Forfait" : v.replace("/ ", "par ")}</option>)}</select>
                   <label className="text-[11px] text-muted-foreground">Proposé<input className={champ} type="number" value={x.prix} onChange={(e) => setPrest(i, { prix: Number(e.target.value) })} /></label>
                   <label className="text-[11px] text-muted-foreground">Vente<input className={champ} type="number" value={x.prix_vente ?? ""} placeholder={String(Math.round(x.prix * (1 + marge / 100)))} onChange={(e) => setPrest(i, { prix_vente: e.target.value === "" ? null : Number(e.target.value) })} data-testid="prix-vente" /></label>
-                  <button onClick={() => setF({ ...f, prestations: f.prestations.filter((_, k) => k !== i) })} className="h-9 w-9 grid place-items-center text-muted-foreground hover:text-red-700" aria-label="Retirer"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => setF({ ...f, prestations: f.prestations.filter((_, k) => k !== i) })} className="h-9 w-9 grid place-items-center text-muted-foreground hover:text-[#9C4A2C]" aria-label="Retirer"><Trash2 className="h-4 w-4" /></button>
                   {x.description ? <p className="col-span-2 sm:col-span-5 text-xs text-muted-foreground">{x.description}</p> : null}
                 </div>
               ))}
@@ -211,11 +211,11 @@ function Fiche({ p, ouvert, onOuvrir, onChange }: { p: Prestataire; ouvert: bool
               className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm disabled:opacity-40"><Save className="h-4 w-4" /> Enregistrer</button>
             {f.statut !== "valide" && <button disabled={occupe} onClick={() => decider("valide")} className="inline-flex items-center gap-1.5 rounded-full bg-[#141414] text-white px-4 h-9 text-sm" data-testid="valider-prestataire"><Check className="h-4 w-4 text-[#E4D49A]" /> Valider et ajouter aux devis</button>}
             {f.statut === "valide" && <button disabled={occupe} onClick={() => decider("suspendu")} className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm"><Ban className="h-4 w-4" /> Suspendre</button>}
-            {["en_attente", "email_a_confirmer"].includes(f.statut) && <button disabled={occupe} onClick={() => decider("refuse")} className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm text-red-700"><X className="h-4 w-4" /> Refuser</button>}
+            {["en_attente", "email_a_confirmer"].includes(f.statut) && <button disabled={occupe} onClick={() => decider("refuse")} className="inline-flex items-center gap-1.5 rounded-full border px-4 h-9 text-sm text-[#9C4A2C]"><X className="h-4 w-4" /> Refuser</button>}
             <label className="text-xs flex items-center gap-1.5 ml-auto"><input type="checkbox" checked={prevenir} onChange={(e) => setPrevenir(e.target.checked)} /> Prévenir le prestataire par e-mail</label>
             {occupe && <Loader2 className="h-4 w-4 animate-spin" />}
           </div>
-          {f.statut === "valide" && <p className="text-xs text-emerald-700 flex items-center gap-1"><Copy className="h-3.5 w-3.5" /> Dans le catalogue des devis : {f.prestations.map((x) => `${x.fonction} (${mad(x.prix_vente ?? x.prix)} ${UNITES[x.unite] ?? ""})`).join(" · ")}</p>}
+          {f.statut === "valide" && <p className="text-xs text-[#1F5A4C] flex items-center gap-1"><Copy className="h-3.5 w-3.5" /> Dans le catalogue des devis : {f.prestations.map((x) => `${x.fonction} (${mad(x.prix_vente ?? x.prix)} ${UNITES[x.unite] ?? ""})`).join(" · ")}</p>}
         </div>
       )}
     </div>

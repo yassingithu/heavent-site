@@ -333,7 +333,7 @@ const BusinessQuote = () => {
                   />
                   <Label htmlFor="rgpdConsent" className="text-sm leading-5">
                     {x("J'accepte que mes données personnelles soient traitées conformément à la")} 
-                    <a href="/politique-confidentialite" className="text-primary hover:underline ml-1">
+                    <a href="/politique-confidentialite" className="text-[#7A5F1F] hover:underline ml-1">
                       {x("politique de confidentialité")}
                     </a>{" "}
                     {x("et à la loi marocaine n° 09-08. Ces données seront utilisées uniquement pour traiter ma demande de devis.")}

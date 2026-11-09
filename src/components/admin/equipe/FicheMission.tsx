@@ -83,7 +83,7 @@ export default function FicheMission({ devisId, lieu }: { devisId: string; lieu:
   return (
     <Card data-testid="fiche-mission-admin">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Fiche mission {existe ? "" : <span className="text-xs font-normal text-amber-700">(à compléter)</span>}</CardTitle>
+        <CardTitle className="text-base">Fiche mission {existe ? "" : <span className="text-xs font-normal text-[#7A5F1F]">(à compléter)</span>}</CardTitle>
         <p className="text-xs text-muted-foreground">Visible par chaque crew de l'équipe dans son espace staff, avec le bouton de pointage le jour J.</p>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">

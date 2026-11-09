@@ -64,7 +64,7 @@ export default function RemarquesCrews() {
                     <div className="flex flex-wrap items-center gap-2">
                       <Input className="flex-1 min-w-[200px]" placeholder="Réponse au crew (facultatif)" value={reponses[r.id] ?? ""} onChange={(e) => setReponses({ ...reponses, [r.id]: e.target.value })} />
                       <Button size="sm" onClick={() => traiter(r, "acceptee")}><Check className="h-4 w-4 mr-1" /> Accepter</Button>
-                      <Button size="sm" variant="outline" className="text-red-700" onClick={() => traiter(r, "refusee")}><X className="h-4 w-4 mr-1" /> Refuser</Button>
+                      <Button size="sm" variant="outline" className="text-[#9C4A2C]" onClick={() => traiter(r, "refusee")}><X className="h-4 w-4 mr-1" /> Refuser</Button>
                       <Button size="sm" variant="ghost" onClick={() => traiter(r, "vue")}>Marquer comme vue</Button>
                     </div>
                   ) : r.reponse ? <div className="text-xs text-muted-foreground border-l-2 border-[#C8B560] pl-2">Ta réponse : {r.reponse}</div> : null}

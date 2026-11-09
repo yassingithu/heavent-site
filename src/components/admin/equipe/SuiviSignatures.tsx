@@ -65,7 +65,7 @@ export default function SuiviSignatures() {
                   <div className="font-medium">{c.staff?.prenom} {c.staff?.nom} <span className="text-muted-foreground font-normal">· {c.devis?.titre || c.evenement || c.titre}</span></div>
                   <div className="text-xs text-muted-foreground">
                     {c.signe_le
-                      ? <span className="text-emerald-800">Signé le {dateHeureFr(c.signe_le)}{c.signature_nom ? ` par ${c.signature_nom}` : ""}{c.employeur_signe_le ? " · contresigné par l'employeur" : ""}{c.signature_preuve?.signe_en_retard ? " · signé en retard" : ""}</span>
+                      ? <span className="text-[#1F5A4C]">Signé le {dateHeureFr(c.signe_le)}{c.signature_nom ? ` par ${c.signature_nom}` : ""}{c.employeur_signe_le ? " · contresigné par l'employeur" : ""}{c.signature_preuve?.signe_en_retard ? " · signé en retard" : ""}</span>
                       : etatSignature(c) === "ferme"
                         ? `Non signé — fin du délai le ${dateHeureFr(finSignature(c))}`
                         : `À signer avant le ${dateHeureFr(limiteSignature(c))} · dernier délai ${dateHeureFr(finSignature(c))}${c.rappels_signature ? ` · ${c.rappels_signature} rappel(s) envoyé(s)` : ""}`}

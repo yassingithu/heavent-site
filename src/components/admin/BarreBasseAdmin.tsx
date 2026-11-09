@@ -1,15 +1,19 @@
 import { useEffect, useState, type ComponentType } from "react";
-import { Ellipsis, House, CalendarDays, Users, X } from "lucide-react";
+import { Ellipsis, House, CalendarDays, Users, Inbox, X } from "lucide-react";
 
 type Icone = ComponentType<{ className?: string }>;
-export interface GroupeMenu { titre: string; items: { valeur: string; libelle: string; Icone: Icone; badge?: number }[] }
+export interface GroupeMenu { titre: string; items: { valeur: string; libelle: string; Icone: Icone; badge?: number; fils?: { valeur: string; libelle: string }[] }[] }
 
 /** Les quatre accès fréquents sur téléphone. Tout le reste se trouve sous « Plus ». */
 const PRINCIPAUX: { valeur: string; libelle: string; Icone: Icone }[] = [
   { valeur: "tableau", libelle: "Accueil", Icone: House },
+  { valeur: "entreprise", libelle: "Clients", Icone: Inbox },
   { valeur: "agenda", libelle: "Événements", Icone: CalendarDays },
   { valeur: "staff", libelle: "Équipe", Icone: Users },
 ];
+/** Rubriques regroupées : « Clients » reste actif sur tous ses sous-onglets. */
+const MEMBRES: Record<string, string[]> = { entreprise: ["entreprise", "mariage", "devis-envoyes", "devis-rapide", "envoyer-devis"], staff: ["staff", "disponibilites"] };
+const dans = (v: string, onglet: string) => (MEMBRES[v] ?? [v]).includes(onglet);
 
 /**
  * Barre de navigation du bas pour téléphone (masquée sur ordinateur).
@@ -19,9 +23,10 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
   onglet: string; onChoisir: (valeur: string) => void; groupes: GroupeMenu[]; onDeconnexion: () => void;
 }) {
   const [plusOuvert, setPlusOuvert] = useState(false);
-  const principaux = new Set(PRINCIPAUX.map((p) => p.valeur));
-  const badgeTotal = groupes.flatMap((g) => g.items).reduce((t, i) => t + (i.badge ?? 0), 0);
-  const dansPlus = !principaux.has(onglet);
+  const tous = groupes.flatMap((g) => g.items);
+  const badgeClients = tous.find((i) => i.valeur === "entreprise")?.badge ?? 0;
+  const badgeTotal = tous.filter((i) => i.valeur !== "entreprise").reduce((t, i) => t + (i.badge ?? 0), 0);
+  const dansPlus = !PRINCIPAUX.some((p) => dans(p.valeur, onglet));
 
   useEffect(() => {
     if (!plusOuvert) return;
@@ -46,9 +51,9 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
               <section key={g.titre} className="mb-4">
                 <h3 className="text-[10px] font-medium uppercase tracking-[0.26em] text-[#7A5F1F] mb-1.5 px-1">{g.titre}</h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {g.items.map(({ valeur, libelle, Icone, badge }) => (
+                  {g.items.map(({ valeur, libelle, Icone, badge, fils }) => (
                     <button key={valeur} onClick={() => choisir(valeur)} data-testid={`plus-${valeur}`}
-                      className={`relative flex items-center gap-2.5 border px-3 min-h-12 text-left text-[13px] transition-colors ${onglet === valeur ? "bg-[#141414] text-[#E4D49A] border-[#141414]" : "bg-[#FAF6EC] text-[#141414] border-[#DCCDAA] active:bg-[#EBE2CF]"}`}>
+                      className={`relative flex items-center gap-2.5 border px-3 min-h-12 text-left text-[13px] transition-colors ${(fils?.some((f) => f.valeur === onglet) || onglet === valeur) ? "bg-[#141414] text-[#E4D49A] border-[#141414]" : "bg-[#FAF6EC] text-[#141414] border-[#DCCDAA] active:bg-[#EBE2CF]"}`}>
                       <Icone className="h-4 w-4 shrink-0" /><span className="leading-tight">{libelle}</span>
                       {!!badge && <span className="ml-auto font-serif text-[17px] leading-none text-[#9C4A2C] tabular-nums">{badge}</span>}
                     </button>
@@ -64,16 +69,17 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
         </div>
       )}
       <nav className="fixed inset-x-0 bottom-0 z-[45] border-t border-[#E4D49A]/15 bg-[#1B1916] text-[#BDB29C] pt-1 pb-[calc(6px+env(safe-area-inset-bottom))]" aria-label="Navigation principale">
-        <ul className="relative grid grid-cols-4">
+        <ul className="relative grid grid-cols-5">
           {/* Le trait glisse sous l'onglet choisi */}
-          <span className="a-trait-nav !top-auto bottom-0.5" style={{ transform: `translateX(${(plusOuvert || dansPlus ? 3 : Math.max(0, PRINCIPAUX.findIndex((p) => p.valeur === onglet))) * 100}%)` }} aria-hidden />
+          <span className="a-trait-nav !top-auto bottom-0.5" style={{ transform: `translateX(${(plusOuvert || dansPlus ? PRINCIPAUX.length : Math.max(0, PRINCIPAUX.findIndex((p) => dans(p.valeur, onglet)))) * 100}%)` }} aria-hidden />
           {PRINCIPAUX.map(({ valeur, libelle, Icone }) => {
-            const actif = onglet === valeur && !plusOuvert;
+            const actif = dans(valeur, onglet) && !plusOuvert;
             return (
               <li key={valeur}>
                 <button onClick={() => choisir(valeur)} aria-current={actif ? "page" : undefined} data-testid={`bas-${valeur}`}
-                  className={`w-full min-h-14 flex flex-col items-center justify-center gap-1 text-[11px] font-medium tracking-[0.04em] transition-colors ${actif ? "text-[#E4D49A]" : "text-[#BDB29C]"}`}>
+                  className={`relative w-full min-h-14 flex flex-col items-center justify-center gap-1 text-[11px] font-medium tracking-[0.04em] transition-colors ${actif ? "text-[#E4D49A]" : "text-[#BDB29C]"}`}>
                   <Icone className="h-5 w-5 [stroke-width:1.4]" />{libelle}
+                  {valeur === "entreprise" && badgeClients > 0 && <span className="absolute top-1 left-1/2 ml-2.5 text-[10.5px] leading-none font-medium tabular-nums text-[#E4D49A]" aria-label={`${badgeClients} nouvelle(s) demande(s)`}>{badgeClients}</span>}
                 </button>
               </li>
             );

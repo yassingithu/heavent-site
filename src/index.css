@@ -54,7 +54,7 @@ All colors MUST be HSL. Color scheme: white, black, gold (#C8B560)
 @layer base {
   :root {
     /* Main brand colors */
-    --background: 0 0% 100%;
+    --background: 42 43% 94%;
     --foreground: 0 0% 8%;
     
     /* Gold accent - primary brand color */
@@ -63,40 +63,40 @@ All colors MUST be HSL. Color scheme: white, black, gold (#C8B560)
     --gold-dark: 45 47% 48%;
     
     /* Card colors */
-    --card: 0 0% 100%;
+    --card: 43 55% 95%;
     --card-foreground: 0 0% 8%;
 
     /* Popover colors */
-    --popover: 0 0% 100%;
+    --popover: 43 55% 95%;
     --popover-foreground: 0 0% 8%;
 
     /* Primary - using gold as primary */
-    --primary: 45 47% 58%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 8%;
+    --primary-foreground: 43 55% 95%;
 
     /* Secondary - elegant gray */
-    --secondary: 0 0% 96%;
+    --secondary: 42 40% 88%;
     --secondary-foreground: 0 0% 8%;
 
     /* Muted colors */
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 42 40% 90%;
+    --muted-foreground: 33 12% 32%;
 
     /* Accent - gold variant */
-    --accent: 45 47% 94%;
+    --accent: 44 52% 86%;
     --accent-foreground: 0 0% 8%;
 
     /* Destructive */
-    --destructive: 0 84% 60%;
+    --destructive: 13 56% 40%;
     --destructive-foreground: 0 0% 100%;
 
     /* Border and input */
-    --border: 0 0% 89%;
-    --input: 0 0% 89%;
-    --ring: 45 47% 58%;
+    --border: 42 40% 76%;
+    --input: 42 40% 76%;
+    --ring: 45 47% 45%;
 
     /* Design system tokens */
-    --radius: 0.75rem;
+    --radius: 2px;
     
     /* Gradients */
     --gradient-hero: linear-gradient(135deg, hsl(var(--background)), hsl(var(--accent)));
@@ -111,21 +111,21 @@ All colors MUST be HSL. Color scheme: white, black, gold (#C8B560)
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 0 0% 8%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-foreground: 43 55% 95%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary: 45 47% 58%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-primary-foreground: 0 0% 8%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent: 0 0% 14%;
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-accent-foreground: 43 55% 95%;
 
-    --sidebar-border: 220 13% 91%;
+    --sidebar-border: 0 0% 20%;
 
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 45 47% 58%;
   }
 
   .dark {

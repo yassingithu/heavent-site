@@ -224,7 +224,7 @@ function FicheLieu({ l, villes, recherche, ouvert, onOuvrir, onChange, onSupprim
                   <input className={`${champ} col-span-2 sm:col-span-1`} value={t.libelle} placeholder="Ex. Location samedi soir" onChange={(e) => setTarif(i, { libelle: e.target.value })} />
                   <select className={champ} value={t.unite} onChange={(e) => setTarif(i, { unite: e.target.value })}>{UNITES.map(([v, x]) => <option key={v} value={v}>{x}</option>)}</select>
                   <input className={champ} type="number" value={t.prix} onChange={(e) => setTarif(i, { prix: Number(e.target.value) })} placeholder="MAD" data-testid="lieu-prix" />
-                  <button onClick={() => setF({ ...f, tarifs: f.tarifs.filter((_, k) => k !== i) })} className="h-11 w-11 sm:h-9 sm:w-9 grid place-items-center text-muted-foreground hover:text-red-700" aria-label="Retirer"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => setF({ ...f, tarifs: f.tarifs.filter((_, k) => k !== i) })} className="h-11 w-11 sm:h-9 sm:w-9 grid place-items-center text-muted-foreground hover:text-[#9C4A2C]" aria-label="Retirer"><Trash2 className="h-4 w-4" /></button>
                 </div>
               ))}
               <button onClick={() => setF({ ...f, tarifs: [...f.tarifs, { libelle: "", unite: "forfait", prix: 0 }] })} className="text-sm text-[#8C6D22] inline-flex items-center gap-1 min-h-11"><Plus className="h-4 w-4" /> Ajouter un tarif</button>

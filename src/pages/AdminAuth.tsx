@@ -109,7 +109,7 @@ const AdminAuth = () => {
       <Card className="w-full max-w-sm sm:max-w-md shadow-xl border-0 bg-white/95 backdrop-blur-sm">
         <CardHeader className="text-center pb-4 sm:pb-6">
           <div className="flex justify-center mb-3 sm:mb-4">
-            <Shield className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
+            <Shield className="h-10 w-10 sm:h-12 sm:w-12 text-[#7A5F1F]" />
           </div>
           <CardTitle className="text-xl sm:text-2xl font-bold">Administration</CardTitle>
           <CardDescription className="text-sm sm:text-base">

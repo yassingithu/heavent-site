@@ -197,7 +197,7 @@ export default function ReponsesWhatsApp({ contexte, compact = false, modeleDire
   );
   const declencheur = (
     <button type="button" onClick={(e) => { e.stopPropagation(); if (mobile) ouvrir(true); }} data-testid="reponses-whatsapp"
-      className={classe ?? `inline-flex items-center gap-1.5 rounded-md border border-green-200 bg-green-50 text-green-800 hover:bg-green-100 text-sm ${compact ? "h-9 px-2.5" : "h-10 px-3"}`}>
+      className={classe ?? `inline-flex items-center gap-1.5 rounded-md border border-[#1F5A4C]/30 bg-[#1F5A4C]/10 text-[#1F5A4C] hover:bg-[#1F5A4C]/10 text-sm ${compact ? "h-9 px-2.5" : "h-10 px-3"}`}>
       <MessageCircle className={`h-4 w-4 ${classe ? "text-[#25D366]" : ""}`} /> {libelle ?? (compact ? "WhatsApp" : "Répondre sur WhatsApp")}
     </button>
   );

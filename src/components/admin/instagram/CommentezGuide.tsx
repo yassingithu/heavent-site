@@ -7,8 +7,8 @@ import { Check, Copy, MessageCircle, RefreshCw } from "lucide-react";
 const URL_WEBHOOK = "https://mapiwnsjsluiwmnulhqk.supabase.co/functions/v1/instagram-webhook";
 interface Commentaire { commentaire_id: string; auteur: string | null; texte: string | null; guide_slug: string | null; statut: string; erreur: string | null; cree_le: string }
 const STATUTS: Record<string, [string, string]> = {
-  envoye: ["Guide envoyé", "text-emerald-700"], ignore: ["Déjà reçu aujourd'hui", "text-muted-foreground"],
-  erreur: ["Erreur", "text-red-700"], recu: ["Reçu", "text-muted-foreground"],
+  envoye: ["Guide envoyé", "text-[#1F5A4C]"], ignore: ["Déjà reçu aujourd'hui", "text-muted-foreground"],
+  erreur: ["Erreur", "text-[#9C4A2C]"], recu: ["Reçu", "text-muted-foreground"],
 };
 
 export default function CommentezGuide({ reglages, onChange }: {
@@ -40,7 +40,7 @@ export default function CommentezGuide({ reglages, onChange }: {
     <section className="rounded-2xl border border-[#EADFC8] bg-white p-4 space-y-3" data-testid="commentez-guide">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-medium flex items-center gap-2"><MessageCircle className="h-4 w-4 text-[#A8933F]" /> « Commentez GUIDE » → message privé automatique</h3>
-        {reglages.abonne_le ? <span className="text-xs text-emerald-700 flex items-center gap-1"><Check className="h-3.5 w-3.5" /> Actif sur le compte</span>
+        {reglages.abonne_le ? <span className="text-xs text-[#1F5A4C] flex items-center gap-1"><Check className="h-3.5 w-3.5" /> Actif sur le compte</span>
           : reglages.instagram && <button onClick={activer} disabled={occupe} className="rounded-full bg-[#141414] text-white px-4 h-9 text-sm">{occupe ? "…" : "Activer sur le compte"}</button>}
       </div>
       <details className="text-sm">
@@ -50,7 +50,7 @@ export default function CommentezGuide({ reglages, onChange }: {
           {reglages.webhook_jeton && <Ligne libelle="Vérifier le token" valeur={reglages.webhook_jeton} onCopier={copier} />}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground w-32 shrink-0">Clé secrète de l'app</span>
-            {reglages.secret_app ? <span className="text-xs text-emerald-700 flex items-center gap-1"><Check className="h-3.5 w-3.5" /> enregistrée</span> : (
+            {reglages.secret_app ? <span className="text-xs text-[#1F5A4C] flex items-center gap-1"><Check className="h-3.5 w-3.5" /> enregistrée</span> : (
               <>
                 <input type="password" autoComplete="off" value={secret} onChange={(e) => setSecret(e.target.value)} placeholder="Paramètres de l'app → Général → Clé secrète" className="flex-1 min-w-0 rounded-md border px-3 h-9 text-sm" data-testid="secret-app" />
                 <button onClick={enregistrerSecret} disabled={secret.trim().length < 10} className="rounded-md bg-[#141414] text-white px-3 h-9 text-sm disabled:opacity-50">Enregistrer</button>

@@ -60,7 +60,7 @@ const PrivacyPolicy = () => {
                 </ul>
                 <p>
                   {x("Pour exercer ces droits, contactez-nous à :")} 
-                  <a href="mailto:info@heaventagency.com" className="text-primary hover:underline ml-1">
+                  <a href="mailto:info@heaventagency.com" className="text-[#7A5F1F] hover:underline ml-1">
                     info@heaventagency.com
                   </a>
                 </p>

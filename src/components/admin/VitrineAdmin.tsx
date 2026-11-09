@@ -134,7 +134,7 @@ export default function VitrineAdmin() {
                   <Input value={x.q} onChange={(e) => majFaq(i, { q: e.target.value })} placeholder="Question" className="font-medium" />
                   <Button size="icon" variant="ghost" onClick={() => deplacerFaq(i, -1)} title="Monter"><ArrowUp className="h-4 w-4" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => deplacerFaq(i, 1)} title="Descendre"><ArrowDown className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => set("faq", v.faq.filter((_, j) => j !== i))} title="Supprimer"><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => set("faq", v.faq.filter((_, j) => j !== i))} title="Supprimer"><Trash2 className="h-4 w-4 text-[#9C4A2C]" /></Button>
                 </div>
                 <Textarea rows={2} value={x.r} onChange={(e) => majFaq(i, { r: e.target.value })} placeholder="Réponse" />
               </div>
@@ -166,7 +166,7 @@ export default function VitrineAdmin() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch checked={r.publie} onCheckedChange={(c) => majRef(r, { publie: c })} title="Affiché sur le site" />
-                  <Button size="icon" variant="ghost" onClick={() => supprimerRef(r)}><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => supprimerRef(r)}><Trash2 className="h-4 w-4 text-[#9C4A2C]" /></Button>
                 </div>
               </div>
             ))}
@@ -193,7 +193,7 @@ export default function VitrineAdmin() {
                 <Textarea rows={2} defaultValue={t.texte} onBlur={(e) => e.target.value !== t.texte && majTem(t, { texte: e.target.value })} />
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 text-xs"><Switch checked={t.publie} onCheckedChange={(c) => majTem(t, { publie: c })} /> {t.publie ? "Publié sur le site" : "Non publié"}</label>
-                  <Button size="icon" variant="ghost" onClick={async () => { if (confirm("Supprimer ce témoignage ?")) { await sb.from("temoignages").delete().eq("id", t.id); chargerVitrine(true); charger(); } }}><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                  <Button size="icon" variant="ghost" onClick={async () => { if (confirm("Supprimer ce témoignage ?")) { await sb.from("temoignages").delete().eq("id", t.id); chargerVitrine(true); charger(); } }}><Trash2 className="h-4 w-4 text-[#9C4A2C]" /></Button>
                 </div>
               </div>
             ))}

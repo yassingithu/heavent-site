@@ -95,7 +95,7 @@ export default function CataloguePrestations({ items, devise, onChange }: { item
                 <TableCell><Switch checked={p.actif} onCheckedChange={(v) => maj(p.id, { actif: v })} /></TableCell>
                 <TableCell className="whitespace-nowrap">
                   {edits[p.id] && <Button size="icon" variant="ghost" title="Enregistrer" onClick={() => maj(p.id, edits[p.id])}><Save className="h-4 w-4" /></Button>}
-                  <Button size="icon" variant="ghost" title="Supprimer" onClick={() => suppr(p)}><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                  <Button size="icon" variant="ghost" title="Supprimer" onClick={() => suppr(p)}><Trash2 className="h-4 w-4 text-[#9C4A2C]" /></Button>
                 </TableCell>
               </TableRow>
             ))}

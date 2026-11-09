@@ -70,7 +70,7 @@ export default function PaiementsPaie({ fiche, onClose, onSaved }: { fiche: any 
                 {lignes.map((p) => (
                   <li key={p.id} className="flex items-start justify-between gap-2 p-2">
                     <span>
-                      <b className={Number(p.montant) < 0 ? "text-red-700" : ""}>{mad(p.montant)}</b> le {dateFr(p.date_paiement)} · {MODES[p.mode] ?? p.mode}
+                      <b className={Number(p.montant) < 0 ? "text-[#9C4A2C]" : ""}>{mad(p.montant)}</b> le {dateFr(p.date_paiement)} · {MODES[p.mode] ?? p.mode}
                       {p.reference ? ` · réf. ${p.reference}` : ""}{p.note ? ` · ${p.note}` : ""}
                       <span className="block text-xs text-muted-foreground">Enregistré par {p.enregistre_par} le {p.enregistre_le ? new Date(p.enregistre_le).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" }) : ""}{p.corrige_paiement ? " · correction" : ""}</span>
                     </span>

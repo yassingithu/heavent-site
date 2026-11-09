@@ -14,9 +14,9 @@ import { MOIS, dateFr, enteteDoc, esc, logo, mad, nomFichier, piedAgence, telech
 import { aujourdhuiMaroc } from "@/lib/dateMaroc";
 
 const STATUTS: Record<string, { label: string; className: string }> = {
-  en_attente: { label: "À valider", className: "bg-yellow-100 text-yellow-800" },
-  valide: { label: "Validée", className: "bg-blue-100 text-blue-800" },
-  paye: { label: "Payée", className: "bg-green-100 text-green-800" },
+  en_attente: { label: "À valider", className: "bg-[#A8933F]/15 text-[#7A5F1F]" },
+  valide: { label: "Validée", className: "bg-[#A8933F]/15 text-[#7A5F1F]" },
+  paye: { label: "Payée", className: "bg-[#1F5A4C]/10 text-[#1F5A4C]" },
 };
 
 const cssPaie = `
@@ -189,13 +189,13 @@ export default function FichesPaieMensuelles() {
       </CardHeader>
       <CardContent className="overflow-x-auto space-y-3">
         {!String(agence?.cnss_affiliation_employeur ?? "").trim() && (
-          <div className="flex gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" data-testid="alerte-cnss-employeur">
+          <div className="flex gap-2 rounded-md border border-[#A8933F]/40 bg-[#A8933F]/15 p-3 text-sm text-[#7A5F1F]" data-testid="alerte-cnss-employeur">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <span>N° d'affiliation CNSS de l'employeur non renseigné (Devis → Infos agence). Les PDF sont des aperçus incomplets et aucun bulletin ne peut être validé. Un paiement réellement effectué peut toujours être enregistré (bouton « Paiement »).</span>
           </div>
         )}
         {doublons.map((g) => (
-          <div key={g.map((p) => p.id).join()} className="flex gap-2 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900" data-testid="alerte-cnss-doublon">
+          <div key={g.map((p) => p.id).join()} className="flex gap-2 rounded-md border border-[#9C4A2C]/30 bg-[#9C4A2C]/10 p-3 text-sm text-[#9C4A2C]" data-testid="alerte-cnss-doublon">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <span>Même N° CNSS saisi pour {g.map((p) => `${p.prenom ?? ""} ${p.nom ?? ""}`.trim()).join(", ")} : à vérifier.</span>
           </div>
@@ -212,7 +212,7 @@ export default function FichesPaieMensuelles() {
               {fiches.map((f) => (
                 <TableRow key={f.id}>
                   <TableCell>{f.staff?.prenom} {f.staff?.nom}{f.generee_auto && <span className="ml-2 text-xs text-muted-foreground">auto</span>}
-                    {!String(f.staff?.numero_securite_sociale ?? "").trim() && <span className="ml-2 text-xs text-amber-700" data-testid="cnss-salarie-manquant">N° CNSS manquant</span>}</TableCell>
+                    {!String(f.staff?.numero_securite_sociale ?? "").trim() && <span className="ml-2 text-xs text-[#7A5F1F]" data-testid="cnss-salarie-manquant">N° CNSS manquant</span>}</TableCell>
                   <TableCell className="text-right">{f.heures_travaillees ?? 0}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">{mad(f.salaire_brut)}</TableCell>
                   <TableCell className="text-right whitespace-nowrap font-medium">{mad(f.salaire_net)}</TableCell>

@@ -579,7 +579,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       <TabsContent value="liste" className="space-y-4">
         {demandesEnAttente.length > 0 && (
           <Card>
-            <CardHeader><CardTitle className="text-base">Demandes reçues sur le site, à chiffrer ({demandesEnAttente.length})</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Demandes à chiffrer ({demandesEnAttente.length})</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               {demandesEnAttente.slice(0, 8).map(({ kind, d }) => (
                 <div key={d.id} className="flex flex-wrap items-center justify-between gap-2 border rounded-md p-3">
@@ -645,8 +645,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                       <TableCell>{d.client_societe || d.client_nom}{d.client_societe && <div className="text-xs text-muted-foreground">{d.client_nom}</div>}</TableCell>
                       <TableCell>{d.titre || "—"}<div className="text-xs text-muted-foreground">{dateFr(d.date_evenement)}</div></TableCell>
                       <TableCell className="text-right font-medium whitespace-nowrap">{money(d.total_ttc, d.devise)}
-                        {d.signe_le ? <div className="text-[11px] font-normal text-green-700">✍️ Signé en ligne</div>
-                          : d.rdv_demande_le ? <div className="text-[11px] font-normal text-amber-700">📅 RDV demandé avant signature</div>
+                        {d.signe_le ? <div className="text-[11px] font-normal text-[#1F5A4C]">✍️ Signé en ligne</div>
+                          : d.rdv_demande_le ? <div className="text-[11px] font-normal text-[#7A5F1F]">📅 RDV demandé avant signature</div>
                           : d.statut === "envoye" && d.relances ? <div className="text-[11px] font-normal text-muted-foreground">{d.relances} relance{d.relances > 1 ? "s" : ""} auto</div> : null}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
@@ -663,12 +663,12 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                         <Button size="icon" variant="ghost" title="Image à partager (PNG)" disabled={imageEnCours} onClick={() => imageDepuisListe(d.id, "png")} data-testid="image-devis-liste"><ImageIcon className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" title="Dupliquer" onClick={() => ouvrir(d.id, true)}><Copy className="h-4 w-4" /></Button>
                         {devisSupprimable(d)
-                          ? <Button size="icon" variant="ghost" title="Supprimer" onClick={() => supprimer(d.id, d.numero)} data-testid="supprimer-devis"><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                          ? <Button size="icon" variant="ghost" title="Supprimer" onClick={() => supprimer(d.id, d.numero)} data-testid="supprimer-devis"><Trash2 className="h-4 w-4 text-[#9C4A2C]" /></Button>
                           : <Button size="icon" variant="ghost" data-testid="archiver-devis"
                               title={d.archive ? "Ressortir des archives" : `Archiver (${d.signe_le ? "devis signé" : d.nbFactures ? "devis facturé" : "contrats signés"} : il ne peut pas être supprimé, mais tu peux le retirer de la liste)`}
                               onClick={() => archiver(d.id, !d.archive)}>{d.archive ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}</Button>}
                         {!devisSupprimable(d) && (
-                          <Button size="icon" variant="ghost" title="Supprimer définitivement (devis de test)" onClick={() => supprimerTest(d)} data-testid="supprimer-devis-test"><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                          <Button size="icon" variant="ghost" title="Supprimer définitivement (devis de test)" onClick={() => supprimerTest(d)} data-testid="supprimer-devis-test"><Trash2 className="h-4 w-4 text-[#9C4A2C]" /></Button>
                         )}
                       </TableCell>
                     </TableRow>
@@ -745,7 +745,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   <CardTitle className="text-base">Prestations</CardTitle>
                   {form.marque === "nawar" && (() => {
                     const nb = form.lignes.filter((l) => /parfum/i.test(l.designation)).reduce((t, l) => t + (Number(l.quantite) || 0), 0);
-                    return nb < 50 ? <p className="text-xs rounded-md border border-amber-300 bg-amber-50 text-amber-900 p-2" data-testid="minimum-nawar">⚠️ {nb} parfum(s) au devis : le minimum facturé est de 50 parfums (conditions Nawar, article 2).</p> : null;
+                    return nb < 50 ? <p className="text-xs rounded-md border border-[#A8933F]/40 bg-[#A8933F]/15 text-[#7A5F1F] p-2" data-testid="minimum-nawar">⚠️ {nb} parfum(s) au devis : le minimum facturé est de 50 parfums (conditions Nawar, article 2).</p> : null;
                   })()}
                   {Object.keys(parCategorie).length > 0 ? (
                     <div className="space-y-2">
@@ -880,7 +880,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 </div>
                 <p className="text-[11px] text-muted-foreground -mt-1">L'image n'affiche que le titre, la date, le lieu et le prix final : pour les clients qui te contactent sur Instagram, TikTok…</p>
                 {form.rdv_demande_le && !form.signe_le && (
-                  <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900" data-testid="rdv-demande">
+                  <div className="rounded-md border border-[#A8933F]/40 bg-[#A8933F]/15 p-2 text-xs text-[#7A5F1F]" data-testid="rdv-demande">
                     📅 Le client a demandé un rendez-vous avant de signer ({dateHeureFr(form.rdv_demande_le)}).
                     {form.rdv_message && <div className="mt-1 whitespace-pre-line">{form.rdv_message}</div>}
                   </div>

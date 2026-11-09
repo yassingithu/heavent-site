@@ -272,7 +272,7 @@ export default function DepensesAdmin() {
                 <div className="sm:col-span-2"><Label>Note</Label><Textarea rows={2} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} /></div>
               </div>
               <div className="flex items-center justify-between gap-2 pt-1">
-                {f.id ? <Button variant="ghost" className="text-red-700 gap-1.5" onClick={supprimer} disabled={occupe} data-testid="supprimer-depense"><Trash2 className="h-4 w-4" /> Supprimer</Button> : <span />}
+                {f.id ? <Button variant="ghost" className="text-[#9C4A2C] gap-1.5" onClick={supprimer} disabled={occupe} data-testid="supprimer-depense"><Trash2 className="h-4 w-4" /> Supprimer</Button> : <span />}
                 <Button onClick={enregistrer} disabled={occupe} data-testid="enregistrer-depense">Enregistrer</Button>
               </div>
             </div>
@@ -287,7 +287,7 @@ export default function DepensesAdmin() {
           <ul className="divide-y rounded-md border text-sm">
             {categories.map((c) => (
               <li key={c} className="flex items-center justify-between px-3 py-2">{c}
-                <button className="text-xs text-muted-foreground hover:text-red-700" onClick={() => retirerCategorie(c)} aria-label={`Retirer ${c}`}><Trash2 className="h-3.5 w-3.5" /></button>
+                <button className="text-xs text-muted-foreground hover:text-[#9C4A2C]" onClick={() => retirerCategorie(c)} aria-label={`Retirer ${c}`}><Trash2 className="h-3.5 w-3.5" /></button>
               </li>
             ))}
           </ul>

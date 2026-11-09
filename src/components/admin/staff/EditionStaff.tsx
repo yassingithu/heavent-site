@@ -132,9 +132,9 @@ export default function EditionStaff({ staffId, onClose, onSaved }: Props) {
                         ? <Textarea rows={2} value={s[c.k] ?? ""} onChange={(e) => setS({ ...s, [c.k]: e.target.value })} />
                         : <Input type={c.type === "number" ? "number" : c.type === "date" ? "date" : "text"} value={s[c.k] ?? ""} onChange={(e) => setS({ ...s, [c.k]: e.target.value })}
                             data-testid={c.k === "numero_securite_sociale" ? "cnss-salarie" : undefined} />}
-                      {c.k === "numero_securite_sociale" && avertissementsNumero(s[c.k]).map((a) => <p key={a} className="text-xs text-amber-700 mt-1">À vérifier : {a} (enregistré tel quel).</p>)}
+                      {c.k === "numero_securite_sociale" && avertissementsNumero(s[c.k]).map((a) => <p key={a} className="text-xs text-[#7A5F1F] mt-1">À vérifier : {a} (enregistré tel quel).</p>)}
                       {c.k === "numero_securite_sociale" && memeCnss.length > 0 && (
-                        <p className="text-xs text-red-700 mt-1" data-testid="cnss-doublon">Même numéro que {memeCnss.map((a) => `${a.prenom ?? ""} ${a.nom ?? ""}`.trim()).join(", ")} : à vérifier.</p>
+                        <p className="text-xs text-[#9C4A2C] mt-1" data-testid="cnss-doublon">Même numéro que {memeCnss.map((a) => `${a.prenom ?? ""} ${a.nom ?? ""}`.trim()).join(", ")} : à vérifier.</p>
                       )}
                     </div>
                   ))}
@@ -166,7 +166,7 @@ export default function EditionStaff({ staffId, onClose, onSaved }: Props) {
               </div>
             </div>
 
-            <div className={`border-t pt-4 ${s.banni ? "bg-red-50 -mx-6 px-6 pb-4" : ""}`}>
+            <div className={`border-t pt-4 ${s.banni ? "bg-[#9C4A2C]/10 -mx-6 px-6 pb-4" : ""}`}>
               <div className="text-sm font-semibold mb-1 flex items-center gap-2"><Ban className="h-4 w-4" /> {s.banni ? "Crew banni" : "Bannir ce crew"}</div>
               {s.banni ? (
                 <p className="text-xs text-muted-foreground mb-2">

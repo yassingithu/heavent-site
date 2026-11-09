@@ -25,7 +25,7 @@ export default function MissionsDuJour() {
     <Card data-testid="missions-du-jour">
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex flex-wrap items-center gap-2">Équipes sur le terrain
-          {aVerifier > 0 && <span className="text-xs font-medium rounded-full bg-orange-100 text-orange-900 px-2 py-0.5">{aVerifier} pointage{aVerifier > 1 ? "s" : ""} à vérifier</span>}
+          {aVerifier > 0 && <span className="text-xs font-medium rounded-full bg-[#A8933F]/15 text-[#7A5F1F] px-2 py-0.5">{aVerifier} pointage{aVerifier > 1 ? "s" : ""} à vérifier</span>}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
@@ -38,7 +38,7 @@ export default function MissionsDuJour() {
                   <div className="min-w-0">
                     <span className="font-medium">{l.staff?.prenom} {l.staff?.nom}</span>
                     <span className="text-muted-foreground"> · {l.devis?.titre || l.devis?.numero}{l.heure_debut ? ` · ${l.heure_debut.slice(0, 5)}${l.heure_fin ? `–${l.heure_fin.slice(0, 5)}` : ""}` : ""}</span>
-                    {l.staff?.telephone && <a className="ml-2 text-xs underline text-primary" href={`tel:${l.staff.telephone}`}>{l.staff.telephone}</a>}
+                    {l.staff?.telephone && <a className="ml-2 text-xs underline text-[#7A5F1F]" href={`tel:${l.staff.telephone}`}>{l.staff.telephone}</a>}
                   </div>
                   <EtatPointage a={l} onChange={charger} />
                 </div>

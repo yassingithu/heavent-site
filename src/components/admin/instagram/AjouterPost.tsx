@@ -97,7 +97,7 @@ export default function AjouterPost({ compte, posts, famille = false, onFermer, 
               </div>
             </div>
           </div>
-          {passe && <p className="text-xs rounded-md bg-amber-50 text-amber-800 px-3 py-2">Cette date est déjà passée : la publication partira dès qu'elle sera prête (au prochain passage, sous 15 min).</p>}
+          {passe && <p className="text-xs rounded-md bg-[#A8933F]/15 text-[#7A5F1F] px-3 py-2">Cette date est déjà passée : la publication partira dès qu'elle sera prête (au prochain passage, sous 15 min).</p>}
 
           {!famille && <div className="text-sm space-y-2">
             <span className="text-muted-foreground">Dans le planning</span>

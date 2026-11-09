@@ -157,16 +157,23 @@ interface Disponibilite {
   };
 }
 
-/** Menu de l'administration, regroupé par thème */
-const MENU_ADMIN: { titre: string; items: (readonly [string, string, typeof Users])[] }[] = [
-  { titre: "Pilotage", items: [["tableau", "Bilan", BarChart3], ["statistiques", "Statistiques", TrendingUp], ["agenda", "Agenda", CalendarDays], ["depenses", "Dépenses", Receipt]] },
-  { titre: "Clients", items: [["entreprise", "Demandes entreprise", Building2], ["mariage", "Demandes événement", PartyPopper], ["devis-rapide", "Devis", FileText], ["devis-envoyes", "Devis envoyés", Inbox], ["envoyer-devis", "Envoyer un devis", Send]] },
-  { titre: "Équipe", items: [["staff", "Personnel", Users], ["disponibilites", "Disponibilités", CalendarCheck], ["contrats", "Contrats", FileSignature], ["fiches", "Paie", Wallet]] },
-  { titre: "Prestataires", items: [["prestataires", "Prestataires", Handshake]] },
-  { titre: "Lieux", items: [["lieux", "Salles & palais", MapPin]] },
-  { titre: "Invitations", items: [["invitations", "Invitations digitales", Mail]] },
-  { titre: "Communication", items: [["instagram", "Instagram", Instagram], ["newsletter", "Newsletter", Mail]] },
-  { titre: "Heavent Studio", items: [["studio", "Démos agences", Sparkles]] },
+/** Menu de l'administration : 14 rubriques ; celles qui en regroupent plusieurs affichent des sous-onglets en haut de la page. */
+type EntreeMenu = readonly [string, string, typeof Users, ReadonlyArray<readonly [string, string]>?];
+const MENU_ADMIN: { titre: string; items: EntreeMenu[] }[] = [
+  { titre: "Pilotage", items: [["tableau", "Bilan", BarChart3], ["agenda", "Agenda", CalendarDays], ["statistiques", "Statistiques", TrendingUp], ["depenses", "Dépenses", Receipt]] },
+  { titre: "Clients", items: [
+    ["entreprise", "Demandes", Inbox, [["entreprise", "Entreprise"], ["mariage", "Événement"], ["devis-envoyes", "Réponses envoyées"]]],
+    ["devis-rapide", "Devis", FileText, [["devis-rapide", "Devis et factures"], ["envoyer-devis", "Réponse rapide"]]],
+  ] },
+  { titre: "Équipe", items: [
+    ["staff", "Personnel", Users, [["staff", "Profils"], ["disponibilites", "Disponibilités"]]],
+    ["contrats", "Contrats", FileSignature], ["fiches", "Paie", Wallet],
+  ] },
+  { titre: "Partenaires", items: [["prestataires", "Prestataires et lieux", Handshake, [["prestataires", "Prestataires"], ["lieux", "Salles & palais"]]]] },
+  { titre: "Communication", items: [
+    ["instagram", "Publications", Instagram, [["instagram", "Instagram"], ["newsletter", "Newsletter"], ["invitations", "Invitations digitales"]]],
+    ["studio", "Heavent Studio", Sparkles],
+  ] },
   { titre: "Réglages", items: [["realisations", "Site web", Globe], ["securite", "Sécurité", Shield]] },
 ];
 const TITRES_ADMIN: Record<string, [string, string]> = {
@@ -1051,16 +1058,22 @@ const Admin = () => {
     );
   }
 
+  const masque = (v: string) => estDemo() && (ongletMasque(v) || v === "depenses");
   const groupesVisibles = MENU_ADMIN
-    .filter((g) => !(estDemo() && (g.titre === "Heavent Studio" || g.items.every(([v]) => ongletMasque(v) || v === "depenses"))))
+    .filter((g) => !(estDemo() && (g.titre === "Heavent Studio" || g.items.every(([v]) => masque(v)))))
     .map((g) => ({
       titre: g.titre,
-      items: g.items.filter(([v]) => !(estDemo() && (ongletMasque(v) || v === "depenses"))).map(([valeur, libelleBase, Icone]) => ({
-        valeur, Icone,
-        libelle: estDemo() ? libelleOnglet(valeur, libelleBase) : libelleBase,
-        badge: valeur === "entreprise" ? nouvellesEntreprise : valeur === "mariage" ? nouvellesMariage : 0,
-      })),
+      items: g.items.filter(([v]) => !masque(v)).map(([valeur, libelleBase, Icone, fils]) => {
+        const sousOnglets = (fils ?? []).filter(([v]) => !masque(v)).map(([v, l]) => ({ valeur: v, libelle: l }));
+        return {
+          valeur, Icone,
+          libelle: estDemo() ? libelleOnglet(valeur, libelleBase) : libelleBase,
+          fils: sousOnglets.length > 1 ? sousOnglets : undefined,
+          badge: valeur === "entreprise" ? nouvellesEntreprise + nouvellesMariage : 0,
+        };
+      }),
     }));
+  const entreeActive = groupesVisibles.flatMap((g) => g.items).find((i) => i.valeur === ongletAdmin || i.fils?.some((f) => f.valeur === ongletAdmin));
 
   return (
     <Tabs value={ongletAdmin} onValueChange={(v) => { setOngletAdmin(v); window.scrollTo({ top: 0 }); }} orientation="vertical" className="admin-theme admin-seuil min-h-screen lg:flex">
@@ -1093,9 +1106,9 @@ const Admin = () => {
               {reduit
                 ? <div className="mx-3 my-2 border-t border-white/10" aria-hidden />
                 : <div className="px-3 pt-2 pb-1 text-[10px] font-medium uppercase tracking-[0.26em] text-[#E4D49A]/60">{groupe.titre}</div>}
-              {groupe.items.map(({ valeur, libelle, Icone, badge }) => (
+              {groupe.items.map(({ valeur, libelle, Icone, badge, fils }) => (
                 <TabsTrigger key={valeur} value={valeur} data-testid={valeur === "agenda" ? "onglet-agenda" : undefined} title={libelle}
-                  className={`relative w-full gap-2.5 rounded-none py-2 text-[13.5px] font-normal tracking-[0.02em] text-[#BDB29C] hover:text-[#FAF6EC] hover:bg-white/[0.05] data-[state=active]:bg-white/[0.06] data-[state=active]:text-[#E4D49A] data-[state=active]:shadow-none before:absolute before:left-0 before:top-2 before:bottom-2 before:w-px before:bg-[#E4D49A] before:origin-top before:scale-y-0 before:transition-transform data-[state=active]:before:scale-y-100 transition-colors ${reduit ? "justify-center px-0" : "justify-start px-3"}`}>
+                  className={`${fils?.some((f) => f.valeur === ongletAdmin) && valeur !== ongletAdmin ? "bg-white/[0.06] !text-[#E4D49A] before:!scale-y-100" : ""} relative w-full gap-2.5 rounded-none py-2 text-[13.5px] font-normal tracking-[0.02em] text-[#BDB29C] hover:text-[#FAF6EC] hover:bg-white/[0.05] data-[state=active]:bg-white/[0.06] data-[state=active]:text-[#E4D49A] data-[state=active]:shadow-none before:absolute before:left-0 before:top-2 before:bottom-2 before:w-px before:bg-[#E4D49A] before:origin-top before:scale-y-0 before:transition-transform data-[state=active]:before:scale-y-100 transition-colors ${reduit ? "justify-center px-0" : "justify-start px-3"}`}>
                   <Icone className="h-4 w-4 shrink-0" /><span className={reduit ? "sr-only" : ""}>{libelle}</span>
                   {badge > 0 && <span className={reduit ? "absolute top-0.5 right-2 min-w-4 h-4 px-1 text-[#E4D49A] text-[10.5px] font-medium tabular-nums inline-flex items-center justify-center" : "ml-auto min-w-5 h-5 px-1.5 border border-[#E4D49A]/40 text-[#E4D49A] text-[11px] font-medium tabular-nums inline-flex items-center justify-center"} aria-hidden title={`${badge} nouvelle(s) demande(s)`}>{badge}</span>}
                 </TabsTrigger>
@@ -1126,6 +1139,17 @@ const Admin = () => {
             <h1 className="font-serif text-[30px] leading-none sm:text-[34px] lg:text-[40px] tracking-[-0.02em] text-[#141414]" data-testid="titre-section">{(estDemo() ? titreOnglet(ongletAdmin, TITRES_ADMIN[ongletAdmin]) : TITRES_ADMIN[ongletAdmin])?.[0] ?? "Administration"}</h1>
             <p className="text-[13px] text-[#5A5146] hidden sm:block">{(estDemo() ? titreOnglet(ongletAdmin, TITRES_ADMIN[ongletAdmin]) : TITRES_ADMIN[ongletAdmin])?.[1]}</p>
           </header>
+        )}
+
+        {entreeActive?.fils && (
+          <div className="mb-4 flex flex-wrap gap-x-6 gap-y-1 border-b border-[#DCCDAA]" role="tablist" aria-label={entreeActive.libelle} data-testid="sous-onglets">
+            {entreeActive.fils.map((f) => (
+              <button key={f.valeur} role="tab" aria-selected={f.valeur === ongletAdmin} onClick={() => { setOngletAdmin(f.valeur); window.scrollTo({ top: 0 }); }}
+                className={`-mb-px min-h-11 border-b-2 px-0.5 text-[13.5px] tracking-[0.02em] transition-colors ${f.valeur === ongletAdmin ? "border-[#A8933F] text-[#141414]" : "border-transparent text-[#5A5146] hover:text-[#141414]"}`}>
+                {f.libelle}{f.valeur === "entreprise" && nouvellesEntreprise > 0 ? ` (${nouvellesEntreprise})` : f.valeur === "mariage" && nouvellesMariage > 0 ? ` (${nouvellesMariage})` : ""}
+              </button>
+            ))}
+          </div>
         )}
 
         <TabsContent value="tableau" className="space-y-4">
@@ -2131,12 +2155,12 @@ const Admin = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="bg-[#A8933F]/15 border border-[#A8933F]/40 rounded-lg p-4">
                 <div className="flex items-start space-x-2">
                   <Shield className="h-5 w-5 text-yellow-600 mt-0.5" />
                   <div>
-                    <h4 className="font-semibold text-yellow-800">Information de sécurité</h4>
-                    <p className="text-sm text-yellow-700 mt-1">
+                    <h4 className="font-semibold text-[#7A5F1F]">Information de sécurité</h4>
+                    <p className="text-sm text-[#7A5F1F] mt-1">
                       Cette fonctionnalité permet de changer le mot de passe de n'importe quel membre du personnel. 
                       Utilisée uniquement en cas d'urgence ou de demande du personnel.
                     </p>
@@ -2206,7 +2230,7 @@ const Admin = () => {
                   </Button>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-[#DCCDAA]/40 p-4 rounded-lg">
                   <h4 className="font-semibold mb-3">Instructions</h4>
                   <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
                     <li>Sélectionnez le membre du personnel concerné</li>
@@ -2216,8 +2240,8 @@ const Admin = () => {
                     <li>Informez la personne de son nouveau mot de passe</li>
                   </ol>
                   
-                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                    <p className="text-xs text-blue-700">
+                  <div className="mt-4 p-3 bg-[#A8933F]/15 border border-[#A8933F]/40 rounded">
+                    <p className="text-xs text-[#7A5F1F]">
                       <strong>Conseil :</strong> Demandez au personnel de changer leur mot de passe 
                       lors de leur prochaine connexion pour des raisons de sécurité.
                     </p>

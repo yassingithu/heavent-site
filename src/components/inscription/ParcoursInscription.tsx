@@ -55,11 +55,11 @@ export function ParcoursInscription({ etape, remplis, total }: Props) {
       <div className={`rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 transition-all duration-500 ${anime ? "ring-2 ring-primary/60 scale-[1.01]" : ""}`}>
         <div className="flex items-center justify-between gap-3 mb-2">
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-wide text-primary font-semibold">{anime ? x("Étape débloquée !") : x("Étape {n} sur 5", { n: etape })} · {x(e.bravo)}</div>
+            <div className="text-xs uppercase tracking-wide text-[#7A5F1F] font-semibold">{anime ? x("Étape débloquée !") : x("Étape {n} sur 5", { n: etape })} · {x(e.bravo)}</div>
             <div className="font-serif text-lg sm:text-xl font-bold truncate">{e.emoji} {x(e.titre)}</div>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-2xl font-bold text-primary leading-none">{pourcentage}%</div>
+            <div className="text-2xl font-bold text-[#7A5F1F] leading-none">{pourcentage}%</div>
             <div className="text-[11px] text-muted-foreground">≈ {minutesRestantes > 1 ? x("{n} min restantes", { n: minutesRestantes }) : x("{n} min restante", { n: minutesRestantes })}</div>
           </div>
         </div>

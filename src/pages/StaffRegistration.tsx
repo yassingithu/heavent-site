@@ -311,7 +311,7 @@ const StaffRegistration = () => {
           <CardContent className="p-8">
             <Confettis />
             <div className="text-6xl mb-3" aria-hidden>🏆</div>
-            <div className="inline-block text-xs uppercase tracking-widest bg-primary/15 text-primary font-semibold rounded-full px-3 py-1 mb-3">{x("Badge débloqué · Membre de la team Heavent")}</div>
+            <div className="inline-block text-xs uppercase tracking-widest bg-primary/15 text-[#7A5F1F] font-semibold rounded-full px-3 py-1 mb-3">{x("Badge débloqué · Membre de la team Heavent")}</div>
             <h2 className="text-2xl font-bold mb-4">{x("Bienvenue dans l'équipe !")}</h2>
             <p className="text-muted-foreground mb-6">
               {x("Votre compte est créé et déjà actif. Vous pouvez dès maintenant indiquer vos disponibilités dans votre espace staff. Un email de bienvenue vous a été envoyé.")}
@@ -337,7 +337,7 @@ const StaffRegistration = () => {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-serif font-bold mb-4">
-              {x("Inscription")} <span className="text-primary">{x("Hôtes & Hôtesses")}</span>
+              {x("Inscription")} <span className="text-[#7A5F1F]">{x("Hôtes & Hôtesses")}</span>
             </h1>
             <p className="text-xl text-muted-foreground">
               {x("Rejoins la team et participe à des événements prestigieux — 5 petites étapes, environ 7 minutes ⏱️")}
@@ -1045,7 +1045,7 @@ const StaffRegistration = () => {
                     />
                     <Label htmlFor="rgpdConsent" className="text-sm leading-5">
                       {x("J'accepte que mes données personnelles soient traitées conformément à la")} 
-                      <a href="/politique-confidentialite" className="text-primary hover:underline ml-1">
+                      <a href="/politique-confidentialite" className="text-[#7A5F1F] hover:underline ml-1">
                         {x("politique de confidentialité")}
                       </a>{" "}
                       {x("et à la loi marocaine n° 09-08. Ces données seront utilisées uniquement pour ma candidature, mon contrat, ma paie et ma sécurité (contact d'urgence).")}{" "}
