@@ -6,7 +6,7 @@ import { toast } from '@/hooks/use-toast';
 
 interface FileUploadProps {
   label: string;
-  bucket: 'photos' | 'identites';
+  bucket: 'photos' | 'photos-crew' | 'identites';
   onFileUploaded: (fileName: string) => void;
   uploadedFile?: string;
 }

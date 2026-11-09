@@ -956,13 +956,13 @@ const StaffRegistration = () => {
                     <div className="grid gap-4">
                       <FileUpload
                         label={x("Photo portrait")}
-                        bucket="photos"
+                        bucket="photos-crew"
                         onFileUploaded={(fileName) => setValue('photoPortrait', fileName)}
                         uploadedFile={watch('photoPortrait')}
                       />
                       <FileUpload
                         label={x("Photo plein pied")}
-                        bucket="photos"
+                        bucket="photos-crew"
                         onFileUploaded={(fileName) => setValue('photoPleinPied', fileName)}
                         uploadedFile={watch('photoPleinPied')}
                       />

@@ -1,6 +1,6 @@
 // Outils communs pour produire des PDF (devis, fiches, contrats, paie) directement dans le navigateur.
 import logoNoir from "@/assets/logo-devis-noir.png";
-import { SUPABASE_URL } from "@/integrations/supabase/client";
+import { SUPABASE_URL, supabase } from "@/integrations/supabase/client";
 
 export const COULEURS = { or: "#C8B560", orFonce: "#A8933F", noir: "#141414", creme: "#FAF7EE" };
 
@@ -20,6 +20,16 @@ export const logo = logoNoir;
 /** URL publique d'une photo du staff (bucket photos). */
 export const photoUrl = (fichier?: string | null) =>
   fichier ? `${SUPABASE_URL}/storage/v1/object/public/photos/photos/${encodeURIComponent(fichier)}` : null;
+
+/**
+ * Photos des candidats et du personnel : espace privé « photos-crew », lecture par lien temporaire (administration).
+ * Repli sur l'ancien espace public pour les fichiers pas encore déplacés.
+ */
+export async function photoCrewUrl(fichier?: string | null): Promise<string | null> {
+  if (!fichier) return null;
+  const { data } = await supabase.storage.from("photos-crew").createSignedUrl(`photos-crew/${fichier}`, 3600);
+  return data?.signedUrl ?? photoUrl(fichier);
+}
 
 /** Convertit une image distante en data URL pour qu'elle apparaisse à coup sûr dans le PDF. */
 export async function enDataUrl(url: string | null): Promise<string | null> {
