@@ -59,7 +59,7 @@
 
 /* Navigation : trait sous l'onglet actif */
 .a-trait-nav { position: absolute; top: 0; left: 0; width: 20%; height: 1px; display: flex; justify-content: center; pointer-events: none; transition: transform .22s var(--s-courbe); }
-.a-trait-nav::before { content: ""; width: 18px; height: 1px; background: var(--s-laiton-clair); }
+.a-trait-nav::before { content: ""; width: 22px; height: 2px; background: var(--s-laiton-clair); }
 
 /* ———————— Instagram (onglet admin, et espace Nawar en mode famille) ———————— */
 .ig { font-family: var(--s-texte); color: var(--s-nuit); }
@@ -293,4 +293,19 @@
   .st-corps { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
   .st-onglets { position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 40; width: 100%; background: var(--s-papier) !important; border-bottom: 0 !important; border-top: 1px solid var(--s-filet); padding-bottom: env(safe-area-inset-bottom) !important; box-shadow: 0 -12px 30px -24px rgba(60,40,10,.5); }
   .st-onglets [role="tab"]::after { top: -1px; bottom: auto; }
+}
+
+/* Mouvement : retour au toucher, fenêtres et sous-onglets */
+.s-btn { transition: transform .15s var(--s-courbe); }
+.s-btn:active:not(:disabled):not([aria-disabled="true"]) { transform: scale(.975); }
+nav[aria-label="Navigation principale"] button { transition: color .2s var(--s-courbe), transform .15s var(--s-courbe); }
+nav[aria-label="Navigation principale"] button:active { transform: scale(.94); }
+.st-espace [role="tabpanel"] { animation: admin-apparition .2s var(--s-courbe) both; }
+[data-testid="sous-onglets"] { position: relative; }
+[data-testid="sous-onglets"]::after { content: ""; position: absolute; left: 0; bottom: -1px; height: 2px; width: var(--l, 0); background: var(--s-laiton); transform: translateX(var(--x, 0)); pointer-events: none; }
+[data-testid="sous-onglets"][data-pret]::after { transition: transform .22s var(--s-courbe), width .22s var(--s-courbe); }
+[data-testid="sous-onglets"] > button { border-bottom-color: transparent !important; }
+@media (prefers-reduced-motion: reduce) {
+  [role="dialog"], [role="alertdialog"], [data-radix-popper-content-wrapper] *, [data-state][class*="animate-"] { animation: none !important; transition: none !important; }
+  .s-btn:active, nav[aria-label="Navigation principale"] button:active { transform: none; }
 }

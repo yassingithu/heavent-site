@@ -3,7 +3,7 @@ import { nePlusCompterCetAppareil } from "@/lib/suivi";
 import Seo from "@/components/Seo";
 import RemarquesCrews from "@/components/admin/equipe/RemarquesCrews";
 import SuiviSignatures from "@/components/admin/equipe/SuiviSignatures";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import { estAdmin, estEspaceNawar } from "@/lib/admin";
 import EspaceNawar from "@/components/admin/accueil/EspaceNawar";
 import { useNavigate } from "react-router-dom";
@@ -267,6 +267,16 @@ const Admin = () => {
 
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [ongletAdmin, setOngletAdmin] = useState(() => { try { return new URLSearchParams(window.location.search).get("crew") || sessionStorage.getItem("heavent-crew") ? "staff" : "tableau"; } catch { return "tableau"; } });
+  // Trait doré des sous-onglets : glisse sous l'onglet choisi
+  useLayoutEffect(() => {
+    const c = document.querySelector<HTMLElement>('[data-testid="sous-onglets"]');
+    const b = c?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!c || !b) return;
+    c.style.setProperty("--x", `${b.offsetLeft}px`);
+    c.style.setProperty("--l", `${b.offsetWidth}px`);
+    const t = requestAnimationFrame(() => c.setAttribute("data-pret", ""));
+    return () => cancelAnimationFrame(t);
+  }, [ongletAdmin]);
   // Menu latéral réductible (ordinateur / appli Mac) : choix mémorisé ; fenêtre étroite = réduit par défaut
   const [reduit, setReduit] = useState<boolean>(() => {
     try { const v = localStorage.getItem("heavent-menu-reduit"); if (v !== null) return v === "1"; } catch { /* stockage indisponible */ }
