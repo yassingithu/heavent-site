@@ -1014,7 +1014,7 @@ const StaffRegistration = () => {
                         <p className="text-sm text-destructive mt-1">{x(String(errors.password.message ?? ""))}</p>
                       )}
                       <p className="text-xs text-muted-foreground mt-1">
-                        {x("Minimum 6 caractères")}
+                        {x("Minimum 8 caractères")}
                       </p>
                     </div>
                     
@@ -1044,7 +1044,7 @@ const StaffRegistration = () => {
                       {x("J'accepte que mes données personnelles soient traitées conformément à la")} 
                       <a href="/politique-confidentialite" className="text-primary hover:underline ml-1">
                         {x("politique de confidentialité")}
-                      </a> 
+                      </a>{" "}
                       {x("et à la loi marocaine n° 09-08. Ces données seront utilisées uniquement pour ma candidature, mon contrat, ma paie et ma sécurité (contact d'urgence).")}
                     </Label>
                   </div>

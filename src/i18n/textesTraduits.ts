@@ -359,6 +359,7 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "Mesure d'audience.": { en: "Audience measurement.", ar: "قياس الزيارات." },
   "Minimum 10 invités": { en: "Minimum 10 guests", ar: "10 ضيوف على الأقل" },
   "Minimum 6 caractères": { en: "At least 6 characters", ar: "6 أحرف على الأقل" },
+  "Minimum 8 caractères": { en: "At least 8 characters", ar: "8 أحرف على الأقل" },
   "Mohammedia": { en: "Mohammedia", ar: "المحمدية" },
   "Moins de 10 000 MAD": { en: "Less than MAD 10,000", ar: "أقل من 10 000 درهم" },
   "Moins de 50 000 MAD": { en: "Less than MAD 50,000", ar: "أقل من 50 000 درهم" },
