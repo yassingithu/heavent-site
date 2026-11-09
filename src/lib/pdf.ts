@@ -91,7 +91,7 @@ export interface InfosAgence {
 export const piedAgence = (p: InfosAgence | null) => {
   const adresse = [p?.adresse, p?.ville].filter(Boolean).join(", ");
   const sep = ' <span style="color:#A8933F">◆</span> ';
-  return `<div class="pied"><b>${esc((p?.raison_sociale ?? "Heavent People Agency").toUpperCase())}</b>${adresse ? sep + esc(adresse) : ""}<br>${[
+  return `<div class="pied"><b>${esc((p?.raison_sociale ?? "Heavent Agency SARL AU").toUpperCase())}</b>${adresse ? sep + esc(adresse) : ""}<br>${[
     p?.rc && `RC ${esc(p.rc)}`, p?.ice && `ICE ${esc(p.ice)}`, p?.if_fiscal && `IF ${esc(p.if_fiscal)}`,
     p?.telephone && esc(p.telephone), p?.email && esc(p.email),
   ].filter(Boolean).join(sep)}</div>`;

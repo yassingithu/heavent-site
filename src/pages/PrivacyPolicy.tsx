@@ -14,7 +14,7 @@ const PrivacyPolicy = () => {
             <section>
               <h2>{x("1. Collecte des données")}</h2>
                 <p>
-                  {x("Heavent People Agency collecte les données personnelles que vous nous fournissez volontairement lors de :")}
+                  {x("Heavent Agency SARL AU collecte les données personnelles que vous nous fournissez volontairement lors de :")}
                 </p>
                 <ul>
                   <li>{x("Votre inscription en tant qu'hôte ou hôtesse")}</li>

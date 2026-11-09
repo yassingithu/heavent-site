@@ -290,7 +290,7 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
   const t = calculerTotaux(d.lignes, d.remise_globale_pct, d.taux_tva, d.acompte_pct);
   const adresse = [p?.adresse, p?.ville].filter(Boolean).join(", ");
   const mentions = [
-    p?.raison_sociale ?? "Heavent People Agency",
+    p?.raison_sociale ?? "Heavent Agency SARL AU",
     adresse,
     p?.rc && `RC ${p.rc}`,
     p?.ice && `ICE ${p.ice}`,
@@ -343,7 +343,7 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
   <div class="parties">
     <div class="partie">
       <div class="etiquette">Émis par</div>
-      <div class="nom">${esc(p?.raison_sociale ?? "Heavent People Agency")}</div>
+      <div class="nom">${esc(p?.raison_sociale ?? "Heavent Agency SARL AU")}</div>
       ${adresse ? `<div>${esc(adresse)}</div>` : ""}
       ${p?.telephone ? `<div>${esc(p.telephone)}</div>` : ""}
       ${p?.email ? `<div>${esc(p.email)}</div>` : ""}
@@ -395,7 +395,7 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
     </div>
   </div>
 </div>
-<div class="pied"><b>${esc((p?.raison_sociale ?? "Heavent People Agency").toUpperCase())}</b>${adresse ? `${sep}${esc(adresse)}` : ""}<br>${[p?.rc && `RC ${esc(p.rc)}`, p?.ice && `ICE ${esc(p.ice)}`, p?.if_fiscal && `IF ${esc(p.if_fiscal)}`, p?.patente && `Patente ${esc(p.patente)}`].filter(Boolean).join(sep)}</div>
+<div class="pied"><b>${esc((p?.raison_sociale ?? "Heavent Agency SARL AU").toUpperCase())}</b>${adresse ? `${sep}${esc(adresse)}` : ""}<br>${[p?.rc && `RC ${esc(p.rc)}`, p?.ice && `ICE ${esc(p.ice)}`, p?.if_fiscal && `IF ${esc(p.if_fiscal)}`, p?.patente && `Patente ${esc(p.patente)}`].filter(Boolean).join(sep)}</div>
 </div>
 <div class="devis-doc cgv suite">
   <div class="band"><img src="${esc(logoUrl)}" alt="${d.marque === "nawar" ? "Nawar — bar à parfums" : "Heavent People Agency"}"><div class="titre"><div class="mot" style="font-size:26px;letter-spacing:4px">CONDITIONS</div><div class="num">GÉNÉRALES DE VENTE</div><div class="dates">Annexe au devis N° ${esc(d.numero ?? "brouillon")}</div></div></div>
@@ -404,7 +404,7 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
     <div class="cols">${articlesHtml(d.marque === "nawar" ? (p?.cgv_nawar?.trim() ? p.cgv_nawar : CGV_NAWAR_DEFAUT) : (p?.cgv?.trim() ? p.cgv : CGV_DEFAUT), esc)}</div>
     <div class="accord">${d.signe_le ? `Conditions acceptées en ligne par ${esc(d.signature_nom)} le ${esc(dateHeureFr(d.signe_le))}, avec la signature du devis.` : "Paraphe du client : ……………………"}</div>
   </div>
-  <div class="pied"><b>${esc((p?.raison_sociale ?? "Heavent People Agency").toUpperCase())}</b>${adresse ? `${sep}${esc(adresse)}` : ""}<br>${[p?.rc && `RC ${esc(p.rc)}`, p?.ice && `ICE ${esc(p.ice)}`, p?.if_fiscal && `IF ${esc(p.if_fiscal)}`, p?.patente && `Patente ${esc(p.patente)}`].filter(Boolean).join(sep)}</div>
+  <div class="pied"><b>${esc((p?.raison_sociale ?? "Heavent Agency SARL AU").toUpperCase())}</b>${adresse ? `${sep}${esc(adresse)}` : ""}<br>${[p?.rc && `RC ${esc(p.rc)}`, p?.ice && `ICE ${esc(p.ice)}`, p?.if_fiscal && `IF ${esc(p.if_fiscal)}`, p?.patente && `Patente ${esc(p.patente)}`].filter(Boolean).join(sep)}</div>
 </div></div>`;
   return { css, html };
 }

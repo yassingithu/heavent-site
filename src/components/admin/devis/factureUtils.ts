@@ -147,7 +147,7 @@ export function factureMarkup(f: Facture, p: Parametres | null, logoUrl: string)
   <div class="parties">
     <div class="partie">
       <div class="etiquette">Émise par</div>
-      <div class="nom">${esc(p?.raison_sociale ?? "Heavent People Agency")}</div>
+      <div class="nom">${esc(p?.raison_sociale ?? "Heavent Agency SARL AU")}</div>
       ${adresse ? `<div>${esc(adresse)}</div>` : ""}
       ${p?.telephone ? `<div>${esc(p.telephone)}</div>` : ""}
       ${p?.email ? `<div>${esc(p.email)}</div>` : ""}
@@ -187,7 +187,7 @@ export function factureMarkup(f: Facture, p: Parametres | null, logoUrl: string)
   </div>
   <div class="lettres">Arrêtée la présente facture à la somme de : <b>${esc(montantEnLettres(Number(f.net_a_payer), devise))}</b> TTC.</div>
 </div>
-<div class="pied"><b>${esc((p?.raison_sociale ?? "Heavent People Agency").toUpperCase())}</b>${adresse ? `${sep}${esc(adresse)}` : ""}<br>${legal}</div>
+<div class="pied"><b>${esc((p?.raison_sociale ?? "Heavent Agency SARL AU").toUpperCase())}</b>${adresse ? `${sep}${esc(adresse)}` : ""}<br>${legal}</div>
 </div></div>`;
   return { css, html };
 }

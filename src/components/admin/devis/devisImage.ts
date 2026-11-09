@@ -54,7 +54,7 @@ export function imageDevisHtml(d: DevisForm, params: Parametres | null, logoSrc:
   const prixTexte = montant(t.ttc);
   const taillePrix = prixTexte.length <= 6 ? 150 : prixTexte.length <= 8 ? 128 : prixTexte.length <= 10 ? 108 : 90;
   const tailleTitre = titreImage(d).length > 34 ? 60 : titreImage(d).length > 22 ? 72 : 86;
-  const marque = d.marque === "nawar" ? "Nawar · bar à parfums" : params?.raison_sociale || "Heavent People Agency";
+  const marque = d.marque === "nawar" ? "Nawar · bar à parfums" : params?.raison_sociale || "Heavent Agency SARL AU";
   return `
 <style>
   .img-devis, .img-devis * { box-sizing: border-box; margin: 0; padding: 0; }

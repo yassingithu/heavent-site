@@ -17,11 +17,11 @@ const MentionsLegales = () => {
   return (
   <div>
     <Seo page="mentions" />
-    <PageTete surtitre="Heavent People Agency" titre={x("Mentions légales")} />
+    <PageTete surtitre="Heavent Agency SARL AU" titre={x("Mentions légales")} />
     <section className="s-platre">
     <div className="s-section s-wrap s-prose s-legal" style={{ maxWidth: 860 }}>
       <Bloc titre="Éditeur du site">
-        <p><strong>{x("HEAVENT AGENCY SARL AU")}</strong> {x("(société à responsabilité limitée à associé unique, capital de 100 000 dirhams), exerçant sous le nom commercial Heavent People Agency — agence d'hôtes et hôtesses d'accueil, de staffing et d'organisation d'événements.")}</p>
+        <p><strong>{x("Heavent Agency SARL AU")}</strong> {x("— agence d'hôtes et hôtesses d'accueil, de staffing et d'organisation d'événements.")}</p>
         <p>{x("Siège : Rue Dakar, Imm. N°5, Apt N°1, Océan — Rabat, Maroc")}</p>
         <p>{x("RC 183001 (Tribunal de Rabat) · ICE 003617071000041")}</p>
         <p>{x("Directrice de la publication : Imane CHAIGARI, gérante")}</p>
@@ -31,7 +31,7 @@ const MentionsLegales = () => {
         <p>{x("Site hébergé par one.com (www.one.com). Données de l'application (demandes de devis, espace staff) hébergées par Supabase (supabase.com).")}</p>
       </Bloc>
       <Bloc titre="Propriété intellectuelle">
-        <p>{x("Les textes, logos, photos et éléments graphiques de ce site appartiennent à Heavent People Agency ou sont utilisés avec autorisation. Toute reproduction sans accord écrit préalable est interdite.")}</p>
+        <p>{x("Les textes, logos, photos et éléments graphiques de ce site appartiennent à Heavent Agency SARL AU ou sont utilisés avec autorisation. Toute reproduction sans accord écrit préalable est interdite.")}</p>
       </Bloc>
       <Bloc titre="Données personnelles">
         <p>{x("Les informations transmises via les formulaires (demandes de devis, inscription du personnel) sont traitées conformément à la loi marocaine n° 09-08 relative à la protection des personnes physiques à l'égard du traitement des données à caractère personnel. Vous disposez d'un droit d'accès, de rectification et d'opposition en écrivant à i.chaigari@heaventagency.com.")}</p>

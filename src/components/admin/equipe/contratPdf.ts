@@ -41,7 +41,7 @@ const cssContrat = `
 function piedHtml(agence: InfosAgence | null) {
   const adresse = [agence?.adresse, agence?.ville].filter(Boolean).join(", ");
   const sep = '<span class="sep">◆</span>';
-  return `<div class="pied"><b>${esc((agence?.raison_sociale ?? "Heavent People Agency").toUpperCase())}</b>${adresse ? `${sep}${esc(adresse)}` : ""}<br>${[
+  return `<div class="pied"><b>${esc((agence?.raison_sociale ?? "Heavent Agency SARL AU").toUpperCase())}</b>${adresse ? `${sep}${esc(adresse)}` : ""}<br>${[
     agence?.rc && `RC ${esc(agence.rc)}`, agence?.ice && `ICE ${esc(agence.ice)}`, agence?.telephone && esc(agence.telephone), agence?.email && esc(agence.email),
   ].filter(Boolean).join(sep)}</div>`;
 }
@@ -84,10 +84,10 @@ function pageContrat(c: any, s: any, ev: Evenement, agence: InfosAgence | null, 
   <div class="parties">
     <div class="partie">
       <div class="etiquette">L'employeur</div>
-      <div class="nom">${esc(agence?.raison_sociale ?? "Heavent People Agency")}</div>
+      <div class="nom">${esc(agence?.raison_sociale ?? "Heavent Agency SARL AU")}</div>
       ${adresse ? `<div>${esc(adresse)}</div>` : ""}
       <div>${[agence?.rc && `RC ${esc(agence.rc)}`, agence?.ice && `ICE ${esc(agence.ice)}`].filter(Boolean).join(" · ")}</div>
-      <div>Représentée par Mme Imane CHAIGARI, gérante — HEAVENT AGENCY SARL AU</div>
+      <div>Représentée par Mme Imane CHAIGARI, gérante — Heavent Agency SARL AU</div>
     </div>
     <div class="partie client">
       <div class="etiquette">Le / la salarié(e)</div>
