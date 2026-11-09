@@ -20,7 +20,7 @@ export default function Realisations() {
   useEffect(() => {
     supabase.from("realisations").select("id, titre, type_evenement, lieu, date_evenement, description, photos")
       .eq("publie", true).order("ordre").order("date_evenement", { ascending: false })
-      .then(({ data }) => setListe(((data ?? []) as Realisation[]).filter((r) => r.photos?.length)));
+      .then(({ data, error }) => { if (error) return; setListe(((data ?? []) as Realisation[]).filter((r) => r.photos?.length)); });
   }, []);
 
   const types = useMemo(() => TYPES_REALISATION.filter((t) => liste?.some((r) => r.type_evenement === t.id)), [liste]);
@@ -29,7 +29,7 @@ export default function Realisations() {
 
   return (
     <div className="min-h-screen s-platre">
-      {liste && liste.length ? <Seo page="realisations" /> : <Seo noindex />}
+      {liste && liste.length === 0 ? <Seo noindex /> : <Seo page="realisations" />}
       <PageTete surtitre={x("Nos réalisations")} titre={x("Des événements qui nous ressemblent")} chapo={x("Mariages, fêtes, soirées d'entreprise et salons : quelques moments que nous avons eu la joie d'organiser et d'accompagner.")} />
       <div className="s-section s-wrap space-y-8">
 

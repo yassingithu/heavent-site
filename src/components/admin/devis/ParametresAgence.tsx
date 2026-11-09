@@ -27,7 +27,7 @@ const CHAMPS: { key: keyof Parametres; label: string; type?: string }[] = [
   { key: "taux_tva", label: "TVA par défaut (%)", type: "number" },
   { key: "validite_jours", label: "Validité d'un devis (jours)", type: "number" },
   { key: "devise", label: "Devise" },
-  { key: "cndp_recepisse", label: "N° de récépissé CNDP (affiché sous la case de consentement du formulaire d'inscription des hôtes et hôtesses ; laisser vide tant qu'on n'en a pas)" },
+  { key: "cndp_recepisse", label: "N° de récépissé CNDP" },
   { key: "lien_avis_google", label: "Lien pour laisser un avis Google (envoyé aux clients le lendemain de leur événement)" },
 ];
 
@@ -61,6 +61,7 @@ export default function ParametresAgence({ value, onSaved }: { value: Parametres
               <Label>{c.label}</Label>
               <Input type={c.type ?? "text"} value={(p[c.key] as string | number | null) ?? ""} onChange={(e) => setP({ ...p, [c.key]: e.target.value })}
                 data-testid={c.key === "cnss_affiliation_employeur" ? "cnss-employeur" : undefined} />
+              {c.key === "cndp_recepisse" && <p className="text-xs text-muted-foreground mt-1">Affiché sous la case de consentement du formulaire d'inscription des hôtes et hôtesses. Laisser vide tant qu'on n'en a pas.</p>}
               {c.key === "cnss_affiliation_employeur" && (
                 !String(p.cnss_affiliation_employeur ?? "").trim()
                   ? <p className="text-xs text-amber-700 mt-1" data-testid="cnss-employeur-manquant">Non renseigné : les bulletins de paie restent des aperçus incomplets et ne peuvent pas être validés.</p>

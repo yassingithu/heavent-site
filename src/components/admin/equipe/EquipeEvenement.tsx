@@ -79,7 +79,7 @@ export default function EquipeEvenement({ devisId, titre, lieu, dateDebut, dateF
   const charger = useCallback(async () => {
     if (!devisId || !dates.length) return;
     const [s, d, a, o] = await Promise.all([
-      supabase.from("staff").select("id, nom, prenom, ville, taux_horaire, genre").eq("banni", false).order("nom"),
+      supabase.from("staff").select("id, nom, prenom, ville, taux_horaire, genre").eq("banni", false).neq("statut_candidature", "refuse").order("nom"),
       supabase.from("disponibilites").select("*").in("date_jour", dates),
       supabase.from("affectations").select("*").eq("devis_id", devisId).neq("statut", "annule").order("date_jour"),
       supabase.from("affectations").select("staff_id, date_jour, devis(numero)").in("date_jour", dates).neq("devis_id", devisId).neq("statut", "annule"),

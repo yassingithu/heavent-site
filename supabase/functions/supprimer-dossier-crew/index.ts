@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
       return json({ mode: "donnees", fichiers });
     }
     const { error } = await db.from("staff").delete().eq("id", staffId);
-    if (error) return json({ error: error.message }, 500);
+    if (error) return json({ error: "Photos et compte supprimés, mais la fiche n'a pas pu l'être : " + error.message }, 500);
     return json({ mode: "complet", fichiers });
   } catch (e) {
     return json({ error: (e as Error).message }, 500);

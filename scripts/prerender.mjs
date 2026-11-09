@@ -18,6 +18,7 @@ const PUBLIQUES = [
   { chemin: "/liens", priorite: "0.4", frequence: "monthly" },
   { chemin: "/studio", priorite: "0.6", frequence: "monthly" },
   { chemin: "/nawar", priorite: "0.7", frequence: "monthly" },
+  { chemin: "/realisations", priorite: "0.6", frequence: "monthly" },
   { chemin: "/prestataires", priorite: "0.5", frequence: "monthly" },
   { chemin: "/wedding-planner-maroc", priorite: "0.9", frequence: "weekly" },
   // Guides gratuits (src/data/guides.ts)

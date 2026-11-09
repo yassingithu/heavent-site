@@ -1050,9 +1050,9 @@ const StaffRegistration = () => {
                       </a>{" "}
                       {x("et à la loi marocaine n° 09-08. Ces données seront utilisées uniquement pour ma candidature, mon contrat, ma paie et ma sécurité (contact d'urgence).")}{" "}
                       {x("Elles sont hébergées en Irlande, hors du Maroc, chez notre sous-traitant Supabase.")}
-                      {recepisseCndp && <>{" "}{x("Récépissé CNDP n°")} {recepisseCndp}.</>}
                     </Label>
                   </div>
+                  {recepisseCndp && <p className="pl-6 text-xs tracking-wide text-muted-foreground">{x("Récépissé CNDP n°")} <span className="font-medium text-[#8C6D22]">{recepisseCndp}</span></p>}
                   {errors.rgpdConsent && (
                     <p className="text-sm text-destructive">{x(String(errors.rgpdConsent.message ?? ""))}</p>
                   )}

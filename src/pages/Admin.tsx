@@ -799,7 +799,10 @@ const Admin = () => {
       return;
     }
     setStaff((prev) => prev.map((x) => (x.id === staffId ? { ...x, statut_candidature: statut } : x)));
-    toast({ title: statut === "approuve" ? "Candidat approuvé" : statut === "refuse" ? "Candidat refusé" : "Remis en attente" });
+    toast({
+      title: statut === "approuve" ? "Candidat approuvé" : statut === "refuse" ? "Candidat refusé" : "Remis en attente",
+      description: statut === "refuse" ? "Aucun message envoyé. Il n'apparaît plus dans le choix des équipes." : "Aucun message envoyé au candidat.",
+    });
   };
 
   /** Supprime le dossier à la demande de la personne : tout si rien à conserver, sinon photos, pièce d'identité, contact d'urgence et compte. */
@@ -1512,6 +1515,7 @@ const Admin = () => {
           <Card>
             <CardHeader>
               <CardTitle>Gestion du Personnel</CardTitle>
+              <p className="text-sm text-muted-foreground">Les crews approuvés ne sont jamais supprimés automatiquement. Les candidatures laissées « en attente » ou « refusées » sans activité pendant 12 mois sont supprimées chaque nuit. Un crew refusé n'apparaît plus dans le choix des équipes.</p>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -1544,11 +1548,11 @@ const Admin = () => {
                        </TableCell>
                        <TableCell>
                          <Select value={person.statut_candidature || "en_attente"} onValueChange={(v) => changerStatutCandidat(person.id, v)}>
-                           <SelectTrigger className={`h-9 w-[130px] ${person.statut_candidature === "approuve" ? "border-[#2f6b3d] text-[#2f6b3d]" : person.statut_candidature === "refuse" ? "border-[#9b3b2f] text-[#9b3b2f]" : ""}`}><SelectValue /></SelectTrigger>
+                           <SelectTrigger className={`h-9 w-[140px] rounded-none gap-2 before:h-2 before:w-2 before:shrink-0 before:rotate-45 before:border before:border-current ${person.statut_candidature === "approuve" ? "border-[#2f6b3d] bg-[#2f6b3d]/10 text-[#2f6b3d] before:bg-current" : person.statut_candidature === "refuse" ? "border-[#9b3b2f] bg-[#9b3b2f]/10 text-[#9b3b2f] before:bg-current" : "border-[#A8933F] bg-[#FBF6E9] text-[#8C6D22]"}`}><SelectValue /></SelectTrigger>
                            <SelectContent>
-                             <SelectItem value="en_attente">En attente</SelectItem>
-                             <SelectItem value="approuve">Approuvé</SelectItem>
-                             <SelectItem value="refuse">Refusé</SelectItem>
+                             <SelectItem value="en_attente" className="text-[#8C6D22]">En attente</SelectItem>
+                             <SelectItem value="approuve" className="text-[#2f6b3d]">Approuvé</SelectItem>
+                             <SelectItem value="refuse" className="text-[#9b3b2f]">Refusé</SelectItem>
                            </SelectContent>
                          </Select>
                        </TableCell>
@@ -1583,12 +1587,12 @@ const Admin = () => {
                               📄 Fiche PDF
                             </Button>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              className="text-[#9b3b2f] border-[#9b3b2f]/40 hover:bg-[#9b3b2f]/10"
+                              className="h-9 px-2 text-[#9b3b2f] underline-offset-4 hover:bg-transparent hover:text-[#832f25] hover:underline"
                               onClick={() => setDossierASupprimer({ id: person.id, nom: `${person.prenom} ${person.nom}` })}
                             >
-                              <Trash2 className="h-4 w-4 mr-1" /> Supprimer le dossier
+                              <Trash2 className="h-4 w-4 mr-1" /> Supprimer
                             </Button>
                           </div>
                         </TableCell>
@@ -1600,31 +1604,34 @@ const Admin = () => {
             </CardContent>
           </Card>
           <AlertDialog open={!!dossierASupprimer} onOpenChange={(o) => { if (!o && !suppressionEnCours) setDossierASupprimer(null); }}>
-            <AlertDialogContent>
+            <AlertDialogContent className="rounded-none border border-[#A8933F]/60 border-t-[3px] border-t-[#9b3b2f] bg-[#FBF6E9] max-w-md">
               <AlertDialogHeader>
-                <AlertDialogTitle>Supprimer le dossier de {dossierASupprimer?.nom} ?</AlertDialogTitle>
+                <AlertDialogTitle className="text-xl">Supprimer le dossier de {dossierASupprimer?.nom} ?</AlertDialogTitle>
                 <AlertDialogDescription asChild>
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-3 text-sm text-[#141414]">
+                    <p className="font-medium text-[#9b3b2f]">Cette action est définitive.</p>
+                    {dossierASupprimer && staff.find((x) => x.id === dossierASupprimer.id)?.statut_candidature === "approuve" && (
+                      <p>Cette personne est <strong>approuvée</strong> : elle n'est jamais supprimée automatiquement, seulement à sa demande ou par vous.</p>
+                    )}
                     {dossierASupprimer && documentsLegaux(dossierASupprimer.id) ? (
                       <>
                         <p>Cette personne a des contrats signés ou des fiches de paie, que la loi oblige à conserver.</p>
-                        <p><strong>Seront supprimés :</strong> photos, copie de la pièce d'identité, contact d'urgence et compte de connexion.</p>
-                        <p><strong>Seront conservés :</strong> sa fiche, ses contrats et ses fiches de paie.</p>
+                        <div className="border-t border-[#EADFC8] pt-2"><p><strong>Supprimés :</strong> photos, copie de la pièce d'identité, contact d'urgence, compte de connexion.</p></div>
+                        <div className="border-t border-[#EADFC8] pt-2"><p><strong>Conservés :</strong> sa fiche, ses contrats, ses fiches de paie.</p></div>
                       </>
                     ) : (
                       <>
-                        <p><strong>Seront supprimés :</strong> la fiche, les photos, la copie de la pièce d'identité et le compte de connexion.</p>
+                        <div className="border-t border-[#EADFC8] pt-2"><p><strong>Supprimés :</strong> la fiche, les photos, la copie de la pièce d'identité, le compte de connexion.</p></div>
                         <p>Aucun contrat signé ni fiche de paie n'est lié à cette personne.</p>
                       </>
                     )}
-                    <p>Cette action est définitive.</p>
                   </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel disabled={suppressionEnCours}>Annuler</AlertDialogCancel>
-                <AlertDialogAction disabled={suppressionEnCours} onClick={(e) => { e.preventDefault(); confirmerSuppressionDossier(); }}>
-                  {suppressionEnCours ? "Suppression…" : "Supprimer"}
+                <AlertDialogCancel disabled={suppressionEnCours} className="rounded-none border-[#141414] text-[#141414]">Annuler</AlertDialogCancel>
+                <AlertDialogAction disabled={suppressionEnCours} className="rounded-none bg-[#9b3b2f] text-white hover:bg-[#832f25] focus-visible:ring-[#9b3b2f]" onClick={(e) => { e.preventDefault(); confirmerSuppressionDossier(); }}>
+                  {suppressionEnCours ? "Suppression…" : dossierASupprimer && documentsLegaux(dossierASupprimer.id) ? "Effacer les données" : "Supprimer le dossier"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
