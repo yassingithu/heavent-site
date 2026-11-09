@@ -75,6 +75,9 @@ const StaffRegistration = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Nouvelle étape : on remonte en haut pour voir la progression et les nouvelles questions
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
+  // N° de récépissé CNDP, saisi dans l'admin (Informations de l'agence) : affiché sous le consentement dès qu'il existe
+  const [recepisseCndp, setRecepisseCndp] = useState<string | null>(null);
+  useEffect(() => { (supabase as any).rpc("recepisse_cndp").then(({ data }: { data: string | null }) => setRecepisseCndp(data || null)); }, []);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -1047,6 +1050,7 @@ const StaffRegistration = () => {
                       </a>{" "}
                       {x("et à la loi marocaine n° 09-08. Ces données seront utilisées uniquement pour ma candidature, mon contrat, ma paie et ma sécurité (contact d'urgence).")}{" "}
                       {x("Elles sont hébergées en Irlande, hors du Maroc, chez notre sous-traitant Supabase.")}
+                      {recepisseCndp && <>{" "}{x("Récépissé CNDP n°")} {recepisseCndp}.</>}
                     </Label>
                   </div>
                   {errors.rgpdConsent && (

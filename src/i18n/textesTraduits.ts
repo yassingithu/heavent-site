@@ -155,6 +155,7 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "Devis Événement": { en: "Event quote", ar: "عرض سعر لمناسبة" },
   "Dimanche": { en: "Sunday", ar: "الأحد" },
   "Directrice de la publication : Imane CHAIGARI, gérante": { en: "Publication director: Imane CHAIGARI, manager", ar: "مديرة النشر: Imane CHAIGARI، المسيّرة" },
+  "Récépissé CNDP n°": { en: "CNDP receipt no.", ar: "وصل اللجنة الوطنية لمراقبة حماية المعطيات (CNDP) رقم" },
   "Heavent Agency SARL AU": { en: "Heavent Agency SARL AU", ar: "Heavent Agency SARL AU" },
   "Disponibilités & Documents": { en: "Availability & documents", ar: "التوفر والوثائق" },
   "Disponibilités dans la semaine *": { en: "Availability during the week *", ar: "التوفر خلال الأسبوع *" },

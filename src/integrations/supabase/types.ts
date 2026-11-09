@@ -644,6 +644,7 @@ export type Database = {
       parametres_agence: {
         Row: {
           lien_avis_google: string | null
+          cndp_recepisse: string | null
           cnss_affiliation_employeur: string | null
           cgv: string | null
           cgv_nawar: string | null
@@ -668,6 +669,7 @@ export type Database = {
         }
         Insert: {
           lien_avis_google?: string | null
+          cndp_recepisse?: string | null
           cnss_affiliation_employeur?: string | null
           cgv?: string | null
           cgv_nawar?: string | null
@@ -692,6 +694,7 @@ export type Database = {
         }
         Update: {
           lien_avis_google?: string | null
+          cndp_recepisse?: string | null
           cnss_affiliation_employeur?: string | null
           cgv?: string | null
           cgv_nawar?: string | null

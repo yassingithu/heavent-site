@@ -24,6 +24,7 @@ import RealisationsAdmin from "@/components/admin/RealisationsAdmin";
 import AgendaAdmin from "@/components/admin/agenda/AgendaAdmin";
 import VitrineAdmin from "@/components/admin/VitrineAdmin";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -68,6 +69,7 @@ interface Staff {
   permis?: boolean;
   disponibilites?: string;
   remarques?: string;
+  statut_candidature?: string;
   created_at?: string;
 }
 
@@ -787,36 +789,38 @@ const Admin = () => {
   const documentsLegaux = (staffId: string) =>
     contrats.some((c: any) => c.staff_id === staffId && c.signe_le) || fichesPaie.some((f: any) => f.staff_id === staffId);
 
-  const deleteStaff = async (staffId: string, staffName: string) => {
-    if (documentsLegaux(staffId)) {
-      toast({ title: "Suppression impossible", description: `${staffName} a des contrats signés ou des fiches de paie, qui doivent être conservés. Pour l'écarter, ouvre sa fiche et utilise « Bannir ce crew ».`, variant: "destructive" });
-      return;
-    }
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${staffName} ? Cette action est irréversible.`)) {
-      return;
-    }
+  const [dossierASupprimer, setDossierASupprimer] = useState<{ id: string; nom: string } | null>(null);
+  const [suppressionEnCours, setSuppressionEnCours] = useState(false);
 
+  const changerStatutCandidat = async (staffId: string, statut: string) => {
+    const { error } = await supabase.from('staff').update({ statut_candidature: statut } as any).eq('id', staffId);
+    if (error) {
+      toast({ title: "Statut non enregistré", description: error.message, variant: "destructive" });
+      return;
+    }
+    setStaff((prev) => prev.map((x) => (x.id === staffId ? { ...x, statut_candidature: statut } : x)));
+    toast({ title: statut === "approuve" ? "Candidat approuvé" : statut === "refuse" ? "Candidat refusé" : "Remis en attente" });
+  };
+
+  /** Supprime le dossier à la demande de la personne : tout si rien à conserver, sinon photos, pièce d'identité, contact d'urgence et compte. */
+  const confirmerSuppressionDossier = async () => {
+    if (!dossierASupprimer) return;
+    setSuppressionEnCours(true);
     try {
-      const { error } = await supabase
-        .from('staff')
-        .delete()
-        .eq('id', staffId);
-
-      if (error) throw error;
-
+      const { data, error } = await supabase.functions.invoke("supprimer-dossier-crew", { body: { staffId: dossierASupprimer.id } });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Erreur");
       toast({
-        title: "Staff supprimé",
-        description: `${staffName} a été supprimé avec succès`,
+        title: (data as any).mode === "complet" ? "Dossier supprimé" : "Données personnelles effacées",
+        description: (data as any).mode === "complet"
+          ? `${dossierASupprimer.nom} : fiche, photos, pièce d'identité et compte supprimés.`
+          : `${dossierASupprimer.nom} : photos, pièce d'identité, contact d'urgence et compte supprimés. Contrats et fiches de paie conservés.`,
       });
-
+      setDossierASupprimer(null);
       fetchData();
     } catch (error) {
-      console.error('Erreur suppression staff:', error);
-      toast({
-        title: "Suppression impossible",
-        description: (error as any)?.message || "Impossible de supprimer le staff",
-        variant: "destructive",
-      });
+      toast({ title: "Suppression impossible", description: (error as any)?.message || "Réessaie dans un instant", variant: "destructive" });
+    } finally {
+      setSuppressionEnCours(false);
     }
   };
 
@@ -1519,6 +1523,7 @@ const Admin = () => {
                       <TableHead className="whitespace-nowrap min-w-[100px]">Téléphone</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[80px]">Ville</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[70px]">Permis</TableHead>
+                      <TableHead className="whitespace-nowrap min-w-[140px]">Candidature</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[200px]">Remarques</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[150px]">Actions</TableHead>
                     </TableRow>
@@ -1536,6 +1541,16 @@ const Admin = () => {
                          <Badge variant={person.permis ? "default" : "secondary"}>
                            {person.permis ? "Oui" : "Non"}
                          </Badge>
+                       </TableCell>
+                       <TableCell>
+                         <Select value={person.statut_candidature || "en_attente"} onValueChange={(v) => changerStatutCandidat(person.id, v)}>
+                           <SelectTrigger className={`h-9 w-[130px] ${person.statut_candidature === "approuve" ? "border-[#2f6b3d] text-[#2f6b3d]" : person.statut_candidature === "refuse" ? "border-[#9b3b2f] text-[#9b3b2f]" : ""}`}><SelectValue /></SelectTrigger>
+                           <SelectContent>
+                             <SelectItem value="en_attente">En attente</SelectItem>
+                             <SelectItem value="approuve">Approuvé</SelectItem>
+                             <SelectItem value="refuse">Refusé</SelectItem>
+                           </SelectContent>
+                         </Select>
                        </TableCell>
                        <TableCell>
                          <div className="flex items-center space-x-2">
@@ -1568,13 +1583,12 @@ const Admin = () => {
                               📄 Fiche PDF
                             </Button>
                             <Button
-                              variant="destructive"
+                              variant="outline"
                               size="sm"
-                              disabled={documentsLegaux(person.id)}
-                              title={documentsLegaux(person.id) ? "Contrats signés ou fiches de paie à conserver : bannis cette personne depuis sa fiche au lieu de la supprimer" : "Supprimer"}
-                              onClick={() => deleteStaff(person.id, `${person.prenom} ${person.nom}`)}
+                              className="text-[#9b3b2f] border-[#9b3b2f]/40 hover:bg-[#9b3b2f]/10"
+                              onClick={() => setDossierASupprimer({ id: person.id, nom: `${person.prenom} ${person.nom}` })}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 mr-1" /> Supprimer le dossier
                             </Button>
                           </div>
                         </TableCell>
@@ -1585,6 +1599,36 @@ const Admin = () => {
               </div>
             </CardContent>
           </Card>
+          <AlertDialog open={!!dossierASupprimer} onOpenChange={(o) => { if (!o && !suppressionEnCours) setDossierASupprimer(null); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer le dossier de {dossierASupprimer?.nom} ?</AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="space-y-2 text-sm">
+                    {dossierASupprimer && documentsLegaux(dossierASupprimer.id) ? (
+                      <>
+                        <p>Cette personne a des contrats signés ou des fiches de paie, que la loi oblige à conserver.</p>
+                        <p><strong>Seront supprimés :</strong> photos, copie de la pièce d'identité, contact d'urgence et compte de connexion.</p>
+                        <p><strong>Seront conservés :</strong> sa fiche, ses contrats et ses fiches de paie.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p><strong>Seront supprimés :</strong> la fiche, les photos, la copie de la pièce d'identité et le compte de connexion.</p>
+                        <p>Aucun contrat signé ni fiche de paie n'est lié à cette personne.</p>
+                      </>
+                    )}
+                    <p>Cette action est définitive.</p>
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={suppressionEnCours}>Annuler</AlertDialogCancel>
+                <AlertDialogAction disabled={suppressionEnCours} onClick={(e) => { e.preventDefault(); confirmerSuppressionDossier(); }}>
+                  {suppressionEnCours ? "Suppression…" : "Supprimer"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </TabsContent>
 
         {/* Contrats Tab */}

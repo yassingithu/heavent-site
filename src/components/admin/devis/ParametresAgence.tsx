@@ -27,6 +27,7 @@ const CHAMPS: { key: keyof Parametres; label: string; type?: string }[] = [
   { key: "taux_tva", label: "TVA par défaut (%)", type: "number" },
   { key: "validite_jours", label: "Validité d'un devis (jours)", type: "number" },
   { key: "devise", label: "Devise" },
+  { key: "cndp_recepisse", label: "N° de récépissé CNDP (affiché sous la case de consentement du formulaire d'inscription des hôtes et hôtesses ; laisser vide tant qu'on n'en a pas)" },
   { key: "lien_avis_google", label: "Lien pour laisser un avis Google (envoyé aux clients le lendemain de leur événement)" },
 ];
 
