@@ -87,7 +87,7 @@
 .inv-rev-noms { margin: 0; font-family: var(--inv-titre); font-size: clamp(24px, 8vw, 34px); line-height: 1.15; }
 .inv-rev-cadre { filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .35)); }
 .inv-rev-coeur { position: relative; width: 260px; height: 240px; }
-.inv-rev-sous { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding-top: 14px; background: radial-gradient(60% 55% at 50% 45%, #fff, var(--inv-papier)); color: var(--inv-texte); }
+.inv-rev-sous { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0 0 26px; background: radial-gradient(60% 55% at 50% 42%, #fff, var(--inv-papier)); color: var(--inv-texte); }
 .inv-rev-sous small { font-size: 12px; letter-spacing: .24em; text-transform: uppercase; }
 .inv-rev-sous b { font-family: var(--inv-titre); font-size: 70px; line-height: 1; color: var(--inv-accent); font-weight: 400; }
 .inv-rev-gratte { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; transition: opacity .8s ease; }
@@ -97,6 +97,10 @@
 .inv-rev-bouton { min-height: 44px; padding: 0 22px; border-radius: 999px; border: 1px solid var(--inv-accent); background: transparent; color: var(--inv-sur-fond); font: inherit; font-size: 13px; letter-spacing: .18em; text-transform: uppercase; cursor: pointer; }
 .inv[dir="rtl"] .inv-rev-bouton { letter-spacing: 0; text-transform: none; font-size: 15px; }
 .inv-page .inv-rev-aide { position: static; color: var(--inv-sur-fond); }
+/* consigne du cœur : deux lignes égales sous le cœur, jamais un mot seul à la ligne */
+.inv .inv-rev .inv-rev-aide { display: block; width: auto; max-width: min(300px, 86vw); margin: 2px auto 0; padding: 0; text-align: center; text-wrap: balance; font-size: 12px; line-height: 1.7; letter-spacing: .2em; }
+.inv[dir="rtl"] .inv-rev .inv-rev-aide { letter-spacing: 0; font-size: 15px; }
+.inv-rev { gap: 18px; }
 .inv-page .inv-scene:has(.inv-porte) { justify-content: center; }
 .inv-page .inv-porte + .inv-aide { color: var(--inv-sur-fond); }
 .inv-o-florale .inv-o-cartouche { top: 62%; }
