@@ -290,8 +290,8 @@
 
 /* Espace staff sur téléphone : les trois rubriques sont en bas de l'écran, sous le pouce */
 @media (max-width: 639px) {
-  .st-corps { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
-  .st-onglets { position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 40; width: 100%; background: var(--s-papier) !important; border-bottom: 0 !important; border-top: 1px solid var(--s-filet); padding-bottom: env(safe-area-inset-bottom) !important; box-shadow: 0 -12px 30px -24px rgba(60,40,10,.5); }
+  .st-corps { padding-bottom: calc(96px + max(14px, env(safe-area-inset-bottom))); }
+  .st-onglets { position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 40; width: 100%; background: var(--s-papier) !important; border-bottom: 0 !important; border-top: 1px solid var(--s-filet); padding-bottom: max(14px, env(safe-area-inset-bottom)) !important; box-shadow: 0 -12px 30px -24px rgba(60,40,10,.5); }
   .st-onglets [role="tab"]::after { top: -1px; bottom: auto; }
 }
 

@@ -35,7 +35,12 @@ export function useAppStaff() {
     ajouterBalise("meta", { name: "apple-mobile-web-app-title", content: "Heavent Staff" });
     ajouterBalise("meta", { name: "apple-mobile-web-app-status-bar-style", content: "default" });
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/staff-sw.js", { scope: "/staff-dashboard" }).catch(() => {});
+    // iPhone : sans « viewport-fit=cover », la marge du bas (barre d'accueil) vaut 0 et les onglets touchent la ligne.
+    const vue = document.querySelector('meta[name="viewport"]');
+    const vueAvant = vue?.getAttribute("content") ?? null;
+    if (vue && vueAvant && !vueAvant.includes("viewport-fit")) vue.setAttribute("content", `${vueAvant}, viewport-fit=cover`);
     return () => {
+      if (vue && vueAvant) vue.setAttribute("content", vueAvant);
       memoire.forEach(([l, h]) => h && l.setAttribute("href", h));
       document.head.querySelectorAll("[data-app-staff]").forEach((e) => e.remove());
     };
