@@ -6,7 +6,7 @@
 3. Envoyer les fichiers chez one.com : depuis le gestionnaire de fichiers one.com (connecté), exécuter dans la console
    de la page un script qui lit `deploy/site/fichiers.json` sur GitHub (raw, au commit voulu) et fait un
    `PUT https://filemanager.one.com/api/webspace/2/drive/heaventagency.com/data/httpd.www/<chemin>` par fichier
-   (dossier `assets/` d'abord, `index.html` en dernier ; `?targetCharset=utf-8` pour les fichiers texte).
+   (dossier `assets/` d'abord, `index.html` en dernier). Nov. 2026 : `?targetCharset=utf-8` répond 400 sur les .js/.css/.html/.htaccess ; renvoyer ces fichiers sans le paramètre (l'encodage UTF-8 reste correct).
    Nouvelle page = nouveau dossier : le créer d'abord avec `PUT …/httpd.www/<dossier>/` (barre finale), sinon l'envoi répond 404.
 4. `.htaccess` (dans `public/`) : adresses propres (/contact), redirection www → sans www, compression, cache d'un an sur /assets.
 
