@@ -1,0 +1,34 @@
+name: Récupérer les images IA
+
+# Relais : télécharge les images générées (liste media-ia/urls.txt), les réduit en JPEG et les range dans media-ia/.
+on:
+  push:
+    branches: [media-ia]
+    paths: ["media-ia/urls.txt"]
+
+permissions:
+  contents: write
+
+jobs:
+  recuperer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Télécharger et réduire
+        run: |
+          sudo apt-get install -y -q imagemagick >/dev/null
+          cd media-ia
+          while read -r nom url; do
+            [ -z "$nom" ] && continue
+            [ -f "$nom.jpg" ] && continue
+            curl -sSL --retry 3 -o "/tmp/$nom.src" "$url" || { echo "ECHEC $nom"; continue; }
+            convert "/tmp/$nom.src" -resize "1620x2880>" -quality 90 "$nom.jpg" || echo "ECHEC conversion $nom"
+          done < urls.txt
+          ls -la | tail -n +2 | wc -l
+      - name: Enregistrer
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add media-ia
+          git diff --cached --quiet || git commit -q -m "Images IA récupérées"
+          git push
