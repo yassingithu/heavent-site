@@ -98,7 +98,7 @@
 .inv[dir="rtl"] .inv-rev-bouton { letter-spacing: 0; text-transform: none; font-size: 15px; }
 .inv-page .inv-rev-aide { position: static; color: var(--inv-sur-fond); }
 /* consigne du cœur : deux lignes égales sous le cœur, jamais un mot seul à la ligne */
-.inv .inv-rev .inv-rev-aide { display: block; width: auto; max-width: min(300px, 86vw); margin: 2px auto 0; padding: 0; text-align: center; text-wrap: balance; font-size: 12px; line-height: 1.7; letter-spacing: .2em; }
+.inv .inv-rev .inv-rev-aide { position: static; inset: auto; z-index: auto; animation: none; color: var(--inv-sur-fond); display: block; width: auto; max-width: min(300px, 86vw); margin: 2px auto 0; padding: 0; text-align: center; text-wrap: balance; font-size: 12px; line-height: 1.7; letter-spacing: .2em; }
 .inv[dir="rtl"] .inv-rev .inv-rev-aide { letter-spacing: 0; font-size: 15px; }
 .inv-rev { gap: 18px; }
 .inv-page .inv-scene:has(.inv-porte) { justify-content: center; }
