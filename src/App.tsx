@@ -20,6 +20,7 @@ const EspaceMaries = lazy(() => import("./pages/EspaceMaries"));
 const Rsvp = lazy(() => import("./pages/Rsvp"));
 const Souvenirs = lazy(() => import("./pages/Souvenirs"));
 const InvitationApercu = lazy(() => import("./pages/InvitationApercu"));
+const ListeInvitesDirecte = lazy(() => import("./pages/ListeInvitesDirecte"));
 const AdminAuth = lazy(() => import("./pages/AdminAuth"));
 const Auth = lazy(() => import("./pages/Auth"));
 const StaffDashboard = lazy(() => import("./pages/StaffDashboard"));
@@ -80,6 +81,7 @@ const App = () => {
               <Route path="/souvenirs/mariage/:token" element={<Souvenirs />} />
               <Route path="/reponse/:token" element={<Rsvp />} />
               <Route path="/invitation/:jeton" element={<InvitationApercu />} />
+              <Route path="/liste/:jeton" element={<ListeInvitesDirecte />} />
               <Route path="/realisations" element={<Realisations />} />
               <Route path="/guides" element={<ListeGuides />} />
               <Route path="/guides/:slug" element={<PageGuide />} />

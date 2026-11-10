@@ -7,13 +7,15 @@ import ChampMessage from "@/components/invitation/ChampMessage";
 import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvitation";
 import type { InvitationReglages } from "@/lib/invitation";
 
-interface Apercu { id: string; jeton: string; noms: string; date_evenement: string | null; lieu: string | null; message: string | null; invitation: InvitationReglages; prospect: string | null; expire_le: string; created_at: string; mode: "test" | "final"; avec_reponse: boolean }
+interface Apercu { id: string; jeton: string; noms: string; date_evenement: string | null; lieu: string | null; message: string | null; invitation: InvitationReglages; prospect: string | null; expire_le: string; created_at: string; mode: "test" | "final"; avec_reponse: boolean; jeton_liste?: string | null; notif_email?: string | null }
 interface Confirme { apercu_id: string; nom: string; reponse: "oui" | "non"; nb_confirmes: number; accompagnants: string[]; created_at: string }
 interface Lieu { nom: string; ville: string | null; lien_maps: string | null }
 
 const champ = "w-full rounded-xl border border-[#E3D6BA] bg-white px-3 min-h-10 text-sm";
 const btn = "inline-flex items-center justify-center gap-1.5 rounded-full px-4 min-h-10 text-sm font-medium transition disabled:opacity-60";
 const lien = (j: string) => `${window.location.origin}/invitation/${j}`;
+const lienListe = (j: string) => `${window.location.origin}/liste/${j}`;
+const MAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const db = supabase as any;
 
 export default function InvitationsAdmin() {
@@ -25,6 +27,8 @@ export default function InvitationsAdmin() {
   const [confirmes, setConfirmes] = useState<Confirme[]>([]);
   const [finaliser, setFinaliser] = useState(false);
   const [choisie, setChoisie] = useState<string>("");
+  const [coupe, setCoupe] = useState(false);
+  const [mailNotif, setMailNotif] = useState<Record<string, string>>({});
   const { toast: t } = useToast();
   const toast = { success: (title: string) => t({ title }), error: (title: string) => t({ title, variant: "destructive" }) };
 
@@ -102,6 +106,33 @@ export default function InvitationsAdmin() {
   };
   const copierListe = async (a: Apercu) => { try { await navigator.clipboard.writeText(texteListe(a)); toast.success("Liste copiée"); } catch { toast.error("Copie impossible"); } };
   const envoyerListe = (a: Apercu) => { window.open(`https://wa.me/?text=${encodeURIComponent(texteListe(a))}`, "_blank"); };
+  const majCarte = (a: Apercu, champs: Partial<Apercu>) => { const maj = { ...a, ...champs }; setListe((l) => (l ?? []).map((x) => (x.id === a.id ? maj : x))); if (edit?.id === a.id) setEdit(maj); };
+  const creerLienListe = async (a: Apercu) => {
+    const j = crypto.randomUUID();
+    const { error } = await db.from("invitations_apercu").update({ jeton_liste: j }).eq("id", a.id);
+    if (error) { toast.error("Création du lien impossible"); return; }
+    majCarte(a, { jeton_liste: j }); toast.success("Lien créé");
+  };
+  const couperLienListe = async (a: Apercu) => {
+    const { error } = await db.from("invitations_apercu").update({ jeton_liste: null }).eq("id", a.id);
+    setCoupe(false);
+    if (error) { toast.error("Impossible de couper le lien"); return; }
+    majCarte(a, { jeton_liste: null }); toast.success("Lien coupé : il ne montre plus rien");
+  };
+  const copierLienListe = async (a: Apercu) => { if (!a.jeton_liste) return; try { await navigator.clipboard.writeText(lienListe(a.jeton_liste)); toast.success("Lien copié"); } catch { toast.error(lienListe(a.jeton_liste)); } };
+  const whatsappListe = (a: Apercu) => {
+    if (!a.jeton_liste) return;
+    const t = `👥 Suivez vos invités en direct :\n${lienListe(a.jeton_liste)}\n\nLa liste se met à jour toute seule à chaque réponse. Ce lien est privé : ne le partagez qu'aux personnes de confiance.\n\nHeavent People Agency`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, "_blank");
+  };
+  const enregistrerMail = async (a: Apercu) => {
+    const v = (mailNotif[a.id] ?? a.notif_email ?? "").trim();
+    if (v && !MAIL_OK.test(v)) { toast.error("Adresse e-mail invalide"); return; }
+    if (v === (a.notif_email ?? "")) return;
+    const { error } = await db.from("invitations_apercu").update({ notif_email: v || null, notif_envoye_le: new Date().toISOString() }).eq("id", a.id);
+    if (error) { toast.error("Enregistrement impossible"); return; }
+    majCarte(a, { notif_email: v || null }); toast.success(v ? "Vous serez prévenu à chaque nouvelle réponse" : "Notifications arrêtées");
+  };
   const choisirLieu = (nom: string) => {
     const l = lieux.find((x) => x.nom === nom);
     if (!edit) return;
@@ -179,6 +210,30 @@ export default function InvitationsAdmin() {
                     <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => copierListe(a)}><Copy className="h-4 w-4" /> Copier la liste</button>
                     <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={() => envoyerListe(a)}><MessageCircle className="h-4 w-4" /> Envoyer au client</button>
                   </div>
+                </div>
+                <div className="mt-4 rounded-2xl border border-[#E3D6BA] bg-[#FBF8F1] p-3 space-y-3" data-testid="liste-directe-admin">
+                  <div>
+                    <p className="text-sm font-medium">Liste en direct pour le client</p>
+                    <p className="text-xs text-[#6B6154]">Un lien privé en lecture seule, sans compte : il montre les confirmations dès qu'elles arrivent. Toute personne qui a le lien voit les noms.</p>
+                  </div>
+                  {a.jeton_liste ? (
+                    <div className="space-y-2">
+                      <input readOnly className={`${champ} text-xs`} value={lienListe(a.jeton_liste)} onFocus={(e) => e.currentTarget.select()} aria-label="Lien de la liste en direct" />
+                      <div className="flex flex-wrap gap-1.5">
+                        <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => copierLienListe(a)} data-testid="liste-copier"><Copy className="h-4 w-4" /> Copier le lien</button>
+                        <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={() => whatsappListe(a)}><MessageCircle className="h-4 w-4" /> Envoyer par WhatsApp</button>
+                        {coupe ? (
+                          <span className="inline-flex flex-wrap items-center gap-2 text-sm">Couper le lien ? Il ne montrera plus rien.
+                            <button type="button" className={`${btn} bg-[#9B2C23] text-white`} onClick={() => couperLienListe(a)} data-testid="liste-couper-confirmer">Oui, couper</button>
+                            <button type="button" className="underline min-h-10" onClick={() => setCoupe(false)}>Annuler</button></span>
+                        ) : <button type="button" className={`${btn} border border-[#DCCBA6] bg-white text-[#9B2C23]`} onClick={() => setCoupe(true)} data-testid="liste-couper">Couper le lien</button>}
+                      </div>
+                    </div>
+                  ) : <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={() => creerLienListe(a)} data-testid="liste-creer">Créer le lien de la liste en direct</button>}
+                  <label className="block text-sm">Prévenir par e-mail à chaque nouvelle réponse
+                    <input type="email" inputMode="email" autoComplete="off" className={`${champ} mt-1`} placeholder="adresse du client (laisser vide = pas d'e-mail)" value={mailNotif[a.id] ?? a.notif_email ?? ""} onChange={(e) => setMailNotif({ ...mailNotif, [a.id]: e.target.value })} onBlur={() => enregistrerMail(a)} data-testid="liste-email" />
+                    <span className="block text-xs text-[#6B6154] mt-1">Un seul e-mail regroupe les réponses reçues (toutes les 5 minutes au plus).</span>
+                  </label>
                 </div>
                 {oui.length === 0 ? <p className="text-sm text-[#5E554A] mt-3">Personne n'a encore confirmé.</p> : (
                   <ul className="divide-y divide-[#EFE6D2] text-sm mt-2">

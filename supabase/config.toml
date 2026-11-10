@@ -55,3 +55,6 @@ verify_jwt = false
 
 [functions.rappel-souvenirs]
 verify_jwt = false
+
+[functions.liste-invites-notif]
+verify_jwt = false
