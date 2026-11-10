@@ -179,6 +179,7 @@ const Contact = () => {
                   <span className="s-surtitre" style={{ letterSpacing: ".24em" }}>{info.title}</span>
                   {info.href === "#" ? <b>{info.value}</b> : <a href={info.href} {...(info.href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}><b dir={info.href.startsWith("tel:") ? "ltr" : undefined}>{info.value}</b></a>}
                   <p style={{ gridColumn: 1 }}>{info.description}</p>
+                  {info.href.startsWith("mailto:") && <p className="s-candidat-ligne" style={{ gridColumn: "1 / -1" }} data-testid="contact-candidats">{x("Vous cherchez une mission d'hôte ou d'hôtesse ?")} <Link to="/inscription-staff">{x("Inscrivez-vous ici")}</Link>. {x("Les candidatures se font en ligne, pas par e-mail.")}</p>}
                 </li>
               ))}
               <li data-revele="" style={{ gridTemplateColumns: "1fr" }}>

@@ -542,3 +542,46 @@ html.s-anime .s-deroule.vu .s-etape::after { transition: transform .5s var(--s-c
 html.s-anime .s-wp-page [data-revele]:not(.vu) { filter: none; transform: translateY(10px); }
 html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
 @media (prefers-reduced-motion: reduce) { .s-wp-ville:target::after, .s-wp-ville.choisie::after { animation: none; transform: scaleX(1); } }
+
+/* ———————— Accueil : carte des candidats (hôtes et hôtesses) ———————— */
+.s-candidats { position: fixed; z-index: 45; left: 24px; bottom: 24px; width: min(380px, calc(100vw - 48px)); padding: 26px 26px 24px; background: url(/seuil/grain-nuit.png) 0 0/128px, #1E1B16; --fond: #1E1B16; border: 1px solid rgba(228,212,154,.42); box-shadow: 0 28px 70px rgba(0,0,0,.6); animation: s-candidats-entree .7s var(--s-courbe) both; }
+.s-candidats::before { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(228,212,154,.16); pointer-events: none; }
+.s-candidats.sort { animation: s-candidats-sortie .26s cubic-bezier(.4,0,1,1) both; }
+.s-candidats-sur { margin: 0; font: 500 11px/1.2 var(--s-texte); letter-spacing: .3em; text-transform: uppercase; color: var(--s-laiton-clair); }
+.s-candidats-titre { margin: 10px 28px 0 0; font: 400 30px/1.08 var(--s-titre); letter-spacing: -.01em; text-wrap: balance; }
+.s-candidats-texte { margin: 12px 0 0; font: 400 15px/1.55 var(--s-texte); color: rgba(247,243,232,.82); }
+.s-candidats-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 20px; }
+.s-candidats-actions .s-btn { min-height: 48px; }
+.s-candidats .s-btn-filet:hover::before { background: #2A261F; }
+.s-candidats-non { min-height: 44px; padding: 0 4px; background: none; border: 0; font: 400 14px/1.2 var(--s-texte); color: rgba(247,243,232,.82); text-decoration: underline; text-underline-offset: 5px; text-decoration-color: rgba(228,212,154,.55); cursor: pointer; }
+.s-candidats-non:hover { color: var(--s-platre); }
+.s-candidats-fermer { position: absolute; z-index: 1; top: 6px; right: 6px; width: 44px; height: 44px; display: grid; place-items: center; background: none; border: 0; color: var(--s-laiton-clair); cursor: pointer; }
+.s-candidats-fermer:hover { color: var(--s-platre); }
+.s-candidats :is(button, a):focus-visible { outline: 2px solid var(--s-laiton-clair); outline-offset: 3px; }
+.s-candidats[dir="rtl"] { left: auto; right: 24px; }
+.s-candidats[dir="rtl"] .s-candidats-fermer { right: auto; left: 6px; }
+.s-candidats[dir="rtl"] .s-candidats-titre { margin: 10px 0 0 28px; }
+.s-candidats[dir="rtl"] .s-candidats-sur { letter-spacing: 0; }
+@keyframes s-candidats-entree { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes s-candidats-sortie { to { opacity: 0; transform: translateY(10px); } }
+/* téléphone : une bande compacte (sur-titre, question, bouton, croix), sans paragraphe */
+@media (max-width: 640px) {
+  .s-candidats, .s-candidats[dir="rtl"] { left: 0; right: 0; bottom: 0; width: auto; display: flex; align-items: center; gap: 12px; padding: 16px 52px calc(14px + env(safe-area-inset-bottom)) 20px; border-width: 1px 0 0; border-top-color: rgba(228,212,154,.7); box-shadow: 0 -24px 60px rgba(0,0,0,.65); }
+  .s-candidats[dir="rtl"] { padding: 16px 20px calc(14px + env(safe-area-inset-bottom)) 52px; }
+  .s-candidats::before { inset: 5px 0 auto; height: 0; border-width: 1px 0 0; border-color: rgba(228,212,154,.28); }
+  .s-candidats-mots { flex: 1; min-width: 0; }
+  .s-candidats-sur { font-size: 10px; letter-spacing: .24em; }
+  .s-candidats-titre, .s-candidats[dir="rtl"] .s-candidats-titre { margin: 5px 0 0; font-size: 19px; line-height: 1.15; }
+  .s-candidats-texte, .s-candidats-non { display: none; }
+  .s-candidats-actions { margin: 0; flex: none; }
+  .s-candidats-actions .s-btn { min-height: 46px; padding: 0 16px; gap: 8px; letter-spacing: .05em; }
+  .s-candidats-fermer { top: 50%; right: 4px; margin-top: calc(-22px - env(safe-area-inset-bottom) / 2 + 1px); }
+  .s-candidats[dir="rtl"] .s-candidats-fermer { right: auto; left: 4px; }
+  @keyframes s-candidats-entree { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  .bouton-whatsapp { transition: translate .4s var(--s-courbe); translate: 0 calc(var(--candidats-h, 0px) * -1); }
+}
+@media (prefers-reduced-motion: reduce) { .s-candidats, .s-candidats.sort { animation: none; } .bouton-whatsapp { transition: none; } }
+
+/* candidats : la même invitation là où l'on clique sur l'e-mail */
+.s-candidat-ligne { display: block; margin-top: 4px; font-size: 13px; opacity: .85; }
+.s-candidat-ligne a { text-decoration: underline; text-underline-offset: 4px; }

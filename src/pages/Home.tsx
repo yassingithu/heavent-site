@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Seo from "@/components/Seo";
 import SectionConfiance from "@/components/vitrine/Confiance";
+import AppelCandidats from "@/components/vitrine/AppelCandidats";
 import { VILLES } from "@/lib/pagesLocales";
 import { useTexte } from "@/i18n/textes";
 import { NUMERO_WHATSAPP } from "@/components/BoutonWhatsApp";
@@ -231,11 +232,13 @@ const Home = () => {
             <div className="s-coord" data-revele="">
               <span><b>{x("Siège")}</b> · Rabat</span>
               <span><b>{x("Contact")}</b> · <a href="mailto:info@heaventagency.com">info@heaventagency.com</a></span>
+              <span><b>{x("Candidat(e) ?")}</b> · <Link to="/inscription-staff" data-testid="fin-inscription-staff">{x("Inscription ici")}</Link></span>
               <span><b>{x("Langues")}</b> · FR · EN · ع</span>
             </div>
           </div>
         </div>
       </section>
+      <AppelCandidats />
     </div>
   );
 };

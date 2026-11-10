@@ -23,6 +23,7 @@ const Footer = () => {
           <h2>{t("nav.contact")}</h2>
           <ul>
             <li><a href="mailto:info@heaventagency.com">info@heaventagency.com</a></li>
+            <li>{x("Candidat(e) ?")} <Link to="/inscription-staff">{x("Inscription ici")}</Link></li>
             <li><a href="tel:+212610939655" dir="ltr">+212 6 10 93 96 55</a></li>
             <li><a href={`https://wa.me/${NUMERO_WHATSAPP}`} target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
             <li><a href="https://instagram.com/heaventagency" target="_blank" rel="noopener noreferrer">Instagram · @heaventagency</a></li>
