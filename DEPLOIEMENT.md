@@ -11,3 +11,8 @@
 4. `.htaccess` (dans `public/`) : adresses propres (/contact), redirection www → sans www, compression, cache d'un an sur /assets.
 
 Contrôles automatiques après chaque mise en ligne : workflows « Agent d'audit » et « Agent bêta-testeur » (onglet Actions / Issues).
+
+
+## Envoi partiel (seulement les fichiers modifiés)
+
+Calculer la liste avec `git diff --no-renames --name-only --diff-filter=AM <ancien> HEAD -- deploy/site`. Sans `--no-renames`, Git classe les fichiers `assets/…-<hash>.js|css` en « renommés » et ils sortent de la liste : le 10/11/2026, `index.html` a été envoyé sans son script principal et le site est resté cassé quelques minutes. Après chaque envoi, vérifier en ligne que tous les fichiers de `assets/` listés dans `fichiers.json` répondent 200, puis seulement envoyer `index.html`.
