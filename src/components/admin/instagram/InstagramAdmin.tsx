@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { CalendarPlus, Check, Copy, Download, ExternalLink, ImagePlus, Instagram, KeyRound, Loader2, Search, Sparkles, Wand2 } from "lucide-react";
+import { CalendarPlus, Check, Copy, Download, ExternalLink, ImagePlus, Instagram, KeyRound, Loader2, Search, Sparkles, Trash2, Wand2 } from "lucide-react";
 import { composerVisuel, enJpeg } from "./visuel";
 import { guidePourTheme } from "@/data/guides";
 import CommentezGuide from "./CommentezGuide";
@@ -385,6 +385,15 @@ function EditeurPost({ post: initial, pixabay, instagram, famille, onFermer }: {
     if (error) { let m = error.message; try { m = (await (error as any).context?.json())?.error ?? m; } catch { /* rien */ } return toast({ title: "Publication impossible", description: m, variant: "destructive" }); }
     toast({ title: "Publié sur Instagram 🎉" }); onFermer();
   };
+  const [confirmeSuppr, setConfirmeSuppr] = useState(false);
+  const supprimer = async () => {
+    if (!confirmeSuppr) { setConfirmeSuppr(true); return; }
+    setOccupe("supprimer");
+    const { error } = await (supabase as any).from("posts_instagram").delete().eq("id", p.id);
+    setOccupe(null);
+    if (error) { setConfirmeSuppr(false); return toast({ title: "Suppression impossible", description: error.message, variant: "destructive" }); }
+    toast({ title: "Post supprimé", description: "Il ne sera pas publié." }); onFermer();
+  };
   const guide = guidePourTheme(p.theme);
   const creerNewsletter = async () => {
     setOccupe("newsletter");
@@ -474,6 +483,12 @@ function EditeurPost({ post: initial, pixabay, instagram, famille, onFermer }: {
               {!famille && (p.compte ?? "heavent") === "heavent" && <button onClick={creerNewsletter} disabled={!!occupe} className="rounded-full border px-4 h-10 text-sm" data-testid="creer-newsletter">✉️ Créer la newsletter</button>}
               {!instagram && !famille && p.statut !== "publie" && p.visuel_url && <button onClick={marquerPublie} className="rounded-full border px-4 h-10 text-sm">Je l'ai publié</button>}
               <button onClick={onFermer} className="rounded-full px-4 h-10 text-sm text-muted-foreground">Fermer</button>
+              {p.statut !== "publie" && (
+                <button onClick={supprimer} onBlur={() => setConfirmeSuppr(false)} disabled={!!occupe} data-testid="supprimer-post"
+                  className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-4 h-10 text-sm transition-colors ${confirmeSuppr ? "bg-[#9C4A2C] text-white" : "text-[#9C4A2C] hover:bg-[#9C4A2C]/10"}`}>
+                  {occupe === "supprimer" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} {confirmeSuppr ? "Confirmer la suppression" : "Supprimer ce post"}
+                </button>
+              )}
             </div>
           </div>
         </div>
