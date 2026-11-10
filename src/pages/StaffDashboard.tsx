@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
-import { FileText, Download, Calendar as CalendarIcon, LogOut, User as UserIcon, ChevronLeft, ChevronRight, Key, Clock, CheckCircle } from "lucide-react";
+import { FileText, Download, Calendar as CalendarIcon, Wallet, LogOut, User as UserIcon, ChevronLeft, ChevronRight, Key, Clock, CheckCircle } from "lucide-react";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay, isWeekend, addDays, isAfter, isBefore } from "date-fns";
 import { fr } from "date-fns/locale";
 import { TimeSlotSelector } from "@/components/TimeSlotSelector";
@@ -502,9 +502,9 @@ const StaffDashboard = () => {
 
         <Tabs defaultValue="contrats" className="space-y-4">
           <TabsList className="st-onglets">
-            <TabsTrigger value="contrats" className="text-xs sm:text-sm py-2">{t('dashboard.contracts_tab')}</TabsTrigger>
-            <TabsTrigger value="paie" className="text-xs sm:text-sm py-2">{t('dashboard.payslips_tab')}</TabsTrigger>
-            <TabsTrigger value="disponibilites" className="text-xs sm:text-sm py-2">{t('dashboard.availability_tab')}</TabsTrigger>
+            <TabsTrigger value="contrats" className="text-xs sm:text-sm py-2"><FileText className="st-icone" aria-hidden />{t('dashboard.contracts_tab')}</TabsTrigger>
+            <TabsTrigger value="paie" className="text-xs sm:text-sm py-2"><Wallet className="st-icone" aria-hidden />{t('dashboard.payslips_tab')}</TabsTrigger>
+            <TabsTrigger value="disponibilites" className="text-xs sm:text-sm py-2"><CalendarIcon className="st-icone" aria-hidden />{t('dashboard.availability_tab')}</TabsTrigger>
           </TabsList>
 
           {/* Contrats */}

@@ -1,0 +1,1 @@
+import{s as t}from"./index-C4fW8wB0.js";async function e(){const{data:a,error:r}=await t.rpc("is_admin");return!r&&a===!0}async function n(){const{data:a,error:r}=await t.rpc("est_espace_nawar");return!r&&a===!0}export{n as a,e};
