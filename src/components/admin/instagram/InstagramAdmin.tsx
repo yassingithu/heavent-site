@@ -297,8 +297,8 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
 
       {/* Calendrier des posts */}
       <h2 className="a-surtitre">Le planning</h2>
-      <div className="ig-grille">
-        {posts.map((p) => (
+      {(() => {
+        const carte = (p: Post) => (
           <button key={p.id} onClick={() => setOuvert(p)} className="ig-carte" data-testid="carte-post">
             <div className="ig-vis">
               {p.visuel_url || p.photo_url ? <img src={p.visuel_url ?? p.photo_url!} alt="" loading="lazy" />
@@ -310,8 +310,21 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
               <div className="quand first-letter:uppercase">{quand(p.date_prevue)}</div>
             </div>
           </button>
-        ))}
-      </div>
+        );
+        const aVenir = posts.filter((p) => p.statut !== "publie");
+        const publies = posts.filter((p) => p.statut === "publie");
+        return (
+          <>
+            <div className="ig-grille">{aVenir.map(carte)}</div>
+            {publies.length > 0 && (
+              <details className="mt-6" data-testid="posts-publies">
+                <summary className="cursor-pointer text-sm text-muted-foreground select-none">Déjà publiés ({publies.length})</summary>
+                <div className="ig-grille mt-3">{publies.map(carte)}</div>
+              </details>
+            )}
+          </>
+        );
+      })()}
 
       {ajout && <AjouterPost compte={compte} posts={posts} famille={famille} onFermer={() => setAjout(false)} onCree={async (id) => {
         setAjout(false);
