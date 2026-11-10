@@ -390,9 +390,10 @@ html.s-anime .s-deroule.vu .s-etape::after { transition: transform .5s var(--s-c
   .s-marque img { height: 38px; }
 }
 /* le menu complet ne s'affiche que s'il tient sur une ligne */
-@media (min-width: 1180px) {
+/* menu complet à partir de 1360 px : en dessous, avec « Réalisations » et les liens secondaires, il dépassait la fenêtre */
+@media (min-width: 1360px) {
   .s-menu-btn, .s-devis-court { display: none; }
-  .s-nav { display: flex; align-items: center; gap: 28px; font: 400 14px var(--s-texte); letter-spacing: .06em; color: #E6DDCB; }
+  .s-nav { display: flex; align-items: center; gap: 20px; white-space: nowrap; font: 400 14px var(--s-texte); letter-spacing: .04em; color: #E6DDCB; }
   .s-nav a:not(.s-btn) { position: relative; padding: 10px 0; }
   .s-nav a:not(.s-btn)::after { content: ""; position: absolute; left: 0; right: 0; bottom: 4px; height: 1px; background: var(--s-laiton); transform: scaleX(0); transform-origin: left; transition: transform .25s var(--s-courbe); }
   .s-nav a:not(.s-btn):hover::after, .s-nav a[aria-current="page"]::after { transform: scaleX(1); }
@@ -490,7 +491,8 @@ html.s-anime .s-deroule.vu .s-etape::after { transition: transform .5s var(--s-c
   .s-nav a.s-nav-sec { font-size: 12px; letter-spacing: .04em; }
 }
 .s-marque { flex: none; }
-@media (max-width: 1319px) { .s-nav a.s-nav-sec[href="/inscription-staff"] { display: none; } }
+@media (max-width: 1639px) { .s-nav a.s-nav-sec[href="/inscription-staff"] { display: none; } }
+@media (min-width: 1640px) { .s-nav { gap: 28px; letter-spacing: .06em; } }
 
 /* Le grand mot du titre ne déborde jamais, quelle que soit la langue (« Hospitality, » est plus long que « L'accueil, ») */
 .s-l1 { font-size: min(clamp(60px, 17vw, 176px), calc(100cqi / (var(--n, 10) * var(--f, .42)))); }
