@@ -228,14 +228,27 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   /* Musique d'ouverture (facultative) : démarre au toucher, avec un bouton pour la couper. */
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [son, setSon] = useState(false);
+  const [aMusique, setAMusique] = useState(false);
   const lancerMusique = () => {
     const u = reglages?.musique?.trim();
     if (!u || !/^(https:\/\/|\/(?!\/))/.test(u) || audioRef.current) return;
-    try { const a = new Audio(u); a.loop = true; a.volume = 0.6; audioRef.current = a; void a.play().then(() => setSon(true)).catch(() => undefined); } catch { /* sans musique */ }
+    try {
+      const a = new Audio(u); a.loop = true; a.volume = 0.6; a.preload = "auto"; audioRef.current = a;
+      // un lien illisible (page de site, fichier supprimé) : pas de bouton fantôme
+      a.onerror = () => { if (audioRef.current === a) { audioRef.current = null; setAMusique(false); setSon(false); } };
+      setAMusique(true);
+      void a.play().then(() => setSon(true)).catch(() => setSon(false));
+    } catch { /* sans musique */ }
   };
   useEffect(() => () => { audioRef.current?.pause(); audioRef.current = null; }, []);
-  useEffect(() => { audioRef.current?.pause(); audioRef.current = null; setSon(false); }, [rejouer, reglages?.musique]);
-  const basculerSon = () => { const a = audioRef.current; if (!a) return; if (a.paused) { void a.play(); setSon(true); } else { a.pause(); setSon(false); } };
+  useEffect(() => { audioRef.current?.pause(); audioRef.current = null; setSon(false); setAMusique(false); }, [rejouer, reglages?.musique]);
+  // l'invité quitte l'onglet ou verrouille le téléphone : la musique se tait, et reprend à son retour si elle jouait
+  useEffect(() => {
+    const voir = () => { const a = audioRef.current; if (!a) return; if (document.hidden) a.pause(); else if (son) void a.play().catch(() => setSon(false)); };
+    document.addEventListener("visibilitychange", voir);
+    return () => document.removeEventListener("visibilitychange", voir);
+  }, [son]);
+  const basculerSon = () => { const a = audioRef.current; if (!a) return; if (a.paused) { void a.play().then(() => setSon(true)).catch(() => setSon(false)); } else { a.pause(); setSon(false); } };
   const nomsRef = useRef<HTMLHeadingElement>(null);
   const depart = useRef<DOMRect | null>(null);
   /* Les prénoms restent au centre de la carte qui sort de l'enveloppe, puis glissent à leur place pendant que le reste apparaît. */
@@ -374,7 +387,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
         <Revelation noms={nomsA} titre={t.gratter} bouton={t.decouvrir} onFini={() => setPhase("ouverte")}
           sous={dp ? { haut: maj(part("weekday")), jour: part("day"), bas: `${part("month")} ${part("year")}` } : { haut: "", jour: initiales(nomsA), bas: "" }} />
       )}
-      {audioRef.current && phase !== "fermee" && (<button type="button" className="inv-musique" onClick={basculerSon} aria-pressed={son} aria-label={son ? "Couper la musique" : "Activer la musique"} data-testid="invitation-musique">{son ? "♪" : "♪̸"}</button>)}
+      {aMusique && phase !== "fermee" && (<button type="button" className="inv-musique" onClick={basculerSon} aria-pressed={son} aria-label={son ? "Couper la musique" : "Activer la musique"} data-testid="invitation-musique">{son ? "♪" : "♪̸"}</button>)}
       {phase === "ouverte" && (<>
         <article className={`inv-carte inv-orn-${ornement}${ouv.carte ? ` inv-carte-film inv-cf-${ouv.id}` : ""}`} data-testid="invitation-carte"
           style={ouv.carte ? ({ "--film-r": ouv.carte.r ?? 180, "--film-fin": `url(${ouv.carte.fin})`, "--film-x": ouv.carte.x, "--film-y": ouv.carte.y, "--film-l": ouv.carte.l, "--film-h": ouv.carte.h, "--film-fond": ouv.carte.fond } as CSSProperties) : undefined}>

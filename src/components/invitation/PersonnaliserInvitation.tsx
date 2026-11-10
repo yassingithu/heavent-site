@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ChampMessage from "./ChampMessage";
+import ChampMusique from "./ChampMusique";
 import ImportOuverture from "./ImportOuverture";
 import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import { RotateCcw, Play } from "lucide-react";
@@ -94,10 +95,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </section>
 
         <section>
-          <label className="block text-sm">Musique à l'ouverture (facultatif)
-            <input className={`${champ} mt-1`} value={valeur.musique ?? ""} maxLength={300} inputMode="url" placeholder="https://…/ma-musique.mp3" data-testid="invitation-musique-lien" onChange={(e) => onChange({ ...valeur, musique: e.target.value })} />
-            <span className="block text-xs text-[#6B6154] mt-1">Lien direct vers un fichier audio (MP3) dont vous avez les droits. Elle démarre quand l'invité ouvre, avec un bouton pour la couper.</span>
-          </label>
+          <ChampMusique valeur={valeur.musique ?? ""} onChange={(m) => onChange({ ...valeur, musique: m })} estAdmin={estAdmin} champ={champ} />
         </section>
 
         <section>
