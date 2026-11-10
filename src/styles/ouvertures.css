@@ -380,10 +380,13 @@
   .inv-page .inv-o-video .inv-ov-cadre { inset: 0 auto 0 50%; width: calc(100vh * 9 / 16); width: calc(100dvh * 9 / 16); transform: translateX(-50%); }
 }
 /* lisibilité des réglages posés sur le film */
-.inv-page:has(.inv-o-video) .inv-langues { gap: 2px; width: max-content; margin: 0 auto; padding: 3px; border-radius: 999px; background: rgba(20, 16, 10, .38); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); left: 50%; right: auto; transform: translateX(-50%); }
-.inv-page:has(.inv-o-video) .inv-langues button { color: #fff; opacity: .85; }
+.inv-page:has(.inv-o-video) .inv-langues { gap: 2px; width: max-content; margin: 0 auto; padding: 3px; border-radius: 999px; background: rgba(20, 16, 10, .6); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); left: 50%; right: auto; transform: translateX(-50%); }
+.inv-page:has(.inv-o-video) .inv-langues button { color: #fff; opacity: 1; }
 .inv-page:has(.inv-o-video) .inv-langues button[aria-pressed="true"] { background: #fff; color: #141414; opacity: 1; }
-.inv-page .inv-o-video ~ .inv-aide { color: #fff; text-shadow: 0 1px 8px rgba(0, 0, 0, .7); }
+.inv-page .inv-o-video ~ .inv-aide { display: none; } /* le bouton central dit déjà « ouvrir » */
+.inv-page .inv-o-video:focus-visible { outline-offset: -6px; }
+.inv-o-video:focus-visible .inv-o-ouvrir { outline: 3px solid #fff; outline-offset: 3px; }
+.inv-musique { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 52px); }
 .inv-page .inv-o-video.inv-o-sans-cachet .inv-o-ouvrir { background: rgba(20, 16, 10, .6); border-color: rgba(255, 255, 255, .7); }
 .inv-page .inv-o-video, .inv-page .inv-o-video[data-ouverture] { background: var(--inv-env); }
 .inv-film-sortie.inv-fs-film { animation-duration: .45s; animation-delay: .1s; }
@@ -393,3 +396,13 @@
 .inv[data-phase="ouverture"] .inv-o-video .inv-ov-affiche { transition: none; }
 .inv-o-video .inv-ov-film { transition-duration: .12s; }
 .inv[data-phase="ouverture"] .inv-page .inv-langues, .inv[data-phase="ouverture"]:has(.inv-o-video) .inv-langues { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(20, 16, 10, .55); }
+
+/* Chiffre du jour : couleur pleine (le dégradé tombait à 2:1 sur le papier) et plus d'air autour des filets */
+.inv .inv-date-jour { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: color-mix(in srgb, var(--inv-accent) 72%, var(--inv-texte)); -webkit-text-fill-color: currentColor; }
+.inv .inv-pag .inv-date-jour { padding: 7px 16px 6px; }
+.inv-env-carte em small { margin: -.10em 0 .20em; }
+/* Films clairs : contrôles crème et noir, jamais gris sur blanc */
+.inv-page .inv-o-video:is([data-ouverture="v-neige"], [data-ouverture="v-glasshouse"], [data-ouverture="v-gardenia"], [data-ouverture="v-porte-blanche"]) .inv-o-ouvrir { background: rgba(251, 246, 233, .92); color: #141414; border: 1px solid #8C6D22; border-radius: 2px; text-shadow: none; box-shadow: 0 6px 22px rgba(20, 16, 10, .16); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.inv-page:has(.inv-o-video:is([data-ouverture="v-neige"], [data-ouverture="v-glasshouse"], [data-ouverture="v-gardenia"], [data-ouverture="v-porte-blanche"])) .inv-langues { background: rgba(251, 246, 233, .9); box-shadow: inset 0 0 0 1px rgba(140, 109, 34, .55); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.inv-page:has(.inv-o-video:is([data-ouverture="v-neige"], [data-ouverture="v-glasshouse"], [data-ouverture="v-gardenia"], [data-ouverture="v-porte-blanche"])) .inv-langues button { color: #141414; }
+.inv-page:has(.inv-o-video:is([data-ouverture="v-neige"], [data-ouverture="v-glasshouse"], [data-ouverture="v-gardenia"], [data-ouverture="v-porte-blanche"])) .inv-langues button[aria-pressed="true"] { background: #141414; color: #FBF6E9; }

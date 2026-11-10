@@ -14,6 +14,8 @@ interface Props {
   libelle: string;
   nomsRef: Ref<HTMLElement>;
   noms: ReactNode;
+  /** prénoms en texte simple, pour le nom accessible du bouton */
+  nomsTexte?: string;
   /** Initiales des mariés, affichées dans le sceau de cire. */
   initiales: string;
   libelleBouton: string;
@@ -44,7 +46,7 @@ function Defs() {
   );
 }
 
-export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, noms, initiales, libelleBouton, onFilm, sansCachet }: Props) {
+export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, noms, nomsTexte, initiales, libelleBouton, onFilm, sansCachet }: Props) {
   const def = ouvertureDe(type);
   const [echec, setEchec] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
@@ -70,7 +72,7 @@ export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, nom
   if (def.video) {
     return (
       <div className="inv-scene">
-        <button type="button" className={`inv-porte inv-o-video${echec ? " inv-o-video-secours" : ""}${sansCachet ? " inv-o-sans-cachet" : ""}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={`${libelleBouton}. ${libelle}`} data-testid="invitation-ouvrir" data-ouverture={type} style={def.sceauY ? ({ "--ov-y": `${def.sceauY}%` } as React.CSSProperties) : undefined}
+        <button type="button" className={`inv-porte inv-o-video${echec ? " inv-o-video-secours" : ""}${sansCachet ? " inv-o-sans-cachet" : ""}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={nomsTexte ? `${libelleBouton} — ${nomsTexte}` : libelleBouton} data-testid="invitation-ouvrir" data-ouverture={type} style={def.sceauY ? ({ "--ov-y": `${def.sceauY}%` } as React.CSSProperties) : undefined}
           onPointerMove={(e) => { if (phase !== "fermee" || e.pointerType === "mouse") return; const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--px", `${((e.clientX - b.left) / b.width - .5) * -12}px`); e.currentTarget.style.setProperty("--py", `${((e.clientY - b.top) / b.height - .5) * -12}px`); }}>
           <span className="inv-ov-cadre">
           <img className="inv-ov-affiche" src={def.poster} alt="" decoding="async" />
@@ -87,7 +89,7 @@ export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, nom
   return (
     <div className="inv-scene">
       <Defs />
-      <button type="button" className={`inv-porte inv-o-${type}${sansCachet ? " inv-o-sans-cachet" : ""}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={`${libelleBouton}. ${libelle}`} data-testid="invitation-ouvrir" data-ouverture={type}
+      <button type="button" className={`inv-porte inv-o-${type}${sansCachet ? " inv-o-sans-cachet" : ""}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={nomsTexte ? `${libelleBouton} — ${nomsTexte}` : libelleBouton} data-testid="invitation-ouvrir" data-ouverture={type}
         onPointerMove={(e) => { if (phase !== "fermee" || e.pointerType === "mouse") return; const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--px", `${((e.clientX - b.left) / b.width - .5) * -12}px`); e.currentTarget.style.setProperty("--py", `${((e.clientY - b.top) / b.height - .5) * -12}px`); }}>
         <span className="inv-o-monde" aria-hidden="true">
         <span className="inv-o-lueur" />
