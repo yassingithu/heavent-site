@@ -370,3 +370,26 @@
 .inv-o-sans-cachet .inv-o-sceau { display: none; }
 .inv-o-sans-cachet .inv-o-ouvrir { min-height: 44px; display: inline-flex; align-items: center; background: rgba(20, 16, 10, .42); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, .55); color: rgba(255, 255, 255, .95); text-shadow: 0 1px 6px rgba(0, 0, 0, .55); box-shadow: none; font-size: 13px; padding: 0 22px; top: calc(var(--ov-y, 50%) + 6px); }
 .inv-o-sans-cachet.inv-o-video[data-ouverture="v-neige"] .inv-o-ouvrir, .inv-o-sans-cachet.inv-o-video[data-ouverture="v-glasshouse"] .inv-o-ouvrir { color: #fff; }
+
+/* ── Ouvertures vidéo en plein écran (page de l'invité) ──
+   Le film occupe tout l'écran du téléphone (recadrage « cover », sans bandes). Sur un écran plus large que 9:16
+   (tablette, ordinateur), il garde toute sa hauteur au centre, sans être rogné. L'aperçu de l'administration (.inv-bloc) reste en petit. */
+.inv-ov-cadre { position: absolute; inset: 0; overflow: hidden; }
+.inv-page .inv-o-video { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; aspect-ratio: auto; box-shadow: none; border-radius: 0; }
+@media (min-aspect-ratio: 3/5) {
+  .inv-page .inv-o-video .inv-ov-cadre { inset: 0 auto 0 50%; width: calc(100vh * 9 / 16); width: calc(100dvh * 9 / 16); transform: translateX(-50%); }
+}
+/* lisibilité des réglages posés sur le film */
+.inv-page:has(.inv-o-video) .inv-langues { gap: 2px; width: max-content; margin: 0 auto; padding: 3px; border-radius: 999px; background: rgba(20, 16, 10, .38); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); left: 50%; right: auto; transform: translateX(-50%); }
+.inv-page:has(.inv-o-video) .inv-langues button { color: #fff; opacity: .85; }
+.inv-page:has(.inv-o-video) .inv-langues button[aria-pressed="true"] { background: #fff; color: #141414; opacity: 1; }
+.inv-page .inv-o-video ~ .inv-aide { color: #fff; text-shadow: 0 1px 8px rgba(0, 0, 0, .7); }
+.inv-page .inv-o-video.inv-o-sans-cachet .inv-o-ouvrir { background: rgba(20, 16, 10, .6); border-color: rgba(255, 255, 255, .7); }
+.inv-page .inv-o-video, .inv-page .inv-o-video[data-ouverture] { background: var(--inv-env); }
+.inv-film-sortie.inv-fs-film { animation-duration: .45s; animation-delay: .1s; }
+.inv:has(.inv-fs-film) .inv-petit { animation-delay: .35s; }
+.inv:has(.inv-fs-film) .inv-lettre { animation-delay: calc(.37s + var(--i) * 45ms); }
+.inv:has(.inv-fs-film) .inv-trait path { animation-delay: .95s; }
+.inv[data-phase="ouverture"] .inv-o-video .inv-ov-affiche { transition: none; }
+.inv-o-video .inv-ov-film { transition-duration: .12s; }
+.inv[data-phase="ouverture"] .inv-page .inv-langues, .inv[data-phase="ouverture"]:has(.inv-o-video) .inv-langues { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(20, 16, 10, .55); }

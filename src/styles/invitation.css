@@ -119,8 +119,10 @@
 .inv-mot { display: block; animation: inv-lettre .9s cubic-bezier(.2, .8, .2, 1) calc(.15s + var(--i) * 120ms) backwards; }
 @keyframes inv-lettre { from { opacity: 0; transform: translateY(.45em) rotate(3deg); filter: blur(7px); } }
 .inv-trait { display: block; width: 62%; max-width: 220px; height: 14px; margin: 0 auto 10px; color: var(--inv-accent); overflow: visible; }
-.inv-trait path { stroke-dasharray: 1; animation: inv-trace-trait .9s ease-out .8s backwards; }
-@keyframes inv-trace-trait { from { stroke-dashoffset: 1; } }
+.inv-trait path { stroke-dasharray: 1; animation: inv-trace-trait .6s cubic-bezier(.2, .7, .2, 1) .7s backwards; }
+.inv-trait path:nth-child(3) { stroke-dasharray: none; transform-box: fill-box; transform-origin: center; animation: inv-losange .3s cubic-bezier(.2, .7, .2, 1) 1s backwards; }
+@keyframes inv-losange { from { opacity: 0; transform: scale(.6); } }
+@keyframes inv-trace-trait { from { stroke-dashoffset: 1; opacity: 0; } 8% { opacity: 1; } }
 @keyframes inv-trace { from { stroke-dashoffset: 600; } }
 .inv-ornement svg g > * { stroke-dasharray: 600; animation: inv-trace 1.6s ease-out .15s backwards; }
 .inv-ornement svg g > g > * { stroke-dasharray: 600; animation: inv-trace 1.6s ease-out .15s backwards; }

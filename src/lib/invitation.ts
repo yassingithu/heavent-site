@@ -14,7 +14,7 @@ export const policeDe = (id?: string) => POLICES.find((p) => p.id === id) ?? POL
 /** Images à précharger pour qu'une ouverture à calques démarre sans à-coup (la carte finale comprise). */
 export function imagesOuverture(o: OuvertureDef): string[] {
   if (o.video || /^perso-/.test(o.id)) return [];
-  const base = `/ouvertures/${o.id}`;
+  const base = `/ouvertures/${o.base ?? o.id}`;
   return [`${base}-g.webp`, `${base}-d.webp`, ...(o.cadre ? [`${base}-cadre.webp`] : []), ...(o.carte ? [o.carte.fin] : [])];
 }
 
@@ -131,6 +131,8 @@ export interface OuvertureDef {
   sceauY?: number;
   /** décor à cadre fixe : image `<id>-cadre.webp` posée devant les battants */
   cadre?: boolean;
+  /** préfixe des fichiers d'images quand il diffère de l'identifiant (ex. `rose` pour rose-g.webp) */
+  base?: string;
   /** film qui finit sur une carte vierge : zoom progressif (centre x,y en fractions, échelle s, début `de` en secondes) avant le fondu vers notre carte */
   zoom?: { x: number; y: number; s: number; de: number; /** secondes : on passe à la carte à ce moment du film (sans attendre la fin) */ fin: number };
   carte?: { fin: string; x: number; y: number; l: number; h: number; fond: string; r?: number };
@@ -148,7 +150,7 @@ export const OUVERTURES: OuvertureDef[] = [
   { id: "moucharabieh", nom: "Moucharabieh", description: "Deux panneaux de bois ajouré aux étoiles de laiton coulissent et laissent passer la lumière.", duree: 1800, styles: ["Marocain", "Luxe"] },
   { id: "zellige", nom: "Zellige", description: "Deux panneaux de zellige bleu, vert et terre cuite s'écartent sur une lumière dorée.", duree: 1800, styles: ["Marocain", "Moderne"] },
   { id: "riad", nom: "Riad", description: "Une porte de cèdre sculpté aux clous de laiton s'ouvre sur le patio du riad : fontaine, orangers et lanternes au crépuscule.", duree: 2200, styles: ["Marocain", "Luxe"] },
-  { id: "rose-imperiale", nom: "Rose Impériale", description: "Deux battants de nacre rose poudré, brodés de fleurs, s'ouvrent sur le cadre intérieur où s'écrit votre invitation.", duree: 2600, styles: ["Floral", "Luxe"], carte: { fin: "/ouvertures/rose-fond.webp", x: 0.315, y: 0.23, l: 0.37, h: 0.515, fond: "#f4e3e2", r: 177.7 } },
+  { id: "rose-imperiale", base: "rose", nom: "Rose Impériale", description: "Deux battants de nacre rose poudré, brodés de fleurs, s'ouvrent sur le cadre intérieur où s'écrit votre invitation.", duree: 2600, styles: ["Floral", "Luxe"], carte: { fin: "/ouvertures/rose-fond.webp", x: 0.315, y: 0.23, l: 0.37, h: 0.515, fond: "#f4e3e2", r: 177.7 } },
   { id: "riad-cedre", cadre: true, nom: "Porte du riad de cèdre", description: "Deux battants de cèdre sculpté s'ouvrent sous l'arche de zellige, puis la caméra avance jusqu'à la carte.", duree: 3500, styles: ["Marocain","Floral"], carte: { fin: "/ouvertures/riad-cedre-fond.webp", x: 0.14, y: 0.16, l: 0.72, h: 0.68, fond: "#f8eddd", r: 150 } },
   { id: "palais-fer", cadre: true, nom: "Palais de fer forgé", description: "Un portail de fer noir et d'or s'ouvre entre les colonnes de marbre ; la caméra avance jusqu'à la carte.", duree: 3500, styles: ["Luxe","Floral"], carte: { fin: "/ouvertures/palais-fer-fond.webp", x: 0.14, y: 0.16, l: 0.72, h: 0.68, fond: "#f9f4ed", r: 150 } },
   { id: "rideaux", nom: "Rideaux", description: "Deux pans de tissu drapé qui s'écartent comme au théâtre.", duree: 1800, styles: ["Luxe", "Marocain"] },

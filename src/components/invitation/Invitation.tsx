@@ -139,6 +139,17 @@ function Lettres({ texte, base, ar }: { texte: string; base: number; ar: boolean
 
 const ETINCELLES = Array.from({ length: 16 }, (_, i) => ({ x: (i * 37) % 100, d: (i * 53) % 700, t: 700 + ((i * 91) % 900), s: 3 + (i % 4) }));
 
+/** Filet sous les prénoms : deux vagues en miroir autour d'un losange, donc exactement centré (viewBox 220, milieu = 110). */
+function Trait() {
+  return (
+    <svg className="inv-trait" viewBox="0 0 220 14" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+      <path pathLength="1" d="M8 7C30 0 52 14 98 7" />
+      <path pathLength="1" d="M212 7C190 0 168 14 122 7" />
+      <path pathLength="1" d="M110 2.5L114.5 7L110 11.5L105.5 7Z" />
+    </svg>
+  );
+}
+
 function Ornement({ type }: { type: Ornement }) {
   const p = { fill: "none", stroke: "currentColor", strokeWidth: 1.2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   switch (type) {
@@ -202,8 +213,8 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       const f = document.querySelector<HTMLVideoElement>(".inv-o-video:not(.inv-o-video-secours) .inv-ov-film");
       if (f && f.readyState >= 2 && f.videoWidth) {
         const b = (f.parentElement ?? f).getBoundingClientRect(); // le cadre du film, hors zoom
-        const cv = document.createElement("canvas"); cv.width = f.videoWidth; cv.height = f.videoHeight;
-        cv.getContext("2d")!.drawImage(f, 0, 0);
+        const cv = document.createElement("canvas"); const ech = Math.min(1, 1280 / f.videoHeight); cv.width = Math.round(f.videoWidth * ech); cv.height = Math.round(f.videoHeight * ech);
+        cv.getContext("2d")!.drawImage(f, 0, 0, cv.width, cv.height);
         const tr = getComputedStyle(f).transform; if (tr && tr !== "none") cv.style.transform = tr; // zoom en cours : l'image figée reprend exactement le cadrage
         setSortie({ canvas: cv, r: { top: b.top, left: b.left, width: b.width, height: b.height } });
       } else if (ouv.carte) {
@@ -308,7 +319,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       <h1 {...(m ? {} : { ref: nomsRef, tabIndex: -1, "data-testid": "rsvp-noms" })} className="inv-noms" aria-label={nomsA} style={{ "--nl": Math.max(6, ...lignes.map((l) => l.length)) } as CSSProperties}>
         {lignes.length === 2 ? (<><Lettres texte={lignes[0]} base={0} ar={ar} /><span className="inv-et" aria-hidden="true">{ar ? "و" : "&"}</span><Lettres texte={lignes[1]} base={lignes[0].length + 2} ar={ar} /></>) : <Lettres texte={nomsA} base={0} ar={ar} />}
       </h1>) });
-    unitesCarte.push({ cle: "trait", avecSuivante: true, rendre: () => <svg className="inv-trait" viewBox="0 0 220 14" aria-hidden="true"><path pathLength="1" d="M4 8c30-9 58 6 92-1s58-6 78 0c14 4 28 3 42-2" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg> });
+    unitesCarte.push({ cle: "trait", avecSuivante: true, rendre: () => <Trait /> });
     if (dp) unitesCarte.push({ cle: "date", rendre: (m) => (
       <div className="inv-date" {...(m ? {} : { "data-testid": "invitation-date" })}>
         <bdi className="inv-date-cote">{maj(part("weekday"))}</bdi><span className="inv-date-jour">{part("day")}</span><bdi className="inv-date-cote">{part("month")} {part("year")}</bdi>
@@ -378,7 +389,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           <p className="inv-petit">{invite ? t.invites : t.invite}</p>
           <h1 ref={nomsRef} tabIndex={-1} className="inv-noms" data-testid="rsvp-noms" aria-label={nomsA}>
             {lignes.length === 2 ? (<><Lettres texte={lignes[0]} base={0} ar={langue === "ar"} /><span className="inv-et" aria-hidden="true">{langue === "ar" ? "و" : "&"}</span><Lettres texte={lignes[1]} base={lignes[0].length + 2} ar={langue === "ar"} /></>) : <Lettres texte={nomsA} base={0} ar={langue === "ar"} />}</h1>
-          <svg className="inv-trait" viewBox="0 0 220 14" aria-hidden="true"><path pathLength="1" d="M4 8c30-9 58 6 92-1s58-6 78 0c14 4 28 3 42-2" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
+          <Trait />
           {dp && (
             <div className="inv-date" data-testid="invitation-date">
               <bdi className="inv-date-cote">{maj(part("weekday"))}</bdi>

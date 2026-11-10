@@ -72,8 +72,10 @@ export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, nom
       <div className="inv-scene">
         <button type="button" className={`inv-porte inv-o-video${echec ? " inv-o-video-secours" : ""}${sansCachet ? " inv-o-sans-cachet" : ""}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={`${libelleBouton}. ${libelle}`} data-testid="invitation-ouvrir" data-ouverture={type} style={def.sceauY ? ({ "--ov-y": `${def.sceauY}%` } as React.CSSProperties) : undefined}
           onPointerMove={(e) => { if (phase !== "fermee" || e.pointerType === "mouse") return; const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--px", `${((e.clientX - b.left) / b.width - .5) * -12}px`); e.currentTarget.style.setProperty("--py", `${((e.clientY - b.top) / b.height - .5) * -12}px`); }}>
+          <span className="inv-ov-cadre">
           <img className="inv-ov-affiche" src={def.poster} alt="" decoding="async" />
           <video ref={video} className="inv-ov-film" src={def.video} poster={def.poster} muted playsInline preload="auto" aria-hidden="true" style={def.zoom ? ({ "--zs": def.zoom.s, "--zx": `${(0.5 - def.zoom.x) * 100}%`, "--zy": `${(0.5 - def.zoom.y) * 100}%` } as CSSProperties) : undefined} onEnded={() => onFilm?.("ended")} onError={() => { setEchec(true); onFilm?.("echec"); }} />
+          </span>
           <span className="inv-o-sceau" aria-hidden="true"><em ref={nomsRef}>{initiales}</em></span>
           <span className="inv-o-ouvrir">{libelleBouton}</span>
           <span className="inv-sr-seul">{noms}</span>
