@@ -230,15 +230,15 @@ export default function FichesProfilStaff() {
         {filtres.length === 0 ? (
           <p className="text-sm text-muted-foreground">Aucun membre du personnel pour l'instant.</p>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {filtres.map((s) => (
-              <div key={s.id} className={`flex items-center gap-1 border rounded-md p-1 hover:bg-muted/50 ${s.banni ? "opacity-60" : ""}`}>
+              <div key={s.id} className={`flex min-w-0 items-center gap-1 border rounded-md p-1 hover:bg-muted/50 ${s.banni ? "opacity-60" : ""}`}>
                 <label className="h-11 w-11 grid place-items-center cursor-pointer flex-none" aria-label={`Sélectionner ${s.prenom} ${s.nom}`}>
                   <Checkbox checked={selection.has(s.id)} onCheckedChange={() => basculer(s.id)} />
                 </label>
                 <button type="button" className="flex-1 min-w-0 text-left py-1" onClick={() => consulter(s.id)}>
                   <div className="font-medium truncate">{s.prenom} {s.nom} {s.banni && <span className="ml-1 text-[10px] uppercase tracking-wide bg-[#9C4A2C]/10 text-[#9C4A2C] rounded px-1.5 py-0.5">Banni</span>}</div>
-                  <div className="text-xs text-muted-foreground truncate">{[s.ville, s.langues].filter(Boolean).join(" · ") || s.email}</div>
+                  <div className="text-xs text-muted-foreground line-clamp-2 break-words">{[s.ville, s.langues].filter(Boolean).join(" · ") || s.email}</div>
                 </button>
                 <Button size="icon" variant="ghost" className="h-11 w-11" title="Consulter la fiche" aria-label="Consulter la fiche" onClick={() => consulter(s.id)}>
                   <Eye className="h-4 w-4" />
