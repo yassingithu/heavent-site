@@ -580,6 +580,17 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
   .s-candidats-fermer { top: 50%; right: 4px; margin-top: calc(-22px - env(safe-area-inset-bottom) / 2 + 1px); }
   .s-candidats[dir="rtl"] .s-candidats-fermer { right: auto; left: 4px; }
   @keyframes s-candidats-entree { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  /* bien visible sur téléphone : bande de laiton, texte noir, bouton plein noir, un reflet à l'arrivée */
+  .s-candidats, .s-candidats[dir="rtl"] { background: linear-gradient(100deg, #E9DBA6 0%, #D9C583 55%, #C6AD62 100%); --fond: #D9C583; color: var(--s-nuit); border-top-color: #F4EBC8; box-shadow: 0 -18px 50px rgba(0,0,0,.55); padding-top: 18px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); overflow: hidden; }
+  .s-candidats::before { border-color: rgba(20,20,20,.22); }
+  .s-candidats::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%); transform: translateX(-110%); animation: s-reflet 1.1s var(--s-courbe) .7s; pointer-events: none; }
+  .s-candidats-sur { color: rgba(20,20,20,.72); font-weight: 600; }
+  .s-candidats.s-candidats h2.s-candidats-titre { font-size: 21px; color: #141414; }
+  .s-candidats .s-btn-filet { background: var(--s-nuit); color: var(--s-papier); font-weight: 600; }
+  .s-candidats .s-btn-filet::before { display: none; }
+  .s-candidats-fermer { color: var(--s-nuit); }
+  .s-candidats-fermer:hover { color: #000; }
+  .s-candidats :is(button, a):focus-visible { outline-color: var(--s-nuit); }
   .bouton-whatsapp { transition: translate .4s var(--s-courbe); translate: 0 calc(var(--candidats-h, 0px) * -1); }
 }
 @media (prefers-reduced-motion: reduce) { .s-candidats, .s-candidats.sort { animation: none; transition: none; } .bouton-whatsapp { transition: none; } }
