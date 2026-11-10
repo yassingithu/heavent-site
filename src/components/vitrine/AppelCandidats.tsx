@@ -43,10 +43,23 @@ export default function AppelCandidats() {
     const poser = () => racine.style.setProperty("--candidats-h", `${carte.current?.offsetHeight ?? 0}px`);
     poser();
     window.addEventListener("resize", poser);
-    const touche = (e: KeyboardEvent) => { if (e.key === "Escape") fermer(); };
+    // Échap ne ferme la carte que si l'on est dedans (sinon il ferme aussi le menu, et la carte pour 90 jours)
+    const touche = (e: KeyboardEvent) => { if (e.key === "Escape" && carte.current?.contains(document.activeElement)) fermer(); };
     window.addEventListener("keydown", touche);
     return () => { window.removeEventListener("resize", poser); window.removeEventListener("keydown", touche); racine.style.removeProperty("--candidats-h"); };
   }, [etat]);
+
+  // en bas de page, la carte s'efface devant le pied de page (liens, langues) et revient si l'on remonte
+  const [enBas, setEnBas] = useState(false);
+  useEffect(() => {
+    if (etat !== "ouverte") return;
+    const pied = document.querySelector("footer");
+    if (!pied || !("IntersectionObserver" in window)) return;
+    const o = new IntersectionObserver(([e]) => setEnBas(e.isIntersecting), { rootMargin: "0px 0px -40px 0px" });
+    o.observe(pied);
+    return () => { o.disconnect(); setEnBas(false); };
+  }, [etat]);
+  useEffect(() => { if (enBas) document.documentElement.style.removeProperty("--candidats-h"); else if (etat === "ouverte") document.documentElement.style.setProperty("--candidats-h", `${carte.current?.offsetHeight ?? 0}px`); }, [enBas, etat]);
 
   const fermer = () => {
     noter(String(Date.now()));
@@ -55,7 +68,7 @@ export default function AppelCandidats() {
   if (etat === "attente" || etat === "fermee") return null;
 
   return (
-    <aside ref={carte} className={`s-candidats s-nuit${etat === "sortie" ? " sort" : ""}`} aria-labelledby="t-candidats" data-testid="appel-candidats" dir={x.langue === "ar" ? "rtl" : undefined}
+    <aside ref={carte} className={`s-candidats s-nuit${etat === "sortie" ? " sort" : ""}${enBas ? " efface" : ""}`} aria-hidden={enBas || undefined} {...(enBas ? ({ inert: "" } as Record<string, string>) : {})} aria-labelledby="t-candidats" data-testid="appel-candidats" dir={x.langue === "ar" ? "rtl" : undefined}
       onAnimationEnd={(e) => { if (etat === "sortie" && e.target === e.currentTarget) setEtat("fermee"); }}>
       <button type="button" className="s-candidats-fermer" onClick={fermer} aria-label={x("Fermer")} data-testid="appel-candidats-fermer">
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
