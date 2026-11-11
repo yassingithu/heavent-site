@@ -369,7 +369,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       {(phase === "fermee" || phase === "ouverture") && ouv.id === "enveloppe" && (
         <div className="inv-scene">
           <span className="inv-env-ombre" aria-hidden="true" />
-          <button type="button" className="inv-enveloppe" onClick={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); lancerMusique(); setPhase("ouverture"); }} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
+          <button type="button" className="inv-enveloppe" data-fermeture={reglages?.fermeture ?? "cachet"} onClick={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); lancerMusique(); setPhase("ouverture"); }} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
             <span className="inv-env-fond" />
             <span className="inv-env-carte" data-orn={ornement}><span><em ref={emRef}>{lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}</em></span></span>
             <span className="inv-fl inv-fl-b"><i /></span>
@@ -377,6 +377,8 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
             <span className="inv-fl inv-fl-d"><i /></span>
             <span className="inv-fl inv-fl-h"><i /></span>
             <span className="inv-env-cachet"><em>{initiales(nomsA)}</em></span>
+            <span className="inv-env-cachet inv-env-cachet-d" aria-hidden="true"><em>{initiales(nomsA)}</em></span>
+            <span className="inv-env-ruban" aria-hidden="true"><i /><b /><u /></span>
           </button>
           <p className="inv-aide" aria-hidden={phase !== "fermee"}>{t.ouvrir}</p>
         </div>

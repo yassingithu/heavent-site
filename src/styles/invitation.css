@@ -552,3 +552,29 @@
   .inv-sec .inv-etoile svg { opacity: 0; transform: rotate(-22deg) scale(.82); }
   .inv-sec.is-in .inv-etoile svg { opacity: 1; transform: none; transition: opacity .9s ease .1s, transform 1.2s cubic-bezier(.2,.7,.2,1) .1s; }
 }
+
+/* ── Fermetures de l'enveloppe : ruban qui glisse, cachet brisé ───────────── */
+.inv-env-ruban { display: none; }
+.inv-enveloppe[data-fermeture="ruban"] .inv-env-cachet { display: none !important; }
+.inv-enveloppe[data-fermeture="ruban"] .inv-env-ruban { display: block; left: 0; right: 0; top: 47%; height: 42px; z-index: 6; transition: transform .5s cubic-bezier(.55, 0, .25, 1), opacity .3s ease .25s; }
+.inv-env-ruban i { position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--inv-accent) 60%, #fff), var(--inv-accent) 45%, color-mix(in srgb, var(--inv-accent) 72%, #000)); box-shadow: 0 2px 5px rgba(0, 0, 0, .3); }
+.inv-env-ruban b { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50% 46% 52% 48%; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--inv-accent) 55%, #fff), var(--inv-accent) 60%, color-mix(in srgb, var(--inv-accent) 70%, #000)); box-shadow: 0 3px 8px rgba(0, 0, 0, .35); }
+.inv-env-ruban u { position: absolute; left: 50%; top: 100%; width: 44px; height: 70px; margin-left: -22px; text-decoration: none; background: linear-gradient(180deg, var(--inv-accent), color-mix(in srgb, var(--inv-accent) 70%, #000)); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%); }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="ruban"] .inv-env-ruban { transform: translateX(112%); opacity: 0; }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="ruban"] .inv-env-rabat { animation: inv-rabat .5s cubic-bezier(.5, 0, .2, 1) .5s both, inv-sort .35s ease-in 1.35s both; }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="ruban"] .inv-env-carte { transition: transform .8s cubic-bezier(.2, .7, .2, 1) .7s; }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="ruban"] :is(.inv-env-fond, .inv-env-poche) { animation: inv-sort .35s ease-in 1.35s both; }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="ruban"] .inv-env-carte span { animation: inv-fondu .25s ease-in 1.45s both; }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="ruban"] .inv-env-ombre { animation: inv-sort .35s ease-in 1.3s both; }
+
+/* Cachet brisé : deux moitiés (même disque, découpé selon une fissure en zigzag) qui s'écartent */
+.inv-env-cachet-d { display: none !important; }
+.inv-enveloppe[data-fermeture="brise"] .inv-env-cachet-d { display: grid !important; }
+.inv-enveloppe[data-fermeture="brise"] .inv-env-cachet { transition: none; clip-path: polygon(0 0, 52% 0, 47% 30%, 53% 55%, 48% 100%, 0 100%); }
+.inv-enveloppe[data-fermeture="brise"] .inv-env-cachet-d { clip-path: polygon(52% 0, 100% 0, 100% 100%, 48% 100%, 53% 55%, 47% 30%); }
+.inv-enveloppe[data-fermeture="brise"] .inv-env-ruban { display: none; }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="brise"] .inv-env-cachet { opacity: 1; animation: inv-brise-g .6s cubic-bezier(.4, 0, .6, 1) .15s both; }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="brise"] .inv-env-cachet-d { opacity: 1; animation: inv-brise-d .6s cubic-bezier(.4, 0, .6, 1) .15s both; }
+@keyframes inv-brise-g { 0% { transform: rotate(-9deg); opacity: 1; } 30% { transform: rotate(-9deg) translateX(-2px); } 100% { transform: rotate(-26deg) translate(-38px, 30px); opacity: 0; } }
+@keyframes inv-brise-d { 0% { transform: rotate(-9deg); opacity: 1; } 30% { transform: rotate(-9deg) translateX(2px); } 100% { transform: rotate(8deg) translate(38px, 34px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .inv-env-ruban, .inv-env-cachet, .inv-env-cachet-d { transition: none !important; animation: none !important; } }

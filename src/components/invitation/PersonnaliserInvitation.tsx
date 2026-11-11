@@ -6,7 +6,7 @@ import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import { RotateCcw, Play } from "lucide-react";
 import Invitation from "./Invitation";
 import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
-import { POLICES, CHAMPS_COULEUR, OUVERTURES, STYLES_OUVERTURE, modelesPour, palettesPour, revelationsPour, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
+import { POLICES, CHAMPS_COULEUR, OUVERTURES, FERMETURES, STYLES_OUVERTURE, modelesPour, palettesPour, revelationsPour, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
 import { evenementDe, questionDe } from "@/lib/evenements";
 
 interface Props {
@@ -76,6 +76,18 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             })}
           </div>
           <p className="text-xs text-[#6B6154] mt-3"><strong className="font-medium">{ouv.nom}.</strong> {ouv.description}</p>
+          {ouv.id === "enveloppe" && (
+            <div className="mt-3" role="group" aria-label="Fermeture de l'enveloppe">
+              <p className="text-sm font-medium mb-2">Fermeture de l'enveloppe</p>
+              <div className="flex flex-wrap gap-2">
+                {FERMETURES.map((f) => (
+                  <button key={f.id} type="button" aria-pressed={(valeur.fermeture ?? "cachet") === f.id} data-testid={`fermeture-${f.id}`} title={f.description}
+                    onClick={() => { onChange({ ...valeur, fermeture: f.id === "cachet" ? undefined : f.id }); setRejouer((n) => n + 1); }}
+                    className={`rounded-full border px-4 min-h-10 text-sm ${(valeur.fermeture ?? "cachet") === f.id ? "border-[#141414] bg-[#141414] text-white" : "border-[#E3D6BA] bg-white hover:border-[#C8B560]"}`}>{f.nom}</button>
+                ))}
+              </div>
+            </div>
+          )}
           {ouv.id !== "enveloppe" && !ouv.cadre && ouv.id !== "rose-imperiale" && (
             <label className="mt-3 flex items-center gap-2 min-h-10 text-sm cursor-pointer">
               <input type="checkbox" className="h-5 w-5 accent-[#8C6D22]" checked={valeur.cachet !== false} onChange={(e) => { onChange({ ...valeur, cachet: e.target.checked ? undefined : false }); setRejouer((n) => n + 1); }} data-testid="option-cachet" />
