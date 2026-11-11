@@ -35,7 +35,7 @@ export default function Cartes() {
   const [extras, setExtras] = useState<string[]>([]);
   const [fiche, setFiche] = useState(false);
   const [panier, setPanier] = useState<Ligne | null>(null);
-  const [f, setF] = useState({ nom: "", telephone: "", email: "", note: "", accord: false });
+  const [f, setF] = useState({ nom: "", telephone: "", note: "", accord: false });
   const [etat, setEtat] = useState<"saisie" | "envoi" | "ok">("saisie");
   const [erreur, setErreur] = useState<string | null>(null);
   const [err, setErr] = useState<Record<string, string>>({});
@@ -101,7 +101,7 @@ export default function Cartes() {
     const total = totalCommande(o, panier.extras);
     const resume = [`Commande : carte « ${o.nom} » (${prixDe(o)})`, ...choisies.map((z) => `+ ${z.nom} (${z.prix} DH)`), `Total estimé : ${total} DH`].join("\n");
     const { error } = await (supabase as any).rpc("carte_demander", {
-      p_nom: f.nom, p_telephone: f.telephone, p_email: f.email, p_occasion: panier.invitation.evenement ?? "mariage", p_noms: panier.noms,
+      p_nom: f.nom, p_telephone: f.telephone, p_email: "", p_occasion: panier.invitation.evenement ?? "mariage", p_noms: panier.noms,
       p_date: panier.date || null, p_lieu: panier.lieu, p_message: [resume, panier.message && `Message de la carte : ${panier.message}`, f.note].filter(Boolean).join("\n\n"),
       p_invitation: { ...panier.invitation, noms: panier.noms, message: panier.message, extras: panier.extras, total },
     });

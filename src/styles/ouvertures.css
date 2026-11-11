@@ -514,3 +514,6 @@
 .inv-carte.inv-sans-entree :is(.inv-lettre, .inv-mot, .inv-petit, .inv-date, .inv-heure, .inv-lieu, .inv-film-zone > *) { opacity: 1 !important; }
 .inv-rev-sur-carte .inv-rev-cadre { zoom: .72; }
 .inv-rev-sur-carte .inv-rev-aide, .inv-rev-sur-carte .inv-g-passer { font-size: 12px; letter-spacing: .16em; }
+
+/* Le libellé « Ouvrir l'invitation » passe à la ligne au lieu d'être rogné par la porte */
+.inv-porte .inv-o-ouvrir { max-width: calc(100% - 16px); box-sizing: border-box; text-align: center; white-space: normal; line-height: 1.3; }
