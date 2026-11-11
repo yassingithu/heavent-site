@@ -124,7 +124,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           {modeClient && !toutes && !filtre && !formule && reste > 0 && <button type="button" onClick={() => setToutes(true)} className="cartes-plus-cartes" data-testid="cartes-voir-plus">Voir toutes les cartes ({filtrees.length})</button>}
           </>}
           {!sansCatalogue && <p className="text-xs text-[#6B6154] mt-3"><strong className="font-medium">{ouv.nom}.</strong> {ouv.description}</p>}
-          <Pli className={`cartes-plus ${modeClient && ouv.id !== "enveloppe" && (ouv.cadre || ouv.id === "rose-imperiale") ? "hidden" : ""}`}>
+          <Pli className={`cartes-plus ${modeClient && ouv.id !== "enveloppe" ? "hidden" : ""}`}>
             {resume(ouv.id === "enveloppe" ? "Cachet et enveloppe" : "Cachet de cire")}
           {ouv.id === "enveloppe" && (
             <div className="mt-3" role="group" aria-label="Fermeture de l'enveloppe">
@@ -164,7 +164,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           )}
           {!modeClient && ouv.id !== "enveloppe" && !ouv.cadre && ouv.id !== "rose-imperiale" && (
             <label className="mt-3 flex items-center gap-2 min-h-10 text-sm cursor-pointer">
-              <input type="checkbox" className="h-5 w-5 accent-[#8C6D22]" checked={valeur.cachet !== false} onChange={(e) => { onChange({ ...valeur, cachet: e.target.checked ? undefined : false }); setRejouer((n) => n + 1); }} data-testid="option-cachet" />
+              <input type="checkbox" className="h-5 w-5 accent-[#8C6D22]" checked={valeur.cachet === true} onChange={(e) => { onChange({ ...valeur, cachet: e.target.checked ? true : undefined }); setRejouer((n) => n + 1); }} data-testid="option-cachet" />
               <span>Cachet de cire doré<span className="block text-xs text-[#6B6154]">Décochez pour un simple bouton « Ouvrir »</span></span>
             </label>
           )}

@@ -28,7 +28,8 @@ interface Ligne { invitation: InvitationReglages; noms: string; date: string; li
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
 
 export default function Cartes() {
-  const [invitation, setInvitation] = useState<InvitationReglages>({ modele: "fleur-oranger", cachet: false });
+  const [dateOk, setDateOk] = useState(true);
+  const [invitation, setInvitation] = useState<InvitationReglages>({ modele: "fleur-oranger" });
   const [noms, setNoms] = useState("");
   const [date, setDate] = useState("");
   const [lieu, setLieu] = useState("");
@@ -76,7 +77,8 @@ export default function Cartes() {
   const ajouter = () => {
     const x: Record<string, string> = {};
     if (!noms.trim()) x.noms = "Indiquez les prénoms à écrire sur la carte.";
-    if (date && date < aujourdhui()) x.date = "Cette date est déjà passée. Choisissez une date à venir.";
+    if (!dateOk) x.date = "Complétez la date (jour, mois, année sur 4 chiffres) ou videz les cases.";
+    else if (date && date < aujourdhui()) x.date = "Cette date est déjà passée. Choisissez une date à venir.";
     setErr(x);
     const premier = Object.keys(x)[0];
     if (premier) { document.getElementById(`cartes-champ-${premier}`)?.focus(); return; }
@@ -127,7 +129,7 @@ export default function Cartes() {
           {!!err.noms && <span id="err-noms" className="block text-[#9B2C2C]" role="alert">{err.noms}</span>}
         </label>
         <label>Date
-          <ChampDate className={champ} value={date} onChange={(v) => { setDate(v); if (err.date) setErr((x) => ({ ...x, date: "" })); }} data-testid="cartes-date" id="cartes-champ-date" invalide={!!err.date} />
+          <ChampDate onValidite={setDateOk} className={champ} value={date} onChange={(v) => { setDate(v); if (err.date) setErr((x) => ({ ...x, date: "" })); }} data-testid="cartes-date" id="cartes-champ-date" invalide={!!err.date} />
           {!!err.date && <span className="block text-[#9B2C2C]" role="alert">{err.date}</span>}
         </label>
         <label className="sm:col-span-2">Lieu

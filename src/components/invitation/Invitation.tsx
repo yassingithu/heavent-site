@@ -404,7 +404,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       <div className="inv-colonne">
       {haut}
       {(phase === "fermee" || phase === "ouverture") && ouv.id !== "enveloppe" && (
-        <Ouverture key={ouv.id} nomsTexte={nomsA} sansCachet={reglages?.cachet === false} type={ouv.id} phase={phase} libelle={t.ouvrir} libelleBouton={t.ouvrirBouton} initiales={initiales(nomsA)} nomsRef={emRef} onFilm={(e) => { if (e === "ended") terminerRef.current(); else window.setTimeout(() => terminerRef.current(), 400); }}
+        <Ouverture key={ouv.id} nomsTexte={nomsA} sansCachet={reglages?.cachet !== true} type={ouv.id} phase={phase} libelle={t.ouvrir} libelleBouton={t.ouvrirBouton} initiales={initiales(nomsA)} nomsRef={emRef} onFilm={(e) => { if (e === "ended") terminerRef.current(); else window.setTimeout(() => terminerRef.current(), 400); }}
           fond={fondCarte} noms={lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}
           onOuvrir={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); lancerMusique(); setPhase("ouverture"); }} />
       )}
