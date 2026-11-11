@@ -274,6 +274,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     if (phaseRef.current !== "ouverture") return;
     depart.current = avecRevelation || ouv.video ? null : (emRef.current?.getBoundingClientRect() ?? null);
     if (!avecRevelation) capturerFilm();
+    if (ouv.carte && !avecRevelation && !sansAnimation()) { const inv = document.querySelector<HTMLElement>(".inv"); if (inv) { inv.style.minHeight = `${inv.getBoundingClientRect().height}px`; window.setTimeout(() => { inv.style.minHeight = ""; }, 2600); } }
     setPhase(avecRevelation ? "revelation" : "ouverte");
   };
   const terminerRef = useRef(terminer); terminerRef.current = terminer;

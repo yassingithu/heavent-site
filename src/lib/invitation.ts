@@ -160,15 +160,15 @@ export interface OuvertureDef {
 /** Formules commerciales : le contenu de la carte (programme, RSVP, livre d'or…) se règle à part ; la formule se déduit de la carte choisie. */
 export type Formule = "classique" | "interactive" | "prestige";
 export const FORMULES: { id: Formule; nom: string; prix: string; texte: string }[] = [
-  { id: "classique", nom: "Classique", prix: "250 DH", texte: "Design personnalisé, animation élégante, musique, partage WhatsApp." },
-  { id: "interactive", nom: "Interactive", prix: "450 DH", texte: "Ouverture en film, compte à rebours, plan Google Maps, programme, confirmation RSVP." },
-  { id: "prestige", nom: "Prestige", prix: "dès 650 DH", texte: "Tout l'Interactive, plus l'histoire des mariés, livre d'or, invitations individuelles, QR code." },
+  { id: "classique", nom: "Classique", prix: "250 DH", texte: "Design personnalisé, animation élégante, partage WhatsApp et e-mail." },
+  { id: "interactive", nom: "Interactive", prix: "450 DH", texte: "Ouverture en film, puis programme, plan Google Maps, compte à rebours et confirmation de présence : nous les réglons avec vous." },
+  { id: "prestige", nom: "Prestige", prix: "dès 650 DH", texte: "650 DH ; 750 DH pour les paysages animés. Tout l'Interactive, plus l'histoire des mariés, le livre d'or, les invitations individuelles et le QR code, réglés avec vous." },
 ];
 const FILMS_INTERACTIVE = ["v-porte-blanche", "v-alhambra", "v-lakeside", "v-gardenia", "v-shoreline", "v-chateau-soir", "v-palace", "v-glasshouse"];
-const PRESTIGE_850 = ["v-minuit", "v-neige", "v-oliveto", "v-azure"];
+const PRESTIGE_750 = ["v-minuit", "v-neige", "v-oliveto", "v-azure"];
 /** Classique : animations dessinées · Interactive : films partenaires · Prestige : nos films photoréalistes (650 DH, 750 DH pour les paysages en mouvement de caméra). */
 export const formuleDe = (o: OuvertureDef): Formule => !o.video ? "classique" : FILMS_INTERACTIVE.includes(o.id) ? "interactive" : "prestige";
-export const prixDe = (o: OuvertureDef): string => { const f = formuleDe(o); return f === "classique" ? "250 DH" : f === "interactive" ? "450 DH" : PRESTIGE_850.includes(o.id) ? "750 DH" : "650 DH"; };
+export const prixDe = (o: OuvertureDef): string => { const f = formuleDe(o); return f === "classique" ? "250 DH" : f === "interactive" ? "450 DH" : PRESTIGE_750.includes(o.id) ? "750 DH" : "650 DH"; };
 export const STYLES_OUVERTURE = ["Marocain", "Luxe", "Floral", "Moderne"];
 const LICENCE_HEAVENT = "Création Heavent";
 const LICENCE_PARTENAIRE = "Ressource tierce, utilisée avec l'accord de son propriétaire";

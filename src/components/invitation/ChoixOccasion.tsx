@@ -27,7 +27,7 @@ export default function ChoixOccasion({ valeur, onChoisir, onglets }: Props) {
             );
           })}
         </div>
-        <div id="occasion-panneau" role="tabpanel" aria-labelledby={`onglet-${g.groupe}`} className="cartes-onglets-panneau">
+        <div key={g.groupe} id="occasion-panneau" role="tabpanel" aria-labelledby={`onglet-${g.groupe}`} className="cartes-onglets-panneau">
           <p>{g.evenements[0].description}</p>
           {g.evenements.length > 1 && (
             <div className="flex flex-wrap gap-2" role="group" aria-label="Précision">

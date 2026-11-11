@@ -180,14 +180,23 @@
 }
 
 
-/* Formules : trois onglets avec leur prix */
-.cartes-formules { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 16px; }
-.cartes-formules button { display: grid; gap: 2px; justify-items: center; align-content: center; min-height: 56px; padding: 8px 4px; border: 1px solid #E3D6BA; border-radius: 12px; background: #fff; cursor: pointer; transition: background .25s, border-color .25s, color .25s; }
-.cartes-formules button b { font: 400 16px/1.1 var(--s-titre, Gloock), serif; }
-.cartes-formules button small { font-size: 11px; color: #6B6154; letter-spacing: .04em; }
-.cartes-formules button[aria-pressed="true"] { background: #141414; border-color: #141414; color: #fff; }
-.cartes-formules button[aria-pressed="true"] small { color: #E4D49A; }
-.cartes-formules button:focus-visible { outline: 2px solid #8C6D22; outline-offset: 2px; }
-.cartes-formules p { grid-column: 1 / -1; margin: 6px 2px 0; font-size: 14px; color: #5E554A; }
-.cartes-prix { display: block; font-size: 12px; letter-spacing: .06em; color: #7A5F1F; }
-@media (max-width: 420px) { .cartes-formules button b { font-size: 14px; } .cartes-formules button small { font-size: 10px; } }
+/* Formules : tableau de tarifs, filets or, sans pilules */
+.cartes-formules { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 0 0 18px; border-top: 1px solid #A8933F; border-bottom: 1px solid #EADFC8; }
+.cartes-formules button { position: relative; display: grid; gap: 6px; justify-items: start; align-content: start; min-height: 76px; padding: 12px 8px 12px 12px; border: 0; border-left: 1px solid #EADFC8; border-radius: 0; background: transparent; color: #141414; cursor: pointer; text-align: left; transition: background .25s, color .25s; }
+.cartes-formules button:first-of-type { border-left: 0; padding-left: 2px; }
+.cartes-formules button small { font: 500 10px var(--s-texte, Jost), sans-serif; letter-spacing: .22em; text-transform: uppercase; color: #5A5146; }
+.cartes-formules button b { font: 400 clamp(17px, 5.2vw, 22px)/1 var(--s-titre, Gloock), serif; color: #7A5F1F; white-space: nowrap; }
+.cartes-formules button[aria-pressed="true"] { background: #141414; color: #F3ECDD; }
+.cartes-formules button[aria-pressed="true"] b, .cartes-formules button[aria-pressed="true"] small { color: #E4D49A; }
+.cartes-formules button[aria-pressed="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: #A8933F; }
+.cartes-formules button:focus-visible { outline: 2px solid #8C6D22; outline-offset: -3px; }
+.cartes-formules p { grid-column: 1 / -1; margin: 0; padding: 10px 2px 2px; font-size: 14px; color: #5E554A; border-top: 1px solid #EADFC8; }
+.cartes-prix { display: flex; align-items: baseline; gap: 5px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #EADFC8; font: 500 10px var(--s-texte, Jost), sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #6B6154; white-space: nowrap; }
+.cartes-prix b { font: 400 14px var(--s-titre, Gloock), serif; letter-spacing: 0; color: #7A5F1F; }
+/* Bouton « Voir » de la barre : le fond du filet vient de --fond */
+.cartes-barre .s-btn-filet { --fond: #141414; --ligne: rgba(228, 212, 154, .75); }
+.cartes-barre .s-btn-filet:hover::before { background: #211E19; }
+
+.cartes-prix { gap: 0; }
+.cartes-barre-choix { min-width: 0; flex: 1 1 auto; }
+.cartes-barre-choix b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

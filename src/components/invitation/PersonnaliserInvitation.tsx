@@ -39,6 +39,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
   useEffect(() => { chargerOuverturesPerso().then(() => forcer((n) => n + 1)); }, []);
   const [filtre, setFiltre] = useState<string | null>(null);
   const [formule, setFormule] = useState<Formule | null>(null);
+  const [vague, setVague] = useState(0);
   const ouv = ouvertureDe(valeur.ouverture);
   const [versFormulaire, setVersFormulaire] = useState(false);
   useEffect(() => {
@@ -57,7 +58,8 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
     if (!modeClient || rejouer === 0 || (typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
     apercuRef.current?.querySelector(".inv")?.animate([{ opacity: 0, transform: "scale(.985)" }, { opacity: 1, transform: "none" }], { duration: 320, easing: "cubic-bezier(.2,.7,.2,1)" });
   }, [valeur.ouverture]); // eslint-disable-line react-hooks/exhaustive-deps
-  const choisirOuverture = (id: string) => { onChange({ ...valeur, ouverture: id }); setRejouer((n) => n + 1); };
+  useEffect(() => { if (modeClient) setVague((n) => n + 1); }, [formule, filtre]); // eslint-disable-line react-hooks/exhaustive-deps
+  const choisirOuverture = (id: string) => { onChange({ ...valeur, ouverture: id }); setRejouer((n) => n + 1); if (modeClient && typeof window !== "undefined" && window.innerWidth < 1024) requestAnimationFrame(() => apercuRef.current?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" })); };
   const choisirRevelation = (id: string) => { onChange({ ...valeur, revelation: id }); setRejouer((n) => n + 1); };
   const [erreurLogo, setErreurLogo] = useState<string | null>(null);
   const choisirModele = (id: string) => onChange({ ...valeur, modele: id });
@@ -68,19 +70,19 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
   const champ = "w-full rounded-xl border border-[#E3D6BA] bg-white px-3 min-h-10 text-sm";
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]" data-testid="personnaliser-invitation">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]" data-testid="personnaliser-invitation">
       <div className="space-y-6 min-w-0">
         <section>
           <h3 className="font-serif text-xl mb-1">{modeClient ? "Comment s'ouvre votre carte ?" : `${num()}. Comment l'invitation s'ouvre`}</h3>
           <p className="text-sm text-[#5E554A] mb-3">{modeClient ? "Vos invités touchent la porte : votre carte apparaît. Touchez-en une pour l'essayer. Nous l'adaptons avec vous avant de la valider." : "Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu."}</p>
           {modeClient && (
             <div className="cartes-formules" role="group" aria-label="Choisir une formule">
-              {[null, ...FORMULES].map((f) => (
-                <button key={f?.id ?? "toutes"} type="button" onClick={() => setFormule(f?.id ?? null)} aria-pressed={formule === (f?.id ?? null)} data-testid={`formule-${f?.id ?? "toutes"}`}>
-                  <b>{f?.nom ?? "Toutes"}</b><small>{f?.prix ?? "250 – 850 DH"}</small>
+              {FORMULES.map((f) => (
+                <button key={f.id} type="button" onClick={() => setFormule(formule === f.id ? null : f.id)} aria-pressed={formule === f.id} data-testid={`formule-${f.id}`}>
+                  <small>{f.nom}</small><b>{f.prix}</b>
                 </button>
               ))}
-              <p>{formule ? FORMULES.find((f) => f.id === formule)?.texte : "Le prix dépend de la carte choisie : animation dessinée, film, ou création Prestige."}</p>
+              <p>{formule ? FORMULES.find((f) => f.id === formule)?.texte : `Touchez une formule pour voir ses cartes. Le prix dépend de la carte : de ${Math.min(...OUVERTURES.map((o) => parseInt(prixDe(o))))} à ${Math.max(...OUVERTURES.map((o) => parseInt(prixDe(o))))} DH.`}</p>
             </div>
           )}
           <div className="flex gap-3 overflow-x-auto border-b border-[#EADFC8] mb-4" role="group" aria-label="Filtrer par style">
@@ -94,7 +96,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
               const choisie = ouv.id === o.id;
               const cache = modeClient && !toutes && !filtre && !formule && !choisie && i >= 6 ? "cartes-cache" : "";
               return (
-              <button key={o.id} type="button" onClick={() => choisirOuverture(o.id)} aria-pressed={choisie} data-testid={`ouverture-${o.id}`} className={`text-left group cartes-vignette ${cache} ${modeClient && toutes && i >= 8 ? "cartes-nouvelle" : ""}`} style={modeClient && i >= 8 ? ({ "--i": Math.min(i - 8, 8) } as React.CSSProperties) : undefined}>
+              <button key={`${vague}-${o.id}`} type="button" onClick={() => choisirOuverture(o.id)} aria-pressed={choisie} data-testid={`ouverture-${o.id}`} className={`text-left group cartes-vignette ${cache} ${modeClient && vague > 1 ? "cartes-nouvelle" : modeClient && toutes && i >= 8 ? "cartes-nouvelle" : ""}`} style={modeClient && (vague > 1 || i >= 8) ? ({ "--i": Math.min(vague > 1 ? i : i - 8, 8) } as React.CSSProperties) : undefined}>
                 <span className={`relative flex aspect-[9/16] w-full overflow-hidden bg-[#EFE6D2] ${modeClient ? "cartes-cadre" : `outline outline-2 outline-offset-2 ${choisie ? "outline-[#8C6D22]" : "outline-transparent group-hover:outline-[#E4D49A]"}`}`} aria-hidden="true">
                   {o.id === "enveloppe"
                     ? <span className="m-auto grid h-full w-full place-items-center bg-[#141414]"><span className="grid h-16 w-16 place-items-center border border-[#A8933F] font-serif italic text-[#E4D49A] text-lg">A &amp; B</span></span>
@@ -105,9 +107,9 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
                     : <><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-g.webp)` }} /><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-d.webp)` }} /></>}
                   {choisie && (modeClient ? <span className="cartes-choisie">Votre carte</span> : <span className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-[#141414] text-[#E4D49A] text-xs">✓</span>)}
                 </span>
-                {modeClient && <span className="cartes-prix">{prixDe(o)}</span>}
                 {modeClient && <span className="cartes-num">Nº {String(OUVERTURES.findIndex((x) => x.id === o.id) + 1).padStart(2, "0")}</span>}
                 <span className={`mt-1.5 block font-serif text-[15px] leading-tight ${modeClient ? "cartes-nom" : ""} ${choisie ? "text-[#8C6D22]" : ""}`}>{o.nom}</span>
+                {modeClient && <span className="cartes-prix"><b>{prixDe(o)}</b></span>}
                 {(!modeClient || o.video) && <span className="block whitespace-nowrap text-[11px] tracking-[.1em] uppercase text-[#6B6154]">{o.video ? "Film" : "Animation"}{!modeClient && ` · ${String(Math.round(o.duree / 100) / 10).replace(".", ",")} s`}</span>}
               </button>
               );
@@ -356,7 +358,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
       <aside ref={apercuRef} className="min-w-0 scroll-mt-16 order-first lg:order-none lg:sticky lg:top-24 self-start space-y-2" aria-label="Aperçu de l'invitation">
         <div className="flex items-center justify-between gap-2">
           <div className="flex gap-1" role="group" aria-label="Langue de l'aperçu">
-            {LANGUES.map(([l, t]) => (
+            {LANGUES.filter(([l]) => !modeClient || l !== "ar").map(([l, t]) => (
               <button key={l} type="button" onClick={() => setLangue(l)} aria-pressed={langue === l}
                 className={`rounded-full px-3 min-h-9 text-xs border ${langue === l ? "bg-[#141414] text-white border-[#141414]" : "bg-white border-[#E3D6BA]"}`}>{t}</button>
             ))}
@@ -367,7 +369,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
       </aside>
       {(!modeClient || !versFormulaire) && <div className={modeClient ? "cartes-barre sticky bottom-0 z-30 col-span-full lg:hidden" : "sticky bottom-0 z-30 -mx-1 col-span-full border-t border-[#E3D6BA] bg-[#FBF8F1]/95 px-4 py-2 lg:hidden"} style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom, 0px))" }}>
         <div className="flex items-center gap-2">
-          {modeClient && <span className="cartes-barre-choix"><small>Votre carte</small><b>{ouv.nom}</b></span>}
+          {modeClient && <span className="cartes-barre-choix"><small>Votre carte</small><b>{ouv.nom} · {prixDe(ouv)}</b></span>}
           <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className={modeClient ? "s-btn s-btn-filet cartes-barre-btn" : "flex w-full items-center justify-center gap-2 rounded-full min-h-12 text-sm font-medium bg-[#141414] text-[#F7F3E8]"} data-testid="voir-apercu-barre"><Play className="h-4 w-4" aria-hidden="true" /> {modeClient ? "Voir" : "Voir l'aperçu"}</button>
           {modeClient && <button type="button" onClick={() => document.getElementById("demande")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="s-btn s-btn-plein s-sombre cartes-barre-btn" data-testid="aller-demande">Envoyer</button>}
         </div>

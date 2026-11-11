@@ -34,7 +34,7 @@ export default function Cartes() {
   const choisirOccasion = (id: TypeEvenement) => {
     const d = evenementDe(id);
     setInvitation((v) => ({
-      ...v, evenement: id === "mariage" ? undefined : id, modele: d.modele, ouverture: d.ouverture, revelation: "aucune", couleurs: {}, questions: [],
+      ...v, evenement: id === "mariage" ? undefined : id, modele: d.modele, ouverture: ouvertureDe(v.ouverture).video ? v.ouverture : d.ouverture, revelation: "aucune", couleurs: {}, questions: [],
       ...(decorsPour(id).some((x) => x.id === v.decor) ? {} : { decor: undefined, club: undefined, club_logo: undefined }),
     }));
   };
@@ -42,6 +42,7 @@ export default function Cartes() {
   const envoyer = async (e: React.FormEvent) => {
     e.preventDefault(); setErreur(null);
     const x: Record<string, string> = {};
+    if (!noms.trim()) x.noms = "Indiquez les prénoms à écrire sur la carte.";
     if (f.nom.trim().length < 2) x.nom = "Indiquez votre nom.";
     if (!f.telephone.trim() && !f.email.trim()) x.tel = "Un numéro WhatsApp ou un e-mail, pour vous répondre.";
     else if (f.telephone.trim() && f.telephone.replace(/\D/g, "").length < 8) x.tel = "Ce numéro semble incomplet.";
@@ -69,7 +70,7 @@ export default function Cartes() {
           <div>
             <Surtitre className="s-entree-heros">Cartes d'invitation digitales</Surtitre>
             <h1 className="s-h1 s-entree-heros">Votre carte, <em>avant même</em> le premier invité.</h1>
-            <p className="s-chapo s-entree-heros" style={{ animationDelay: ".12s" }}>Choisissez l'enveloppe, le cachet, les couleurs. Voyez-la s'ouvrir sur votre téléphone, puis confiez-la-nous : nous vous répondons avec un aperçu et le tarif.</p>
+            <p className="s-chapo s-entree-heros" style={{ animationDelay: ".12s" }}>Choisissez l'enveloppe, le cachet, les couleurs. Voyez-la s'ouvrir sur votre téléphone, puis confiez-la-nous : nous vous répondons avec un aperçu et le prix confirmé (de 250 à 750 DH selon la carte).</p>
             <div className="cartes-cta s-entree-heros" style={{ animationDelay: ".24s" }}>
               <a href="#composer" className="s-btn s-btn-plein">Composer ma carte</a>
               <a href="#demande" className="cartes-lien">Ou laissez-nous la composer pour vous</a>
@@ -96,7 +97,8 @@ export default function Cartes() {
             <header id="t-infos" className="cartes-tete" data-revele><span className="cartes-n" aria-hidden="true">02</span><div><small>Étape 2 sur 4</small><h2>Que doit-on lire sur la carte ?</h2></div></header>
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="block text-sm sm:col-span-3">Prénoms ou nom affichés
-                <input className={champ} value={noms} onChange={(e) => setNoms(e.target.value)} placeholder={/^mariage|fiancailles|henne/.test(ev.id) ? "Lina & Adam" : "Adam"} maxLength={80} data-testid="cartes-noms" />
+                <input className={champ} value={noms} onChange={(e) => setNoms(e.target.value)} placeholder={/^mariage|fiancailles|henne/.test(ev.id) ? "Lina & Adam" : "Adam"} maxLength={80} data-testid="cartes-noms" id="cartes-champ-noms" aria-invalid={!!err.noms} />
+                {err.noms && <span className="block text-sm text-[#9B2C2C]" role="alert">{err.noms}</span>}
               </label>
               <label className="block text-sm">Date
                 <input type="date" lang="fr" min={new Date().toISOString().slice(0, 10)} className={champ} value={date} onChange={(e) => setDate(e.target.value)} data-testid="cartes-date" id="cartes-champ-date" aria-invalid={!!err.date} />
@@ -126,14 +128,14 @@ export default function Cartes() {
                 <Etoile /><Etoile className="bas" />
                 <h4 className="s-h3 s-entree-heros">Demande bien reçue</h4>
                 <p className="cartes-delai s-entree-heros" style={{ animationDelay: ".25s" }}><b>24 h</b><span>ouvrées</span></p>
-                <p className="text-sm text-[#5E554A]">Merci {f.nom.split(" ")[0]}. Notre équipe prépare votre carte « {ouvertureDe(invitation.ouverture).nom} » : vous recevez un aperçu à partager et le tarif.</p>
+                <p className="text-sm text-[#5E554A]">Merci {f.nom.split(" ")[0]}. Notre équipe prépare votre carte « {ouvertureDe(invitation.ouverture).nom} » : vous recevez un aperçu à partager et le prix confirmé.</p>
                 <Bouton href={WHATSAPP + encodeURIComponent(`Bonjour Heavent, je viens d'envoyer ma demande de carte d'invitation (${ev.nom}). Je m'appelle ${f.nom}.`)} externe variante="filet">Nous écrire sur WhatsApp</Bouton>
               </div>
             ) : (
               <>
               <p className="cartes-recap" data-testid="cartes-recap">Vous envoyez : <b>{ev.nom}{noms ? ` · ${noms}` : ""}</b> · carte <b>{ouvertureDe(invitation.ouverture).nom}</b> · formule <b>{FORMULES.find((x) => x.id === formuleDe(ouvertureDe(invitation.ouverture)))?.nom} ({prixDe(ouvertureDe(invitation.ouverture))})</b></p>
                 <form onSubmit={envoyer} className="space-y-3 s-form cartes-formulaire" style={{ padding: "22px 18px" }} noValidate>
-                <p className="text-sm text-[#5E554A]">Aucun paiement maintenant. Notre équipe vous répond sous 24 h ouvrées avec un aperçu de votre carte et le tarif.</p>
+                <p className="text-sm text-[#5E554A]">Aucun paiement maintenant. Prix annoncé pour cette carte : {prixDe(ouvertureDe(invitation.ouverture))}, confirmé par notre équipe sous 24 h ouvrées avec votre aperçu.</p>
                 <label className="block text-sm">Votre nom
                   <input className={champ} value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} autoComplete="name" required id="cartes-champ-nom" aria-invalid={!!err.nom} data-testid="cartes-nom" />
                   {err.nom && <span className="block text-sm text-[#9B2C2C]" role="alert">{err.nom}</span>}
