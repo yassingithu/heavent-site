@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { evenementDe } from "@/lib/evenements";
 
 const db = supabase as any;
+/** Numéro marocain saisi « 06… » ou « 6… » : on ajoute l'indicatif 212 pour que le lien WhatsApp fonctionne. */
+const wa = (t: string) => { const n = t.replace(/[^\d]/g, ""); if (t.trim().startsWith("+") || n.startsWith("00")) return n.replace(/^00/, ""); if (n.startsWith("212")) return n; return "212" + n.replace(/^0/, ""); };
 interface Demande { id: string; cree_le: string; nom: string; telephone: string | null; email: string | null; occasion: string | null; noms: string | null; date_evenement: string | null; lieu: string | null; message: string | null; invitation: any; statut: string; apercu_id: string | null }
 
 /** Demandes reçues depuis la page publique /cartes : un clic transforme la demande en aperçu prêt à partager. */
@@ -39,7 +41,7 @@ export default function DemandesCartes({ onApercu }: { onApercu: () => void }) {
           <li key={d.id} className={`py-3 space-y-1 ${d.statut === "traitee" ? "opacity-60" : ""}`}>
             <p className="text-sm"><b>{d.nom}</b> · {evenementDe(d.occasion === "mariage" ? undefined : (d.occasion as any)).nom} · {new Date(d.cree_le).toLocaleDateString("fr-FR")}</p>
             <p className="text-sm text-[#5E554A]">{[d.noms && `Carte : ${d.noms}`, d.date_evenement, d.lieu].filter(Boolean).join(" · ") || "Informations de la carte non renseignées"}</p>
-            <p className="text-sm">{d.telephone && <a className="underline mr-3" href={`https://wa.me/${d.telephone.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer">WhatsApp {d.telephone}</a>}{d.email && <a className="underline" href={`mailto:${d.email}`}>{d.email}</a>}</p>
+            <p className="text-sm">{d.telephone && <a className="underline mr-3" href={`https://wa.me/${wa(d.telephone)}`} target="_blank" rel="noreferrer">WhatsApp {d.telephone}</a>}{d.email && <a className="underline" href={`mailto:${d.email}`}>{d.email}</a>}</p>
             {d.message && <p className="text-sm text-[#5E554A] whitespace-pre-line">{d.message}</p>}
             <div className="flex flex-wrap gap-2 pt-1">
               {!d.apercu_id && <button type="button" disabled={busy === d.id} onClick={() => creer(d)} className="rounded-full bg-[#141414] text-white px-4 min-h-11 text-sm disabled:opacity-60" data-testid={`demande-apercu-${d.id}`}>{busy === d.id ? "Création…" : "Créer l'aperçu"}</button>}

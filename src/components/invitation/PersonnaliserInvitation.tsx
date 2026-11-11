@@ -26,7 +26,7 @@ const egal = (a: Couleurs, b: Couleurs) => (Object.keys(a) as (keyof Couleurs)[]
 export default function PersonnaliserInvitation({ noms, date, lieu, message, valeur, onChange, estAdmin, modeClient }: Props) {
   const ev = evenementDe(valeur.evenement);
   const compteur = { v: 0 }; const num = () => ++compteur.v;
-  const [rejouer, setRejouer] = useState(0);
+  const [rejouer, setRejouer] = useState(modeClient ? 1 : 0);
   const [langue, setLangue] = useState<Langue>("fr");
   const modele = modeleDe(valeur.modele);
   const actuelles = couleursDe(valeur);
@@ -213,7 +213,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
               <RotateCcw className="h-4 w-4" /> Couleurs du modèle
             </button>
           </div>
-          <p className="text-sm text-[#5E554A] mb-3">Un clic sur une palette, ou réglez chaque couleur. Modifiable à tout moment, même après l'envoi : vos invités voient toujours la dernière version.</p>
+          <p className="text-sm text-[#5E554A] mb-3">Un clic sur une palette, ou réglez chaque couleur. Vous pourrez ajuster votre carte avec nous avant de la valider.</p>
           <div className="flex flex-wrap gap-2 mb-4">
             {palettesPour(ev.id).map((p) => (
               <button key={p.id} type="button" onClick={() => appliquerPalette(p.couleurs)} aria-pressed={egal(actuelles, p.couleurs)} aria-label={p.nom} title={p.nom} data-testid={`palette-${p.id}`}
@@ -227,7 +227,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           </div>
           <div className="grid sm:grid-cols-2 gap-2">
             <div className="sm:col-span-2" role="group" aria-label="Police des prénoms">
-              <p className="text-sm font-medium">Police des prénoms (version française)</p>
+              <p className="text-sm font-medium">Police des prénoms</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {POLICES.map((p) => (
                   <button key={p.id} type="button" aria-pressed={(valeur.police ?? "calligraphie") === p.id} onClick={() => onChange({ ...valeur, police: p.id })} data-testid={`police-${p.id}`}
@@ -247,7 +247,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           </div>
         </section>
 
-        <section className="space-y-3">
+        {!modeClient && <section className="space-y-3">
           <h3 className="font-serif text-xl">{num()}. Le lieu et l'heure</h3>
           <label className="block text-sm">Heure d'accueil (facultatif)
             <input className={`${champ} mt-1`} value={valeur.heure ?? ""} maxLength={20} placeholder="19h30" onChange={(e) => onChange({ ...valeur, heure: e.target.value })} data-testid="invitation-heure" />
@@ -256,7 +256,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             <input className={`${champ} mt-1`} value={valeur.lieu_maps ?? ""} maxLength={300} inputMode="url" placeholder="https://maps.app.goo.gl/…" onChange={(e) => onChange({ ...valeur, lieu_maps: e.target.value })} data-testid="invitation-maps" />
             <span className="block text-xs text-[#6B6154] mt-1">Sans lien, le bouton ouvre une recherche Google Maps avec le nom du lieu.</span>
           </label>
-        </section>
+        </section>}
 
         {!modeClient && <section className="space-y-3" data-testid="invitation-programme">
           <h3 className="font-serif text-xl">{num()}. Le programme (facultatif)</h3>
@@ -275,7 +275,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           </div>
         </section>}
 
-        {ev.questions.length > 0 && (
+        {!modeClient && ev.questions.length > 0 && (
           <section className="space-y-2" data-testid="invitation-questions">
             <h3 className="font-serif text-xl">{num()}. Les questions posées à vos invités</h3>
             <p className="text-xs text-[#6B6154]">Cochez celles qui vous aident. Toutes sont facultatives pour l'invité. Rien n'est demandé sur la religion ou la santé, hormis ce que l'invité choisit d'indiquer.</p>
@@ -324,7 +324,10 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         <Invitation noms={noms || "Prénom & Prénom"} date={date} lieu={lieu} message={message} reglages={valeur} langue={langue} pleinePage={false} rejouer={rejouer} ouverte={rejouer === 0} autoOuvrir />
       </aside>
       <div className="sticky bottom-0 z-30 -mx-1 col-span-full border-t border-[#E3D6BA] bg-[#FBF8F1]/95 px-4 py-2 lg:hidden" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom, 0px))" }}>
-        <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#141414] text-[#F7F3E8] min-h-12 text-sm font-medium" data-testid="voir-apercu-barre"><Play className="h-4 w-4" /> Voir l'aperçu</button>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className={`flex items-center justify-center gap-2 rounded-full min-h-12 text-sm font-medium ${modeClient ? "border border-[#141414] text-[#141414] px-4" : "w-full bg-[#141414] text-[#F7F3E8]"}`} data-testid="voir-apercu-barre"><Play className="h-4 w-4" /> Voir l'aperçu</button>
+          {modeClient && <button type="button" onClick={() => document.getElementById("demande")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="flex flex-1 items-center justify-center rounded-full bg-[#141414] text-[#F7F3E8] min-h-12 text-sm font-medium" data-testid="aller-demande">J'envoie ma demande</button>}
+        </div>
       </div>
     </div>
   );

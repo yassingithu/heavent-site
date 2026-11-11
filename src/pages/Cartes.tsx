@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Seo from "@/components/Seo";
-import { Bouton, PageTete } from "@/components/seuil/Seuil";
+import { Bouton, Etoile, Surtitre } from "@/components/seuil/Seuil";
+import "@/styles/cartes.css";
 import ChoixOccasion from "@/components/invitation/ChoixOccasion";
 import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvitation";
 import { evenementDe, type TypeEvenement } from "@/lib/evenements";
@@ -28,6 +29,7 @@ export default function Cartes() {
   const [f, setF] = useState({ nom: "", telephone: "", email: "", note: "", accord: false });
   const [etat, setEtat] = useState<"saisie" | "envoi" | "ok">("saisie");
   const [erreur, setErreur] = useState<string | null>(null);
+  const [err, setErr] = useState<Record<string, string>>({});
   const ev = evenementDe(invitation.evenement);
 
   const choisirOccasion = (id: TypeEvenement) => {
@@ -40,10 +42,15 @@ export default function Cartes() {
 
   const envoyer = async (e: React.FormEvent) => {
     e.preventDefault(); setErreur(null);
-    if (f.nom.trim().length < 2) return setErreur("Indiquez votre nom.");
-    if (!f.telephone.trim() && !f.email.trim()) return setErreur("Indiquez un numéro WhatsApp ou une adresse e-mail pour que nous puissions vous répondre.");
-    if (f.email.trim() && !MAIL_OK.test(f.email.trim())) return setErreur("L'adresse e-mail semble incorrecte.");
-    if (!f.accord) return setErreur("Cochez la case pour que nous puissions utiliser vos informations afin de vous répondre.");
+    const x: Record<string, string> = {};
+    if (f.nom.trim().length < 2) x.nom = "Indiquez votre nom.";
+    if (!f.telephone.trim() && !f.email.trim()) x.tel = "Indiquez un numéro WhatsApp ou une adresse e-mail pour que nous puissions vous répondre.";
+    else if (f.telephone.trim() && f.telephone.replace(/\D/g, "").length < 8) x.tel = "Ce numéro semble incomplet.";
+    if (f.email.trim() && !MAIL_OK.test(f.email.trim())) x.email = "L'adresse e-mail semble incorrecte.";
+    if (!f.accord) x.accord = "Cochez la case ci-dessus pour que nous puissions vous répondre.";
+    setErr(x);
+    const premier = Object.keys(x)[0];
+    if (premier) { document.getElementById(`cartes-champ-${premier}`)?.focus(); return; }
     setEtat("envoi");
     const { error } = await (supabase as any).rpc("carte_demander", {
       p_nom: f.nom, p_telephone: f.telephone, p_email: f.email, p_occasion: invitation.evenement ?? "mariage", p_noms: noms,
@@ -54,11 +61,29 @@ export default function Cartes() {
   };
 
   return (
-    <div>
+    <div className="cartes-page">
       <Seo perso={{ chemin: "/cartes", titre: "Cartes d'invitation digitales sur mesure | Heavent", description: "Composez votre carte d'invitation digitale : enveloppe, ruban ou cachet, couleurs, décor, surprise à la révélation. Aperçu en direct, puis demande à Heavent." }} />
-      <PageTete surtitre="Cartes d'invitation digitales" titre="Choisissez votre carte" chapo="Anniversaire, naissance, fiançailles, henné, iftar… Composez la carte que vos invités recevront, voyez-la s'ouvrir, puis envoyez-nous votre demande." />
+      <section className="s-nuit cartes-haut s-g">
+        <div className="in">
+          <div>
+            <Surtitre className="s-entree-heros">Cartes d'invitation digitales</Surtitre>
+            <h1 className="s-h1 s-entree-heros">Votre carte, <em>avant même</em> le premier invité.</h1>
+            <p className="s-chapo s-entree-heros" style={{ animationDelay: ".12s" }}>Choisissez l'enveloppe, le cachet, les couleurs. Voyez-la s'ouvrir sur votre téléphone, puis confiez-la-nous : nous vous répondons avec un aperçu et le tarif.</p>
+            <div className="cartes-cta">
+              <a href="#composer" className="s-btn s-btn-plein">Composer ma carte</a>
+              <a href="#demande" className="s-btn s-btn-filet">Envoyer ma demande</a>
+            </div>
+          </div>
+          <div className="cartes-scene" aria-hidden="true">
+            <div className="cartes-carte cartes-c1"><div><small>Fiançailles</small><b>Salma<br />&amp; Omar</b><i>14 · 06 · 2027</i></div></div>
+            <div className="cartes-carte cartes-c3"><div><small>Mariage</small><b>Lina<br />&amp; Adam</b><i>12 · 09 · 2027</i></div></div>
+            <div className="cartes-carte cartes-c2"><div><small>Ont la joie de vous convier</small><b>Yasmine<br />&amp; Karim</b><i>03 · 10 · 2027</i></div></div>
+          </div>
+        </div>
+        <div className="cartes-bande" />
+      </section>
 
-      <main className="bg-[#FBF8F1] text-[#2A2420]">
+      <main id="composer" className="bg-[#FBF8F1] text-[#2A2420] scroll-mt-4">
         <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
           <ChoixOccasion valeur={invitation.evenement} onChoisir={choisirOccasion} />
 
@@ -75,6 +100,9 @@ export default function Cartes() {
                 <input className={champ} value={lieu} onChange={(e) => setLieu(e.target.value)} placeholder="Villa, salle, restaurant, ville…" maxLength={120} data-testid="cartes-lieu" />
               </label>
             </div>
+            <label className="block text-sm">Votre message sur la carte (facultatif)
+              <textarea className={champ} rows={3} value={message} onChange={(e) => setMessage(e.target.value)} maxLength={400} placeholder="Ex. : Nous serions heureux de partager ce moment avec vous." data-testid="cartes-message" />
+            </label>
             <p className="text-xs text-[#6B6154]">La date est dévoilée par la surprise de la carte : sans date, la surprise ne s'affiche pas.</p>
           </section>
 
@@ -83,34 +111,39 @@ export default function Cartes() {
           <section id="demande" className="max-w-xl space-y-4" aria-labelledby="t-demande">
             <h3 id="t-demande" className="font-serif text-2xl">J'envoie ma demande à Heavent</h3>
             {etat === "ok" ? (
-              <div className="rounded-2xl border border-[#DCCBA6] bg-white p-5 space-y-3" role="status" data-testid="cartes-merci">
-                <p className="flex items-center gap-2 font-serif text-xl"><CheckCircle2 className="h-6 w-6 text-[#8C6D22]" aria-hidden="true" /> Demande bien reçue</p>
+              <div className="s-fairepart s-merci" role="status" data-testid="cartes-merci">
+                <Etoile /><Etoile className="bas" />
+                <h4 className="s-h3">Demande bien reçue</h4>
                 <p className="text-sm text-[#5E554A]">Merci {f.nom.split(" ")[0]}. Notre équipe prépare votre carte : vous recevez un aperçu à partager et le tarif sous 24 h ouvrées.</p>
                 <Bouton href={WHATSAPP + encodeURIComponent(`Bonjour Heavent, je viens d'envoyer ma demande de carte d'invitation (${ev.nom}). Je m'appelle ${f.nom}.`)} externe variante="filet">Nous écrire sur WhatsApp</Bouton>
               </div>
             ) : (
-              <form onSubmit={envoyer} className="space-y-3" noValidate>
+              <form onSubmit={envoyer} className="space-y-3 s-form cartes-formulaire" style={{ padding: "22px 18px" }} noValidate>
                 <p className="text-sm text-[#5E554A]">Aucun paiement maintenant. Notre équipe vous répond sous 24 h ouvrées avec un aperçu de votre carte et le tarif.</p>
                 <label className="block text-sm">Votre nom
-                  <input className={champ} value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} autoComplete="name" required data-testid="cartes-nom" />
+                  <input className={champ} value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} autoComplete="name" required id="cartes-champ-nom" aria-invalid={!!err.nom} data-testid="cartes-nom" />
+                  {err.nom && <span className="block text-sm text-[#9B2C2C]" role="alert">{err.nom}</span>}
                 </label>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block text-sm">WhatsApp ou téléphone
-                    <input className={champ} type="tel" inputMode="tel" value={f.telephone} onChange={(e) => setF({ ...f, telephone: e.target.value })} autoComplete="tel" placeholder="+212 6…" data-testid="cartes-tel" />
+                    <input className={champ} type="tel" inputMode="tel" value={f.telephone} onChange={(e) => setF({ ...f, telephone: e.target.value })} autoComplete="tel" placeholder="+212 6…" id="cartes-champ-tel" aria-invalid={!!err.tel} data-testid="cartes-tel" />
+                    {err.tel && <span className="block text-sm text-[#9B2C2C]" role="alert">{err.tel}</span>}
                   </label>
                   <label className="block text-sm">E-mail (facultatif si WhatsApp)
-                    <input className={champ} type="email" inputMode="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} autoComplete="email" data-testid="cartes-email" />
+                    <input className={champ} type="email" inputMode="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} autoComplete="email" id="cartes-champ-email" aria-invalid={!!err.email} data-testid="cartes-email" />
+                    {err.email && <span className="block text-sm text-[#9B2C2C]" role="alert">{err.email}</span>}
                   </label>
                 </div>
                 <label className="block text-sm">Un mot pour nous (facultatif)
                   <textarea className={champ} rows={3} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} maxLength={800} placeholder="Une envie, un thème, un nombre d'invités…" />
                 </label>
-                <label className="flex items-start gap-2 text-sm">
-                  <input type="checkbox" className="mt-1 h-5 w-5" checked={f.accord} onChange={(e) => setF({ ...f, accord: e.target.checked })} data-testid="cartes-accord" />
+                <label className="cartes-accord flex items-start gap-2 text-sm">
+                  <input type="checkbox" className="mt-1 h-5 w-5" checked={f.accord} onChange={(e) => setF({ ...f, accord: e.target.checked })} id="cartes-champ-accord" aria-invalid={!!err.accord} data-testid="cartes-accord" />
                   <span>J'accepte que Heavent utilise ces informations pour me répondre. <Link to="/politique-confidentialite" className="underline">Politique de confidentialité</Link></span>
                 </label>
+                {err.accord && <p className="text-sm text-[#9B2C2C]" role="alert">{err.accord}</p>}
                 {erreur && <p role="alert" className="text-sm text-[#9B2C2C]" data-testid="cartes-erreur">{erreur}</p>}
-                <button type="submit" disabled={etat === "envoi"} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#141414] text-[#F7F3E8] px-6 min-h-12 text-base font-medium disabled:opacity-60" data-testid="cartes-envoyer">
+                <button type="submit" disabled={etat === "envoi"} className="s-btn s-btn-plein s-sombre disabled:opacity-60" data-testid="cartes-envoyer">
                   {etat === "envoi" && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />} Envoyer ma demande
                 </button>
               </form>
