@@ -15,6 +15,10 @@ interface Props {
   estAdmin?: boolean;
   /** Page publique « Choisir ma carte » : pas de musique (licence), de programme ni de version arabe (relecture en cours). */
   modeClient?: boolean;
+  /** Fiche d'une carte de la boutique : la carte est déjà choisie, on masque le catalogue et la barre du bas. */
+  sansCatalogue?: boolean;
+  /** Contenu posé en tête de la colonne des réglages (fiche de la boutique : texte de la carte, options). */
+  avant?: React.ReactNode;
   noms: string; date?: string | null; lieu?: string | null; message?: string | null;
   valeur: InvitationReglages; onChange: (v: InvitationReglages) => void;
 }
@@ -23,7 +27,7 @@ const LANGUES: [Langue, string][] = [["fr", "FR"], ["en", "EN"], ["ar", "عرب�
 const egal = (a: Couleurs, b: Couleurs) => (Object.keys(a) as (keyof Couleurs)[]).every((k) => a[k].toLowerCase() === b[k].toLowerCase());
 
 /** Choix du modèle, des couleurs (modifiables à tout moment) et aperçu en direct. */
-export default function PersonnaliserInvitation({ noms, date, lieu, message, valeur, onChange, estAdmin, modeClient }: Props) {
+export default function PersonnaliserInvitation({ noms, date, lieu, message, valeur, onChange, estAdmin, modeClient, sansCatalogue, avant }: Props) {
   const ev = evenementDe(valeur.evenement);
   const compteur = { v: 0 }; const num = () => ++compteur.v;
   /* Page publique : les réglages fins sont repliés ; dans l'éditeur, simple conteneur */
@@ -72,7 +76,9 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]" data-testid="personnaliser-invitation">
       <div className="space-y-6 min-w-0">
+        {avant}
         <section>
+          {!sansCatalogue && <>
           <h3 className="font-serif text-xl mb-1">{modeClient ? "Comment s'ouvre votre carte ?" : `${num()}. Comment l'invitation s'ouvre`}</h3>
           <p className="text-sm text-[#5E554A] mb-3">{modeClient ? "Vos invités touchent la porte : votre carte apparaît. Touchez-en une pour l'essayer. Nous l'adaptons avec vous avant de la valider." : "Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu."}</p>
           {modeClient && (
@@ -116,7 +122,8 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             })}
           </div>
           {modeClient && !toutes && !filtre && !formule && reste > 0 && <button type="button" onClick={() => setToutes(true)} className="cartes-plus-cartes" data-testid="cartes-voir-plus">Voir toutes les cartes ({filtrees.length})</button>}
-          <p className="text-xs text-[#6B6154] mt-3"><strong className="font-medium">{ouv.nom}.</strong> {ouv.description}</p>
+          </>}
+          {!sansCatalogue && <p className="text-xs text-[#6B6154] mt-3"><strong className="font-medium">{ouv.nom}.</strong> {ouv.description}</p>}
           <Pli className={`cartes-plus ${modeClient && ouv.id !== "enveloppe" && (ouv.cadre || ouv.id === "rose-imperiale") ? "hidden" : ""}`}>
             {resume(ouv.id === "enveloppe" ? "Cachet et enveloppe" : "Cachet de cire")}
           {ouv.id === "enveloppe" && (
@@ -162,7 +169,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             </label>
           )}
           </Pli>
-          <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[#DCCBA6] bg-white px-4 min-h-11 text-sm lg:hidden" data-testid="voir-apercu"><Play className="h-4 w-4" /> Voir l'aperçu</button>
+          {!sansCatalogue && <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[#DCCBA6] bg-white px-4 min-h-11 text-sm lg:hidden" data-testid="voir-apercu"><Play className="h-4 w-4" /> Voir l'aperçu</button>}
           {estAdmin && <ImportOuverture onAjoutee={(id) => choisirOuverture(id)} />}
         </section>
 
@@ -367,7 +374,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </div>
         <Invitation noms={noms || "Prénom & Prénom"} date={date} lieu={lieu} message={message} reglages={valeur} langue={langue} pleinePage={false} rejouer={rejouer} ouverte={rejouer === 0} autoOuvrir />
       </aside>
-      {(!modeClient || !versFormulaire) && <div className={modeClient ? "cartes-barre sticky bottom-0 z-30 col-span-full lg:hidden" : "sticky bottom-0 z-30 -mx-1 col-span-full border-t border-[#E3D6BA] bg-[#FBF8F1]/95 px-4 py-2 lg:hidden"} style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom, 0px))" }}>
+      {!sansCatalogue && (!modeClient || !versFormulaire) && <div className={modeClient ? "cartes-barre sticky bottom-0 z-30 col-span-full lg:hidden" : "sticky bottom-0 z-30 -mx-1 col-span-full border-t border-[#E3D6BA] bg-[#FBF8F1]/95 px-4 py-2 lg:hidden"} style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom, 0px))" }}>
         <div className="flex items-center gap-2">
           {modeClient && <span className="cartes-barre-choix"><small>{ouv.nom}</small><b>{prixDe(ouv)}</b></span>}
           <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className={modeClient ? "s-btn s-btn-filet cartes-barre-btn" : "flex w-full items-center justify-center gap-2 rounded-full min-h-12 text-sm font-medium bg-[#141414] text-[#F7F3E8]"} data-testid="voir-apercu-barre"><Play className="h-4 w-4" aria-hidden="true" /> {modeClient ? "Voir" : "Voir l'aperçu"}</button>

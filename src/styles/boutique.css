@@ -1,0 +1,161 @@
+/* Boutique de cartes : catalogue, fiche d'une carte, commande. Tons Heavent : noir, or, crème. */
+.boutique-garanties { display: grid; grid-template-columns: 1fr 1fr; margin: 0 0 40px; padding: 0; list-style: none; border-top: 1px solid #A8933F; border-bottom: 1px solid #EADFC8; }
+.boutique-garanties li { padding: 12px 10px 12px 0; font: 500 11px/1.35 var(--s-texte, Jost), sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #5A4A1E; }
+.boutique-garanties li:nth-child(2n) { padding-left: 12px; border-left: 1px solid #EADFC8; }
+.boutique-garanties li:nth-child(n+3) { border-top: 1px solid #EADFC8; }
+@media (min-width: 900px) {
+  .boutique-garanties { grid-template-columns: repeat(4, 1fr); }
+  .boutique-garanties li { padding: 14px 14px 14px 16px; border-left: 1px solid #EADFC8; }
+  .boutique-garanties li:first-child { padding-left: 0; border-left: 0; }
+  .boutique-garanties li:nth-child(n+3) { border-top: 0; }
+}
+
+.cartes-tete .boutique-panier-lien { margin-left: auto; align-self: center; min-height: 44px; display: inline-flex; align-items: center; padding: 0 14px; background: #141414; color: #E4D49A; font: 500 12px var(--s-texte, Jost), sans-serif; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
+.boutique-occasion-titre { margin: 0 0 6px; font: 500 11px var(--s-texte, Jost), sans-serif; letter-spacing: .3em; text-transform: uppercase; color: #7A5F1F; }
+
+/* Barre d'outils du catalogue */
+.boutique-barre { margin-top: 28px; }
+.boutique-outils { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; }
+.boutique-styles { display: flex; gap: 14px; overflow-x: auto; flex: 1 1 260px; min-width: 0; scrollbar-width: none; }
+.boutique-styles::-webkit-scrollbar { display: none; }
+.boutique-styles button { flex: none; min-height: 44px; padding: 0 2px; border: 0; border-bottom: 2px solid transparent; background: none; font: 500 12px var(--s-texte, Jost), sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #5E554A; cursor: pointer; transition: color .2s, border-color .2s; }
+.boutique-styles button[aria-pressed="true"] { color: #141414; border-bottom-color: #8C6D22; }
+.boutique-tri { display: inline-flex; align-items: center; gap: 10px; font: 500 11px var(--s-texte, Jost), sans-serif; letter-spacing: .2em; text-transform: uppercase; color: #5E554A; }
+.boutique-tri select { min-height: 44px; padding: 0 28px 0 10px; border: 0; border-bottom: 1px solid #A8933F; border-radius: 0; background-color: transparent; font: 400 15px var(--s-texte, Jost), sans-serif; letter-spacing: 0; text-transform: none; color: #141414; }
+.boutique-compte { margin: 6px 0 14px; font: 400 14px var(--s-texte, Jost), sans-serif; color: #5E554A; }
+
+/* Grille de fiches */
+.boutique-grille { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 14px; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 640px) { .boutique-grille { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 20px; } }
+@media (min-width: 1024px) { .boutique-grille { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px 26px; } }
+.boutique-carte > button { display: block; width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; font-family: var(--s-texte, Jost), sans-serif; }
+.boutique-cadre { position: relative; display: block; aspect-ratio: 9 / 16; padding: 5px; overflow: hidden; background: #FAF6EC; box-shadow: inset 0 0 0 1px #DCCDAA; clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px); transition: background-color .25s cubic-bezier(.2, .7, .2, 1), transform .15s cubic-bezier(.2, .7, .2, 1); }
+.boutique-cadre > img, .boutique-cadre > .boutique-vide, .boutique-cadre > .boutique-moitie { width: 100%; height: 100%; object-fit: cover; }
+.boutique-cadre > img { display: block; transition: transform .6s cubic-bezier(.2, .7, .2, 1); }
+.boutique-cadre > .boutique-moitie { display: inline-block; width: 50%; background-size: cover; background-position: center; }
+.boutique-cadre > video { position: absolute; inset: 5px; width: calc(100% - 10px); height: calc(100% - 10px); object-fit: cover; animation: boutique-fondu .3s both; }
+.boutique-vide { display: grid; place-items: center; }
+.boutique-monogramme { padding: 14px; border: 1px solid #A8933F; font: italic 400 20px/1.1 "Cormorant", "Cormorant Garamond", serif; color: #E4D49A; text-align: center; }
+@media (hover: hover) {
+  .boutique-carte > button:hover .boutique-cadre { background: #E4D49A; }
+  .boutique-carte > button:hover .boutique-cadre > img { transform: scale(1.03); }
+}
+.boutique-carte > button:active .boutique-cadre { transform: scale(.98); }
+.boutique-carte > button:focus-visible { outline: 2px solid #8C6D22; outline-offset: 4px; }
+.boutique-badge { position: absolute; left: 12px; top: 12px; padding: 5px 8px; font: 500 9px/1 var(--s-texte, Jost), sans-serif; letter-spacing: .22em; text-transform: uppercase; background: #FAF6EC; color: #5A4A1E; box-shadow: 0 0 0 1px rgba(168, 147, 63, .5); }
+.boutique-badge-interactive { background: #E4D49A; color: #141414; box-shadow: none; }
+.boutique-badge-prestige { background: #141414; color: #E4D49A; box-shadow: 0 0 0 1px rgba(228, 212, 154, .5); }
+.boutique-dedans { position: absolute; left: 10px; right: 10px; bottom: 10px; padding: 7px 4px; text-align: center; background: #141414; color: #E4D49A; font: 500 10px var(--s-texte, Jost), sans-serif; letter-spacing: .2em; text-transform: uppercase; }
+.boutique-num { display: block; margin-top: 10px; font: italic 400 13px/1 "Cormorant", "Cormorant Garamond", serif; color: #7A5F1F; }
+.boutique-nom { display: block; margin-top: 4px; min-height: 2.3em; font: 400 17px/1.15 var(--s-titre, Gloock), serif; color: #141414; }
+.boutique-ligne { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 7px; border-top: 1px solid #EADFC8; }
+.boutique-ligne b { font: 400 16px var(--s-titre, Gloock), serif; color: #7A5F1F; }
+.boutique-ligne em { font: 500 10px var(--s-texte, Jost), sans-serif; font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: #6B6154; }
+.boutique-grille { animation: boutique-entre .45s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes boutique-entre { from { opacity: 0; transform: translateY(10px); } }
+@keyframes boutique-fondu { from { opacity: 0; } }
+.boutique-vide-liste { display: grid; justify-items: center; gap: 6px; padding: 44px 0; text-align: center; border-top: 1px solid #EADFC8; border-bottom: 1px solid #EADFC8; }
+.boutique-lien { min-height: 44px; padding: 0 4px; border: 0; background: none; color: #7A5F1F; text-decoration: underline; text-underline-offset: 4px; font: 400 15px var(--s-texte, Jost), sans-serif; cursor: pointer; }
+
+/* Fiche d'une carte */
+.boutique-voile { position: fixed; inset: 0; z-index: 100; background: rgba(20, 20, 20, .62); animation: boutique-fondu .2s both; }
+.boutique-fiche { position: fixed; z-index: 101; inset: 0; display: flex; flex-direction: column; background: #F9F4E8; color: #2A2420; animation: boutique-entre .28s cubic-bezier(.2, .7, .2, 1) both; }
+@media (min-width: 1024px) { .boutique-fiche { inset: 4vh 0; margin: 0 auto; width: min(1120px, 94vw); border-top: 2px solid #A8933F; box-shadow: 0 30px 80px -30px rgba(0, 0, 0, .6); } }
+.boutique-fiche-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 16px 6px; }
+.boutique-fiche-tete small { display: block; margin-bottom: 4px; font: 500 11px var(--s-texte, Jost), sans-serif; letter-spacing: .28em; text-transform: uppercase; color: #7A5F1F; }
+.boutique-fiche-tete h2 { margin: 0; font: 400 clamp(26px, 6vw, 36px)/1.05 var(--s-titre, Gloock), serif; }
+.boutique-fermer { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid #A8933F; background: transparent; color: #141414; cursor: pointer; }
+.boutique-fermer svg { width: 20px; height: 20px; }
+.boutique-fermer:hover { background: #E4D49A; }
+.boutique-fiche-desc { margin: 0; padding: 0 16px 12px; font: 400 15px/1.45 var(--s-texte, Jost), sans-serif; color: #5E554A; border-bottom: 1px solid #EADFC8; }
+.boutique-fiche-corps { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 18px 16px 28px; }
+@media (min-width: 1024px) { .boutique-fiche-tete, .boutique-fiche-desc, .boutique-fiche-corps { padding-left: 28px; padding-right: 28px; } }
+.boutique-fiche aside[aria-label^="Aperçu"] { top: 8px; }
+.boutique-fiche-pied { flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 14px max(10px, env(safe-area-inset-bottom, 0px)); background: #141414; border-top: 1px solid rgba(228, 212, 154, .4); color: #F3ECDD; }
+.boutique-total { flex: 1; min-width: 0; }
+.boutique-total small { display: block; font: 500 10px var(--s-texte, Jost), sans-serif; letter-spacing: .24em; text-transform: uppercase; color: #E4D49A; }
+.boutique-total b { display: block; font: 400 24px/1.1 var(--s-titre, Gloock), serif; font-weight: 400; }
+.boutique-fiche-pied .s-btn { flex: none; min-height: 48px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; }
+.boutique-fiche-pied .s-btn-plein { background: #E4D49A; color: #141414; }
+.boutique-fiche-pied .s-btn.s-btn-filet { background: transparent !important; color: #F3ECDD !important; border: 1px solid rgba(228, 212, 154, .7) !important; }
+@media (min-width: 1024px) { .boutique-fiche-pied { padding-left: 28px; padding-right: 28px; } .boutique-apercu { display: none !important; } }
+@media (max-width: 400px) { .boutique-fiche-pied .boutique-ajouter { padding: 0 12px; font-size: 13px; } }
+
+/* Réglages dans la fiche */
+.boutique-reglages { display: grid; gap: 22px; }
+.boutique-formule-texte { margin: 0; padding-left: 12px; border-left: 2px solid #A8933F; font: 400 15px/1.45 var(--s-texte, Jost), sans-serif; color: #5E554A; }
+.boutique-formule-texte b { font-weight: 500; color: #141414; }
+.boutique-champs, .boutique-options { margin: 0; padding: 0; border: 0; min-width: 0; }
+.boutique-champs { display: grid; gap: 14px; }
+@media (min-width: 640px) { .boutique-champs { grid-template-columns: repeat(3, minmax(0, 1fr)); } .boutique-champs legend { grid-column: 1 / -1; } }
+.boutique-champs legend, .boutique-options legend { float: left; width: 100%; margin-bottom: 12px; padding: 0 0 8px; border-bottom: 1px solid #EADFC8; font: 500 11px var(--s-texte, Jost), sans-serif; letter-spacing: .3em; text-transform: uppercase; color: #7A5F1F; }
+.boutique-champs legend + *, .boutique-options legend + * { clear: both; }
+.boutique-champs label { display: block; font: 500 12px var(--s-texte, Jost), sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #5A5146; }
+.boutique-champs :is(input, textarea) { margin-top: 6px; font-size: 16px; letter-spacing: 0; text-transform: none; color: #141414; font-family: var(--s-texte, Jost), sans-serif; }
+.boutique-champs [role="alert"] { margin-top: 4px; font: 400 14px var(--s-texte, Jost), sans-serif; letter-spacing: 0; text-transform: none; }
+.boutique-champs p { margin: 0; font: 400 14px var(--s-texte, Jost), sans-serif; }
+.boutique-option { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: start; gap: 12px; min-height: 56px; padding: 12px 0; border-bottom: 1px solid #EADFC8; cursor: pointer; }
+.boutique-option input[type="checkbox"] { width: 24px; height: 24px; margin: 2px 0 0; accent-color: #8C6D22; }
+.boutique-option b { display: block; font: 500 15px var(--s-texte, Jost), sans-serif; color: #141414; }
+.boutique-option small { display: block; margin-top: 2px; font: 400 13px var(--s-texte, Jost), sans-serif; color: #5E554A; }
+.boutique-option em { font: 400 16px var(--s-titre, Gloock), serif; font-style: normal; color: #7A5F1F; white-space: nowrap; }
+.cartes-page .boutique-option input[type="checkbox"] { width: 24px; height: 24px; }
+@media (max-width: 899px) {
+  .boutique-fiche :is(button, summary):not(.inv *) { min-height: 44px; }
+  .boutique-fiche input[type="color"] { min-height: 44px; min-width: 48px; }
+  .boutique-fiche [role="group"][aria-label="Langue de l'aperçu"] button { min-width: 44px; min-height: 44px; }
+}
+
+/* Commande : récapitulatif et formulaire */
+.boutique-commande { display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .boutique-commande { grid-template-columns: minmax(0, 1fr) 380px; gap: 56px; align-items: start; } .boutique-recap { order: 2; position: sticky; top: 96px; } }
+.boutique-recap { padding: 18px 18px 14px; background: #FAF6EC; border-top: 2px solid #A8933F; box-shadow: inset 0 0 0 1px #EADFC8; }
+.boutique-recap-carte { display: flex; gap: 14px; align-items: center; padding-bottom: 14px; border-bottom: 1px solid #EADFC8; }
+.boutique-recap-img { flex: none; width: 64px; aspect-ratio: 9 / 16; overflow: hidden; background: #141414; display: grid; place-items: center; box-shadow: 0 0 0 3px #FAF6EC, 0 0 0 4px #A8933F; }
+.boutique-recap-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.boutique-recap-img i { font: italic 400 20px "Cormorant", serif; color: #E4D49A; }
+.boutique-recap-carte small { display: block; font: 500 10px var(--s-texte, Jost), sans-serif; letter-spacing: .24em; text-transform: uppercase; color: #7A5F1F; }
+.boutique-recap-carte b { display: block; margin: 3px 0; font: 400 20px/1.1 var(--s-titre, Gloock), serif; font-weight: 400; color: #141414; }
+.boutique-recap-carte span:not(.boutique-recap-img) { display: block; font: 400 14px/1.35 var(--s-texte, Jost), sans-serif; color: #5E554A; }
+.boutique-lignes { margin: 0; padding: 6px 0; }
+.boutique-lignes > div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; font: 400 15px var(--s-texte, Jost), sans-serif; color: #2A2420; }
+.boutique-lignes dt, .boutique-lignes dd { margin: 0; }
+.boutique-lignes dd { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.boutique-lignes .boutique-total-ligne { margin-top: 6px; padding-top: 12px; border-top: 1px solid #A8933F; }
+.boutique-total-ligne dt { font: 500 12px var(--s-texte, Jost), sans-serif; letter-spacing: .2em; text-transform: uppercase; align-self: center; }
+.boutique-total-ligne dd { font: 400 26px/1 var(--s-titre, Gloock), serif; color: #7A5F1F; }
+.boutique-recap-note { margin: 4px 0 8px; font: 400 14px/1.45 var(--s-texte, Jost), sans-serif; color: #5E554A; }
+.boutique-recap-actions { display: flex; gap: 18px; flex-wrap: wrap; }
+.boutique-formulaire { padding: 22px 18px; }
+.boutique-form-titre { margin: 0 0 6px; font: 400 24px/1.1 var(--s-titre, Gloock), serif; }
+.boutique-merci-texte { font: 400 15px/1.5 var(--s-texte, Jost), sans-serif; color: #5E554A; margin-bottom: 22px; }
+.boutique-panier-vide { display: grid; justify-items: center; gap: 10px; padding: 48px 16px; text-align: center; background: #FAF6EC; border-top: 2px solid #A8933F; box-shadow: inset 0 0 0 1px #EADFC8; }
+.boutique-panier-vide p { margin: 0; font: 400 26px var(--s-titre, Gloock), serif; }
+.boutique-panier-vide span { max-width: 28rem; margin-bottom: 8px; font: 400 15px/1.5 var(--s-texte, Jost), sans-serif; color: #5E554A; }
+
+/* Barre « Ma commande » */
+.boutique-barre-panier { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; align-items: center; gap: 10px; animation: boutique-entre .3s cubic-bezier(.2, .7, .2, 1) both; }
+@media (min-width: 900px) { .boutique-barre-panier { left: auto; right: 24px; bottom: 24px; min-width: 360px; padding: 10px 14px; box-shadow: 0 16px 40px -12px rgba(0, 0, 0, .5); } }
+.cartes-page .boutique-barre-panier .s-btn { display: inline-flex; align-items: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .boutique-grille, .boutique-fiche, .boutique-voile, .boutique-barre-panier, .boutique-cadre > video { animation: none; }
+  .boutique-cadre > img { transition: none; }
+}
+
+/* Compacité mobile : le catalogue démarre plus haut */
+.boutique-fiche-pied .s-btn-filet { --fond: #141414; --ligne: rgba(228, 212, 154, .75); }
+.boutique-apercu { width: 48px; padding: 0 !important; justify-content: center; }
+.boutique-total b { white-space: nowrap; }
+@media (max-width: 899px) {
+  .boutique-aide { display: none; }
+  .boutique-barre { margin-top: 18px; }
+  .boutique-compte { margin: 2px 0 12px; }
+  .boutique-occasion-titre { display: none; }
+  .cartes-page .cartes-onglets-panneau > p { display: none; }
+  .boutique-outils { gap: 0 14px; }
+  .boutique-tri span { display: none; }
+  .boutique-tri select { max-width: 11.5rem; }
+}
+.cartes-formules p.boutique-aide { margin-top: 0; }
+@media (max-width: 899px) { .cartes-tete .boutique-panier-lien { display: none; } }

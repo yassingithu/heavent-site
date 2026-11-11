@@ -169,6 +169,16 @@ const PRESTIGE_750 = ["v-minuit", "v-neige", "v-oliveto", "v-azure"];
 /** Classique : animations dessinées · Interactive : films partenaires · Prestige : nos films photoréalistes (650 DH, 750 DH pour les paysages en mouvement de caméra). */
 export const formuleDe = (o: OuvertureDef): Formule => !o.video ? "classique" : FILMS_INTERACTIVE.includes(o.id) ? "interactive" : "prestige";
 export const prixDe = (o: OuvertureDef): string => { const f = formuleDe(o); return f === "classique" ? "250 DH" : f === "interactive" ? "450 DH" : PRESTIGE_750.includes(o.id) ? "750 DH" : "650 DH"; };
+/** Boutique : prix en nombre, options à la carte (grille tarifaire de la formule) et total de la commande. */
+export const prixNombre = (o: OuvertureDef): number => parseInt(prixDe(o), 10);
+export interface Extra { id: string; nom: string; prix: number; texte: string; sauf?: Formule[] }
+export const EXTRAS: Extra[] = [
+  { id: "modif", nom: "Modification supplémentaire", prix: 50, texte: "Un ajustement de plus après l'aperçu." },
+  { id: "qr", nom: "QR code", prix: 100, texte: "Un QR code à imprimer, qui ouvre la carte.", sauf: ["prestige"] },
+  { id: "urgent", nom: "Création urgente en 24 h", prix: 150, texte: "Votre carte prête en 24 h." },
+];
+export const extrasPour = (o: OuvertureDef): Extra[] => EXTRAS.filter((e) => !e.sauf?.includes(formuleDe(o)));
+export const totalCommande = (o: OuvertureDef, ids: string[]): number => prixNombre(o) + extrasPour(o).filter((e) => ids.includes(e.id)).reduce((t, e) => t + e.prix, 0);
 export const STYLES_OUVERTURE = ["Marocain", "Luxe", "Floral", "Moderne"];
 const LICENCE_HEAVENT = "Création Heavent";
 const LICENCE_PARTENAIRE = "Ressource tierce, utilisée avec l'accord de son propriétaire";
