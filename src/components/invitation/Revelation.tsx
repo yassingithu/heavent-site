@@ -6,9 +6,9 @@ const L = 260, H = 240, ROND = "M20 120A110 110 0 0 1 240 120A110 110 0 0 1 20 1
 const SEUIL = 0.5;
 
 /** `secret` : le contenu n'existe pas dans la page tant que l'invité n'a pas gratté (rien à lire dans le code ni au lecteur d'écran). */
-interface Props { sous: { haut: string; jour: string; bas: string } | null; titre: string; bouton: string; noms: string; onFini: () => void; secret?: boolean; rond?: boolean }
+interface Props { sous: { haut: string; jour: string; bas: string } | null; titre: string; bouton: string; noms: string; onFini: () => void; secret?: boolean; rond?: boolean; /** posé sur la carte, à la place de la date */ enLigne?: boolean }
 
-export default function Revelation({ sous, titre, bouton, noms, onFini, secret = false, rond = false }: Props) {
+export default function Revelation({ sous, titre, bouton, noms, onFini, secret = false, rond = false, enLigne = false }: Props) {
   const FORME = rond ? ROND : COEUR;
   const cv = useRef<HTMLCanvasElement>(null);
   const [fini, setFini] = useState(false);
@@ -64,8 +64,8 @@ export default function Revelation({ sous, titre, bouton, noms, onFini, secret =
   }, [reveler, FORME, rond]);
 
   return (
-    <div className={`inv-rev ${fini ? "is-fini" : ""}`} data-testid="invitation-revelation">
-      <p className="inv-rev-noms">{noms}</p>
+    <div className={`inv-rev ${fini ? "is-fini" : ""}${enLigne ? " inv-rev-ligne" : ""}`} data-testid="invitation-revelation">
+      {!enLigne && <p className="inv-rev-noms">{noms}</p>}
       <div className="inv-rev-cadre"><div className="inv-rev-coeur" style={{ clipPath: `path('${FORME}')`, WebkitClipPath: `path('${FORME}')` }}>
         {sous && (!secret || fini) && <div className="inv-rev-sous" aria-hidden={!fini}><small>{sous.haut}</small><b>{sous.jour}</b><small>{sous.bas}</small></div>}
         <canvas ref={cv} className="inv-rev-gratte" aria-hidden="true" />

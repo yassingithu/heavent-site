@@ -195,7 +195,8 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   }, [ouvChoisie.id]);
   const ouv = secours ? ouvertureDe(undefined) : ouvChoisie;
   const revId = revelationDe(reglages?.revelation).id;
-  const avecRevelation = !!date && revId !== "aucune" && revelationsPour(ev.id).some((r) => r.id === revId) && !sansAnimation();
+  const revEnLigne = !ouv.carte && (revId === "coeur" || revId === "medaillon");
+  const avecRevelation = !revEnLigne && !!date && revId !== "aucune" && revelationsPour(ev.id).some((r) => r.id === revId) && !sansAnimation();
   const [phase, setPhase] = useState<"fermee" | "ouverture" | "revelation" | "ouverte">(ouverte || sansAnimation() ? "ouverte" : "fermee");
 
   useEffect(() => () => {
@@ -272,7 +273,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   /* Passage à la carte : à la fin réelle du film (ou au minuteur de secours), jamais avant. */
   const terminer = () => {
     if (phaseRef.current !== "ouverture") return;
-    depart.current = avecRevelation || ouv.video ? null : (emRef.current?.getBoundingClientRect() ?? null);
+    depart.current = avecRevelation || ouv.video || fondCarte ? null : (emRef.current?.getBoundingClientRect() ?? null);
     if (!avecRevelation) capturerFilm();
     if (ouv.carte && !avecRevelation && !sansAnimation()) { const inv = document.querySelector<HTMLElement>(".inv"); if (inv) { inv.style.minHeight = `${inv.getBoundingClientRect().height}px`; window.setTimeout(() => { inv.style.minHeight = ""; }, 2600); } }
     setPhase(avecRevelation ? "revelation" : "ouverte");
@@ -364,6 +365,26 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   }
   const repondreCarte = pleinePage && children ? <a className="inv-repondre" href="#inv-reponse" onClick={(e) => { e.preventDefault(); document.getElementById("inv-reponse")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>{t.repondreCourt}</a> : undefined;
 
+  /* La carte déjà écrite, visible derrière les portes qui s'ouvrent : jamais de page vide. */
+  const fondCarte = (!ouv.video && !sansAnimation()) ? (ouv.carte ? (
+    <div className={`inv-carte inv-carte-film inv-cf-${ouv.id} inv-fond-statique`} style={{ "--film-r": ouv.carte.r ?? 180, "--film-fin": `url(${ouv.carte.fin})`, "--film-x": ouv.carte.x, "--film-y": ouv.carte.y, "--film-l": ouv.carte.l, "--film-h": ouv.carte.h, "--film-fond": ouv.carte.fond } as CSSProperties}>
+      <div className="inv-film-zone"><PagesCarte unites={unitesCarte} ar={ar} textes={t} repondre={false} signature={[langue, noms, date, lieu, heure, messageA, invite, reglages?.noms_ar, reglages?.lieu_ar, !!carte, "fond"].join("¤")} /></div>
+    </div>
+  ) : (
+    <div className={`inv-carte inv-orn-${ornement} inv-fond-statique`}>
+      {invite && <p className="inv-petit">{t.cher} {inviteA},</p>}
+      <p className="inv-petit">{invite ? t.invites : t.invite}</p>
+      <h2 className="inv-noms">
+        {lignes.length === 2 ? (<><Lettres texte={lignes[0]} base={0} ar={langue === "ar"} /><span className="inv-et" aria-hidden="true">{langue === "ar" ? "و" : "&"}</span><Lettres texte={lignes[1]} base={lignes[0].length + 2} ar={langue === "ar"} /></>) : <Lettres texte={nomsA} base={0} ar={langue === "ar"} />}
+      </h2>
+      <Trait />
+      {dp && !revEnLigne && !avecRevelation && (
+        <div className="inv-date"><bdi className="inv-date-cote">{maj(part("weekday"))}</bdi><span className="inv-date-jour">{part("day")}</span><bdi className="inv-date-cote">{part("month")} {part("year")}</bdi></div>
+      )}
+      {heure && <p className="inv-heure" dir="auto">{heure}</p>}
+      {lieuA && <p className="inv-lieu" dir="auto">{lieuA}</p>}
+    </div>
+  )) : null;
   return (
     <div className={`inv ${pleinePage ? "inv-page" : "inv-bloc"}`} style={style} dir={langue === "ar" ? "rtl" : "ltr"} lang={langue} data-phase={phase} data-testid="invitation">
       <div className="inv-particules" aria-hidden="true">{PARTICULES.map((q, i) => <span key={i} style={{ left: `${q.x}%`, width: q.s, height: q.s, animationDelay: `-${q.d}ms`, animationDuration: `${q.t}ms` }} />)}</div>
@@ -371,7 +392,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       {haut}
       {(phase === "fermee" || phase === "ouverture") && ouv.id !== "enveloppe" && (
         <Ouverture key={ouv.id} nomsTexte={nomsA} sansCachet={reglages?.cachet === false} type={ouv.id} phase={phase} libelle={t.ouvrir} libelleBouton={t.ouvrirBouton} initiales={initiales(nomsA)} nomsRef={emRef} onFilm={(e) => { if (e === "ended") terminerRef.current(); else window.setTimeout(() => terminerRef.current(), 400); }}
-          noms={lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}
+          fond={fondCarte} noms={lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}
           onOuvrir={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); lancerMusique(); setPhase("ouverture"); }} />
       )}
       {(phase === "fermee" || phase === "ouverture") && ouv.id === "enveloppe" && (
@@ -397,14 +418,17 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           ref={(el) => { if (el && !el.firstChild) { sortie.canvas.className = "inv-film-img"; el.appendChild(sortie.canvas); } }} />
       )}
       {phase === "revelation" && (() => {
+        const enCarte = (n: ReactNode) => ouv.carte ? (
+          <div className={`inv-carte inv-carte-film inv-cf-${ouv.id} inv-rev-sur-carte`} style={{ "--film-r": ouv.carte.r ?? 180, "--film-fin": `url(${ouv.carte.fin})`, "--film-x": ouv.carte.x, "--film-y": ouv.carte.y, "--film-l": ouv.carte.l, "--film-h": ouv.carte.h, "--film-fond": ouv.carte.fond } as CSSProperties}>{n}</div>
+        ) : n;
         const sousDate = dp ? { haut: maj(part("weekday")), jour: part("day"), bas: `${part("month")} ${part("year")}` } : { haut: "", jour: initiales(nomsA), bas: "" };
-        return revId === "bougies" || revId === "lanterne" || revId === "ballon"
+        return enCarte(revId === "bougies" || revId === "lanterne" || revId === "ballon"
           ? <RevelationGeste type={revId} langue={langue} noms={nomsA} sous={sousDate} onFini={() => setPhase("ouverte")} />
-          : <Revelation rond={revId === "medaillon"} noms={nomsA} titre={revId === "medaillon" ? ({ fr: "Grattez le médaillon pour découvrir la date", en: "Scratch the medallion to reveal the date", ar: "اخدشوا الميدالية لاكتشاف التاريخ" } as Record<string, string>)[langue] : t.gratter} bouton={({ fr: "Passer · voir la date", en: "Skip · show the date", ar: "تخطي · عرض التاريخ" } as Record<string, string>)[langue]} onFini={() => setPhase("ouverte")} sous={sousDate} />;
+          : <Revelation rond={revId === "medaillon"} noms={nomsA} titre={revId === "medaillon" ? ({ fr: "Grattez le médaillon pour découvrir la date", en: "Scratch the medallion to reveal the date", ar: "اخدشوا الميدالية لاكتشاف التاريخ" } as Record<string, string>)[langue] : t.gratter} bouton={({ fr: "Passer · voir la date", en: "Skip · show the date", ar: "تخطي · عرض التاريخ" } as Record<string, string>)[langue]} onFini={() => setPhase("ouverte")} sous={sousDate} />);
       })()}
       {aMusique && phase !== "fermee" && (<button type="button" className="inv-musique" onClick={basculerSon} aria-pressed={son} aria-label={son ? "Couper la musique" : "Activer la musique"} data-testid="invitation-musique">{son ? "♪" : "♪̸"}</button>)}
       {phase === "ouverte" && (<>
-        <article className={`inv-carte inv-orn-${ornement}${ouv.carte ? ` inv-carte-film inv-cf-${ouv.id}` : ""}`} data-testid="invitation-carte"
+        <article className={`inv-carte inv-orn-${ornement}${ouv.carte ? ` inv-carte-film inv-cf-${ouv.id}` : ""}${fondCarte && !sortie ? " inv-sans-entree" : ""}`} data-testid="invitation-carte"
           style={ouv.carte ? ({ "--film-r": ouv.carte.r ?? 180, "--film-fin": `url(${ouv.carte.fin})`, "--film-x": ouv.carte.x, "--film-y": ouv.carte.y, "--film-l": ouv.carte.l, "--film-h": ouv.carte.h, "--film-fond": ouv.carte.fond } as CSSProperties) : undefined}>
           <div className="inv-etincelles" aria-hidden="true">{ETINCELLES.map((e, i) => <span key={i} style={{ left: `${e.x}%`, animationDelay: `${e.d}ms`, animationDuration: `${e.t + 900}ms`, width: e.s, height: e.s }} />)}</div>
           <div className="inv-motif" aria-hidden="true" />
@@ -418,7 +442,11 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           <h1 ref={nomsRef} tabIndex={-1} className="inv-noms" data-testid="rsvp-noms" aria-label={nomsA}>
             {lignes.length === 2 ? (<><Lettres texte={lignes[0]} base={0} ar={langue === "ar"} /><span className="inv-et" aria-hidden="true">{langue === "ar" ? "و" : "&"}</span><Lettres texte={lignes[1]} base={lignes[0].length + 2} ar={langue === "ar"} /></>) : <Lettres texte={nomsA} base={0} ar={langue === "ar"} />}</h1>
           <Trait />
-          {dp && (
+          {dp && revEnLigne && !sansAnimation() && (<>
+            <Revelation enLigne rond={revId === "medaillon"} noms={nomsA} titre={revId === "medaillon" ? ({ fr: "Grattez le médaillon pour découvrir la date", en: "Scratch the medallion to reveal the date", ar: "اخدشوا الميدالية لاكتشاف التاريخ" } as Record<string, string>)[langue] : t.gratter} bouton={({ fr: "Passer · voir la date", en: "Skip · show the date", ar: "تخطي · عرض التاريخ" } as Record<string, string>)[langue]} onFini={() => {}} sous={{ haut: maj(part("weekday")), jour: part("day"), bas: `${part("month")} ${part("year")}` }} />
+            <span className="inv-sr-seul" data-testid="invitation-date">{maj(part("weekday"))} {part("day")} {part("month")} {part("year")}</span>
+          </>)}
+          {dp && !(revEnLigne && !sansAnimation()) && (
             <div className="inv-date" data-testid="invitation-date">
               <bdi className="inv-date-cote">{maj(part("weekday"))}</bdi>
               <span className="inv-date-jour">{part("day")}</span>

@@ -13,6 +13,8 @@ interface Props {
   onOuvrir: () => void;
   libelle: string;
   nomsRef: Ref<HTMLElement>;
+  /** la carte déjà écrite, visible derrière les battants qui s'ouvrent */
+  fond?: ReactNode;
   noms: ReactNode;
   /** prénoms en texte simple, pour le nom accessible du bouton */
   nomsTexte?: string;
@@ -46,7 +48,19 @@ function Defs() {
   );
 }
 
-export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, noms, nomsTexte, initiales, libelleBouton, onFilm, sansCachet }: Props) {
+/** Met la carte écrite à l'échelle de la porte : même largeur que la vraie carte, réduite pour tenir dans l'ouverture. */
+function useEchelleFond(ref: React.RefObject<HTMLElement>, actif: boolean) {
+  useEffect(() => {
+    const el = ref.current; if (!actif || !el) return;
+    const porte = el.closest<HTMLElement>(".inv-porte"); if (!porte) return;
+    const maj = () => { const col = document.querySelector<HTMLElement>(".inv-colonne"); const cw = Math.min(440, col?.clientWidth || 440); el.style.setProperty("--cw", `${cw}px`); el.style.setProperty("--k", String(porte.clientWidth / cw)); };
+    maj(); const ro = new ResizeObserver(maj); ro.observe(porte); return () => ro.disconnect();
+  }, [ref, actif]);
+}
+
+export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, noms, nomsTexte, initiales, libelleBouton, onFilm, sansCachet, fond }: Props) {
+  const fondRef = useRef<HTMLSpanElement>(null);
+  useEchelleFond(fondRef, !!fond);
   const def = ouvertureDe(type);
   const [echec, setEchec] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
@@ -61,7 +75,7 @@ export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, nom
       if (v && !fini) {
         const t = v.currentTime, d = v.duration;
         if (def.zoom && t >= def.zoom.de && !v.dataset.zoom) v.dataset.zoom = "1";
-        if ((def.zoom && t >= def.zoom.fin) || (d && isFinite(d) && t > 0.5 && d - t < 0.4)) { fini = true; onFilm?.("ended"); return; }
+        if ((def.zoom && t >= def.zoom.fin) || (def.carte?.stop && t >= def.carte.stop) || (d && isFinite(d) && t > 0.5 && d - t < 0.4)) { fini = true; onFilm?.("ended"); return; }
       }
       raf = requestAnimationFrame(suivre);
     };
@@ -92,7 +106,8 @@ export default function Ouverture({ type, phase, onOuvrir, libelle, nomsRef, nom
       <button type="button" className={`inv-porte inv-o-${type}${sansCachet ? " inv-o-sans-cachet" : ""}`} onClick={onOuvrir} disabled={phase !== "fermee"} aria-label={nomsTexte ? `${libelleBouton} — ${nomsTexte}` : libelleBouton} data-testid="invitation-ouvrir" data-ouverture={type}
         onPointerMove={(e) => { if (phase !== "fermee" || e.pointerType === "mouse") return; const b = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--px", `${((e.clientX - b.left) / b.width - .5) * -12}px`); e.currentTarget.style.setProperty("--py", `${((e.clientY - b.top) / b.height - .5) * -12}px`); }}>
         <span className="inv-o-monde" aria-hidden="true">
-        <span className="inv-o-lueur" />
+        <span className={`inv-o-lueur${fond ? " inv-o-lueur-fond" : ""}`} />
+        {fond && <span className="inv-o-fond-carte" aria-hidden="true" ref={fondRef}>{fond}</span>}
         <span className="inv-o-battants" aria-hidden="true">
           <span className="inv-o-battant inv-o-g" />
           <span className="inv-o-battant inv-o-d" />

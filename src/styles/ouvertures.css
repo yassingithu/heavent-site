@@ -216,8 +216,8 @@
 .inv-cf-v-porte-blanche .inv-film-zone > .inv-petit { font-size: max(10px, 2.7cqw); letter-spacing: .1em; line-height: 1.5; text-wrap: balance; overflow-wrap: anywhere; }
 .inv-cf-v-porte-blanche .inv-film-zone > :is(.inv-heure, .inv-lieu) { font-size: max(11.5px, 3.1cqw); }
 .inv-cf-v-porte-blanche .inv-film-zone > .inv-repondre { font-size: max(11px, 2.9cqw); letter-spacing: .1em; margin-top: 10px; }
-.inv-page .inv-carte.inv-carte-film .inv-lettre { animation-delay: calc(.6s + var(--i) * 45ms); }
-.inv-page .inv-carte.inv-carte-film .inv-film-zone > :is(.inv-petit, .inv-date, .inv-heure, .inv-lieu, .inv-repondre, .inv-defiler) { animation-delay: .85s; }
+.inv-page .inv-carte.inv-carte-film .inv-lettre { animation-delay: calc(.15s + var(--i) * 40ms); }
+.inv-page .inv-carte.inv-carte-film .inv-film-zone > :is(.inv-petit, .inv-date, .inv-heure, .inv-lieu, .inv-repondre, .inv-defiler) { animation-delay: .45s; }
 
 /* Battants : tranche en laiton à l'intérieur et ombre de charnière (portes marocaine et portail) */
 :is(.inv-o-marocaine, .inv-o-fer, .inv-o-moucharabieh, .inv-o-zellige, .inv-o-riad) .inv-o-battant::before { content: ""; position: absolute; top: 0; bottom: 0; width: 4px; z-index: 3; background: linear-gradient(180deg, #E4D49A, #8C6D22 50%, #E4D49A); box-shadow: 0 0 6px rgba(0, 0, 0, .45); }
@@ -483,3 +483,32 @@
 .inv-g-lueur { inset: -30% -60%; }
 .inv-g-scene { min-height: 260px; }
 .inv-g-passer { color: var(--inv-sur-fond, var(--inv-texte)); opacity: .85; }
+
+/* Révélation (cœur à gratter) posée directement sur la carte du film : plus de page blanche */
+.inv-rev-sur-carte { display: flex; align-items: center; justify-content: center; min-height: calc(var(--film-r, 180) * 1cqw); animation: inv-rev-carte .3s ease both; }
+.inv-rev-sur-carte .inv-rev { --inv-sur-fond: #3a2f22; min-height: 0; padding: 0; color: #3a2f22; }
+.inv-rev-sur-carte .inv-rev-noms { color: #3a2f22; }
+@keyframes inv-rev-carte { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .inv-rev-sur-carte { animation: none; } }
+
+/* Cœur à gratter inscrit sur la carte, à la place de la date */
+.inv-rev-ligne { min-height: 0; padding: 0; margin-top: 4px; gap: 8px; color: var(--inv-texte, #3a2f22); zoom: .82; }
+.inv-rev-ligne .inv-rev-aide { color: inherit; }
+.inv-rev-ligne .inv-g-passer { color: inherit; }
+
+/* La carte écrite derrière les battants : les portes s'ouvrent sur le vrai texte */
+.inv-o-lueur-fond { background: none; }
+.inv-o-fond-carte { position: absolute; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; }
+.inv-o-fond-carte { --k: .8; --cw: 440px; }
+.inv-o-fond-carte .inv-fond-statique { position: absolute; top: 0; left: 0; width: var(--cw); max-width: none; margin: 0; box-sizing: border-box; transform-origin: top left; transform: scale(var(--k)) !important; animation: none !important; border-radius: 0; box-shadow: none; }
+.inv-o-fond-carte .inv-fond-statique:not(.inv-carte-film) { height: calc(100% / var(--k)); }
+.inv-o-fond-carte .inv-fond-statique:not(.inv-carte-film) { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.inv-fond-statique *, .inv-fond-statique *::before, .inv-fond-statique *::after { animation: none !important; transition: none !important; }
+.inv-fond-statique :is(.inv-lettre, .inv-mot, .inv-petit, .inv-date, .inv-heure, .inv-lieu) { opacity: 1 !important; transform: none !important; filter: none !important; }
+.inv-fond-statique .inv-film-zone > * { opacity: 1 !important; transform: none; }
+.inv-fond-statique .inv-film-zone > .inv-date { transform: scale(.8) !important; }
+/* la vraie carte arrive sans rejouer l'écriture : le texte est déjà là */
+.inv-carte.inv-sans-entree { animation: none !important; opacity: 1 !important; }
+.inv-carte.inv-sans-entree, .inv-carte.inv-sans-entree :is(.inv-lettre, .inv-mot, .inv-petit, .inv-date, .inv-heure, .inv-lieu, .inv-trait, .inv-film-zone > *) { animation: none !important; }
+
+.inv-carte.inv-sans-entree :is(.inv-lettre, .inv-mot, .inv-petit, .inv-date, .inv-heure, .inv-lieu, .inv-film-zone > *) { opacity: 1 !important; }
