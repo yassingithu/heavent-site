@@ -427,33 +427,46 @@
 .inv-page:has(.inv-porte:not(.inv-o-video)) .inv-langues button[aria-pressed="true"] { background: #fff; color: #141414; }
 
 /* Révélations au geste : bougies, lanterne, ballon */
-.inv-g-scene { position: relative; width: min(64vw, 250px); min-height: 200px; display: grid; place-items: center; cursor: pointer; touch-action: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-.inv-g-svg { width: 100%; height: auto; overflow: visible; }
-.inv-g-date { display: grid; justify-items: center; gap: 2px; opacity: 0; transform: translateY(8px); transition: opacity .5s ease .4s, transform .5s cubic-bezier(.2,.7,.2,1) .4s; color: var(--inv-texte); }
-.inv-g-date b { font-family: var(--inv-titre); font-weight: 400; font-size: 44px; line-height: 1; }
-.inv-g-date small { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--inv-accent); }
-.inv-g.is-fini .inv-g-date { opacity: 1; transform: none; }
-.inv-g.is-fini .inv-aide, .inv-g.is-fini .inv-rev-bouton { opacity: 0; pointer-events: none; transition: opacity .3s; }
+.inv-g-scene { position: relative; width: min(64vw, 250px); min-height: 200px; display: grid; place-items: center; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.inv-g { transition: opacity .35s ease, transform .35s ease; }
+.inv-g.is-sortie { opacity: 0; transform: translateY(-6px); }
+.inv-g-svg, .inv-g-img { width: 100%; height: auto; overflow: visible; }
+.inv-g-date { display: grid; justify-items: center; gap: 2px; opacity: 0; transform: translateY(8px); filter: blur(4px); transition: opacity .5s ease .4s, transform .5s cubic-bezier(.2,.7,.2,1) .4s, filter .5s ease .4s; color: var(--inv-texte); }
+.inv-g-date b { font-family: var(--inv-titre); font-weight: 400; font-size: 48px; line-height: 1; }
+.inv-g-date small { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--inv-accent); }
+.inv-g.is-fini .inv-g-date { opacity: 1; transform: none; filter: none; }
+.inv-g.is-fini .inv-aide, .inv-g.is-fini .inv-g-passer { opacity: 0; pointer-events: none; transition: opacity .3s; }
+.inv-g .inv-aide { font-size: 13px; letter-spacing: .08em; color: var(--inv-texte); opacity: .8; max-width: 26ch; text-align: center; }
+.inv-g.is-indice .inv-aide { opacity: 1; animation: inv-g-indice .5s ease; }
+@keyframes inv-g-indice { 0%, 100% { transform: none; } 30% { transform: translateY(-3px); } 60% { transform: translateY(1px); } }
+.inv-g-passer { min-height: 44px; padding: 8px 14px; background: none; border: 0; font: inherit; font-size: 13px; letter-spacing: .06em; color: var(--inv-texte); opacity: .7; text-decoration: underline; text-decoration-color: #A8933F; text-underline-offset: 4px; cursor: pointer; }
 .inv-g-jauge { position: absolute; left: 14%; right: 14%; bottom: 2px; height: 3px; background: rgba(168, 147, 63, .25); border-radius: 2px; overflow: hidden; }
-.inv-g-jauge i { display: block; height: 100%; background: #A8933F; transform-origin: left; transform: scaleX(0); }
-.inv-g-flamme { transform-box: fill-box; transform-origin: 50% 100%; transition: transform .6s cubic-bezier(.3,0,.6,1), opacity .18s ease; }
+.inv-g-jauge i { display: block; height: 100%; background: #8C6D22; transform-origin: left; transform: scaleX(0); transition: transform .25s ease-out; }
+.inv-g-bougies.is-geste .inv-g-jauge i { transform: scaleX(1); transition: transform 1.2s linear; }
+.inv-g-bougies.is-fini .inv-g-jauge { opacity: 0; transition: opacity .3s; }
+.inv-g-flamme { transform-box: fill-box; transform-origin: 50% 100%; animation: inv-g-vibre 1.6s ease-in-out infinite; transition: opacity .18s ease; }
+@keyframes inv-g-vibre { 0%, 100% { transform: scaleY(.95) rotate(-2deg); } 50% { transform: scaleY(1.05) rotate(2deg); } }
 .inv-g-fumee { opacity: 0; }
-.inv-g-bougies.is-geste .inv-g-flamme { transform: rotate(-8deg) scaleY(.9); }
-.inv-g-bougies.is-fini .inv-g-flamme { opacity: 0; }
+.inv-g-bougies.is-geste .inv-g-flamme { animation: inv-g-penche 1.2s linear both; }
+@keyframes inv-g-penche { to { transform: rotate(-14deg) scaleY(.85); } }
+.inv-g-bougies.is-fini .inv-g-flamme { opacity: 0; animation: none; }
 .inv-g-bougies.is-fini .inv-g-fumee { animation: inv-g-fumee .7s ease-out both; }
+.inv-g-bougies.is-fini .inv-g-fumee:nth-of-type(2) { animation-delay: .08s; }
 @keyframes inv-g-fumee { 0% { opacity: .5; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-24px); } }
-.inv-g-lanterne .inv-g-lueur, .inv-g-lanterne .inv-g-svg > path { transition: opacity .45s cubic-bezier(.2,.7,.2,1); }
-.inv-g-lanterne:not(.is-geste):not(.is-fini) .inv-g-svg { opacity: .55; }
-.inv-g-lanterne .inv-g-svg { transition: opacity .45s cubic-bezier(.2,.7,.2,1); }
-.inv-g-lanterne.is-geste .inv-g-lueur, .inv-g-lanterne.is-fini .inv-g-lueur { opacity: .85; }
-.inv-g-lanterne.is-geste .inv-g-halo, .inv-g-lanterne.is-fini .inv-g-halo { opacity: .18; animation: inv-g-halo .65s cubic-bezier(.2,.7,.2,1) both; }
-@keyframes inv-g-halo { from { transform: scale(.6); } to { transform: scale(1); } }
-.inv-g-halo { transform-box: fill-box; transform-origin: center; transition: opacity .45s; }
+.inv-g-lanterne .inv-g-svg, .inv-g-lanterne .inv-g-img { transition: opacity .45s cubic-bezier(.2,.7,.2,1); }
+.inv-g-lanterne:not(.is-geste):not(.is-fini) :is(.inv-g-svg, .inv-g-img) { opacity: .85; }
+.inv-g-lueur { position: absolute; inset: -18%; border-radius: 50%; background: radial-gradient(circle, rgba(232, 190, 90, .55) 0%, rgba(232, 190, 90, .22) 38%, transparent 68%); opacity: 0; transform: scale(.6); transition: opacity .45s cubic-bezier(.2,.7,.2,1), transform .65s cubic-bezier(.2,.7,.2,1); pointer-events: none; }
+.inv-g-lanterne.is-geste .inv-g-lueur, .inv-g-lanterne.is-fini .inv-g-lueur { opacity: 1; transform: scale(1); }
+.inv-g-lanterne.is-fini .inv-g-lueur { animation: inv-g-respire 3s ease-in-out 1s infinite; }
+@keyframes inv-g-respire { 0%, 100% { opacity: .85; } 50% { opacity: 1; } }
+.inv-g-lanterne .inv-g-svg .inv-g-lueur-svg { opacity: 0; transition: opacity .45s; }
+.inv-g-lanterne.is-geste .inv-g-lueur-svg, .inv-g-lanterne.is-fini .inv-g-lueur-svg { opacity: .85; }
+.inv-g.is-geste .inv-g-ballon, .inv-g.is-fini .inv-g-ballon { opacity: 0; transform: scale(1.06); transition: transform .12s, opacity .06s .12s; }
+@media (hover: hover) { .inv-g-ballon:hover { transform: scale(1.03); transition: transform .12s; } }
 .inv-g-ballon { transform-box: fill-box; transform-origin: 50% 100%; }
-.inv-g-ballon:hover { transform: scale(1.03); transition: transform .12s; }
-.inv-g-ballon.x, .inv-g-ballon { transition: transform .12s, opacity .06s .12s; }
-.inv-g-ballon.is-geste, .inv-g-ballon.is-fini { opacity: 0; }
-.inv-g-ballon:is(.is-geste *), .inv-g-ballon:is(.is-fini *) { opacity: 0; transform: scale(1.06); }
-.inv-g-conf { transform-box: fill-box; transform-origin: center; animation: inv-g-conf .6s cubic-bezier(.1,.7,.3,1) both; }
-@keyframes inv-g-conf { from { transform: rotate(var(--a)) translateY(0); opacity: 1; } to { transform: rotate(var(--a)) translateY(-95px) rotate(200deg); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .inv-g *, .inv-g *::before { animation: none !important; transition: none !important; } .inv-g-date { opacity: 0; } .inv-g.is-fini .inv-g-date { opacity: 1; transform: none; } }
+.inv-g-conf { transform-box: fill-box; transform-origin: center; animation: inv-g-conf .7s cubic-bezier(.1,.7,.3,1) both; }
+@keyframes inv-g-conf { from { transform: rotate(var(--a)) translateY(0) rotate(0); opacity: 1; } to { transform: rotate(var(--a)) translateY(calc(var(--d) * -1.2)) rotate(var(--r)); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .inv-g *, .inv-g *::before { animation: none !important; transition: none !important; } .inv-g-conf { display: none; } .inv-g-bougies.is-fini .inv-g-flamme { opacity: 0; } .inv-g-date { filter: none; opacity: 0; } .inv-g.is-fini .inv-g-date { opacity: 1; transform: none; } }
+.inv-rev-anneau { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; transition: opacity .6s; }
+.is-fini .inv-rev-anneau { opacity: 1; }
+.inv-rev-coeur:has(.inv-rev-anneau) .inv-rev-sous { padding-bottom: 0; }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 /** Cœur doré à gratter : le doigt (ou la souris) découvre la date. Bouton « Découvrir » toujours présent, et
  *  révélation d'office après quelques secondes sans geste : personne ne reste bloqué. */
-const L = 260, H = 240, ROND = "M130 10A110 110 0 1 1 129.99 10Z", COEUR = "M130 225C20 150 0 90 0 62C0 26 28 2 64 2C92 2 116 18 130 44C144 18 168 2 196 2C232 2 260 26 260 62C260 90 240 150 130 225Z";
+const L = 260, H = 240, ROND = "M20 120A110 110 0 0 1 240 120A110 110 0 0 1 20 120Z", COEUR = "M130 225C20 150 0 90 0 62C0 26 28 2 64 2C92 2 116 18 130 44C144 18 168 2 196 2C232 2 260 26 260 62C260 90 240 150 130 225Z";
 const SEUIL = 0.5;
 
 /** `secret` : le contenu n'existe pas dans la page tant que l'invité n'a pas gratté (rien à lire dans le code ni au lecteur d'écran). */
@@ -34,8 +34,8 @@ export default function Revelation({ sous, titre, bouton, noms, onFini, secret =
     const d = g.createLinearGradient(0, 0, L, H);
     d.addColorStop(0, couleur); d.addColorStop(0.45, "#f3e3a8"); d.addColorStop(1, couleur);
     g.fillStyle = d; g.fillRect(0, 0, L, H);
-    g.globalAlpha = 0.16; g.fillStyle = "#000";
-    for (let i = 0; i < 380; i++) g.fillRect(Math.random() * L, Math.random() * H, 1.4, 1.4);
+    g.globalAlpha = rond ? 0.05 : 0.16; g.fillStyle = "#000";
+    for (let i = 0; i < (rond ? 90 : 380); i++) g.fillRect(Math.random() * L, Math.random() * H, 1.4, 1.4);
     g.globalAlpha = 1;
     g.globalCompositeOperation = "destination-out"; g.lineWidth = 30; g.lineCap = "round"; g.lineJoin = "round";
     let bas = false, px = 0, py = 0;
@@ -61,7 +61,7 @@ export default function Revelation({ sous, titre, bouton, noms, onFini, secret =
       else if (Date.now() - dernier.current > 9000) reveler();
     }, 280);
     return () => { window.clearInterval(mesure); c.removeEventListener("pointerdown", down); c.removeEventListener("pointermove", move); c.removeEventListener("pointerup", up); c.removeEventListener("pointercancel", up); };
-  }, [reveler, FORME]);
+  }, [reveler, FORME, rond]);
 
   return (
     <div className={`inv-rev ${fini ? "is-fini" : ""}`} data-testid="invitation-revelation">
@@ -69,6 +69,7 @@ export default function Revelation({ sous, titre, bouton, noms, onFini, secret =
       <div className="inv-rev-cadre"><div className="inv-rev-coeur" style={{ clipPath: `path('${FORME}')`, WebkitClipPath: `path('${FORME}')` }}>
         {sous && (!secret || fini) && <div className="inv-rev-sous" aria-hidden={!fini}><small>{sous.haut}</small><b>{sous.jour}</b><small>{sous.bas}</small></div>}
         <canvas ref={cv} className="inv-rev-gratte" aria-hidden="true" />
+        {rond && <svg className="inv-rev-anneau" viewBox="0 0 260 240" aria-hidden="true"><circle cx="130" cy="120" r="104" fill="none" stroke="#8C6D22" strokeWidth="1.5" /><circle cx="130" cy="120" r="96" fill="none" stroke="#8C6D22" strokeWidth=".8" opacity=".7" /></svg>}
       </div></div>
       <p className={`inv-aide inv-rev-aide ${aGratte ? "is-vu" : ""}`}>{titre}</p>
       <button type="button" className="inv-rev-bouton" onClick={reveler} data-testid="invitation-decouvrir">{bouton}</button>

@@ -195,7 +195,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   }, [ouvChoisie.id]);
   const ouv = secours ? ouvertureDe(undefined) : ouvChoisie;
   const revId = revelationDe(reglages?.revelation).id;
-  const avecRevelation = revId !== "aucune" && revelationsPour(ev.id).some((r) => r.id === revId) && !sansAnimation();
+  const avecRevelation = !!date && revId !== "aucune" && revelationsPour(ev.id).some((r) => r.id === revId) && !sansAnimation();
   const [phase, setPhase] = useState<"fermee" | "ouverture" | "revelation" | "ouverte">(ouverte || sansAnimation() ? "ouverte" : "fermee");
 
   useEffect(() => () => {
@@ -279,7 +279,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const terminerRef = useRef(terminer); terminerRef.current = terminer;
   useEffect(() => {
     if (phase !== "ouverture") return;
-    const court = reglages?.fermeture === "ruban" ? 1850 : reglages?.fermeture === "cire-brisee" ? 2100 : Infinity;
+    const court = ["ruban", "ficelle", "washi", "tissu"].includes(reglages?.fermeture ?? "") ? 1850 : reglages?.fermeture === "cire-brisee" ? 2100 : Infinity;
     const id = window.setTimeout(() => terminerRef.current(), sansAnimation() ? 0 : Math.min(ouv.duree, court) + (ouv.video ? 3000 : 0));
     const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     const surChangement = () => { if (mq?.matches) terminerRef.current(); };
@@ -376,7 +376,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       {(phase === "fermee" || phase === "ouverture") && ouv.id === "enveloppe" && (
         <div className="inv-scene">
           <span className="inv-env-ombre" aria-hidden="true" />
-          <button type="button" className="inv-enveloppe" data-fermeture={reglages?.fermeture ?? "cachet"} data-papier={reglages?.papier} data-doublure={reglages?.doublure} onClick={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); lancerMusique(); setPhase("ouverture"); }} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
+          <button type="button" className="inv-enveloppe" data-fermeture={["ficelle", "washi", "tissu"].includes(reglages?.fermeture ?? "") ? "ruban" : (reglages?.fermeture ?? "cachet")} data-fixation={reglages?.fermeture} data-papier={reglages?.papier} data-doublure={reglages?.doublure} onClick={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); lancerMusique(); setPhase("ouverture"); }} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
             <span className="inv-env-fond" />
             <span className="inv-env-carte" data-orn={ornement}><span><em ref={emRef}>{lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}</em></span></span>
             <span className="inv-fl inv-fl-b"><i /></span>

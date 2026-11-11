@@ -10,14 +10,14 @@ export const DECORS: DecorDef[] = [
   { id: "khatam", nom: "Étoile khatam", pour: ["iftar", "henne", "naissance", "circoncision", "fiancailles", "mariage", "mariage-civil", "diplome"] },
   { id: "olivier", nom: "Branche d'olivier", pour: ["baby-shower", "naissance", "bapteme", "fiancailles", "mariage", "mariage-civil", "anniversaire", "anniversaire-enfant", "diplome"] },
   { id: "bougies", nom: "Bougies", pour: ["anniversaire", "anniversaire-enfant"] },
-  { id: "maillot", nom: "Maillot de foot", pour: ["anniversaire-enfant"] },
-  { id: "enfant-foot", nom: "Petit footballeur", pour: ["anniversaire-enfant"] },
-  { id: "enfant-medecin", nom: "Petit médecin", pour: ["anniversaire-enfant"] },
-  { id: "enfant-police", nom: "Petit policier", pour: ["anniversaire-enfant"] },
-  { id: "enfant-avion", nom: "Petit pilote", pour: ["anniversaire-enfant"] },
+  { id: "maillot", nom: "Maillot au prénom", pour: ["anniversaire-enfant"] },
+  { id: "enfant-foot", nom: "Footballeur (dessin)", pour: ["anniversaire-enfant"] },
+  { id: "enfant-medecin", nom: "Médecin", pour: ["anniversaire-enfant"] },
+  { id: "enfant-police", nom: "Policier", pour: ["anniversaire-enfant"] },
+  { id: "enfant-avion", nom: "Pilote", pour: ["anniversaire-enfant"] },
   { id: "enfant-safari", nom: "Safari", pour: ["anniversaire-enfant", "baby-shower"] },
   { id: "enfant-dino", nom: "Dinosaure", pour: ["anniversaire-enfant"] },
-  { id: "enfant-princesse", nom: "Petite princesse", pour: ["anniversaire-enfant"] },
+  { id: "enfant-princesse", nom: "Princesse", pour: ["anniversaire-enfant"] },
 ];
 export const decorsPour = (ev?: TypeEvenement) => DECORS.filter((d) => !d.pour || d.pour.includes(ev ?? "mariage"));
 export const decorDe = (id?: string) => DECORS.find((d) => d.id === id) ?? DECORS[0];

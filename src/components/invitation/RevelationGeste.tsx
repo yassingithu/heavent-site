@@ -11,7 +11,7 @@ const T: Record<TypeGeste, { aide: Record<string, string>; bouton: Record<string
   ballon: { aide: { fr: "Touchez le ballon pour le faire éclater", en: "Tap the balloon to pop it", ar: "المسوا البالون ليفرقع" }, bouton: { fr: "Éclater", en: "Pop", ar: "فرقعوا" } },
 };
 
-function Scene({ type, etat, confettis }: { type: TypeGeste; etat: "attente" | "geste" | "fini"; confettis: number[] }) {
+function Scene({ type, etat, reduit }: { type: TypeGeste; etat: "attente" | "geste" | "fini"; reduit: boolean }) {
   const or = "#A8933F";
   if (type === "bougies") return (
     <svg viewBox="0 0 220 200" aria-hidden="true" className="inv-g-svg">
@@ -45,54 +45,67 @@ function Scene({ type, etat, confettis }: { type: TypeGeste; etat: "attente" | "
         <path d="M100 172c-10 14 10 26 0 40" fill="none" stroke={or} strokeWidth="1.8" />
         <path d="M66 52c6-14 20-22 34-22" fill="none" stroke={or} strokeWidth="2" opacity=".5" strokeLinecap="round" />
       </g>
-      {etat !== "attente" && confettis.map((a, i) => (
-        <rect key={i} className="inv-g-conf" x="98" y="84" width="6" height="10" rx="1" fill={or} style={{ ["--a" as string]: `${a}deg`, animationDelay: `${(i % 4) * 0.03}s`, opacity: i % 2 ? 0.55 : 0.95 }} />
+      {etat !== "attente" && !reduit && CONFETTIS.map((c, i) => (
+        <rect key={i} className="inv-g-conf" x="98" y="84" width={c.t === 0 ? 5 : 8} height={c.t === 2 ? 6 : 11} rx="1" fill={or} style={{ ["--a" as string]: `${c.a}deg`, ["--d" as string]: `${c.d}px`, ["--r" as string]: `${c.r}deg`, animationDelay: `${(i % 4) * 0.03}s` }} />
       ))}
     </svg>
   );
 }
 
+const CONFETTIS = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((a, i) => ({ a, d: 70 + ((i * 37) % 50), r: 120 + ((i * 53) % 160), t: i % 3 }));
+const PASSER: Record<string, string> = { fr: "Passer · voir la date", en: "Skip · show the date", ar: "تخطي · عرض التاريخ" };
+const AIDE_REDUIT: Record<string, string> = { fr: "Touchez le gâteau pour souffler les bougies", en: "Tap the cake to blow out the candles", ar: "المسوا الكعكة لإطفاء الشموع" };
+
 export default function RevelationGeste({ type, langue, noms, sous, onFini }: Props) {
   const [etat, setEtat] = useState<"attente" | "geste" | "fini">("attente");
-  const [jauge, setJauge] = useState(0);
+  const [indice, setIndice] = useState(false);
+  const [sortie, setSortie] = useState(false);
   const fini = useRef(false);
-  const depart = useRef(0);
-  const trame = useRef(0);
+  const minuteurs = useRef<number[]>([]);
+  const maintien = useRef(0);
+  const auto = useRef(0);
   const finiRef = useRef(onFini); finiRef.current = onFini;
   const reduit = typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  const confettis = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
+  const later = (f: () => void, ms: number) => { const id = window.setTimeout(f, ms); minuteurs.current.push(id); return id; };
 
   const terminer = () => {
     if (fini.current) return;
-    fini.current = true; cancelAnimationFrame(trame.current); setJauge(1); setEtat("fini");
-    window.setTimeout(() => finiRef.current(), reduit ? 600 : 1900);
+    fini.current = true; window.clearTimeout(maintien.current); window.clearTimeout(auto.current); setEtat("fini");
+    later(() => setSortie(true), reduit ? 300 : 2300);
+    later(() => finiRef.current(), reduit ? 600 : 2650);
   };
-  const toucher = () => { if (type === "bougies") return; if (!fini.current) { setEtat("geste"); window.setTimeout(terminer, reduit ? 0 : 450); } };
+  const armerAuto = () => { window.clearTimeout(auto.current); auto.current = window.setTimeout(terminer, 12000); };
+  const toucher = () => {
+    if (fini.current) return;
+    if (type === "bougies") { setIndice(true); later(() => setIndice(false), 1400); return; }
+    setEtat("geste"); later(terminer, reduit ? 0 : 450);
+  };
   const appuyer = () => {
     if (type !== "bougies" || fini.current) return;
     if (reduit) { terminer(); return; }
-    depart.current = performance.now(); setEtat("geste");
-    const pas = () => { const p = Math.min(1, (performance.now() - depart.current) / 1200); setJauge(p); if (p >= 1) terminer(); else trame.current = requestAnimationFrame(pas); };
-    trame.current = requestAnimationFrame(pas);
+    setEtat("geste"); window.clearTimeout(auto.current);
+    maintien.current = window.setTimeout(terminer, 1200);
   };
-  const relacher = () => { if (type !== "bougies" || fini.current) return; cancelAnimationFrame(trame.current); setJauge(0); setEtat("attente"); };
-  useEffect(() => () => cancelAnimationFrame(trame.current), []);
-  /* Rien ne bloque l'invité : sans geste après 12 s, la date apparaît d'elle-même. */
-  useEffect(() => { const id = window.setTimeout(terminer, 12000); return () => window.clearTimeout(id); }, []);
+  const relacher = () => {
+    if (type !== "bougies" || fini.current) return;
+    window.clearTimeout(maintien.current); setEtat("attente"); armerAuto();
+  };
+  useEffect(() => { armerAuto(); return () => { window.clearTimeout(auto.current); window.clearTimeout(maintien.current); minuteurs.current.forEach((id) => window.clearTimeout(id)); }; }, []);
 
-  const secours = () => { if (type === "bougies") terminer(); else { setEtat("geste"); window.setTimeout(terminer, reduit ? 0 : 300); } };
+  const secours = () => { if (type === "bougies") terminer(); else { setEtat("geste"); later(terminer, reduit ? 0 : 300); } };
+  const aide = type === "bougies" && reduit ? AIDE_REDUIT[langue] : T[type].aide[langue];
   return (
-    <div className={`inv-rev inv-g inv-g-${type} is-${etat}`} data-testid="invitation-revelation" data-type={type}>
+    <div className={`inv-rev inv-g inv-g-${type} is-${etat}${indice ? " is-indice" : ""}${sortie ? " is-sortie" : ""}`} data-testid="invitation-revelation" data-type={type}>
       <p className="inv-rev-noms">{noms}</p>
-      <div className="inv-g-scene" role="button" tabIndex={0} aria-label={T[type].aide[langue]}
+      <div className="inv-g-scene" role="button" tabIndex={0} aria-label={aide} onContextMenu={(e) => e.preventDefault()}
         onPointerDown={appuyer} onPointerUp={relacher} onPointerLeave={relacher} onPointerCancel={relacher} onClick={toucher}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); secours(); } }}>
-        <Scene type={type} etat={etat} confettis={confettis} />
-        {type === "bougies" && <span className="inv-g-jauge" aria-hidden="true"><i style={{ transform: `scaleX(${jauge})` }} /></span>}
+        <Scene type={type} etat={etat === "fini" ? "fini" : etat === "geste" ? "geste" : "attente"} reduit={reduit} />
+        {type === "bougies" && <span className="inv-g-jauge" aria-hidden="true"><i /></span>}
       </div>
-      {sous && <div className="inv-g-date" aria-hidden={etat !== "fini"}><small>{sous.haut}</small><b>{sous.jour}</b><small>{sous.bas}</small></div>}
-      <p className="inv-aide inv-rev-aide">{T[type].aide[langue]}</p>
-      <button type="button" className="inv-rev-bouton" onClick={secours} data-testid="invitation-decouvrir">{T[type].bouton[langue]}</button>
+      {sous && <div className="inv-g-date" aria-live="polite" aria-hidden={etat !== "fini"}><small>{sous.haut}</small><b>{sous.jour}</b><small>{sous.bas}</small></div>}
+      <p className="inv-aide inv-rev-aide">{aide}</p>
+      <button type="button" className="inv-g-passer" onClick={secours} data-testid="invitation-decouvrir">{PASSER[langue]}</button>
     </div>
   );
 }

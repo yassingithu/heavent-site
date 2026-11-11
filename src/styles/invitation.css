@@ -632,3 +632,23 @@
 /* Personnages enfants : illustrations gouache détourées */
 .inv-decor-perso { width: min(54vw, 230px); max-height: 250px; }
 .inv-decor-perso img { display: block; max-width: 100%; max-height: 250px; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .18)); }
+
+/* Fermetures « objet » : ficelle, washi, languette de tissu (réutilisent le mouvement du ruban) */
+.inv-enveloppe[data-fixation="ficelle"] .inv-env-ruban i { top: 50%; bottom: auto; height: 3px; margin-top: -1px; background: repeating-linear-gradient(115deg, #CDB98F 0 3px, #B59F72 3px 5px); box-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
+.inv-enveloppe[data-fixation="ficelle"] .inv-env-ruban b { width: 18px; height: 18px; margin: -9px 0 0 -9px; background: radial-gradient(circle at 35% 30%, #E3D3AE, #B59F72); box-shadow: 0 2px 3px rgba(0, 0, 0, .35); }
+.inv-enveloppe[data-fixation="ficelle"] .inv-env-ruban u { width: 14px; height: 54px; margin-left: -7px; background: repeating-linear-gradient(115deg, #CDB98F 0 3px, #B59F72 3px 5px); clip-path: polygon(0 0, 45% 0, 30% 100%, 0 90%); }
+.inv-enveloppe[data-fixation="washi"] .inv-env-ruban { left: 14%; right: 14%; top: 40%; height: 30px; transform: rotate(-5deg); }
+.inv-enveloppe[data-fixation="washi"] .inv-env-ruban i { opacity: .82; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--inv-accent) 70%, #fff) 0 7px, rgba(255, 255, 255, .55) 7px 12px); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); clip-path: polygon(0 12%, 3% 0, 6% 12%, 9% 0, 12% 12%, 100% 12%, 100% 88%, 97% 100%, 94% 88%, 91% 100%, 88% 88%, 0 88%); }
+.inv-enveloppe[data-fixation="washi"] .inv-env-ruban :is(b, u) { display: none; }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fixation="washi"] .inv-env-ruban { transform: rotate(-5deg) translateY(-26px); opacity: 0; transition: transform .45s cubic-bezier(.55, 0, .25, 1), opacity .3s ease .2s; }
+.inv-enveloppe[data-fixation="tissu"] .inv-env-ruban { left: 50%; right: auto; width: 0; top: 56%; height: 0; }
+.inv-enveloppe[data-fixation="tissu"] .inv-env-ruban :is(i, b) { display: none; }
+.inv-enveloppe[data-fixation="tissu"] .inv-env-ruban u { top: 0; left: -21px; margin: 0; width: 42px; height: 96px; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .05) 0 1px, transparent 1px 3px), linear-gradient(180deg, color-mix(in srgb, var(--inv-accent) 40%, #E8DFC9), color-mix(in srgb, var(--inv-accent) 40%, #CDBF9F)); clip-path: polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%); box-shadow: 0 2px 4px rgba(0, 0, 0, .3); }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fixation="tissu"] .inv-env-ruban { transform: translateY(46px); opacity: 0; }
+
+/* Relecture 2 : air autour des personnages, poids homogène, or plus lisible sur crème */
+.inv-decor-perso { margin-bottom: 24px; }
+.inv-decor-perso img { max-height: 230px; }
+.inv-decor-perso:has(img[src*="foot"]), .inv-decor-perso:has(img[src*="police"]), .inv-decor-perso:has(img[src*="medecin"]) { width: auto; }
+.inv-decor-perso:has(img[src*="avion"]) img, .inv-decor-perso:has(img[src*="dino"]) img { max-height: 170px; }
+.inv-decor-perso img { filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .12)); }
