@@ -3,11 +3,12 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperti
 import { MapPin } from "lucide-react";
 import Ouverture from "./Ouverture";
 import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
+import RevelationGeste from "./RevelationGeste";
 import Revelation from "./Revelation";
 import Decor from "./Decor";
 import PagesCarte, { type UnitePage } from "./PagesCarte";
 import { morceauxDeTexte, phrases } from "@/lib/pagination";
-import { couleursDe, imagesOuverture, policeDe, initiales, lienMaps, modeleDe, ouvertureDe, revelationDe, surCouleur, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
+import { couleursDe, imagesOuverture, policeDe, initiales, lienMaps, modeleDe, ouvertureDe, revelationDe, revelationsPour, surCouleur, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
 import { evenementDe, textesDe } from "@/lib/evenements";
 import "@fontsource/pinyon-script/latin-400.css";
 import "@fontsource/pinyon-script/latin-ext-400.css";
@@ -193,7 +194,8 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     return () => { vivant = false; window.clearTimeout(t); };
   }, [ouvChoisie.id]);
   const ouv = secours ? ouvertureDe(undefined) : ouvChoisie;
-  const avecRevelation = revelationDe(reglages?.revelation).id === "coeur" && ev.id === "mariage" && !sansAnimation();
+  const revId = revelationDe(reglages?.revelation).id;
+  const avecRevelation = revId !== "aucune" && revelationsPour(ev.id).some((r) => r.id === revId) && !sansAnimation();
   const [phase, setPhase] = useState<"fermee" | "ouverture" | "revelation" | "ouverte">(ouverte || sansAnimation() ? "ouverte" : "fermee");
 
   useEffect(() => () => {
@@ -393,10 +395,12 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
         <div className={`inv-film-sortie${ouv.carte ? " inv-fs-carte" : ""}${ouv.video ? " inv-fs-film" : ""}`} aria-hidden="true" style={sortie.r} onAnimationEnd={() => setSortie(null)}
           ref={(el) => { if (el && !el.firstChild) { sortie.canvas.className = "inv-film-img"; el.appendChild(sortie.canvas); } }} />
       )}
-      {phase === "revelation" && (
-        <Revelation noms={nomsA} titre={t.gratter} bouton={t.decouvrir} onFini={() => setPhase("ouverte")}
-          sous={dp ? { haut: maj(part("weekday")), jour: part("day"), bas: `${part("month")} ${part("year")}` } : { haut: "", jour: initiales(nomsA), bas: "" }} />
-      )}
+      {phase === "revelation" && (() => {
+        const sousDate = dp ? { haut: maj(part("weekday")), jour: part("day"), bas: `${part("month")} ${part("year")}` } : { haut: "", jour: initiales(nomsA), bas: "" };
+        return revId === "bougies" || revId === "lanterne" || revId === "ballon"
+          ? <RevelationGeste type={revId} langue={langue} noms={nomsA} sous={sousDate} onFini={() => setPhase("ouverte")} />
+          : <Revelation rond={revId === "medaillon"} noms={nomsA} titre={revId === "medaillon" ? ({ fr: "Grattez le médaillon pour découvrir la date", en: "Scratch the medallion to reveal the date", ar: "اخدشوا الميدالية لاكتشاف التاريخ" } as Record<string, string>)[langue] : t.gratter} bouton={t.decouvrir} onFini={() => setPhase("ouverte")} sous={sousDate} />;
+      })()}
       {aMusique && phase !== "fermee" && (<button type="button" className="inv-musique" onClick={basculerSon} aria-pressed={son} aria-label={son ? "Couper la musique" : "Activer la musique"} data-testid="invitation-musique">{son ? "♪" : "♪̸"}</button>)}
       {phase === "ouverte" && (<>
         <article className={`inv-carte inv-orn-${ornement}${ouv.carte ? ` inv-carte-film inv-cf-${ouv.id}` : ""}`} data-testid="invitation-carte"

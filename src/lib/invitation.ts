@@ -188,6 +188,10 @@ export const OUVERTURES: OuvertureDef[] = [
 export const REVELATIONS: { id: string; nom: string; description: string; pour?: TypeEvenement[] }[] = [
   { id: "aucune", nom: "Aucune", description: "L'invitation s'affiche juste après l'ouverture." },
   { id: "coeur", nom: "Cœur à gratter", description: "L'invité gratte un cœur doré pour découvrir la date.", pour: ["mariage"] },
+  { id: "medaillon", nom: "Médaillon à gratter", description: "L'invité gratte un médaillon doré pour découvrir la date.", pour: ["fiancailles", "henne", "naissance", "bapteme", "circoncision", "iftar", "diplome", "mariage-civil"] },
+  { id: "bougies", nom: "Bougies à souffler", description: "L'invité maintient le doigt pour souffler les bougies : la date apparaît.", pour: ["anniversaire", "anniversaire-enfant"] },
+  { id: "ballon", nom: "Ballon à crever", description: "L'invité touche le ballon, il éclate et dévoile la date.", pour: ["anniversaire-enfant", "baby-shower"] },
+  { id: "lanterne", nom: "Lanterne à allumer", description: "L'invité touche la lanterne : elle s'allume et dévoile la date.", pour: ["iftar", "naissance", "henne"] },
 ];
 export const revelationsPour = (ev?: TypeEvenement) => REVELATIONS.filter((r) => !r.pour || r.pour.includes(ev ?? "mariage"));
 export const FERMETURES: { id: "cachet" | "ruban" | "brise" | "cire" | "cire-or" | "cire-brisee"; nom: string; description: string }[] = [

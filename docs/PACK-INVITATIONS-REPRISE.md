@@ -50,3 +50,12 @@
 4 enveloppe bleu nuit sans cachet ni cordon: https://file.deepytb.com/media/tasks/task_0f57a1992ff6406192b0bad0a52accc6/0.png
 5 nœud de satin crème seul: https://file.deepytb.com/media/tasks/task_3c8b0f3e494f423dba90627c1afc5841/0.png
 Accès navigateur : file.deepytb.com autorisé sur le Mac. Style prêt pour l'initiale sur cachet vierge (`data-cire-vierge`, fin de invitation.css).
+
+## Lot 3 — personnages enfants (valides ~7 jours, jusqu'au 18/11)
+1. foot : https://file.deepytb.com/media/tasks/task_2c5811c8a7bf4fc3ae0a1b99f5af318b/0.png
+2. médecin : https://file.deepytb.com/media/tasks/task_553d99e346264c7ab805126d21664d1b/0.png
+3. safari : https://file.deepytb.com/media/tasks/task_d98e6689f5a54fc6a785f6baec5e77b3/0.png
+4. dino : https://file.deepytb.com/media/tasks/task_c443c8c17c114f758431ac3f654a7076/0.png
+5. avion : https://file.deepytb.com/media/tasks/task_c8578cafb3b84b4e9aab844d370f65d7/0.png
+6. princesse : https://file.deepytb.com/media/tasks/task_853b959b49ef4d5b9771364c5d2ef654/0.png
+7. police : https://file.deepytb.com/media/tasks/task_f97ec41515da493ba06c7b3dd18fa0a2/0.png
