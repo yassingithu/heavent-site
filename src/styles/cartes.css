@@ -156,3 +156,12 @@
 .cartes-page .rounded-full { transition: color .2s, border-color .2s, background-color .2s; }
 .cartes-barre .s-btn.s-btn-filet { background: transparent !important; color: #F3ECDD !important; border: 1px solid rgba(228, 212, 154, .7) !important; }
 .cartes-barre .s-btn.s-btn-filet svg { color: #E4D49A; }
+
+/* Page moins longue : occasions en deux colonnes, sans la phrase de description */
+.cartes-page ul[aria-label="Occasion"] { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; border-top: 1px solid #EADFC8; }
+.cartes-page ul[aria-label="Occasion"] > li { border-bottom: 1px solid #EADFC8; }
+.cartes-page ul[aria-label="Occasion"] > li:has([aria-label="Précision"]) { grid-column: 1 / -1; }
+.cartes-page ul[aria-label="Occasion"] button.group span.text-xs { display: none; }
+.cartes-page ul[aria-label="Occasion"] button.group { min-height: 52px; padding-top: 6px; padding-bottom: 6px; }
+.cartes-page ul[aria-label="Occasion"] .font-serif { font-size: 17px; }
+@media (max-width: 899px) { .cartes-fond .max-w-6xl { padding-top: 36px; } .cartes-sep { margin: 44px 0; } }

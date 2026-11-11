@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { SERVICES, VILLES } from "@/lib/pagesLocales";
 import { useTranslation } from "react-i18next";
 import { useTexte } from "@/i18n/textes";
@@ -8,6 +8,8 @@ import { PAYS_WP, VILLES_WP } from "@/lib/weddingPlannerMaroc";
 const Footer = () => {
   const { t } = useTranslation();
   const x = useTexte();
+  /* Page cartes : pied de page allégé (les listes de référencement allongeaient la page de 2 000 px) */
+  const allege = useLocation().pathname === "/cartes";
 
   return (
     <footer className="s-pied s-nuit">
@@ -43,7 +45,7 @@ const Footer = () => {
         </div>
 
         {/* Nos villes et nos services (pages locales) */}
-        <div className="s-pied-colonnes" data-testid="pied-villes-services" style={{ display: "grid", gap: 28 }}>
+        {!allege && <div className="s-pied-colonnes" data-testid="pied-villes-services" style={{ display: "grid", gap: 28 }}>
           <div>
             <h2>{x("Nos villes")}</h2>
             <ul className="s-pied-liens">
@@ -68,11 +70,11 @@ const Footer = () => {
               <span aria-hidden="true" style={{ color: "var(--s-laiton-clair)" }}>→</span>
             </Link>
           </div>
-        </div>
+        </div>}
       </div>
 
       {/* Wedding planner au Maroc : page de référencement, accessible uniquement d'ici */}
-      <nav className="s-pied-wp s-wrap" aria-label="Wedding planner au Maroc" data-testid="pied-wedding-planner">
+      {!allege && <nav className="s-pied-wp s-wrap" aria-label="Wedding planner au Maroc" data-testid="pied-wedding-planner">
         <h2><Link to="/wedding-planner-maroc">Wedding planner et organisation de mariage au Maroc</Link></h2>
         <p className="s-surtitre">Villes</p>
         <ul>
@@ -82,7 +84,7 @@ const Footer = () => {
         <ul className="pays">
           {PAYS_WP.map((p) => <li key={p.id}><Link to={`/wedding-planner-maroc?pays=${p.id}`}>Mariage au Maroc depuis {p.de}</Link></li>)}
         </ul>
-      </nav>
+      </nav>}
 
       <div className="s-pied-bas s-wrap">
         <span>&copy; {new Date().getFullYear()} Heavent People Agency. {x("Tous droits réservés.")}</span>
