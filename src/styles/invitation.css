@@ -607,3 +607,6 @@
 .inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] .inv-env-cachet-d { width: 52px; margin: -54px 0 0 0; background-image: url("../assets/photos/cachet-droite.webp"); background-position: left center; transform-origin: 10% 70%; animation-name: inv-cire-d; }
 @keyframes inv-cire-g { 0% { transform: rotate(-6deg); opacity: 1; } 25% { transform: rotate(-9deg) translateX(-4px); } 100% { transform: rotate(-38deg) translate(-46px, 120px); opacity: 0; } }
 @keyframes inv-cire-d { 0% { transform: rotate(-6deg); opacity: 1; } 25% { transform: rotate(-3deg) translateX(4px); } 100% { transform: rotate(30deg) translate(46px, 130px); opacity: 0; } }
+
+/* Initiale du client en relief cuivré sur le cachet vierge (utilisée dès que les cachets sans lettre sont en place) */
+.inv-enveloppe[data-cire-vierge] :is(.inv-env-cachet:not(.inv-env-cachet-d):not(.inv-env-cachet-g)) em { display: flex !important; position: absolute; inset: 0; align-items: center; justify-content: center; margin: 0; font-style: normal; font-family: var(--inv-titre); font-size: 40px; font-weight: 600; color: transparent; background: linear-gradient(160deg, #f0b48a 0%, #b4673c 45%, #6e3418 100%); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 1px 0 rgba(255, 220, 190, .55)) drop-shadow(0 -1px 1px rgba(0, 0, 0, .55)); }

@@ -42,3 +42,11 @@
 - Nouvelles fermetures « Cire (photo) » et « Cire brisée (photo) » codées et testées en mobile (l'animation de brisure n'a pas pu être capturée image par image).
 - **Limite connue :** le cachet photo porte la lettre « H » (Heavent). Pour les invités d'un client il faut un cachet **sans lettre** + l'initiale du client posée en relief, ou des cachets génériques (feuille). À générer : cachet bordeaux vierge, or vierge, et leurs moitiés (~0,03 $ pièce, accord de Yassin requis).
 - Rabat animé : il faut la même enveloppe fermée + ouverte (régénérer à partir de la même image de référence).
+
+## Images générées 11/11 (2e lot, vues et validées) — à enregistrer puis brancher
+1 cachet bordeaux vierge: https://file.deepytb.com/media/tasks/task_4f874815180d481ca8e2d73b8a42b137/0.png
+2 cachet or vierge: https://file.deepytb.com/media/tasks/task_17fa96fba342443fb02e9a042e9ddca0/0.png
+3 enveloppe ivoire OUVERTE (même que n°1 du 1er lot): https://file.deepytb.com/media/tasks/task_7f89f8581fbc425e9519a9164744fdee/0.png
+4 enveloppe bleu nuit sans cachet ni cordon: https://file.deepytb.com/media/tasks/task_0f57a1992ff6406192b0bad0a52accc6/0.png
+5 nœud de satin crème seul: https://file.deepytb.com/media/tasks/task_3c8b0f3e494f423dba90627c1afc5841/0.png
+Accès navigateur : file.deepytb.com autorisé sur le Mac. Style prêt pour l'initiale sur cachet vierge (`data-cire-vierge`, fin de invitation.css).
