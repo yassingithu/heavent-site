@@ -16,6 +16,7 @@ import "@fontsource/amiri/arabic-400.css";
 import "@fontsource/amiri/arabic-700.css";
 import "@/styles/invitation.css";
 import "@/styles/ouvertures.css";
+import "@/styles/invitation-mouvement.css";
 
 export interface InvitationProps {
   noms: string;
@@ -53,17 +54,45 @@ function pleinEcran() {
   } catch { /* plein écran refusé : l'invitation reste lisible */ }
 }
 
-function useReveal<T extends HTMLElement>() {
+function useReveal<T extends HTMLElement>(marge = "0px 0px -8% 0px") {
   const ref = useRef<T>(null);
   const [vu, setVu] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === "undefined") { setVu(true); return; }
-    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { setVu(true); io.disconnect(); } }, { threshold: 0, rootMargin: "0px 0px -8% 0px" });
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { setVu(true); io.disconnect(); } }, { threshold: 0, rootMargin: marge });
     io.observe(el);
-    return () => io.disconnect();
+    const filet = window.setTimeout(() => { setVu(true); io.disconnect(); }, 6000);
+    return () => { io.disconnect(); window.clearTimeout(filet); };
   }, []);
   return [ref, vu] as const;
+}
+
+/** Une ligne du programme : son point s'allume quand elle arrive à l'écran. */
+function Moment({ k, children }: { k: number; children: ReactNode }) {
+  const [ref, vu] = useReveal<HTMLLIElement>("0px 0px -18% 0px");
+  return <li ref={ref} className={vu ? "is-on" : ""} style={{ ["--k" as string]: k } as CSSProperties}>{children}</li>;
+}
+
+/** Calendrier du mois : la date de la fête est marquée d'un cœur qui se dessine puis bat doucement. Les chiffres viennent du CSS (compteur), le texte de la page ne change pas. */
+function Calendrier({ date, locale, label, khatam }: { date: string; locale: string; label: string; khatam?: boolean }) {
+  const [y, m, d] = date.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  const decal = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
+  const nb = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const f = (o: Intl.DateTimeFormatOptions, dt: Date) => new Intl.DateTimeFormat(locale, { timeZone: "UTC", ...o }).format(dt);
+  const forme = khatam ? "M20 4l4 6 7-1-1 7 6 4-6 4 1 7-7-1-4 6-4-6-7 1 1-7-6-4 6-4-1-7 7 1z" : "M20 35C8 26 4 19 4 13a8 8 0 0 1 16-3 8 8 0 0 1 16 3c0 6-4 13-16 22z";
+  return (
+    <div className="inv-cal" role="img" aria-label={label} data-mois={f({ month: "long", year: "numeric" }, new Date(Date.UTC(y, m - 1, 1)))} data-testid="invitation-calendrier">
+      {Array.from({ length: 7 }, (_, i) => <b key={i} data-l={f({ weekday: "narrow" }, new Date(Date.UTC(2024, 0, 1 + i)))} />)}
+      {Array.from({ length: decal }, (_, i) => <u key={`u${i}`} />)}
+      {Array.from({ length: nb }, (_, i) => (
+        <i key={i} className={i + 1 === d ? "inv-cal-date" : undefined}>
+          {i + 1 === d && <svg viewBox="0 0 40 40" aria-hidden="true"><path className="o" d={forme} /><path className="p" pathLength={1} d={forme} /></svg>}
+        </i>
+      ))}
+    </div>
+  );
 }
 
 function Section({ className = "", children, titre, id, nuit }: { nuit?: boolean; className?: string; children: ReactNode; titre?: string; id?: string }) {
@@ -481,7 +510,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
         {pleinePage && (
           <div className="inv-histoire">
             <Section nuit className="inv-sec-anneaux">{ev.anneaux ? <Anneaux /> : <div className="inv-etoile" aria-hidden="true"><Ornement type="khatam" /></div>}<p className="inv-sec-mot">{t.alliances}</p></Section>
-            {cibleMs && (cibleMs > Date.now() || date === aujourdhuiISO) && <Section nuit titre={t.compte}><CompteARebours cible={cibleMs} t={t} /></Section>}
+            {cibleMs && (cibleMs > Date.now() || date === aujourdhuiISO) && <Section nuit titre={t.compte}><CompteARebours cible={cibleMs} t={t} />{date && <Calendrier date={date} locale={t.locale} label={`${maj(part("weekday"))} ${part("day")} ${part("month")} ${part("year")}`} khatam={!!reglages?.evenement && reglages.evenement !== "mariage"} />}</Section>}
             {cibleMs && cibleMs > Date.now() && (
               <Section nuit><a className="inv-maps" href={lienAgenda({ titre: noms, date, debutMs: heureBrute ? cibleMs : null, lieu: lieu ?? undefined })} target="_blank" rel="noopener noreferrer" data-testid="invitation-agenda"><CalendarPlus className="h-4 w-4" aria-hidden="true" /> {t.agenda}</a></Section>
             )}
@@ -494,14 +523,18 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
             )}
             {programme.length > 0 && (
               <Section titre={t.programmeTitre}>
-                <ol className="inv-programme">{programme.map((l, k) => <li key={k} style={{ ["--k" as string]: k } as CSSProperties}><b>{ar ? heure_ar(l.heure) : l.heure}</b><span dir="auto">{ar ? (l.titre_ar?.trim() || titre_ar(l.titre)) : l.titre}</span></li>)}</ol>
+                <ol className="inv-programme">{programme.map((l, k) => <Moment key={k} k={k}><b>{ar ? heure_ar(l.heure) : l.heure}</b><span dir="auto">{ar ? (l.titre_ar?.trim() || titre_ar(l.titre)) : l.titre}</span></Moment>)}</ol>
               </Section>
             )}
             {citations.length > 0 && (
               <Section nuit>{citations.map((c, k) => <figure key={k} className="inv-citation"><blockquote dir="auto">« {c.texte} »</blockquote>{c.auteur && <figcaption>{c.auteur}</figcaption>}</figure>)}</Section>
             )}
             {galerie.length > 0 && (
-              <Section titre={t.galerieTitre}><div className="inv-galerie">{galerie.map((src, k) => <img key={k} src={src} alt="" loading="lazy" decoding="async" />)}</div></Section>
+              <Section titre={t.galerieTitre}>{galerie.length >= 2
+                ? <div className="inv-carrousel" data-testid="invitation-carrousel" onPointerDown={(e) => { e.currentTarget.dataset.pause = "1"; }} onPointerUp={(e) => { delete e.currentTarget.dataset.pause; }} onPointerCancel={(e) => { delete e.currentTarget.dataset.pause; }} onPointerLeave={(e) => { delete e.currentTarget.dataset.pause; }}>
+                    <div className="inv-car-piste">{[...galerie, ...galerie].map((src, k) => <img key={k} src={src} alt="" aria-hidden={k >= galerie.length || undefined} loading="lazy" decoding="async" />)}</div>
+                  </div>
+                : <div className="inv-galerie">{galerie.map((src, k) => <img key={k} src={src} alt="" loading="lazy" decoding="async" />)}</div>}</Section>
             )}
             {messageSimple && !ouv.carte && <Section><p className="inv-message" dir="auto" style={{ border: 0, padding: 0, margin: 0 }}>{messageSimple}</p></Section>}
             {children && <Section id="inv-reponse" titre={t.reponseTitre} className="inv-sec-reponse">{children}</Section>}
