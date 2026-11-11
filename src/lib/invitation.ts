@@ -160,7 +160,7 @@ export interface OuvertureDef {
 /** Formules commerciales : le contenu de la carte (programme, RSVP, livre d'or…) se règle à part ; la formule se déduit de la carte choisie. */
 export type Formule = "classique" | "interactive" | "prestige";
 export const FORMULES: { id: Formule; nom: string; prix: string; texte: string }[] = [
-  { id: "classique", nom: "Classique", prix: "250 DH", texte: "Design personnalisé, animation élégante, partage WhatsApp et e-mail." },
+  { id: "classique", nom: "Classique", prix: "250 DH", texte: "Design personnalisé, animation élégante, partage par WhatsApp." },
   { id: "interactive", nom: "Interactive", prix: "450 DH", texte: "Ouverture en film, puis programme, plan Google Maps, compte à rebours et confirmation de présence : nous les réglons avec vous." },
   { id: "prestige", nom: "Prestige", prix: "dès 650 DH", texte: "Tout l'Interactive, plus l'histoire des mariés, le livre d'or, les invitations individuelles et le QR code, réglés avec vous." },
 ];
@@ -175,8 +175,9 @@ export interface Extra { id: string; nom: string; prix: number; texte: string; s
 export const EXTRAS: Extra[] = [
   { id: "modif", nom: "Modification supplémentaire", prix: 50, texte: "Un ajustement de plus après l'aperçu." },
   { id: "qr", nom: "QR code", prix: 100, texte: "Un QR code à imprimer, qui ouvre la carte.", sauf: ["prestige"] },
-  { id: "urgent", nom: "Création urgente en 24 h", prix: 150, texte: "Votre carte prête en 24 h." },
 ];
+/** Cartes vendues en boutique : seulement les créations photoréalistes (films et décors illustrés finement), pas les portes dessinées. */
+export const ouverturesBoutique = (): OuvertureDef[] => OUVERTURES.filter((o) => o.video || o.carte);
 export const extrasPour = (o: OuvertureDef): Extra[] => EXTRAS.filter((e) => !e.sauf?.includes(formuleDe(o)));
 export const totalCommande = (o: OuvertureDef, ids: string[]): number => prixNombre(o) + extrasPour(o).filter((e) => ids.includes(e.id)).reduce((t, e) => t + e.prix, 0);
 export const STYLES_OUVERTURE = ["Marocain", "Luxe", "Floral", "Moderne"];

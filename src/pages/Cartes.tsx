@@ -10,7 +10,7 @@ import BoutiqueCartes from "@/components/invitation/BoutiqueCartes";
 import FicheCarte from "@/components/invitation/FicheCarte";
 import { evenementDe, GROUPES, type TypeEvenement } from "@/lib/evenements";
 import { decorsPour } from "@/lib/decors";
-import { OUVERTURES, ouvertureDe, type InvitationReglages, FORMULES, formuleDe, prixDe, prixNombre, extrasPour, totalCommande } from "@/lib/invitation";
+import { ouverturesBoutique, ouvertureDe, type InvitationReglages, FORMULES, formuleDe, prixDe, prixNombre, extrasPour, totalCommande } from "@/lib/invitation";
 import { supabase } from "@/integrations/supabase/client";
 import { suivre } from "@/lib/suivi";
 
@@ -20,8 +20,7 @@ import { suivre } from "@/lib/suivi";
  */
 const WHATSAPP = "https://wa.me/212610939655?text=";
 const champ = "w-full min-h-11 px-3 text-base bg-[#FFFDF7] border-0 border-b border-[#A8933F] rounded-none";
-const MAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const GARANTIES: [string, string][] = [["24 h", "Aperçu de votre carte, jours ouvrés"], ["0 DH", "Aucun paiement maintenant"], ["1 prix", "Confirmé avec votre aperçu"], ["WhatsApp", "et e-mail pour partager"]];
+const GARANTIES: [string, string][] = [["1 semaine", "Pour recevoir votre carte"], ["Aperçu", "Validé avant le paiement"], ["Paiement", "Avant la réception du fichier final"], ["WhatsApp", "Pour partager votre carte"]];
 
 /** Ce que contient la commande : la carte telle qu'elle a été réglée dans la fiche, et ses options. */
 interface Ligne { invitation: InvitationReglages; noms: string; date: string; lieu: string; message: string; extras: string[] }
@@ -44,7 +43,7 @@ export default function Cartes() {
   const [maj, setMaj] = useState(0);
   const ev = evenementDe(invitation.evenement);
   const ouv = ouvertureDe(invitation.ouverture);
-  const rang = (id: string) => OUVERTURES.findIndex((x) => x.id === id) + 1;
+  const rang = (id: string) => ouverturesBoutique().findIndex((x) => x.id === id) + 1;
   const reduit = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   useEffect(() => {
@@ -90,9 +89,8 @@ export default function Cartes() {
     if (!panier) return;
     const x: Record<string, string> = {};
     if (f.nom.trim().length < 2) x.nom = "Indiquez votre nom.";
-    if (!f.telephone.trim() && !f.email.trim()) x.tel = "Un numéro WhatsApp ou un e-mail, pour vous répondre.";
+    if (!f.telephone.trim()) x.tel = "Indiquez votre numéro WhatsApp, pour vous répondre.";
     else if (f.telephone.trim() && f.telephone.replace(/\D/g, "").length < 8) x.tel = "Ce numéro semble incomplet.";
-    if (f.email.trim() && !MAIL_OK.test(f.email.trim())) x.email = "L'adresse e-mail semble incorrecte.";
     if (!f.accord) x.accord = "Cochez la case ci-dessus pour que nous puissions vous répondre.";
     setErr(x);
     const premier = Object.keys(x)[0];
@@ -153,7 +151,6 @@ export default function Cartes() {
             <em>+ {z.prix} DH</em>
           </label>
         ))}
-        {extras.includes("urgent") && !date && <p className="boutique-aide-champ" role="status">Pour une carte en 24 h, indiquez la date de votre événement plus haut.</p>}
       </fieldset>
     </div>
   );
@@ -206,9 +203,9 @@ export default function Cartes() {
               <div className="s-fairepart s-merci" role="status" data-testid="cartes-merci">
                 <Etoile /><Etoile className="bas" />
                 <h4 className="s-h3 s-entree-heros">Demande bien reçue</h4>
-                <p className="cartes-delai s-entree-heros" style={{ animationDelay: ".25s" }}><b>24 h</b><span>ouvrées</span></p>
-                <p className="boutique-merci-texte">Merci {f.nom.split(" ")[0]}. Notre équipe prépare votre carte « {ligne?.nom} » : vous recevez un aperçu à partager et le prix confirmé.</p>
-                <p className="boutique-merci-rappel">Carte « {ligne?.nom} » · {totalPanier} DH · réponse {f.telephone ? `sur ${f.telephone}` : `à ${f.email}`}</p>
+                <p className="cartes-delai s-entree-heros" style={{ animationDelay: ".25s" }}><b>1 semaine</b><span>pour votre carte</span></p>
+                <p className="boutique-merci-texte">Merci {f.nom.split(" ")[0]}. Notre équipe prépare votre carte « {ligne?.nom} » : vous recevez un aperçu à valider, puis votre carte sous 1 semaine.</p>
+                <p className="boutique-merci-rappel">Carte « {ligne?.nom} » · {totalPanier} DH · réponse sur WhatsApp au {f.telephone}</p>
                 <Bouton href={WHATSAPP + encodeURIComponent(`Bonjour Heavent, je viens d'envoyer ma demande de carte d'invitation (${evPanier.nom}). Je m'appelle ${f.nom}.`)} externe variante="filet">Nous écrire sur WhatsApp</Bouton>
                 <button type="button" className="boutique-lien" onClick={recommencer} data-testid="autre-demande">Faire une autre demande</button>
               </div>
@@ -238,7 +235,7 @@ export default function Cartes() {
                     {lignesExtras.map((z) => <div key={z.id}><dt>{z.nom}</dt><dd>+ {z.prix} DH</dd></div>)}
                     <div className="boutique-total-ligne"><dt>Total estimé</dt><dd key={totalPanier} className="boutique-maj" data-testid="commande-total">{totalPanier} DH</dd></div>
                   </dl>
-                  <p className="boutique-recap-note">Aucun paiement maintenant. Le prix est confirmé par notre équipe sous 24 h ouvrées, avec votre aperçu.</p>
+                  <p className="boutique-recap-note">Aucun paiement maintenant. Notre équipe vous contacte sur WhatsApp, vous validez l'aperçu, puis le paiement est réglé avant l'envoi du fichier final. Délai : 1 semaine.</p>
                   <div className="boutique-recap-actions">
                     <button type="button" className="boutique-lien" onClick={modifier} data-testid="commande-modifier">Modifier ma carte</button>
                     <button type="button" className="boutique-lien" onClick={retirer} data-testid="commande-retirer">Retirer</button>
@@ -251,14 +248,10 @@ export default function Cartes() {
                     <input className={champ} value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} autoComplete="name" required id="cartes-champ-nom" aria-invalid={!!err.nom} data-testid="cartes-nom" />
                     {err.nom && <span className="block text-sm text-[#9B2C2C]" role="alert">{err.nom}</span>}
                   </label>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="block text-sm">WhatsApp ou téléphone
+                  <div className="grid gap-3">
+                    <label className="block text-sm">Votre numéro WhatsApp
                       <input className={champ} type="tel" inputMode="tel" value={f.telephone} onChange={(e) => setF({ ...f, telephone: e.target.value })} autoComplete="tel" placeholder="+212 6…" id="cartes-champ-tel" aria-invalid={!!err.tel} data-testid="cartes-tel" />
                       {err.tel && <span className="block text-sm text-[#9B2C2C]" role="alert">{err.tel}</span>}
-                    </label>
-                    <label className="block text-sm">E-mail (facultatif si WhatsApp)
-                      <input className={champ} type="email" inputMode="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} autoComplete="email" id="cartes-champ-email" aria-invalid={!!err.email} data-testid="cartes-email" />
-                      {err.email && <span className="block text-sm text-[#9B2C2C]" role="alert">{err.email}</span>}
                     </label>
                   </div>
                   <label className="block text-sm">Une précision pour l'équipe (facultatif)
