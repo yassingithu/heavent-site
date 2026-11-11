@@ -3,7 +3,7 @@ export type Langue = "fr" | "en" | "ar";
 export type Ornement = "khatam" | "arche" | "cadre" | "fleur" | "filet" | "zellige";
 export interface Couleurs { fond: string; enveloppe: string; papier: string; texte: string; accent: string }
 import type { TypeEvenement } from "./evenements";
-export interface InvitationReglages { /** occasion : sans valeur, c'est un mariage */ evenement?: TypeEvenement; /** questions ajoutées au formulaire de réponse (identifiants de QUESTIONS) */ questions?: string[]; cachet?: boolean; /** décor du haut de la carte (voir decors.ts) */ decor?: string; /** équipe du maillot et écusson (image réduite, données) */ club?: string; club_logo?: string; /** fermeture de l'enveloppe : cachet (défaut), ruban qui glisse, ou cachet qui se brise */ /** matière réelle du papier de l'enveloppe et doublure du rabat */ papier?: "gaufre" | "kraft"; doublure?: "sauge"; fermeture?: "cachet" | "ruban" | "brise" | "cire" | "cire-or" | "cire-brisee" | "ficelle" | "washi" | "tissu"; musique?: string; ouverture?: string; revelation?: string; modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; programme?: { heure: string; titre: string; titre_ar?: string }[]; noms_ar?: string; lieu_ar?: string; message_ar?: string; police?: string }
+export interface InvitationReglages { /** occasion : sans valeur, c'est un mariage */ evenement?: TypeEvenement; /** questions ajoutées au formulaire de réponse (identifiants de QUESTIONS) */ questions?: string[]; cachet?: boolean; /** décor du haut de la carte (voir decors.ts) */ decor?: string; /** équipe du maillot et écusson (image réduite, données) */ club?: string; club_logo?: string; /** fermeture de l'enveloppe : cachet (défaut), ruban qui glisse, ou cachet qui se brise */ /** matière réelle du papier de l'enveloppe et doublure du rabat */ papier?: "gaufre" | "kraft"; doublure?: "sauge"; fermeture?: "cachet" | "ruban" | "brise" | "cire" | "cire-or" | "cire-brisee" | "ficelle" | "washi" | "tissu"; musique?: string; ouverture?: string; revelation?: string; modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; /** citations ou mots des mariés, affichés après le programme */ citations?: { texte: string; auteur?: string }[]; /** photos (images réduites, données) : réservé à l'administration, la limite de 4 Ko du côté des mariés ne les permet pas */ galerie?: string[]; programme?: { heure: string; titre: string; titre_ar?: string }[]; noms_ar?: string; lieu_ar?: string; message_ar?: string; police?: string }
 /** Polices des prénoms au choix (toutes déjà hébergées : aucun chargement en plus) */
 export const POLICES: { id: string; nom: string; css: string }[] = [
   { id: "calligraphie", nom: "Calligraphie", css: '"Pinyon Script", "Snell Roundhand", cursive' },
@@ -118,19 +118,19 @@ export const TEXTES = {
     gratter: "Grattez le cœur pour découvrir la date", decouvrir: "Découvrir", ouvrir: "Touchez pour ouvrir", ouvrirBouton: "Ouvrir l'invitation", suivant: "Suivant", precedent: "Précédent", pageSur: "Page {n} sur {m}", defilable: "Texte à faire défiler", passer: "Passer l'animation", rejouer: "Revoir l'ouverture", invite: "Ont la joie de vous convier à leur mariage", invites: "Vous êtes invité(e) au mariage de",
     cher: "Bonjour", a: "à", maps: "Voir le lieu sur Google Maps", locale: "fr-FR",
     defiler: "Faites défiler", repondre: "Répondre maintenant", repondreCourt: "Répondre", alliances: "Nous allons nous dire oui", compte: "Le grand jour approche", aujourdhui: "C'est aujourd'hui !", jours: "jours", heures: "heures", minutes: "minutes", secondes: "secondes",
-    lieuTitre: "Le lieu", itineraire: "Itinéraire", agenda: "Ajouter à mon agenda", programmeTitre: "Le programme", reponseTitre: "Votre réponse", avecVous: "Nous avons hâte de partager ce moment avec vous", pour: "Une invitation pour",
+    lieuTitre: "Le lieu", itineraire: "Itinéraire", agenda: "Ajouter à mon agenda", galerieTitre: "En images", programmeTitre: "Le programme", reponseTitre: "Votre réponse", avecVous: "Nous avons hâte de partager ce moment avec vous", pour: "Une invitation pour",
   },
   en: {
     gratter: "Scratch the heart to reveal the date", decouvrir: "Reveal", ouvrir: "Tap to open", ouvrirBouton: "Open the invitation", suivant: "Next", precedent: "Back", pageSur: "Page {n} of {m}", defilable: "Scrollable text", passer: "Skip the animation", rejouer: "Replay the opening", invite: "Joyfully invite you to their wedding", invites: "You are invited to the wedding of",
     cher: "Dear", a: "at", maps: "View the venue on Google Maps", locale: "en-GB",
     defiler: "Scroll down", repondre: "Reply now", repondreCourt: "Reply", alliances: "We are about to say yes", compte: "The big day is coming", aujourdhui: "It's today!", jours: "days", heures: "hours", minutes: "minutes", secondes: "seconds",
-    lieuTitre: "The venue", itineraire: "Directions", agenda: "Add to my calendar", programmeTitre: "The programme", reponseTitre: "Your reply", avecVous: "We can't wait to share this moment with you", pour: "An invitation for",
+    lieuTitre: "The venue", itineraire: "Directions", agenda: "Add to my calendar", galerieTitre: "In pictures", programmeTitre: "The programme", reponseTitre: "Your reply", avecVous: "We can't wait to share this moment with you", pour: "An invitation for",
   },
   ar: {
     gratter: "اخدشوا القلب لاكتشاف التاريخ", decouvrir: "اكتشفوا", ouvrir: "المسوا لفتح الدعوة", ouvrirBouton: "افتحوا الدعوة", suivant: "التالي", precedent: "السابق", pageSur: "الصفحة {n} من {m}", defilable: "نص قابل للتمرير", passer: "تخطّي العرض", rejouer: "إعادة الفتح", invite: "يتشرفان بدعوتكم لحضور حفل زفافهما", invites: "يسعدنا دعوتكم لحضور حفل زفاف",
     cher: "مرحباً", a: "في", maps: "عرض المكان على خرائط جوجل", locale: "ar-MA-u-nu-latn-ca-gregory",
     defiler: "مرروا للأسفل", repondre: "الرد الآن", repondreCourt: "الرد", alliances: "سنقول نعم قريباً", compte: "اليوم الكبير يقترب", aujourdhui: "إنه اليوم!", jours: "أيام", heures: "ساعات", minutes: "دقائق", secondes: "ثوان",
-    lieuTitre: "المكان", itineraire: "الاتجاهات", agenda: "أضف إلى التقويم", programmeTitre: "البرنامج", reponseTitre: "ردكم", avecVous: "نتطلع لمشاركتكم هذه اللحظة", pour: "دعوة إلى",
+    lieuTitre: "المكان", itineraire: "الاتجاهات", agenda: "أضف إلى التقويم", galerieTitre: "بالصور", programmeTitre: "البرنامج", reponseTitre: "ردكم", avecVous: "نتطلع لمشاركتكم هذه اللحظة", pour: "دعوة إلى",
   },
 } as const;
 
@@ -266,4 +266,10 @@ export function lienAgenda({ titre, date, debutMs, lieu }: { titre: string; date
   const dates = debutMs ? `${z(debutMs)}/${z(debutMs + 4 * 3600000)}` : `${jour(date)}/${jour(date, 1)}`;
   const q = new URLSearchParams({ action: "TEMPLATE", text: titre, dates, ...(lieu ? { location: lieu } : {}) });
   return `https://calendar.google.com/calendar/render?${q.toString()}`;
+}
+
+/** Déplace un élément d'une liste (réordonner le programme, les photos, les citations). */
+export function deplacer<T>(liste: T[], de: number, vers: number): T[] {
+  if (de === vers || de < 0 || vers < 0 || de >= liste.length || vers >= liste.length) return liste;
+  const c = liste.slice(); const [x] = c.splice(de, 1); c.splice(vers, 0, x); return c;
 }

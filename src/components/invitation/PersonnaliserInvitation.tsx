@@ -7,7 +7,7 @@ import { RotateCcw, Play } from "lucide-react";
 import Invitation from "./Invitation";
 import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
 import { decorsPour, CLUBS } from "@/lib/decors";
-import { POLICES, CHAMPS_COULEUR, OUVERTURES, FERMETURES, PAPIERS, STYLES_OUVERTURE, FORMULES, formuleDe, prixDe, type Formule, modelesPour, palettesPour, revelationsPour, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
+import { POLICES, CHAMPS_COULEUR, OUVERTURES, FERMETURES, PAPIERS, STYLES_OUVERTURE, deplacer, FORMULES, formuleDe, prixDe, type Formule, modelesPour, palettesPour, revelationsPour, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
 import { evenementDe, questionDe } from "@/lib/evenements";
 
 interface Props {
@@ -34,6 +34,8 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
   const Pli = (modeClient ? "details" : "div") as "details";
   const resume = (t: string) => modeClient ? <summary className="cartes-resume">{t}</summary> : null;
   const [rejouer, setRejouer] = useState(modeClient ? 1 : 0);
+  const [glisse, setGlisse] = useState<number | null>(null);
+  const [erreurPhoto, setErreurPhoto] = useState<string | null>(null);
   const [langue, setLangue] = useState<Langue>("fr");
   const modele = modeleDe(valeur.modele);
   const actuelles = couleursDe(valeur);
@@ -313,7 +315,12 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           <h3 className="font-serif text-xl">{num()}. Le programme (facultatif)</h3>
           <p className="text-xs text-[#6B6154]">Affiché aux invités quand ils font défiler l'invitation.</p>
           {(valeur.programme ?? []).map((l, k) => (
-            <div key={k} className="flex gap-2">
+            <div key={k} className={`flex gap-2 items-center${glisse === k ? " opacity-50" : ""}`} draggable onDragStart={() => setGlisse(k)} onDragEnd={() => setGlisse(null)} onDragOver={(e) => e.preventDefault()}
+              onDrop={() => { if (glisse !== null) onChange({ ...valeur, programme: deplacer(valeur.programme ?? [], glisse, k) }); setGlisse(null); }}>
+              <span className="flex flex-col shrink-0" role="group" aria-label="Déplacer ce moment">
+                <button type="button" className="px-2 text-xs leading-none min-h-6 cursor-grab" aria-label="Monter" disabled={k === 0} onClick={() => onChange({ ...valeur, programme: deplacer(valeur.programme ?? [], k, k - 1) })}>▲</button>
+                <button type="button" className="px-2 text-xs leading-none min-h-6" aria-label="Descendre" disabled={k === (valeur.programme ?? []).length - 1} onClick={() => onChange({ ...valeur, programme: deplacer(valeur.programme ?? [], k, k + 1) })}>▼</button>
+              </span>
               <input className={`${champ} w-24`} value={l.heure} maxLength={10} placeholder="19h30" aria-label="Heure" onChange={(e) => onChange({ ...valeur, programme: (valeur.programme ?? []).map((x, i) => (i === k ? { ...x, heure: e.target.value } : x)) })} />
               <input className={`${champ} flex-1 min-w-0`} value={l.titre} maxLength={50} placeholder="Cérémonie" aria-label="Moment" onChange={(e) => onChange({ ...valeur, programme: (valeur.programme ?? []).map((x, i) => (i === k ? { ...x, titre: e.target.value } : x)) })} />
               <input dir="rtl" className={`${champ} w-36`} value={l.titre_ar ?? ""} maxLength={50} placeholder={titre_ar(l.titre) || "بالعربية"} aria-label="Moment en arabe" onChange={(e) => onChange({ ...valeur, programme: (valeur.programme ?? []).map((x, i) => (i === k ? { ...x, titre_ar: e.target.value } : x)) })} />
@@ -324,6 +331,59 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             {(valeur.programme ?? []).length < 8 && <button type="button" className={bouton} onClick={() => onChange({ ...valeur, programme: [...(valeur.programme ?? []), { heure: "", titre: "" }] })}>Ajouter un moment</button>}
             {!(valeur.programme ?? []).length && ev.programme.length > 0 && <button type="button" className={bouton} onClick={() => onChange({ ...valeur, programme: ev.programme })}>Programme type</button>}
           </div>
+        </section>}
+
+        {!modeClient && <section className="space-y-3" data-testid="invitation-citations">
+          <h3 className="font-serif text-xl">{num()}. Un mot ou une citation (facultatif)</h3>
+          <p className="text-xs text-[#6B6154]">Un verset, un proverbe ou quelques mots de votre part, affichés après le programme. 3 au maximum.</p>
+          {(valeur.citations ?? []).map((c, k) => (
+            <div key={k} className="flex gap-2 items-start">
+              <span className="flex flex-col shrink-0" role="group" aria-label="Déplacer cette citation">
+                <button type="button" className="px-2 text-xs leading-none min-h-6" aria-label="Monter" disabled={k === 0} onClick={() => onChange({ ...valeur, citations: deplacer(valeur.citations ?? [], k, k - 1) })}>▲</button>
+                <button type="button" className="px-2 text-xs leading-none min-h-6" aria-label="Descendre" disabled={k === (valeur.citations ?? []).length - 1} onClick={() => onChange({ ...valeur, citations: deplacer(valeur.citations ?? [], k, k + 1) })}>▼</button>
+              </span>
+              <div className="flex-1 min-w-0 space-y-1">
+                <textarea className={`${champ} w-full`} rows={2} maxLength={160} value={c.texte} placeholder="Aimer, c'est trouver sa richesse hors de soi." aria-label="Texte" onChange={(e) => onChange({ ...valeur, citations: (valeur.citations ?? []).map((x, i) => (i === k ? { ...x, texte: e.target.value } : x)) })} />
+                <input className={`${champ} w-full`} maxLength={40} value={c.auteur ?? ""} placeholder="Auteur (facultatif)" aria-label="Auteur" onChange={(e) => onChange({ ...valeur, citations: (valeur.citations ?? []).map((x, i) => (i === k ? { ...x, auteur: e.target.value } : x)) })} />
+              </div>
+              <button type="button" className="px-3 min-h-11 text-sm underline" aria-label="Retirer cette citation" onClick={() => onChange({ ...valeur, citations: (valeur.citations ?? []).filter((_, i) => i !== k) })}>✕</button>
+            </div>
+          ))}
+          {(valeur.citations ?? []).length < 3 && <button type="button" className={bouton} onClick={() => onChange({ ...valeur, citations: [...(valeur.citations ?? []), { texte: "" }] })} data-testid="citation-ajouter">Ajouter une citation</button>}
+        </section>}
+
+        {estAdmin && !modeClient && <section className="space-y-3" data-testid="invitation-galerie">
+          <h3 className="font-serif text-xl">{num()}. Photos (facultatif)</h3>
+          <p className="text-xs text-[#6B6154]">6 photos au maximum, affichées en bas de l'invitation. Elles sont réduites automatiquement.</p>
+          <div className="flex flex-wrap gap-3">
+            {(valeur.galerie ?? []).map((src, k) => (
+              <div key={k} className="w-24 space-y-1">
+                <img src={src} alt={`Photo ${k + 1}`} className="h-24 w-24 rounded-lg border border-[#E3D6BA] object-cover" />
+                <div className="flex justify-between text-sm">
+                  <button type="button" aria-label="Avancer" disabled={k === 0} className="px-2 min-h-8" onClick={() => onChange({ ...valeur, galerie: deplacer(valeur.galerie ?? [], k, k - 1) })}>◀</button>
+                  <button type="button" aria-label="Retirer la photo" className="px-2 min-h-8 underline" onClick={() => onChange({ ...valeur, galerie: (valeur.galerie ?? []).filter((_, i) => i !== k) })}>✕</button>
+                  <button type="button" aria-label="Reculer" disabled={k === (valeur.galerie ?? []).length - 1} className="px-2 min-h-8" onClick={() => onChange({ ...valeur, galerie: deplacer(valeur.galerie ?? [], k, k + 1) })}>▶</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {(valeur.galerie ?? []).length < 6 && (
+            <label className={`${bouton} inline-flex cursor-pointer`}>Ajouter une photo
+              <input type="file" accept="image/*" className="sr-only" data-testid="galerie-fichier" onChange={(e) => {
+                const f = e.target.files?.[0]; if (!f) return;
+                const img = new Image(); const url = URL.createObjectURL(f);
+                img.onload = () => {
+                  const c = document.createElement("canvas"); const k = Math.min(1, 900 / Math.max(img.width, img.height, 1));
+                  c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+                  c.getContext("2d")?.drawImage(img, 0, 0, c.width, c.height);
+                  URL.revokeObjectURL(url); setErreurPhoto(null); onChange({ ...valeur, galerie: [...(valeur.galerie ?? []), c.toDataURL("image/webp", 0.72)] });
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); setErreurPhoto("Image illisible. Utilisez une photo JPG, PNG ou WebP."); };
+                img.src = url; e.target.value = "";
+              }} />
+            </label>
+          )}
+          {erreurPhoto && <p role="alert" className="text-sm text-red-700">{erreurPhoto}</p>}
         </section>}
 
         {!modeClient && ev.questions.length > 0 && (

@@ -523,3 +523,11 @@
 
 /* Après la révélation, ni « Passer » ni consigne ne restent affichés */
 .inv-rev.is-fini .inv-g-passer, .inv-rev.is-fini .inv-rev-aide { opacity: 0; pointer-events: none; transition: opacity .3s; }
+
+/* Citations et galerie photo en bas de l'invitation */
+.inv-citation { margin: 0 0 18px; text-align: center; }
+.inv-citation blockquote { margin: 0; font: italic 400 clamp(17px, 4.6vw, 21px)/1.45 "Cormorant Garamond", Georgia, serif; text-wrap: balance; }
+.inv-citation figcaption { margin-top: 6px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; opacity: .75; }
+.inv-galerie { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.inv-galerie img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 4px; display: block; }
+.inv-galerie img:first-child:nth-last-child(odd) { grid-column: 1 / -1; aspect-ratio: 4 / 3; }

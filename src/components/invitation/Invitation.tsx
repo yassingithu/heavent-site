@@ -333,6 +333,8 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const part = (k: string) => dp?.find((x) => x.type === k)?.value ?? "";
   const maj = (v: string) => v.charAt(0).toLocaleUpperCase(t.locale) + v.slice(1);
   const aujourdhuiISO = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
+  const citations = (reglages?.citations ?? []).filter((c) => c && c.texte?.trim()).slice(0, 3);
+  const galerie = (reglages?.galerie ?? []).filter((x) => typeof x === "string" && x.startsWith("data:image/")).slice(0, 6);
   const programme = (reglages?.programme ?? []).filter((l) => l && (l.heure || l.titre)).slice(0, 8);
   const cibleMs = (() => {
     if (!date) return null;
@@ -494,6 +496,12 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
               <Section titre={t.programmeTitre}>
                 <ol className="inv-programme">{programme.map((l, k) => <li key={k} style={{ ["--k" as string]: k } as CSSProperties}><b>{ar ? heure_ar(l.heure) : l.heure}</b><span dir="auto">{ar ? (l.titre_ar?.trim() || titre_ar(l.titre)) : l.titre}</span></li>)}</ol>
               </Section>
+            )}
+            {citations.length > 0 && (
+              <Section nuit>{citations.map((c, k) => <figure key={k} className="inv-citation"><blockquote dir="auto">« {c.texte} »</blockquote>{c.auteur && <figcaption>{c.auteur}</figcaption>}</figure>)}</Section>
+            )}
+            {galerie.length > 0 && (
+              <Section titre={t.galerieTitre}><div className="inv-galerie">{galerie.map((src, k) => <img key={k} src={src} alt="" loading="lazy" decoding="async" />)}</div></Section>
             )}
             {messageSimple && !ouv.carte && <Section><p className="inv-message" dir="auto" style={{ border: 0, padding: 0, margin: 0 }}>{messageSimple}</p></Section>}
             {children && <Section id="inv-reponse" titre={t.reponseTitre} className="inv-sec-reponse">{children}</Section>}
