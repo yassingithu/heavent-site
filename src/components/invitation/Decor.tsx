@@ -4,6 +4,8 @@ import { clubDe } from "@/lib/decors";
 /** Dessins du dossier assets/decors, chargés à la demande (un seul sera téléchargé). */
 const FICHIERS = import.meta.glob("../../assets/decors/*.svg", { query: "?raw", import: "default" }) as Record<string, () => Promise<string>>;
 
+const PERSOS = import.meta.glob("../../assets/enfants/*.webp", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
+
 interface Props { id: string; club?: string; logo?: string; prenom?: string }
 
 function Maillot({ club, logo, prenom }: { club?: string; logo?: string; prenom?: string }) {
@@ -37,6 +39,10 @@ export default function Decor({ id, club, logo, prenom }: Props) {
     if (cle) FICHIERS[cle]().then((s) => { if (vivant) setSvg(s); }).catch(() => undefined);
     return () => { vivant = false; };
   }, [id]);
+  if (id.startsWith("enfant-")) {
+    const cle = Object.keys(PERSOS).find((k) => k.endsWith(`/${id.slice(7)}.webp`));
+    if (cle) return <div className="inv-decor inv-decor-perso"><img src={PERSOS[cle]} alt="" loading="eager" decoding="async" /></div>;
+  }
   if (id === "maillot") return <div className="inv-decor inv-decor-maillot"><Maillot club={club} logo={logo} prenom={prenom} /></div>;
   if (!svg) return <div className="inv-decor" aria-hidden="true" />;
   return <div className="inv-decor" data-decor={id} aria-hidden="true" dangerouslySetInnerHTML={{ __html: svg }} />;

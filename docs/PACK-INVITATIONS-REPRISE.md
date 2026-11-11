@@ -59,3 +59,7 @@ Accès navigateur : file.deepytb.com autorisé sur le Mac. Style prêt pour l'in
 5. avion : https://file.deepytb.com/media/tasks/task_c8578cafb3b84b4e9aab844d370f65d7/0.png
 6. princesse : https://file.deepytb.com/media/tasks/task_853b959b49ef4d5b9771364c5d2ef654/0.png
 7. police : https://file.deepytb.com/media/tasks/task_f97ec41515da493ba06c7b3dd18fa0a2/0.png
+
+## Mise à jour du soir (11/11)
+Fait : retours ergonome/designer/motion/beta appliqués, 4 révélations (bougies, lanterne, ballon, médaillon), 7 personnages enfants détourés (src/assets/enfants) branchés comme décors « enfant-* » de l'anniversaire enfant.
+Reste : relire révélations + personnages avec ergonome/designer/motion/beta ; fermetures ficelle/zip/washi/languette ; ruban photo (noeud-satin.webp) ; enveloppe teintée thème enfant, plaque du nom, parchemin du lieu, badge date ; points « Important » de l'ergonome ; Rsvp.tsx devis ; tarifs ; licence musique ; CNDP ; relecture arabe.
