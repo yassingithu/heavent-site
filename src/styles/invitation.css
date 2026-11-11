@@ -588,25 +588,25 @@
 @media (prefers-reduced-motion: no-preference) { .inv-decor { animation: inv-decor-flotte 6s ease-in-out infinite; } }
 @keyframes inv-decor-flotte { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
-/* ── Cachet de cire photographié (détouré) : entier, ou brisé en deux moitiés ── */
-.inv-env-cachet-g { display: none !important; }
-.inv-enveloppe:is([data-fermeture="cire"], [data-fermeture="cire-brisee"]) .inv-env-cachet:not(.inv-env-cachet-d):not(.inv-env-cachet-g) {
-  width: 108px; height: 110px; margin: -55px 0 0 -54px; border-radius: 0; box-shadow: none; background: url("../assets/photos/cachet-h.webp") center / contain no-repeat; filter: drop-shadow(0 5px 6px rgba(0, 0, 0, .42)); transform: rotate(-6deg);
+/* ── Cachet de cire photographié (détouré, sans lettre) : l'initiale du client est posée en relief dessus ── */
+.inv-enveloppe[data-fermeture="cire"] { --cire: url("../assets/photos/cachet-vierge-bordeaux.webp"); }
+.inv-enveloppe[data-fermeture="cire-or"] { --cire: url("../assets/photos/cachet-vierge-or.webp"); }
+.inv-enveloppe[data-fermeture="cire-brisee"] { --cire: url("../assets/photos/cachet-vierge-bordeaux.webp"); }
+.inv-enveloppe[data-fermeture^="cire"] .inv-env-cachet {
+  width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 0; box-shadow: none; background: var(--cire) center / contain no-repeat; filter: drop-shadow(0 5px 6px rgba(0, 0, 0, .42)); transform: rotate(-6deg);
 }
-.inv-enveloppe:is([data-fermeture="cire"], [data-fermeture="cire-brisee"]) .inv-env-cachet::before,
-.inv-enveloppe:is([data-fermeture="cire"], [data-fermeture="cire-brisee"]) .inv-env-cachet::after,
-.inv-enveloppe:is([data-fermeture="cire"], [data-fermeture="cire-brisee"]) .inv-env-cachet em { display: none; }
-.inv-enveloppe:is([data-fermeture="cire"], [data-fermeture="cire-brisee"]) .inv-env-ruban { display: none; }
-.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire"] .inv-env-cachet:not(.inv-env-cachet-d):not(.inv-env-cachet-g) { animation: inv-cire .6s ease-in both; }
-/* brisé : à l'ouverture l'entier disparaît d'un coup et deux moitiés réelles (autre photo du même cachet) s'écartent */
+.inv-enveloppe[data-fermeture^="cire"] .inv-env-cachet::before, .inv-enveloppe[data-fermeture^="cire"] .inv-env-cachet::after { display: none; }
+.inv-enveloppe[data-fermeture^="cire"] .inv-env-cachet em { display: flex !important; position: absolute; inset: 0; align-items: center; justify-content: center; margin: 0; font-style: normal; font-family: var(--inv-titre); font-size: 44px; font-weight: 600; color: #cf8d5c !important; text-shadow: 0 1px 0 rgba(255, 226, 200, .65), 0 -1px 1px rgba(50, 14, 6, .75), 0 2px 3px rgba(50, 14, 6, .35); }
+.inv-enveloppe[data-fermeture="cire-or"] .inv-env-cachet em { color: #a8761f !important; text-shadow: 0 1px 0 rgba(255, 240, 190, .8), 0 -1px 1px rgba(70, 44, 6, .7), 0 2px 3px rgba(70, 44, 6, .3); }
+.inv-enveloppe[data-fermeture^="cire"] .inv-env-ruban { display: none; }
+.inv-env-cachet-g { display: none !important; }
+.inv[data-phase="ouverture"] .inv-enveloppe:is([data-fermeture="cire"], [data-fermeture="cire-or"]) .inv-env-cachet:not(.inv-env-cachet-d) { animation: inv-cire .6s ease-in both; }
+/* brisé : deux moitiés découpées en dents irrégulières dans la même photo ; elles s'écartent puis tombent */
 .inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] .inv-env-cachet:not(.inv-env-cachet-d):not(.inv-env-cachet-g) { animation: none; opacity: 0; }
 .inv-enveloppe[data-fermeture="cire-brisee"] :is(.inv-env-cachet-g, .inv-env-cachet-d) { display: none !important; }
-.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] :is(.inv-env-cachet-g, .inv-env-cachet-d) {
-  display: block !important; opacity: 1; width: 56px; height: 108px; margin: -54px 0 0 -56px; border-radius: 0; box-shadow: none; background: url("../assets/photos/cachet-gauche.webp") right center / auto 100% no-repeat; filter: drop-shadow(0 4px 5px rgba(0, 0, 0, .4)); transform-origin: 90% 70%; animation: inv-cire-g .75s cubic-bezier(.35, 0, .7, 1) both;
-}
-.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] .inv-env-cachet-d { width: 52px; margin: -54px 0 0 0; background-image: url("../assets/photos/cachet-droite.webp"); background-position: left center; transform-origin: 10% 70%; animation-name: inv-cire-d; }
-@keyframes inv-cire-g { 0% { transform: rotate(-6deg); opacity: 1; } 25% { transform: rotate(-9deg) translateX(-4px); } 100% { transform: rotate(-38deg) translate(-46px, 120px); opacity: 0; } }
-@keyframes inv-cire-d { 0% { transform: rotate(-6deg); opacity: 1; } 25% { transform: rotate(-3deg) translateX(4px); } 100% { transform: rotate(30deg) translate(46px, 130px); opacity: 0; } }
-
-/* Initiale du client en relief cuivré sur le cachet vierge (utilisée dès que les cachets sans lettre sont en place) */
-.inv-enveloppe[data-cire-vierge] :is(.inv-env-cachet:not(.inv-env-cachet-d):not(.inv-env-cachet-g)) em { display: flex !important; position: absolute; inset: 0; align-items: center; justify-content: center; margin: 0; font-style: normal; font-family: var(--inv-titre); font-size: 40px; font-weight: 600; color: transparent; background: linear-gradient(160deg, #f0b48a 0%, #b4673c 45%, #6e3418 100%); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 1px 0 rgba(255, 220, 190, .55)) drop-shadow(0 -1px 1px rgba(0, 0, 0, .55)); }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] :is(.inv-env-cachet-g, .inv-env-cachet-d) { display: grid !important; opacity: 1; animation: inv-cire-g .8s cubic-bezier(.35, 0, .7, 1) both; transform-origin: 60% 80%; }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] .inv-env-cachet-g { clip-path: polygon(0 0, 54% 0, 49% 14%, 55% 29%, 48% 44%, 56% 58%, 49% 73%, 55% 88%, 51% 100%, 0 100%); }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] .inv-env-cachet-d { clip-path: polygon(54% 0, 100% 0, 100% 100%, 51% 100%, 55% 88%, 49% 73%, 56% 58%, 48% 44%, 55% 29%, 49% 14%); transform-origin: 40% 80%; animation-name: inv-cire-d; }
+@keyframes inv-cire-g { 0% { transform: rotate(-6deg); opacity: 1; } 22% { transform: rotate(-10deg) translateX(-5px); } 100% { transform: rotate(-42deg) translate(-52px, 150px); opacity: 0; } }
+@keyframes inv-cire-d { 0% { transform: rotate(-6deg); opacity: 1; } 22% { transform: rotate(-2deg) translateX(5px); } 100% { transform: rotate(34deg) translate(52px, 160px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .inv-env-cachet, .inv-env-cachet-g, .inv-env-cachet-d { animation: none !important; } }

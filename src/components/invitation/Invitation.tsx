@@ -378,7 +378,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
             <span className="inv-fl inv-fl-d"><i /></span>
             <span className="inv-fl inv-fl-h"><i /></span>
             <span className="inv-env-cachet"><em>{initiales(nomsA)}</em></span>
-            <span className="inv-env-cachet inv-env-cachet-g" aria-hidden="true" />
+            <span className="inv-env-cachet inv-env-cachet-g" aria-hidden="true"><em>{initiales(nomsA)}</em></span>
             <span className="inv-env-cachet inv-env-cachet-d" aria-hidden="true"><em>{initiales(nomsA)}</em></span>
             <span className="inv-env-ruban" aria-hidden="true"><i /><b /><u /></span>
           </button>
