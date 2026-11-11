@@ -2,7 +2,8 @@
 export type Langue = "fr" | "en" | "ar";
 export type Ornement = "khatam" | "arche" | "cadre" | "fleur" | "filet" | "zellige";
 export interface Couleurs { fond: string; enveloppe: string; papier: string; texte: string; accent: string }
-export interface InvitationReglages { cachet?: boolean; musique?: string; ouverture?: string; revelation?: string; modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; programme?: { heure: string; titre: string; titre_ar?: string }[]; noms_ar?: string; lieu_ar?: string; message_ar?: string; police?: string }
+import type { TypeEvenement } from "./evenements";
+export interface InvitationReglages { /** occasion : sans valeur, c'est un mariage */ evenement?: TypeEvenement; /** questions ajoutées au formulaire de réponse (identifiants de QUESTIONS) */ questions?: string[]; cachet?: boolean; musique?: string; ouverture?: string; revelation?: string; modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; programme?: { heure: string; titre: string; titre_ar?: string }[]; noms_ar?: string; lieu_ar?: string; message_ar?: string; police?: string }
 /** Polices des prénoms au choix (toutes déjà hébergées : aucun chargement en plus) */
 export const POLICES: { id: string; nom: string; css: string }[] = [
   { id: "calligraphie", nom: "Calligraphie", css: '"Pinyon Script", "Snell Roundhand", cursive' },
@@ -18,10 +19,11 @@ export function imagesOuverture(o: OuvertureDef): string[] {
   return [`${base}-g.webp`, `${base}-d.webp`, ...(o.cadre ? [`${base}-cadre.webp`] : []), ...(o.carte ? [o.carte.fin] : [])];
 }
 
-export interface Modele { id: string; nom: string; description: string; ornement: Ornement; couleurs: Couleurs }
+/** `pour` : occasions auxquelles le modèle est proposé (vide = toutes). Les teintes poudrées restent aux mariages. */
+export interface Modele { id: string; nom: string; description: string; ornement: Ornement; couleurs: Couleurs; pour?: TypeEvenement[] }
 
 export const MODELES: Modele[] = [
-  { id: "fleur-oranger", nom: "Fleur d'oranger", description: "Rose poudré, doux et lumineux", ornement: "fleur",
+  { id: "fleur-oranger", nom: "Fleur d'oranger", description: "Rose poudré, doux et lumineux", ornement: "fleur", pour: ["mariage"],
     couleurs: { fond: "#F2E2DA", enveloppe: "#E8C7BC", papier: "#FFFBF6", texte: "#4A3731", accent: "#B07A68" } },
   { id: "or-ivoire", nom: "Or & ivoire", description: "Classique, noir et or", ornement: "khatam",
     couleurs: { fond: "#141414", enveloppe: "#2A2622", papier: "#F7F1E3", texte: "#2A2420", accent: "#B5923A" } },
@@ -33,11 +35,25 @@ export const MODELES: Modele[] = [
     couleurs: { fond: "#E9DCC6", enveloppe: "#D8BFA0", papier: "#FFFBF2", texte: "#4B3A2C", accent: "#9C4A2C" } },
   { id: "grenat", nom: "Grenat & or", description: "Rouge profond, raffiné et chaleureux", ornement: "khatam",
     couleurs: { fond: "#3A1420", enveloppe: "#5A1F32", papier: "#FBF4EE", texte: "#3A1F27", accent: "#C9A25B" } },
+  /* Modèles des autres occasions : un seul accent chacun, dans l'univers noir, or et crème */
+  { id: "prune", nom: "Prune & champagne", description: "Velours prune, or champagne", ornement: "khatam", pour: ["anniversaire", "anniversaire-enfant"],
+    couleurs: { fond: "#2A0F20", enveloppe: "#4A1F38", papier: "#FAF4EA", texte: "#2E1726", accent: "#B8975A" } },
+  { id: "olivier", nom: "Olivier & sauge", description: "Sauge, ivoire et or doux", ornement: "fleur", pour: ["baby-shower"],
+    couleurs: { fond: "#DDE3D3", enveloppe: "#BCC8AC", papier: "#FCFBF5", texte: "#2F3A2A", accent: "#6F8452" } },
+  { id: "ivoire-vert", nom: "Ivoire & vert profond", description: "Sobre, zellige et or mat", ornement: "zellige", pour: ["naissance"],
+    couleurs: { fond: "#E9E2D0", enveloppe: "#1F4A3C", papier: "#FBF8EF", texte: "#1F2A24", accent: "#8C6D22" } },
+  { id: "ivoire-nuit", nom: "Ivoire & bleu nuit", description: "Recueilli, bleu nuit et or doux", ornement: "cadre", pour: ["bapteme"],
+    couleurs: { fond: "#F1ECE0", enveloppe: "#101B30", papier: "#FBF8F1", texte: "#16213A", accent: "#9C8650" } },
+  { id: "nuit-lanterne", nom: "Nuit & lanterne", description: "Bleu nuit, or de lanterne", ornement: "khatam", pour: ["iftar"],
+    couleurs: { fond: "#0B1424", enveloppe: "#1B2E52", papier: "#F4F1EA", texte: "#16213A", accent: "#B89A4E" } },
 ];
 
+/** Modèles proposés pour une occasion (les mariages gardent toute la bibliothèque d'origine) */
+export const modelesPour = (ev?: TypeEvenement) => MODELES.filter((m) => !m.pour || m.pour.includes(ev ?? "mariage"));
+
 /** Palettes toutes prêtes : un clic applique les 5 couleurs (le modèle reste le même) */
-export const PALETTES: { id: string; nom: string; couleurs: Couleurs }[] = [
-  { id: "poudre", nom: "Rose poudré", couleurs: MODELES[0].couleurs },
+export const PALETTES: { id: string; nom: string; couleurs: Couleurs; pour?: TypeEvenement[] }[] = [
+  { id: "poudre", nom: "Rose poudré", couleurs: MODELES[0].couleurs, pour: ["mariage"] },
   { id: "noir-or", nom: "Noir & or", couleurs: MODELES[1].couleurs },
   { id: "vert", nom: "Vert émeraude", couleurs: MODELES[2].couleurs },
   { id: "bleu", nom: "Bleu Majorelle", couleurs: MODELES[3].couleurs },
@@ -46,9 +62,11 @@ export const PALETTES: { id: string; nom: string; couleurs: Couleurs }[] = [
   { id: "ivoire", nom: "Ivoire & or", couleurs: { fond: "#F4EFE3", enveloppe: "#E4D49A", papier: "#FBF6E9", texte: "#2F2A20", accent: "#8C6D22" } },
   { id: "sauge", nom: "Sauge", couleurs: { fond: "#DDE3D3", enveloppe: "#BCC8AC", papier: "#FCFBF5", texte: "#2F3A2A", accent: "#7B8F5E" } },
   { id: "marine", nom: "Bleu nuit", couleurs: { fond: "#101B30", enveloppe: "#1B2E52", papier: "#F4F1EA", texte: "#16213A", accent: "#C9B27A" } },
-  { id: "peche", nom: "Pêche", couleurs: { fond: "#F8E4D6", enveloppe: "#F0C7AE", papier: "#FFFAF5", texte: "#54382B", accent: "#D07C58" } },
-  { id: "lavande", nom: "Lavande", couleurs: { fond: "#E7E1F0", enveloppe: "#CFC4E3", papier: "#FFFCFF", texte: "#3F3552", accent: "#8A6FB5" } },
+  { id: "peche", nom: "Pêche", couleurs: { fond: "#F8E4D6", enveloppe: "#F0C7AE", papier: "#FFFAF5", texte: "#54382B", accent: "#D07C58" }, pour: ["mariage"] },
+  { id: "lavande", nom: "Lavande", couleurs: { fond: "#E7E1F0", enveloppe: "#CFC4E3", papier: "#FFFCFF", texte: "#3F3552", accent: "#8A6FB5" }, pour: ["mariage"] },
+  { id: "prune", nom: "Prune & champagne", couleurs: MODELES[6].couleurs, pour: ["anniversaire", "anniversaire-enfant"] },
 ];
+export const palettesPour = (ev?: TypeEvenement) => PALETTES.filter((p) => !p.pour || p.pour.includes(ev ?? "mariage"));
 
 export const CHAMPS_COULEUR: { cle: keyof Couleurs; libelle: string; aide: string }[] = [
   { cle: "fond", libelle: "Fond de la page", aide: "Derrière l'enveloppe" },
@@ -118,7 +136,7 @@ export const TEXTES = {
 
 export const initiales = (noms: string) => {
   const m = noms.split(/\s+(?:et|and|و)\s+|\s*&\s*/i).map((s) => s.trim().charAt(0).toUpperCase()).filter(Boolean);
-  return m.length >= 2 ? `${m[0]} & ${m[1]}` : (m[0] ?? "♥");
+  return m.length >= 2 ? `${m[0]} & ${m[1]}` : (m[0] ?? "✦");
 };
 
 /** Ouvertures et révélations : chacune se combine librement avec n'importe quel modèle de couleurs. */
@@ -167,9 +185,10 @@ export const OUVERTURES: OuvertureDef[] = [
   { id: "v-oliveto", nom: "Oliveraie", description: "Un chemin d'oliviers se colore, aquarelle méditerranéenne. 5 s.", duree: 5000, video: "/ouvertures/video/oliveto.mp4", poster: "/ouvertures/video/oliveto-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Moderne", "Floral"] },
   { id: "v-azure", nom: "Côte bleue", description: "Une arche donne sur la mer et les coupoles bleues. 5 s.", duree: 5000, video: "/ouvertures/video/azure.mp4", poster: "/ouvertures/video/azure-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Moderne"] },
 ];
-export const REVELATIONS: { id: string; nom: string; description: string }[] = [
+export const REVELATIONS: { id: string; nom: string; description: string; pour?: TypeEvenement[] }[] = [
   { id: "aucune", nom: "Aucune", description: "L'invitation s'affiche juste après l'ouverture." },
-  { id: "coeur", nom: "Cœur à gratter", description: "L'invité gratte un cœur doré pour découvrir la date." },
+  { id: "coeur", nom: "Cœur à gratter", description: "L'invité gratte un cœur doré pour découvrir la date.", pour: ["mariage"] },
 ];
+export const revelationsPour = (ev?: TypeEvenement) => REVELATIONS.filter((r) => !r.pour || r.pour.includes(ev ?? "mariage"));
 export const ouvertureDe = (id?: string) => OUVERTURES.find((o) => o.id === id) ?? OUVERTURES[0];
 export const revelationDe = (id?: string) => REVELATIONS.find((r) => r.id === id) ?? REVELATIONS[0];

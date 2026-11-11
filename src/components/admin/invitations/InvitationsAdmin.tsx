@@ -6,9 +6,11 @@ import { ouvertureDe } from "@/lib/invitation";
 import ChampMessage from "@/components/invitation/ChampMessage";
 import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvitation";
 import type { InvitationReglages } from "@/lib/invitation";
+import ChoixOccasion from "@/components/invitation/ChoixOccasion";
+import { evenementDe, type TypeEvenement } from "@/lib/evenements";
 
 interface Apercu { id: string; jeton: string; noms: string; date_evenement: string | null; lieu: string | null; message: string | null; invitation: InvitationReglages; prospect: string | null; expire_le: string; created_at: string; mode: "test" | "final"; avec_reponse: boolean; jeton_liste?: string | null; notif_email?: string | null }
-interface Confirme { apercu_id: string; nom: string; reponse: "oui" | "non"; nb_confirmes: number; accompagnants: string[]; created_at: string }
+interface Confirme { apercu_id: string; nom: string; reponse: "oui" | "non"; nb_confirmes: number; accompagnants: string[]; precisions?: string | null; created_at: string }
 interface Lieu { nom: string; ville: string | null; lien_maps: string | null }
 
 const champ = "w-full rounded-xl border border-[#E3D6BA] bg-white px-3 min-h-10 text-sm";
@@ -38,7 +40,7 @@ export default function InvitationsAdmin() {
       db.from("lieux").select("nom,ville,lien_maps").eq("actif", true).order("ville").order("nom"),
     ]);
     setListe(a.data ?? []); setLieux(l.data ?? []);
-    const c = await db.from("reponses_invitation").select("apercu_id,nom,reponse,nb_confirmes,accompagnants,created_at").order("created_at", { ascending: true });
+    const c = await db.from("reponses_invitation").select("apercu_id,nom,reponse,nb_confirmes,accompagnants,precisions,created_at").order("created_at", { ascending: true });
     setConfirmes(c.data ?? []);
   }, []);
   useEffect(() => { charger(); }, [charger]);
@@ -50,7 +52,7 @@ export default function InvitationsAdmin() {
   };
   const enregistrer = async () => {
     if (!edit) return;
-    if (!edit.noms.trim()) { toast.error("Saisissez les prénoms des mariés"); return; }
+    if (!edit.noms.trim()) { toast.error(`Renseignez : ${evenementDe(edit.invitation?.evenement).nomsLibelle.toLowerCase()}`); return; }
     setEnvoi(true);
     const { error } = await db.from("invitations_apercu").update({ noms: edit.noms.trim(), date_evenement: edit.date_evenement || null, lieu: edit.lieu?.trim() || null, message: edit.message?.trim() || null, invitation: edit.invitation, prospect: edit.prospect?.trim() || null }).eq("id", edit.id);
     setEnvoi(false);
@@ -65,14 +67,14 @@ export default function InvitationsAdmin() {
   };
   const copier = async (a: Apercu) => { try { await navigator.clipboard.writeText(lien(a.jeton)); toast.success("Lien copié"); } catch { toast.error(lien(a.jeton)); } };
   const whatsapp = async (a: Apercu) => {
-    if (!a.noms.trim()) { toast.error("Saisissez d'abord les prénoms des mariés"); return; }
+    if (!a.noms.trim()) { toast.error(`Renseignez d'abord : ${evenementDe(a.invitation?.evenement).nomsLibelle.toLowerCase()}`); return; }
     const fenetre = window.open("about:blank", "_blank");
     if (edit?.id === a.id) await enregistrer();
-    const t = `💌 Votre invitation de mariage numérique\n\nBonjour ! Voici à quoi pourrait ressembler votre invitation, avec vos prénoms. Touchez l'enveloppe pour l'ouvrir :\n${lien(a.jeton)}\n\nLes couleurs se changent à votre goût, et vos invités répondent en un clic. — Heavent People Agency`;
+    const t = `💌 Votre invitation ${evenementDe(a.invitation?.evenement).de} numérique\n\nBonjour ! Voici à quoi pourrait ressembler votre invitation. Touchez l'enveloppe pour l'ouvrir :\n${lien(a.jeton)}\n\nLes couleurs se changent à votre goût, et vos invités répondent en un clic. — Heavent People Agency`;
     const url = `https://wa.me/?text=${encodeURIComponent(t)}`;
     if (fenetre) fenetre.location.href = url; else window.location.href = url;
   };
-  const manque = (a: Apercu) => !a.noms.trim() ? "Saisissez les prénoms des mariés" : !a.date_evenement ? "Ajoutez la date avant de passer en finale" : a.date_evenement < new Date().toISOString().slice(0, 10) ? "La date est déjà passée : corrigez-la avant de passer en finale" : !a.lieu?.trim() ? "Ajoutez la salle avant de passer en finale" : null;
+  const manque = (a: Apercu) => !a.noms.trim() ? `Renseignez : ${evenementDe(a.invitation?.evenement).nomsLibelle.toLowerCase()}` : !a.date_evenement ? "Ajoutez la date avant de passer en finale" : a.date_evenement < new Date().toISOString().slice(0, 10) ? "La date est déjà passée : corrigez-la avant de passer en finale" : !a.lieu?.trim() ? "Ajoutez la salle avant de passer en finale" : null;
   const passerFinale = async () => {
     if (!edit) return;
     if (!manque(edit)) { /* ok */ } else { toast.error(manque(edit)!); setFinaliser(false); return; }
@@ -94,7 +96,7 @@ export default function InvitationsAdmin() {
   const whatsappClient = async (a: Apercu) => {
     const fenetre = window.open("about:blank", "_blank");
     if (edit?.id === a.id) await enregistrer();
-    const t = `💌 Voici votre invitation de mariage numérique, prête à envoyer à vos invités :\n${lien(a.jeton)}\n\n${a.avec_reponse ? "Vos invités peuvent y confirmer leur présence ; nous vous enverrons la liste des personnes qui ont confirmé." : "Vous pouvez l'envoyer à qui vous voulez (WhatsApp, SMS, e-mail)."}\n\nHeavent People Agency`;
+    const t = `💌 Voici votre invitation ${evenementDe(a.invitation?.evenement).de} numérique, prête à envoyer à vos invités :\n${lien(a.jeton)}\n\n${a.avec_reponse ? "Vos invités peuvent y confirmer leur présence ; nous vous enverrons la liste des personnes qui ont confirmé." : "Vous pouvez l'envoyer à qui vous voulez (WhatsApp, SMS, e-mail)."}\n\nHeavent People Agency`;
     const url = `https://wa.me/?text=${encodeURIComponent(t)}`;
     if (fenetre) fenetre.location.href = url; else window.location.href = url;
   };
@@ -133,6 +135,13 @@ export default function InvitationsAdmin() {
     if (error) { toast.error("Enregistrement impossible"); return; }
     majCarte(a, { notif_email: v || null }); toast.success(v ? "Vous serez prévenu à chaque nouvelle réponse" : "Notifications arrêtées");
   };
+  const appliquerOccasion = (id: TypeEvenement) => {
+    if (!edit) return;
+    const avant = evenementDe(edit.invitation?.evenement), d = evenementDe(id);
+    const prog = edit.invitation.programme ?? [];
+    const memeQuePreset = JSON.stringify(prog) === JSON.stringify(avant.programme);
+    setEdit({ ...edit, invitation: { ...edit.invitation, evenement: id === "mariage" ? undefined : id, modele: d.modele, ouverture: d.ouverture, revelation: "aucune", couleurs: {}, questions: [], programme: prog.length && !memeQuePreset ? prog : d.programme } });
+  };
   const choisirLieu = (nom: string) => {
     const l = lieux.find((x) => x.nom === nom);
     if (!edit) return;
@@ -145,8 +154,9 @@ export default function InvitationsAdmin() {
     return (
       <div className="space-y-5" data-testid="invitation-edition">
         <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => setEdit(null)}><ArrowLeft className="h-4 w-4" /> Tous les aperçus</button>
+        <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 sm:p-6"><ChoixOccasion valeur={edit.invitation?.evenement} onChoisir={appliquerOccasion} /></div>
         <div className="grid sm:grid-cols-2 gap-3 rounded-3xl bg-white border border-[#EADFC8] p-4">
-          <label className="text-sm">Prénoms des mariés<input className={`${champ} mt-1`} value={edit.noms} placeholder="Lina & Adam" onChange={(e) => setEdit({ ...edit, noms: e.target.value })} data-testid="apercu-noms" /></label>
+          <label className="text-sm">{evenementDe(edit.invitation?.evenement).nomsLibelle}<input className={`${champ} mt-1`} value={edit.noms} placeholder={evenementDe(edit.invitation?.evenement).nomsExemple} onChange={(e) => setEdit({ ...edit, noms: e.target.value })} data-testid="apercu-noms" /></label>
           <label className="text-sm">Pour qui (note interne)<input className={`${champ} mt-1`} value={edit.prospect ?? ""} placeholder="Ex. couple rencontré au salon" onChange={(e) => setEdit({ ...edit, prospect: e.target.value })} /></label>
           <label className="text-sm">Date<input type="date" className={`${champ} mt-1`} value={edit.date_evenement ?? ""} onChange={(e) => setEdit({ ...edit, date_evenement: e.target.value })} /></label>
           <label className="text-sm">Salle (liste Heavent)
@@ -237,7 +247,7 @@ export default function InvitationsAdmin() {
                 </div>
                 {oui.length === 0 ? <p className="text-sm text-[#5E554A] mt-3">Personne n'a encore confirmé.</p> : (
                   <ul className="divide-y divide-[#EFE6D2] text-sm mt-2">
-                    {oui.map((c, i) => <li key={i} className="py-2"><b>{c.nom}</b>{c.accompagnants.length ? <span className="text-[#6B6154]"> + {c.accompagnants.join(", ")}</span> : null}</li>)}
+                    {oui.map((c, i) => <li key={i} className="py-2"><b>{c.nom}</b>{c.accompagnants.length ? <span className="text-[#6B6154]"> + {c.accompagnants.join(", ")}</span> : null}{c.precisions ? <span className="block text-xs text-[#6B6154]" data-testid="confirme-precisions">{c.precisions}</span> : null}</li>)}
                   </ul>
                 )}
                 {non.length > 0 && <p className="text-sm text-[#6B6154] mt-3">Ne viendront pas : {non.map((c) => c.nom).join(", ")}</p>}
@@ -247,7 +257,7 @@ export default function InvitationsAdmin() {
         </div>
       ) : (<>
       <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-[#5E554A] max-w-xl">Créez en 1 minute un aperçu avec les prénoms d'un couple et envoyez-lui le lien : l'enveloppe s'ouvre, la salle s'affiche sur Google Maps. Les aperçus restent valables 30 jours ; une carte finale reste valable jusqu'à 30 jours après le mariage. Pour un couple client, l'invitation se règle dans son espace mariés (onglet « Mon invitation »).</p>
+        <p className="text-sm text-[#5E554A] max-w-xl">Créez en 1 minute un aperçu (mariage, anniversaire, baby shower, naissance, iftar) et envoyez le lien au client : l'enveloppe s'ouvre, la salle s'affiche sur Google Maps. Les aperçus restent valables 30 jours ; une carte finale reste valable jusqu'à 30 jours après le mariage. Pour un couple client, l'invitation se règle dans son espace mariés (onglet « Mon invitation »).</p>
         <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={creer} data-testid="apercu-nouveau"><Plus className="h-4 w-4" /> Nouvel aperçu</button>
       </div>
       {liste.length === 0 && <p className="text-sm text-[#5E554A] text-center py-10">Aucun aperçu pour le moment.</p>}
@@ -255,7 +265,7 @@ export default function InvitationsAdmin() {
         {liste.map((a) => (
           <li key={a.id} className="rounded-2xl bg-white border border-[#EADFC8] p-3 flex flex-wrap items-center gap-2 justify-between">
             <button type="button" className="text-left min-w-0 flex-1" onClick={() => setEdit(a)}>
-              <span className="block font-medium truncate">{a.noms} <span className={`ml-1 align-middle text-[10px] uppercase tracking-widest rounded-full px-2 py-0.5 ${a.mode === "final" ? "bg-[#E6F2EC] text-[#1F5A4C]" : "bg-[#F4ECD8] text-[#7A5A12]"}`}>{a.mode === "final" ? "Finale" : "Test"}</span></span>
+              <span className="block font-medium truncate">{a.noms} {a.invitation?.evenement && <span className="ml-1 align-middle text-[10px] uppercase tracking-widest rounded-full border border-[#DCCBA6] px-2 py-0.5 text-[#6B6154]">{evenementDe(a.invitation.evenement).nom}</span>}<span className={`ml-1 align-middle text-[10px] uppercase tracking-widest rounded-full px-2 py-0.5 ${a.mode === "final" ? "bg-[#E6F2EC] text-[#1F5A4C]" : "bg-[#F4ECD8] text-[#7A5A12]"}`}>{a.mode === "final" ? "Finale" : "Test"}</span></span>
               <span className="block text-xs text-[#6B6154] truncate">{[a.prospect, a.lieu, `${a.mode === "final" ? "valable jusqu'au" : "expire le"} ${new Date(a.expire_le).toLocaleDateString("fr-FR")}`].filter(Boolean).join(" · ")}</span>
             </button>
             <div className="w-full flex flex-wrap items-center gap-2 text-xs">

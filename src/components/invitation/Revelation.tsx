@@ -5,20 +5,23 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const L = 260, H = 240, COEUR = "M130 225C20 150 0 90 0 62C0 26 28 2 64 2C92 2 116 18 130 44C144 18 168 2 196 2C232 2 260 26 260 62C260 90 240 150 130 225Z";
 const SEUIL = 0.5;
 
-interface Props { sous: { haut: string; jour: string; bas: string } | null; titre: string; bouton: string; noms: string; onFini: () => void }
+/** `secret` : le contenu n'existe pas dans la page tant que l'invité n'a pas gratté (rien à lire dans le code ni au lecteur d'écran). */
+interface Props { sous: { haut: string; jour: string; bas: string } | null; titre: string; bouton: string; noms: string; onFini: () => void; secret?: boolean }
 
-export default function Revelation({ sous, titre, bouton, noms, onFini }: Props) {
+export default function Revelation({ sous, titre, bouton, noms, onFini, secret = false }: Props) {
   const cv = useRef<HTMLCanvasElement>(null);
   const [fini, setFini] = useState(false);
   const [aGratte, setAGratte] = useState(false);
   const termine = useRef(false);
   const dernier = useRef(Date.now());
 
+  /* onFini change à chaque rendu du parent : on le garde dans une référence, sinon le canevas serait redessiné pendant le grattage */
+  const finiRef = useRef(onFini); finiRef.current = onFini;
   const reveler = useCallback(() => {
     if (termine.current) return;
     termine.current = true; setFini(true);
-    window.setTimeout(onFini, 950);
-  }, [onFini]);
+    window.setTimeout(() => finiRef.current(), 950);
+  }, []);
 
   useEffect(() => {
     const c = cv.current; if (!c) return;
@@ -63,7 +66,7 @@ export default function Revelation({ sous, titre, bouton, noms, onFini }: Props)
     <div className={`inv-rev ${fini ? "is-fini" : ""}`} data-testid="invitation-revelation">
       <p className="inv-rev-noms">{noms}</p>
       <div className="inv-rev-cadre"><div className="inv-rev-coeur" style={{ clipPath: `path('${COEUR}')`, WebkitClipPath: `path('${COEUR}')` }}>
-        {sous && <div className="inv-rev-sous"><small>{sous.haut}</small><b>{sous.jour}</b><small>{sous.bas}</small></div>}
+        {sous && (!secret || fini) && <div className="inv-rev-sous" aria-hidden={!fini}><small>{sous.haut}</small><b>{sous.jour}</b><small>{sous.bas}</small></div>}
         <canvas ref={cv} className="inv-rev-gratte" aria-hidden="true" />
       </div></div>
       <p className={`inv-aide inv-rev-aide ${aGratte ? "is-vu" : ""}`}>{titre}</p>

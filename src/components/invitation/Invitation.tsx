@@ -6,7 +6,8 @@ import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import Revelation from "./Revelation";
 import PagesCarte, { type UnitePage } from "./PagesCarte";
 import { morceauxDeTexte, phrases } from "@/lib/pagination";
-import { couleursDe, imagesOuverture, policeDe, initiales, lienMaps, modeleDe, ouvertureDe, revelationDe, surCouleur, TEXTES, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
+import { couleursDe, imagesOuverture, policeDe, initiales, lienMaps, modeleDe, ouvertureDe, revelationDe, surCouleur, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
+import { evenementDe, textesDe } from "@/lib/evenements";
 import "@fontsource/pinyon-script/latin-400.css";
 import "@fontsource/pinyon-script/latin-ext-400.css";
 import "@fontsource/amiri/arabic-400.css";
@@ -175,7 +176,8 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const c = useMemo(() => couleursDe(reglages), [reglages]);
   const modele = reglages?.modele;
   const ornement = modeleDe(modele).ornement;
-  const t = TEXTES[langue];
+  const ev = evenementDe(reglages?.evenement);
+  const t = textesDe(langue, ev.id);
   const [, majOuv] = useState(0);
   useEffect(() => { if (String(reglages?.ouverture ?? "").startsWith("perso-")) chargerOuverturesPerso().then(() => majOuv((n) => n + 1)); }, [reglages?.ouverture]);
   // préchargement des images de l'ouverture choisie ; si l'une échoue (réseau, fichier absent), on bascule sur l'ouverture de secours sans animation d'images
@@ -190,7 +192,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     return () => { vivant = false; window.clearTimeout(t); };
   }, [ouvChoisie.id]);
   const ouv = secours ? ouvertureDe(undefined) : ouvChoisie;
-  const avecRevelation = revelationDe(reglages?.revelation).id === "coeur" && !sansAnimation();
+  const avecRevelation = revelationDe(reglages?.revelation).id === "coeur" && ev.id === "mariage" && !sansAnimation();
   const [phase, setPhase] = useState<"fermee" | "ouverture" | "revelation" | "ouverte">(ouverte || sansAnimation() ? "ouverte" : "fermee");
 
   useEffect(() => () => {
@@ -422,7 +424,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           </>}
         {pleinePage && (
           <div className="inv-histoire">
-            <Section nuit className="inv-sec-anneaux"><Anneaux /><p className="inv-sec-mot">{t.alliances}</p></Section>
+            <Section nuit className="inv-sec-anneaux">{ev.anneaux ? <Anneaux /> : <div className="inv-etoile" aria-hidden="true"><Ornement type="khatam" /></div>}<p className="inv-sec-mot">{t.alliances}</p></Section>
             {cibleMs && (cibleMs > Date.now() || date === aujourdhuiISO) && <Section nuit titre={t.compte}><CompteARebours cible={cibleMs} t={t} /></Section>}
             {(lieu || carte) && (
               <Section nuit titre={t.lieuTitre}>

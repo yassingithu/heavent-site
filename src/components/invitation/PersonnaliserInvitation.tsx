@@ -6,7 +6,8 @@ import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import { RotateCcw, Play } from "lucide-react";
 import Invitation from "./Invitation";
 import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
-import { POLICES, CHAMPS_COULEUR, MODELES, OUVERTURES, STYLES_OUVERTURE, PALETTES, REVELATIONS, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
+import { POLICES, CHAMPS_COULEUR, OUVERTURES, STYLES_OUVERTURE, modelesPour, palettesPour, revelationsPour, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
+import { evenementDe, questionDe } from "@/lib/evenements";
 
 interface Props {
   /** Affiche l'outil d'ajout d'ouvertures vidéo (administration seulement). */
@@ -20,6 +21,8 @@ const egal = (a: Couleurs, b: Couleurs) => (Object.keys(a) as (keyof Couleurs)[]
 
 /** Choix du modèle, des couleurs (modifiables à tout moment) et aperçu en direct. */
 export default function PersonnaliserInvitation({ noms, date, lieu, message, valeur, onChange, estAdmin }: Props) {
+  const ev = evenementDe(valeur.evenement);
+  const compteur = { v: 0 }; const num = () => ++compteur.v;
   const [rejouer, setRejouer] = useState(0);
   const [langue, setLangue] = useState<Langue>("fr");
   const modele = modeleDe(valeur.modele);
@@ -45,7 +48,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]" data-testid="personnaliser-invitation">
       <div className="space-y-6 min-w-0">
         <section>
-          <h3 className="font-serif text-xl mb-1">1. Comment l'invitation s'ouvre</h3>
+          <h3 className="font-serif text-xl mb-1">{num()}. Comment l'invitation s'ouvre</h3>
           <p className="text-sm text-[#5E554A] mb-3">Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu.</p>
           <div className="flex gap-3 overflow-x-auto border-b border-[#EADFC8] mb-4" role="group" aria-label="Filtrer par style">
             {[null, ...STYLES_OUVERTURE].map((st) => (
@@ -83,26 +86,28 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           {estAdmin && <ImportOuverture onAjoutee={(id) => choisirOuverture(id)} />}
         </section>
 
+        {revelationsPour(ev.id).length > 1 && (
         <section>
-          <h3 className="font-serif text-xl mb-1">2. Une petite surprise ?</h3>
+          <h3 className="font-serif text-xl mb-1">{num()}. Une petite surprise ?</h3>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Révélation">
-            {REVELATIONS.map((r) => (
+            {revelationsPour(ev.id).map((r) => (
               <button key={r.id} type="button" onClick={() => choisirRevelation(r.id)} aria-pressed={rev.id === r.id} data-testid={`revelation-${r.id}`}
                 className={`rounded-full border px-4 min-h-10 text-sm ${rev.id === r.id ? "border-[#141414] bg-[#141414] text-white" : "border-[#E3D6BA] bg-white hover:border-[#C8B560]"}`}>{r.nom}</button>
             ))}
           </div>
           <p className="text-xs text-[#6B6154] mt-2">{rev.description}</p>
         </section>
+        )}
 
         <section>
           <ChampMusique valeur={valeur.musique ?? ""} onChange={(m) => onChange({ ...valeur, musique: m })} estAdmin={estAdmin} champ={champ} />
         </section>
 
         <section>
-          <h3 className="font-serif text-xl mb-1">3. Le style de l'invitation</h3>
+          <h3 className="font-serif text-xl mb-1">{num()}. Le style de l'invitation</h3>
           <p className="text-sm text-[#5E554A] mb-3">Chaque modèle a son ornement et ses couleurs. Vos couleurs personnalisées sont conservées quand vous changez de modèle.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {MODELES.map((m) => (
+            {modelesPour(ev.id).map((m) => (
               <button key={m.id} type="button" onClick={() => choisirModele(m.id)} aria-pressed={modele.id === m.id} data-testid={`modele-${m.id}`}
                 className={`text-left rounded-2xl border p-2.5 transition ${modele.id === m.id ? "border-[#141414] ring-2 ring-[#141414]/15" : "border-[#E3D6BA] hover:border-[#C8B560]"}`}>
                 <span className="flex h-14 rounded-lg overflow-hidden mb-2" style={{ background: m.couleurs.fond }} aria-hidden="true">
@@ -117,14 +122,14 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
 
         <section>
           <div className="flex items-center justify-between gap-2 mb-1">
-            <h3 className="font-serif text-xl">4. Les couleurs</h3>
+            <h3 className="font-serif text-xl">{num()}. Les couleurs</h3>
             <button type="button" className={bouton} onClick={() => onChange({ ...valeur, couleurs: {} })} disabled={!modifiees} data-testid="couleurs-reinit">
               <RotateCcw className="h-4 w-4" /> Couleurs du modèle
             </button>
           </div>
           <p className="text-sm text-[#5E554A] mb-3">Un clic sur une palette, ou réglez chaque couleur. Modifiable à tout moment, même après l'envoi : vos invités voient toujours la dernière version.</p>
           <div className="flex flex-wrap gap-2 mb-4">
-            {PALETTES.map((p) => (
+            {palettesPour(ev.id).map((p) => (
               <button key={p.id} type="button" onClick={() => appliquerPalette(p.couleurs)} aria-pressed={egal(actuelles, p.couleurs)} aria-label={p.nom} title={p.nom} data-testid={`palette-${p.id}`}
                 className={`flex items-center gap-2 rounded-full border pl-1.5 pr-3 min-h-10 text-xs ${egal(actuelles, p.couleurs) ? "border-[#141414] bg-[#FAF7EE]" : "border-[#E3D6BA] bg-white hover:bg-[#FAF7EE]"}`}>
                 <span className="flex" aria-hidden="true">
@@ -157,7 +162,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </section>
 
         <section className="space-y-3">
-          <h3 className="font-serif text-xl">5. Le lieu et l'heure</h3>
+          <h3 className="font-serif text-xl">{num()}. Le lieu et l'heure</h3>
           <label className="block text-sm">Heure d'accueil (facultatif)
             <input className={`${champ} mt-1`} value={valeur.heure ?? ""} maxLength={20} placeholder="19h30" onChange={(e) => onChange({ ...valeur, heure: e.target.value })} data-testid="invitation-heure" />
           </label>
@@ -168,7 +173,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </section>
 
         <section className="space-y-3" data-testid="invitation-programme">
-          <h3 className="font-serif text-xl">6. Le programme (facultatif)</h3>
+          <h3 className="font-serif text-xl">{num()}. Le programme (facultatif)</h3>
           <p className="text-xs text-[#6B6154]">Affiché aux invités quand ils font défiler l'invitation.</p>
           {(valeur.programme ?? []).map((l, k) => (
             <div key={k} className="flex gap-2">
@@ -180,14 +185,31 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           ))}
           <div className="flex flex-wrap gap-2">
             {(valeur.programme ?? []).length < 8 && <button type="button" className={bouton} onClick={() => onChange({ ...valeur, programme: [...(valeur.programme ?? []), { heure: "", titre: "" }] })}>Ajouter un moment</button>}
-            {!(valeur.programme ?? []).length && <button type="button" className={bouton} onClick={() => onChange({ ...valeur, programme: [{ heure: "19h30", titre: "Accueil des invités" }, { heure: "20h30", titre: "Entrée des mariés" }, { heure: "21h00", titre: "Dîner" }, { heure: "23h00", titre: "Soirée dansante" }] })}>Programme type</button>}
+            {!(valeur.programme ?? []).length && ev.programme.length > 0 && <button type="button" className={bouton} onClick={() => onChange({ ...valeur, programme: ev.programme })}>Programme type</button>}
           </div>
         </section>
 
+        {ev.questions.length > 0 && (
+          <section className="space-y-2" data-testid="invitation-questions">
+            <h3 className="font-serif text-xl">{num()}. Les questions posées à vos invités</h3>
+            <p className="text-xs text-[#6B6154]">Cochez celles qui vous aident. Toutes sont facultatives pour l'invité. Rien n'est demandé sur la religion ou la santé, hormis ce que l'invité choisit d'indiquer.</p>
+            {ev.questions.map((id) => {
+              const q = questionDe(id); if (!q) return null;
+              const coche = (valeur.questions ?? []).includes(id);
+              return (
+                <label key={id} className="flex items-center gap-2 min-h-11 text-sm cursor-pointer">
+                  <input type="checkbox" className="h-5 w-5 accent-[#8C6D22]" checked={coche} onChange={(e) => onChange({ ...valeur, questions: e.target.checked ? [...(valeur.questions ?? []), id] : (valeur.questions ?? []).filter((x) => x !== id) })} data-testid={`question-choix-${id}`} />
+                  <span>{q.fr}</span>
+                </label>
+              );
+            })}
+          </section>
+        )}
+
         <section className="space-y-3" data-testid="invitation-arabe">
-          <h3 className="font-serif text-xl">7. La version arabe</h3>
+          <h3 className="font-serif text-xl">{num()}. La version arabe</h3>
           <p className="text-xs text-[#6B6154]">Les prénoms et le lieu sont écrits automatiquement en lettres arabes. Vérifiez et corrigez ici si besoin : ce que vous écrivez remplace la suggestion.</p>
-          <label className="block text-sm">Prénoms des mariés
+          <label className="block text-sm">{ev.nomsLibelle}
             <input dir="rtl" className={`${champ} mt-1`} value={valeur.noms_ar ?? ""} maxLength={80} placeholder={noms_ar(noms)} onChange={(e) => onChange({ ...valeur, noms_ar: e.target.value })} data-testid="invitation-noms-ar" />
           </label>
           {lieu && (
