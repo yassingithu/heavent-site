@@ -28,7 +28,7 @@ export default function Revelation({ sous, titre, bouton, noms, onFini, secret =
     const c = cv.current; if (!c) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     c.width = L * dpr; c.height = H * dpr;
-    const g = c.getContext("2d"); if (!g) return;
+    const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return;
     g.scale(dpr, dpr);
     const couleur = getComputedStyle(c).getPropertyValue("--inv-accent").trim() || "#B8923A";
     const d = g.createLinearGradient(0, 0, L, H);
@@ -72,7 +72,7 @@ export default function Revelation({ sous, titre, bouton, noms, onFini, secret =
         {rond && <svg className="inv-rev-anneau" viewBox="0 0 260 240" aria-hidden="true"><circle cx="130" cy="120" r="104" fill="none" stroke="#8C6D22" strokeWidth="1.5" /><circle cx="130" cy="120" r="96" fill="none" stroke="#8C6D22" strokeWidth=".8" opacity=".7" /></svg>}
       </div></div>
       <p className={`inv-aide inv-rev-aide ${aGratte ? "is-vu" : ""}`}>{titre}</p>
-      <button type="button" className="inv-rev-bouton" onClick={reveler} data-testid="invitation-decouvrir">{bouton}</button>
+      <button type="button" className="inv-g-passer" onClick={reveler} data-testid="invitation-decouvrir">{bouton}</button>
     </div>
   );
 }

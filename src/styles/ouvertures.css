@@ -482,3 +482,4 @@
 .inv-g-conf-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .inv-g-lueur { inset: -30% -60%; }
 .inv-g-scene { min-height: 260px; }
+.inv-g-passer { color: var(--inv-sur-fond, var(--inv-texte)); opacity: .85; }

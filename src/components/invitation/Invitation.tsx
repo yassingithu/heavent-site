@@ -399,7 +399,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
         const sousDate = dp ? { haut: maj(part("weekday")), jour: part("day"), bas: `${part("month")} ${part("year")}` } : { haut: "", jour: initiales(nomsA), bas: "" };
         return revId === "bougies" || revId === "lanterne" || revId === "ballon"
           ? <RevelationGeste type={revId} langue={langue} noms={nomsA} sous={sousDate} onFini={() => setPhase("ouverte")} />
-          : <Revelation rond={revId === "medaillon"} noms={nomsA} titre={revId === "medaillon" ? ({ fr: "Grattez le médaillon pour découvrir la date", en: "Scratch the medallion to reveal the date", ar: "اخدشوا الميدالية لاكتشاف التاريخ" } as Record<string, string>)[langue] : t.gratter} bouton={t.decouvrir} onFini={() => setPhase("ouverte")} sous={sousDate} />;
+          : <Revelation rond={revId === "medaillon"} noms={nomsA} titre={revId === "medaillon" ? ({ fr: "Grattez le médaillon pour découvrir la date", en: "Scratch the medallion to reveal the date", ar: "اخدشوا الميدالية لاكتشاف التاريخ" } as Record<string, string>)[langue] : t.gratter} bouton={({ fr: "Passer · voir la date", en: "Skip · show the date", ar: "تخطي · عرض التاريخ" } as Record<string, string>)[langue]} onFini={() => setPhase("ouverte")} sous={sousDate} />;
       })()}
       {aMusique && phase !== "fermee" && (<button type="button" className="inv-musique" onClick={basculerSon} aria-pressed={son} aria-label={son ? "Couper la musique" : "Activer la musique"} data-testid="invitation-musique">{son ? "♪" : "♪̸"}</button>)}
       {phase === "ouverte" && (<>

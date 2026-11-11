@@ -72,11 +72,13 @@ export default function RevelationGeste({ type, langue, noms, sous, onFini }: Pr
   const armerAuto = () => { window.clearTimeout(auto.current); auto.current = window.setTimeout(terminer, 12000); };
   const toucher = () => {
     if (fini.current) return;
-    if (type === "bougies") { setIndice(true); later(() => setIndice(false), 1400); return; }
+    if (type === "bougies") return;
     setEtat("geste"); later(terminer, reduit ? 0 : 450);
   };
+  const depart = useRef(0);
   const appuyer = () => {
     if (type !== "bougies" || fini.current) return;
+    depart.current = Date.now();
     if (reduit) { terminer(); return; }
     setEtat("geste"); window.clearTimeout(auto.current);
     maintien.current = window.setTimeout(terminer, 1200);
@@ -84,6 +86,7 @@ export default function RevelationGeste({ type, langue, noms, sous, onFini }: Pr
   const relacher = () => {
     if (type !== "bougies" || fini.current) return;
     window.clearTimeout(maintien.current); setEtat("attente"); armerAuto();
+    if (Date.now() - depart.current < 300) { setIndice(true); later(() => setIndice(false), 1400); }
   };
   useEffect(() => { armerAuto(); return () => { window.clearTimeout(auto.current); window.clearTimeout(maintien.current); minuteurs.current.forEach((id) => window.clearTimeout(id)); }; }, []);
 
