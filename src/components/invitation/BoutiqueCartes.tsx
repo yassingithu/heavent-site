@@ -1,76 +1,54 @@
-import { useEffect, useRef, useState } from "react";
-import { ouverturesBoutique, FORMULES, formuleDe, prixDe, type OuvertureDef } from "@/lib/invitation";
+import { useState } from "react";
+import { ouverturesBoutique, FORMULES, formuleDe, prixDe, type Formule, type OuvertureDef } from "@/lib/invitation";
+import FilmBoucle from "./FilmBoucle";
 
-interface Props {
-  /** Carte déjà dans la commande (repérée dans la grille). */
-  dansCommande?: string | null;
-  onOuvrir: (id: string) => void;
+/** Carte sans film (portes en images) : les deux battants s'ouvrent en boucle sur la carte. */
+function Portes({ o }: { o: OuvertureDef }) {
+  return (
+    <span className="cv-portes" aria-hidden="true">
+      {o.carte && <img className="cv-portes-fond" src={o.carte.fin} alt="" loading="lazy" decoding="async" />}
+      {o.carte && <span className="cv-texte-carte cv-texte-portes" style={{ left: `${o.carte.x * 100}%`, top: `${o.carte.y * 100}%`, width: `${o.carte.l * 100}%`, height: `${o.carte.h * 100}%` }}><em>Lina<small>&amp;</small>Adam</em></span>}
+      <span className="cv-battant cv-battant-g" style={{ backgroundImage: `url(/ouvertures/${o.id}-g.webp)` }} />
+      <span className="cv-battant cv-battant-d" style={{ backgroundImage: `url(/ouvertures/${o.id}-d.webp)` }} />
+    </span>
+  );
 }
 
-
-/** Vignette d'une carte : affiche, film qui se lance au survol (souris seulement), formule et prix. */
-function Fiche({ o, rang, dedans, onOuvrir, i }: { o: OuvertureDef; rang: number; dedans: boolean; onOuvrir: (id: string) => void; i: number }) {
-  const [film, setFilm] = useState(false);
-  const minuteur = useRef<number>();
-  const f = formuleDe(o);
-  const survol = () => {
-    if (!o.video || matchMedia("(hover: none)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    window.clearTimeout(minuteur.current); minuteur.current = window.setTimeout(() => setFilm(true), 220);
-  };
-  const quitte = () => { window.clearTimeout(minuteur.current); setFilm(false); };
-  useEffect(() => () => window.clearTimeout(minuteur.current), []);
+function Tuile({ o, onOuvrir }: { o: OuvertureDef; onOuvrir: (id: string) => void }) {
+  const f = FORMULES.find((x) => x.id === formuleDe(o));
   return (
-    <li className="boutique-carte" style={{ "--i": Math.min(i, 6) } as React.CSSProperties}>
-      <button type="button" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); const st = document.documentElement.style; st.setProperty("--fiche-x", `${r.left + r.width / 2}px`); st.setProperty("--fiche-y", `${r.top + r.height / 2}px`); onOuvrir(o.id); }} onPointerEnter={survol} onPointerLeave={quitte} onFocus={survol} onBlur={quitte} data-testid={`ouverture-${o.id}`} aria-label={`${o.nom}, formule ${FORMULES.find((x) => x.id === f)?.nom}, ${prixDe(o)}. Voir la carte`}>
-        <span className="boutique-cadre" aria-hidden="true">
-          {o.id === "enveloppe"
-            ? <span className="boutique-vide" style={{ background: "#141414" }}><span className="boutique-monogramme">A &amp; B</span></span>
-            : o.id === "rose-imperiale" && !o.poster && o.carte
-            ? <img src={o.carte.fin} alt="" loading="lazy" decoding="async" />
-            : o.poster
-            ? <img src={o.poster} alt="" loading="lazy" decoding="async" />
-            : <><span className="boutique-moitie" style={{ backgroundImage: `url(/ouvertures/${o.id}-g.webp)` }} /><span className="boutique-moitie" style={{ backgroundImage: `url(/ouvertures/${o.id}-d.webp)` }} /></>}
-          {film && o.video && <video src={o.video} poster={o.poster} muted loop playsInline autoPlay preload="auto" onPlaying={(e) => e.currentTarget.classList.add("joue")} />}
-          {dedans && <span className="boutique-dedans">Dans ma commande</span>}
-          <span className="boutique-voir">Voir la carte</span>
+    <li className="cv-tuile">
+      <button type="button" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); const st = document.documentElement.style; st.setProperty("--fiche-x", `${r.left + r.width / 2}px`); st.setProperty("--fiche-y", `${r.top + r.height / 2}px`); onOuvrir(o.id); }}
+        data-testid={`ouverture-${o.id}`} aria-label={`${o.nom}, formule ${f?.nom}, ${prixDe(o)}. Voir la carte`}>
+        <span className="cv-cadre" aria-hidden="true">
+          {o.video ? <FilmBoucle src={o.video} poster={o.poster} className="cv-media" zone={o.carte ? { x: o.carte.x, y: o.carte.y, l: o.carte.l, h: o.carte.h, apres: o.carte.stop ?? o.duree / 1000 * 0.55 } : undefined} /> : <Portes o={o} />}
         </span>
-        <span className="boutique-num">Nº {String(rang).padStart(2, "0")}</span>
-        <span className="boutique-nom">{o.nom}</span>
-        <span className="boutique-ligne"><b>{prixDe(o)}</b>{o.video && <em className="boutique-film">Film</em>}</span>
+        <span className="cv-prix">{prixDe(o)}</span>
+        <span className="cv-legende">
+          <b>{o.nom}</b>
+          <span>{[f?.nom, ...o.styles.slice(0, 1)].map((t) => <i key={t}>{t}</i>)}</span>
+        </span>
       </button>
     </li>
   );
 }
 
-/** Catalogue de la boutique de cartes : trois rayons (Classique, Interactive, Prestige), tout se voit en descendant. */
-export default function BoutiqueCartes({ dansCommande, onOuvrir }: Props) {
+/** Catalogue : une seule grille, filtrée par formule. Chaque carte se joue en boucle sous les yeux du client. */
+export default function BoutiqueCartes({ onOuvrir }: { onOuvrir: (id: string) => void }) {
   const cartes = ouverturesBoutique();
-  const aller = (id: string) => { const el = document.getElementById(`rayon-${id}`); if (el) el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); };
+  const [formule, setFormule] = useState<Formule | null>(null);
+  const liste = formule ? cartes.filter((o) => formuleDe(o) === formule) : cartes;
+  const sel = FORMULES.find((f) => f.id === formule);
   return (
-    <div className="boutique" data-testid="boutique">
-      <div className="boutique-barre">
-        <div className="cartes-formules" role="group" aria-label="Aller à une formule">
-          {FORMULES.map((f) => {
-            const n = cartes.filter((o) => formuleDe(o) === f.id).length;
-            return n ? <button key={f.id} type="button" onClick={() => aller(f.id)} data-testid={`formule-${f.id}`}><small>{f.nom}</small><b>{f.prix}</b></button> : null;
-          })}
-        </div>
+    <div className="cv-boutique" data-testid="boutique">
+      <div className="cv-onglets" role="group" aria-label="Filtrer par formule">
+        <button type="button" aria-pressed={!formule} onClick={() => setFormule(null)} data-testid="formule-toutes">Toutes</button>
+        {FORMULES.map((f) => cartes.some((o) => formuleDe(o) === f.id) ? <button key={f.id} type="button" aria-pressed={formule === f.id} onClick={() => setFormule(formule === f.id ? null : f.id)} data-testid={`formule-${f.id}`}>{f.nom}<span>{f.id === "prestige" ? "dès 650 DH" : f.prix}</span></button> : null)}
       </div>
-      {FORMULES.map((f) => {
-        const liste = cartes.filter((o) => formuleDe(o) === f.id);
-        if (!liste.length) return null;
-        return (
-          <section key={f.id} id={`rayon-${f.id}`} className="boutique-rayon" aria-labelledby={`rayon-titre-${f.id}`}>
-            <header className="boutique-rayon-tete">
-              <h3 id={`rayon-titre-${f.id}`}>{f.nom}<span> · {f.prix}</span></h3>
-              <p>{f.texte}{f.id === "prestige" ? " 650 DH, ou 750 DH pour les paysages animés." : ""}</p>
-            </header>
-            <ul className="boutique-grille vu" aria-label={`Cartes ${f.nom}`}>
-              {liste.map((o, i) => <Fiche key={o.id} o={o} i={i} rang={cartes.findIndex((x) => x.id === o.id) + 1} dedans={dansCommande === o.id} onOuvrir={onOuvrir} />)}
-            </ul>
-          </section>
-        );
-      })}
+      <p className="cv-formule-texte" aria-live="polite">{sel ? sel.texte : "Touchez une carte pour la voir s'ouvrir en grand."}</p>
+      <ul className="cv-grille" aria-label="Cartes d'invitation">
+        {liste.map((o) => <Tuile key={o.id} o={o} onOuvrir={onOuvrir} />)}
+      </ul>
     </div>
   );
 }
