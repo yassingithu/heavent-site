@@ -162,7 +162,7 @@ export type Formule = "classique" | "interactive" | "prestige";
 export const FORMULES: { id: Formule; nom: string; prix: string; texte: string }[] = [
   { id: "classique", nom: "Classique", prix: "250 DH", texte: "Design personnalisé, animation élégante, partage WhatsApp et e-mail." },
   { id: "interactive", nom: "Interactive", prix: "450 DH", texte: "Ouverture en film, puis programme, plan Google Maps, compte à rebours et confirmation de présence : nous les réglons avec vous." },
-  { id: "prestige", nom: "Prestige", prix: "dès 650 DH", texte: "650 DH ; 750 DH pour les paysages animés. Tout l'Interactive, plus l'histoire des mariés, le livre d'or, les invitations individuelles et le QR code, réglés avec vous." },
+  { id: "prestige", nom: "Prestige", prix: "dès 650 DH", texte: "Tout l'Interactive, plus l'histoire des mariés, le livre d'or, les invitations individuelles et le QR code, réglés avec vous." },
 ];
 const FILMS_INTERACTIVE = ["v-porte-blanche", "v-alhambra", "v-lakeside", "v-gardenia", "v-shoreline", "v-chateau-soir", "v-palace", "v-glasshouse"];
 const PRESTIGE_750 = ["v-minuit", "v-neige", "v-oliveto", "v-azure"];

@@ -145,7 +145,7 @@
 
 /* Compacité mobile : le catalogue démarre plus haut */
 .boutique-fiche-pied .s-btn-filet { --fond: #141414; --ligne: rgba(228, 212, 154, .75); }
-.boutique-apercu { width: 48px; padding: 0 !important; justify-content: center; }
+.boutique-apercu { padding: 0 12px !important; justify-content: center; }
 .boutique-total b { white-space: nowrap; }
 @media (max-width: 899px) {
   .boutique-aide { display: none; }
@@ -159,3 +159,154 @@
 }
 .cartes-formules p.boutique-aide { margin-top: 0; }
 @media (max-width: 899px) { .cartes-tete .boutique-panier-lien { display: none; } }
+/* A AJOUTER A LA FIN de src/styles/boutique.css (propositions motion /cartes, 11/11) */
+:root { --b-courbe: cubic-bezier(.2, .7, .2, 1); }
+
+/* 1. Cascade réelle de la grille (la grille entière ne bouge plus) */
+.boutique-grille { animation: none; }
+.boutique-carte { animation: boutique-cascade .5s var(--b-courbe) calc(var(--i, 0) * 45ms) both; }
+.boutique-grille:not(.vu) .boutique-carte { animation-play-state: paused; }
+@keyframes boutique-cascade { from { opacity: 0; transform: translateY(14px); } }
+
+/* 2. Total « imprimé » (faire-part) */
+.boutique-maj { display: block; animation: boutique-imprime .26s var(--b-courbe) both; }
+.boutique-maj-inline { display: inline-block; }
+html.s-anime .boutique-recap:not(.vu) .boutique-maj { animation: none; }
+@keyframes boutique-imprime { from { opacity: 0; transform: translateY(5px); filter: blur(2.5px); } }
+
+/* 3. Récapitulatif : filet d'or qui se trace, reflet doré une seule fois */
+.boutique-recap { border-top: 0; padding-top: 20px; overflow: hidden; }
+@media (max-width: 899px) { .boutique-recap { position: relative; } } /* sur ordinateur : sticky (déjà posé) */
+.boutique-recap::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: #A8933F; transform-origin: left; }
+html.s-anime .boutique-recap[data-revele]:not(.vu)::before { transform: scaleX(0); }
+html.s-anime .boutique-recap[data-revele].vu::before { transition: transform .8s var(--b-courbe) .15s; }
+.boutique-recap-lueur { position: absolute; inset: 0; pointer-events: none; transform: translateX(-110%); background: linear-gradient(100deg, transparent 35%, rgba(228, 212, 154, .5) 50%, transparent 65%); }
+.boutique-recap.vu .boutique-recap-lueur { animation: s-reflet .9s var(--b-courbe) .4s both; }
+
+/* 4. Fiche : entrée depuis la carte touchée, sortie douce */
+.boutique-fiche { transform-origin: var(--fiche-x, 50%) var(--fiche-y, 50%); animation: boutique-ouvre .3s var(--b-courbe) both; }
+@media (min-width: 1024px) { .boutique-fiche { transform-origin: calc(var(--fiche-x, 50vw) - (100vw - min(1120px, 94vw)) / 2) calc(var(--fiche-y, 50vh) - 4vh); } }
+@keyframes boutique-ouvre { from { opacity: 0; transform: scale(.95); } }
+.boutique-fiche[data-state="closed"] { animation: boutique-ferme .18s var(--b-courbe) both; }
+.boutique-voile[data-state="closed"] { animation: boutique-fondu-sortie .18s both; }
+@keyframes boutique-ferme { to { opacity: 0; transform: scale(.98); } }
+@keyframes boutique-fondu-sortie { to { opacity: 0; } }
+
+/* 5. Barre « Ma commande » : elle monte vraiment */
+.boutique-barre-panier { animation: boutique-monte .32s var(--b-courbe) both; }
+@keyframes boutique-monte { from { transform: translateY(100%); } }
+@media (min-width: 900px) { .boutique-barre-panier { animation-name: boutique-entre; } }
+
+/* 6. Filtres : soulignés qui se tracent comme les onglets d'occasion */
+.boutique-styles button { position: relative; border-bottom: 0; transition: color .2s; }
+.boutique-styles button::after { content: ""; position: absolute; left: 2px; right: 2px; bottom: 0; height: 2px; background: #8C6D22; transform: scaleX(0); transform-origin: left; transition: transform .22s var(--b-courbe); }
+.boutique-styles button[aria-pressed="true"]::after { transform: scaleX(1); }
+.cartes-formules button::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: #A8933F; transform: scaleX(0); transform-origin: left; transition: transform .22s var(--b-courbe); }
+.cartes-formules button[aria-pressed="true"]::after { transform: scaleX(1); }
+
+/* 7. Récap-envoi : la demande bien reçue se pose, l'étoile fait un huitième de tour */
+.s-merci { animation: boutique-pose .6s var(--b-courbe) both; }
+.s-merci > .s-etoile { animation: boutique-etoile .9s var(--b-courbe) .25s both; }
+@keyframes boutique-pose { from { opacity: 0; transform: translateY(12px); } }
+@keyframes boutique-etoile { from { rotate: -45deg; opacity: 0; } }
+
+/* Mineurs */
+.boutique-dedans { animation: cartes-coche .22s var(--b-courbe) both; }
+.boutique-cadre > video { opacity: 0; animation: none; transition: opacity .3s var(--b-courbe); }
+.boutique-cadre > video.joue { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .boutique-carte, .boutique-maj, .boutique-recap-lueur, .boutique-barre-panier, .boutique-dedans, .s-merci, .s-merci > .s-etoile { animation: none !important; }
+  .boutique-fiche, .boutique-fiche[data-state], .boutique-voile[data-state] { animation: none; }
+  .boutique-styles button::after, .cartes-formules button::after, .boutique-cadre > video { transition: none; }
+}
+
+/* ───── Relectures du 11/11 (designer, ergonome) ───── */
+/* Cadre taillé : filet or continu, même sur les pans coupés (double couche) */
+.boutique-cadre { padding: 8px; background: #C9B27A; box-shadow: none; }
+.boutique-cadre::before { content: ""; position: absolute; inset: 1px; background: #FAF6EC; clip-path: polygon(7px 0, calc(100% - 7px) 0, 100% 7px, 100% calc(100% - 7px), calc(100% - 7px) 100%, 7px 100%, 0 calc(100% - 7px), 0 7px); transition: background-color .25s cubic-bezier(.2, .7, .2, 1); }
+.boutique-cadre > * { position: relative; }
+.boutique-cadre > .boutique-badge, .boutique-cadre > .boutique-dedans, .boutique-cadre > .boutique-voir, .boutique-cadre > video { position: absolute; }
+.boutique-cadre > video { inset: 8px; width: calc(100% - 16px); height: calc(100% - 16px); }
+.boutique-cadre > img { outline: 1px solid rgba(140, 109, 34, .35); outline-offset: -1px; }
+@media (hover: hover) {
+  .boutique-carte > button:hover .boutique-cadre { background: #C9B27A; }
+  .boutique-carte > button:hover .boutique-cadre::before { background: #E4D49A; }
+}
+.boutique-badge { left: 14px; top: 14px; }
+.boutique-dedans { left: 14px; right: 14px; bottom: 14px; }
+.boutique-voir { display: none; }
+@media (hover: hover) {
+  .boutique-voir { display: block; left: 8px; right: 8px; bottom: 8px; padding: 10px 4px; text-align: center; background: #141414; color: #E4D49A; font: 500 10px var(--s-texte, Jost), sans-serif; letter-spacing: .22em; text-transform: uppercase; transform: translateY(100%); transition: transform .25s cubic-bezier(.2, .7, .2, 1); }
+  .boutique-carte > button:hover .boutique-voir, .boutique-carte > button:focus-visible .boutique-voir { transform: none; }
+  .boutique-carte > button:hover .boutique-dedans { opacity: 0; }
+}
+.boutique-nom { font-size: 19px; }
+.boutique-num { font-size: 14px; }
+.boutique-ligne b { font-size: 21px; line-height: 1; }
+.boutique-film { display: inline-flex; align-items: center; gap: 6px; }
+.boutique-film::before { content: ""; width: 0; height: 0; border-left: 8px solid #7A5F1F; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+
+/* Fiche : aperçu proportionné pour que les champs restent visibles */
+/* Le film ou la porte d'aperçu est dimensionné par la hauteur de l'écran : on le plafonne pour garder les champs visibles */
+.boutique-fiche .inv-bloc { min-height: 0; padding: 12px; }
+.boutique-fiche .inv-bloc .inv-porte { width: min(92vw, calc((38svh - 24px) / 2), 400px); }
+.boutique-fiche .inv-bloc .inv-porte.inv-o-video { width: calc((38svh - 24px) * 9 / 16); }
+@media (min-width: 1024px) {
+  .boutique-fiche .inv-bloc .inv-porte { width: min(calc((100svh - 8svh - 330px - 24px) / 2), 400px); }
+  .boutique-fiche .inv-bloc .inv-porte.inv-o-video { width: calc((100svh - 8svh - 330px - 24px) * 9 / 16); }
+}
+.boutique-court { display: none; }
+@media (max-width: 479px) { .boutique-long { display: none; } .boutique-court { display: inline; } }
+.boutique-aide-champ { margin: 8px 0 0; font: 400 14px var(--s-texte, Jost), sans-serif; color: #7A5F1F; }
+.boutique-occasion-select { appearance: auto; min-height: 44px; }
+.boutique-option em { font: 500 15px var(--s-texte, Jost), sans-serif; font-style: normal; color: #7A5F1F; }
+
+/* Contrôles : placeholders lisibles, focus net, cases taillées */
+.cartes-page ::placeholder, .boutique-fiche ::placeholder { color: #7A6F60; opacity: 1; font-family: "Cormorant Garamond", "Cormorant", serif; font-style: italic; font-size: 1.05em; }
+.cartes-page :is(input, textarea, select):focus-visible, .boutique-fiche :is(input, textarea, select):focus-visible { outline: 0; border-bottom: 2px solid #8C6D22; background-color: #FFFDF7; }
+.cartes-page input[type="checkbox"], .boutique-fiche input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 24px; height: 24px; margin: 0; border: 1px solid #8C6D22; background: #FFFDF7; border-radius: 0; cursor: pointer; }
+.cartes-page input[type="checkbox"]:checked, .boutique-fiche input[type="checkbox"]:checked { background: #141414; border-color: #141414; }
+.cartes-page input[type="checkbox"]:checked::after, .boutique-fiche input[type="checkbox"]:checked::after { content: ""; position: absolute; left: 7px; top: 3px; width: 6px; height: 12px; border: solid #E4D49A; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.cartes-page input[type="checkbox"]:focus-visible, .boutique-fiche input[type="checkbox"]:focus-visible { outline: 2px solid #8C6D22; outline-offset: 2px; }
+/* Précision d'occasion : onglets texte, plus de pastilles */
+.cartes-page [aria-label="Précision"] button, .boutique-fiche [aria-label="Précision"] button { border: 0 !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; padding: 0 2px !important; min-height: 44px; font: 500 12px var(--s-texte, Jost), sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #5E554A !important; border-bottom: 2px solid transparent !important; }
+.cartes-page [aria-label="Précision"] button[aria-pressed="true"] { color: #141414 !important; border-bottom-color: #8C6D22 !important; }
+.cartes-page [aria-label="Précision"] { gap: 6px 18px; }
+
+/* Catalogue : compteur et tri sur une seule rangée */
+.boutique-rangee { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 14px; }
+.boutique-rangee .boutique-compte { margin: 0; flex: 1 1 auto; min-width: 0; }
+@media (max-width: 899px) { .boutique-rangee .boutique-compte { font-size: 13px; } .boutique-compte-suite { display: none; } }
+
+/* Engagements : un mot-clé en grand, une légende */
+.boutique-garanties li { display: grid; gap: 4px; align-content: start; letter-spacing: 0; text-transform: none; }
+.boutique-garanties b { font: 400 22px/1 var(--s-titre, Gloock), serif; font-weight: 400; color: #7A5F1F; }
+.boutique-garanties span { font: 400 13px/1.35 var(--s-texte, Jost), sans-serif; letter-spacing: .02em; color: #5A4A1E; }
+
+/* Hero : rien de coupé, une seule bande de crème */
+.cartes-c1 { padding: 18px 54px 18px 18px; }
+.cartes-c3 { padding: 18px 18px 18px 54px; }
+.cartes-c1 b, .cartes-c3 b { font-size: 24px; }
+.cartes-bande { background: #F9F4E8; }
+.cartes-haut .s-h1 { text-wrap: balance; }
+@media (min-width: 900px) { .cartes-c1 { padding-right: 70px; } .cartes-c3 { padding-left: 70px; } }
+
+/* Reçu provisoire */
+.boutique-recap { background: #FFFDF7; box-shadow: none; padding: 22px 20px 20px; }
+.boutique-recap-tete { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 14px; font: 500 10px var(--s-texte, Jost), sans-serif; letter-spacing: .3em; text-transform: uppercase; color: #7A5F1F; }
+.boutique-recap-tete span { letter-spacing: .18em; }
+.boutique-recap-img { width: 76px; }
+.boutique-recap-img b { display: inline-block; width: 50%; height: 100%; background-size: cover; background-position: center; }
+.boutique-recap-carte b.boutique-recap-nom, .boutique-recap-noms { display: block; margin: 2px 0 4px; font: italic 400 26px/1.05 "Cormorant", "Cormorant Garamond", serif; color: #141414; }
+.boutique-recap-carte > div > b { font-size: 17px; }
+.boutique-recap-date { margin-top: 4px; font: 500 13px var(--s-texte, Jost), sans-serif !important; letter-spacing: .22em; color: #7A5F1F !important; }
+.boutique-lignes dt { display: flex; flex: 1; align-items: baseline; }
+.boutique-lignes dt::after { content: ""; flex: 1; margin: 0 8px; border-bottom: 1px dotted #A8933F; }
+.boutique-lignes .boutique-total-ligne { border-top: 3px double #A8933F; }
+.boutique-total-ligne dt::after { display: none; }
+.boutique-total-ligne dd { font-size: 32px; }
+.boutique-barre-panier { border-top: 2px solid #A8933F; }
+.boutique-barre-lien { color: inherit; text-decoration: none; }
+.boutique-merci-rappel { margin: 0 0 14px; font: 500 12px var(--s-texte, Jost), sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #7A5F1F; }
+.boutique-panier-vide { background: #FFFDF7; border: 1px dashed #A8933F; box-shadow: none; }

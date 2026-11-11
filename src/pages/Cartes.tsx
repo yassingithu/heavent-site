@@ -8,7 +8,7 @@ import ChoixOccasion from "@/components/invitation/ChoixOccasion";
 import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvitation";
 import BoutiqueCartes from "@/components/invitation/BoutiqueCartes";
 import FicheCarte from "@/components/invitation/FicheCarte";
-import { evenementDe, type TypeEvenement } from "@/lib/evenements";
+import { evenementDe, GROUPES, type TypeEvenement } from "@/lib/evenements";
 import { decorsPour } from "@/lib/decors";
 import { OUVERTURES, ouvertureDe, type InvitationReglages, FORMULES, formuleDe, prixDe, prixNombre, extrasPour, totalCommande } from "@/lib/invitation";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,12 +21,11 @@ import { suivre } from "@/lib/suivi";
 const WHATSAPP = "https://wa.me/212610939655?text=";
 const champ = "w-full min-h-11 px-3 text-base bg-[#FFFDF7] border-0 border-b border-[#A8933F] rounded-none";
 const MAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const GARANTIES = ["Aperçu de votre carte sous 24 h ouvrées", "Aucun paiement maintenant", "Prix confirmé avec votre aperçu", "Partage par WhatsApp et e-mail"];
+const GARANTIES: [string, string][] = [["24 h", "Aperçu de votre carte, jours ouvrés"], ["0 DH", "Aucun paiement maintenant"], ["1 prix", "Confirmé avec votre aperçu"], ["WhatsApp", "et e-mail pour partager"]];
 
 /** Ce que contient la commande : la carte telle qu'elle a été réglée dans la fiche, et ses options. */
 interface Ligne { invitation: InvitationReglages; noms: string; date: string; lieu: string; message: string; extras: string[] }
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
-const dateFr = (d: string) => d ? new Date(`${d}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "";
 
 export default function Cartes() {
   const [invitation, setInvitation] = useState<InvitationReglages>({ modele: "fleur-oranger" });
@@ -42,6 +41,7 @@ export default function Cartes() {
   const [erreur, setErreur] = useState<string | null>(null);
   const [err, setErr] = useState<Record<string, string>>({});
   const [versCommande, setVersCommande] = useState(false);
+  const [maj, setMaj] = useState(0);
   const ev = evenementDe(invitation.evenement);
   const ouv = ouvertureDe(invitation.ouverture);
   const rang = (id: string) => OUVERTURES.findIndex((x) => x.id === id) + 1;
@@ -66,11 +66,12 @@ export default function Cartes() {
   const ouvrirFiche = (id: string) => {
     if (panier && panier.invitation.ouverture === id) {
       setInvitation(panier.invitation); setNoms(panier.noms); setDate(panier.date); setLieu(panier.lieu); setMessage(panier.message); setExtras(panier.extras);
-    } else { setInvitation((v) => ({ ...v, ouverture: id })); setExtras([]); }
+    } else { setInvitation((v) => ({ ...v, ouverture: id })); setExtras(panier ? panier.extras : []); }
     setErr({}); setFiche(true); suivre("clic", `cartes:fiche:${id}`);
   };
   const modifier = () => panier && ouvrirFiche(panier.invitation.ouverture!);
   const retirer = () => { setPanier(null); setEtat("saisie"); };
+  const recommencer = () => { setPanier(null); setEtat("saisie"); setNoms(""); setDate(""); setLieu(""); setMessage(""); setExtras([]); setErr({}); setF((x) => ({ ...x, accord: false, note: "" })); document.getElementById("boutique")?.scrollIntoView({ block: "start", behavior: reduit() ? "auto" : "smooth" }); };
 
   const ajouter = () => {
     const x: Record<string, string> = {};
@@ -80,8 +81,8 @@ export default function Cartes() {
     const premier = Object.keys(x)[0];
     if (premier) { document.getElementById(`cartes-champ-${premier}`)?.focus(); return; }
     setPanier({ invitation, noms, date, lieu, message, extras: extras.filter((id) => extrasPour(ouv).some((e) => e.id === id)) });
-    setFiche(false); suivre("clic", "cartes:ajout");
-    window.setTimeout(() => document.getElementById("commande")?.scrollIntoView({ block: "start", behavior: reduit() ? "auto" : "smooth" }), 120);
+    setVersCommande(true); setMaj((n) => n + 1); setFiche(false); suivre("clic", "cartes:ajout");
+    window.setTimeout(() => document.getElementById("commande")?.scrollIntoView({ block: "start", behavior: reduit() ? "auto" : "smooth" }), 220);
   };
 
   const envoyer = async (e: React.FormEvent) => {
@@ -123,15 +124,20 @@ export default function Cartes() {
       <fieldset className="boutique-champs">
         <legend>Sur votre carte</legend>
         <label className="sm:col-span-3">Prénoms ou nom affichés
-          <input className={champ} value={noms} onChange={(e) => setNoms(e.target.value)} placeholder={/^mariage|fiancailles|henne/.test(ev.id) ? "Lina & Adam" : "Adam"} maxLength={80} data-testid="cartes-noms" id="cartes-champ-noms" aria-invalid={!!err.noms} aria-describedby={err.noms ? "err-noms" : undefined} />
-          {err.noms && <span id="err-noms" className="block text-[#9B2C2C]" role="alert">{err.noms}</span>}
+          <input className={champ} value={noms} onChange={(e) => { setNoms(e.target.value); if (err.noms) setErr((x) => ({ ...x, noms: "" })); }} placeholder={/^mariage|fiancailles|henne/.test(ev.id) ? "Lina & Adam" : "Adam"} maxLength={80} data-testid="cartes-noms" id="cartes-champ-noms" aria-invalid={!!err.noms} aria-describedby={err.noms ? "err-noms" : undefined} />
+          {!!err.noms && <span id="err-noms" className="block text-[#9B2C2C]" role="alert">{err.noms}</span>}
         </label>
         <label>Date
-          <input type="date" lang="fr" min={aujourdhui()} className={champ} value={date} onChange={(e) => setDate(e.target.value)} data-testid="cartes-date" id="cartes-champ-date" aria-invalid={!!err.date} />
-          {err.date && <span className="block text-[#9B2C2C]" role="alert">{err.date}</span>}
+          <input type="date" lang="fr" min={aujourdhui()} className={champ} value={date} onChange={(e) => { setDate(e.target.value); if (err.date) setErr((x) => ({ ...x, date: "" })); }} data-testid="cartes-date" id="cartes-champ-date" aria-invalid={!!err.date} />
+          {!!err.date && <span className="block text-[#9B2C2C]" role="alert">{err.date}</span>}
         </label>
         <label className="sm:col-span-2">Lieu
           <input className={champ} value={lieu} onChange={(e) => setLieu(e.target.value)} placeholder="Villa, salle, restaurant, ville…" maxLength={120} data-testid="cartes-lieu" />
+        </label>
+        <label className="sm:col-span-3">Occasion
+          <select className={`${champ} boutique-occasion-select`} value={ev.id} onChange={(e) => choisirOccasion(e.target.value as TypeEvenement)} data-testid="fiche-occasion">
+            {GROUPES.flatMap((g) => g.evenements).map((e) => <option key={e.id} value={e.id}>{e.nom}</option>)}
+          </select>
         </label>
         <label className="sm:col-span-3">Votre message sur la carte (facultatif)
           <textarea className={champ} rows={3} value={message} onChange={(e) => setMessage(e.target.value)} maxLength={400} placeholder="Ex. : Nous serions heureux de partager ce moment avec vous." data-testid="cartes-message" />
@@ -147,6 +153,7 @@ export default function Cartes() {
             <em>+ {z.prix} DH</em>
           </label>
         ))}
+        {extras.includes("urgent") && !date && <p className="boutique-aide-champ" role="status">Pour une carte en 24 h, indiquez la date de votre événement plus haut.</p>}
       </fieldset>
     </div>
   );
@@ -176,13 +183,13 @@ export default function Cartes() {
 
       <main className="text-[#2A2420] cartes-fond">
         <div className="max-w-6xl mx-auto px-4 py-10">
-          <ul className="boutique-garanties" aria-label="Nos engagements">{GARANTIES.map((g) => <li key={g}>{g}</li>)}</ul>
+          <ul className="boutique-garanties" aria-label="Nos engagements">{GARANTIES.map(([n, t]) => <li key={n}><b>{n}</b><span>{t}</span></li>)}</ul>
 
           <section id="boutique" className="scroll-mt-28" aria-labelledby="t-boutique">
             <header className="cartes-tete" data-revele>
               <span className="cartes-n" aria-hidden="true">01</span>
               <div><small>La boutique</small><h2 id="t-boutique">Choisissez votre carte</h2></div>
-              {panier && <a href="#commande" className="boutique-panier-lien" data-testid="lien-commande">Ma commande · {totalPanier} DH</a>}
+              {panier && <a href="#commande" className="boutique-panier-lien" data-testid="lien-commande">Ma commande · <span key={totalPanier} className="boutique-maj boutique-maj-inline">{totalPanier} DH</span></a>}
             </header>
             <p className="boutique-occasion-titre">Pour quelle occasion ?</p>
             <ChoixOccasion valeur={invitation.evenement} onChoisir={choisirOccasion} onglets />
@@ -201,7 +208,9 @@ export default function Cartes() {
                 <h4 className="s-h3 s-entree-heros">Demande bien reçue</h4>
                 <p className="cartes-delai s-entree-heros" style={{ animationDelay: ".25s" }}><b>24 h</b><span>ouvrées</span></p>
                 <p className="boutique-merci-texte">Merci {f.nom.split(" ")[0]}. Notre équipe prépare votre carte « {ligne?.nom} » : vous recevez un aperçu à partager et le prix confirmé.</p>
+                <p className="boutique-merci-rappel">Carte « {ligne?.nom} » · {totalPanier} DH · réponse {f.telephone ? `sur ${f.telephone}` : `à ${f.email}`}</p>
                 <Bouton href={WHATSAPP + encodeURIComponent(`Bonjour Heavent, je viens d'envoyer ma demande de carte d'invitation (${evPanier.nom}). Je m'appelle ${f.nom}.`)} externe variante="filet">Nous écrire sur WhatsApp</Bouton>
+                <button type="button" className="boutique-lien" onClick={recommencer} data-testid="autre-demande">Faire une autre demande</button>
               </div>
             ) : !panier || !ligne ? (
               <div className="boutique-panier-vide" data-testid="commande-vide">
@@ -211,19 +220,23 @@ export default function Cartes() {
               </div>
             ) : (
               <div className="boutique-commande">
-                <aside className="boutique-recap" aria-label="Récapitulatif de la commande" data-testid="cartes-recap">
+                <aside className="boutique-recap" aria-label="Récapitulatif de la commande" data-testid="cartes-recap" data-revele="">
+                  <span key={maj} className="boutique-recap-lueur" aria-hidden="true" />
+                  <p className="boutique-recap-tete"><b>Reçu provisoire</b><span>{new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }).replaceAll("/", " · ")}</span></p>
                   <div className="boutique-recap-carte">
-                    <span className="boutique-recap-img" aria-hidden="true">{ligne.poster ? <img src={ligne.poster} alt="" /> : <i>{String(rang(ligne.id)).padStart(2, "0")}</i>}</span>
+                    <span className="boutique-recap-img" aria-hidden="true">{ligne.poster ? <img src={ligne.poster} alt="" /> : ligne.id === "enveloppe" || ligne.id === "rose-imperiale" ? <i>{String(rang(ligne.id)).padStart(2, "0")}</i> : <><b style={{ backgroundImage: `url(/ouvertures/${ligne.id}-g.webp)` }} /><b style={{ backgroundImage: `url(/ouvertures/${ligne.id}-d.webp)` }} /></>}</span>
                     <div>
                       <small>{FORMULES.find((x) => x.id === formuleDe(ligne))?.nom} · Nº {String(rang(ligne.id)).padStart(2, "0")}</small>
                       <b>{ligne.nom}</b>
-                      <span>{evPanier.nom}{panier.noms ? ` · ${panier.noms}` : ""}{panier.date ? ` · ${dateFr(panier.date)}` : ""}</span>
+                      <em className="boutique-recap-noms">{panier.noms}</em>
+                      <span>{evPanier.nom}{panier.lieu ? ` · ${panier.lieu}` : ""}</span>
+                      {panier.date && <span className="boutique-recap-date">{panier.date.split("-").reverse().join(" · ")}</span>}
                     </div>
                   </div>
                   <dl className="boutique-lignes">
                     <div><dt>Carte « {ligne.nom} »</dt><dd>{prixNombre(ligne)} DH</dd></div>
                     {lignesExtras.map((z) => <div key={z.id}><dt>{z.nom}</dt><dd>+ {z.prix} DH</dd></div>)}
-                    <div className="boutique-total-ligne"><dt>Total estimé</dt><dd data-testid="commande-total">{totalPanier} DH</dd></div>
+                    <div className="boutique-total-ligne"><dt>Total estimé</dt><dd key={totalPanier} className="boutique-maj" data-testid="commande-total">{totalPanier} DH</dd></div>
                   </dl>
                   <p className="boutique-recap-note">Aucun paiement maintenant. Le prix est confirmé par notre équipe sous 24 h ouvrées, avec votre aperçu.</p>
                   <div className="boutique-recap-actions">
@@ -269,13 +282,14 @@ export default function Cartes() {
 
       {panier && etat !== "ok" && !versCommande && !fiche && (
         <div className="cartes-barre boutique-barre-panier" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom, 0px))" }}>
-          <span className="cartes-barre-choix"><small>Ma commande · {ligne?.nom}</small><b>{totalPanier} DH</b></span>
-          <a href="#commande" className="s-btn s-btn-plein s-sombre cartes-barre-btn" data-testid="aller-demande">Commander</a>
+          <a href="#commande" className="cartes-barre-choix boutique-barre-lien"><small>Ma commande · {ligne?.nom}</small><b key={totalPanier} className="boutique-maj">{totalPanier} DH</b></a>
+          <a href="#commande" className="s-btn s-btn-plein s-sombre cartes-barre-btn" data-testid="aller-demande">Voir ma commande</a>
         </div>
       )}
 
       <FicheCarte ouvert={fiche} onFermer={() => setFiche(false)} ouverture={ouv} rang={rang(ouv.id)} total={totalCommande(ouv, extras)}
-        action={panier && panier.invitation.ouverture === ouv.id ? "Mettre à jour ma commande" : panier ? "Remplacer dans ma commande" : "Ajouter à ma commande"} onAction={ajouter}>
+        action={panier && panier.invitation.ouverture === ouv.id ? "Mettre à jour ma commande" : panier ? `Remplacer « ${ouvertureDe(panier.invitation.ouverture).nom} »` : "Ajouter à ma commande"}
+        actionCourt={panier && panier.invitation.ouverture === ouv.id ? "Mettre à jour" : panier ? "Remplacer" : "Ajouter"} retour={ouv.id} onAction={ajouter}>
         {fiche && <PersonnaliserInvitation modeClient sansCatalogue avant={reglages} noms={noms} date={date || null} lieu={lieu || null} message={message || null} valeur={invitation} onChange={setInvitation} />}
       </FicheCarte>
     </div>
