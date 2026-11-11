@@ -443,7 +443,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       {(phase === "fermee" || phase === "ouverture") && ouv.id === "enveloppe" && (
         <div className="inv-scene">
           <span className="inv-env-ombre" aria-hidden="true" />
-          {fleurs && <><img className="inv-fleur inv-fleur-env-a" src="/fleurs/grenat-bouquet.webp" alt="" aria-hidden="true" decoding="async" draggable={false} /><img className="inv-fleur inv-fleur-env-b" src="/fleurs/grenat-coin.webp" alt="" aria-hidden="true" decoding="async" draggable={false} /></>}
+          {fleurs && <><img className="inv-fleur inv-fleur-env-a" src="/fleurs/grenat-bouquet.webp" alt="" aria-hidden="true" decoding="async" draggable={false} /></>}
           <button type="button" className="inv-enveloppe" data-fermeture={["ficelle", "washi", "tissu"].includes(reglages?.fermeture ?? "") ? "ruban" : (reglages?.fermeture ?? "cachet")} data-fixation={reglages?.fermeture} data-papier={reglages?.papier} data-doublure={reglages?.doublure} onClick={() => { if (phase !== "fermee") return; if (pleinePage) pleinEcran(); lancerMusique(); setPhase("ouverture"); }} aria-label={t.ouvrir} data-testid="invitation-ouvrir">
             <span className="inv-env-fond" />
             <span className="inv-env-carte" data-orn={ornement}><span><em ref={emRef}>{lignes.length === 2 ? <>{lignes[0]}<small>{langue === "ar" ? "و" : "&"}</small>{lignes[1]}</> : nomsA}</em></span></span>
@@ -478,7 +478,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           style={ouv.carte ? ({ "--film-r": ouv.carte.r ?? 180, "--film-fin": `url(${ouv.carte.fin})`, "--film-x": ouv.carte.x, "--film-y": ouv.carte.y, "--film-l": ouv.carte.l, "--film-h": ouv.carte.h, "--film-fond": ouv.carte.fond } as CSSProperties) : undefined}>
           <div className="inv-etincelles" aria-hidden="true">{ETINCELLES.map((e, i) => <span key={i} style={{ left: `${e.x}%`, animationDelay: `${e.d}ms`, animationDuration: `${e.t + 900}ms`, width: e.s, height: e.s }} />)}</div>
           <div className="inv-motif" aria-hidden="true" />
-          {fleurs && <img className="inv-fleur inv-fleur-carte" src="/fleurs/grenat-coin.webp" alt="" aria-hidden="true" decoding="async" draggable={false} />}
+          {fleurs && <img className="inv-fleur inv-fleur-carte" src="/fleurs/grenat-bouquet.webp" alt="" aria-hidden="true" decoding="async" draggable={false} />}
           <div className="inv-ornement">{reglages?.decor && reglages.decor !== "aucun" ? <Decor id={reglages.decor} club={reglages.club} logo={reglages.club_logo} prenom={lignes[0]} /> : <Ornement type={ornement} />}</div>
           {ouv.carte ? (
             <div className="inv-film-zone"><PagesCarte unites={unitesCarte} ar={ar} textes={t} repondre={repondreCarte}
