@@ -3,7 +3,7 @@ export type Langue = "fr" | "en" | "ar";
 export type Ornement = "khatam" | "arche" | "cadre" | "fleur" | "filet" | "zellige";
 export interface Couleurs { fond: string; enveloppe: string; papier: string; texte: string; accent: string }
 import type { TypeEvenement } from "./evenements";
-export interface InvitationReglages { /** occasion : sans valeur, c'est un mariage */ evenement?: TypeEvenement; /** questions ajoutées au formulaire de réponse (identifiants de QUESTIONS) */ questions?: string[]; cachet?: boolean; /** décor du haut de la carte (voir decors.ts) */ decor?: string; /** équipe du maillot et écusson (image réduite, données) */ club?: string; club_logo?: string; /** fermeture de l'enveloppe : cachet (défaut), ruban qui glisse, ou cachet qui se brise */ fermeture?: "cachet" | "ruban" | "brise" | "cire" | "cire-or" | "cire-brisee"; musique?: string; ouverture?: string; revelation?: string; modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; programme?: { heure: string; titre: string; titre_ar?: string }[]; noms_ar?: string; lieu_ar?: string; message_ar?: string; police?: string }
+export interface InvitationReglages { /** occasion : sans valeur, c'est un mariage */ evenement?: TypeEvenement; /** questions ajoutées au formulaire de réponse (identifiants de QUESTIONS) */ questions?: string[]; cachet?: boolean; /** décor du haut de la carte (voir decors.ts) */ decor?: string; /** équipe du maillot et écusson (image réduite, données) */ club?: string; club_logo?: string; /** fermeture de l'enveloppe : cachet (défaut), ruban qui glisse, ou cachet qui se brise */ /** matière réelle du papier de l'enveloppe et doublure du rabat */ papier?: "gaufre" | "kraft"; doublure?: "sauge"; fermeture?: "cachet" | "ruban" | "brise" | "cire" | "cire-or" | "cire-brisee"; musique?: string; ouverture?: string; revelation?: string; modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; programme?: { heure: string; titre: string; titre_ar?: string }[]; noms_ar?: string; lieu_ar?: string; message_ar?: string; police?: string }
 /** Polices des prénoms au choix (toutes déjà hébergées : aucun chargement en plus) */
 export const POLICES: { id: string; nom: string; css: string }[] = [
   { id: "calligraphie", nom: "Calligraphie", css: '"Pinyon Script", "Snell Roundhand", cursive' },
@@ -198,5 +198,6 @@ export const FERMETURES: { id: "cachet" | "ruban" | "brise" | "cire" | "cire-or"
   { id: "cire-or", nom: "Cire dorée (photo)", description: "Un vrai cachet doré, avec l'initiale en relief." },
   { id: "cire-brisee", nom: "Cire brisée (photo)", description: "Le vrai cachet se brise en deux, les moitiés tombent." },
 ];
+export const PAPIERS: { id: "lisse" | "gaufre" | "kraft"; nom: string }[] = [{ id: "lisse", nom: "Papier lisse" }, { id: "gaufre", nom: "Gaufré feuillage" }, { id: "kraft", nom: "Kraft" }];
 export const ouvertureDe = (id?: string) => OUVERTURES.find((o) => o.id === id) ?? OUVERTURES[0];
 export const revelationDe = (id?: string) => REVELATIONS.find((r) => r.id === id) ?? REVELATIONS[0];

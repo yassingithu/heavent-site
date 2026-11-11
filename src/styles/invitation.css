@@ -596,7 +596,7 @@
   width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 0; box-shadow: none; background: var(--cire) center / contain no-repeat; filter: drop-shadow(0 5px 6px rgba(0, 0, 0, .42)); transform: rotate(-6deg);
 }
 .inv-enveloppe[data-fermeture^="cire"] .inv-env-cachet::before, .inv-enveloppe[data-fermeture^="cire"] .inv-env-cachet::after { display: none; }
-.inv-enveloppe[data-fermeture^="cire"] .inv-env-cachet em { display: flex !important; position: absolute; inset: 0; align-items: center; justify-content: center; margin: 0; font-style: normal; font-family: var(--inv-titre); font-size: 44px; font-weight: 600; color: #cf8d5c !important; text-shadow: 0 1px 0 rgba(255, 226, 200, .65), 0 -1px 1px rgba(50, 14, 6, .75), 0 2px 3px rgba(50, 14, 6, .35); }
+.inv-enveloppe[data-fermeture^="cire"] .inv-env-cachet em { display: flex !important; position: absolute; inset: 0; align-items: center; justify-content: center; margin: 0; font-style: normal; font-family: var(--inv-titre); font-size: clamp(22px, calc(88px / var(--n, 1)), 44px); font-weight: 600; letter-spacing: -.02em; color: #cf8d5c !important; text-shadow: 0 1px 0 rgba(255, 226, 200, .65), 0 -1px 1px rgba(50, 14, 6, .75), 0 2px 3px rgba(50, 14, 6, .35); }
 .inv-enveloppe[data-fermeture="cire-or"] .inv-env-cachet em { color: #a8761f !important; text-shadow: 0 1px 0 rgba(255, 240, 190, .8), 0 -1px 1px rgba(70, 44, 6, .7), 0 2px 3px rgba(70, 44, 6, .3); }
 .inv-enveloppe[data-fermeture^="cire"] .inv-env-ruban { display: none; }
 .inv-env-cachet-g { display: none !important; }
@@ -610,3 +610,11 @@
 @keyframes inv-cire-g { 0% { transform: rotate(-6deg); opacity: 1; } 22% { transform: rotate(-10deg) translateX(-5px); } 100% { transform: rotate(-42deg) translate(-52px, 150px); opacity: 0; } }
 @keyframes inv-cire-d { 0% { transform: rotate(-6deg); opacity: 1; } 22% { transform: rotate(-2deg) translateX(5px); } 100% { transform: rotate(34deg) translate(52px, 160px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .inv-env-cachet, .inv-env-cachet-g, .inv-env-cachet-d { animation: none !important; } }
+
+/* ── Matière réelle de l'enveloppe : texture photographiée (relief du papier) posée sur la couleur du modèle ── */
+.inv-enveloppe[data-papier="gaufre"] { --papier-tex: url("../assets/photos/texture-gaufre.webp"); }
+.inv-enveloppe[data-papier="kraft"] { --papier-tex: url("../assets/photos/texture-kraft.webp"); }
+.inv-enveloppe:is([data-papier="gaufre"], [data-papier="kraft"]) :is(.inv-env-fond, .inv-env-poche, .inv-env-rabat i)::after { background-image: var(--papier-tex); background-size: 100% 100%; background-repeat: no-repeat; mix-blend-mode: overlay; opacity: .95; }
+.inv-enveloppe[data-papier="gaufre"] .inv-env-rabat i::after { background-size: 160% 100%; }
+.inv-enveloppe[data-doublure="sauge"] .inv-env-rabat b { background: url("../assets/photos/doublure-sauge.webp") center / 230px auto repeat; }
+.inv-enveloppe[data-doublure="sauge"] .inv-env-rabat b::before { display: none; }

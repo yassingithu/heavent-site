@@ -7,7 +7,7 @@ import { RotateCcw, Play } from "lucide-react";
 import Invitation from "./Invitation";
 import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
 import { decorsPour, CLUBS } from "@/lib/decors";
-import { POLICES, CHAMPS_COULEUR, OUVERTURES, FERMETURES, STYLES_OUVERTURE, modelesPour, palettesPour, revelationsPour, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
+import { POLICES, CHAMPS_COULEUR, OUVERTURES, FERMETURES, PAPIERS, STYLES_OUVERTURE, modelesPour, palettesPour, revelationsPour, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
 import { evenementDe, questionDe } from "@/lib/evenements";
 
 interface Props {
@@ -86,6 +86,30 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
                     onClick={() => { onChange({ ...valeur, fermeture: f.id === "cachet" ? undefined : f.id }); setRejouer((n) => n + 1); }}
                     className={`rounded-full border px-4 min-h-10 text-sm ${(valeur.fermeture ?? "cachet") === f.id ? "border-[#141414] bg-[#141414] text-white" : "border-[#E3D6BA] bg-white hover:border-[#C8B560]"}`}>{f.nom}</button>
                 ))}
+              </div>
+            </div>
+          )}
+          {ouv.id === "enveloppe" && (
+            <div className="mt-3 space-y-3" data-testid="matiere-enveloppe">
+              <div role="group" aria-label="Papier de l'enveloppe">
+                <p className="text-sm font-medium mb-2">Papier de l'enveloppe</p>
+                <div className="flex flex-wrap gap-2">
+                  {PAPIERS.map((pp) => (
+                    <button key={pp.id} type="button" aria-pressed={(valeur.papier ?? "lisse") === pp.id} data-testid={`papier-${pp.id}`}
+                      onClick={() => { onChange({ ...valeur, papier: pp.id === "lisse" ? undefined : pp.id }); setRejouer((n) => n + 1); }}
+                      className={`rounded-full border px-4 min-h-10 text-sm ${(valeur.papier ?? "lisse") === pp.id ? "border-[#141414] bg-[#141414] text-white" : "border-[#E3D6BA] bg-white hover:border-[#C8B560]"}`}>{pp.nom}</button>
+                  ))}
+                </div>
+              </div>
+              <div role="group" aria-label="Doublure du rabat">
+                <p className="text-sm font-medium mb-2">Doublure du rabat</p>
+                <div className="flex flex-wrap gap-2">
+                  {[{ id: undefined, nom: "Couleur du modèle" }, { id: "sauge" as const, nom: "Fleurie sauge" }].map((d) => (
+                    <button key={d.nom} type="button" aria-pressed={valeur.doublure === d.id} data-testid={`doublure-${d.id ?? "modele"}`}
+                      onClick={() => { onChange({ ...valeur, doublure: d.id }); setRejouer((n) => n + 1); }}
+                      className={`rounded-full border px-4 min-h-10 text-sm ${valeur.doublure === d.id ? "border-[#141414] bg-[#141414] text-white" : "border-[#E3D6BA] bg-white hover:border-[#C8B560]"}`}>{d.nom}</button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
