@@ -45,6 +45,7 @@ export default function Cartes() {
     if (f.nom.trim().length < 2) x.nom = "Indiquez votre nom.";
     if (!f.telephone.trim() && !f.email.trim()) x.tel = "Un numéro WhatsApp ou un e-mail, pour vous répondre.";
     else if (f.telephone.trim() && f.telephone.replace(/\D/g, "").length < 8) x.tel = "Ce numéro semble incomplet.";
+    if (date && date < new Date().toISOString().slice(0, 10)) x.date = "Cette date est déjà passée. Choisissez une date à venir.";
     if (f.email.trim() && !MAIL_OK.test(f.email.trim())) x.email = "L'adresse e-mail semble incorrecte.";
     if (!f.accord) x.accord = "Cochez la case ci-dessus pour que nous puissions vous répondre.";
     setErr(x);
@@ -95,10 +96,11 @@ export default function Cartes() {
             <header id="t-infos" className="cartes-tete" data-revele><span className="cartes-n" aria-hidden="true">02</span><div><small>Étape 2 sur 4</small><h2>Que doit-on lire sur la carte ?</h2></div></header>
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="block text-sm sm:col-span-3">Prénoms ou nom affichés
-                <input className={champ} value={noms} onChange={(e) => setNoms(e.target.value)} placeholder={ev.id === "mariage" ? "Lina & Adam" : "Adam"} maxLength={80} data-testid="cartes-noms" />
+                <input className={champ} value={noms} onChange={(e) => setNoms(e.target.value)} placeholder={/^mariage|fiancailles|henne/.test(ev.id) ? "Lina & Adam" : "Adam"} maxLength={80} data-testid="cartes-noms" />
               </label>
               <label className="block text-sm">Date
-                <input type="date" lang="fr" min={new Date().toISOString().slice(0, 10)} className={champ} value={date} onChange={(e) => setDate(e.target.value)} data-testid="cartes-date" />
+                <input type="date" lang="fr" min={new Date().toISOString().slice(0, 10)} className={champ} value={date} onChange={(e) => setDate(e.target.value)} data-testid="cartes-date" id="cartes-champ-date" aria-invalid={!!err.date} />
+                {err.date && <span className="block text-sm text-[#9B2C2C]" role="alert">{err.date}</span>}
               </label>
               <label className="block text-sm sm:col-span-2">Lieu
                 <input className={champ} value={lieu} onChange={(e) => setLieu(e.target.value)} placeholder="Villa, salle, restaurant, ville…" maxLength={120} data-testid="cartes-lieu" />

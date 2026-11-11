@@ -165,3 +165,16 @@
 .cartes-page ul[aria-label="Occasion"] button.group { min-height: 52px; padding-top: 6px; padding-bottom: 6px; }
 .cartes-page ul[aria-label="Occasion"] .font-serif { font-size: 17px; }
 @media (max-width: 899px) { .cartes-fond .max-w-6xl { padding-top: 36px; } .cartes-sep { margin: 44px 0; } }
+
+/* Corrections du bêta-test */
+@media (max-width: 1023px) { .cartes-vignette.cartes-cache { display: none; } }
+.cartes-page [data-testid="personnaliser-invitation"] { overflow-x: clip; }
+.cartes-page aside[aria-label^="Aperçu"] { min-width: 0; max-width: 100%; }
+.cartes-page aside[aria-label^="Aperçu"] > :last-child { max-width: 100%; overflow: hidden; }
+@media (max-width: 899px) { .cartes-page aside[aria-label^="Aperçu"] > :last-child { padding: 8px; } }
+@media (max-width: 899px) {
+  .cartes-page [role="group"][aria-label="Langue de l'aperçu"] button { min-width: 44px; min-height: 44px; }
+  .cartes-page [role="group"][aria-label="Filtrer par style"] button { min-width: 44px; }
+  .cartes-page .cartes-accord a, .cartes-page .cartes-accord { min-height: 44px; }
+  .cartes-page .cartes-accord a { display: inline-block; padding: 12px 0; margin: -12px 0; }
+}

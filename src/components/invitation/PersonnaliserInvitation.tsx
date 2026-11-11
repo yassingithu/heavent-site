@@ -81,7 +81,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           <div className="grid grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-5 items-start" role="group" aria-label="Ouverture">
             {visibles.map((o, i) => {
               const choisie = ouv.id === o.id;
-              const cache = modeClient && !toutes && !filtre && !choisie && i >= 6 ? "max-lg:hidden" : "";
+              const cache = modeClient && !toutes && !filtre && !choisie && i >= 6 ? "cartes-cache" : "";
               return (
               <button key={o.id} type="button" onClick={() => choisirOuverture(o.id)} aria-pressed={choisie} data-testid={`ouverture-${o.id}`} className={`text-left group cartes-vignette ${cache} ${modeClient && toutes && i >= 8 ? "cartes-nouvelle" : ""}`} style={modeClient && i >= 8 ? ({ "--i": Math.min(i - 8, 8) } as React.CSSProperties) : undefined}>
                 <span className={`relative flex aspect-[9/16] w-full overflow-hidden bg-[#EFE6D2] ${modeClient ? "cartes-cadre" : `outline outline-2 outline-offset-2 ${choisie ? "outline-[#8C6D22]" : "outline-transparent group-hover:outline-[#E4D49A]"}`}`} aria-hidden="true">
@@ -94,7 +94,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
                     : <><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-g.webp)` }} /><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-d.webp)` }} /></>}
                   {choisie && (modeClient ? <span className="cartes-choisie">Votre carte</span> : <span className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-[#141414] text-[#E4D49A] text-xs">✓</span>)}
                 </span>
-                {modeClient && <span className="cartes-num">Nº {String(i + 1).padStart(2, "0")}</span>}
+                {modeClient && <span className="cartes-num">Nº {String(OUVERTURES.findIndex((x) => x.id === o.id) + 1).padStart(2, "0")}</span>}
                 <span className={`mt-1.5 block font-serif text-[15px] leading-tight ${modeClient ? "cartes-nom" : ""} ${choisie ? "text-[#8C6D22]" : ""}`}>{o.nom}</span>
                 {(!modeClient || o.video) && <span className="block whitespace-nowrap text-[11px] tracking-[.1em] uppercase text-[#6B6154]">{o.video ? "Film" : "Animation"}{!modeClient && ` · ${String(Math.round(o.duree / 100) / 10).replace(".", ",")} s`}</span>}
               </button>
