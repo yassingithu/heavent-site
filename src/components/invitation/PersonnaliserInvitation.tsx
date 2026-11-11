@@ -369,7 +369,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
       </aside>
       {(!modeClient || !versFormulaire) && <div className={modeClient ? "cartes-barre sticky bottom-0 z-30 col-span-full lg:hidden" : "sticky bottom-0 z-30 -mx-1 col-span-full border-t border-[#E3D6BA] bg-[#FBF8F1]/95 px-4 py-2 lg:hidden"} style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom, 0px))" }}>
         <div className="flex items-center gap-2">
-          {modeClient && <span className="cartes-barre-choix"><small>Votre carte</small><b>{ouv.nom} · {prixDe(ouv)}</b></span>}
+          {modeClient && <span className="cartes-barre-choix"><small>{ouv.nom}</small><b>{prixDe(ouv)}</b></span>}
           <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className={modeClient ? "s-btn s-btn-filet cartes-barre-btn" : "flex w-full items-center justify-center gap-2 rounded-full min-h-12 text-sm font-medium bg-[#141414] text-[#F7F3E8]"} data-testid="voir-apercu-barre"><Play className="h-4 w-4" aria-hidden="true" /> {modeClient ? "Voir" : "Voir l'aperçu"}</button>
           {modeClient && <button type="button" onClick={() => document.getElementById("demande")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="s-btn s-btn-plein s-sombre cartes-barre-btn" data-testid="aller-demande">Envoyer</button>}
         </div>

@@ -200,3 +200,7 @@
 .cartes-prix { gap: 0; }
 .cartes-barre-choix { min-width: 0; flex: 1 1 auto; }
 .cartes-barre-choix b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.cartes-barre-choix small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: .14em; }
+.cartes-formules button b { font-size: clamp(15px, 4.4vw, 20px); }
+.cartes-formules button { padding-right: 4px; }
