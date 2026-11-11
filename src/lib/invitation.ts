@@ -158,6 +158,7 @@ export interface OuvertureDef {
   styles: string[];
 }
 export const STYLES_OUVERTURE = ["Marocain", "Luxe", "Floral", "Moderne"];
+const LICENCE_HEAVENT = "Création Heavent";
 const LICENCE_PARTENAIRE = "Ressource tierce, utilisée avec l'accord de son propriétaire";
 export const OUVERTURES: OuvertureDef[] = [
   { id: "enveloppe", nom: "Enveloppe", description: "Le faire-part sort de son enveloppe cachetée.", duree: 2450, styles: ["Marocain", "Moderne"] },
@@ -184,6 +185,12 @@ export const OUVERTURES: OuvertureDef[] = [
   { id: "v-neige", nom: "Chalet sous la neige", description: "Une aquarelle d'hiver se peint sous vos yeux. 5 s.", duree: 5000, video: "/ouvertures/video/neige.mp4", poster: "/ouvertures/video/neige-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Moderne"] },
   { id: "v-oliveto", nom: "Oliveraie", description: "Un chemin d'oliviers se colore, aquarelle méditerranéenne. 5 s.", duree: 5000, video: "/ouvertures/video/oliveto.mp4", poster: "/ouvertures/video/oliveto-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Moderne", "Floral"] },
   { id: "v-azure", nom: "Côte bleue", description: "Une arche donne sur la mer et les coupoles bleues. 5 s.", duree: 5000, video: "/ouvertures/video/azure.mp4", poster: "/ouvertures/video/azure-poster.webp", licence: LICENCE_PARTENAIRE, styles: ["Moderne"] },
+  { id: "v-carte-bordeaux", nom: "Cachet bordeaux", description: "Une enveloppe ivoire gaufrée, fermée d'un cachet de cire bordeaux. Le rabat s'ouvre, la carte s'élève. 6 s.", duree: 5900, zoom: { x: 0.5, y: 0.5, s: 1, de: 4.2, fin: 5.1 }, video: "/ouvertures/video/carte-bordeaux.mp4", poster: "/ouvertures/video/carte-bordeaux-poster.webp", licence: LICENCE_HEAVENT, styles: ["Luxe", "Classique"] },
+  { id: "v-carte-or", nom: "Cachet doré", description: "Une enveloppe ivoire fermée d'un cachet doré. Le rabat s'ouvre, la carte s'élève. 6 s.", duree: 5900, zoom: { x: 0.5, y: 0.5, s: 1, de: 4.2, fin: 5.1 }, video: "/ouvertures/video/carte-or.mp4", poster: "/ouvertures/video/carte-or-poster.webp", licence: LICENCE_HEAVENT, styles: ["Luxe", "Moderne"] },
+  { id: "v-carte-ruban", nom: "Ruban rose", description: "Une enveloppe nouée d'un ruban rose. Le nœud se défait, la carte s'élève. 6 s.", duree: 5900, zoom: { x: 0.5, y: 0.5, s: 1, de: 4.2, fin: 5.1 }, video: "/ouvertures/video/carte-ruban.mp4", poster: "/ouvertures/video/carte-ruban-poster.webp", licence: LICENCE_HEAVENT, styles: ["Floral", "Doux"] },
+  { id: "v-carte-zellige", nom: "Zellige émeraude", description: "Une enveloppe émeraude à motif zellige, cachet doré. Le rabat s'ouvre, la carte s'élève. 6 s.", duree: 5900, zoom: { x: 0.5, y: 0.5, s: 1, de: 4.2, fin: 5.1 }, video: "/ouvertures/video/carte-zellige.mp4", poster: "/ouvertures/video/carte-zellige-poster.webp", licence: LICENCE_HEAVENT, styles: ["Marocain", "Luxe"] },
+  { id: "v-carte-lin", nom: "Cordon de lin", description: "Une enveloppe fermée d'un cordon de lin et d'une perle. Le cordon se dénoue, la carte s'élève. 6 s.", duree: 5900, zoom: { x: 0.5, y: 0.5, s: 1, de: 4.2, fin: 5.1 }, video: "/ouvertures/video/carte-lin.mp4", poster: "/ouvertures/video/carte-lin-poster.webp", licence: LICENCE_HEAVENT, styles: ["Champêtre", "Moderne"] },
+  { id: "v-carte-nuit", nom: "Art déco nuit", description: "Une enveloppe bleu nuit art déco, cachet doré. Le rabat s'ouvre, la carte s'élève. 6 s.", duree: 5900, zoom: { x: 0.5, y: 0.5, s: 1, de: 4.2, fin: 5.1 }, video: "/ouvertures/video/carte-nuit.mp4", poster: "/ouvertures/video/carte-nuit-poster.webp", licence: LICENCE_HEAVENT, styles: ["Luxe", "Moderne"] },
 ];
 export const REVELATIONS: { id: string; nom: string; description: string; pour?: TypeEvenement[] }[] = [
   { id: "aucune", nom: "Aucune", description: "L'invitation s'affiche juste après l'ouverture." },
