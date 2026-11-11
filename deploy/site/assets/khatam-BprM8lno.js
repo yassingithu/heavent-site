@@ -1,0 +1,45 @@
+const t=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-104 -104 208 208" class="khatam">
+<title>Khatam, sceau à huit branches</title>
+<defs>
+<linearGradient id="kg-a" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+<stop offset="0" style="stop-color:var(--khatam-clair,#F3E4AE)"/><stop offset=".3" style="stop-color:var(--khatam-or,#CDAE62)"/><stop offset=".55" style="stop-color:var(--khatam-mat,#8C6D22)"/><stop offset=".8" style="stop-color:var(--khatam-or,#CDAE62)"/><stop offset="1" style="stop-color:var(--khatam-clair,#F3E4AE)"/></linearGradient>
+<linearGradient id="kg-b" gradientUnits="userSpaceOnUse" x1="-60" y1="-60" x2="60" y2="60">
+<stop offset="0" style="stop-color:var(--khatam-clair,#F3E4AE)"/><stop offset=".5" style="stop-color:var(--khatam-or,#CDAE62)"/><stop offset="1" style="stop-color:var(--khatam-mat,#8C6D22)"/></linearGradient>
+<linearGradient id="kg-c" gradientUnits="userSpaceOnUse" x1="60" y1="-60" x2="-60" y2="60">
+<stop offset="0" style="stop-color:var(--khatam-clair,#F3E4AE)"/><stop offset=".55" style="stop-color:var(--khatam-or,#CDAE62)"/><stop offset="1" style="stop-color:var(--khatam-mat,#8C6D22)"/></linearGradient>
+<pattern id="kg-grain" width="1.8" height="1.8" patternUnits="userSpaceOnUse" patternTransform="rotate(32)"><rect width="1.8" height=".35" fill="#fff" opacity=".22"/></pattern>
+<clipPath id="kg-dessus"><g><circle cx="66.47" cy="27.53" r="9"/><circle cx="-27.53" cy="66.47" r="9"/><circle cx="-66.47" cy="-27.53" r="9"/><circle cx="27.53" cy="-66.47" r="9"/></g></clipPath>
+</defs>
+<g id="sceau">
+ <g id="entrelacs">
+  <g id="carre-a"><g id="bande-a" fill="none" stroke-linejoin="miter" stroke-miterlimit="4">
+<path d="M0 -94L94 0L0 94L-94 0Z" stroke="var(--khatam-ombre,#4a3710)" stroke-width="8.600000000000001"/>
+<path d="M0 -94L94 0L0 94L-94 0Z" stroke="url(#kg-b)" stroke-width="6.4"/>
+<path d="M0 -94L94 0L0 94L-94 0Z" stroke="var(--khatam-clair,#F6EBC0)" stroke-width=".9" opacity=".75"/></g></g>
+  <g id="carre-b"><g id="bande-b" fill="none" stroke-linejoin="miter" stroke-miterlimit="4">
+<path d="M66.47 -66.47L66.47 66.47L-66.47 66.47L-66.47 -66.47Z" stroke="var(--khatam-ombre,#4a3710)" stroke-width="8.600000000000001"/>
+<path d="M66.47 -66.47L66.47 66.47L-66.47 66.47L-66.47 -66.47Z" stroke="url(#kg-c)" stroke-width="6.4"/>
+<path d="M66.47 -66.47L66.47 66.47L-66.47 66.47L-66.47 -66.47Z" stroke="var(--khatam-clair,#F6EBC0)" stroke-width=".9" opacity=".75"/></g></g>
+  <g id="carre-a-dessus" clip-path="url(#kg-dessus)"><g id="bande-a2" fill="none" stroke-linejoin="miter" stroke-miterlimit="4">
+<path d="M0 -94L94 0L0 94L-94 0Z" stroke="var(--khatam-ombre,#4a3710)" stroke-width="8.600000000000001"/>
+<path d="M0 -94L94 0L0 94L-94 0Z" stroke="url(#kg-b)" stroke-width="6.4"/>
+<path d="M0 -94L94 0L0 94L-94 0Z" stroke="var(--khatam-clair,#F6EBC0)" stroke-width=".9" opacity=".75"/></g></g>
+ </g>
+ <g id="ajours" fill="url(#kg-b)"><path d="M53.17 17.83L54.4 19.06L56.14 19.06L56.14 20.8L57.37 22.03L56.14 23.26L56.14 25L54.4 25L53.17 26.23L51.94 25L50.2 25L50.2 23.26L48.97 22.03L50.2 20.8L50.2 19.06L51.94 19.06Z"/><path d="M22.03 48.97L23.26 50.2L25 50.2L25 51.94L26.23 53.17L25 54.4L25 56.14L23.26 56.14L22.03 57.37L20.8 56.14L19.06 56.14L19.06 54.4L17.83 53.17L19.06 51.94L19.06 50.2L20.8 50.2Z"/><path d="M-22.03 48.97L-20.8 50.2L-19.06 50.2L-19.06 51.94L-17.83 53.17L-19.06 54.4L-19.06 56.14L-20.8 56.14L-22.03 57.37L-23.26 56.14L-25 56.14L-25 54.4L-26.23 53.17L-25 51.94L-25 50.2L-23.26 50.2Z"/><path d="M-53.17 17.83L-51.94 19.06L-50.2 19.06L-50.2 20.8L-48.97 22.03L-50.2 23.26L-50.2 25L-51.94 25L-53.17 26.23L-54.4 25L-56.14 25L-56.14 23.26L-57.37 22.03L-56.14 20.8L-56.14 19.06L-54.4 19.06Z"/><path d="M-53.17 -26.23L-51.94 -25L-50.2 -25L-50.2 -23.26L-48.97 -22.03L-50.2 -20.8L-50.2 -19.06L-51.94 -19.06L-53.17 -17.83L-54.4 -19.06L-56.14 -19.06L-56.14 -20.8L-57.37 -22.03L-56.14 -23.26L-56.14 -25L-54.4 -25Z"/><path d="M-22.03 -57.37L-20.8 -56.14L-19.06 -56.14L-19.06 -54.4L-17.83 -53.17L-19.06 -51.94L-19.06 -50.2L-20.8 -50.2L-22.03 -48.97L-23.26 -50.2L-25 -50.2L-25 -51.94L-26.23 -53.17L-25 -54.4L-25 -56.14L-23.26 -56.14Z"/><path d="M22.03 -57.37L23.26 -56.14L25 -56.14L25 -54.4L26.23 -53.17L25 -51.94L25 -50.2L23.26 -50.2L22.03 -48.97L20.8 -50.2L19.06 -50.2L19.06 -51.94L17.83 -53.17L19.06 -54.4L19.06 -56.14L20.8 -56.14Z"/><path d="M53.17 -26.23L54.4 -25L56.14 -25L56.14 -23.26L57.37 -22.03L56.14 -20.8L56.14 -19.06L54.4 -19.06L53.17 -17.83L51.94 -19.06L50.2 -19.06L50.2 -20.8L48.97 -22.03L50.2 -23.26L50.2 -25L51.94 -25Z"/><circle cx="75.2" cy="0" r="2.3"/><circle cx="60.16" cy="0" r="1.3"/><circle cx="53.17" cy="53.17" r="2.3"/><circle cx="42.54" cy="42.54" r="1.3"/><circle cx="0" cy="75.2" r="2.3"/><circle cx="0" cy="60.16" r="1.3"/><circle cx="-53.17" cy="53.17" r="2.3"/><circle cx="-42.54" cy="42.54" r="1.3"/><circle cx="-75.2" cy="0" r="2.3"/><circle cx="-60.16" cy="0" r="1.3"/><circle cx="-53.17" cy="-53.17" r="2.3"/><circle cx="-42.54" cy="-42.54" r="1.3"/><circle cx="0" cy="-75.2" r="2.3"/><circle cx="0" cy="-60.16" r="1.3"/><circle cx="53.17" cy="-53.17" r="2.3"/><circle cx="42.54" cy="-42.54" r="1.3"/></g>
+ <g id="filets" fill="none" stroke="url(#kg-b)" stroke-width="1.1" stroke-linecap="round">
+  <path id="octogone" d="M14.92 -36.03L36.03 -14.92L36.03 14.92L14.92 36.03L-14.92 36.03L-36.03 14.92L-36.03 -14.92L-14.92 -36.03Z" stroke-width="1.2"/>
+  <path id="octogone-fin" d="M13.59 -32.8L32.8 -13.59L32.8 13.59L13.59 32.8L-13.59 32.8L-32.8 13.59L-32.8 -13.59L-13.59 -32.8Z" stroke-width=".5"/>
+  <path id="filet-etoile" d="M0 -100L29.29 -70.71L70.71 -70.71L70.71 -29.29L100 0L70.71 29.29L70.71 70.71L29.29 70.71L0 100L-29.29 70.71L-70.71 70.71L-70.71 29.29L-100 0L-70.71 -29.29L-70.71 -70.71L-29.29 -70.71Z" stroke-width="1" opacity=".9"/>
+  <path id="filet-etoile-int" d="M0 -88L25.77 -62.23L62.23 -62.23L62.23 -25.77L88 0L62.23 25.77L62.23 62.23L25.77 62.23L0 88L-25.77 62.23L-62.23 62.23L-62.23 25.77L-88 0L-62.23 -25.77L-62.23 -62.23L-25.77 -62.23Z" stroke-width=".5" opacity=".7"/>
+ </g>
+ <g id="brides"><g id="etoile-8-3" fill="none" stroke-linejoin="miter" stroke-miterlimit="4">
+<path d="M0 -56L39.6 39.6M39.6 -39.6L0 56M56 0L-39.6 39.6M39.6 39.6L-56 0M0 56L-39.6 -39.6M-39.6 39.6L0 -56M-56 0L39.6 -39.6M-39.6 -39.6L56 0" stroke="var(--khatam-ombre,#4a3710)" stroke-width="5.4"/>
+<path d="M0 -56L39.6 39.6M39.6 -39.6L0 56M56 0L-39.6 39.6M39.6 39.6L-56 0M0 56L-39.6 -39.6M-39.6 39.6L0 -56M-56 0L39.6 -39.6M-39.6 -39.6L56 0" stroke="url(#kg-c)" stroke-width="3.2"/>
+<path d="M0 -56L39.6 39.6M39.6 -39.6L0 56M56 0L-39.6 39.6M39.6 39.6L-56 0M0 56L-39.6 -39.6M-39.6 39.6L0 -56M-56 0L39.6 -39.6M-39.6 -39.6L56 0" stroke="var(--khatam-clair,#F6EBC0)" stroke-width=".9" opacity=".75"/></g></g>
+ <g id="rosace" fill="url(#kg-c)" stroke="var(--khatam-ombre,#4a3710)" stroke-width=".4"><path transform="rotate(0)" d="M5 0Q12 -3 19 0Q12 3 5 0Z"/><path transform="rotate(22.5)" d="M5 0Q9.5 -2.2 14 0Q9.5 2.2 5 0Z"/><path transform="rotate(45)" d="M5 0Q12 -3 19 0Q12 3 5 0Z"/><path transform="rotate(67.5)" d="M5 0Q9.5 -2.2 14 0Q9.5 2.2 5 0Z"/><path transform="rotate(90)" d="M5 0Q12 -3 19 0Q12 3 5 0Z"/><path transform="rotate(112.5)" d="M5 0Q9.5 -2.2 14 0Q9.5 2.2 5 0Z"/><path transform="rotate(135)" d="M5 0Q12 -3 19 0Q12 3 5 0Z"/><path transform="rotate(157.5)" d="M5 0Q9.5 -2.2 14 0Q9.5 2.2 5 0Z"/><path transform="rotate(180)" d="M5 0Q12 -3 19 0Q12 3 5 0Z"/><path transform="rotate(202.5)" d="M5 0Q9.5 -2.2 14 0Q9.5 2.2 5 0Z"/><path transform="rotate(225)" d="M5 0Q12 -3 19 0Q12 3 5 0Z"/><path transform="rotate(247.5)" d="M5 0Q9.5 -2.2 14 0Q9.5 2.2 5 0Z"/><path transform="rotate(270)" d="M5 0Q12 -3 19 0Q12 3 5 0Z"/><path transform="rotate(292.5)" d="M5 0Q9.5 -2.2 14 0Q9.5 2.2 5 0Z"/><path transform="rotate(315)" d="M5 0Q12 -3 19 0Q12 3 5 0Z"/><path transform="rotate(337.5)" d="M5 0Q9.5 -2.2 14 0Q9.5 2.2 5 0Z"/></g>
+ <circle id="coeur" r="4.2" fill="url(#kg-b)" stroke="var(--khatam-ombre,#4a3710)" stroke-width=".8"/>
+ <path id="coeur-etoile" d="M0 -3.4L1 -2.4L2.4 -2.4L2.4 -1L3.4 0L2.4 1L2.4 2.4L1 2.4L0 3.4L-1 2.4L-2.4 2.4L-2.4 1L-3.4 0L-2.4 -1L-2.4 -2.4L-1 -2.4Z" fill="var(--khatam-ombre,#4a3710)"/>
+ <g id="grain" fill="url(#kg-grain)" pointer-events="none"><path d="M0 -94L94 0L0 94L-94 0Z M66.47 -66.47L66.47 66.47L-66.47 66.47L-66.47 -66.47Z" fill="none" stroke="url(#kg-grain)" stroke-width="6"/></g>
+</g>
+<path id="reflet" class="reflet" d="M0 -94L27.53 -66.47L66.47 -66.47L66.47 -27.53L94 0L66.47 27.53L66.47 66.47L27.53 66.47L0 94L-27.53 66.47L-66.47 66.47L-66.47 27.53L-94 0L-66.47 -27.53L-66.47 -66.47L-27.53 -66.47Z" fill="none"/>
+</svg>`;export{t as default};
