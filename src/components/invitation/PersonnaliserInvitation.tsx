@@ -162,7 +162,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
               </div>
             </div>
           )}
-          {ouv.id !== "enveloppe" && !ouv.cadre && ouv.id !== "rose-imperiale" && (
+          {!modeClient && ouv.id !== "enveloppe" && !ouv.cadre && ouv.id !== "rose-imperiale" && (
             <label className="mt-3 flex items-center gap-2 min-h-10 text-sm cursor-pointer">
               <input type="checkbox" className="h-5 w-5 accent-[#8C6D22]" checked={valeur.cachet !== false} onChange={(e) => { onChange({ ...valeur, cachet: e.target.checked ? undefined : false }); setRejouer((n) => n + 1); }} data-testid="option-cachet" />
               <span>Cachet de cire doré<span className="block text-xs text-[#6B6154]">Décochez pour un simple bouton « Ouvrir »</span></span>

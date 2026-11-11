@@ -441,7 +441,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       })()}
       {aMusique && phase !== "fermee" && (<button type="button" className="inv-musique" onClick={basculerSon} aria-pressed={son} aria-label={son ? "Couper la musique" : "Activer la musique"} data-testid="invitation-musique">{son ? "♪" : "♪̸"}</button>)}
       {phase === "ouverte" && (<>
-        <article className={`inv-carte inv-orn-${ornement}${ouv.carte ? ` inv-carte-film inv-cf-${ouv.id}` : ""}${fondCarte ? " inv-sans-entree" : ""}`} data-testid="invitation-carte"
+        <article className={`inv-carte inv-orn-${ornement}${ouv.carte ? ` inv-carte-film inv-cf-${ouv.id}` : ""}${fondCarte || (ouv.video && !ouv.carte) ? " inv-sans-entree" : ""}`} data-testid="invitation-carte"
           style={ouv.carte ? ({ "--film-r": ouv.carte.r ?? 180, "--film-fin": `url(${ouv.carte.fin})`, "--film-x": ouv.carte.x, "--film-y": ouv.carte.y, "--film-l": ouv.carte.l, "--film-h": ouv.carte.h, "--film-fond": ouv.carte.fond } as CSSProperties) : undefined}>
           <div className="inv-etincelles" aria-hidden="true">{ETINCELLES.map((e, i) => <span key={i} style={{ left: `${e.x}%`, animationDelay: `${e.d}ms`, animationDuration: `${e.t + 900}ms`, width: e.s, height: e.s }} />)}</div>
           <div className="inv-motif" aria-hidden="true" />

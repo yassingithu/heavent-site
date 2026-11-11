@@ -162,7 +162,7 @@ export type Formule = "classique" | "interactive" | "prestige";
 export const FORMULES: { id: Formule; nom: string; prix: string; texte: string }[] = [
   { id: "classique", nom: "Classique", prix: "250 DH", texte: "Design personnalisé, animation élégante, partage par WhatsApp." },
   { id: "interactive", nom: "Interactive", prix: "450 DH", texte: "Ouverture en film, puis programme, plan Google Maps, compte à rebours et confirmation de présence : nous les réglons avec vous." },
-  { id: "prestige", nom: "Prestige", prix: "dès 650 DH", texte: "Tout l'Interactive, plus l'histoire des mariés, le livre d'or, les invitations individuelles et le QR code, réglés avec vous." },
+  { id: "prestige", nom: "Prestige", prix: "dès 650 DH", texte: "Tout l'Interactive, plus l'histoire des mariés, le livre d'or, les invitations individuelles, réglés avec vous." },
 ];
 const FILMS_INTERACTIVE = ["v-porte-blanche", "v-alhambra", "v-lakeside", "v-gardenia", "v-shoreline", "v-chateau-soir", "v-palace", "v-glasshouse"];
 const PRESTIGE_750 = ["v-minuit", "v-neige", "v-oliveto", "v-azure"];
@@ -174,7 +174,6 @@ export const prixNombre = (o: OuvertureDef): number => parseInt(prixDe(o), 10);
 export interface Extra { id: string; nom: string; prix: number; texte: string; sauf?: Formule[] }
 export const EXTRAS: Extra[] = [
   { id: "modif", nom: "Modification supplémentaire", prix: 50, texte: "Un ajustement de plus après l'aperçu." },
-  { id: "qr", nom: "QR code", prix: 100, texte: "Un QR code à imprimer, qui ouvre la carte.", sauf: ["prestige"] },
 ];
 /** Cartes vendues en boutique : seulement les créations photoréalistes (films et décors illustrés finement), pas les portes dessinées. */
 export const ouverturesBoutique = (): OuvertureDef[] => OUVERTURES.filter((o) => o.video || o.carte);

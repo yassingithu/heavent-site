@@ -10,6 +10,7 @@ import BoutiqueCartes from "@/components/invitation/BoutiqueCartes";
 import FicheCarte from "@/components/invitation/FicheCarte";
 import { evenementDe, GROUPES, type TypeEvenement } from "@/lib/evenements";
 import { decorsPour } from "@/lib/decors";
+import ChampDate from "@/components/invitation/ChampDate";
 import { ouverturesBoutique, ouvertureDe, type InvitationReglages, FORMULES, formuleDe, prixDe, prixNombre, extrasPour, totalCommande } from "@/lib/invitation";
 import { supabase } from "@/integrations/supabase/client";
 import { suivre } from "@/lib/suivi";
@@ -20,14 +21,14 @@ import { suivre } from "@/lib/suivi";
  */
 const WHATSAPP = "https://wa.me/212610939655?text=";
 const champ = "w-full min-h-11 px-3 text-base bg-[#FFFDF7] border-0 border-b border-[#A8933F] rounded-none";
-const GARANTIES: [string, string][] = [["1 semaine", "Pour recevoir votre carte"], ["Aperçu", "Validé avant le paiement"], ["Paiement", "Avant la réception du fichier final"], ["WhatsApp", "Partage uniquement par WhatsApp"]];
+const GARANTIES: [string, string][] = [["Aperçu", "Validé avant tout paiement"], ["Paiement", "Avant le fichier final"], ["1 semaine", "Après votre paiement"], ["WhatsApp", "Partage uniquement par WhatsApp"]];
 
 /** Ce que contient la commande : la carte telle qu'elle a été réglée dans la fiche, et ses options. */
 interface Ligne { invitation: InvitationReglages; noms: string; date: string; lieu: string; message: string; extras: string[] }
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
 
 export default function Cartes() {
-  const [invitation, setInvitation] = useState<InvitationReglages>({ modele: "fleur-oranger" });
+  const [invitation, setInvitation] = useState<InvitationReglages>({ modele: "fleur-oranger", cachet: false });
   const [noms, setNoms] = useState("");
   const [date, setDate] = useState("");
   const [lieu, setLieu] = useState("");
@@ -126,7 +127,7 @@ export default function Cartes() {
           {!!err.noms && <span id="err-noms" className="block text-[#9B2C2C]" role="alert">{err.noms}</span>}
         </label>
         <label>Date
-          <input type="date" lang="fr" min={aujourdhui()} className={champ} value={date} onChange={(e) => { setDate(e.target.value); if (err.date) setErr((x) => ({ ...x, date: "" })); }} data-testid="cartes-date" id="cartes-champ-date" aria-invalid={!!err.date} />
+          <ChampDate className={champ} value={date} onChange={(v) => { setDate(v); if (err.date) setErr((x) => ({ ...x, date: "" })); }} data-testid="cartes-date" id="cartes-champ-date" invalide={!!err.date} />
           {!!err.date && <span className="block text-[#9B2C2C]" role="alert">{err.date}</span>}
         </label>
         <label className="sm:col-span-2">Lieu
@@ -203,8 +204,8 @@ export default function Cartes() {
               <div className="s-fairepart s-merci" role="status" data-testid="cartes-merci">
                 <Etoile /><Etoile className="bas" />
                 <h4 className="s-h3 s-entree-heros">Demande bien reçue</h4>
-                <p className="cartes-delai s-entree-heros" style={{ animationDelay: ".25s" }}><b>1 semaine</b><span>pour votre carte</span></p>
-                <p className="boutique-merci-texte">Merci {f.nom.split(" ")[0]}. Notre équipe prépare votre carte « {ligne?.nom} » : vous recevez un aperçu à valider, puis votre carte sous 1 semaine. Le paiement se règle avant l'envoi du fichier final.</p>
+                <p className="cartes-delai s-entree-heros" style={{ animationDelay: ".25s" }}><b>1 semaine</b><span>après le paiement</span></p>
+                <p className="boutique-merci-texte">Merci {f.nom.split(" ")[0]}. Notre équipe prépare votre carte « {ligne?.nom} » : vous recevez un aperçu à valider. Une fois le paiement réglé, votre carte est livrée sous 1 semaine.</p>
                 <p className="boutique-merci-rappel">Carte « {ligne?.nom} » · {totalPanier} DH · réponse sur WhatsApp au {f.telephone}</p>
                 <Bouton href={WHATSAPP + encodeURIComponent(`Bonjour Heavent, je viens d'envoyer ma demande de carte d'invitation (${evPanier.nom}). Je m'appelle ${f.nom}.`)} externe variante="filet">Nous écrire sur WhatsApp</Bouton>
                 <button type="button" className="boutique-lien" onClick={recommencer} data-testid="autre-demande">Faire une autre demande</button>
@@ -235,7 +236,7 @@ export default function Cartes() {
                     {lignesExtras.map((z) => <div key={z.id}><dt>{z.nom}</dt><dd>+ {z.prix} DH</dd></div>)}
                     <div className="boutique-total-ligne"><dt>Total estimé</dt><dd key={totalPanier} className="boutique-maj" data-testid="commande-total">{totalPanier} DH</dd></div>
                   </dl>
-                  <p className="boutique-recap-note">Aucun paiement maintenant. Notre équipe vous contacte sur WhatsApp, vous validez l'aperçu, puis le paiement est réglé avant l'envoi du fichier final. Délai : 1 semaine.</p>
+                  <p className="boutique-recap-note">Aucun paiement maintenant. Notre équipe vous contacte sur WhatsApp, vous validez l'aperçu, puis vous réglez : le fichier final est envoyé sous 1 semaine à partir du paiement.</p>
                   <div className="boutique-recap-actions">
                     <button type="button" className="boutique-lien" onClick={modifier} data-testid="commande-modifier">Modifier ma carte</button>
                     <button type="button" className="boutique-lien" onClick={retirer} data-testid="commande-retirer">Retirer</button>
