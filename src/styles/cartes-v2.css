@@ -210,3 +210,11 @@ textarea.cv-champ { resize: vertical; line-height: 1.4; }
 .cv-option em { font-style: normal; font-size: 13px; color: var(--or-clair, #E4D49A); white-space: nowrap; }
 .cv-option input { width: 20px; height: 20px; accent-color: #C9B27A; }
 .cv-option-champs { display: grid; gap: 10px; padding: 10px 0 4px; }
+.cv-demande { display: grid; gap: 16px; }
+.cv-live { display: grid; gap: 10px; justify-items: center; }
+.cv-live .cv-scene { width: 100%; display: grid; justify-items: center; }
+.cv-live-bouton { justify-self: center; }
+@media (min-width: 900px) {
+  .cv-demande { grid-template-columns: minmax(0, 1fr) minmax(260px, 320px); align-items: start; gap: 32px; }
+  .cv-live { order: 2; position: sticky; top: 0; }
+}

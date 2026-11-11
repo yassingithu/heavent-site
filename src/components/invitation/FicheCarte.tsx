@@ -19,10 +19,11 @@ const numeroAffiche = (t: string) => { const d = t.replace(/\D/g, ""); if (d.sta
 const reduit = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** Aperçu qui se rejoue sans fin : ouverture, carte écrite, quelques secondes de pause, puis on recommence. */
-function ApercuBoucle({ ouverture }: { ouverture: OuvertureDef }) {
+function ApercuBoucle({ ouverture, noms = "Lina & Adam", dateIso, lieu = "Marrakech" }: { ouverture: OuvertureDef; noms?: string; dateIso?: string; lieu?: string }) {
   const [n, setN] = useState(1);
   const racine = useRef<HTMLDivElement>(null);
-  const [date] = useState(dateExemple);
+  const [dateEx] = useState(dateExemple);
+  const date = dateIso || dateEx;
   useEffect(() => {
     if (reduit()) return;
     const el = racine.current?.querySelector<HTMLElement>("[data-testid=invitation]"); if (!el) return;
@@ -35,7 +36,7 @@ function ApercuBoucle({ ouverture }: { ouverture: OuvertureDef }) {
   return (
     <div className="cv-apercu" ref={racine} data-testid="apercu-boucle">
       <div className="cv-apercu-in" aria-hidden="true" {...{ inert: "" }}>
-        <Invitation key={ouverture.id} noms="Lina & Adam" date={date} lieu="Marrakech"
+        <Invitation key={`${ouverture.id}|${noms}|${date}|${lieu}`} noms={noms} date={date} lieu={lieu}
           reglages={{ modele: "or-ivoire", couleurs: { fond: "#EAE2D0" }, ouverture: ouverture.id }} pleinePage={false} rejouer={n} autoOuvrir />
       </div>
       <button type="button" className="cv-rejouer" onClick={() => setN((x) => x + 1)} data-testid="invitation-rejouer">↺ Revoir l'ouverture</button>
@@ -52,6 +53,9 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
   const [opts, setOpts] = useState<string[]>([]);
   const bascule = (id: string) => setOpts((a) => a.includes(id) ? a.filter((x) => x !== id) : [...a, id]);
   const [dateOk, setDateOk] = useState(true);
+  const [vivant, setVivant] = useState({ noms: "", date: "", lieu: "" });
+  useEffect(() => { const t = window.setTimeout(() => setVivant({ noms: v.noms.trim(), date: dateOk && v.date >= aujourdhui() ? v.date : "", lieu: v.lieu.trim() }), 800); return () => window.clearTimeout(t); }, [v.noms, v.date, v.lieu, dateOk]);
+  const [voir, setVoir] = useState(() => typeof matchMedia !== "undefined" && matchMedia("(min-width: 900px)").matches);
   const [err, setErr] = useState<Record<string, string>>({});
   const [etat, setEtat] = useState<"saisie" | "envoi" | "ok">("saisie");
   const [erreur, setErreur] = useState<string | null>(null);
@@ -128,6 +132,11 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
                 </div>
               </div>
             ) : (
+              <div className="cv-demande">
+              <div className="cv-live">
+                <button type="button" className="cv-lien cv-live-bouton" aria-expanded={voir} onClick={() => setVoir((x) => !x)} data-testid="apercu-live-bouton">{voir ? "Masquer l'aperçu" : "Voir ma carte avec mes prénoms"}</button>
+                {voir && ouvert && <div className="cv-scene" data-testid="apercu-live"><ApercuBoucle ouverture={o} noms={vivant.noms || undefined} dateIso={vivant.date || undefined} lieu={vivant.lieu || undefined} /><p className="cv-apercu-note">Aperçu rapide. L'aperçu final, plus soigné, vous est envoyé sur WhatsApp.</p></div>}
+              </div>
               <form onSubmit={envoyer} className="cv-form" noValidate data-testid="cartes-formulaire">
                 <h3>Je veux cette carte</h3>
                 <p className="cv-form-aide">Dites-nous ce qu'il faut écrire dessus. Nous vous envoyons l'aperçu sur WhatsApp, vous ne payez qu'après l'avoir validé.</p>
@@ -197,6 +206,7 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
                   <li>Une modification supplémentaire après l'aperçu : 50 DH.</li>
                 </ul>
               </form>
+              </div>
             )}
           </div>
           {etat !== "ok" && etape === "carte" && (
