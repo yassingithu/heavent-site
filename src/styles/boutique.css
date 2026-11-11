@@ -319,3 +319,8 @@ html.s-anime .boutique-recap[data-revele].vu::before { transition: transform .8s
 .boutique-rayon-tete p { margin: 0; max-width: 60ch; font: 400 15px/1.5 var(--s-texte, Jost), sans-serif; color: #5E554A; }
 .cartes-formules { margin-bottom: 0; }
 .boutique-grille.vu .boutique-carte { animation-play-state: running; }
+
+/* Boutons de rayon toujours à portée */
+.boutique-barre { position: sticky; top: 64px; z-index: 6; background: #F9F4E8; padding-top: 6px; }
+@media (min-width: 900px) { .boutique-barre { top: 86px; } }
+.boutique-recap-img img { object-fit: cover; object-position: top center; }

@@ -183,7 +183,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             ))}
           </div>
           <p className="text-xs text-[#6B6154] mt-2">{rev.description}</p>
-          <p className="text-xs text-[#6B6154] mt-1">Touchez un choix, puis essayez-le dans l'aperçu (touchez l'enveloppe pour l'ouvrir). La surprise dévoile la date : pensez à la renseigner.</p>
+          <p className="text-xs text-[#6B6154] mt-1">Touchez un choix, puis essayez-le dans l'aperçu (touchez la carte pour l'ouvrir). La surprise dévoile la date : pensez à la renseigner.</p>
         </section>
         )}
 

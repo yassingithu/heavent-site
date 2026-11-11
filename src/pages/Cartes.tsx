@@ -20,7 +20,7 @@ import { suivre } from "@/lib/suivi";
  */
 const WHATSAPP = "https://wa.me/212610939655?text=";
 const champ = "w-full min-h-11 px-3 text-base bg-[#FFFDF7] border-0 border-b border-[#A8933F] rounded-none";
-const GARANTIES: [string, string][] = [["1 semaine", "Pour recevoir votre carte"], ["Aperçu", "Validé avant le paiement"], ["Paiement", "Avant la réception du fichier final"], ["WhatsApp", "Pour partager votre carte"]];
+const GARANTIES: [string, string][] = [["1 semaine", "Pour recevoir votre carte"], ["Aperçu", "Validé avant le paiement"], ["Paiement", "Avant la réception du fichier final"], ["WhatsApp", "Partage uniquement par WhatsApp"]];
 
 /** Ce que contient la commande : la carte telle qu'elle a été réglée dans la fiche, et ses options. */
 interface Ligne { invitation: InvitationReglages; noms: string; date: string; lieu: string; message: string; extras: string[] }
@@ -204,7 +204,7 @@ export default function Cartes() {
                 <Etoile /><Etoile className="bas" />
                 <h4 className="s-h3 s-entree-heros">Demande bien reçue</h4>
                 <p className="cartes-delai s-entree-heros" style={{ animationDelay: ".25s" }}><b>1 semaine</b><span>pour votre carte</span></p>
-                <p className="boutique-merci-texte">Merci {f.nom.split(" ")[0]}. Notre équipe prépare votre carte « {ligne?.nom} » : vous recevez un aperçu à valider, puis votre carte sous 1 semaine.</p>
+                <p className="boutique-merci-texte">Merci {f.nom.split(" ")[0]}. Notre équipe prépare votre carte « {ligne?.nom} » : vous recevez un aperçu à valider, puis votre carte sous 1 semaine. Le paiement se règle avant l'envoi du fichier final.</p>
                 <p className="boutique-merci-rappel">Carte « {ligne?.nom} » · {totalPanier} DH · réponse sur WhatsApp au {f.telephone}</p>
                 <Bouton href={WHATSAPP + encodeURIComponent(`Bonjour Heavent, je viens d'envoyer ma demande de carte d'invitation (${evPanier.nom}). Je m'appelle ${f.nom}.`)} externe variante="filet">Nous écrire sur WhatsApp</Bouton>
                 <button type="button" className="boutique-lien" onClick={recommencer} data-testid="autre-demande">Faire une autre demande</button>
@@ -221,7 +221,7 @@ export default function Cartes() {
                   <span key={maj} className="boutique-recap-lueur" aria-hidden="true" />
                   <p className="boutique-recap-tete"><b>Reçu provisoire</b><span>{new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }).replaceAll("/", " · ")}</span></p>
                   <div className="boutique-recap-carte">
-                    <span className="boutique-recap-img" aria-hidden="true">{ligne.poster ? <img src={ligne.poster} alt="" /> : ligne.id === "enveloppe" || ligne.id === "rose-imperiale" ? <i>{String(rang(ligne.id)).padStart(2, "0")}</i> : <><b style={{ backgroundImage: `url(/ouvertures/${ligne.id}-g.webp)` }} /><b style={{ backgroundImage: `url(/ouvertures/${ligne.id}-d.webp)` }} /></>}</span>
+                    <span className="boutique-recap-img" aria-hidden="true">{ligne.poster ? <img src={ligne.poster} alt="" /> : ligne.id === "rose-imperiale" && ligne.carte ? <img src={ligne.carte.fin} alt="" /> : <><b style={{ backgroundImage: `url(/ouvertures/${ligne.id}-g.webp)` }} /><b style={{ backgroundImage: `url(/ouvertures/${ligne.id}-d.webp)` }} /></>}</span>
                     <div>
                       <small>{FORMULES.find((x) => x.id === formuleDe(ligne))?.nom} · Nº {String(rang(ligne.id)).padStart(2, "0")}</small>
                       <b>{ligne.nom}</b>

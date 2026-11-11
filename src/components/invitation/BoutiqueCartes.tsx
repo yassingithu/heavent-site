@@ -25,8 +25,8 @@ function Fiche({ o, rang, dedans, onOuvrir, i }: { o: OuvertureDef; rang: number
         <span className="boutique-cadre" aria-hidden="true">
           {o.id === "enveloppe"
             ? <span className="boutique-vide" style={{ background: "#141414" }}><span className="boutique-monogramme">A &amp; B</span></span>
-            : o.id === "rose-imperiale" && !o.poster
-            ? <span className="boutique-vide" style={{ background: "#F3ECDD" }}><span className="boutique-monogramme" style={{ color: "#7A5F1F", border: 0 }}>Rose<br />Impériale</span></span>
+            : o.id === "rose-imperiale" && !o.poster && o.carte
+            ? <img src={o.carte.fin} alt="" loading="lazy" decoding="async" />
             : o.poster
             ? <img src={o.poster} alt="" loading="lazy" decoding="async" />
             : <><span className="boutique-moitie" style={{ backgroundImage: `url(/ouvertures/${o.id}-g.webp)` }} /><span className="boutique-moitie" style={{ backgroundImage: `url(/ouvertures/${o.id}-d.webp)` }} /></>}
