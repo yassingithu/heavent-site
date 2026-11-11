@@ -63,3 +63,16 @@
   .inv-maps::before { transition: none; }
   .inv-btn::after { display: none; }
 }
+
+/* Fleurs photo (bouquet grenat) : posées sur le bord de l'enveloppe et au coin de la carte */
+.inv-fleur { position: absolute; z-index: 6; pointer-events: none; user-select: none; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .35)); transform-origin: 85% 90%; will-change: transform; }
+.inv-fleur-env-a { width: min(62%, 330px); right: -7%; bottom: 10%; animation: inv-fleur-souffle 7s ease-in-out infinite; }
+.inv-fleur-env-b, .inv-fleur-carte { -webkit-mask-image: linear-gradient(to right, #000 60%, transparent); mask-image: linear-gradient(to right, #000 60%, transparent); }
+.inv-fleur-env-b { width: min(30%, 160px); left: -3%; top: 8%; transform: rotate(-12deg) scaleX(-1); transform-origin: 20% 80%; animation: inv-fleur-souffle-b 8.5s ease-in-out -2s infinite; }
+.inv-fleur-carte { width: clamp(150px, 40%, 190px); right: -15%; top: auto; bottom: calc(100% - 96px); transform: rotate(8deg) scaleX(-1); transform-origin: 20% 40%; animation: inv-fleur-arrive .9s cubic-bezier(.2, .8, .2, 1) .2s backwards, inv-fleur-souffle-c 9s ease-in-out 1.2s infinite; }
+@keyframes inv-fleur-souffle { 0%, 100% { transform: rotate(0deg) translateY(0); } 50% { transform: rotate(-1.6deg) translateY(-4px); } }
+@keyframes inv-fleur-souffle-b { 0%, 100% { transform: rotate(-12deg) scaleX(-1) translateY(0); } 50% { transform: rotate(-9deg) scaleX(-1) translateY(-3px); } }
+@keyframes inv-fleur-souffle-c { 0%, 100% { transform: rotate(8deg) scaleX(-1); } 50% { transform: rotate(5.5deg) scaleX(-1) translateY(-3px); } }
+@keyframes inv-fleur-arrive { from { opacity: 0; transform: rotate(18deg) scaleX(-1) translate(-18px, -22px) scale(.92); } }
+.inv[dir="rtl"] .inv-fleur-carte { right: auto; left: -15%; transform: rotate(-8deg); }
+@media (prefers-reduced-motion: reduce) { .inv-fleur { animation: none !important; } }
