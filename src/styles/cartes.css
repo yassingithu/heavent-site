@@ -35,3 +35,10 @@
 .cartes-page .cartes-formulaire :is(input, textarea):not([type="checkbox"]) { margin-top: 6px; background: #FBF8F1; border: 0; border-bottom: 1px solid #A8933F; border-radius: 0; font-size: 16px; letter-spacing: 0; text-transform: none; color: #141414; }
 .cartes-page .cartes-formulaire label.cartes-accord { text-transform: none; letter-spacing: 0; font-size: 14px; }
 .cartes-page .cartes-formulaire label.cartes-accord a { color: #7A5F1F; }
+/* Cibles tactiles ≥ 44 px dans les réglages */
+@media (max-width: 899px) {
+  .cartes-page :is(main button, main [role="button"], main summary):not(.inv *) { min-height: 44px; }
+  .cartes-page main input[type="color"] { min-height: 44px; min-width: 48px; }
+  .cartes-page footer a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+.cartes-page .cartes-formulaire label.cartes-accord input[type="checkbox"] { flex: none; margin-top: 2px; }

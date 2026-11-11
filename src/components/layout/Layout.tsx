@@ -110,7 +110,7 @@ const Layout = ({ children }: LayoutProps) => {
         {children}
       </main>
       <Footer />
-      <BoutonWhatsApp />
+      {pathname !== "/cartes" && <BoutonWhatsApp />}
     </div>
   );
 };

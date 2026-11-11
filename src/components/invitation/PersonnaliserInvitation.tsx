@@ -311,7 +311,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </section>}
       </div>
 
-      <aside ref={apercuRef} className="min-w-0 scroll-mt-16 order-first lg:order-none lg:sticky lg:top-4 self-start space-y-2" aria-label="Aperçu de l'invitation">
+      <aside ref={apercuRef} className="min-w-0 scroll-mt-16 order-first lg:order-none lg:sticky lg:top-24 self-start space-y-2" aria-label="Aperçu de l'invitation">
         <div className="flex items-center justify-between gap-2">
           <div className="flex gap-1" role="group" aria-label="Langue de l'aperçu">
             {LANGUES.map(([l, t]) => (

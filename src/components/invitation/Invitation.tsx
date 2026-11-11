@@ -457,7 +457,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
         </article>
         {pleinePage && !sansAnimation() && <button type="button" className="inv-rejouer" onClick={() => { setSortie(null); setPhase("fermee"); window.scrollTo({ top: 0 }); }} data-testid="invitation-rejouer">↺ {t.rejouer}</button>}
       </>)}
-      {phase === "ouverture" && <button type="button" className="inv-passer" onClick={() => terminerRef.current()} data-testid="invitation-passer">{t.passer}</button>}
+      {phase === "ouverture" && pleinePage && <button type="button" className="inv-passer" onClick={() => terminerRef.current()} data-testid="invitation-passer">{t.passer}</button>}
       {bas}
       </div>
     </div>
