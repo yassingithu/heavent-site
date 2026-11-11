@@ -11,44 +11,39 @@ const T: Record<TypeGeste, { aide: Record<string, string>; bouton: Record<string
   ballon: { aide: { fr: "Touchez le ballon pour le faire éclater", en: "Tap the balloon to pop it", ar: "المسوا البالون ليفرقع" }, bouton: { fr: "Éclater", en: "Pop", ar: "فرقعوا" } },
 };
 
+const IMGS = import.meta.glob("../../assets/enfants/revelation-*.webp", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
+const img = (n: string) => Object.entries(IMGS).find(([k]) => k.endsWith(`revelation-${n}.webp`))?.[1] ?? "";
+
+/** Trois objets gouache (même univers que les personnages) : le gâteau, la lanterne et le ballon se superposent à de simples calques animés. */
 function Scene({ type, etat, reduit }: { type: TypeGeste; etat: "attente" | "geste" | "fini"; reduit: boolean }) {
-  const or = "#A8933F";
   if (type === "bougies") return (
-    <svg viewBox="0 0 220 200" aria-hidden="true" className="inv-g-svg">
-      <ellipse cx="110" cy="168" rx="86" ry="14" fill="none" stroke={or} strokeWidth="2" />
-      <path d="M30 168V112c0-8 8-14 18-14h124c10 0 18 6 18 14v56" fill="none" stroke={or} strokeWidth="2.5" />
-      <path d="M30 128c14 10 28-8 42 2s28-8 42 2 28-8 42 2 28-8 34 0" fill="none" stroke={or} strokeWidth="2" />
-      {[70, 110, 150].map((x, i) => (
-        <g key={x}>
-          <rect x={x - 5} y="62" width="10" height="36" rx="2" fill="none" stroke={or} strokeWidth="2.5" />
-          <path className="inv-g-flamme" style={{ animationDelay: `${i * 0.18}s` }} d={`M${x} 40c8 8 8 16 0 20c-8-4-8-12 0-20z`} fill={or} opacity=".9" />
-          <path className="inv-g-fumee" d={`M${x} 38c-4-8 4-14 0-22`} fill="none" stroke={or} strokeWidth="1.5" strokeLinecap="round" />
-        </g>
-      ))}
-    </svg>
+    <div className="inv-g-objet inv-g-gateau">
+      <img className="inv-g-img" src={img("gateau")} alt="" decoding="async" draggable={false} />
+      <svg className="inv-g-flammes" viewBox="0 0 100 22" aria-hidden="true">
+        {[34.5, 50.5, 65].map((x, i) => (
+          <g key={x}>
+            <path className="inv-g-flamme" style={{ animationDelay: `${i * 0.18}s` }} d={`M${x} 3c3.6 3.6 3.6 8 0 10.4c-3.6-2.4-3.6-6.8 0-10.4z`} fill="#E2A93B" stroke="#A8933F" strokeWidth=".6" />
+            <path className="inv-g-fumee" style={{ animationDelay: `${i * 0.08}s` }} d={`M${x} 12c-2-4 2-7 0-11`} fill="none" stroke="#8C6D22" strokeWidth=".8" strokeLinecap="round" />
+          </g>
+        ))}
+      </svg>
+    </div>
   );
   if (type === "lanterne") return (
-    <svg viewBox="0 0 200 240" aria-hidden="true" className="inv-g-svg">
-      <circle className="inv-g-halo" cx="100" cy="130" r="90" fill={or} opacity="0" />
-      <path d="M100 8v34" stroke={or} strokeWidth="2.5" /><circle cx="100" cy="8" r="5" fill="none" stroke={or} strokeWidth="2" />
-      <path d="M70 52h60l16 26v82l-16 26H70l-16-26V78z" fill="none" stroke={or} strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M62 78h76M62 160h76M100 52v134M80 78v82M120 78v82" stroke={or} strokeWidth="1.5" opacity=".6" />
-      <ellipse className="inv-g-lueur" cx="100" cy="120" rx="22" ry="34" fill={or} opacity=".25" />
-      <path d="M78 186h44l-6 18H84z" fill="none" stroke={or} strokeWidth="2.5" strokeLinejoin="round" />
-    </svg>
+    <div className="inv-g-objet inv-g-lant">
+      <span className="inv-g-lueur" aria-hidden="true" />
+      <img className="inv-g-img" src={img("lanterne")} alt="" decoding="async" draggable={false} />
+    </div>
   );
   return (
-    <svg viewBox="0 0 200 240" aria-hidden="true" className="inv-g-svg">
-      <g className="inv-g-ballon">
-        <ellipse cx="100" cy="88" rx="60" ry="72" fill="none" stroke={or} strokeWidth="2.5" />
-        <path d="M100 160l-8 12h16z" fill={or} />
-        <path d="M100 172c-10 14 10 26 0 40" fill="none" stroke={or} strokeWidth="1.8" />
-        <path d="M66 52c6-14 20-22 34-22" fill="none" stroke={or} strokeWidth="2" opacity=".5" strokeLinecap="round" />
-      </g>
-      {etat !== "attente" && !reduit && CONFETTIS.map((c, i) => (
-        <rect key={i} className="inv-g-conf" x="98" y="84" width={c.t === 0 ? 5 : 8} height={c.t === 2 ? 6 : 11} rx="1" fill={or} style={{ ["--a" as string]: `${c.a}deg`, ["--d" as string]: `${c.d}px`, ["--r" as string]: `${c.r}deg`, animationDelay: `${(i % 4) * 0.03}s` }} />
-      ))}
-    </svg>
+    <div className="inv-g-objet inv-g-bal">
+      <img className="inv-g-img inv-g-ballon" src={img("ballon")} alt="" decoding="async" draggable={false} />
+      <svg className="inv-g-conf-svg" viewBox="0 0 100 100" aria-hidden="true">
+        {etat !== "attente" && !reduit && CONFETTIS.map((c, i) => (
+          <rect key={i} className="inv-g-conf" x="48" y="30" width={c.t === 0 ? 3 : 4.5} height={c.t === 2 ? 3.5 : 6} rx=".6" fill={i % 3 ? "#A8933F" : "#A3362B"} style={{ ["--a" as string]: `${c.a}deg`, ["--d" as string]: `${c.d}px`, ["--r" as string]: `${c.r}deg`, animationDelay: `${(i % 4) * 0.03}s` }} />
+        ))}
+      </svg>
+    </div>
   );
 }
 

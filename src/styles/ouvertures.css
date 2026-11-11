@@ -470,3 +470,15 @@
 .inv-rev-anneau { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; transition: opacity .6s; }
 .is-fini .inv-rev-anneau { opacity: 1; }
 .inv-rev-coeur:has(.inv-rev-anneau) .inv-rev-sous { padding-bottom: 0; }
+
+/* Objets gouache des révélations */
+.inv-g-objet { position: relative; width: 100%; }
+.inv-g-gateau { padding-top: 16%; width: 88%; }
+.inv-g-flammes { position: absolute; left: 0; top: 0; width: 100%; height: 16%; overflow: visible; }
+.inv-g-lant { width: 46%; }
+.inv-g-bal { width: 62%; }
+.inv-g-img { display: block; width: 100%; height: auto; -webkit-user-drag: none; pointer-events: none; }
+.inv-g-bal .inv-g-img { transform-origin: 50% 40%; }
+.inv-g-conf-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.inv-g-lueur { inset: -30% -60%; }
+.inv-g-scene { min-height: 260px; }
