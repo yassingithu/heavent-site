@@ -49,7 +49,7 @@ interface Props { ouvert: boolean; onFermer: () => void; ouverture: OuvertureDef
 export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
   const f = FORMULES.find((x) => x.id === formuleDe(o));
   const [etape, setEtape] = useState<"carte" | "demande">("carte");
-  const [v, setV] = useState({ noms: "", occasion: "mariage", date: "", lieu: "", message: "", nom: "", tel: "", accord: false });
+  const [v, setV] = useState({ noms: "", occasion: "mariage", date: "", lieu: "", message: "", nom: "", tel: "", accord: false, heure: "", maps: "", programme: "", musique: "", rsvp: true, voeux: false, photos: false });
   const [dateOk, setDateOk] = useState(true);
   const [err, setErr] = useState<Record<string, string>>({});
   const [etat, setEtat] = useState<"saisie" | "envoi" | "ok">("saisie");
@@ -60,6 +60,7 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
   const prix = totalCommande(o, []);
   useEffect(() => { if (etat === "ok") requestAnimationFrame(() => document.querySelector<HTMLElement>("[data-testid=cartes-merci]")?.focus()); }, [etat]);
 
+  const plus = f?.id !== "classique";
   const envoyer = async (e: React.FormEvent) => {
     e.preventDefault(); setErreur(null);
     const x: Record<string, string> = {};
@@ -75,10 +76,11 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
     if (premier) { document.getElementById(`cv-champ-${premier}`)?.focus(); return; }
     setEtat("envoi");
     const resume = `Demande de carte « ${o.nom} » (${prixDe(o)})`;
+    const details = [v.heure && `Heure : ${v.heure}`, v.maps && `Lien Google Maps : ${v.maps}`, v.programme && `Programme : ${v.programme}`, v.musique && `Musique souhaitée : ${v.musique}`, plus && `Confirmation de présence : ${v.rsvp ? "oui" : "non"}`, plus && `Livre d'or / vœux : ${v.voeux ? "oui" : "non"}`, plus && v.photos && "Photos à envoyer par WhatsApp"].filter(Boolean).join("\n");
     const { error } = await (supabase as any).rpc("carte_demander", {
       p_nom: v.nom, p_telephone: v.tel, p_email: "", p_occasion: v.occasion, p_noms: v.noms,
-      p_date: v.date || null, p_lieu: v.lieu, p_message: [resume, v.message && `Message de la carte : ${v.message}`].filter(Boolean).join("\n\n"),
-      p_invitation: { ouverture: o.id, evenement: v.occasion === "mariage" ? undefined : v.occasion, noms: v.noms, message: v.message, extras: [], total: prix },
+      p_date: v.date || null, p_lieu: v.lieu, p_message: [resume, v.message && `Message de la carte : ${v.message}`, details].filter(Boolean).join("\n\n"),
+      p_invitation: { ouverture: o.id, evenement: v.occasion === "mariage" ? undefined : v.occasion, noms: v.noms, message: v.message, extras: [], total: prix, details: { heure: v.heure, maps: v.maps, programme: v.programme, musique: v.musique, rsvp: v.rsvp, voeux: v.voeux, photos: v.photos } },
     });
     if (error) { setEtat("saisie"); return setErreur(error.code === "P0429" ? "Vous avez déjà envoyé plusieurs demandes. Merci de patienter un peu ou de nous écrire sur WhatsApp." : "L'envoi n'a pas fonctionné. Réessayez, ou écrivez-nous sur WhatsApp."); }
     suivre("clic", `cartes:demande:${o.id}`); setEtat("ok");
@@ -150,6 +152,28 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
                 <label>Un message sur la carte <i>(facultatif)</i>
                   <textarea className="cv-champ" rows={2} value={v.message} onChange={(e) => maj("message", e.target.value)} maxLength={400} placeholder="Nous serions heureux de partager ce moment avec vous." data-testid="cartes-message" />
                 </label>
+                {plus && (
+                  <details className="cv-plus" data-testid="cartes-details">
+                    <summary>Détails de la fête <i>(facultatif, vous pourrez nous les envoyer plus tard)</i></summary>
+                    <div className="cv-duo">
+                      <label>Heure
+                        <input className="cv-champ" value={v.heure} onChange={(e) => maj("heure", e.target.value)} placeholder="19h30" maxLength={20} />
+                      </label>
+                      <label>Lien Google Maps
+                        <input className="cv-champ" type="url" inputMode="url" value={v.maps} onChange={(e) => maj("maps", e.target.value)} placeholder="https://maps.app.goo.gl/…" maxLength={300} />
+                      </label>
+                    </div>
+                    <label>Programme de la journée
+                      <textarea className="cv-champ" rows={2} value={v.programme} onChange={(e) => maj("programme", e.target.value)} maxLength={500} placeholder="Cérémonie 17h, cocktail 18h, dîner 20h…" />
+                    </label>
+                    <label>Musique souhaitée
+                      <input className="cv-champ" value={v.musique} onChange={(e) => maj("musique", e.target.value)} placeholder="Titre ou ambiance (nous vous proposerons)" maxLength={120} />
+                    </label>
+                    <label className="cv-accord"><input type="checkbox" checked={v.rsvp} onChange={(e) => maj("rsvp", e.target.checked)} /><span>Vos invités confirment leur présence</span></label>
+                    <label className="cv-accord"><input type="checkbox" checked={v.voeux} onChange={(e) => maj("voeux", e.target.checked)} /><span>Un livre d'or pour les vœux</span></label>
+                    <label className="cv-accord"><input type="checkbox" checked={v.photos} onChange={(e) => maj("photos", e.target.checked)} /><span>Je vous envoie des photos par WhatsApp</span></label>
+                  </details>
+                )}
                 <div className="cv-duo">
                   <label>Votre nom
                     <input className="cv-champ" value={v.nom} onChange={(e) => maj("nom", e.target.value)} autoComplete="name" id="cv-champ-nom" data-testid="cartes-nom" aria-invalid={!!err.nom} />

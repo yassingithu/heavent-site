@@ -436,7 +436,7 @@
 .inv-g-date small { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--inv-accent); }
 .inv-g.is-fini .inv-g-date { opacity: 1; transform: none; filter: none; }
 .inv-g.is-fini .inv-aide, .inv-g.is-fini .inv-g-passer { opacity: 0; pointer-events: none; transition: opacity .3s; }
-.inv-g .inv-aide { font-size: 13px; letter-spacing: .08em; color: var(--inv-texte); opacity: .8; max-width: 26ch; text-align: center; }
+.inv-g .inv-aide { font-size: 13px; letter-spacing: .08em; color: var(--inv-texte); opacity: .8; max-width: 26ch; margin-top: 18px; text-align: center; }
 .inv-g.is-indice .inv-aide { opacity: 1; animation: inv-g-indice .5s ease; }
 @keyframes inv-g-indice { 0%, 100% { transform: none; } 30% { transform: translateY(-3px); } 60% { transform: translateY(1px); } }
 .inv-g-passer { min-height: 44px; padding: 8px 14px; background: none; border: 0; font: inherit; font-size: 13px; letter-spacing: .06em; color: var(--inv-texte); opacity: .7; text-decoration: underline; text-decoration-color: #A8933F; text-underline-offset: 4px; cursor: pointer; }
