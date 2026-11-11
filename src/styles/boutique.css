@@ -312,7 +312,7 @@ html.s-anime .boutique-recap[data-revele].vu::before { transition: transform .8s
 .boutique-panier-vide { background: #FFFDF7; border: 1px dashed #A8933F; box-shadow: none; }
 
 /* Rayons : un titre par formule, les cartes dessous */
-.boutique-rayon { margin-top: 44px; scroll-margin-top: 16px; }
+.boutique-rayon { margin-top: 44px; scroll-margin-top: 140px; }
 .boutique-rayon-tete { display: grid; gap: 6px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #A8933F; }
 .boutique-rayon-tete h3 { margin: 0; font: 400 clamp(24px, 6vw, 32px)/1.1 var(--s-titre, Gloock), serif; color: #141414; }
 .boutique-rayon-tete h3 span { color: #7A5F1F; }

@@ -223,7 +223,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
         cv.getContext("2d")!.drawImage(f, 0, 0, cv.width, cv.height);
         const tr = getComputedStyle(f).transform; if (tr && tr !== "none") cv.style.transform = tr; // zoom en cours : l'image figée reprend exactement le cadrage
         setSortie({ canvas: cv, r: { top: b.top, left: b.left, width: b.width, height: b.height } });
-      } else if (ouv.carte) {
+      } else if (ouv.carte && !fondCarte) {
         /* décors à carte intégrée : la scène intérieure reste en place puis glisse sur la carte */
         const porte = document.querySelector<HTMLElement>(".inv-porte"); if (!porte) return;
         const b = porte.getBoundingClientRect(); const im = new Image(); im.src = ouv.carte.fin; im.alt = "";
@@ -270,10 +270,23 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     h.animate([{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }], { duration: 1000, delay: 250, easing: "cubic-bezier(.2,.7,.2,1)", fill: "backwards" });
   }, [phase]);
   const phaseRef = useRef(phase); phaseRef.current = phase;
+  const porteRect = useRef<DOMRect | null>(null);
+  /* La carte prend le relais de la porte à la même échelle, puis grandit : le texte ne saute pas. */
+  useLayoutEffect(() => {
+    const r = porteRect.current; if (phase !== "ouverte" || !r) return; porteRect.current = null;
+    const el = document.querySelector<HTMLElement>("[data-testid=invitation-carte]"); if (!el || typeof el.animate !== "function") return;
+    const c = el.getBoundingClientRect(); if (!c.width || !r.width) return;
+    const k = r.width / c.width; const rogne = Math.max(0, c.height - r.height / k);
+    el.animate([
+      { transformOrigin: "top left", transform: `translate(${r.left - c.left}px, ${r.top - c.top}px) scale(${k})`, clipPath: `inset(0 0 ${rogne}px 0)` },
+      { transformOrigin: "top left", transform: "translate(0, 0) scale(1)", clipPath: "inset(0 0 0 0)" },
+    ], { duration: 650, easing: "cubic-bezier(.2,.7,.2,1)" });
+  }, [phase]);
   /* Passage à la carte : à la fin réelle du film (ou au minuteur de secours), jamais avant. */
   const terminer = () => {
     if (phaseRef.current !== "ouverture") return;
     depart.current = avecRevelation || ouv.video || fondCarte ? null : (emRef.current?.getBoundingClientRect() ?? null);
+    { const st = fondCarte && !avecRevelation ? document.querySelector<HTMLElement>(".inv-fond-statique") : null; const po = document.querySelector<HTMLElement>(".inv-porte")?.getBoundingClientRect(); const sr = st?.getBoundingClientRect(); porteRect.current = sr && po ? new DOMRect(sr.left, sr.top, sr.width, Math.min(sr.height, po.bottom - sr.top)) : null; }
     if (!avecRevelation) capturerFilm();
     if (ouv.carte && !avecRevelation && !sansAnimation()) { const inv = document.querySelector<HTMLElement>(".inv"); if (inv) { inv.style.minHeight = `${inv.getBoundingClientRect().height}px`; window.setTimeout(() => { inv.style.minHeight = ""; }, 2600); } }
     setPhase(avecRevelation ? "revelation" : "ouverte");
@@ -368,7 +381,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   /* La carte déjà écrite, visible derrière les portes qui s'ouvrent : jamais de page vide. */
   const fondCarte = (!ouv.video && !sansAnimation()) ? (ouv.carte ? (
     <div className={`inv-carte inv-carte-film inv-cf-${ouv.id} inv-fond-statique`} style={{ "--film-r": ouv.carte.r ?? 180, "--film-fin": `url(${ouv.carte.fin})`, "--film-x": ouv.carte.x, "--film-y": ouv.carte.y, "--film-l": ouv.carte.l, "--film-h": ouv.carte.h, "--film-fond": ouv.carte.fond } as CSSProperties}>
-      <div className="inv-film-zone"><PagesCarte unites={unitesCarte} ar={ar} textes={t} repondre={false} signature={[langue, noms, date, lieu, heure, messageA, invite, reglages?.noms_ar, reglages?.lieu_ar, !!carte, "fond"].join("¤")} /></div>
+      <div className="inv-film-zone"><PagesCarte unites={avecRevelation ? unitesCarte.filter((u) => u.cle !== "date") : unitesCarte} ar={ar} textes={t} repondre={false} signature={[langue, noms, date, lieu, heure, messageA, invite, reglages?.noms_ar, reglages?.lieu_ar, !!carte, "fond"].join("¤")} /></div>
     </div>
   ) : (
     <div className={`inv-carte inv-orn-${ornement} inv-fond-statique`}>
@@ -428,7 +441,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       })()}
       {aMusique && phase !== "fermee" && (<button type="button" className="inv-musique" onClick={basculerSon} aria-pressed={son} aria-label={son ? "Couper la musique" : "Activer la musique"} data-testid="invitation-musique">{son ? "♪" : "♪̸"}</button>)}
       {phase === "ouverte" && (<>
-        <article className={`inv-carte inv-orn-${ornement}${ouv.carte ? ` inv-carte-film inv-cf-${ouv.id}` : ""}${fondCarte && !sortie ? " inv-sans-entree" : ""}`} data-testid="invitation-carte"
+        <article className={`inv-carte inv-orn-${ornement}${ouv.carte ? ` inv-carte-film inv-cf-${ouv.id}` : ""}${fondCarte ? " inv-sans-entree" : ""}`} data-testid="invitation-carte"
           style={ouv.carte ? ({ "--film-r": ouv.carte.r ?? 180, "--film-fin": `url(${ouv.carte.fin})`, "--film-x": ouv.carte.x, "--film-y": ouv.carte.y, "--film-l": ouv.carte.l, "--film-h": ouv.carte.h, "--film-fond": ouv.carte.fond } as CSSProperties) : undefined}>
           <div className="inv-etincelles" aria-hidden="true">{ETINCELLES.map((e, i) => <span key={i} style={{ left: `${e.x}%`, animationDelay: `${e.d}ms`, animationDuration: `${e.t + 900}ms`, width: e.s, height: e.s }} />)}</div>
           <div className="inv-motif" aria-hidden="true" />
