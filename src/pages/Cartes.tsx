@@ -46,6 +46,7 @@ export default function Cartes() {
           <h2 id="cv-faq-titre">Questions fréquentes</h2>
           {QUESTIONS.map(([q, r]) => <details key={q}><summary>{q}</summary><p>{r}</p></details>)}
         </section>
+        <p className="cv-credit">Bouton « Ajouter à mon agenda » inspiré d'<a href="https://github.com/Rainier-PS/Invitation-Template" target="_blank" rel="noopener noreferrer">Invitation Template</a> de Rainier Pearson Saputra (licence MIT).</p>
       </main>
 
       <FicheCarte ouvert={fiche !== null} onFermer={() => setFiche(null)} ouverture={ouv} rang={rang} />

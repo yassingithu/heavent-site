@@ -118,19 +118,19 @@ export const TEXTES = {
     gratter: "Grattez le cœur pour découvrir la date", decouvrir: "Découvrir", ouvrir: "Touchez pour ouvrir", ouvrirBouton: "Ouvrir l'invitation", suivant: "Suivant", precedent: "Précédent", pageSur: "Page {n} sur {m}", defilable: "Texte à faire défiler", passer: "Passer l'animation", rejouer: "Revoir l'ouverture", invite: "Ont la joie de vous convier à leur mariage", invites: "Vous êtes invité(e) au mariage de",
     cher: "Bonjour", a: "à", maps: "Voir le lieu sur Google Maps", locale: "fr-FR",
     defiler: "Faites défiler", repondre: "Répondre maintenant", repondreCourt: "Répondre", alliances: "Nous allons nous dire oui", compte: "Le grand jour approche", aujourdhui: "C'est aujourd'hui !", jours: "jours", heures: "heures", minutes: "minutes", secondes: "secondes",
-    lieuTitre: "Le lieu", itineraire: "Itinéraire", programmeTitre: "Le programme", reponseTitre: "Votre réponse", avecVous: "Nous avons hâte de partager ce moment avec vous", pour: "Une invitation pour",
+    lieuTitre: "Le lieu", itineraire: "Itinéraire", agenda: "Ajouter à mon agenda", programmeTitre: "Le programme", reponseTitre: "Votre réponse", avecVous: "Nous avons hâte de partager ce moment avec vous", pour: "Une invitation pour",
   },
   en: {
     gratter: "Scratch the heart to reveal the date", decouvrir: "Reveal", ouvrir: "Tap to open", ouvrirBouton: "Open the invitation", suivant: "Next", precedent: "Back", pageSur: "Page {n} of {m}", defilable: "Scrollable text", passer: "Skip the animation", rejouer: "Replay the opening", invite: "Joyfully invite you to their wedding", invites: "You are invited to the wedding of",
     cher: "Dear", a: "at", maps: "View the venue on Google Maps", locale: "en-GB",
     defiler: "Scroll down", repondre: "Reply now", repondreCourt: "Reply", alliances: "We are about to say yes", compte: "The big day is coming", aujourdhui: "It's today!", jours: "days", heures: "hours", minutes: "minutes", secondes: "seconds",
-    lieuTitre: "The venue", itineraire: "Directions", programmeTitre: "The programme", reponseTitre: "Your reply", avecVous: "We can't wait to share this moment with you", pour: "An invitation for",
+    lieuTitre: "The venue", itineraire: "Directions", agenda: "Add to my calendar", programmeTitre: "The programme", reponseTitre: "Your reply", avecVous: "We can't wait to share this moment with you", pour: "An invitation for",
   },
   ar: {
     gratter: "اخدشوا القلب لاكتشاف التاريخ", decouvrir: "اكتشفوا", ouvrir: "المسوا لفتح الدعوة", ouvrirBouton: "افتحوا الدعوة", suivant: "التالي", precedent: "السابق", pageSur: "الصفحة {n} من {m}", defilable: "نص قابل للتمرير", passer: "تخطّي العرض", rejouer: "إعادة الفتح", invite: "يتشرفان بدعوتكم لحضور حفل زفافهما", invites: "يسعدنا دعوتكم لحضور حفل زفاف",
     cher: "مرحباً", a: "في", maps: "عرض المكان على خرائط جوجل", locale: "ar-MA-u-nu-latn-ca-gregory",
     defiler: "مرروا للأسفل", repondre: "الرد الآن", repondreCourt: "الرد", alliances: "سنقول نعم قريباً", compte: "اليوم الكبير يقترب", aujourdhui: "إنه اليوم!", jours: "أيام", heures: "ساعات", minutes: "دقائق", secondes: "ثوان",
-    lieuTitre: "المكان", itineraire: "الاتجاهات", programmeTitre: "البرنامج", reponseTitre: "ردكم", avecVous: "نتطلع لمشاركتكم هذه اللحظة", pour: "دعوة إلى",
+    lieuTitre: "المكان", itineraire: "الاتجاهات", agenda: "أضف إلى التقويم", programmeTitre: "البرنامج", reponseTitre: "ردكم", avecVous: "نتطلع لمشاركتكم هذه اللحظة", pour: "دعوة إلى",
   },
 } as const;
 
@@ -258,3 +258,12 @@ export const PAPIERS: { id: "lisse" | "gaufre" | "kraft"; nom: string }[] = [{ i
 export const descriptionVente = (o: { description: string }) => o.description.replace(/\s*\d+(,\d+)? s\.?$/, "");
 export const ouvertureDe = (id?: string) => OUVERTURES.find((o) => o.id === id) ?? OUVERTURES[0];
 export const revelationDe = (id?: string) => REVELATIONS.find((r) => r.id === id) ?? REVELATIONS[0];
+
+/** Lien « Ajouter à Google Agenda » : avec une heure connue l'événement dure 4 h, sinon c'est une journée entière. */
+export function lienAgenda({ titre, date, debutMs, lieu }: { titre: string; date: string; debutMs?: number | null; lieu?: string }): string {
+  const z = (ms: number) => new Date(ms).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const jour = (iso: string, plus = 0) => { const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + plus); return d.toISOString().slice(0, 10).replace(/-/g, ""); };
+  const dates = debutMs ? `${z(debutMs)}/${z(debutMs + 4 * 3600000)}` : `${jour(date)}/${jour(date, 1)}`;
+  const q = new URLSearchParams({ action: "TEMPLATE", text: titre, dates, ...(lieu ? { location: lieu } : {}) });
+  return `https://calendar.google.com/calendar/render?${q.toString()}`;
+}

@@ -1,6 +1,6 @@
 import { noms_ar, nomInvite_ar, lieu_ar, heure_ar, titre_ar } from "@/lib/arabe";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { MapPin } from "lucide-react";
+import { CalendarPlus, MapPin } from "lucide-react";
 import Ouverture from "./Ouverture";
 import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import RevelationGeste from "./RevelationGeste";
@@ -8,7 +8,7 @@ import Revelation from "./Revelation";
 import Decor from "./Decor";
 import PagesCarte, { type UnitePage } from "./PagesCarte";
 import { morceauxDeTexte, phrases } from "@/lib/pagination";
-import { couleursDe, imagesOuverture, policeDe, initiales, lienMaps, modeleDe, ouvertureDe, revelationDe, revelationsPour, surCouleur, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
+import { couleursDe, imagesOuverture, policeDe, initiales, lienAgenda, lienMaps, modeleDe, ouvertureDe, revelationDe, revelationsPour, surCouleur, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
 import { evenementDe, textesDe } from "@/lib/evenements";
 import "@fontsource/pinyon-script/latin-400.css";
 import "@fontsource/pinyon-script/latin-ext-400.css";
@@ -480,6 +480,9 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           <div className="inv-histoire">
             <Section nuit className="inv-sec-anneaux">{ev.anneaux ? <Anneaux /> : <div className="inv-etoile" aria-hidden="true"><Ornement type="khatam" /></div>}<p className="inv-sec-mot">{t.alliances}</p></Section>
             {cibleMs && (cibleMs > Date.now() || date === aujourdhuiISO) && <Section nuit titre={t.compte}><CompteARebours cible={cibleMs} t={t} /></Section>}
+            {cibleMs && cibleMs > Date.now() && (
+              <Section nuit><a className="inv-maps" href={lienAgenda({ titre: noms, date, debutMs: heureBrute ? cibleMs : null, lieu: lieu ?? undefined })} target="_blank" rel="noopener noreferrer" data-testid="invitation-agenda"><CalendarPlus className="h-4 w-4" aria-hidden="true" /> {t.agenda}</a></Section>
+            )}
             {(lieu || carte) && (
               <Section nuit titre={t.lieuTitre}>
                 {lieuA && <p className="inv-lieu" dir="auto" style={{ marginBottom: 12 }}>{lieuA}</p>}

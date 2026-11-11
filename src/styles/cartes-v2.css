@@ -218,3 +218,5 @@ textarea.cv-champ { resize: vertical; line-height: 1.4; }
   .cv-demande { grid-template-columns: minmax(0, 1fr) minmax(260px, 320px); align-items: start; gap: 32px; }
   .cv-live { order: 2; position: sticky; top: 0; }
 }
+.cv-credit { margin: 28px auto 0; max-width: 560px; text-align: center; font-size: 11px; line-height: 1.5; color: var(--discret); opacity: .75; }
+.cv-credit a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
