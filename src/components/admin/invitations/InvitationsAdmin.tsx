@@ -156,7 +156,7 @@ export default function InvitationsAdmin() {
     return (
       <div className="space-y-5" data-testid="invitation-edition">
         <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => setEdit(null)}><ArrowLeft className="h-4 w-4" /> Tous les aperçus</button>
-        <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 sm:p-6"><ChoixOccasion valeur={edit.invitation?.evenement} onChoisir={appliquerOccasion} /></div>
+        <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 sm:p-6"><ChoixOccasion valeur={edit.invitation?.evenement} onChoisir={appliquerOccasion} onglets /></div>
         <div className="grid sm:grid-cols-2 gap-3 rounded-3xl bg-white border border-[#EADFC8] p-4">
           <label className="text-sm">{evenementDe(edit.invitation?.evenement).nomsLibelle}<input className={`${champ} mt-1`} value={edit.noms} placeholder={evenementDe(edit.invitation?.evenement).nomsExemple} onChange={(e) => setEdit({ ...edit, noms: e.target.value })} data-testid="apercu-noms" /></label>
           <label className="text-sm">Pour qui (note interne)<input className={`${champ} mt-1`} value={edit.prospect ?? ""} placeholder="Ex. couple rencontré au salon" onChange={(e) => setEdit({ ...edit, prospect: e.target.value })} /></label>

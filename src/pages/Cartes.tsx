@@ -88,7 +88,7 @@ export default function Cartes() {
         <div className="max-w-6xl mx-auto px-4 py-10">
           <div>
             <header className="cartes-tete" data-revele><span className="cartes-n" aria-hidden="true">01</span><div><small>Étape 1 sur 4</small><h2>Pour quelle occasion ?</h2></div></header>
-            <ChoixOccasion valeur={invitation.evenement} onChoisir={choisirOccasion} />
+            <ChoixOccasion valeur={invitation.evenement} onChoisir={choisirOccasion} onglets />
           </div>
 
           <div className="cartes-sep" aria-hidden="true" />
