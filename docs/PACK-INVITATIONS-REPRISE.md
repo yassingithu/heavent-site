@@ -36,3 +36,9 @@
 ## Veilles faites
 - Rapports (monde + Maroc) : mécaniques d'ouverture, fermetures d'enveloppe, tendances (quiet luxury, vellum, papier coton, illustrations signées), pièges (poids < 1 Mo, accessibilité, indice du geste, pas de musique automatique).
 - Vidéo de référence analysée : cachet qui se brise, rabat, doublure à motif, carte qui glisse, sections en papier déchiré, compte à rebours, lieu + carte, réponse en un clic.
+
+## Mise à jour 11/11 (après-midi)
+- Les 10 images ont été vues et sont bonnes. Sauvegardées en .webp optimisées dans `src/assets/photos/` (sources PNG en dehors du dépôt). Cachet entier et deux moitiés **détourés** (cachet-h, cachet-gauche, cachet-droite).
+- Nouvelles fermetures « Cire (photo) » et « Cire brisée (photo) » codées et testées en mobile (l'animation de brisure n'a pas pu être capturée image par image).
+- **Limite connue :** le cachet photo porte la lettre « H » (Heavent). Pour les invités d'un client il faut un cachet **sans lettre** + l'initiale du client posée en relief, ou des cachets génériques (feuille). À générer : cachet bordeaux vierge, or vierge, et leurs moitiés (~0,03 $ pièce, accord de Yassin requis).
+- Rabat animé : il faut la même enveloppe fermée + ouverte (régénérer à partir de la même image de référence).

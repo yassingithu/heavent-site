@@ -587,3 +587,23 @@
 .inv-decor[data-decor="khatam"], .inv-decor[data-decor="croissant-etoiles"] { color: var(--inv-accent); width: min(40vw, 160px); }
 @media (prefers-reduced-motion: no-preference) { .inv-decor { animation: inv-decor-flotte 6s ease-in-out infinite; } }
 @keyframes inv-decor-flotte { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+/* ── Cachet de cire photographié (détouré) : entier, ou brisé en deux moitiés ── */
+.inv-env-cachet-g { display: none !important; }
+.inv-enveloppe:is([data-fermeture="cire"], [data-fermeture="cire-brisee"]) .inv-env-cachet:not(.inv-env-cachet-d):not(.inv-env-cachet-g) {
+  width: 108px; height: 110px; margin: -55px 0 0 -54px; border-radius: 0; box-shadow: none; background: url("../assets/photos/cachet-h.webp") center / contain no-repeat; filter: drop-shadow(0 5px 6px rgba(0, 0, 0, .42)); transform: rotate(-6deg);
+}
+.inv-enveloppe:is([data-fermeture="cire"], [data-fermeture="cire-brisee"]) .inv-env-cachet::before,
+.inv-enveloppe:is([data-fermeture="cire"], [data-fermeture="cire-brisee"]) .inv-env-cachet::after,
+.inv-enveloppe:is([data-fermeture="cire"], [data-fermeture="cire-brisee"]) .inv-env-cachet em { display: none; }
+.inv-enveloppe:is([data-fermeture="cire"], [data-fermeture="cire-brisee"]) .inv-env-ruban { display: none; }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire"] .inv-env-cachet:not(.inv-env-cachet-d):not(.inv-env-cachet-g) { animation: inv-cire .6s ease-in both; }
+/* brisé : à l'ouverture l'entier disparaît d'un coup et deux moitiés réelles (autre photo du même cachet) s'écartent */
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] .inv-env-cachet:not(.inv-env-cachet-d):not(.inv-env-cachet-g) { animation: none; opacity: 0; }
+.inv-enveloppe[data-fermeture="cire-brisee"] :is(.inv-env-cachet-g, .inv-env-cachet-d) { display: none !important; }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] :is(.inv-env-cachet-g, .inv-env-cachet-d) {
+  display: block !important; opacity: 1; width: 56px; height: 108px; margin: -54px 0 0 -56px; border-radius: 0; box-shadow: none; background: url("../assets/photos/cachet-gauche.webp") right center / auto 100% no-repeat; filter: drop-shadow(0 4px 5px rgba(0, 0, 0, .4)); transform-origin: 90% 70%; animation: inv-cire-g .75s cubic-bezier(.35, 0, .7, 1) both;
+}
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] .inv-env-cachet-d { width: 52px; margin: -54px 0 0 0; background-image: url("../assets/photos/cachet-droite.webp"); background-position: left center; transform-origin: 10% 70%; animation-name: inv-cire-d; }
+@keyframes inv-cire-g { 0% { transform: rotate(-6deg); opacity: 1; } 25% { transform: rotate(-9deg) translateX(-4px); } 100% { transform: rotate(-38deg) translate(-46px, 120px); opacity: 0; } }
+@keyframes inv-cire-d { 0% { transform: rotate(-6deg); opacity: 1; } 25% { transform: rotate(-3deg) translateX(4px); } 100% { transform: rotate(30deg) translate(46px, 130px); opacity: 0; } }
