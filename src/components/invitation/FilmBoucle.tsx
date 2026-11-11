@@ -9,11 +9,13 @@ export default function FilmBoucle({ src, poster, className = "", eager = false,
   const ref = useRef<HTMLVideoElement>(null);
   const [charge, setCharge] = useState(eager);
   const [joue, setJoue] = useState(false);
+  const visible = useRef(false);
   const reduit = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   useEffect(() => {
     const v = ref.current; if (!v || reduit) return;
     if (typeof IntersectionObserver === "undefined") { setCharge(true); return; }
     const io = new IntersectionObserver(([e]) => {
+      visible.current = e.isIntersecting;
       if (e.isIntersecting) { setCharge(true); v.play().catch(() => {}); } else v.pause();
     }, { threshold: 0.35, rootMargin: "80px 0px" });
     io.observe(v);
@@ -24,7 +26,7 @@ export default function FilmBoucle({ src, poster, className = "", eager = false,
       {poster && <img className={className} src={poster} alt="" loading="lazy" decoding="async" />}
       {!reduit && (
         <video ref={ref} className={`${className} cv-film${joue ? " joue" : ""}`} src={charge ? src : undefined} muted loop playsInline preload={charge ? "auto" : "none"} aria-hidden="true" tabIndex={-1}
-          onPlaying={() => setJoue(true)} onTimeUpdate={zone ? (e) => setLu(e.currentTarget.currentTime >= zone.apres) : undefined} onLoadedData={(e) => { if (charge) e.currentTarget.play().catch(() => {}); }} />
+          onPlaying={() => setJoue(true)} onTimeUpdate={zone ? (e) => { const v = e.currentTarget; setLu(v.currentTime >= zone.apres && v.currentTime < (v.duration || 99) - 0.35); } : undefined} onLoadedData={(e) => { if (charge && visible.current) e.currentTarget.play().catch(() => {}); }} />
       )}
       {zone && !reduit && <span className={`cv-texte-carte${lu ? " lu" : ""}`} aria-hidden="true" style={{ left: `${zone.x * 100}%`, top: `${zone.y * 100}%`, width: `${zone.l * 100}%`, height: `${zone.h * 100}%` }}><em>Lina<small>&amp;</small>Adam</em></span>}
     </>

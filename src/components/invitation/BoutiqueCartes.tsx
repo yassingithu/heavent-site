@@ -26,7 +26,7 @@ function Tuile({ o, onOuvrir }: { o: OuvertureDef; onOuvrir: (id: string) => voi
         <span className="cv-prix">{prixDe(o)}</span>
         <span className="cv-legende">
           <b>{o.nom}</b>
-          <span>{[f?.nom, ...o.styles.slice(0, 1)].map((t) => <i key={t}>{t}</i>)}</span>
+          <span>{o.styles.slice(0, 2).map((t) => <i key={t}>{t}</i>)}</span>
         </span>
       </button>
     </li>
@@ -45,7 +45,7 @@ export default function BoutiqueCartes({ onOuvrir }: { onOuvrir: (id: string) =>
         <button type="button" aria-pressed={!formule} onClick={() => setFormule(null)} data-testid="formule-toutes">Toutes</button>
         {FORMULES.map((f) => cartes.some((o) => formuleDe(o) === f.id) ? <button key={f.id} type="button" aria-pressed={formule === f.id} onClick={() => setFormule(formule === f.id ? null : f.id)} data-testid={`formule-${f.id}`}>{f.nom}<span>{f.id === "prestige" ? "dès 650 DH" : f.prix}</span></button> : null)}
       </div>
-      <p className="cv-formule-texte" aria-live="polite">{sel ? sel.texte : "Touchez une carte pour la voir s'ouvrir en grand."}</p>
+      <p className="cv-formule-texte" aria-live="polite">{sel ? sel.texte : "Chaque carte se joue en boucle : choisissez celle qui vous ressemble."}</p>
       <ul className="cv-grille" aria-label="Cartes d'invitation">
         {liste.map((o) => <Tuile key={o.id} o={o} onOuvrir={onOuvrir} />)}
       </ul>

@@ -20,20 +20,20 @@ const QUESTIONS: [string, string][] = [
 
 export default function Cartes() {
   const [fiche, setFiche] = useState<string | null>(null);
-  const ouv = ouvertureDe(fiche ?? undefined);
+  const [dernier, setDernier] = useState<string | undefined>(undefined);
+  const ouv = ouvertureDe(fiche ?? dernier);
   const rang = ouverturesBoutique().findIndex((x) => x.id === ouv.id) + 1;
   return (
     <div className="cv-page">
       <Seo perso={{ chemin: "/cartes", titre: "Cartes d'invitation digitales sur mesure | Heavent", description: "Cartes d'invitation digitales en film pour mariage, fiançailles, baptême et anniversaire : choisissez votre carte, recevez l'aperçu à vos prénoms sur WhatsApp, payez après l'avoir validé. De 250 à 750 DH." }} />
       <header className="cv-haut">
-        <h1>Cartes d'invitation digitales, en film</h1>
-        <p>Choisissez votre carte · Aperçu avant de payer · Livrée 1 semaine après le paiement</p>
-        <small>Partage par WhatsApp</small>
+        <h1>Votre invitation, en film</h1>
+        <p>Choisissez une carte. Nous l'écrivons à vos prénoms, vous la validez avant de payer.</p>
       </header>
 
       <main>
         <section id="boutique" aria-label="Les cartes">
-          <BoutiqueCartes onOuvrir={(id) => { setFiche(id); suivre("clic", `cartes:fiche:${id}`); }} />
+          <BoutiqueCartes onOuvrir={(id) => { setFiche(id); setDernier(id); suivre("clic", `cartes:fiche:${id}`); }} />
         </section>
 
         <section className="cv-aide">

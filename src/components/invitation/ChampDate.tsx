@@ -45,7 +45,7 @@ export default function ChampDate({ value, onChange, className, id, invalide, on
       <input ref={refA} className={className} style={style(1.7)} inputMode="numeric" autoComplete="off" placeholder="AAAA" aria-label="Année" maxLength={4} value={p.a} aria-invalid={invalide || faux}
         onChange={(e) => maj({ a: chiffres(e.target.value, 4) })} onKeyDown={(e) => { if (e.key === "Backspace" && !p.a) refM.current?.focus(); }} />
     </span>
-    {faux && <span role="alert" style={{ display: "block", color: "#9B2C2C", fontSize: 13, marginTop: 4 }}>Date incorrecte</span>}
+    {faux && <span role="alert" style={{ display: "block", color: "#F4A9A0", fontSize: 13, marginTop: 4 }}>Cette date n'existe pas</span>}
     </>
   );
 }

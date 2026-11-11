@@ -52,7 +52,7 @@ const formSchema = z.object({
     .refine((d) => { const a = (Date.now() - d.getTime()) / 31557600000; return a >= 16 && a <= 80; }, "Vérifiez la date de naissance"),
   lieu_naissance: z.string().min(1, "Le lieu de naissance est requis"),
   situation_familiale: z.string().min(1, "La situation familiale est requise"),
-  numero_identite: z.string().min(5, "Le numéro d'identité est requis"),
+  numero_identite: z.string().optional().refine((v) => !v || v.trim().length === 0 || v.trim().length >= 5, "Numéro trop court (5 caractères minimum)"),
   numero_securite_sociale: z.string().optional(),
   iban: z.string().optional(),
   niveau_etudes: z.string().min(1, "Le niveau d'études est requis"),
@@ -296,7 +296,7 @@ const StaffRegistration = () => {
   // Progression « en direct » : se remplit à chaque réponse donnée
   const valeurs = watch();
   const CHAMPS_OBLIGATOIRES = ['nom', 'prenom', 'age', 'genre', 'ville', 'telephone', 'email', 'adresse_complete', 'code_postal', 'nationalite',
-    'date_naissance', 'lieu_naissance', 'situation_familiale', 'numero_identite', 'niveau_etudes', 'nom_urgence', 'telephone_urgence', 'taille',
+    'date_naissance', 'lieu_naissance', 'situation_familiale', 'niveau_etudes', 'nom_urgence', 'telephone_urgence', 'taille',
     'taille_pantalon', 'taille_haut', 'pointure', 'taille_confection', 'couleur_cheveux', 'couleur_yeux', 'competences', 'langues', 'experience',
     'availability', 'password', 'confirmPassword', 'rgpdConsent'] as const;
   const champsRemplis = CHAMPS_OBLIGATOIRES.filter((c) => {
@@ -605,10 +605,10 @@ const StaffRegistration = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="numero_identite">{x("Numéro d'identité *")}</Label>
+                      <Label htmlFor="numero_identite">{x("Numéro d'identité (facultatif)")}</Label>
                       <Input
                         id="numero_identite"
-                        placeholder={x("CIN, Passeport...")}
+                        placeholder={x("CIN, Passeport… (vous pourrez l'ajouter plus tard)")}
                         {...register("numero_identite")}
                         className={errors.numero_identite ? "border-destructive" : ""}
                       />
@@ -654,14 +654,14 @@ const StaffRegistration = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="iban">{x("IBAN (compte bancaire)")}</Label>
+                    <Label htmlFor="iban">{x("IBAN (compte bancaire, facultatif)")}</Label>
                     <Input
                       id="iban"
                       placeholder={x("MA64 011519 000000 013040 10003 82 (optionnel)")}
                       {...register("iban")}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      {x("Nécessaire pour le versement des salaires")}
+                      {x("Facultatif pour l'instant : à nous donner avant le premier versement de salaire")}
                     </p>
                   </div>
 

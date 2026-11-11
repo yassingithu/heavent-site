@@ -13,6 +13,9 @@ const WHATSAPP = "https://wa.me/212610939655?text=";
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
 /** Date d'exemple : toujours dans le futur, pour que l'aperçu ne se démode pas. */
 const dateExemple = () => { const d = new Date(); d.setMonth(d.getMonth() + 9); d.setDate(12); return d.toISOString().slice(0, 10); };
+/** Moins de 10 jours entre aujourd'hui et la date : la livraison (1 semaine après le paiement) risque de ne pas tenir. */
+const tropProche = (iso: string) => !!iso && (new Date(iso).getTime() - Date.now()) / 86400000 < 10;
+const numeroAffiche = (t: string) => { const d = t.replace(/\D/g, ""); if (d.startsWith("212") && d.length === 12) return `+212 ${d[3]} ${d.slice(4).replace(/(\d\d)(?=\d)/g, "$1 ")}`; if (d.length === 10 && d.startsWith("0")) return `+212 ${d[1]} ${d.slice(2).replace(/(\d\d)(?=\d)/g, "$1 ")}`; return t; };
 const reduit = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** Aperçu qui se rejoue sans fin : ouverture, carte écrite, quelques secondes de pause, puis on recommence. */
@@ -24,14 +27,17 @@ function ApercuBoucle({ ouverture }: { ouverture: OuvertureDef }) {
     if (reduit()) return;
     const el = racine.current?.querySelector<HTMLElement>("[data-testid=invitation]"); if (!el) return;
     let t = 0;
-    const verif = () => { window.clearTimeout(t); if (el.dataset.phase === "ouverte") t = window.setTimeout(() => setN((x) => x + 1), 5500); };
+    /* on rejoue seul quelques fois, puis on laisse la main au bouton : pas de boucle infinie en arrière-plan */
+    const verif = () => { window.clearTimeout(t); if (el.dataset.phase === "ouverte" && n < 4) t = window.setTimeout(() => setN((x) => x + 1), 5500); };
     const mo = new MutationObserver(verif); mo.observe(el, { attributes: true, attributeFilter: ["data-phase"] }); verif();
     return () => { mo.disconnect(); window.clearTimeout(t); };
   }, [ouverture.id, n]);
   return (
     <div className="cv-apercu" ref={racine} data-testid="apercu-boucle">
-      <Invitation key={ouverture.id} noms="Lina & Adam" date={date} lieu="Domaine des Roses, Marrakech" message="Nous serions heureux de partager ce moment avec vous."
-        reglages={{ modele: "or-ivoire", ouverture: ouverture.id }} pleinePage={false} rejouer={n} autoOuvrir />
+      <div className="cv-apercu-in" aria-hidden="true" {...{ inert: "" }}>
+        <Invitation key={ouverture.id} noms="Lina & Adam" date={date} lieu="Marrakech"
+          reglages={{ modele: "or-ivoire", couleurs: { fond: "#EAE2D0" }, ouverture: ouverture.id }} pleinePage={false} rejouer={n} autoOuvrir />
+      </div>
       <button type="button" className="cv-rejouer" onClick={() => setN((x) => x + 1)} data-testid="invitation-rejouer">↺ Revoir l'ouverture</button>
     </div>
   );
@@ -52,6 +58,7 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
   useEffect(() => { if (ouvert) { setEtape("carte"); setErr({}); setErreur(null); setEtat("saisie"); } }, [ouvert, o.id]);
   const maj = (k: string, x: string | boolean) => { setV((a) => ({ ...a, [k]: x })); if (err[k]) setErr((e) => ({ ...e, [k]: "" })); };
   const prix = totalCommande(o, []);
+  useEffect(() => { if (etat === "ok") requestAnimationFrame(() => document.querySelector<HTMLElement>("[data-testid=cartes-merci]")?.focus()); }, [etat]);
 
   const envoyer = async (e: React.FormEvent) => {
     e.preventDefault(); setErreur(null);
@@ -82,7 +89,7 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
     <Dialog.Root open={ouvert} onOpenChange={(x) => { if (!x) onFermer(); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="cv-voile" />
-        <Dialog.Content className="cv-fiche" data-etape={etape} aria-describedby="cv-fiche-desc" data-testid="fiche-carte"
+        <Dialog.Content className="cv-fiche" data-etape={etape} data-testid="fiche-carte"
           onCloseAutoFocus={(e) => { e.preventDefault(); document.querySelector<HTMLElement>(`[data-testid="ouverture-${o.id}"]`)?.focus({ preventScroll: true }); }}>
           <header className="cv-fiche-tete">
             {etape === "demande" && etat !== "ok" && <button type="button" className="cv-retour" onClick={() => setEtape("carte")} aria-label="Revoir la carte" data-testid="fiche-retour"><ArrowLeft aria-hidden="true" /></button>}
@@ -92,11 +99,14 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
             </div>
             <Dialog.Close className="cv-fermer" aria-label="Fermer la fiche" data-testid="fiche-fermer"><X aria-hidden="true" /></Dialog.Close>
           </header>
+          {etape !== "carte" || etat === "ok" ? <Dialog.Description className="cv-sr">{descriptionVente(o)}</Dialog.Description> : null}
           <div className="cv-fiche-corps" ref={corps}>
             {etat === "ok" ? (
               <div className="cv-merci" role="status" data-testid="cartes-merci" tabIndex={-1}>
                 <h4>Demande bien reçue</h4>
-                <p>Merci {v.nom.split(" ")[0]}. Nous préparons votre carte « {o.nom} » avec vos prénoms et vous envoyons l'aperçu sur WhatsApp au {v.tel}.</p>
+                <p>Merci {v.nom.split(" ")[0]}. Nous préparons votre carte « {o.nom} » avec vos prénoms et vous envoyons l'aperçu sur WhatsApp au <b>{numeroAffiche(v.tel)}</b>.</p>
+                <p className="cv-merci-num">Ce n'est pas le bon numéro ? <a href={WHATSAPP + encodeURIComponent(`Bonjour Heavent, j'ai fait une erreur de numéro dans ma demande de carte « ${o.nom} ». Mon bon numéro : `)} target="_blank" rel="noopener noreferrer">Écrivez-nous ici</a>.</p>
+                {tropProche(v.date) && <p className="cv-alerte" role="note">Votre date est proche : écrivez-nous sur WhatsApp pour que nous vous répondions en priorité.</p>}
                 <p className="cv-merci-etapes">Vous validez l'aperçu, vous réglez, puis votre carte est livrée sous 1 semaine à partir du paiement.</p>
                 <a className="s-btn s-btn-plein cv-bouton" href={WHATSAPP + encodeURIComponent(`Bonjour Heavent, je viens de demander la carte « ${o.nom} ». Je m'appelle ${v.nom}.`)} target="_blank" rel="noopener noreferrer">Nous écrire sur WhatsApp</a>
                 <button type="button" className="cv-lien" onClick={onFermer} data-testid="autre-demande">Voir d'autres cartes</button>
@@ -104,8 +114,8 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
             ) : etape === "carte" ? (
               <div className="cv-fiche-carte">
                 <div className="cv-infos">
-                  <p id="cv-fiche-desc" className="cv-desc">{descriptionVente(o)}</p>
-                  <ul className="cv-etiquettes">{[f?.nom, ...o.styles.slice(0, 2)].map((t) => <li key={t}>{t}</li>)}</ul>
+                  <Dialog.Description id="cv-fiche-desc" className="cv-desc">{descriptionVente(o)}</Dialog.Description>
+                  <ul className="cv-etiquettes">{o.styles.slice(0, 2).map((t) => <li key={t}>{t}</li>)}</ul>
                   <div className="cv-formule"><b>{f?.nom} · {prixDe(o)}</b><p>{f?.texte}</p></div>
                   <ul className="cv-garanties"><li>Aperçu à vos prénoms avant de payer</li><li>Livrée 1 semaine après le paiement</li><li>Partagée par WhatsApp</li></ul>
                   <p className="cv-apercu-note">Exemple avec « Lina &amp; Adam ». Votre carte portera vos prénoms, votre date et votre lieu.</p>
@@ -136,6 +146,7 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
                     <input className="cv-champ" value={v.lieu} onChange={(e) => maj("lieu", e.target.value)} placeholder="Villa, salle, ville…" maxLength={120} data-testid="cartes-lieu" />
                   </label>
                 </div>
+                {tropProche(v.date) && !err.date && <p className="cv-alerte" role="note" data-testid="alerte-delai">Livraison 1 semaine après le paiement : pour une date aussi proche, <a href={WHATSAPP + encodeURIComponent("Bonjour Heavent, ma date est proche, est-il possible d'avoir ma carte à temps ?")} target="_blank" rel="noopener noreferrer">écrivez-nous d'abord sur WhatsApp</a>. Vous pouvez aussi envoyer la demande.</p>}
                 <label>Un message sur la carte <i>(facultatif)</i>
                   <textarea className="cv-champ" rows={2} value={v.message} onChange={(e) => maj("message", e.target.value)} maxLength={400} placeholder="Nous serions heureux de partager ce moment avec vous." data-testid="cartes-message" />
                 </label>
