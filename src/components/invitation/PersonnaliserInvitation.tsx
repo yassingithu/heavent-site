@@ -7,7 +7,7 @@ import { RotateCcw, Play } from "lucide-react";
 import Invitation from "./Invitation";
 import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
 import { decorsPour, CLUBS } from "@/lib/decors";
-import { POLICES, CHAMPS_COULEUR, OUVERTURES, FERMETURES, PAPIERS, STYLES_OUVERTURE, modelesPour, palettesPour, revelationsPour, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
+import { POLICES, CHAMPS_COULEUR, OUVERTURES, FERMETURES, PAPIERS, STYLES_OUVERTURE, FORMULES, formuleDe, prixDe, type Formule, modelesPour, palettesPour, revelationsPour, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
 import { evenementDe, questionDe } from "@/lib/evenements";
 
 interface Props {
@@ -38,6 +38,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
   const [, forcer] = useState(0);
   useEffect(() => { chargerOuverturesPerso().then(() => forcer((n) => n + 1)); }, []);
   const [filtre, setFiltre] = useState<string | null>(null);
+  const [formule, setFormule] = useState<Formule | null>(null);
   const ouv = ouvertureDe(valeur.ouverture);
   const [versFormulaire, setVersFormulaire] = useState(false);
   useEffect(() => {
@@ -47,9 +48,9 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
     io.observe(cible); return () => io.disconnect();
   }, [modeClient]);
   const [toutes, setToutes] = useState(!modeClient);
-  const filtrees = OUVERTURES.filter((o) => !filtre || o.styles.includes(filtre) || o.id === ouv.id);
+  const filtrees = OUVERTURES.filter((o) => o.id === ouv.id || ((!filtre || o.styles.includes(filtre)) && (!formule || formuleDe(o) === formule)));
   /* Page publique : six cartes d'abord (la carte choisie reste toujours visible) */
-  const visibles = toutes || filtre ? filtrees : filtrees.filter((o, i) => i < 8 || o.id === ouv.id);
+  const visibles = toutes || filtre || formule ? filtrees : filtrees.filter((o, i) => i < 8 || o.id === ouv.id);
   const reste = filtrees.length - visibles.length;
   const rev = revelationDe(valeur.revelation);
   useEffect(() => {
@@ -72,6 +73,16 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         <section>
           <h3 className="font-serif text-xl mb-1">{modeClient ? "Comment s'ouvre votre carte ?" : `${num()}. Comment l'invitation s'ouvre`}</h3>
           <p className="text-sm text-[#5E554A] mb-3">{modeClient ? "Vos invités touchent la porte : votre carte apparaît. Touchez-en une pour l'essayer. Nous l'adaptons avec vous avant de la valider." : "Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu."}</p>
+          {modeClient && (
+            <div className="cartes-formules" role="group" aria-label="Choisir une formule">
+              {[null, ...FORMULES].map((f) => (
+                <button key={f?.id ?? "toutes"} type="button" onClick={() => setFormule(f?.id ?? null)} aria-pressed={formule === (f?.id ?? null)} data-testid={`formule-${f?.id ?? "toutes"}`}>
+                  <b>{f?.nom ?? "Toutes"}</b><small>{f?.prix ?? "250 – 850 DH"}</small>
+                </button>
+              ))}
+              <p>{formule ? FORMULES.find((f) => f.id === formule)?.texte : "Le prix dépend de la carte choisie : animation dessinée, film, ou création Prestige."}</p>
+            </div>
+          )}
           <div className="flex gap-3 overflow-x-auto border-b border-[#EADFC8] mb-4" role="group" aria-label="Filtrer par style">
             {[null, ...STYLES_OUVERTURE].map((st) => (
               <button key={st ?? "tous"} type="button" onClick={() => setFiltre(st)} aria-pressed={filtre === st}
@@ -81,7 +92,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           <div className="grid grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-5 items-start" role="group" aria-label="Ouverture">
             {visibles.map((o, i) => {
               const choisie = ouv.id === o.id;
-              const cache = modeClient && !toutes && !filtre && !choisie && i >= 6 ? "cartes-cache" : "";
+              const cache = modeClient && !toutes && !filtre && !formule && !choisie && i >= 6 ? "cartes-cache" : "";
               return (
               <button key={o.id} type="button" onClick={() => choisirOuverture(o.id)} aria-pressed={choisie} data-testid={`ouverture-${o.id}`} className={`text-left group cartes-vignette ${cache} ${modeClient && toutes && i >= 8 ? "cartes-nouvelle" : ""}`} style={modeClient && i >= 8 ? ({ "--i": Math.min(i - 8, 8) } as React.CSSProperties) : undefined}>
                 <span className={`relative flex aspect-[9/16] w-full overflow-hidden bg-[#EFE6D2] ${modeClient ? "cartes-cadre" : `outline outline-2 outline-offset-2 ${choisie ? "outline-[#8C6D22]" : "outline-transparent group-hover:outline-[#E4D49A]"}`}`} aria-hidden="true">
@@ -94,6 +105,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
                     : <><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-g.webp)` }} /><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-d.webp)` }} /></>}
                   {choisie && (modeClient ? <span className="cartes-choisie">Votre carte</span> : <span className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-[#141414] text-[#E4D49A] text-xs">✓</span>)}
                 </span>
+                {modeClient && <span className="cartes-prix">{prixDe(o)}</span>}
                 {modeClient && <span className="cartes-num">Nº {String(OUVERTURES.findIndex((x) => x.id === o.id) + 1).padStart(2, "0")}</span>}
                 <span className={`mt-1.5 block font-serif text-[15px] leading-tight ${modeClient ? "cartes-nom" : ""} ${choisie ? "text-[#8C6D22]" : ""}`}>{o.nom}</span>
                 {(!modeClient || o.video) && <span className="block whitespace-nowrap text-[11px] tracking-[.1em] uppercase text-[#6B6154]">{o.video ? "Film" : "Animation"}{!modeClient && ` · ${String(Math.round(o.duree / 100) / 10).replace(".", ",")} s`}</span>}
@@ -101,7 +113,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
               );
             })}
           </div>
-          {modeClient && !toutes && !filtre && reste > 0 && <button type="button" onClick={() => setToutes(true)} className="cartes-plus-cartes" data-testid="cartes-voir-plus">Voir toutes les cartes ({filtrees.length})</button>}
+          {modeClient && !toutes && !filtre && !formule && reste > 0 && <button type="button" onClick={() => setToutes(true)} className="cartes-plus-cartes" data-testid="cartes-voir-plus">Voir toutes les cartes ({filtrees.length})</button>}
           <p className="text-xs text-[#6B6154] mt-3"><strong className="font-medium">{ouv.nom}.</strong> {ouv.description}</p>
           <Pli className={`cartes-plus ${modeClient && ouv.id !== "enveloppe" && (ouv.cadre || ouv.id === "rose-imperiale") ? "hidden" : ""}`}>
             {resume(ouv.id === "enveloppe" ? "Cachet et enveloppe" : "Cachet de cire")}

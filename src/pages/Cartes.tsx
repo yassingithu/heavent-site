@@ -7,7 +7,7 @@ import ChoixOccasion from "@/components/invitation/ChoixOccasion";
 import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvitation";
 import { evenementDe, type TypeEvenement } from "@/lib/evenements";
 import { decorsPour } from "@/lib/decors";
-import { ouvertureDe, type InvitationReglages } from "@/lib/invitation";
+import { ouvertureDe, type InvitationReglages, FORMULES, formuleDe, prixDe } from "@/lib/invitation";
 import { supabase } from "@/integrations/supabase/client";
 import { suivre } from "@/lib/suivi";
 
@@ -131,7 +131,7 @@ export default function Cartes() {
               </div>
             ) : (
               <>
-              <p className="cartes-recap" data-testid="cartes-recap">Vous envoyez : <b>{ev.nom}{noms ? ` · ${noms}` : ""}</b> · carte <b>{ouvertureDe(invitation.ouverture).nom}</b></p>
+              <p className="cartes-recap" data-testid="cartes-recap">Vous envoyez : <b>{ev.nom}{noms ? ` · ${noms}` : ""}</b> · carte <b>{ouvertureDe(invitation.ouverture).nom}</b> · formule <b>{FORMULES.find((x) => x.id === formuleDe(ouvertureDe(invitation.ouverture)))?.nom} ({prixDe(ouvertureDe(invitation.ouverture))})</b></p>
                 <form onSubmit={envoyer} className="space-y-3 s-form cartes-formulaire" style={{ padding: "22px 18px" }} noValidate>
                 <p className="text-sm text-[#5E554A]">Aucun paiement maintenant. Notre équipe vous répond sous 24 h ouvrées avec un aperçu de votre carte et le tarif.</p>
                 <label className="block text-sm">Votre nom

@@ -179,3 +179,15 @@
   .cartes-page .cartes-accord a { display: inline-block; padding: 12px 0; margin: -12px 0; }
 }
 
+
+/* Formules : trois onglets avec leur prix */
+.cartes-formules { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 16px; }
+.cartes-formules button { display: grid; gap: 2px; justify-items: center; align-content: center; min-height: 56px; padding: 8px 4px; border: 1px solid #E3D6BA; border-radius: 12px; background: #fff; cursor: pointer; transition: background .25s, border-color .25s, color .25s; }
+.cartes-formules button b { font: 400 16px/1.1 var(--s-titre, Gloock), serif; }
+.cartes-formules button small { font-size: 11px; color: #6B6154; letter-spacing: .04em; }
+.cartes-formules button[aria-pressed="true"] { background: #141414; border-color: #141414; color: #fff; }
+.cartes-formules button[aria-pressed="true"] small { color: #E4D49A; }
+.cartes-formules button:focus-visible { outline: 2px solid #8C6D22; outline-offset: 2px; }
+.cartes-formules p { grid-column: 1 / -1; margin: 6px 2px 0; font-size: 14px; color: #5E554A; }
+.cartes-prix { display: block; font-size: 12px; letter-spacing: .06em; color: #7A5F1F; }
+@media (max-width: 420px) { .cartes-formules button b { font-size: 14px; } .cartes-formules button small { font-size: 10px; } }
