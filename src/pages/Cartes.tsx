@@ -71,7 +71,7 @@ export default function Cartes() {
             <p className="s-chapo s-entree-heros" style={{ animationDelay: ".12s" }}>Choisissez l'enveloppe, le cachet, les couleurs. Voyez-la s'ouvrir sur votre téléphone, puis confiez-la-nous : nous vous répondons avec un aperçu et le tarif.</p>
             <div className="cartes-cta">
               <a href="#composer" className="s-btn s-btn-plein">Composer ma carte</a>
-              <a href="#demande" className="s-btn s-btn-filet">Envoyer ma demande</a>
+              <a href="#demande" className="cartes-lien">Ou laissez-nous la composer pour vous</a>
             </div>
           </div>
           <div className="cartes-scene" aria-hidden="true">
@@ -85,10 +85,14 @@ export default function Cartes() {
 
       <main id="composer" className="bg-[#FBF8F1] text-[#2A2420] scroll-mt-4">
         <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
-          <ChoixOccasion valeur={invitation.evenement} onChoisir={choisirOccasion} />
+          <div>
+            <p className="cartes-etape"><span>1</span><b>Votre occasion</b></p>
+            <ChoixOccasion valeur={invitation.evenement} onChoisir={choisirOccasion} />
+          </div>
 
           <section className="space-y-3" aria-labelledby="t-infos">
-            <h3 id="t-infos" className="font-serif text-xl">Les informations de la carte</h3>
+            <p className="cartes-etape"><span>2</span><b>Vos informations</b></p>
+            <h3 id="t-infos" className="font-serif text-xl">Ce qui s'écrit sur la carte</h3>
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="block text-sm sm:col-span-3">Prénoms ou nom affichés
                 <input className={champ} value={noms} onChange={(e) => setNoms(e.target.value)} placeholder={ev.id === "mariage" ? "Lina & Adam" : "Adam"} maxLength={80} data-testid="cartes-noms" />
@@ -106,9 +110,13 @@ export default function Cartes() {
             <p className="text-xs text-[#6B6154]">La date est dévoilée par la surprise de la carte : sans date, la surprise ne s'affiche pas.</p>
           </section>
 
+          <div>
+            <p className="cartes-etape"><span>3</span><b>Votre carte</b></p>
           <PersonnaliserInvitation modeClient noms={noms} date={date || null} lieu={lieu || null} message={message || null} valeur={invitation} onChange={setInvitation} />
+          </div>
 
           <section id="demande" className="max-w-xl space-y-4" aria-labelledby="t-demande">
+            <p className="cartes-etape"><span>4</span><b>Votre demande</b></p>
             <h3 id="t-demande" className="font-serif text-2xl">J'envoie ma demande à Heavent</h3>
             {etat === "ok" ? (
               <div className="s-fairepart s-merci" role="status" data-testid="cartes-merci">

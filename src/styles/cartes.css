@@ -42,3 +42,19 @@
   .cartes-page footer a { display: inline-flex; align-items: center; min-height: 44px; }
 }
 .cartes-page .cartes-formulaire label.cartes-accord input[type="checkbox"] { flex: none; margin-top: 2px; }
+/* Réglages repliés */
+.cartes-plus { margin-top: 14px; }
+.cartes-plus > .cartes-resume { list-style: none; cursor: pointer; min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; border: 1px solid #C9B27A; background: #FBF8F1; font: 500 13px var(--s-texte), sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #5A4A1E; clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px); }
+.cartes-plus > .cartes-resume::-webkit-details-marker { display: none; }
+.cartes-plus > .cartes-resume::after { content: "+"; font-size: 22px; line-height: 1; }
+.cartes-plus[open] > .cartes-resume::after { content: "–"; }
+.cartes-plus[open] > .cartes-resume { margin-bottom: 18px; }
+.cartes-plus-grand { margin-top: 8px; }
+.cartes-plus-grand[open] > :not(.cartes-resume) + :not(.cartes-resume) { margin-top: 24px; }
+/* Numéros d'étape */
+.cartes-etape { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.cartes-etape span { flex: none; width: 30px; height: 30px; display: grid; place-items: center; font: 500 14px var(--s-texte), sans-serif; color: #F7F3E8; background: #141414; clip-path: polygon(7px 0, calc(100% - 7px) 0, 100% 7px, 100% calc(100% - 7px), calc(100% - 7px) 100%, 7px 100%, 0 calc(100% - 7px), 0 7px); }
+.cartes-etape b { font: 500 11px var(--s-texte), sans-serif; letter-spacing: .24em; text-transform: uppercase; color: #8C6D22; }
+.cartes-cta { align-items: center; }
+.cartes-lien { color: #E4D49A; text-decoration: underline; text-underline-offset: 4px; min-height: 44px; display: inline-flex; align-items: center; font: 400 15px var(--s-texte), sans-serif; }
+.cartes-plus-cartes { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 48px; margin-top: 14px; border: 1px solid #A8933F; background: transparent; color: #5A4A1E; font: 500 13px var(--s-texte), sans-serif; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }

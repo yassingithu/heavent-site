@@ -26,6 +26,9 @@ const egal = (a: Couleurs, b: Couleurs) => (Object.keys(a) as (keyof Couleurs)[]
 export default function PersonnaliserInvitation({ noms, date, lieu, message, valeur, onChange, estAdmin, modeClient }: Props) {
   const ev = evenementDe(valeur.evenement);
   const compteur = { v: 0 }; const num = () => ++compteur.v;
+  /* Page publique : les réglages fins sont repliés ; dans l'éditeur, simple conteneur */
+  const Pli = (modeClient ? "details" : "div") as "details";
+  const resume = (t: string) => modeClient ? <summary className="cartes-resume">{t}</summary> : null;
   const [rejouer, setRejouer] = useState(modeClient ? 1 : 0);
   const [langue, setLangue] = useState<Langue>("fr");
   const modele = modeleDe(valeur.modele);
@@ -36,7 +39,11 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
   useEffect(() => { chargerOuverturesPerso().then(() => forcer((n) => n + 1)); }, []);
   const [filtre, setFiltre] = useState<string | null>(null);
   const ouv = ouvertureDe(valeur.ouverture);
-  const visibles = OUVERTURES.filter((o) => !filtre || o.styles.includes(filtre) || o.id === ouv.id);
+  const [toutes, setToutes] = useState(!modeClient);
+  const filtrees = OUVERTURES.filter((o) => !filtre || o.styles.includes(filtre) || o.id === ouv.id);
+  /* Page publique : six cartes d'abord (la carte choisie reste toujours visible) */
+  const visibles = toutes || filtre ? filtrees : filtrees.filter((o, i) => i < 6 || o.id === ouv.id);
+  const reste = filtrees.length - visibles.length;
   const rev = revelationDe(valeur.revelation);
   const choisirOuverture = (id: string) => { onChange({ ...valeur, ouverture: id }); setRejouer((n) => n + 1); };
   const choisirRevelation = (id: string) => { onChange({ ...valeur, revelation: id }); setRejouer((n) => n + 1); };
@@ -52,8 +59,8 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]" data-testid="personnaliser-invitation">
       <div className="space-y-6 min-w-0">
         <section>
-          <h3 className="font-serif text-xl mb-1">{num()}. Comment l'invitation s'ouvre</h3>
-          <p className="text-sm text-[#5E554A] mb-3">Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu.</p>
+          <h3 className="font-serif text-xl mb-1">{modeClient ? "Choisissez votre carte" : `${num()}. Comment l'invitation s'ouvre`}</h3>
+          <p className="text-sm text-[#5E554A] mb-3">{modeClient ? "Touchez une carte : elle s'ouvre dans l'aperçu. C'est un exemple, nous l'adaptons avec vous avant de la valider." : "Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu."}</p>
           <div className="flex gap-3 overflow-x-auto border-b border-[#EADFC8] mb-4" role="group" aria-label="Filtrer par style">
             {[null, ...STYLES_OUVERTURE].map((st) => (
               <button key={st ?? "tous"} type="button" onClick={() => setFiltre(st)} aria-pressed={filtre === st}
@@ -79,7 +86,10 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
               );
             })}
           </div>
+          {modeClient && !toutes && !filtre && reste > 0 && <button type="button" onClick={() => setToutes(true)} className="cartes-plus-cartes" data-testid="cartes-voir-plus">Voir {reste} autres cartes</button>}
           <p className="text-xs text-[#6B6154] mt-3"><strong className="font-medium">{ouv.nom}.</strong> {ouv.description}</p>
+          <Pli className="cartes-plus">
+            {resume("Fermeture, papier et cachet de l'enveloppe")}
           {ouv.id === "enveloppe" && (
             <div className="mt-3" role="group" aria-label="Fermeture de l'enveloppe">
               <p className="text-sm font-medium mb-2">Fermeture de l'enveloppe</p>
@@ -122,13 +132,14 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
               <span>Cachet de cire doré<span className="block text-xs text-[#6B6154]">Décochez pour un simple bouton « Ouvrir »</span></span>
             </label>
           )}
+          </Pli>
           <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[#DCCBA6] bg-white px-4 min-h-11 text-sm lg:hidden" data-testid="voir-apercu"><Play className="h-4 w-4" /> Voir l'aperçu</button>
           {estAdmin && <ImportOuverture onAjoutee={(id) => choisirOuverture(id)} />}
         </section>
 
         {revelationsPour(ev.id).length > 1 && (
         <section>
-          <h3 className="font-serif text-xl mb-1">{num()}. Une petite surprise ?</h3>
+          <h3 className="font-serif text-xl mb-1">{modeClient ? "Une petite surprise ?" : `${num()}. Une petite surprise ?`}</h3>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Révélation">
             {revelationsPour(ev.id).map((r) => (
               <button key={r.id} type="button" onClick={() => choisirRevelation(r.id)} aria-pressed={rev.id === r.id} data-testid={`revelation-${r.id}`}
@@ -144,6 +155,8 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           <ChampMusique valeur={valeur.musique ?? ""} onChange={(m) => onChange({ ...valeur, musique: m })} estAdmin={estAdmin} champ={champ} />
         </section>}
 
+        <Pli className="cartes-plus cartes-plus-grand">
+          {resume("Personnaliser davantage : style, décor, couleurs")}
         <section>
           <h3 className="font-serif text-xl mb-1">{num()}. Le style de l'invitation</h3>
           <p className="text-sm text-[#5E554A] mb-3">Chaque modèle a son ornement et ses couleurs. Vos couleurs personnalisées sont conservées quand vous changez de modèle.</p>
@@ -246,6 +259,8 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             ))}
           </div>
         </section>
+
+        </Pli>
 
         {!modeClient && <section className="space-y-3">
           <h3 className="font-serif text-xl">{num()}. Le lieu et l'heure</h3>
