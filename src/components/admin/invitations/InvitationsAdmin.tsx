@@ -9,6 +9,7 @@ import type { InvitationReglages } from "@/lib/invitation";
 import ChoixOccasion from "@/components/invitation/ChoixOccasion";
 import { evenementDe, type TypeEvenement } from "@/lib/evenements";
 import { decorsPour } from "@/lib/decors";
+import DemandesCartes from "./DemandesCartes";
 
 interface Apercu { id: string; jeton: string; noms: string; date_evenement: string | null; lieu: string | null; message: string | null; invitation: InvitationReglages; prospect: string | null; expire_le: string; created_at: string; mode: "test" | "final"; avec_reponse: boolean; jeton_liste?: string | null; notif_email?: string | null }
 interface Confirme { apercu_id: string; nom: string; reponse: "oui" | "non"; nb_confirmes: number; accompagnants: string[]; precisions?: string | null; created_at: string }
@@ -195,6 +196,7 @@ export default function InvitationsAdmin() {
   const finales = liste.filter((a) => a.mode === "final" && a.avec_reponse);
   return (
     <div className="space-y-4" data-testid="invitations-admin">
+      <DemandesCartes onApercu={charger} />
       <div className="flex gap-2" role="tablist">
         {([["apercus", "Aperçus et cartes"], ["confirmes", `Confirmés${finales.length ? ` (${confirmes.filter((c) => c.reponse === "oui").length})` : ""}`]] as const).map(([k, l]) => (
           <button key={k} type="button" role="tab" aria-selected={onglet === k} onClick={() => setOnglet(k)} data-testid={`onglet-${k}`} className={`${btn} border ${onglet === k ? "bg-[#141414] text-white border-[#141414]" : "bg-white border-[#DCCBA6]"}`}>{l}</button>

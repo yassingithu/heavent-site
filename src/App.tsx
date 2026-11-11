@@ -37,6 +37,7 @@ const MonDevis = lazy(() => import("./pages/MonDevis"));
 const Realisations = lazy(() => import("./pages/Realisations"));
 const PageLocale = lazy(() => import("./pages/PageLocale"));
 const Studio = lazy(() => import("./pages/Studio"));
+const Cartes = lazy(() => import("./pages/Cartes"));
 const Nawar = lazy(() => import("./pages/Nawar"));
 const Prestataires = lazy(() => import("./pages/Prestataires"));
 const WeddingPlannerMaroc = lazy(() => import("./pages/WeddingPlannerMaroc"));
@@ -87,6 +88,7 @@ const App = () => {
               <Route path="/guides/:slug" element={<PageGuide />} />
               <Route path="/liens" element={<Liens />} />
               <Route path="/studio" element={<Studio />} />
+              <Route path="/cartes" element={<Cartes />} />
               <Route path="/nawar" element={<Nawar />} />
               <Route path="/prestataires" element={<Prestataires />} />
               <Route path="/wedding-planner-maroc" element={<WeddingPlannerMaroc />} />

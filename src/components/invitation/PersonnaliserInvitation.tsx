@@ -13,6 +13,8 @@ import { evenementDe, questionDe } from "@/lib/evenements";
 interface Props {
   /** Affiche l'outil d'ajout d'ouvertures vidéo (administration seulement). */
   estAdmin?: boolean;
+  /** Page publique « Choisir ma carte » : pas de musique (licence), de programme ni de version arabe (relecture en cours). */
+  modeClient?: boolean;
   noms: string; date?: string | null; lieu?: string | null; message?: string | null;
   valeur: InvitationReglages; onChange: (v: InvitationReglages) => void;
 }
@@ -21,7 +23,7 @@ const LANGUES: [Langue, string][] = [["fr", "FR"], ["en", "EN"], ["ar", "عرب�
 const egal = (a: Couleurs, b: Couleurs) => (Object.keys(a) as (keyof Couleurs)[]).every((k) => a[k].toLowerCase() === b[k].toLowerCase());
 
 /** Choix du modèle, des couleurs (modifiables à tout moment) et aperçu en direct. */
-export default function PersonnaliserInvitation({ noms, date, lieu, message, valeur, onChange, estAdmin }: Props) {
+export default function PersonnaliserInvitation({ noms, date, lieu, message, valeur, onChange, estAdmin, modeClient }: Props) {
   const ev = evenementDe(valeur.evenement);
   const compteur = { v: 0 }; const num = () => ++compteur.v;
   const [rejouer, setRejouer] = useState(0);
@@ -138,9 +140,9 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </section>
         )}
 
-        <section>
+        {!modeClient && <section>
           <ChampMusique valeur={valeur.musique ?? ""} onChange={(m) => onChange({ ...valeur, musique: m })} estAdmin={estAdmin} champ={champ} />
-        </section>
+        </section>}
 
         <section>
           <h3 className="font-serif text-xl mb-1">{num()}. Le style de l'invitation</h3>
@@ -256,7 +258,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           </label>
         </section>
 
-        <section className="space-y-3" data-testid="invitation-programme">
+        {!modeClient && <section className="space-y-3" data-testid="invitation-programme">
           <h3 className="font-serif text-xl">{num()}. Le programme (facultatif)</h3>
           <p className="text-xs text-[#6B6154]">Affiché aux invités quand ils font défiler l'invitation.</p>
           {(valeur.programme ?? []).map((l, k) => (
@@ -271,7 +273,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             {(valeur.programme ?? []).length < 8 && <button type="button" className={bouton} onClick={() => onChange({ ...valeur, programme: [...(valeur.programme ?? []), { heure: "", titre: "" }] })}>Ajouter un moment</button>}
             {!(valeur.programme ?? []).length && ev.programme.length > 0 && <button type="button" className={bouton} onClick={() => onChange({ ...valeur, programme: ev.programme })}>Programme type</button>}
           </div>
-        </section>
+        </section>}
 
         {ev.questions.length > 0 && (
           <section className="space-y-2" data-testid="invitation-questions">
@@ -290,7 +292,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           </section>
         )}
 
-        <section className="space-y-3" data-testid="invitation-arabe">
+        {!modeClient && <section className="space-y-3" data-testid="invitation-arabe">
           <h3 className="font-serif text-xl">{num()}. La version arabe</h3>
           <p className="text-xs text-[#6B6154]">Les prénoms et le lieu sont écrits automatiquement en lettres arabes. Vérifiez et corrigez ici si besoin : ce que vous écrivez remplace la suggestion.</p>
           <label className="block text-sm">{ev.nomsLibelle}
@@ -306,7 +308,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
               <ChampMessage rtl pagine={!!ouvertureDe(valeur.ouverture).carte} libelle="Message en arabe" valeur={valeur.message_ar ?? ""} onChange={(v) => onChange({ ...valeur, message_ar: v })} className={`${champ} mt-1 py-2`} placeholder="ترجمة رسالتكم بالعربية" testId="invitation-message-ar" />
             </label>
           )}
-        </section>
+        </section>}
       </div>
 
       <aside ref={apercuRef} className="min-w-0 scroll-mt-16 order-first lg:order-none lg:sticky lg:top-4 self-start space-y-2" aria-label="Aperçu de l'invitation">
