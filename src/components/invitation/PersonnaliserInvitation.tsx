@@ -39,12 +39,23 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
   useEffect(() => { chargerOuverturesPerso().then(() => forcer((n) => n + 1)); }, []);
   const [filtre, setFiltre] = useState<string | null>(null);
   const ouv = ouvertureDe(valeur.ouverture);
+  const [versFormulaire, setVersFormulaire] = useState(false);
+  useEffect(() => {
+    if (!modeClient || typeof IntersectionObserver === "undefined") return;
+    const cible = document.getElementById("demande"); if (!cible) return;
+    const io = new IntersectionObserver(([e]) => setVersFormulaire(e.isIntersecting), { rootMargin: "0px 0px -20% 0px" });
+    io.observe(cible); return () => io.disconnect();
+  }, [modeClient]);
   const [toutes, setToutes] = useState(!modeClient);
   const filtrees = OUVERTURES.filter((o) => !filtre || o.styles.includes(filtre) || o.id === ouv.id);
   /* Page publique : six cartes d'abord (la carte choisie reste toujours visible) */
-  const visibles = toutes || filtre ? filtrees : filtrees.filter((o, i) => i < 6 || o.id === ouv.id);
+  const visibles = toutes || filtre ? filtrees : filtrees.filter((o, i) => i < 8 || o.id === ouv.id);
   const reste = filtrees.length - visibles.length;
   const rev = revelationDe(valeur.revelation);
+  useEffect(() => {
+    if (!modeClient || rejouer === 0 || (typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+    apercuRef.current?.querySelector(".inv")?.animate([{ opacity: 0, transform: "scale(.985)" }, { opacity: 1, transform: "none" }], { duration: 320, easing: "cubic-bezier(.2,.7,.2,1)" });
+  }, [valeur.ouverture]); // eslint-disable-line react-hooks/exhaustive-deps
   const choisirOuverture = (id: string) => { onChange({ ...valeur, ouverture: id }); setRejouer((n) => n + 1); };
   const choisirRevelation = (id: string) => { onChange({ ...valeur, revelation: id }); setRejouer((n) => n + 1); };
   const [erreurLogo, setErreurLogo] = useState<string | null>(null);
@@ -59,37 +70,41 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]" data-testid="personnaliser-invitation">
       <div className="space-y-6 min-w-0">
         <section>
-          <h3 className="font-serif text-xl mb-1">{modeClient ? "Choisissez votre carte" : `${num()}. Comment l'invitation s'ouvre`}</h3>
-          <p className="text-sm text-[#5E554A] mb-3">{modeClient ? "Touchez une carte : elle s'ouvre dans l'aperçu. C'est un exemple, nous l'adaptons avec vous avant de la valider." : "Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu."}</p>
+          <h3 className="font-serif text-xl mb-1">{modeClient ? "Comment s'ouvre votre carte ?" : `${num()}. Comment l'invitation s'ouvre`}</h3>
+          <p className="text-sm text-[#5E554A] mb-3">{modeClient ? "Vos invités touchent la porte : votre carte apparaît. Touchez-en une pour l'essayer. Nous l'adaptons avec vous avant de la valider." : "Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu."}</p>
           <div className="flex gap-3 overflow-x-auto border-b border-[#EADFC8] mb-4" role="group" aria-label="Filtrer par style">
             {[null, ...STYLES_OUVERTURE].map((st) => (
               <button key={st ?? "tous"} type="button" onClick={() => setFiltre(st)} aria-pressed={filtre === st}
                 className={`shrink-0 min-h-11 px-0.5 text-xs tracking-[.08em] uppercase border-b-2 ${filtre === st ? "text-[#141414] border-[#8C6D22]" : "text-[#5E554A] border-transparent"}`}>{st ?? "Toutes"}</button>
             ))}
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-x-3 gap-y-5 items-start" role="group" aria-label="Ouverture">
-            {visibles.map((o) => {
+          <div className="grid grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-5 items-start" role="group" aria-label="Ouverture">
+            {visibles.map((o, i) => {
               const choisie = ouv.id === o.id;
+              const cache = modeClient && !toutes && !filtre && !choisie && i >= 6 ? "max-lg:hidden" : "";
               return (
-              <button key={o.id} type="button" onClick={() => choisirOuverture(o.id)} aria-pressed={choisie} data-testid={`ouverture-${o.id}`} className="text-left group">
-                <span className={`relative flex aspect-[9/16] w-full overflow-hidden bg-[#EFE6D2] outline outline-2 outline-offset-2 ${choisie ? "outline-[#8C6D22]" : "outline-transparent group-hover:outline-[#E4D49A]"}`} aria-hidden="true">
+              <button key={o.id} type="button" onClick={() => choisirOuverture(o.id)} aria-pressed={choisie} data-testid={`ouverture-${o.id}`} className={`text-left group cartes-vignette ${cache} ${modeClient && toutes && i >= 8 ? "cartes-nouvelle" : ""}`} style={modeClient && i >= 8 ? ({ "--i": Math.min(i - 8, 8) } as React.CSSProperties) : undefined}>
+                <span className={`relative flex aspect-[9/16] w-full overflow-hidden bg-[#EFE6D2] ${modeClient ? "cartes-cadre" : `outline outline-2 outline-offset-2 ${choisie ? "outline-[#8C6D22]" : "outline-transparent group-hover:outline-[#E4D49A]"}`}`} aria-hidden="true">
                   {o.id === "enveloppe"
                     ? <span className="m-auto grid h-full w-full place-items-center bg-[#141414]"><span className="grid h-16 w-16 place-items-center border border-[#A8933F] font-serif italic text-[#E4D49A] text-lg">A &amp; B</span></span>
+                    : o.id === "rose-imperiale" && !o.poster
+                    ? <span className="grid h-full w-full place-items-center bg-[#F3ECDD]"><span className="px-2 text-center font-serif italic text-[#7A5F1F] text-[17px] leading-tight">Rose<br />Impériale</span></span>
                     : o.poster
                     ? <img src={o.poster} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                     : <><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-g.webp)` }} /><span className="w-1/2 bg-cover bg-center" style={{ backgroundImage: `url(/ouvertures/${o.id}-d.webp)` }} /></>}
-                  {choisie && <span className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-[#141414] text-[#E4D49A] text-xs">✓</span>}
+                  {choisie && (modeClient ? <span className="cartes-choisie">Votre carte</span> : <span className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-[#141414] text-[#E4D49A] text-xs">✓</span>)}
                 </span>
-                <span className={`mt-1.5 block font-serif text-[15px] leading-tight ${choisie ? "text-[#8C6D22]" : ""}`}>{o.nom}</span>
-                <span className="block whitespace-nowrap text-[11px] tracking-[.1em] uppercase text-[#6B6154]">{o.video ? "Film" : "Animation"} · {String(Math.round(o.duree / 100) / 10).replace(".", ",")} s</span>
+                {modeClient && <span className="cartes-num">Nº {String(i + 1).padStart(2, "0")}</span>}
+                <span className={`mt-1.5 block font-serif text-[15px] leading-tight ${modeClient ? "cartes-nom" : ""} ${choisie ? "text-[#8C6D22]" : ""}`}>{o.nom}</span>
+                {(!modeClient || o.video) && <span className="block whitespace-nowrap text-[11px] tracking-[.1em] uppercase text-[#6B6154]">{o.video ? "Film" : "Animation"}{!modeClient && ` · ${String(Math.round(o.duree / 100) / 10).replace(".", ",")} s`}</span>}
               </button>
               );
             })}
           </div>
-          {modeClient && !toutes && !filtre && reste > 0 && <button type="button" onClick={() => setToutes(true)} className="cartes-plus-cartes" data-testid="cartes-voir-plus">Voir {reste} autres cartes</button>}
+          {modeClient && !toutes && !filtre && reste > 0 && <button type="button" onClick={() => setToutes(true)} className="cartes-plus-cartes" data-testid="cartes-voir-plus">Voir toutes les cartes ({filtrees.length})</button>}
           <p className="text-xs text-[#6B6154] mt-3"><strong className="font-medium">{ouv.nom}.</strong> {ouv.description}</p>
-          <Pli className="cartes-plus">
-            {resume("Fermeture, papier et cachet de l'enveloppe")}
+          <Pli className={`cartes-plus ${modeClient && ouv.id !== "enveloppe" && (ouv.cadre || ouv.id === "rose-imperiale") ? "hidden" : ""}`}>
+            {resume(ouv.id === "enveloppe" ? "Cachet et enveloppe" : "Cachet de cire")}
           {ouv.id === "enveloppe" && (
             <div className="mt-3" role="group" aria-label="Fermeture de l'enveloppe">
               <p className="text-sm font-medium mb-2">Fermeture de l'enveloppe</p>
@@ -158,7 +173,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         <Pli className="cartes-plus cartes-plus-grand">
           {resume("Personnaliser davantage : style, décor, couleurs")}
         <section>
-          <h3 className="font-serif text-xl mb-1">{num()}. Le style de l'invitation</h3>
+          <h3 className="font-serif text-xl mb-1">{modeClient ? "Le style" : `${num()}. Le style de l'invitation`}</h3>
           <p className="text-sm text-[#5E554A] mb-3">Chaque modèle a son ornement et ses couleurs. Vos couleurs personnalisées sont conservées quand vous changez de modèle.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {modelesPour(ev.id).map((m) => (
@@ -176,7 +191,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
 
         {decorsPour(ev.id).length > 1 && (
         <section data-testid="section-decor">
-          <h3 className="font-serif text-xl mb-1">{num()}. Le décor</h3>
+          <h3 className="font-serif text-xl mb-1">{modeClient ? "Le décor" : `${num()}. Le décor`}</h3>
           <p className="text-sm text-[#5E554A] mb-3">Le dessin en haut de la carte. Il se combine avec n'importe quel modèle, couleur et ouverture.</p>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Décor">
             {decorsPour(ev.id).map((d) => (
@@ -221,7 +236,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
 
         <section>
           <div className="flex items-center justify-between gap-2 mb-1">
-            <h3 className="font-serif text-xl">{num()}. Les couleurs</h3>
+            <h3 className="font-serif text-xl">{modeClient ? "Les couleurs" : `${num()}. Les couleurs`}</h3>
             <button type="button" className={bouton} onClick={() => onChange({ ...valeur, couleurs: {} })} disabled={!modifiees} data-testid="couleurs-reinit">
               <RotateCcw className="h-4 w-4" /> Couleurs du modèle
             </button>
@@ -338,12 +353,13 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </div>
         <Invitation noms={noms || "Prénom & Prénom"} date={date} lieu={lieu} message={message} reglages={valeur} langue={langue} pleinePage={false} rejouer={rejouer} ouverte={rejouer === 0} autoOuvrir />
       </aside>
-      <div className="sticky bottom-0 z-30 -mx-1 col-span-full border-t border-[#E3D6BA] bg-[#FBF8F1]/95 px-4 py-2 lg:hidden" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom, 0px))" }}>
-        <div className="flex gap-2">
-          <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className={`flex items-center justify-center gap-2 rounded-full min-h-12 text-sm font-medium ${modeClient ? "border border-[#141414] text-[#141414] px-4" : "w-full bg-[#141414] text-[#F7F3E8]"}`} data-testid="voir-apercu-barre"><Play className="h-4 w-4" /> Voir l'aperçu</button>
-          {modeClient && <button type="button" onClick={() => document.getElementById("demande")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="flex flex-1 items-center justify-center rounded-full bg-[#141414] text-[#F7F3E8] min-h-12 text-sm font-medium" data-testid="aller-demande">J'envoie ma demande</button>}
+      {(!modeClient || !versFormulaire) && <div className={modeClient ? "cartes-barre sticky bottom-0 z-30 col-span-full lg:hidden" : "sticky bottom-0 z-30 -mx-1 col-span-full border-t border-[#E3D6BA] bg-[#FBF8F1]/95 px-4 py-2 lg:hidden"} style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom, 0px))" }}>
+        <div className="flex items-center gap-2">
+          {modeClient && <span className="cartes-barre-choix"><small>Votre carte</small><b>{ouv.nom}</b></span>}
+          <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className={modeClient ? "s-btn s-btn-filet cartes-barre-btn" : "flex w-full items-center justify-center gap-2 rounded-full min-h-12 text-sm font-medium bg-[#141414] text-[#F7F3E8]"} data-testid="voir-apercu-barre"><Play className="h-4 w-4" aria-hidden="true" /> {modeClient ? "Voir" : "Voir l'aperçu"}</button>
+          {modeClient && <button type="button" onClick={() => document.getElementById("demande")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="s-btn s-btn-plein s-sombre cartes-barre-btn" data-testid="aller-demande">Envoyer</button>}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

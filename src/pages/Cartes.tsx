@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import Seo from "@/components/Seo";
 import { Bouton, Etoile, Surtitre } from "@/components/seuil/Seuil";
 import "@/styles/cartes.css";
@@ -8,7 +7,7 @@ import ChoixOccasion from "@/components/invitation/ChoixOccasion";
 import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvitation";
 import { evenementDe, type TypeEvenement } from "@/lib/evenements";
 import { decorsPour } from "@/lib/decors";
-import type { InvitationReglages } from "@/lib/invitation";
+import { ouvertureDe, type InvitationReglages } from "@/lib/invitation";
 import { supabase } from "@/integrations/supabase/client";
 import { suivre } from "@/lib/suivi";
 
@@ -17,7 +16,7 @@ import { suivre } from "@/lib/suivi";
  * puis envoie sa demande à Heavent (pas de paiement en ligne : l'équipe le recontacte). Page en français pour l'instant.
  */
 const WHATSAPP = "https://wa.me/212610939655?text=";
-const champ = "w-full rounded-xl border border-[#E3D6BA] bg-white px-3 min-h-11 text-base";
+const champ = "w-full min-h-11 px-3 text-base bg-[#FFFDF7] border-0 border-b border-[#A8933F] rounded-none";
 const MAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export default function Cartes() {
@@ -44,7 +43,7 @@ export default function Cartes() {
     e.preventDefault(); setErreur(null);
     const x: Record<string, string> = {};
     if (f.nom.trim().length < 2) x.nom = "Indiquez votre nom.";
-    if (!f.telephone.trim() && !f.email.trim()) x.tel = "Indiquez un numéro WhatsApp ou une adresse e-mail pour que nous puissions vous répondre.";
+    if (!f.telephone.trim() && !f.email.trim()) x.tel = "Un numéro WhatsApp ou un e-mail, pour vous répondre.";
     else if (f.telephone.trim() && f.telephone.replace(/\D/g, "").length < 8) x.tel = "Ce numéro semble incomplet.";
     if (f.email.trim() && !MAIL_OK.test(f.email.trim())) x.email = "L'adresse e-mail semble incorrecte.";
     if (!f.accord) x.accord = "Cochez la case ci-dessus pour que nous puissions vous répondre.";
@@ -58,6 +57,7 @@ export default function Cartes() {
     });
     if (error) { setEtat("saisie"); return setErreur(error.code === "P0429" ? "Vous avez déjà envoyé plusieurs demandes. Merci de patienter un peu ou de nous écrire sur WhatsApp." : "L'envoi n'a pas fonctionné. Réessayez, ou écrivez-nous sur WhatsApp."); }
     suivre("clic", "cartes:demande"); setEtat("ok");
+    requestAnimationFrame(() => { const m = document.querySelector<HTMLElement>('[data-testid="cartes-merci"]'); m?.setAttribute("tabindex", "-1"); m?.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); m?.focus({ preventScroll: true }); });
   };
 
   return (
@@ -69,12 +69,12 @@ export default function Cartes() {
             <Surtitre className="s-entree-heros">Cartes d'invitation digitales</Surtitre>
             <h1 className="s-h1 s-entree-heros">Votre carte, <em>avant même</em> le premier invité.</h1>
             <p className="s-chapo s-entree-heros" style={{ animationDelay: ".12s" }}>Choisissez l'enveloppe, le cachet, les couleurs. Voyez-la s'ouvrir sur votre téléphone, puis confiez-la-nous : nous vous répondons avec un aperçu et le tarif.</p>
-            <div className="cartes-cta">
+            <div className="cartes-cta s-entree-heros" style={{ animationDelay: ".24s" }}>
               <a href="#composer" className="s-btn s-btn-plein">Composer ma carte</a>
               <a href="#demande" className="cartes-lien">Ou laissez-nous la composer pour vous</a>
             </div>
           </div>
-          <div className="cartes-scene" aria-hidden="true">
+          <div className="cartes-scene" data-revele aria-hidden="true">
             <div className="cartes-carte cartes-c1"><div><small>Fiançailles</small><b>Salma<br />&amp; Omar</b><i>14 · 06 · 2027</i></div></div>
             <div className="cartes-carte cartes-c3"><div><small>Mariage</small><b>Lina<br />&amp; Adam</b><i>12 · 09 · 2027</i></div></div>
             <div className="cartes-carte cartes-c2"><div><small>Ont la joie de vous convier</small><b>Yasmine<br />&amp; Karim</b><i>03 · 10 · 2027</i></div></div>
@@ -83,22 +83,22 @@ export default function Cartes() {
         <div className="cartes-bande" />
       </section>
 
-      <main id="composer" className="bg-[#FBF8F1] text-[#2A2420] scroll-mt-4">
-        <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
+      <main id="composer" className="text-[#2A2420] scroll-mt-20 cartes-fond">
+        <div className="max-w-6xl mx-auto px-4 py-10">
           <div>
-            <p className="cartes-etape"><span>1</span><b>Votre occasion</b></p>
+            <header className="cartes-tete" data-revele><span className="cartes-n" aria-hidden="true">01</span><div><small>Étape 1 sur 4</small><h2>Pour quelle occasion ?</h2></div></header>
             <ChoixOccasion valeur={invitation.evenement} onChoisir={choisirOccasion} />
           </div>
 
+          <div className="cartes-sep" aria-hidden="true" />
           <section className="space-y-3" aria-labelledby="t-infos">
-            <p className="cartes-etape"><span>2</span><b>Vos informations</b></p>
-            <h3 id="t-infos" className="font-serif text-xl">Ce qui s'écrit sur la carte</h3>
+            <header id="t-infos" className="cartes-tete" data-revele><span className="cartes-n" aria-hidden="true">02</span><div><small>Étape 2 sur 4</small><h2>Que doit-on lire sur la carte ?</h2></div></header>
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="block text-sm sm:col-span-3">Prénoms ou nom affichés
                 <input className={champ} value={noms} onChange={(e) => setNoms(e.target.value)} placeholder={ev.id === "mariage" ? "Lina & Adam" : "Adam"} maxLength={80} data-testid="cartes-noms" />
               </label>
               <label className="block text-sm">Date
-                <input type="date" className={champ} value={date} onChange={(e) => setDate(e.target.value)} data-testid="cartes-date" />
+                <input type="date" lang="fr" min={new Date().toISOString().slice(0, 10)} className={champ} value={date} onChange={(e) => setDate(e.target.value)} data-testid="cartes-date" />
               </label>
               <label className="block text-sm sm:col-span-2">Lieu
                 <input className={champ} value={lieu} onChange={(e) => setLieu(e.target.value)} placeholder="Villa, salle, restaurant, ville…" maxLength={120} data-testid="cartes-lieu" />
@@ -107,26 +107,30 @@ export default function Cartes() {
             <label className="block text-sm">Votre message sur la carte (facultatif)
               <textarea className={champ} rows={3} value={message} onChange={(e) => setMessage(e.target.value)} maxLength={400} placeholder="Ex. : Nous serions heureux de partager ce moment avec vous." data-testid="cartes-message" />
             </label>
-            <p className="text-xs text-[#6B6154]">La date est dévoilée par la surprise de la carte : sans date, la surprise ne s'affiche pas.</p>
+            {invitation.revelation && invitation.revelation !== "aucune" && !date && <p className="text-sm text-[#7A5F1F]">Ajoutez la date : c'est elle que la surprise dévoile.</p>}
           </section>
 
+          <div className="cartes-sep" aria-hidden="true" />
           <div>
-            <p className="cartes-etape"><span>3</span><b>Votre carte</b></p>
+            <header className="cartes-tete" data-revele><span className="cartes-n" aria-hidden="true">03</span><div><small>Étape 3 sur 4</small><h2>Votre carte</h2></div></header>
           <PersonnaliserInvitation modeClient noms={noms} date={date || null} lieu={lieu || null} message={message || null} valeur={invitation} onChange={setInvitation} />
           </div>
 
-          <section id="demande" className="max-w-xl space-y-4" aria-labelledby="t-demande">
-            <p className="cartes-etape"><span>4</span><b>Votre demande</b></p>
-            <h3 id="t-demande" className="font-serif text-2xl">J'envoie ma demande à Heavent</h3>
+          <div className="cartes-sep" aria-hidden="true" />
+          <section id="demande" className="max-w-xl space-y-4 scroll-mt-20" aria-labelledby="t-demande">
+            <header id="t-demande" className="cartes-tete" data-revele><span className="cartes-n" aria-hidden="true">04</span><div><small>Étape 4 sur 4</small><h2>Comment vous répondre ?</h2></div></header>
             {etat === "ok" ? (
               <div className="s-fairepart s-merci" role="status" data-testid="cartes-merci">
                 <Etoile /><Etoile className="bas" />
-                <h4 className="s-h3">Demande bien reçue</h4>
-                <p className="text-sm text-[#5E554A]">Merci {f.nom.split(" ")[0]}. Notre équipe prépare votre carte : vous recevez un aperçu à partager et le tarif sous 24 h ouvrées.</p>
+                <h4 className="s-h3 s-entree-heros">Demande bien reçue</h4>
+                <p className="cartes-delai s-entree-heros" style={{ animationDelay: ".25s" }}><b>24 h</b><span>ouvrées</span></p>
+                <p className="text-sm text-[#5E554A]">Merci {f.nom.split(" ")[0]}. Notre équipe prépare votre carte « {ouvertureDe(invitation.ouverture).nom} » : vous recevez un aperçu à partager et le tarif.</p>
                 <Bouton href={WHATSAPP + encodeURIComponent(`Bonjour Heavent, je viens d'envoyer ma demande de carte d'invitation (${ev.nom}). Je m'appelle ${f.nom}.`)} externe variante="filet">Nous écrire sur WhatsApp</Bouton>
               </div>
             ) : (
-              <form onSubmit={envoyer} className="space-y-3 s-form cartes-formulaire" style={{ padding: "22px 18px" }} noValidate>
+              <>
+              <p className="cartes-recap" data-testid="cartes-recap">Vous envoyez : <b>{ev.nom}{noms ? ` · ${noms}` : ""}</b> · carte <b>{ouvertureDe(invitation.ouverture).nom}</b></p>
+                <form onSubmit={envoyer} className="space-y-3 s-form cartes-formulaire" style={{ padding: "22px 18px" }} noValidate>
                 <p className="text-sm text-[#5E554A]">Aucun paiement maintenant. Notre équipe vous répond sous 24 h ouvrées avec un aperçu de votre carte et le tarif.</p>
                 <label className="block text-sm">Votre nom
                   <input className={champ} value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} autoComplete="name" required id="cartes-champ-nom" aria-invalid={!!err.nom} data-testid="cartes-nom" />
@@ -142,7 +146,7 @@ export default function Cartes() {
                     {err.email && <span className="block text-sm text-[#9B2C2C]" role="alert">{err.email}</span>}
                   </label>
                 </div>
-                <label className="block text-sm">Un mot pour nous (facultatif)
+                <label className="block text-sm">Une précision pour l'équipe (facultatif)
                   <textarea className={champ} rows={3} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} maxLength={800} placeholder="Une envie, un thème, un nombre d'invités…" />
                 </label>
                 <label className="cartes-accord flex items-start gap-2 text-sm">
@@ -151,10 +155,11 @@ export default function Cartes() {
                 </label>
                 {err.accord && <p className="text-sm text-[#9B2C2C]" role="alert">{err.accord}</p>}
                 {erreur && <p role="alert" className="text-sm text-[#9B2C2C]" data-testid="cartes-erreur">{erreur}</p>}
-                <button type="submit" disabled={etat === "envoi"} className="s-btn s-btn-plein s-sombre disabled:opacity-60" data-testid="cartes-envoyer">
-                  {etat === "envoi" && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />} Envoyer ma demande
+                <button type="submit" disabled={etat === "envoi"} aria-busy={etat === "envoi"} className="s-btn s-btn-plein s-sombre" data-testid="cartes-envoyer">
+                  {etat === "envoi" ? "Envoi en cours…" : "Envoyer ma demande"}
                 </button>
               </form>
+              </>
             )}
           </section>
         </div>
