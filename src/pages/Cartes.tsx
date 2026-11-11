@@ -12,7 +12,7 @@ import { suivre } from "@/lib/suivi";
  */
 const WHATSAPP = "https://wa.me/212610939655?text=";
 const QUESTIONS: [string, string][] = [
-  ["Combien coûte une carte ?", "De 250 DH (Classique) à 650 DH (Prestige). Les paysages animés (Salle de bal, Chalet sous la neige, Oliveraie, Côte bleue) sont à 750 DH. Le prix de chaque carte est affiché sur la carte."],
+  ["Combien coûte une carte ?", "Chaque carte est à 250 DH, écrite à vos prénoms avec la date et le lieu (350 DH pour les paysages animés : Salle de bal, Chalet sous la neige, Oliveraie, Côte bleue). Vous ajoutez ensuite seulement les options qu'il vous faut, 50 DH chacune : compte à rebours, cœur à gratter, plan Google Maps, programme, confirmation de présence, livre d'or, musique…"],
   ["Comment ça se passe ?", "Vous choisissez une carte et envoyez votre demande. Nous préparons l'aperçu avec vos prénoms, votre date et votre lieu, et nous vous l'envoyons sur WhatsApp. Vous le validez, vous réglez, puis votre carte est livrée sous 1 semaine à partir du paiement."],
   ["Comment mes invités la reçoivent-ils ?", "Par un lien que vous partagez sur WhatsApp : la carte s'ouvre sur leur téléphone, comme dans les aperçus de cette page."],
   ["Puis-je demander une modification ?", "Vous validez l'aperçu avant de payer. Une modification supplémentaire après l'aperçu coûte 50 DH."],
@@ -25,7 +25,7 @@ export default function Cartes() {
   const rang = ouverturesBoutique().findIndex((x) => x.id === ouv.id) + 1;
   return (
     <div className="cv-page">
-      <Seo perso={{ chemin: "/cartes", titre: "Cartes d'invitation digitales sur mesure | Heavent", description: "Cartes d'invitation digitales en film pour mariage, fiançailles, baptême et anniversaire : choisissez votre carte, recevez l'aperçu à vos prénoms sur WhatsApp, payez après l'avoir validé. De 250 à 750 DH." }} />
+      <Seo perso={{ chemin: "/cartes", titre: "Cartes d'invitation digitales sur mesure | Heavent", description: "Cartes d'invitation digitales en film pour mariage, fiançailles, baptême et anniversaire : choisissez votre carte, recevez l'aperçu à vos prénoms sur WhatsApp, payez après l'avoir validé. Dès 250 DH, options à 50 DH." }} />
       <header className="cv-haut">
         <h1>Votre invitation, en film</h1>
         <p>Choisissez une carte. Nous l'écrivons à vos prénoms, vous la validez avant de payer.</p>

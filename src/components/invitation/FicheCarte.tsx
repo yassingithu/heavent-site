@@ -4,7 +4,7 @@ import { ArrowLeft, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import Invitation from "./Invitation";
 import ChampDate from "./ChampDate";
-import { FORMULES, descriptionVente, formuleDe, prixDe, prixNombre, totalCommande, type OuvertureDef } from "@/lib/invitation";
+import { OPTIONS_CARTE, PRIX_OPTION, descriptionVente, prixDe, totalCommande, type OuvertureDef } from "@/lib/invitation";
 import { evenementDe, GROUPES } from "@/lib/evenements";
 import { supabase } from "@/integrations/supabase/client";
 import { suivre } from "@/lib/suivi";
@@ -47,9 +47,10 @@ interface Props { ouvert: boolean; onFermer: () => void; ouverture: OuvertureDef
 
 /** Fiche d'une carte : l'aperçu tourne en continu, à côté (ordinateur) ou avant (téléphone) la demande. Rien à régler : l'équipe prépare l'aperçu personnalisé. */
 export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
-  const f = FORMULES.find((x) => x.id === formuleDe(o));
   const [etape, setEtape] = useState<"carte" | "demande">("carte");
-  const [v, setV] = useState({ noms: "", occasion: "mariage", date: "", lieu: "", message: "", nom: "", tel: "", accord: false, heure: "", maps: "", programme: "", musique: "", rsvp: true, voeux: false, photos: false });
+  const [v, setV] = useState({ noms: "", occasion: "mariage", date: "", lieu: "", message: "", nom: "", tel: "", accord: false, heure: "", maps: "", programme: "", musique: "", photos: false });
+  const [opts, setOpts] = useState<string[]>([]);
+  const bascule = (id: string) => setOpts((a) => a.includes(id) ? a.filter((x) => x !== id) : [...a, id]);
   const [dateOk, setDateOk] = useState(true);
   const [err, setErr] = useState<Record<string, string>>({});
   const [etat, setEtat] = useState<"saisie" | "envoi" | "ok">("saisie");
@@ -57,10 +58,9 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
   const corps = useRef<HTMLDivElement>(null);
   useEffect(() => { if (ouvert) { setEtape("carte"); setErr({}); setErreur(null); setEtat("saisie"); } }, [ouvert, o.id]);
   const maj = (k: string, x: string | boolean) => { setV((a) => ({ ...a, [k]: x })); if (err[k]) setErr((e) => ({ ...e, [k]: "" })); };
-  const prix = totalCommande(o, []);
+  const prix = totalCommande(o, opts);
   useEffect(() => { if (etat === "ok") requestAnimationFrame(() => document.querySelector<HTMLElement>("[data-testid=cartes-merci]")?.focus()); }, [etat]);
 
-  const plus = f?.id !== "classique";
   const envoyer = async (e: React.FormEvent) => {
     e.preventDefault(); setErreur(null);
     const x: Record<string, string> = {};
@@ -76,11 +76,12 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
     if (premier) { document.getElementById(`cv-champ-${premier}`)?.focus(); return; }
     setEtat("envoi");
     const resume = `Demande de carte « ${o.nom} » (${prixDe(o)})`;
-    const details = [v.heure && `Heure : ${v.heure}`, v.maps && `Lien Google Maps : ${v.maps}`, v.programme && `Programme : ${v.programme}`, v.musique && `Musique souhaitée : ${v.musique}`, plus && `Confirmation de présence : ${v.rsvp ? "oui" : "non"}`, plus && `Livre d'or / vœux : ${v.voeux ? "oui" : "non"}`, plus && v.photos && "Photos à envoyer par WhatsApp"].filter(Boolean).join("\n");
+    const choisies = OPTIONS_CARTE.filter((x) => opts.includes(x.id));
+    const details = [choisies.length > 0 && `Options (${PRIX_OPTION} DH chacune) : ${choisies.map((x) => x.nom).join(", ")}`, v.heure && `Heure : ${v.heure}`, v.maps && `Lien Google Maps : ${v.maps}`, v.programme && `Programme : ${v.programme}`, v.musique && `Musique souhaitée : ${v.musique}`, v.photos && "Photos à envoyer par WhatsApp", `Total estimé : ${prix} DH`].filter(Boolean).join("\n");
     const { error } = await (supabase as any).rpc("carte_demander", {
       p_nom: v.nom, p_telephone: v.tel, p_email: "", p_occasion: v.occasion, p_noms: v.noms,
       p_date: v.date || null, p_lieu: v.lieu, p_message: [resume, v.message && `Message de la carte : ${v.message}`, details].filter(Boolean).join("\n\n"),
-      p_invitation: { ouverture: o.id, evenement: v.occasion === "mariage" ? undefined : v.occasion, noms: v.noms, message: v.message, extras: [], total: prix, details: { heure: v.heure, maps: v.maps, programme: v.programme, musique: v.musique, rsvp: v.rsvp, voeux: v.voeux, photos: v.photos } },
+      p_invitation: { ouverture: o.id, evenement: v.occasion === "mariage" ? undefined : v.occasion, noms: v.noms, message: v.message, extras: opts, total: prix, details: { heure: v.heure, maps: v.maps, programme: v.programme, musique: v.musique, photos: v.photos } },
     });
     if (error) { setEtat("saisie"); return setErreur(error.code === "P0429" ? "Vous avez déjà envoyé plusieurs demandes. Merci de patienter un peu ou de nous écrire sur WhatsApp." : "L'envoi n'a pas fonctionné. Réessayez, ou écrivez-nous sur WhatsApp."); }
     suivre("clic", `cartes:demande:${o.id}`); setEtat("ok");
@@ -96,7 +97,7 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
           <header className="cv-fiche-tete">
             {etape === "demande" && etat !== "ok" && <button type="button" className="cv-retour" onClick={() => setEtape("carte")} aria-label="Revoir la carte" data-testid="fiche-retour"><ArrowLeft aria-hidden="true" /></button>}
             <div>
-              <small>{f?.nom} · {prixDe(o)}</small>
+              <small>À partir de {prixDe(o)}</small>
               <Dialog.Title>{o.nom}</Dialog.Title>
             </div>
             <Dialog.Close className="cv-fermer" aria-label="Fermer la fiche" data-testid="fiche-fermer"><X aria-hidden="true" /></Dialog.Close>
@@ -118,7 +119,7 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
                 <div className="cv-infos">
                   <Dialog.Description id="cv-fiche-desc" className="cv-desc">{descriptionVente(o)}</Dialog.Description>
                   <ul className="cv-etiquettes">{o.styles.slice(0, 2).map((t) => <li key={t}>{t}</li>)}</ul>
-                  <div className="cv-formule"><b>{f?.nom} · {prixDe(o)}</b><p>{f?.texte}</p></div>
+                  <div className="cv-formule"><b>La carte · {prixDe(o)}</b><p>Écrite à vos prénoms, avec la date et le lieu, partagée par WhatsApp. Ajoutez seulement les options qu'il vous faut, {PRIX_OPTION} DH chacune : compte à rebours, cœur à gratter, plan Google Maps, confirmation de présence, livre d'or…</p></div>
                   <ul className="cv-garanties"><li>Aperçu à vos prénoms avant de payer</li><li>Livrée 1 semaine après le paiement</li><li>Partagée par WhatsApp</li></ul>
                   <p className="cv-apercu-note">Exemple avec « Lina &amp; Adam ». Votre carte portera vos prénoms, votre date et votre lieu.</p>
                 </div>
@@ -152,28 +153,25 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
                 <label>Un message sur la carte <i>(facultatif)</i>
                   <textarea className="cv-champ" rows={2} value={v.message} onChange={(e) => maj("message", e.target.value)} maxLength={400} placeholder="Nous serions heureux de partager ce moment avec vous." data-testid="cartes-message" />
                 </label>
-                {plus && (
-                  <details className="cv-plus" data-testid="cartes-details">
-                    <summary>Détails de la fête <i>(facultatif, vous pourrez nous les envoyer plus tard)</i></summary>
-                    <div className="cv-duo">
-                      <label>Heure
-                        <input className="cv-champ" value={v.heure} onChange={(e) => maj("heure", e.target.value)} placeholder="19h30" maxLength={20} />
-                      </label>
-                      <label>Lien Google Maps
-                        <input className="cv-champ" type="url" inputMode="url" value={v.maps} onChange={(e) => maj("maps", e.target.value)} placeholder="https://maps.app.goo.gl/…" maxLength={300} />
-                      </label>
+                <fieldset className="cv-options" data-testid="cartes-options">
+                  <legend>Options <i>({PRIX_OPTION} DH chacune, facultatif)</i></legend>
+                  {OPTIONS_CARTE.map((x) => (
+                    <label key={x.id} className="cv-option">
+                      <input type="checkbox" checked={opts.includes(x.id)} onChange={() => bascule(x.id)} data-testid={`option-${x.id}`} />
+                      <span><b>{x.nom}</b><small>{x.texte}</small></span>
+                      <em>+{PRIX_OPTION} DH</em>
+                    </label>
+                  ))}
+                  {opts.includes("programme") && (
+                    <div className="cv-option-champs">
+                      <label>Heure<input className="cv-champ" value={v.heure} onChange={(e) => maj("heure", e.target.value)} placeholder="19h30" maxLength={20} /></label>
+                      <label>Programme<textarea className="cv-champ" rows={2} value={v.programme} onChange={(e) => maj("programme", e.target.value)} maxLength={500} placeholder="Cérémonie 17h, cocktail 18h, dîner 20h…" /></label>
                     </div>
-                    <label>Programme de la journée
-                      <textarea className="cv-champ" rows={2} value={v.programme} onChange={(e) => maj("programme", e.target.value)} maxLength={500} placeholder="Cérémonie 17h, cocktail 18h, dîner 20h…" />
-                    </label>
-                    <label>Musique souhaitée
-                      <input className="cv-champ" value={v.musique} onChange={(e) => maj("musique", e.target.value)} placeholder="Titre ou ambiance (nous vous proposerons)" maxLength={120} />
-                    </label>
-                    <label className="cv-accord"><input type="checkbox" checked={v.rsvp} onChange={(e) => maj("rsvp", e.target.checked)} /><span>Vos invités confirment leur présence</span></label>
-                    <label className="cv-accord"><input type="checkbox" checked={v.voeux} onChange={(e) => maj("voeux", e.target.checked)} /><span>Un livre d'or pour les vœux</span></label>
-                    <label className="cv-accord"><input type="checkbox" checked={v.photos} onChange={(e) => maj("photos", e.target.checked)} /><span>Je vous envoie des photos par WhatsApp</span></label>
-                  </details>
-                )}
+                  )}
+                  {opts.includes("maps") && <div className="cv-option-champs"><label>Lien Google Maps<input className="cv-champ" type="url" inputMode="url" value={v.maps} onChange={(e) => maj("maps", e.target.value)} placeholder="https://maps.app.goo.gl/…" maxLength={300} /></label></div>}
+                  {opts.includes("musique") && <div className="cv-option-champs"><label>Musique souhaitée<input className="cv-champ" value={v.musique} onChange={(e) => maj("musique", e.target.value)} placeholder="Titre ou ambiance (nous vous proposerons)" maxLength={120} /></label></div>}
+                  {(opts.includes("histoire") || opts.includes("prenom")) && <label className="cv-accord"><input type="checkbox" checked={v.photos} onChange={(e) => maj("photos", e.target.checked)} /><span>Je vous envoie photos et textes par WhatsApp</span></label>}
+                </fieldset>
                 <div className="cv-duo">
                   <label>Votre nom
                     <input className="cv-champ" value={v.nom} onChange={(e) => maj("nom", e.target.value)} autoComplete="name" id="cv-champ-nom" data-testid="cartes-nom" aria-invalid={!!err.nom} />
@@ -191,7 +189,7 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
                 {err.accord && <span className="cv-err" role="alert">{err.accord}</span>}
                 {erreur && <p role="alert" className="cv-err" data-testid="cartes-erreur">{erreur}</p>}
                 <button type="submit" disabled={etat === "envoi"} aria-busy={etat === "envoi"} className="s-btn s-btn-plein cv-bouton" data-testid="cartes-envoyer">
-                  {etat === "envoi" ? "Envoi en cours…" : `Envoyer ma demande · ${prixNombre(o)} DH`}
+                  {etat === "envoi" ? "Envoi en cours…" : `Envoyer ma demande · ${prix} DH`}
                 </button>
                 <ul className="cv-petit">
                   <li>Aucun paiement maintenant.</li>

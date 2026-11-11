@@ -168,7 +168,22 @@ const FILMS_INTERACTIVE = ["v-porte-blanche", "v-alhambra", "v-lakeside", "v-gar
 const PRESTIGE_750 = ["v-minuit", "v-neige", "v-oliveto", "v-azure"];
 /** Classique : animations dessinées · Interactive : films partenaires · Prestige : nos films photoréalistes (650 DH, 750 DH pour les paysages en mouvement de caméra). */
 export const formuleDe = (o: OuvertureDef): Formule => !o.video ? "classique" : FILMS_INTERACTIVE.includes(o.id) ? "interactive" : "prestige";
-export const prixDe = (o: OuvertureDef): string => { const f = formuleDe(o); return f === "classique" ? "250 DH" : f === "interactive" ? "450 DH" : PRESTIGE_750.includes(o.id) ? "750 DH" : "650 DH"; };
+/** Tarif boutique : une carte à 250 DH (350 DH pour les paysages en mouvement de caméra), puis chaque option cochée à 50 DH. */
+export const PRIX_CARTE = 250;
+export const PRIX_OPTION = 50;
+export const prixDe = (o: OuvertureDef): string => `${PRIX_CARTE + (PRESTIGE_750.includes(o.id) ? 100 : 0)} DH`;
+export interface OptionCarte { id: string; nom: string; texte: string }
+export const OPTIONS_CARTE: OptionCarte[] = [
+  { id: "compte", nom: "Compte à rebours", texte: "Les jours, heures et minutes avant la fête." },
+  { id: "coeur", nom: "Cœur à gratter", texte: "Vos invités grattent pour découvrir la date." },
+  { id: "maps", nom: "Plan Google Maps", texte: "Un bouton qui ouvre l'itinéraire vers le lieu." },
+  { id: "programme", nom: "Programme de la journée", texte: "Les horaires de chaque moment." },
+  { id: "rsvp", nom: "Confirmation de présence", texte: "Vos invités répondent d'un geste, vous suivez les réponses." },
+  { id: "livre", nom: "Livre d'or", texte: "Vos invités laissent leurs vœux." },
+  { id: "musique", nom: "Musique", texte: "Une ambiance sonore à l'ouverture." },
+  { id: "histoire", nom: "Notre histoire", texte: "Quelques lignes et photos sur votre histoire." },
+  { id: "prenom", nom: "Invitation au prénom de chaque invité", texte: "Chaque invité reçoit sa carte personnalisée." },
+];
 /** Boutique : prix en nombre, options à la carte (grille tarifaire de la formule) et total de la commande. */
 export const prixNombre = (o: OuvertureDef): number => parseInt(prixDe(o), 10);
 export interface Extra { id: string; nom: string; prix: number; texte: string; sauf?: Formule[] }
@@ -178,7 +193,7 @@ export const EXTRAS: Extra[] = [
 /** Cartes vendues en boutique : seulement les créations photoréalistes (films et décors illustrés finement), pas les portes dessinées. */
 export const ouverturesBoutique = (): OuvertureDef[] => OUVERTURES.filter((o) => o.video || o.carte);
 export const extrasPour = (o: OuvertureDef): Extra[] => EXTRAS.filter((e) => !e.sauf?.includes(formuleDe(o)));
-export const totalCommande = (o: OuvertureDef, ids: string[]): number => prixNombre(o) + extrasPour(o).filter((e) => ids.includes(e.id)).reduce((t, e) => t + e.prix, 0);
+export const totalCommande = (o: OuvertureDef, ids: string[]): number => prixNombre(o) + extrasPour(o).filter((e) => ids.includes(e.id)).reduce((t, e) => t + e.prix, 0) + OPTIONS_CARTE.filter((x) => ids.includes(x.id)).length * PRIX_OPTION;
 export const STYLES_OUVERTURE = ["Marocain", "Luxe", "Floral", "Moderne"];
 const LICENCE_HEAVENT = "Création Heavent";
 const LICENCE_PARTENAIRE = "Ressource tierce, utilisée avec l'accord de son propriétaire";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ouverturesBoutique, FORMULES, formuleDe, prixDe, type Formule, type OuvertureDef } from "@/lib/invitation";
+import { ouverturesBoutique, STYLES_OUVERTURE, PRIX_OPTION, prixDe, type OuvertureDef } from "@/lib/invitation";
 import FilmBoucle from "./FilmBoucle";
 
 /** Carte sans film (portes en images) : les deux battants s'ouvrent en boucle sur la carte. */
@@ -15,11 +15,10 @@ function Portes({ o }: { o: OuvertureDef }) {
 }
 
 function Tuile({ o, onOuvrir }: { o: OuvertureDef; onOuvrir: (id: string) => void }) {
-  const f = FORMULES.find((x) => x.id === formuleDe(o));
   return (
     <li className="cv-tuile">
       <button type="button" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); const st = document.documentElement.style; st.setProperty("--fiche-x", `${r.left + r.width / 2}px`); st.setProperty("--fiche-y", `${r.top + r.height / 2}px`); onOuvrir(o.id); }}
-        data-testid={`ouverture-${o.id}`} aria-label={`${o.nom}, formule ${f?.nom}, ${prixDe(o)}. Voir la carte`}>
+        data-testid={`ouverture-${o.id}`} aria-label={`${o.nom}, ${prixDe(o)}. Voir la carte`}>
         <span className="cv-cadre" aria-hidden="true">
           {o.video ? <FilmBoucle src={o.video} poster={o.poster} className="cv-media" zone={o.carte ? { x: o.carte.x, y: o.carte.y, l: o.carte.l, h: o.carte.h, apres: o.carte.stop ?? o.duree / 1000 * 0.55 } : undefined} /> : <Portes o={o} />}
         </span>
@@ -36,16 +35,15 @@ function Tuile({ o, onOuvrir }: { o: OuvertureDef; onOuvrir: (id: string) => voi
 /** Catalogue : une seule grille, filtrée par formule. Chaque carte se joue en boucle sous les yeux du client. */
 export default function BoutiqueCartes({ onOuvrir }: { onOuvrir: (id: string) => void }) {
   const cartes = ouverturesBoutique();
-  const [formule, setFormule] = useState<Formule | null>(null);
-  const liste = formule ? cartes.filter((o) => formuleDe(o) === formule) : cartes;
-  const sel = FORMULES.find((f) => f.id === formule);
+  const [style, setStyle] = useState<string | null>(null);
+  const liste = style ? cartes.filter((o) => o.styles.includes(style)) : cartes;
   return (
     <div className="cv-boutique" data-testid="boutique">
-      <div className="cv-onglets" role="group" aria-label="Filtrer par formule">
-        <button type="button" aria-pressed={!formule} onClick={() => setFormule(null)} data-testid="formule-toutes">Toutes</button>
-        {FORMULES.map((f) => cartes.some((o) => formuleDe(o) === f.id) ? <button key={f.id} type="button" aria-pressed={formule === f.id} onClick={() => setFormule(formule === f.id ? null : f.id)} data-testid={`formule-${f.id}`}>{f.nom}<span>{f.id === "prestige" ? "dès 650 DH" : f.prix}</span></button> : null)}
+      <div className="cv-onglets" role="group" aria-label="Filtrer par style">
+        <button type="button" aria-pressed={!style} onClick={() => setStyle(null)} data-testid="formule-toutes">Toutes</button>
+        {STYLES_OUVERTURE.map((st) => cartes.some((o) => o.styles.includes(st)) ? <button key={st} type="button" aria-pressed={style === st} onClick={() => setStyle(style === st ? null : st)} data-testid={`style-${st}`}>{st}</button> : null)}
       </div>
-      <p className="cv-formule-texte" aria-live="polite">{sel ? sel.texte : "Chaque carte se joue en boucle : choisissez celle qui vous ressemble."}</p>
+      <p className="cv-formule-texte" aria-live="polite">Chaque carte se joue en boucle : choisissez celle qui vous ressemble. Les options (compte à rebours, cœur à gratter, plan…) s'ajoutent à {PRIX_OPTION} DH chacune.</p>
       <ul className="cv-grille" aria-label="Cartes d'invitation">
         {liste.map((o) => <Tuile key={o.id} o={o} onOuvrir={onOuvrir} />)}
       </ul>
