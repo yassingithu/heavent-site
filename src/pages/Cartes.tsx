@@ -85,12 +85,12 @@ export default function Cartes() {
             {etat === "ok" ? (
               <div className="rounded-2xl border border-[#DCCBA6] bg-white p-5 space-y-3" role="status" data-testid="cartes-merci">
                 <p className="flex items-center gap-2 font-serif text-xl"><CheckCircle2 className="h-6 w-6 text-[#8C6D22]" aria-hidden="true" /> Demande bien reçue</p>
-                <p className="text-sm text-[#5E554A]">Merci {f.nom.split(" ")[0]}. Nous préparons votre carte et revenons vers vous très vite, avec un aperçu à partager et le tarif.</p>
+                <p className="text-sm text-[#5E554A]">Merci {f.nom.split(" ")[0]}. Notre équipe prépare votre carte : vous recevez un aperçu à partager et le tarif sous 24 h ouvrées.</p>
                 <Bouton href={WHATSAPP + encodeURIComponent(`Bonjour Heavent, je viens d'envoyer ma demande de carte d'invitation (${ev.nom}). Je m'appelle ${f.nom}.`)} externe variante="filet">Nous écrire sur WhatsApp</Bouton>
               </div>
             ) : (
               <form onSubmit={envoyer} className="space-y-3" noValidate>
-                <p className="text-sm text-[#5E554A]">Aucun paiement maintenant. Nous vous répondons avec un aperçu de votre carte et le tarif.</p>
+                <p className="text-sm text-[#5E554A]">Aucun paiement maintenant. Notre équipe vous répond sous 24 h ouvrées avec un aperçu de votre carte et le tarif.</p>
                 <label className="block text-sm">Votre nom
                   <input className={champ} value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} autoComplete="name" required data-testid="cartes-nom" />
                 </label>
