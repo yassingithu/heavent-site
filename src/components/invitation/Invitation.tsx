@@ -277,9 +277,13 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const terminerRef = useRef(terminer); terminerRef.current = terminer;
   useEffect(() => {
     if (phase !== "ouverture") return;
-    const id = window.setTimeout(() => terminerRef.current(), sansAnimation() ? 0 : ouv.duree + (ouv.video ? 3000 : 0));
-    return () => window.clearTimeout(id);
-  }, [phase, ouv.duree, ouv.video]);
+    const court = reglages?.fermeture === "ruban" ? 1850 : reglages?.fermeture === "cire-brisee" ? 2100 : Infinity;
+    const id = window.setTimeout(() => terminerRef.current(), sansAnimation() ? 0 : Math.min(ouv.duree, court) + (ouv.video ? 3000 : 0));
+    const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const surChangement = () => { if (mq?.matches) terminerRef.current(); };
+    mq?.addEventListener?.("change", surChangement);
+    return () => { window.clearTimeout(id); mq?.removeEventListener?.("change", surChangement); };
+  }, [phase, ouv.duree, ouv.video, reglages?.fermeture]);
   /* La carte écrite sur le film : l'image finale glisse et s'ajuste sur la carte (FLIP) pendant qu'elle s'estompe. */
   useEffect(() => { if (phase === "ouverte" && pleinePage && !sansAnimation()) window.setTimeout(() => nomsRef.current?.focus({ preventScroll: true }), 50); }, [phase, pleinePage]);
   useLayoutEffect(() => {

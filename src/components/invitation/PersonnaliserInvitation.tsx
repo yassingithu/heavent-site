@@ -38,6 +38,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
   const rev = revelationDe(valeur.revelation);
   const choisirOuverture = (id: string) => { onChange({ ...valeur, ouverture: id }); setRejouer((n) => n + 1); };
   const choisirRevelation = (id: string) => { onChange({ ...valeur, revelation: id }); setRejouer((n) => n + 1); };
+  const [erreurLogo, setErreurLogo] = useState<string | null>(null);
   const choisirModele = (id: string) => onChange({ ...valeur, modele: id });
   const appliquerPalette = (c: Couleurs) => onChange({ ...valeur, couleurs: { ...c } });
   const changer = (k: keyof Couleurs, v: string) => onChange({ ...valeur, couleurs: { ...(valeur.couleurs ?? {}), [k]: v } });
@@ -47,7 +48,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]" data-testid="personnaliser-invitation">
-      <div className="space-y-6 min-w-0">
+      <div className="space-y-6 min-w-0 pb-20 lg:pb-0">
         <section>
           <h3 className="font-serif text-xl mb-1">{num()}. Comment l'invitation s'ouvre</h3>
           <p className="text-sm text-[#5E554A] mb-3">Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu.</p>
@@ -178,7 +179,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
               <p className="text-xs text-[#6B6154]">Nous dessinons le maillot aux couleurs de l'équipe, sans écusson. Vous pouvez ajouter celui de votre choix ci-dessous.</p>
               <div className="flex flex-wrap items-center gap-2">
                 <label className="inline-flex items-center gap-2 rounded-full border border-[#DCCBA6] bg-white px-4 min-h-11 text-sm cursor-pointer">
-                  Ajouter un écusson ou une photo
+                  Ajouter l'écusson (logo de l'équipe)
                   <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" data-testid="club-logo" onChange={(e) => {
                     const f = e.target.files?.[0]; if (!f) return;
                     const img = new Image(); const url = URL.createObjectURL(f);
@@ -186,14 +187,16 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
                       const c = document.createElement("canvas"); const k = 160 / Math.max(img.width, img.height, 1);
                       c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
                       c.getContext("2d")?.drawImage(img, 0, 0, c.width, c.height);
-                      URL.revokeObjectURL(url); onChange({ ...valeur, club_logo: c.toDataURL("image/webp", 0.85) });
+                      URL.revokeObjectURL(url); setErreurLogo(null); onChange({ ...valeur, club_logo: c.toDataURL("image/webp", 0.85) });
                     };
-                    img.onerror = () => URL.revokeObjectURL(url);
+                    img.onerror = () => { URL.revokeObjectURL(url); setErreurLogo("Image illisible. Utilisez une photo JPG, PNG ou WebP (les photos HEIC d'iPhone ne passent pas : faites une capture d'écran)."); };
                     img.src = url; e.target.value = "";
                   }} />
                 </label>
+                {valeur.club_logo && <img src={valeur.club_logo} alt="Écusson ajouté" className="h-11 w-11 rounded-lg border border-[#E3D6BA] object-contain bg-white" />}
                 {valeur.club_logo && <button type="button" className="text-sm underline min-h-11" onClick={() => onChange({ ...valeur, club_logo: undefined })}>Retirer</button>}
               </div>
+              {erreurLogo && <p role="alert" className="text-sm text-[#9B2C2C]">{erreurLogo}</p>}
               <p className="text-xs text-[#6B6154]">L'image envoyée reste celle du client : n'utilisez que des visuels dont vous avez le droit de vous servir.</p>
             </div>
           )}
@@ -317,6 +320,9 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </div>
         <Invitation noms={noms || "Prénom & Prénom"} date={date} lieu={lieu} message={message} reglages={valeur} langue={langue} pleinePage={false} rejouer={rejouer} ouverte={rejouer === 0} autoOuvrir />
       </aside>
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#E3D6BA] bg-[#FBF8F1]/95 px-4 py-2 lg:hidden" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom, 0px))" }}>
+        <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#141414] text-[#F7F3E8] min-h-12 text-sm font-medium" data-testid="voir-apercu-barre"><Play className="h-4 w-4" /> Voir l'aperçu</button>
+      </div>
     </div>
   );
 }

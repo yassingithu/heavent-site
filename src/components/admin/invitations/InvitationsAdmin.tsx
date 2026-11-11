@@ -8,6 +8,7 @@ import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvita
 import type { InvitationReglages } from "@/lib/invitation";
 import ChoixOccasion from "@/components/invitation/ChoixOccasion";
 import { evenementDe, type TypeEvenement } from "@/lib/evenements";
+import { decorsPour } from "@/lib/decors";
 
 interface Apercu { id: string; jeton: string; noms: string; date_evenement: string | null; lieu: string | null; message: string | null; invitation: InvitationReglages; prospect: string | null; expire_le: string; created_at: string; mode: "test" | "final"; avec_reponse: boolean; jeton_liste?: string | null; notif_email?: string | null }
 interface Confirme { apercu_id: string; nom: string; reponse: "oui" | "non"; nb_confirmes: number; accompagnants: string[]; precisions?: string | null; created_at: string }
@@ -140,7 +141,7 @@ export default function InvitationsAdmin() {
     const avant = evenementDe(edit.invitation?.evenement), d = evenementDe(id);
     const prog = edit.invitation.programme ?? [];
     const memeQuePreset = JSON.stringify(prog) === JSON.stringify(avant.programme);
-    setEdit({ ...edit, invitation: { ...edit.invitation, evenement: id === "mariage" ? undefined : id, modele: d.modele, ouverture: d.ouverture, revelation: "aucune", couleurs: {}, questions: [], programme: prog.length && !memeQuePreset ? prog : d.programme } });
+    setEdit({ ...edit, invitation: { ...edit.invitation, evenement: id === "mariage" ? undefined : id, modele: d.modele, ouverture: d.ouverture, revelation: "aucune", couleurs: {}, questions: [], ...(decorsPour(id).some((x) => x.id === edit.invitation.decor) ? {} : { decor: undefined, club: undefined, club_logo: undefined }), programme: prog.length && !memeQuePreset ? prog : d.programme } });
   };
   const choisirLieu = (nom: string) => {
     const l = lieux.find((x) => x.nom === nom);

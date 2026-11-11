@@ -604,11 +604,11 @@
 /* brisé : deux moitiés découpées en dents irrégulières dans la même photo ; elles s'écartent puis tombent */
 .inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] .inv-env-cachet:not(.inv-env-cachet-d):not(.inv-env-cachet-g) { animation: none; opacity: 0; }
 .inv-enveloppe[data-fermeture="cire-brisee"] :is(.inv-env-cachet-g, .inv-env-cachet-d) { display: none !important; }
-.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] :is(.inv-env-cachet-g, .inv-env-cachet-d) { display: grid !important; opacity: 1; animation: inv-cire-g .8s cubic-bezier(.35, 0, .7, 1) both; transform-origin: 60% 80%; }
+.inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] :is(.inv-env-cachet-g, .inv-env-cachet-d) { display: grid !important; opacity: 1; animation: inv-cire-g .6s cubic-bezier(.35, 0, .7, 1) both; transform-origin: 60% 80%; }
 .inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] .inv-env-cachet-g { clip-path: polygon(0 0, 54% 0, 49% 14%, 55% 29%, 48% 44%, 56% 58%, 49% 73%, 55% 88%, 51% 100%, 0 100%); }
 .inv[data-phase="ouverture"] .inv-enveloppe[data-fermeture="cire-brisee"] .inv-env-cachet-d { clip-path: polygon(54% 0, 100% 0, 100% 100%, 51% 100%, 55% 88%, 49% 73%, 56% 58%, 48% 44%, 55% 29%, 49% 14%); transform-origin: 40% 80%; animation-name: inv-cire-d; }
-@keyframes inv-cire-g { 0% { transform: rotate(-6deg); opacity: 1; } 22% { transform: rotate(-10deg) translateX(-5px); } 100% { transform: rotate(-42deg) translate(-52px, 150px); opacity: 0; } }
-@keyframes inv-cire-d { 0% { transform: rotate(-6deg); opacity: 1; } 22% { transform: rotate(-2deg) translateX(5px); } 100% { transform: rotate(34deg) translate(52px, 160px); opacity: 0; } }
+@keyframes inv-cire-g { 0% { transform: rotate(-6deg); opacity: 1; } 22% { transform: rotate(-10deg) translateX(-5px); } 100% { transform: rotate(-30deg) translate(-40px, 70px); opacity: 0; } }
+@keyframes inv-cire-d { 0% { transform: rotate(-6deg); opacity: 1; } 22% { transform: rotate(-2deg) translateX(5px); } 100% { transform: rotate(26deg) translate(40px, 78px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .inv-env-cachet, .inv-env-cachet-g, .inv-env-cachet-d { animation: none !important; } }
 
 /* ── Matière réelle de l'enveloppe : texture photographiée (relief du papier) posée sur la couleur du modèle ── */
@@ -618,3 +618,13 @@
 .inv-enveloppe[data-papier="gaufre"] .inv-env-rabat i::after { background-size: 160% 100%; }
 .inv-enveloppe[data-doublure="sauge"] .inv-env-rabat b { background: url("../assets/photos/doublure-sauge.webp") center / 230px auto repeat; }
 .inv-enveloppe[data-doublure="sauge"] .inv-env-rabat b::before { display: none; }
+
+/* Relecture designer : or mat, langues discrètes */
+.inv-enveloppe[data-fermeture="cire-or"] .inv-env-cachet,
+.inv-enveloppe[data-fermeture="cire-or"] .inv-env-cachet-g,
+.inv-enveloppe[data-fermeture="cire-or"] .inv-env-cachet-d { filter: saturate(.65) sepia(.15) brightness(.95) drop-shadow(0 5px 6px rgba(0, 0, 0, .42)); }
+.inv-langues { gap: 0; align-items: center; }
+.inv-langues button, .inv-page:has(.inv-scene) .inv-langues button { background: transparent; border-radius: 0; padding: 6px 12px; opacity: .65; letter-spacing: .08em; position: relative; }
+.inv-langues button + button::before { content: "·"; position: absolute; left: -2px; opacity: .6; }
+.inv-langues button[aria-pressed="true"], .inv-page:has(.inv-scene) .inv-langues button[aria-pressed="true"] { background: transparent; color: var(--inv-sur-fond); opacity: 1; box-shadow: inset 0 -1px 0 #A8933F; }
+.inv-page:has(.inv-scene) .inv-langues button[aria-pressed="true"] { color: var(--inv-sur-env); }

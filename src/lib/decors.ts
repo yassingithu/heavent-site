@@ -11,7 +11,6 @@ export const DECORS: DecorDef[] = [
   { id: "olivier", nom: "Branche d'olivier", pour: ["baby-shower", "naissance", "bapteme", "fiancailles", "mariage", "mariage-civil", "anniversaire", "anniversaire-enfant", "diplome"] },
   { id: "bougies", nom: "Bougies", pour: ["anniversaire", "anniversaire-enfant"] },
   { id: "maillot", nom: "Maillot de foot", pour: ["anniversaire-enfant"] },
-  { id: "ballon", nom: "Ballon de foot", pour: ["anniversaire-enfant"] },
 ];
 export const decorsPour = (ev?: TypeEvenement) => DECORS.filter((d) => !d.pour || d.pour.includes(ev ?? "mariage"));
 export const decorDe = (id?: string) => DECORS.find((d) => d.id === id) ?? DECORS[0];
