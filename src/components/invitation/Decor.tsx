@@ -24,7 +24,7 @@ function Maillot({ club, logo, prenom }: { club?: string; logo?: string; prenom?
       {logo
         ? <image href={logo} x="123" y="66" width="54" height="54" preserveAspectRatio="xMidYMid meet" />
         : <text x="150" y="108" textAnchor="middle" fontSize="40" fill={c.texte} opacity=".8" fontFamily="Gloock, Georgia, serif">{(prenom ?? "H").slice(0, 1).toUpperCase()}</text>}
-      {prenom && <text x="150" y="168" textAnchor="middle" fontSize={prenom.length > 12 ? 14 : prenom.length > 9 ? 19 : prenom.length > 6 ? 25 : 30} fontWeight="700" fill={c.texte} fontFamily="Gloock, Georgia, serif" letterSpacing="2">{prenom.toUpperCase().slice(0, 16)}</text>}
+      {prenom && <text x="150" y="168" textAnchor="middle" fontSize={prenom.length > 12 ? 14 : prenom.length > 9 ? 19 : prenom.length > 6 ? 25 : 30} fontWeight="700" fill={c.texte} fontFamily="Gloock, Georgia, serif" letterSpacing="2" textLength={prenom.length > 9 ? 120 : undefined} lengthAdjust="spacingAndGlyphs">{prenom.toUpperCase().slice(0, 16)}</text>}
     </svg>
   );
 }

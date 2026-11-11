@@ -336,7 +336,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     </>);
     unitesCarte.push({ cle: "accueil", avecSuivante: true, rendre: accueil });
     unitesCarte.push({ cle: "noms", avecSuivante: true, rendre: (m) => (
-      <h1 {...(m ? {} : { ref: nomsRef, tabIndex: -1, "data-testid": "rsvp-noms" })} className="inv-noms" aria-label={nomsA} style={{ "--nl": Math.max(6, ...lignes.map((l) => l.length)) } as CSSProperties}>
+      <h1 {...(m ? {} : { ref: nomsRef, tabIndex: -1, "data-testid": "rsvp-noms" })} className="inv-noms" aria-label={nomsA} style={{ "--nl": Math.max(6, ...lignes.map((l) => l.length * (l.length > 12 ? 1.3 : 1))) } as CSSProperties}>
         {lignes.length === 2 ? (<><Lettres texte={lignes[0]} base={0} ar={ar} /><span className="inv-et" aria-hidden="true">{ar ? "و" : "&"}</span><Lettres texte={lignes[1]} base={lignes[0].length + 2} ar={ar} /></>) : <Lettres texte={nomsA} base={0} ar={ar} />}
       </h1>) });
     unitesCarte.push({ cle: "trait", avecSuivante: true, rendre: () => <Trait /> });

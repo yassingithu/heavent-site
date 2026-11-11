@@ -29,7 +29,7 @@ export default function ChoixOccasion({ valeur, onChoisir }: Props) {
               {choisi && evenements.length > 1 && (
                 <div className="flex flex-wrap gap-2 pb-3 pl-4" role="group" aria-label="Précision">
                   {evenements.map((e) => (
-                    <button key={e.id} type="button" onClick={() => onChoisir(e.id)} aria-pressed={actuel.id === e.id} data-testid={`occasion-${e.id}`}
+                    <button key={e.id} type="button" onClick={() => onChoisir(e.id)} aria-pressed={actuel.id === e.id} data-testid={`occasion-precis-${e.id}`}
                       className={`rounded-full border px-4 min-h-10 text-sm ${actuel.id === e.id ? "border-[#141414] bg-[#141414] text-white" : "border-[#E3D6BA] bg-white hover:border-[#C8B560]"}`}>{e.sous}</button>
                   ))}
                 </div>

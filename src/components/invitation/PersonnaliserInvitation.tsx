@@ -48,7 +48,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]" data-testid="personnaliser-invitation">
-      <div className="space-y-6 min-w-0 pb-20 lg:pb-0">
+      <div className="space-y-6 min-w-0">
         <section>
           <h3 className="font-serif text-xl mb-1">{num()}. Comment l'invitation s'ouvre</h3>
           <p className="text-sm text-[#5E554A] mb-3">Le premier geste de vos invités. Touchez un choix pour le revoir dans l'aperçu.</p>
@@ -165,7 +165,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           <div className="flex flex-wrap gap-2" role="group" aria-label="Décor">
             {decorsPour(ev.id).map((d) => (
               <button key={d.id} type="button" aria-pressed={(valeur.decor ?? "aucun") === d.id} data-testid={`decor-${d.id}`}
-                onClick={() => onChange({ ...valeur, decor: d.id === "aucun" ? undefined : d.id })}
+                onClick={() => { setErreurLogo(null); onChange({ ...valeur, decor: d.id === "aucun" ? undefined : d.id, ...(d.id === "maillot" ? {} : { club: undefined, club_logo: undefined }) }); }}
                 className={`rounded-full border px-4 min-h-11 text-sm ${(valeur.decor ?? "aucun") === d.id ? "border-[#141414] bg-[#141414] text-white" : "border-[#E3D6BA] bg-white hover:border-[#C8B560]"}`}>{d.nom}</button>
             ))}
           </div>
@@ -320,7 +320,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </div>
         <Invitation noms={noms || "Prénom & Prénom"} date={date} lieu={lieu} message={message} reglages={valeur} langue={langue} pleinePage={false} rejouer={rejouer} ouverte={rejouer === 0} autoOuvrir />
       </aside>
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#E3D6BA] bg-[#FBF8F1]/95 px-4 py-2 lg:hidden" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom, 0px))" }}>
+      <div className="sticky bottom-0 z-30 -mx-1 col-span-full border-t border-[#E3D6BA] bg-[#FBF8F1]/95 px-4 py-2 lg:hidden" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom, 0px))" }}>
         <button type="button" onClick={() => { setRejouer((n) => n + 1); apercuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#141414] text-[#F7F3E8] min-h-12 text-sm font-medium" data-testid="voir-apercu-barre"><Play className="h-4 w-4" /> Voir l'aperçu</button>
       </div>
     </div>
