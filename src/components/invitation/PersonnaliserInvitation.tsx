@@ -6,6 +6,7 @@ import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import { RotateCcw, Play } from "lucide-react";
 import Invitation from "./Invitation";
 import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
+import { decorsPour, CLUBS } from "@/lib/decors";
 import { POLICES, CHAMPS_COULEUR, OUVERTURES, FERMETURES, STYLES_OUVERTURE, modelesPour, palettesPour, revelationsPour, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
 import { evenementDe, questionDe } from "@/lib/evenements";
 
@@ -131,6 +132,49 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
             ))}
           </div>
         </section>
+
+        {decorsPour(ev.id).length > 1 && (
+        <section data-testid="section-decor">
+          <h3 className="font-serif text-xl mb-1">{num()}. Le décor</h3>
+          <p className="text-sm text-[#5E554A] mb-3">Le dessin en haut de la carte. Il se combine avec n'importe quel modèle, couleur et ouverture.</p>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Décor">
+            {decorsPour(ev.id).map((d) => (
+              <button key={d.id} type="button" aria-pressed={(valeur.decor ?? "aucun") === d.id} data-testid={`decor-${d.id}`}
+                onClick={() => onChange({ ...valeur, decor: d.id === "aucun" ? undefined : d.id })}
+                className={`rounded-full border px-4 min-h-11 text-sm ${(valeur.decor ?? "aucun") === d.id ? "border-[#141414] bg-[#141414] text-white" : "border-[#E3D6BA] bg-white hover:border-[#C8B560]"}`}>{d.nom}</button>
+            ))}
+          </div>
+          {valeur.decor === "maillot" && (
+            <div className="mt-4 space-y-3" data-testid="choix-club">
+              <label className="block text-sm font-medium">Équipe
+                <select className="mt-1 block w-full min-h-11 rounded-xl border border-[#E3D6BA] bg-white px-3" value={valeur.club ?? "libre"} onChange={(e) => onChange({ ...valeur, club: e.target.value === "libre" ? undefined : e.target.value })} data-testid="club-select">
+                  {CLUBS.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}
+                </select>
+              </label>
+              <p className="text-xs text-[#6B6154]">Nous dessinons le maillot aux couleurs de l'équipe, sans écusson. Vous pouvez ajouter celui de votre choix ci-dessous.</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex items-center gap-2 rounded-full border border-[#DCCBA6] bg-white px-4 min-h-11 text-sm cursor-pointer">
+                  Ajouter un écusson ou une photo
+                  <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" data-testid="club-logo" onChange={(e) => {
+                    const f = e.target.files?.[0]; if (!f) return;
+                    const img = new Image(); const url = URL.createObjectURL(f);
+                    img.onload = () => {
+                      const c = document.createElement("canvas"); const k = 160 / Math.max(img.width, img.height, 1);
+                      c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+                      c.getContext("2d")?.drawImage(img, 0, 0, c.width, c.height);
+                      URL.revokeObjectURL(url); onChange({ ...valeur, club_logo: c.toDataURL("image/webp", 0.85) });
+                    };
+                    img.onerror = () => URL.revokeObjectURL(url);
+                    img.src = url; e.target.value = "";
+                  }} />
+                </label>
+                {valeur.club_logo && <button type="button" className="text-sm underline min-h-11" onClick={() => onChange({ ...valeur, club_logo: undefined })}>Retirer</button>}
+              </div>
+              <p className="text-xs text-[#6B6154]">L'image envoyée reste celle du client : n'utilisez que des visuels dont vous avez le droit de vous servir.</p>
+            </div>
+          )}
+        </section>
+        )}
 
         <section>
           <div className="flex items-center justify-between gap-2 mb-1">

@@ -4,6 +4,7 @@ import { MapPin } from "lucide-react";
 import Ouverture from "./Ouverture";
 import { chargerOuverturesPerso } from "@/lib/ouverturesPerso";
 import Revelation from "./Revelation";
+import Decor from "./Decor";
 import PagesCarte, { type UnitePage } from "./PagesCarte";
 import { morceauxDeTexte, phrases } from "@/lib/pagination";
 import { couleursDe, imagesOuverture, policeDe, initiales, lienMaps, modeleDe, ouvertureDe, revelationDe, surCouleur, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
@@ -397,7 +398,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
           style={ouv.carte ? ({ "--film-r": ouv.carte.r ?? 180, "--film-fin": `url(${ouv.carte.fin})`, "--film-x": ouv.carte.x, "--film-y": ouv.carte.y, "--film-l": ouv.carte.l, "--film-h": ouv.carte.h, "--film-fond": ouv.carte.fond } as CSSProperties) : undefined}>
           <div className="inv-etincelles" aria-hidden="true">{ETINCELLES.map((e, i) => <span key={i} style={{ left: `${e.x}%`, animationDelay: `${e.d}ms`, animationDuration: `${e.t + 900}ms`, width: e.s, height: e.s }} />)}</div>
           <div className="inv-motif" aria-hidden="true" />
-          <div className="inv-ornement"><Ornement type={ornement} /></div>
+          <div className="inv-ornement">{reglages?.decor && reglages.decor !== "aucun" ? <Decor id={reglages.decor} club={reglages.club} logo={reglages.club_logo} prenom={lignes[0]} /> : <Ornement type={ornement} />}</div>
           {ouv.carte ? (
             <div className="inv-film-zone"><PagesCarte unites={unitesCarte} ar={ar} textes={t} repondre={repondreCarte}
               signature={[langue, noms, date, lieu, heure, messageA, invite, reglages?.noms_ar, reglages?.lieu_ar, !!carte].join("¤")} /></div>

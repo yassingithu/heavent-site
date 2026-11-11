@@ -578,3 +578,12 @@
 @keyframes inv-brise-g { 0% { transform: rotate(-9deg); opacity: 1; } 30% { transform: rotate(-9deg) translateX(-2px); } 100% { transform: rotate(-26deg) translate(-38px, 30px); opacity: 0; } }
 @keyframes inv-brise-d { 0% { transform: rotate(-9deg); opacity: 1; } 30% { transform: rotate(-9deg) translateX(2px); } 100% { transform: rotate(8deg) translate(38px, 34px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .inv-env-ruban, .inv-env-cachet, .inv-env-cachet-d { transition: none !important; animation: none !important; } }
+
+/* ── Décor de la carte ── */
+.inv-decor { width: min(46vw, 190px); max-height: 210px; margin: 0 auto; display: grid; place-items: center; }
+.inv-decor svg { width: 100%; height: auto; max-height: 210px; display: block; }
+.inv-decor-maillot, .inv-decor-ballon { width: min(52vw, 220px); filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .25)); }
+.inv-decor[data-decor="lanterne"] { --lanterne-nuit: #17110a; --lanterne-or: var(--inv-accent); width: min(34vw, 130px); }
+.inv-decor[data-decor="khatam"], .inv-decor[data-decor="croissant-etoiles"] { color: var(--inv-accent); width: min(40vw, 160px); }
+@media (prefers-reduced-motion: no-preference) { .inv-decor { animation: inv-decor-flotte 6s ease-in-out infinite; } }
+@keyframes inv-decor-flotte { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
