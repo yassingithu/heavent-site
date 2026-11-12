@@ -7,7 +7,7 @@ export interface TableMariage { id: string; nom: string; places: number }
 export interface Invite {
   id: string; jeton: string; nom: string; cote: "mariee" | "marie" | "commun"; nb_prevus: number;
   reponse: "attente" | "oui" | "non"; nb_confirmes: number | null; remarque: string | null; table_id: string | null; repondu_le: string | null;
-  accompagnants?: string[]; telephone?: string | null; liste_statut?: "valide" | "a_valider" | "refuse";
+  accompagnants?: string[]; telephone?: string | null; carte_envoyee_le?: string | null; liste_statut?: "valide" | "a_valider" | "refuse";
 }
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
@@ -106,6 +106,13 @@ export const lireListeInvites = (texte: string): { lignes: LigneImport[]; ignore
       }
       if (nomEnCours) cases.push(nomEnCours);
     }
+    // « Zineb 0677777777 4 » sans séparateur : on isole le numéro (et les places) en fin de ligne
+    if (cases.length === 1) { const m = cases[0].match(/^(.*?\D)\s+(\+?\d[\d\s().-]{6,}\d)(?:\s+(\d{1,2}))?$/); if (m) {
+        let tel = m[2].trim(); let places = m[3];
+        const dernier = tel.match(/^(.*\d)\s+(\d{1,2})$/); // « 0677777777 4 » : le dernier groupe est un nombre de places si ce qui précède est un numéro complet
+        if (!places && dernier && dernier[1].replace(/\D/g, "").length >= (dernier[1].trim().startsWith("+") ? 11 : 10)) { tel = dernier[1]; places = dernier[2]; }
+        cases = [m[1].trim(), tel, ...(places ? [places] : [])];
+      } }
     const tel = cases.find((c) => /^\+?[\d\s().-]{8,}$/.test(c) && c.replace(/\D/g, "").length >= 8) ?? null;
     const places = cases.find((c) => c !== tel && /^\d{1,2}$/.test(c));
     const nom = cases.find((c) => c !== tel && c !== places && /[A-Za-zÀ-ÿ\u0600-\u06FF]/.test(c));

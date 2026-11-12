@@ -33,7 +33,7 @@ const T = {
     photoIllisible: "A photo could not be read (unsupported format).", rien: "Add at least one photo or a note.",
   },
   ar: {
-    albumPlein: "اكتمل ألبوم الزفاف ولم يعد بالإمكان إضافة صور. شكراً لمشاركتكم!",
+    albumPlein: "اكتمل ألبوم الزفاف ولم يعد بالإمكان إضافة صور. شكراً لمشاركتكم! سيتوصل العروسان بكتابهما قريباً.",
     titre: "ذكريات حفل الزفاف", intro: (n: string) => `شاركوا أجمل صوركم من حفل زفاف ${n}. سيجدونها في كتاب تذكاري.`,
     avant: (d: string) => `ستفتح هذه الصفحة يوم الزفاف، ${d}. عودوا في ذلك اليوم مع صوركم.`,
     fermee: "شكراً! انتهت مشاركة الذكريات. سيتوصل العروسان قريباً بكتابهما التذكاري.",
@@ -199,12 +199,20 @@ export default function Souvenirs() {
     <div style={{ textAlign: "center", marginBottom: 20 }}>
       <p className="inv-titre-suite" style={{ marginBottom: 6 }}>{t.titre}</p>
       <p style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 38, lineHeight: 1.1, margin: "0 0 8px", color: "var(--inv-accent)" }}>{etat.noms}</p>
-      {etat.etat === "ouverte" && <p style={{ fontSize: 14, opacity: .85, margin: 0 }}>{t.intro(etat.noms)}</p>}
+      {etat.etat === "ouverte" && !etat.complet && <p style={{ fontSize: 14, opacity: .85, margin: 0 }}>{t.intro(etat.noms)}</p>}
     </div>
   );
 
   if (etat.etat === "avant") return coque(<>{entete}<p style={{ textAlign: "center" }} data-testid="souvenirs-avant">{t.avant(date)}</p></>);
   if (etat.etat === "fermee") return coque(<>{entete}<p style={{ textAlign: "center" }} data-testid="souvenirs-fermee">{t.fermee}</p></>);
+
+  if (etat.complet && fini === null) return coque(
+    <>{entete}
+      <div style={{ textAlign: "center", borderTop: "1px solid var(--inv-accent)", borderBottom: "1px solid var(--inv-accent)", padding: "16px 8px", margin: "8px 0" }} data-testid="souvenirs-plein">
+        <p style={{ fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", margin: "0 0 8px", color: "var(--inv-accent)" }}>{langue === "ar" ? "اكتمل الألبوم" : langue === "en" ? "Album complete" : "Album complet"}</p>
+        <p style={{ fontSize: 16, margin: 0 }}>{t.albumPlein}</p>
+      </div>
+    </>);
 
   if (fini !== null) return coque(
     <>{entete}

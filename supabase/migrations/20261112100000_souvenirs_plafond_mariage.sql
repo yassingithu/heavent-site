@@ -44,3 +44,5 @@ $$;
 alter table public.invites_mariage add column if not exists telephone text;
 
 -- invite_enregistrer : accepte aussi `telephone` (nettoyé, 20 caractères max). Voir la définition en base.
+
+-- invites_mariage.carte_envoyee_le + invite_enregistrer accepte 'carte_envoyee' (true/false). Voir la définition en base.

@@ -397,7 +397,7 @@ export async function contexte(navigateur, base, email, { mobile = false, agent 
           if (!d) return route.fulfill({ status: 400, json: { message: "Espace introuvable" } });
           const p = corps.p_invite;
           let i = p.id && base.invites_mariage.find((x) => x.id === p.id && x.devis_id === d.id);
-          if (i) Object.assign(i, p, { table_id: p.table_id || null });
+          if (i) { Object.assign(i, p, { table_id: p.table_id || null }); if ("carte_envoyee" in p) i.carte_envoyee_le = p.carte_envoyee ? new Date().toISOString() : null; }
           else { i = { id: crypto.randomUUID(), jeton: crypto.randomUUID(), devis_id: d.id, reponse: "attente", nb_confirmes: null, remarque: null, table_id: null, repondu_le: null, cote: "commun", nb_prevus: 1, ...p }; base.invites_mariage.push(i); }
           return route.fulfill({ json: sans(i) });
         }

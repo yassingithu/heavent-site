@@ -71,12 +71,14 @@ export default function LivreSouvenirsAdmin({ devisId, noms, date, lieu }: { dev
   const changerLimite = async (v: number, annulation = false) => {
     setNotif(""); setErreur("");
     if (!Number.isFinite(v) || v < 0 || v > 5000) { setErreur("Entrez un nombre entre 0 et 5000."); return; }
+    if (!Number.isInteger(v)) { setErreur("Entrez un nombre entier."); return; }
+    if (!annulation && v === limite) { setErreur(`Le plafond est déjà de ${limite} photos.`); return; }
     if (v < nb!.photos + nb!.masquees) { setErreur(`Impossible : ${nb!.photos + nb!.masquees} photos sont déjà déposées. Choisissez un plafond au moins égal.`); return; }
     const avant = limite;
     const { error } = await (supabase as any).from("devis").update({ souvenirs_limite: Math.round(v) }).eq("id", devisId);
     if (error) { setErreur("Le plafond n'a pas pu être modifié."); return; }
     setLimite(Math.round(v)); setSaisie(""); setPrecedent(annulation ? null : avant);
-    setNotif(Math.round(v) > nb!.photos + nb!.masquees ? `Plafond porté à ${Math.round(v)} photos : les invités peuvent de nouveau en ajouter.` : `Plafond fixé à ${Math.round(v)} photos : les envois restent bloqués.`);
+    setNotif(annulation ? `Plafond remis à ${Math.round(v)} photos.` : Math.round(v) > nb!.photos + nb!.masquees ? `Plafond porté à ${Math.round(v)} photos : les invités peuvent de nouveau en ajouter.` : `Plafond fixé à ${Math.round(v)} photos : les envois restent bloqués.`);
   };
 
   const telecharger = async () => {
