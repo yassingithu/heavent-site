@@ -7,7 +7,7 @@ import { RotateCcw, Play } from "lucide-react";
 import Invitation from "./Invitation";
 import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
 import { decorsPour, CLUBS } from "@/lib/decors";
-import { POLICES, CHAMPS_COULEUR, OUVERTURES, FERMETURES, PAPIERS, STYLES_OUVERTURE, deplacer, FORMULES, formuleDe, prixDe, type Formule, modelesPour, palettesPour, revelationsPour, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
+import { TEXTES_MODIFIABLES, POLICES, CHAMPS_COULEUR, OUVERTURES, FERMETURES, PAPIERS, STYLES_OUVERTURE, deplacer, FORMULES, formuleDe, prixDe, type Formule, modelesPour, palettesPour, revelationsPour, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
 import { evenementDe, questionDe, textesDe } from "@/lib/evenements";
 
 interface Props {
@@ -316,7 +316,20 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           </>}
         </section>
 
-        {!modeClient && <section className="space-y-3">
+<details className="rounded-xl border border-[#E3D6BA] bg-white/60 p-4" data-testid="invitation-textes">
+          <summary className="cursor-pointer font-serif text-xl">{num()}. Les autres textes de la carte (facultatif)</summary>
+          <p className="text-xs text-[#6B6154] mt-2">Réécrivez les phrases fixes de la carte. Elles sont en {langue === "fr" ? "français" : langue === "en" ? "anglais" : "arabe"} : changez la langue de l'aperçu pour les écrire dans une autre langue. Vide, le texte d'origine reste.</p>
+          <div className="mt-3 space-y-3">
+            {TEXTES_MODIFIABLES.map(({ cle, nom }) => (
+              <label key={cle} className="block text-sm">{nom}
+                <input dir={langue === "ar" ? "rtl" : undefined} className={`${champ} mt-1`} maxLength={120} value={valeur.textes?.[langue]?.[cle] ?? ""} placeholder={(textesDe(langue, ev.id) as unknown as Record<string, string>)[cle]}
+                  onChange={(e) => onChange({ ...valeur, textes: { ...valeur.textes, [langue]: { ...valeur.textes?.[langue], [cle]: e.target.value } } })} data-testid={`invitation-texte-${cle}`} />
+              </label>
+            ))}
+          </div>
+        </details>
+
+                {!modeClient && <section className="space-y-3">
           <h3 className="font-serif text-xl">{num()}. Le lieu et l'heure</h3>
           <label className="block text-sm">Heure d'accueil (facultatif)
             <input className={`${champ} mt-1`} value={valeur.heure ?? ""} maxLength={20} placeholder="19h30" onChange={(e) => onChange({ ...valeur, heure: e.target.value })} data-testid="invitation-heure" />

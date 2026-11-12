@@ -3,7 +3,7 @@ export type Langue = "fr" | "en" | "ar";
 export type Ornement = "khatam" | "arche" | "cadre" | "fleur" | "filet" | "zellige";
 export interface Couleurs { fond: string; enveloppe: string; papier: string; texte: string; accent: string }
 import type { TypeEvenement } from "./evenements";
-export interface InvitationReglages { /** fleurs photo posées sur la carte et l'enveloppe (grenat par défaut avec le modèle Grenat) */ fleurs?: "grenat" | "aucun"; /** occasion : sans valeur, c'est un mariage */ evenement?: TypeEvenement; /** questions ajoutées au formulaire de réponse (identifiants de QUESTIONS) */ questions?: string[]; cachet?: boolean; /** décor du haut de la carte (voir decors.ts) */ decor?: string; /** équipe du maillot et écusson (image réduite, données) */ club?: string; club_logo?: string; /** fermeture de l'enveloppe : cachet (défaut), ruban qui glisse, ou cachet qui se brise */ /** matière réelle du papier de l'enveloppe et doublure du rabat */ papier?: "gaufre" | "kraft"; doublure?: "sauge"; fermeture?: "cachet" | "ruban" | "brise" | "cire" | "cire-or" | "cire-brisee" | "ficelle" | "washi" | "tissu"; musique?: string; ouverture?: string; revelation?: string; modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; /** citations ou mots des mariés, affichés après le programme */ citations?: { texte: string; auteur?: string }[]; /** photos (images réduites, données) : réservé à l'administration, la limite de 4 Ko du côté des mariés ne les permet pas */ galerie?: string[]; programme?: { heure: string; titre: string; titre_ar?: string }[]; noms_ar?: string; /** phrase d'accueil de la carte (remplace « Vous êtes invité(e) à… »), une par langue */ accroche?: string; accroche_en?: string; accroche_ar?: string; lieu_ar?: string; message_ar?: string; police?: string }
+export interface InvitationReglages { /** fleurs photo posées sur la carte et l'enveloppe (grenat par défaut avec le modèle Grenat) */ fleurs?: "grenat" | "aucun"; /** occasion : sans valeur, c'est un mariage */ evenement?: TypeEvenement; /** questions ajoutées au formulaire de réponse (identifiants de QUESTIONS) */ questions?: string[]; cachet?: boolean; /** décor du haut de la carte (voir decors.ts) */ decor?: string; /** équipe du maillot et écusson (image réduite, données) */ club?: string; club_logo?: string; /** fermeture de l'enveloppe : cachet (défaut), ruban qui glisse, ou cachet qui se brise */ /** matière réelle du papier de l'enveloppe et doublure du rabat */ papier?: "gaufre" | "kraft"; doublure?: "sauge"; fermeture?: "cachet" | "ruban" | "brise" | "cire" | "cire-or" | "cire-brisee" | "ficelle" | "washi" | "tissu"; musique?: string; ouverture?: string; revelation?: string; modele?: string; couleurs?: Partial<Couleurs>; lieu_maps?: string; heure?: string; /** citations ou mots des mariés, affichés après le programme */ citations?: { texte: string; auteur?: string }[]; /** photos (images réduites, données) : réservé à l'administration, la limite de 4 Ko du côté des mariés ne les permet pas */ galerie?: string[]; programme?: { heure: string; titre: string; titre_ar?: string }[]; noms_ar?: string; /** phrase d'accueil de la carte (remplace « Vous êtes invité(e) à… »), une par langue */ accroche?: string; accroche_en?: string; accroche_ar?: string; /** autres textes de la carte modifiés par langue (clés de TEXTES : alliances, compte, programmeTitre, reponseTitre…) */ textes?: Partial<Record<Langue, Record<string, string>>>; lieu_ar?: string; message_ar?: string; police?: string }
 /** Polices des prénoms au choix (toutes déjà hébergées : aucun chargement en plus) */
 export const POLICES: { id: string; nom: string; css: string }[] = [
   { id: "calligraphie", nom: "Calligraphie", css: '"Pinyon Script", "Snell Roundhand", cursive' },
@@ -113,6 +113,20 @@ export function lienMaps(r: InvitationReglages | null | undefined, lieu?: string
   return null;
 }
 
+/** Textes de la carte que l'hôte ou l'agence peut réécrire (clé de TEXTES, libellé affiché dans la fiche). */
+export const TEXTES_MODIFIABLES: { cle: string; nom: string }[] = [
+  { cle: "alliances", nom: "Phrase sous le lieu" },
+  { cle: "compte", nom: "Titre du compte à rebours" },
+  { cle: "aujourdhui", nom: "Le jour J" },
+  { cle: "lieuTitre", nom: "Titre « Le lieu »" },
+  { cle: "itineraire", nom: "Bouton d'itinéraire" },
+  { cle: "agenda", nom: "Bouton « Ajouter à mon agenda »" },
+  { cle: "programmeTitre", nom: "Titre « Le programme »" },
+  { cle: "galerieTitre", nom: "Titre des photos" },
+  { cle: "reponseTitre", nom: "Titre « Votre réponse »" },
+  { cle: "avecVous", nom: "Phrase avant la réponse" },
+  { cle: "repondre", nom: "Bouton « Répondre »" },
+];
 export const TEXTES = {
   fr: {
     gratter: "Grattez le cœur pour découvrir la date", decouvrir: "Découvrir", ouvrir: "Touchez pour ouvrir", ouvrirBouton: "Ouvrir l'invitation", suivant: "Suivant", precedent: "Précédent", pageSur: "Page {n} sur {m}", defilable: "Texte à faire défiler", passer: "Passer l'animation", rejouer: "Revoir l'ouverture", invite: "Ont la joie de vous convier à leur mariage", invites: "Vous êtes invité(e) au mariage de",

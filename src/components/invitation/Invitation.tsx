@@ -211,7 +211,8 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const ev = evenementDe(reglages?.evenement);
   const t0 = textesDe(langue, ev.id);
   const accroche = (langue === "ar" ? reglages?.accroche_ar : langue === "en" ? reglages?.accroche_en : reglages?.accroche)?.trim();
-  const t = accroche ? { ...t0, invite: accroche, invites: accroche } : t0;
+  const perso = Object.fromEntries(Object.entries(reglages?.textes?.[langue] ?? {}).filter(([, v]) => typeof v === "string" && v.trim()).map(([k, v]) => [k, v.trim()]));
+  const t = { ...t0, ...perso, ...(accroche ? { invite: accroche, invites: accroche } : {}) };
   const [, majOuv] = useState(0);
   useEffect(() => { if (String(reglages?.ouverture ?? "").startsWith("perso-")) chargerOuverturesPerso().then(() => majOuv((n) => n + 1)); }, [reglages?.ouverture]);
   // préchargement des images de l'ouverture choisie ; si l'une échoue (réseau, fichier absent), on bascule sur l'ouverture de secours sans animation d'images
