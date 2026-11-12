@@ -1078,7 +1078,7 @@ const Admin = () => {
     );
   }
 
-  const masque = (v: string) => estDemo() && (ongletMasque(v) || v === "depenses" || v === "studio");
+  const masque = (v: string) => estDemo() && (ongletMasque(v) || v === "depenses" || v === "studio" || v === "invitations" || v === "demandes-cartes");
   const groupesVisibles = MENU_ADMIN
     .filter((g) => !g.items.every(([v]) => masque(v)))
     .map((g) => ({

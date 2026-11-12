@@ -23,13 +23,13 @@ export default function DemandesCartes({ onApercu, onChange, onVoir, complet, re
     setBusy(d.id); setErr(null);
     const { noms: _n, message: _m, ...reglages } = d.invitation ?? {};
     const { data, error } = await db.from("invitations_apercu").insert({
-      noms: d.noms || d.nom, date_evenement: d.date_evenement, lieu: d.lieu, message: d.invitation?.message ?? null, invitation: reglages, prospect: d.nom,
+      noms: d.noms || "", date_evenement: d.date_evenement, lieu: d.lieu, message: d.invitation?.message ?? null, invitation: reglages, prospect: d.nom,
     }).select().single();
     if (error) { setBusy(null); setErr("Création de l'aperçu impossible."); return; }
     await db.from("demandes_cartes").update({ apercu_id: data.id, statut: "apercu" }).eq("id", d.id);
     setBusy(null); await charger(); onChange?.(); onApercu(data.id);
   };
-  const traiter = async (d: Demande) => { await db.from("demandes_cartes").update({ statut: d.statut === "traitee" ? "nouvelle" : "traitee" }).eq("id", d.id); await charger(); onChange?.(); };
+  const traiter = async (d: Demande) => { await db.from("demandes_cartes").update({ statut: d.statut === "traitee" ? (d.apercu_id ? "apercu" : "nouvelle") : "traitee" }).eq("id", d.id); await charger(); onChange?.(); };
 
   const aTraiter = liste.filter((d) => d.statut === "nouvelle");
   const enLettres = (v: string) => new Date(`${v.slice(0, 10)}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
@@ -64,18 +64,18 @@ export default function DemandesCartes({ onApercu, onChange, onVoir, complet, re
           return (
             <li key={d.id} className="ia-demande">
               <div className="ia-date"><b>{cree.getDate()}</b><small>{cree.toLocaleDateString("fr-FR", { month: "short", year: "numeric" }).replace(".", "")}</small></div>
-              <div className="min-w-0 space-y-1.5">
+              <div className="min-w-0 space-y-1.5 [overflow-wrap:anywhere]">
                 <p className="ia-titre text-xl leading-tight flex flex-wrap items-center gap-x-2 gap-y-1">{d.nom}
                   <span className="ia-tag ia-tag-calme">{evenementDe(d.occasion === "mariage" ? undefined : (d.occasion as any)).nom}</span>
                   {d.statut === "nouvelle" ? <span className="ia-tag ia-tag-test">À traiter</span> : traitee ? <span className="ia-tag ia-tag-calme">Traitée</span> : <span className="ia-tag ia-tag-final">Aperçu créé</span>}
                 </p>
                 <p className="ia-meta">{infos.length ? infos.map((x, i) => <span key={i}>{i > 0 && <i>·</i>}{x}</span>) : "Informations de la carte non renseignées"}</p>
-                <p className="text-sm">{d.telephone && <a className="ia-lien mr-3" href={`https://wa.me/${wa(d.telephone)}`} target="_blank" rel="noreferrer">WhatsApp {d.telephone}</a>}{d.email && <a className="ia-lien" href={`mailto:${d.email}`}>{d.email}</a>}</p>
+                <p className="text-sm">{d.telephone && <a className="ia-lien mr-3" href={`https://wa.me/${wa(d.telephone)}`} target="_blank" rel="noreferrer">WhatsApp {d.telephone}</a>}{d.email && <a className="ia-lien break-all" href={`mailto:${d.email}`}>{d.email}</a>}</p>
                 {d.message && <p className="ia-meta whitespace-pre-line">Message du client : {d.message}</p>}
                 <p className="ia-meta text-[13px]">Livraison : 1 semaine après le paiement.</p>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {!d.apercu_id && <button type="button" disabled={busy === d.id} onClick={() => creer(d)} className="ia-btn ia-btn-1 inline-flex items-center justify-center rounded-full text-sm font-medium disabled:opacity-60" data-testid={`demande-apercu-${d.id}`}>{busy === d.id ? "Création…" : "Créer l'aperçu"}</button>}
-                  {d.apercu_id && <span className="text-sm self-center text-[#7A5A12]">Aperçu créé : retrouvez-le dans Invitations</span>}
+                  {d.apercu_id && <button type="button" onClick={() => onApercu(d.apercu_id!)} className="ia-btn ia-btn-1 inline-flex items-center justify-center rounded-full text-sm font-medium">Ouvrir l'aperçu</button>}
                   <button type="button" onClick={() => traiter(d)} className="ia-btn ia-btn-2 inline-flex items-center justify-center rounded-full text-sm font-medium">{traitee ? "Remettre à traiter" : "Terminée, rien à faire"}</button>
                 </div>
               </div>
