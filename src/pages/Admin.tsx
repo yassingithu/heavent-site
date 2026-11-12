@@ -47,6 +47,7 @@ import { supabase, FUNCTIONS_URL } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { User, Session } from "@supabase/supabase-js";
 import DevisRapide from "@/components/admin/devis/DevisRapide";
+import NouvelleFicheMaries from "@/components/admin/devis/NouvelleFicheMaries";
 import FichesProfilStaff from "@/components/admin/staff/FichesProfilStaff";
 import PlanningDispos from "@/components/admin/staff/PlanningDispos";
 import FichesPaieMensuelles from "@/components/admin/paie/FichesPaieMensuelles";
@@ -1229,6 +1230,7 @@ const Admin = () => {
         </TabsContent>
 
         <TabsContent value="devis-rapide" className="space-y-4">
+          <NouvelleFicheMaries />
           <DevisRapide
             demandesEntreprise={devisEntreprise as any}
             demandesMariage={devisMariage as any}
