@@ -8,7 +8,7 @@ import Invitation from "./Invitation";
 import { noms_ar, lieu_ar, titre_ar } from "@/lib/arabe";
 import { decorsPour, CLUBS } from "@/lib/decors";
 import { POLICES, CHAMPS_COULEUR, OUVERTURES, FERMETURES, PAPIERS, STYLES_OUVERTURE, deplacer, FORMULES, formuleDe, prixDe, type Formule, modelesPour, palettesPour, revelationsPour, couleursDe, modeleDe, ouvertureDe, revelationDe, type Couleurs, type InvitationReglages, type Langue } from "@/lib/invitation";
-import { evenementDe, questionDe } from "@/lib/evenements";
+import { evenementDe, questionDe, textesDe } from "@/lib/evenements";
 
 interface Props {
   /** Affiche l'outil d'ajout d'ouvertures vidéo (administration seulement). */
@@ -299,6 +299,22 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
         </section>
 
         </Pli>
+
+        <section className="space-y-3" data-testid="invitation-accroche">
+          <h3 className="font-serif text-xl">{num()}. La phrase d'accueil (facultatif)</h3>
+          <p className="text-xs text-[#6B6154]">La phrase écrite au-dessus des prénoms. Laissez vide pour garder « {textesDe("fr", ev.id).invite} ».</p>
+          <label className="block text-sm">Français
+            <input className={`${champ} mt-1`} value={valeur.accroche ?? ""} maxLength={90} placeholder={textesDe("fr", ev.id).invite} onChange={(e) => onChange({ ...valeur, accroche: e.target.value })} data-testid="invitation-accroche-fr" />
+          </label>
+          {!modeClient && <>
+            <label className="block text-sm">English
+              <input className={`${champ} mt-1`} value={valeur.accroche_en ?? ""} maxLength={90} placeholder={textesDe("en", ev.id).invite} onChange={(e) => onChange({ ...valeur, accroche_en: e.target.value })} data-testid="invitation-accroche-en" />
+            </label>
+            <label className="block text-sm">العربية
+              <input dir="rtl" className={`${champ} mt-1`} value={valeur.accroche_ar ?? ""} maxLength={90} placeholder={textesDe("ar", ev.id).invite} onChange={(e) => onChange({ ...valeur, accroche_ar: e.target.value })} data-testid="invitation-accroche-ar" />
+            </label>
+          </>}
+        </section>
 
         {!modeClient && <section className="space-y-3">
           <h3 className="font-serif text-xl">{num()}. Le lieu et l'heure</h3>
