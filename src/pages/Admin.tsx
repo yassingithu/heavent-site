@@ -1048,8 +1048,9 @@ const Admin = () => {
   const versDevis = () => { setOngletAdmin("devis-rapide"); window.scrollTo({ top: 0 }); };
 
   const [nouvellesCartes, setNouvellesCartes] = useState(0);
+  const [apercuAOuvrir, setApercuAOuvrir] = useState<string | null>(null);
   const compterCartes = useCallback(async () => {
-    try { const { count } = await (supabase as any).from("demandes_cartes").select("id", { count: "exact", head: true }).neq("statut", "traitee"); setNouvellesCartes(count ?? 0); } catch { setNouvellesCartes(0); }
+    try { const { count } = await (supabase as any).from("demandes_cartes").select("id", { count: "exact", head: true }).eq("statut", "nouvelle"); setNouvellesCartes(count ?? 0); } catch { setNouvellesCartes(0); }
   }, []);
   useEffect(() => { compterCartes(); }, [compterCartes, ongletAdmin]);
   const nouvellesEntreprise = devisEntreprise.filter((d: any) => d.statut === "en_attente").length;
@@ -1207,11 +1208,11 @@ const Admin = () => {
         </TabsContent>
 
         <TabsContent value="invitations" className="space-y-4">
-          <InvitationsAdmin onVoirDemandes={() => { setOngletAdmin("demandes-cartes"); window.scrollTo({ top: 0 }); }} />
+          <InvitationsAdmin ouvrirId={apercuAOuvrir} onOuvert={() => setApercuAOuvrir(null)} onVoirDemandes={() => { setOngletAdmin("demandes-cartes"); window.scrollTo({ top: 0 }); }} />
         </TabsContent>
 
         <TabsContent value="demandes-cartes" className="space-y-4">
-          <DemandesCartes complet onApercu={() => { setOngletAdmin("invitations"); window.scrollTo({ top: 0 }); }} onChange={compterCartes} />
+          <DemandesCartes complet onApercu={(id) => { setApercuAOuvrir(id ?? null); setOngletAdmin("invitations"); window.scrollTo({ top: 0 }); }} onChange={compterCartes} />
         </TabsContent>
 
         <TabsContent value="lieux" className="space-y-4">

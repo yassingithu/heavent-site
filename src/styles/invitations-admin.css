@@ -1,0 +1,74 @@
+/* Écrans d'invitations de l'admin : même univers que la boutique /cartes (nuit, or, crème, filets fins).
+   Tout est borné par .ia-admin : le reste de l'admin n'est pas touché. */
+.ia-admin {
+  --nuit: #121110; --nuit2: #1B1915; --or: #C9B27A; --or-vif: #E4D49A; --or-texte: #7A5A12;
+  --creme: #F7F3E8; --papier: #FFFDF7; --encre: #1A1814; --discret: #5E554A;
+  --filet: #E3D6BA; --filet-or: rgba(201, 178, 122, .55); --alerte: #9B2C23;
+}
+.ia-admin h3, .ia-admin .ia-titre { font-family: var(--s-titre, Gloock), Didot, Georgia, serif; font-weight: 400; color: var(--encre); }
+
+/* Boutons */
+.ia-admin .ia-btn { min-height: 44px; padding: 0 20px; letter-spacing: .03em; border: 1px solid transparent; }
+.ia-admin .ia-btn:focus-visible, .ia-admin .ia-bandeau a:focus-visible, .ia-admin .ia-bandeau button:focus-visible { outline: 2px solid var(--or-texte); outline-offset: 3px; }
+.ia-admin .ia-btn-1 { background: var(--nuit); color: var(--or-vif); border-color: var(--nuit); }
+.ia-admin .ia-btn-1:hover { background: var(--nuit2); border-color: var(--or); }
+.ia-admin .ia-btn-2 { background: transparent; color: var(--encre); border-color: #B79F5E; }
+.ia-admin .ia-btn-2:hover { border-color: var(--or-texte); background: rgba(201, 178, 122, .14); }
+.ia-admin .ia-btn-or { background: var(--or-vif); color: #141414; border-color: #B79F5E; }
+.ia-admin .ia-btn-or:hover { background: #EBDDA8; }
+.ia-admin .ia-btn-danger { background: transparent; color: var(--alerte); border-color: #B79F5E; }
+.ia-admin .ia-btn-danger:hover { border-color: var(--alerte); }
+.ia-admin .ia-icone { width: 44px; padding: 0; border-radius: 999px; }
+
+/* Cartes et champs */
+.ia-admin .ia-carte { background: var(--papier); border: 1px solid var(--filet); border-radius: 14px; box-shadow: 0 18px 40px -34px rgba(140, 109, 34, .5); }
+.ia-admin .ia-champ { background: var(--papier); border: 1px solid #D9C9A0; border-radius: 12px; min-height: 44px; font-size: 16px; padding-inline: 12px; width: 100%; }
+.ia-admin .ia-champ:focus { outline: none; border-color: var(--or-texte); box-shadow: 0 0 0 3px rgba(228, 212, 154, .7); }
+.ia-admin label.ia-lib { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; color: var(--discret); }
+.ia-admin label.ia-lib .ia-champ { text-transform: none; letter-spacing: normal; font-weight: 400; color: var(--encre); margin-top: 6px; }
+
+/* Légende de section : petites capitales + filet or qui s'efface */
+.ia-admin .ia-legende { display: block; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; font-weight: 500; color: var(--or-texte); }
+.ia-admin .ia-section::after { content: ""; display: block; height: 1px; margin-top: 12px; background: linear-gradient(90deg, var(--or), transparent 70%); }
+
+/* Étiquettes de statut */
+.ia-admin .ia-tag { display: inline-flex; align-items: center; height: 22px; padding: 0 10px; border-radius: 999px; font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; vertical-align: middle; border: 1px solid transparent; }
+.ia-admin .ia-tag-final { background: var(--nuit); color: var(--or-vif); }
+.ia-admin .ia-tag-test { background: #F4ECD8; color: var(--or-texte); border-color: var(--filet-or); }
+.ia-admin .ia-tag-calme { background: transparent; color: var(--discret); border-color: var(--filet); }
+
+/* Bandeau des demandes : une des trois seules zones nuit */
+.ia-admin .ia-bandeau { position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-radius: 14px; background: var(--nuit); color: var(--creme); box-shadow: inset 0 0 0 1px var(--filet-or); overflow: hidden; }
+.ia-admin .ia-bandeau::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 2px; background: var(--or); }
+.ia-admin .ia-bandeau .ia-chiffre { font-family: var(--s-titre, Gloock), Didot, Georgia, serif; font-size: 40px; line-height: 1; color: var(--or-vif); margin-right: 12px; }
+.ia-admin .ia-bandeau .ia-btn-or { background: var(--or-vif); }
+@media (max-width: 520px) { .ia-admin .ia-bandeau .ia-btn { width: 100%; } }
+
+/* Demande : ligne « faire-part » */
+.ia-admin .ia-demande { display: grid; grid-template-columns: 64px 1fr; gap: 16px; padding: 16px 0; }
+.ia-admin .ia-date { border-right: 1px solid var(--or); padding-right: 12px; text-align: center; }
+.ia-admin .ia-date b { display: block; font-family: var(--s-titre, Gloock), Didot, Georgia, serif; font-weight: 400; font-size: 34px; line-height: 1; color: var(--encre); }
+.ia-admin .ia-date small { display: block; margin-top: 4px; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--or-texte); }
+.ia-admin .ia-meta { font-size: 14px; color: var(--discret); }
+.ia-admin .ia-meta i { font-style: normal; color: var(--or); padding: 0 6px; }
+.ia-admin .ia-lien { color: var(--or-texte); text-decoration: underline; text-underline-offset: 3px; }
+
+/* État vide : une arche, rien d'illustré */
+.ia-admin .ia-vide { text-align: center; padding: 48px 20px; }
+.ia-admin .ia-arche { width: 56px; height: 76px; margin: 0 auto 16px; border: 1px solid var(--or); border-bottom: 0; border-radius: 999px 999px 0 0; }
+
+/* Lignes d'aperçu */
+.ia-admin .ia-ligne { padding: 14px 16px; }
+.ia-admin .ia-ligne:hover { border-color: var(--or); }
+
+/* Barre d'enregistrement : deuxième zone nuit */
+.ia-admin .ia-barre { background: var(--nuit); border-top: 1px solid var(--or); border-radius: 14px; padding: 10px; z-index: 5; }
+.ia-admin .ia-barre .ia-btn-2 { color: var(--creme); border-color: var(--filet-or); }
+.ia-admin .ia-barre .ia-btn-2:hover { border-color: var(--or-vif); background: rgba(247, 243, 232, .08); }
+.ia-admin .ia-barre .ia-btn-1 { background: var(--or-vif); color: #141414; border-color: #B79F5E; }
+@media (max-width: 767px) { .ia-admin .ia-barre { bottom: calc(env(safe-area-inset-bottom, 0px) + 76px) !important; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ia-admin .ia-liste > li { animation: ia-entree .22s ease both; }
+  @keyframes ia-entree { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}

@@ -44,7 +44,7 @@ const REGROUPES = {
   "Disponibilités": [/Personnel$/, "Disponibilités"], "Prestataires": [/Prestataires et lieux$/, "Prestataires"],
   "Salles & palais": [/Prestataires et lieux$/, "Salles & palais"], "Instagram": [/Publications$/, "Instagram"],
   "Newsletter": [/Publications$/, "Newsletter"], "Invitations digitales": [/Heavent Studio$/, "Invitations"],
-  "Démos agences": [/Heavent Studio$/, null],
+  "Démos agences": [/Heavent Studio$/, "Démos agences"],
 };
 async function clicOnglet(page, nom) {
   const cle = nom instanceof RegExp ? nom.source.replace(/^\^/, "").replace(/\$$/, "") : nom;

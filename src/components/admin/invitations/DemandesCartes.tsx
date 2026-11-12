@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { evenementDe } from "@/lib/evenements";
+import "@/styles/invitations-admin.css";
 
 const db = supabase as any;
 /** Numéro marocain saisi « 06… » ou « 6… » : on ajoute l'indicatif 212 pour que le lien WhatsApp fonctionne. */
@@ -8,7 +9,7 @@ const wa = (t: string) => { const n = t.replace(/[^\d]/g, ""); if (t.trim().star
 interface Demande { id: string; cree_le: string; nom: string; telephone: string | null; email: string | null; occasion: string | null; noms: string | null; date_evenement: string | null; lieu: string | null; message: string | null; invitation: any; statut: string; apercu_id: string | null }
 
 /** Demandes reçues depuis la page publique /cartes : un clic transforme la demande en aperçu prêt à partager. */
-export default function DemandesCartes({ onApercu, onChange, onVoir, complet, resume }: { onApercu: () => void; onChange?: () => void; onVoir?: () => void; complet?: boolean; resume?: boolean }) {
+export default function DemandesCartes({ onApercu, onChange, onVoir, complet, resume }: { onApercu: (id?: string) => void; onChange?: () => void; onVoir?: () => void; complet?: boolean; resume?: boolean }) {
   const [liste, setListe] = useState<Demande[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -26,44 +27,61 @@ export default function DemandesCartes({ onApercu, onChange, onVoir, complet, re
     }).select().single();
     if (error) { setBusy(null); setErr("Création de l'aperçu impossible."); return; }
     await db.from("demandes_cartes").update({ apercu_id: data.id, statut: "apercu" }).eq("id", d.id);
-    setBusy(null); await charger(); onChange?.(); onApercu();
+    setBusy(null); await charger(); onChange?.(); onApercu(data.id);
   };
   const traiter = async (d: Demande) => { await db.from("demandes_cartes").update({ statut: d.statut === "traitee" ? "nouvelle" : "traitee" }).eq("id", d.id); await charger(); onChange?.(); };
 
-  const aTraiter = liste.filter((d) => d.statut !== "traitee");
+  const aTraiter = liste.filter((d) => d.statut === "nouvelle");
+  const enLettres = (v: string) => new Date(`${v.slice(0, 10)}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
   if (resume) {
     if (aTraiter.length === 0) return null;
     return (
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#A8933F]/50 bg-[#FBF6E9] px-4 py-3" data-testid="demandes-cartes-resume">
-        <p className="text-sm"><b>{aTraiter.length}</b> {aTraiter.length > 1 ? "demandes de cartes attendent" : "demande de carte attend"} votre réponse.</p>
-        <button type="button" onClick={onVoir} className="rounded-full bg-[#141414] text-white px-4 min-h-11 text-sm" data-testid="demandes-cartes-voir">Voir les demandes</button>
+      <div className="ia-admin ia-bandeau" data-testid="demandes-cartes-resume">
+        <p className="text-[15px] flex items-center"><span className="ia-chiffre">{aTraiter.length}</span>{aTraiter.length > 1 ? "demandes de cartes à traiter" : "demande de carte à traiter"}</p>
+        <button type="button" onClick={onVoir} className="ia-btn ia-btn-or inline-flex items-center justify-center rounded-full text-sm font-medium" data-testid="demandes-cartes-voir">Voir les demandes</button>
       </div>
     );
   }
   if (liste.length === 0) return complet ? (
-    <section className="rounded-2xl border border-[#DCCBA6] bg-white p-8 text-center space-y-1" data-testid="demandes-cartes-vide">
-      <p className="font-serif text-lg">Aucune demande pour le moment</p>
-      <p className="text-sm text-[#5E554A]">Les commandes passées depuis la boutique /cartes arriveront ici, avec le numéro WhatsApp du client.</p>
+    <section className="ia-admin ia-carte ia-vide" data-testid="demandes-cartes-vide">
+      <div className="ia-arche" aria-hidden="true" />
+      <p className="ia-titre text-[22px]">Aucune demande pour le moment</p>
+      <p className="text-sm text-[#5E554A] mt-1">Les commandes passées depuis la boutique /cartes arriveront ici, avec le numéro WhatsApp du client.</p>
     </section>
   ) : null;
   return (
-    <section className="rounded-2xl border border-[#DCCBA6] bg-white p-4 space-y-3" data-testid="demandes-cartes">
-      <h3 className="font-serif text-lg">{aTraiter.length} à traiter · {liste.length} au total</h3>
-      {err && <p role="alert" className="text-sm text-[#9B2C2C]">{err}</p>}
-      <ul className="divide-y divide-[#EADFC8]">
-        {liste.map((d) => (
-          <li key={d.id} className={`py-3 space-y-1 ${d.statut === "traitee" ? "opacity-60" : ""}`}>
-            <p className="text-sm"><b>{d.nom}</b> · {evenementDe(d.occasion === "mariage" ? undefined : (d.occasion as any)).nom} · {new Date(d.cree_le).toLocaleDateString("fr-FR")}</p>
-            <p className="text-sm text-[#5E554A]">{[d.noms && `Carte : ${d.noms}`, d.date_evenement, d.lieu].filter(Boolean).join(" · ") || "Informations de la carte non renseignées"}</p>
-            <p className="text-sm">{d.telephone && <a className="underline mr-3" href={`https://wa.me/${wa(d.telephone)}`} target="_blank" rel="noreferrer">WhatsApp {d.telephone}</a>}{d.email && <a className="underline" href={`mailto:${d.email}`}>{d.email}</a>}</p>
-            {d.message && <p className="text-sm text-[#5E554A] whitespace-pre-line">{d.message}</p>}
-            <div className="flex flex-wrap gap-2 pt-1">
-              {!d.apercu_id && <button type="button" disabled={busy === d.id} onClick={() => creer(d)} className="rounded-full bg-[#141414] text-white px-4 min-h-11 text-sm disabled:opacity-60" data-testid={`demande-apercu-${d.id}`}>{busy === d.id ? "Création…" : "Créer l'aperçu"}</button>}
-              {d.apercu_id && <span className="text-sm text-[#8C6D22] self-center">Aperçu créé, retrouvez-le dans la liste</span>}
-              <button type="button" onClick={() => traiter(d)} className="rounded-full border border-[#DCCBA6] px-4 min-h-11 text-sm">{d.statut === "traitee" ? "Remettre à traiter" : "Marquer traitée"}</button>
-            </div>
-          </li>
-        ))}
+    <section className="ia-admin ia-carte p-4 sm:p-5" data-testid="demandes-cartes">
+      <div className="ia-section">
+        <span className="ia-legende">Reçues depuis /cartes</span>
+        <h3 className="text-2xl leading-tight mt-1">{aTraiter.length} à traiter <span className="text-sm text-[#5E554A]" style={{ fontFamily: "Jost, sans-serif" }}>· {liste.length} au total</span></h3>
+      </div>
+      {err && <p role="alert" className="text-sm text-[#9B2C2C] mt-2">{err}</p>}
+      <ul className="divide-y divide-[#E3D6BA] ia-liste">
+        {liste.map((d) => {
+          const cree = new Date(d.cree_le);
+          const traitee = d.statut === "traitee";
+          const infos = [d.noms && `Carte ${d.noms}`, d.date_evenement && enLettres(d.date_evenement), d.lieu].filter(Boolean) as string[];
+          return (
+            <li key={d.id} className="ia-demande">
+              <div className="ia-date"><b>{cree.getDate()}</b><small>{cree.toLocaleDateString("fr-FR", { month: "short", year: "numeric" }).replace(".", "")}</small></div>
+              <div className="min-w-0 space-y-1.5">
+                <p className="ia-titre text-xl leading-tight flex flex-wrap items-center gap-x-2 gap-y-1">{d.nom}
+                  <span className="ia-tag ia-tag-calme">{evenementDe(d.occasion === "mariage" ? undefined : (d.occasion as any)).nom}</span>
+                  {d.statut === "nouvelle" ? <span className="ia-tag ia-tag-test">À traiter</span> : traitee ? <span className="ia-tag ia-tag-calme">Traitée</span> : <span className="ia-tag ia-tag-final">Aperçu créé</span>}
+                </p>
+                <p className="ia-meta">{infos.length ? infos.map((x, i) => <span key={i}>{i > 0 && <i>·</i>}{x}</span>) : "Informations de la carte non renseignées"}</p>
+                <p className="text-sm">{d.telephone && <a className="ia-lien mr-3" href={`https://wa.me/${wa(d.telephone)}`} target="_blank" rel="noreferrer">WhatsApp {d.telephone}</a>}{d.email && <a className="ia-lien" href={`mailto:${d.email}`}>{d.email}</a>}</p>
+                {d.message && <p className="ia-meta whitespace-pre-line">Message du client : {d.message}</p>}
+                <p className="ia-meta text-[13px]">Livraison : 1 semaine après le paiement.</p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {!d.apercu_id && <button type="button" disabled={busy === d.id} onClick={() => creer(d)} className="ia-btn ia-btn-1 inline-flex items-center justify-center rounded-full text-sm font-medium disabled:opacity-60" data-testid={`demande-apercu-${d.id}`}>{busy === d.id ? "Création…" : "Créer l'aperçu"}</button>}
+                  {d.apercu_id && <span className="text-sm self-center text-[#7A5A12]">Aperçu créé : retrouvez-le dans Invitations</span>}
+                  <button type="button" onClick={() => traiter(d)} className="ia-btn ia-btn-2 inline-flex items-center justify-center rounded-full text-sm font-medium">{traitee ? "Remettre à traiter" : "Terminée, rien à faire"}</button>
+                </div>
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

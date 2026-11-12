@@ -10,19 +10,20 @@ import ChoixOccasion from "@/components/invitation/ChoixOccasion";
 import { evenementDe, type TypeEvenement } from "@/lib/evenements";
 import { decorsPour } from "@/lib/decors";
 import DemandesCartes from "./DemandesCartes";
+import "@/styles/invitations-admin.css";
 
 interface Apercu { id: string; jeton: string; noms: string; date_evenement: string | null; lieu: string | null; message: string | null; invitation: InvitationReglages; prospect: string | null; expire_le: string; created_at: string; mode: "test" | "final"; avec_reponse: boolean; jeton_liste?: string | null; notif_email?: string | null }
 interface Confirme { apercu_id: string; nom: string; reponse: "oui" | "non"; nb_confirmes: number; accompagnants: string[]; precisions?: string | null; created_at: string }
 interface Lieu { nom: string; ville: string | null; lien_maps: string | null }
 
-const champ = "w-full rounded-xl border border-[#E3D6BA] bg-white px-3 min-h-10 text-sm";
-const btn = "inline-flex items-center justify-center gap-1.5 rounded-full px-4 min-h-10 text-sm font-medium transition disabled:opacity-60";
+const champ = "ia-champ";
+const btn = "ia-btn inline-flex items-center justify-center gap-1.5 rounded-full text-sm font-medium transition disabled:opacity-60";
 const lien = (j: string) => `${window.location.origin}/invitation/${j}`;
 const lienListe = (j: string) => `${window.location.origin}/liste/${j}`;
 const MAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const db = supabase as any;
 
-export default function InvitationsAdmin({ onVoirDemandes }: { onVoirDemandes?: () => void }) {
+export default function InvitationsAdmin({ onVoirDemandes, ouvrirId, onOuvert }: { onVoirDemandes?: () => void; ouvrirId?: string | null; onOuvert?: () => void }) {
   const [liste, setListe] = useState<Apercu[] | null>(null);
   const [lieux, setLieux] = useState<Lieu[]>([]);
   const [edit, setEdit] = useState<Apercu | null>(null);
@@ -46,6 +47,14 @@ export default function InvitationsAdmin({ onVoirDemandes }: { onVoirDemandes?: 
     setConfirmes(c.data ?? []);
   }, []);
   useEffect(() => { charger(); }, [charger]);
+  useEffect(() => {
+    if (!ouvrirId) return;
+    (async () => {
+      const { data } = await db.from("invitations_apercu").select("*").eq("id", ouvrirId).single();
+      if (data) { setListe((l) => [data, ...(l ?? []).filter((x) => x.id !== data.id)]); setEdit(data); }
+      onOuvert?.();
+    })();
+  }, [ouvrirId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const creer = async () => {
     const { data, error } = await db.from("invitations_apercu").insert({ noms: "", invitation: { modele: "fleur-oranger" } }).select().single();
@@ -154,39 +163,39 @@ export default function InvitationsAdmin({ onVoirDemandes }: { onVoirDemandes?: 
 
   if (edit) {
     return (
-      <div className="space-y-5" data-testid="invitation-edition">
-        <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => setEdit(null)}><ArrowLeft className="h-4 w-4" /> Tous les aperçus</button>
-        <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 sm:p-6"><ChoixOccasion valeur={edit.invitation?.evenement} onChoisir={appliquerOccasion} onglets /></div>
-        <div className="grid sm:grid-cols-2 gap-3 rounded-3xl bg-white border border-[#EADFC8] p-4">
-          <label className="text-sm">{evenementDe(edit.invitation?.evenement).nomsLibelle}<input className={`${champ} mt-1`} value={edit.noms} placeholder={evenementDe(edit.invitation?.evenement).nomsExemple} onChange={(e) => setEdit({ ...edit, noms: e.target.value })} data-testid="apercu-noms" /></label>
-          <label className="text-sm">Pour qui (note interne)<input className={`${champ} mt-1`} value={edit.prospect ?? ""} placeholder="Ex. couple rencontré au salon" onChange={(e) => setEdit({ ...edit, prospect: e.target.value })} /></label>
-          <label className="text-sm">Date<input type="date" className={`${champ} mt-1`} value={edit.date_evenement ?? ""} onChange={(e) => setEdit({ ...edit, date_evenement: e.target.value })} /></label>
-          <label className="text-sm">Salle (liste Heavent)
+      <div className="ia-admin space-y-5" data-testid="invitation-edition">
+        <button type="button" className={`${btn} ia-btn-2`} onClick={() => setEdit(null)}><ArrowLeft className="h-4 w-4" /> Tous les aperçus</button>
+        <div className="ia-carte p-4 sm:p-6"><ChoixOccasion valeur={edit.invitation?.evenement} onChoisir={appliquerOccasion} onglets /></div>
+        <div className="grid sm:grid-cols-2 gap-3 ia-carte p-4">
+          <label className="ia-lib">{evenementDe(edit.invitation?.evenement).nomsLibelle}<input className={`${champ} mt-1`} value={edit.noms} placeholder={evenementDe(edit.invitation?.evenement).nomsExemple} onChange={(e) => setEdit({ ...edit, noms: e.target.value })} data-testid="apercu-noms" /></label>
+          <label className="ia-lib">Pour qui (note interne)<input className={`${champ} mt-1`} value={edit.prospect ?? ""} placeholder="Ex. couple rencontré au salon" onChange={(e) => setEdit({ ...edit, prospect: e.target.value })} /></label>
+          <label className="ia-lib">Date<input type="date" className={`${champ} mt-1`} value={edit.date_evenement ?? ""} onChange={(e) => setEdit({ ...edit, date_evenement: e.target.value })} /></label>
+          <label className="ia-lib">Salle (liste Heavent)
             <select className={`${champ} mt-1`} value="" onChange={(e) => choisirLieu(e.target.value)}>
               <option value="">Choisir dans les lieux…</option>
               {lieux.map((l) => <option key={l.nom + l.ville} value={l.nom}>{l.nom}{l.ville ? ` — ${l.ville}` : ""}</option>)}
             </select>
           </label>
-          <label className="text-sm sm:col-span-2">Lieu affiché<input className={`${champ} mt-1`} value={edit.lieu ?? ""} onChange={(e) => setEdit({ ...edit, lieu: e.target.value })} /></label>
-          <div className="text-sm sm:col-span-2"><label htmlFor="champ-message">Petit mot (facultatif)</label><div className="mt-1"><ChampMessage id="champ-message" pagine={!!ouvertureDe(edit.invitation?.ouverture).carte} valeur={edit.message ?? ""} onChange={(v) => setEdit({ ...edit, message: v })} className={`${champ} py-2`} testId="invitation-message" /></div></div>
+          <label className="ia-lib sm:col-span-2">Lieu affiché<input className={`${champ} mt-1`} value={edit.lieu ?? ""} onChange={(e) => setEdit({ ...edit, lieu: e.target.value })} /></label>
+          <div className="text-sm sm:col-span-2"><label htmlFor="champ-message" className="ia-lib">Petit mot (facultatif)</label><div className="mt-1"><ChampMessage id="champ-message" pagine={!!ouvertureDe(edit.invitation?.ouverture).carte} valeur={edit.message ?? ""} onChange={(v) => setEdit({ ...edit, message: v })} className={`${champ} py-2`} testId="invitation-message" /></div></div>
         </div>
-        <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 sm:p-6">
+        <div className="ia-carte p-4 sm:p-6">
           <PersonnaliserInvitation estAdmin noms={edit.noms || "Prénom & Prénom"} date={edit.date_evenement} lieu={edit.lieu} message={edit.message} valeur={edit.invitation} onChange={(v) => setEdit({ ...edit, invitation: v })} />
         </div>
-        <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 space-y-3" data-testid="invitation-etat">
+        <div className="ia-carte p-4 space-y-3" data-testid="invitation-etat">
           <p className="text-sm flex items-center gap-2">{edit.mode === "final" ? <><BadgeCheck className="h-4 w-4 text-[#1F5A4C]" /> <b>Version finale</b> : sans filigrane, le lien peut être utilisé par le client.</> : <><b>Version test</b> : un filigrane « Aperçu » recouvre la page, la réponse est une démonstration.</>}</p>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={edit.avec_reponse} onChange={(e) => basculerReponses(edit, e.target.checked)} data-testid="avec-reponse" /> Les invités confirment leur présence sur la carte <span className="text-[#6B6154]">(décochez si le client envoie la carte sans réponse)</span></label>
         </div>
-        <div className="flex flex-wrap gap-2 sticky bottom-3">
-          <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={enregistrer} disabled={envoi} data-testid="apercu-enregistrer">{envoi && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer</button>
-          <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => copier(edit)}><Copy className="h-4 w-4" /> Copier le lien</button>
+        <div className="ia-barre flex flex-wrap gap-2 sticky bottom-3">
+          <button type="button" className={`${btn} ia-btn-1`} onClick={enregistrer} disabled={envoi} data-testid="apercu-enregistrer">{envoi && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer</button>
+          <button type="button" className={`${btn} ia-btn-2`} onClick={() => copier(edit)}><Copy className="h-4 w-4" /> Copier le lien</button>
           {edit.mode === "test" ? (<>
-            <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => whatsapp(edit)}><MessageCircle className="h-4 w-4" /> Envoyer le test par WhatsApp</button>
+            <button type="button" className={`${btn} ia-btn-2`} onClick={() => whatsapp(edit)}><MessageCircle className="h-4 w-4" /> Envoyer le test par WhatsApp</button>
             {finaliser ? (
-              <span className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-[#141414] text-[#FBF6E9] border-t border-[#A8933F] px-4 py-2 text-sm max-w-xl">Le lien déjà envoyé deviendra la vraie carte ({new Date(`${edit.date_evenement}T12:00:00`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · {edit.lieu}). Réponses des invités : {edit.avec_reponse ? "activées" : "désactivées"}. Retour au test impossible. <button type="button" className="font-semibold rounded bg-[#E4D49A] text-[#141414] px-3 min-h-10" onClick={passerFinale} disabled={envoi} data-testid="finale-confirmer">Oui, version finale</button> <button type="button" className="underline min-h-10" onClick={() => setFinaliser(false)}>Annuler</button></span>
-            ) : <button type="button" className={`${btn} bg-[#B8923A] text-[#141414] hover:bg-[#C9A44A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#141414]`} onClick={() => { const m = manque(edit); if (m) toast.error(m); else setFinaliser(true); }} data-testid="finale-passer"><BadgeCheck className="h-4 w-4" /> Passer en version finale</button>}
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-[#141414] text-[#FBF6E9] border-t border-[#C9B27A] px-4 py-2 text-sm max-w-xl">Le paiement est-il reçu ? Livraison prévue sous 1 semaine après paiement. Le lien déjà envoyé deviendra la vraie carte ({new Date(`${edit.date_evenement}T12:00:00`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · {edit.lieu}). Réponses des invités : {edit.avec_reponse ? "activées" : "désactivées"}. Retour au test impossible. <button type="button" className="font-semibold rounded bg-[#E4D49A] text-[#141414] px-3 min-h-10" onClick={passerFinale} disabled={envoi} data-testid="finale-confirmer">Oui, paiement reçu : version finale</button> <button type="button" className="underline min-h-10" onClick={() => setFinaliser(false)}>Annuler</button></span>
+            ) : <button type="button" className={`${btn} ia-btn-or`} onClick={() => { const m = manque(edit); if (m) toast.error(m); else setFinaliser(true); }} data-testid="finale-passer"><BadgeCheck className="h-4 w-4" /> Passer en version finale</button>}
           </>) : (
-            <button type="button" className={`${btn} bg-[#B8923A] text-[#141414] hover:bg-[#C9A44A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#141414]`} onClick={() => whatsappClient(edit)} data-testid="finale-envoyer"><MessageCircle className="h-4 w-4" /> Envoyer la version finale au client</button>
+            <button type="button" className={`${btn} ia-btn-or`} onClick={() => whatsappClient(edit)} data-testid="finale-envoyer"><MessageCircle className="h-4 w-4" /> Envoyer la version finale au client</button>
           )}
         </div>
       </div>
@@ -195,11 +204,11 @@ export default function InvitationsAdmin({ onVoirDemandes }: { onVoirDemandes?: 
 
   const finales = liste.filter((a) => a.mode === "final" && a.avec_reponse);
   return (
-    <div className="space-y-4" data-testid="invitations-admin">
-      <DemandesCartes resume onVoir={onVoirDemandes} onApercu={charger} />
+    <div className="ia-admin space-y-4" data-testid="invitations-admin">
+      <DemandesCartes resume onVoir={onVoirDemandes} onApercu={() => charger()} />
       <div className="flex gap-2" role="tablist">
         {([["apercus", "Aperçus et cartes"], ["confirmes", `Confirmés${finales.length ? ` (${confirmes.filter((c) => c.reponse === "oui").length})` : ""}`]] as const).map(([k, l]) => (
-          <button key={k} type="button" role="tab" aria-selected={onglet === k} onClick={() => setOnglet(k)} data-testid={`onglet-${k}`} className={`${btn} border ${onglet === k ? "bg-[#141414] text-white border-[#141414]" : "bg-white border-[#DCCBA6]"}`}>{l}</button>
+          <button key={k} type="button" role="tab" aria-selected={onglet === k} onClick={() => setOnglet(k)} data-testid={`onglet-${k}`} className={`${btn} ${onglet === k ? "ia-btn-1" : "ia-btn-2"}`}>{l}</button>
         ))}
       </div>
       {onglet === "confirmes" ? (
@@ -211,17 +220,17 @@ export default function InvitationsAdmin({ onVoirDemandes }: { onVoirDemandes?: 
             const non = confirmes.filter((c) => c.apercu_id === a.id && c.reponse === "non");
             const total = oui.reduce((n, c) => n + c.nb_confirmes, 0);
             return (<>
-              <label className="block text-sm">Carte d'invitation
+              <label className="ia-lib block">Carte d'invitation
                 <select className={`${champ} mt-1`} value={a.id} onChange={(e) => setChoisie(e.target.value)} data-testid="choix-carte">
                   {finales.map((x) => { const n = confirmes.filter((c) => c.apercu_id === x.id && c.reponse === "oui").reduce((s, c) => s + c.nb_confirmes, 0); return <option key={x.id} value={x.id}>{x.noms}{x.date_evenement ? ` · ${new Date(`${x.date_evenement}T12:00:00`).toLocaleDateString("fr-FR")}` : ""} — {n} confirmé{n > 1 ? "s" : ""}</option>; })}
                 </select>
               </label>
-              <section className="rounded-3xl bg-white border border-[#EADFC8] p-4">
+              <section className="ia-carte p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div><h3 className="font-serif text-lg">{a.noms}</h3><p className="text-xs text-[#6B6154]">{total} personne{total > 1 ? "s" : ""} confirmée{total > 1 ? "s" : ""} · {non.length} absent{non.length > 1 ? "s" : ""}</p></div>
+                  <div><h3 className="font-titre text-lg">{a.noms}</h3><p className="text-xs text-[#6B6154]">{total} personne{total > 1 ? "s" : ""} confirmée{total > 1 ? "s" : ""} · {non.length} absent{non.length > 1 ? "s" : ""}</p></div>
                   <div className="flex gap-1.5">
-                    <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => copierListe(a)}><Copy className="h-4 w-4" /> Copier la liste</button>
-                    <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={() => envoyerListe(a)}><MessageCircle className="h-4 w-4" /> Envoyer au client</button>
+                    <button type="button" className={`${btn} ia-btn-2`} onClick={() => copierListe(a)}><Copy className="h-4 w-4" /> Copier la liste</button>
+                    <button type="button" className={`${btn} ia-btn-1`} onClick={() => envoyerListe(a)}><MessageCircle className="h-4 w-4" /> Envoyer au client</button>
                   </div>
                 </div>
                 <div className="mt-4 rounded-2xl border border-[#E3D6BA] bg-[#FBF8F1] p-3 space-y-3" data-testid="liste-directe-admin">
@@ -233,17 +242,17 @@ export default function InvitationsAdmin({ onVoirDemandes }: { onVoirDemandes?: 
                     <div className="space-y-2">
                       <input readOnly className={`${champ} text-xs`} value={lienListe(a.jeton_liste)} onFocus={(e) => e.currentTarget.select()} aria-label="Lien de la liste en direct" />
                       <div className="flex flex-wrap gap-1.5">
-                        <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => copierLienListe(a)} data-testid="liste-copier"><Copy className="h-4 w-4" /> Copier le lien</button>
-                        <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={() => whatsappListe(a)}><MessageCircle className="h-4 w-4" /> Envoyer par WhatsApp</button>
+                        <button type="button" className={`${btn} ia-btn-2`} onClick={() => copierLienListe(a)} data-testid="liste-copier"><Copy className="h-4 w-4" /> Copier le lien</button>
+                        <button type="button" className={`${btn} ia-btn-1`} onClick={() => whatsappListe(a)}><MessageCircle className="h-4 w-4" /> Envoyer par WhatsApp</button>
                         {coupe ? (
                           <span className="inline-flex flex-wrap items-center gap-2 text-sm">Couper le lien ? Il ne montrera plus rien.
                             <button type="button" className={`${btn} bg-[#9B2C23] text-white`} onClick={() => couperLienListe(a)} data-testid="liste-couper-confirmer">Oui, couper</button>
                             <button type="button" className="underline min-h-10" onClick={() => setCoupe(false)}>Annuler</button></span>
-                        ) : <button type="button" className={`${btn} border border-[#DCCBA6] bg-white text-[#9B2C23]`} onClick={() => setCoupe(true)} data-testid="liste-couper">Couper le lien</button>}
+                        ) : <button type="button" className={`${btn} ia-btn-danger`} onClick={() => setCoupe(true)} data-testid="liste-couper">Couper le lien</button>}
                       </div>
                     </div>
-                  ) : <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={() => creerLienListe(a)} data-testid="liste-creer">Créer le lien de la liste en direct</button>}
-                  <label className="block text-sm">Prévenir par e-mail à chaque nouvelle réponse
+                  ) : <button type="button" className={`${btn} ia-btn-1`} onClick={() => creerLienListe(a)} data-testid="liste-creer">Créer le lien de la liste en direct</button>}
+                  <label className="ia-lib block">Prévenir par e-mail à chaque nouvelle réponse
                     <input type="email" inputMode="email" autoComplete="off" className={`${champ} mt-1`} placeholder="adresse du client (laisser vide = pas d'e-mail)" value={mailNotif[a.id] ?? a.notif_email ?? ""} onChange={(e) => setMailNotif({ ...mailNotif, [a.id]: e.target.value })} onBlur={() => enregistrerMail(a)} data-testid="liste-email" />
                     <span className="block text-xs text-[#6B6154] mt-1">Un seul e-mail regroupe les réponses reçues (toutes les 5 minutes au plus).</span>
                   </label>
@@ -259,26 +268,30 @@ export default function InvitationsAdmin({ onVoirDemandes }: { onVoirDemandes?: 
           })()}
         </div>
       ) : (<>
-      <div className="rounded-3xl bg-white border border-[#EADFC8] p-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-[#5E554A] max-w-xl">Créez en 1 minute un aperçu (mariage, anniversaire, baby shower, naissance, iftar) et envoyez le lien au client : l'enveloppe s'ouvre, la salle s'affiche sur Google Maps. Les aperçus restent valables 30 jours ; une carte finale reste valable jusqu'à 30 jours après le mariage. Pour un couple client, l'invitation se règle dans son espace mariés (onglet « Mon invitation »).</p>
-        <button type="button" className={`${btn} bg-[#141414] text-white`} onClick={creer} data-testid="apercu-nouveau"><Plus className="h-4 w-4" /> Nouvel aperçu</button>
+      <div className="ia-section flex flex-wrap items-start justify-between gap-3 w-full">
+        <div className="max-w-xl">
+          <span className="ia-legende">Aperçus et cartes</span>
+          <p className="text-sm text-[#5E554A] mt-1">Créez un aperçu, envoyez le lien au client par WhatsApp : l'enveloppe s'ouvre, la salle s'affiche sur Google Maps. Aperçu valable 30 jours · carte finale valable 30 jours après l'événement.</p>
+          <details className="text-sm text-[#5E554A] mt-1"><summary className="cursor-pointer underline underline-offset-4">Comment ça marche</summary><p className="mt-1">Occasions : mariage, anniversaire, baby shower, naissance, iftar. Pour un couple client, l'invitation se règle aussi dans son espace mariés (onglet « Mon invitation »). La version finale se débloque après paiement ; livraison 1 semaine après le paiement.</p></details>
+        </div>
+        <button type="button" className={`${btn} ia-btn-1`} onClick={creer} data-testid="apercu-nouveau"><Plus className="h-4 w-4" /> Nouvel aperçu</button>
       </div>
-      {liste.length === 0 && <p className="text-sm text-[#5E554A] text-center py-10">Aucun aperçu pour le moment.</p>}
-      <ul className="space-y-2">
+      {liste.length === 0 && <div className="ia-vide"><div className="ia-arche" aria-hidden="true" /><p className="ia-titre text-[22px]">Aucun aperçu pour le moment</p><p className="text-sm text-[#5E554A] mt-1">Créez-en un pour l'envoyer au client par WhatsApp.</p></div>}
+      <ul className="space-y-2 ia-liste">
         {liste.map((a) => (
-          <li key={a.id} className="rounded-2xl bg-white border border-[#EADFC8] p-3 flex flex-wrap items-center gap-2 justify-between">
+          <li key={a.id} className="ia-carte ia-ligne flex flex-wrap items-center gap-2 justify-between">
             <button type="button" className="text-left min-w-0 flex-1" onClick={() => setEdit(a)}>
-              <span className="block font-medium truncate">{a.noms} {a.invitation?.evenement && <span className="ml-1 align-middle text-[10px] uppercase tracking-widest rounded-full border border-[#DCCBA6] px-2 py-0.5 text-[#6B6154]">{evenementDe(a.invitation.evenement).nom}</span>}<span className={`ml-1 align-middle text-[10px] uppercase tracking-widest rounded-full px-2 py-0.5 ${a.mode === "final" ? "bg-[#E6F2EC] text-[#1F5A4C]" : "bg-[#F4ECD8] text-[#7A5A12]"}`}>{a.mode === "final" ? "Finale" : "Test"}</span></span>
-              <span className="block text-xs text-[#6B6154] truncate">{[a.prospect, a.lieu, `${a.mode === "final" ? "valable jusqu'au" : "expire le"} ${new Date(a.expire_le).toLocaleDateString("fr-FR")}`].filter(Boolean).join(" · ")}</span>
+              <span className="block ia-titre text-[19px] truncate">{a.noms} {a.invitation?.evenement && <span className="ia-tag ia-tag-calme ml-2">{evenementDe(a.invitation.evenement).nom}</span>}<span className={`ia-tag ml-2 ${a.mode === "final" ? "ia-tag-final" : "ia-tag-test"}`}>{a.mode === "final" ? "Finale" : "Test"}</span></span>
+              <span className="block text-xs text-[#6B6154] truncate">{[a.prospect, a.lieu, a.expire_le && !isNaN(new Date(a.expire_le).getTime()) && `${a.mode === "final" ? "valable jusqu'au" : "expire le"} ${new Date(a.expire_le).toLocaleDateString("fr-FR")}`].filter(Boolean).join(" · ")}</span>
             </button>
             <div className="w-full flex flex-wrap items-center gap-2 text-xs">
               <label className="inline-flex items-center gap-1.5 rounded-full border border-[#DCCBA6] bg-white px-3 min-h-9 cursor-pointer"><input type="checkbox" checked={a.avec_reponse} onChange={(e) => basculerReponses(a, e.target.checked)} data-testid="liste-avec-reponse" /> {a.avec_reponse ? "Demande de confirmation" : "Sans confirmation"}</label>
               {a.mode === "final" && a.avec_reponse && <button type="button" className="rounded-full bg-[#E4D49A] text-[#141414] px-3 min-h-9 font-medium" onClick={() => { setChoisie(a.id); setOnglet("confirmes"); }}>{confirmes.filter((c) => c.apercu_id === a.id && c.reponse === "oui").reduce((s, c) => s + c.nb_confirmes, 0)} confirmé(s) →</button>}
             </div>
             <div className="flex gap-1.5">
-              <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => copier(a)} aria-label="Copier le lien"><Copy className="h-4 w-4" /></button>
-              <button type="button" className={`${btn} border border-[#DCCBA6] bg-white`} onClick={() => whatsapp(a)} aria-label="Envoyer par WhatsApp"><MessageCircle className="h-4 w-4" /></button>
-              <button type="button" className={`${btn} border border-[#DCCBA6] bg-white text-[#9B2C23]`} onClick={() => supprimer(a)} aria-label="Supprimer"><Trash2 className="h-4 w-4" /></button>
+              <button type="button" className={`${btn} ia-btn-2 ia-icone`} onClick={() => copier(a)} aria-label="Copier le lien"><Copy className="h-4 w-4" /></button>
+              <button type="button" className={`${btn} ia-btn-2 ia-icone`} onClick={() => whatsapp(a)} aria-label="Envoyer par WhatsApp"><MessageCircle className="h-4 w-4" /></button>
+              <button type="button" className={`${btn} ia-btn-danger ia-icone`} onClick={() => supprimer(a)} aria-label="Supprimer"><Trash2 className="h-4 w-4" /></button>
             </div>
           </li>
         ))}
