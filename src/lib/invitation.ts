@@ -160,9 +160,9 @@ export interface OuvertureDef {
 /** Formules commerciales : le contenu de la carte (programme, RSVP, livre d'or…) se règle à part ; la formule se déduit de la carte choisie. */
 export type Formule = "classique" | "interactive" | "prestige";
 export const FORMULES: { id: Formule; nom: string; prix: string; texte: string }[] = [
-  { id: "classique", nom: "Classique", prix: "250 DH", texte: "Une carte élégante qui s'ouvre en animation, écrite à vos prénoms, avec la date et le lieu. Partage par WhatsApp." },
-  { id: "interactive", nom: "Interactive", prix: "450 DH", texte: "L'ouverture en film, puis le programme, le plan Google Maps, le compte à rebours et la confirmation de présence de vos invités." },
-  { id: "prestige", nom: "Prestige", prix: "dès 650 DH", texte: "Tout l'Interactive, avec l'histoire des mariés, le livre d'or et une invitation au prénom de chaque invité." },
+  { id: "classique", nom: "Classique", prix: "250 DH", texte: "Design personnalisé, animation élégante, musique, format partageable (WhatsApp, e-mail…). L'adresse du lieu est écrite sur la carte ; le plan Google Maps cliquable est inclus à partir de l'Interactive. Version trilingue : français, arabe, anglais." },
+  { id: "interactive", nom: "Interactive", prix: "450 DH", texte: "Ouverture animée de l'invitation, musique, compte à rebours, localisation Google Maps, programme de la journée, bouton de confirmation de présence, design entièrement personnalisé. Version trilingue : français, arabe, anglais." },
+  { id: "prestige", nom: "Prestige", prix: "dès 650 DH", texte: "Tout ce qui est inclus dans l'Interactive, avec l'histoire des mariés et leurs photos, le livre d'or pour les invités, une invitation individuelle au nom de chaque invité, la gestion des confirmations et un design premium sur mesure. Version trilingue : français, arabe, anglais." },
 ];
 const FILMS_INTERACTIVE = ["v-porte-blanche", "v-alhambra", "v-lakeside", "v-gardenia", "v-shoreline", "v-chateau-soir", "v-palace", "v-glasshouse"];
 const PRESTIGE_750 = ["v-minuit", "v-neige", "v-oliveto", "v-azure"];
@@ -188,7 +188,7 @@ export const OPTIONS_CARTE: OptionCarte[] = [
 export const prixNombre = (o: OuvertureDef): number => parseInt(prixDe(o), 10);
 export interface Extra { id: string; nom: string; prix: number; texte: string; sauf?: Formule[] }
 export const EXTRAS: Extra[] = [
-  { id: "modif", nom: "Modification supplémentaire", prix: 50, texte: "Un ajustement de plus après l'aperçu." },
+  { id: "urgent", nom: "Création urgente (24 h)", prix: 150, texte: "Votre carte est prête 24 h après le paiement, au lieu d'1 semaine." },
 ];
 /** Cartes vendues en boutique : seulement les créations photoréalistes (films et décors illustrés finement), pas les portes dessinées. */
 export const ouverturesBoutique = (): OuvertureDef[] => OUVERTURES.filter((o) => o.video || o.carte);

@@ -4,7 +4,7 @@ import { ArrowLeft, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import Invitation from "./Invitation";
 import ChampDate from "./ChampDate";
-import { OPTIONS_CARTE, PRIX_OPTION, descriptionVente, prixDe, totalCommande, type OuvertureDef } from "@/lib/invitation";
+import { extrasPour, OPTIONS_CARTE, PRIX_OPTION, descriptionVente, prixDe, totalCommande, type OuvertureDef } from "@/lib/invitation";
 import { evenementDe, GROUPES } from "@/lib/evenements";
 import { supabase } from "@/integrations/supabase/client";
 import { suivre } from "@/lib/suivi";
@@ -81,7 +81,8 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
     setEtat("envoi");
     const resume = `Demande de carte « ${o.nom} » (${prixDe(o)})`;
     const choisies = OPTIONS_CARTE.filter((x) => opts.includes(x.id));
-    const details = [choisies.length > 0 && `Options (${PRIX_OPTION} DH chacune) : ${choisies.map((x) => x.nom).join(", ")}`, v.heure && `Heure : ${v.heure}`, v.maps && `Lien Google Maps : ${v.maps}`, v.programme && `Programme : ${v.programme}`, v.musique && `Musique souhaitée : ${v.musique}`, v.photos && "Photos à envoyer par WhatsApp", `Total estimé : ${prix} DH`].filter(Boolean).join("\n");
+    const extrasChoisis = extrasPour(o).filter((x) => opts.includes(x.id));
+    const details = [extrasChoisis.length > 0 && `Supplément : ${extrasChoisis.map((x) => `${x.nom} (+${x.prix} DH)`).join(", ")}`, choisies.length > 0 && `Options (${PRIX_OPTION} DH chacune) : ${choisies.map((x) => x.nom).join(", ")}`, v.heure && `Heure : ${v.heure}`, v.maps && `Lien Google Maps : ${v.maps}`, v.programme && `Programme : ${v.programme}`, v.musique && `Musique souhaitée : ${v.musique}`, v.photos && "Photos à envoyer par WhatsApp", `Total estimé : ${prix} DH`].filter(Boolean).join("\n");
     const { error } = await (supabase as any).rpc("carte_demander", {
       p_nom: v.nom, p_telephone: v.tel, p_email: "", p_occasion: v.occasion, p_noms: v.noms,
       p_date: v.date || null, p_lieu: v.lieu, p_message: [resume, v.message && `Message de la carte : ${v.message}`, details].filter(Boolean).join("\n\n"),
@@ -114,7 +115,7 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
                 <p>Merci {v.nom.split(" ")[0]}. Nous préparons votre carte « {o.nom} » avec vos prénoms et vous envoyons l'aperçu sur WhatsApp au <b>{numeroAffiche(v.tel)}</b>.</p>
                 <p className="cv-merci-num">Ce n'est pas le bon numéro ? <a href={WHATSAPP + encodeURIComponent(`Bonjour Heavent, j'ai fait une erreur de numéro dans ma demande de carte « ${o.nom} ». Mon bon numéro : `)} target="_blank" rel="noopener noreferrer">Écrivez-nous ici</a>.</p>
                 {tropProche(v.date) && <p className="cv-alerte" role="note">Votre date est proche : écrivez-nous sur WhatsApp pour que nous vous répondions en priorité.</p>}
-                <p className="cv-merci-etapes">Vous validez l'aperçu, vous réglez, puis votre carte est livrée sous 1 semaine à partir du paiement.</p>
+                <p className="cv-merci-etapes">{opts.includes("urgent") ? "Vous validez l'aperçu, vous réglez, puis votre carte est livrée sous 24 h à partir du paiement." : "Vous validez l'aperçu, vous réglez, puis votre carte est livrée sous 1 semaine à partir du paiement."}</p>
                 <a className="s-btn s-btn-plein cv-bouton" href={WHATSAPP + encodeURIComponent(`Bonjour Heavent, je viens de demander la carte « ${o.nom} ». Je m'appelle ${v.nom}.`)} target="_blank" rel="noopener noreferrer">Nous écrire sur WhatsApp</a>
                 <button type="button" className="cv-lien" onClick={onFermer} data-testid="autre-demande">Voir d'autres cartes</button>
               </div>
@@ -181,6 +182,18 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
                   {opts.includes("musique") && <div className="cv-option-champs"><label>Musique souhaitée<input className="cv-champ" value={v.musique} onChange={(e) => maj("musique", e.target.value)} placeholder="Titre ou ambiance (nous vous proposerons)" maxLength={120} /></label></div>}
                   {(opts.includes("histoire") || opts.includes("prenom")) && <label className="cv-accord"><input type="checkbox" checked={v.photos} onChange={(e) => maj("photos", e.target.checked)} /><span>Je vous envoie photos et textes par WhatsApp</span></label>}
                 </fieldset>
+                {extrasPour(o).length > 0 && (
+                  <fieldset className="cv-options" data-testid="cartes-extras">
+                    <legend>Supplément</legend>
+                    {extrasPour(o).map((x) => (
+                      <label key={x.id} className="cv-option">
+                        <input type="checkbox" checked={opts.includes(x.id)} onChange={() => bascule(x.id)} data-testid={`option-${x.id}`} />
+                        <span><b>{x.nom}</b><small>{x.texte}</small></span>
+                        <em>+{x.prix} DH</em>
+                      </label>
+                    ))}
+                  </fieldset>
+                )}
                 <div className="cv-duo">
                   <label>Votre nom
                     <input className="cv-champ" value={v.nom} onChange={(e) => maj("nom", e.target.value)} autoComplete="name" id="cv-champ-nom" data-testid="cartes-nom" aria-invalid={!!err.nom} />
