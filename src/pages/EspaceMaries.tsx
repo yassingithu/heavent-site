@@ -6,9 +6,10 @@ import { enregistrerFichier } from "@/lib/pdf";
 import SouvenirsMaries from "@/components/mariage/SouvenirsMaries";
 import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvitation";
 import type { InvitationReglages } from "@/lib/invitation";
+import { lienWa } from "@/lib/whatsapp";
 import {
   COTES, ECHEANCES, Echeance, Invite, Moment, PosteBudget, TableMariage, Tache,
-  budgetDefaut, checklistDefaut, dateEcheance, estActive, nomsPersonnes, lienReponse, lienRsvp, messageWhatsappInvite, programmeDefaut, uid,
+  budgetDefaut, checklistDefaut, dateEcheance, estActive, nomsPersonnes, lienReponse, lienRsvp, lireListeInvites, messageWhatsappInvite, programmeDefaut, uid,
 } from "@/lib/mariage";
 import {
   ArrowLeft, Check, CheckCircle2, Copy, Download, Heart, ListChecks, Loader2, MessageCircle,
@@ -362,14 +363,32 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
   token: string; espace: Espace; invites: Invite[]; noms: string; date: string | null; maj: (m: Partial<Espace>) => void;
   enregistrer: (i: Partial<Invite> & { nom: string }) => Promise<Invite | null>; supprimer: (id: string) => void;
 }) {
-  const [nom, setNom] = useState(""); const [cote, setCote] = useState<Invite["cote"]>("commun"); const [nb, setNb] = useState("1");
+  const [nom, setNom] = useState(""); const [tel, setTel] = useState(""); const [cote, setCote] = useState<Invite["cote"]>("commun"); const [nb, setNb] = useState("1");
   const [filtre, setFiltre] = useState<"tous" | Invite["reponse"]>("tous");
   const [copie, setCopie] = useState<string | null>(null);
   const [ajout, setAjout] = useState(false);
   const [annul, setAnnul] = useState<Invite | null>(null);
+  const [colle, setColle] = useState(""); const [import_, setImport] = useState<string>("");
+  const cleEnvoyes = `heavent-envoyes-${token}`;
+  const [envoyes, setEnvoyes] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem(cleEnvoyes) ?? "[]"); } catch { return []; } });
+  const marquerEnvoye = (id: string) => setEnvoyes((l) => { const n = l.includes(id) ? l : [...l, id]; try { localStorage.setItem(cleEnvoyes, JSON.stringify(n)); } catch { /* sans stockage : la coche reste le temps de la page */ } return n; });
+  const importer = async () => {
+    const { lignes, ignorees } = lireListeInvites(colle);
+    const connus = new Set(invites.map((i) => i.nom.trim().toLowerCase()));
+    const nouvelles = lignes.filter((l) => { const k = l.nom.toLowerCase(); if (connus.has(k)) return false; connus.add(k); return true; });
+    if (!nouvelles.length) { setImport("Rien à ajouter : aucune ligne nouvelle n'a été reconnue."); return; }
+    setAjout(true); let ok = 0;
+    for (const l of nouvelles) { setImport(`Ajout en cours… ${ok}/${nouvelles.length}`); if (await enregistrer({ nom: l.nom, cote: "commun", nb_prevus: l.nb_prevus, telephone: l.telephone })) ok++; else break; }
+    setAjout(false);
+    const doublons = lignes.length - nouvelles.length;
+    setImport(`${ok} invité${ok > 1 ? "s" : ""} ajouté${ok > 1 ? "s" : ""}${doublons ? ` · ${doublons} déjà dans la liste` : ""}${ignorees ? ` · ${ignorees} ligne${ignorees > 1 ? "s" : ""} sans nom ignorée${ignorees > 1 ? "s" : ""}` : ""}${ok < nouvelles.length ? " · l'import s'est arrêté, réessayez" : ""}.`);
+    if (ok === nouvelles.length) setColle("");
+  };
   const minuteur = useRef<number>();
   useEffect(() => () => window.clearTimeout(minuteur.current), []);
   const actives = invites.filter(estActive);
+  const aEnvoyer = actives.filter((i) => i.telephone && i.reponse === "attente" && !envoyes.includes(i.id));
+  const avecNumero = actives.filter((i) => i.telephone).length;
   const enAttenteValidation = invites.filter((i) => i.liste_statut === "a_valider");
   const refuses = invites.filter((i) => i.liste_statut === "refuse");
   const liste = actives.filter((i) => filtre === "tous" || i.reponse === filtre);
@@ -382,9 +401,9 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
     if (!nom.trim()) return;
     if (/^\s*(famille|family|les)\b|&|\bet\b/i.test(nom) && !window.confirm("Ce nom ressemble à une famille ou à un couple. Pour les tables, mieux vaut un prénom et un nom (ex. Samir Benali) avec 3 places, puis les prénoms des autres dans « Noms des accompagnants ». Ajouter quand même ?")) return;
     setAjout(true);
-    const ok = await enregistrer({ nom: nom.trim(), cote, nb_prevus: Math.min(20, Math.max(1, Number(nb) || 1)) });
+    const ok = await enregistrer({ nom: nom.trim(), cote, nb_prevus: Math.min(20, Math.max(1, Number(nb) || 1)), telephone: tel.trim() || null });
     setAjout(false);
-    if (ok) { setNom(""); setNb("1"); }
+    if (ok) { setNom(""); setNb("1"); setTel(""); }
   };
   const copier = async (i: Invite) => {
     try { await navigator.clipboard.writeText(lienRsvp(i.jeton)); setCopie(i.id); setTimeout(() => setCopie(null), 1500); } catch { window.prompt("Lien à copier :", lienRsvp(i.jeton)); }
@@ -462,14 +481,25 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
 
       <section className={`${carte} p-5 space-y-4`}>
         <h2 className="font-titre text-xl">Ajouter des invités</h2>
-        <form onSubmit={ajouter} className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-2">
+        <form onSubmit={ajouter} className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto_auto] gap-2">
           <input value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Prénom et nom (ex. Samir Benali)" className={champ} data-testid="invite-nom" />
+          <input value={tel} onChange={(e) => setTel(e.target.value)} type="tel" inputMode="tel" placeholder="WhatsApp (facultatif)" aria-label="Numéro WhatsApp de l'invité" className={`${champ} sm:w-44`} data-testid="invite-tel" />
           <select value={cote} onChange={(e) => setCote(e.target.value as Invite["cote"])} className={champ} aria-label="Côté">
             {Object.entries(COTES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
           <label className="flex items-center gap-2 text-sm"><span className="text-[#6B6155]" title="1 = l'invité seul, 2 = il peut venir avec une personne (+1), 3 = avec deux (+2)…">Personnes (+1, +2…)</span><input type="number" min={1} max={20} value={nb} onChange={(e) => setNb(e.target.value)} className={`${champ} w-20`} data-testid="invite-nb" /></label>
           <button className={boutonOr} disabled={ajout} data-testid="ajouter-invite">{ajout ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Ajouter</button>
         </form>
+        <details className="text-sm" data-testid="import-liste">
+          <summary className="cursor-pointer text-[#8C6D22]">Importer toute ma liste d'un coup</summary>
+          <div className="mt-3 space-y-2">
+            <p className="text-xs text-[#6B6155]">Collez votre liste (depuis Excel, Notes ou WhatsApp) : une ligne par invité, avec le nom puis le numéro WhatsApp, et si besoin le nombre de places. Exemple : <i>Samir Benali ; 0612345678 ; 3</i></p>
+            <textarea value={colle} onChange={(e) => { setColle(e.target.value); setImport(""); }} rows={6} className={`${champ} py-2 font-mono`} placeholder={"Samir Benali ; 0612345678 ; 3\nLeila Idrissi ; 0698765432"} aria-label="Liste d'invités à importer" data-testid="import-texte" />
+            {colle.trim() && <p className="text-xs text-[#5E554A]">{lireListeInvites(colle).lignes.length} invité{lireListeInvites(colle).lignes.length > 1 ? "s" : ""} reconnu{lireListeInvites(colle).lignes.length > 1 ? "s" : ""}, dont {lireListeInvites(colle).lignes.filter((l) => l.telephone).length} avec un numéro.</p>}
+            <button type="button" className={boutonOr} disabled={ajout || !colle.trim()} onClick={() => void importer()} data-testid="import-valider">Importer ces invités</button>
+            {import_ && <p className="text-sm" role="status" data-testid="import-resultat">{import_}</p>}
+          </div>
+        </details>
         <p className="text-xs text-[#6B6155]">Une famille ? Ajoutez une personne (ex. Samir Benali) avec 3 places, puis écrivez le prénom et le nom des autres dans « Noms des accompagnants ». « Personnes » = nombre de places pour cet invité, lui compris : 1 = seul, 2 = il peut venir avec une personne (+1), 3 = avec deux (+2). Un invité ne peut pas confirmer plus de places que celles que vous lui avez accordées.</p>
         <details className="text-sm">
           <summary className="cursor-pointer text-[#8C6D22]">Message et date limite de réponse</summary>
@@ -479,6 +509,19 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
           </div>
         </details>
       </section>
+
+      {avecNumero > 0 && (
+        <section className={`${carte} p-5 space-y-3`} data-testid="envoi-cartes">
+          <h2 className="font-titre text-xl">Envoyer les cartes une par une</h2>
+          <p className="text-sm text-[#5E554A]">Chaque invité reçoit sa propre carte, à son nom, directement sur son WhatsApp. Un appui par invité : WhatsApp s'ouvre avec le message prêt, il ne reste qu'à envoyer.</p>
+          <p className="text-sm"><b>{actives.filter((i) => i.telephone && envoyes.includes(i.id)).length}</b> envoyée{actives.filter((i) => i.telephone && envoyes.includes(i.id)).length > 1 ? "s" : ""} sur {avecNumero}</p>
+          {aEnvoyer[0] ? (
+            <a href={lienWa(messageWhatsappInvite(aEnvoyer[0], noms, date), aEnvoyer[0].telephone)} target="_blank" rel="noopener noreferrer" onClick={() => marquerEnvoye(aEnvoyer[0].id)} className={`${bouton} bg-[#25D366] text-white min-h-12 px-5 w-full sm:w-auto`} data-testid="envoyer-suivant">
+              <MessageCircle className="h-5 w-5" /> Envoyer à {aEnvoyer[0].nom}{aEnvoyer.length > 1 ? ` (${aEnvoyer.length - 1} ensuite)` : ""}
+            </a>
+          ) : <p className="text-sm text-[#2F5A2A]" data-testid="envoi-termine">Toutes les cartes avec un numéro ont été envoyées.</p>}
+        </section>
+      )}
 
       <section className={`${carte} p-5 space-y-3`}>
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -498,6 +541,8 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
               <li key={i.id} className="py-3 flex flex-wrap items-center gap-3">
                 <div className="flex-1 min-w-[180px]">
                   <div className="font-medium">{i.nom} <span className="text-xs text-[#8C6D22] font-normal">· {COTES[i.cote]} · {i.nb_prevus} pers.</span></div>
+                  <input key={`${i.id}-tel-${i.telephone ?? ""}`} defaultValue={i.telephone ?? ""} type="tel" inputMode="tel" maxLength={20} placeholder="N° WhatsApp pour envoi direct" aria-label={`Numéro WhatsApp de ${i.nom}`} className="mt-1 w-full max-w-[220px] rounded-lg border border-[#E3D6BA] bg-white px-2 min-h-9 text-xs"
+                    onBlur={(e) => { const v = e.target.value.trim(); if (v !== (i.telephone ?? "")) enregistrer({ ...i, telephone: v || null }); }} />
                   {i.remarque && <div className="text-xs text-[#6B6155]">« {i.remarque} »</div>}
                   {i.nb_prevus > 1 && (
                     <details className="text-xs mt-1" data-testid="accompagnants-invite">
@@ -524,8 +569,8 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
                   <option value="oui">Présent{i.reponse === "oui" && i.nb_confirmes ? ` (${i.nb_confirmes})` : ""}</option>
                   <option value="non">Absent</option>
                 </select>
-                <a href={`https://wa.me/?text=${encodeURIComponent(messageWhatsappInvite(i, noms, date))}`} target="_blank" rel="noopener noreferrer" className={`${bouton} bg-[#25D366] text-white min-h-9 px-3`} aria-label={`Envoyer l'invitation à ${i.nom} par WhatsApp`}>
-                  <MessageCircle className="h-4 w-4" /> <span className="hidden sm:inline">Envoyer</span>
+                <a href={lienWa(messageWhatsappInvite(i, noms, date), i.telephone)} target="_blank" rel="noopener noreferrer" onClick={() => marquerEnvoye(i.id)} className={`${bouton} bg-[#25D366] text-white min-h-9 px-3`} aria-label={`Envoyer l'invitation à ${i.nom} par WhatsApp`}>
+                  {envoyes.includes(i.id) ? <CheckCircle2 className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />} <span className="hidden sm:inline">{envoyes.includes(i.id) ? "Envoyée" : "Envoyer"}</span>
                 </a>
                 <button onClick={() => copier(i)} className={`${boutonClair} min-h-9 px-3`} aria-label="Copier le lien de réponse" data-testid="copier-lien-invite">
                   {copie === i.id ? <CheckCircle2 className="h-4 w-4 text-[#2F5A2A]" /> : <Copy className="h-4 w-4" />}

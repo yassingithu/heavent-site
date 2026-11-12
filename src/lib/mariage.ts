@@ -7,7 +7,7 @@ export interface TableMariage { id: string; nom: string; places: number }
 export interface Invite {
   id: string; jeton: string; nom: string; cote: "mariee" | "marie" | "commun"; nb_prevus: number;
   reponse: "attente" | "oui" | "non"; nb_confirmes: number | null; remarque: string | null; table_id: string | null; repondu_le: string | null;
-  accompagnants?: string[]; liste_statut?: "valide" | "a_valider" | "refuse";
+  accompagnants?: string[]; telephone?: string | null; liste_statut?: "valide" | "a_valider" | "refuse";
 }
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
@@ -87,4 +87,20 @@ export const nomsPersonnes = (i: Invite, n: number) => {
   const liste = [i.nom, ...acc];
   while (liste.length < n) liste.push("");
   return liste.slice(0, Math.max(n, 1));
+};
+
+/** Colle d'un tableur ou d'un carnet : une ligne par invité, « Nom ; numéro WhatsApp ; places » (séparateurs : tabulation, point-virgule, virgule). */
+export interface LigneImport { nom: string; telephone: string | null; nb_prevus: number }
+export const lireListeInvites = (texte: string): { lignes: LigneImport[]; ignorees: number } => {
+  const lignes: LigneImport[] = []; let ignorees = 0;
+  for (const brut of texte.split(/\r?\n/)) {
+    if (!brut.trim()) continue;
+    const cases = brut.split(/\t|;|,|\s{2,}/).map((c) => c.trim()).filter(Boolean);
+    const tel = cases.find((c) => /^\+?[\d\s().-]{8,}$/.test(c) && c.replace(/\D/g, "").length >= 8) ?? null;
+    const places = cases.find((c) => /^\d{1,2}$/.test(c));
+    const nom = cases.find((c) => c !== tel && c !== places && /[A-Za-zÀ-ÿ\u0600-\u06FF]/.test(c));
+    if (!nom) { ignorees++; continue; }
+    lignes.push({ nom: nom.slice(0, 120), telephone: tel ? tel.replace(/[^\d+]/g, "") : null, nb_prevus: Math.min(20, Math.max(1, Number(places) || 1)) });
+  }
+  return { lignes: lignes.slice(0, 300), ignorees: ignorees + Math.max(0, lignes.length - 300) };
 };

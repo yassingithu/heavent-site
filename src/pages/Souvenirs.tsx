@@ -6,11 +6,12 @@ import { Camera, CheckCircle2, Loader2, X } from "lucide-react";
 import "@/styles/invitation.css";
 
 type Langue = "fr" | "en" | "ar";
-interface Etat { etat: "avant" | "ouverte" | "fermee"; noms: string; nom: string | null; date_evenement: string | null; mot: string | null; nb_photos: number }
+interface Etat { etat: "avant" | "ouverte" | "fermee"; noms: string; nom: string | null; date_evenement: string | null; mot: string | null; nb_photos: number; complet?: boolean }
 
 const MAX = 8;
 const T = {
   fr: {
+    albumPlein: "L'album du mariage est complet : il n'est plus possible d'ajouter de photos. Merci pour votre partage !",
     titre: "Vos souvenirs du mariage", intro: (n: string) => `Partagez vos plus belles photos du mariage de ${n}. Ils les retrouveront dans un livre souvenir.`,
     avant: (d: string) => `Cette page s'ouvrira le jour du mariage, le ${d}. Revenez ce jour-là avec vos photos.`,
     fermee: "Merci ! Le partage de souvenirs est maintenant terminé. Les mariés recevront bientôt leur livre souvenir.",
@@ -21,6 +22,7 @@ const T = {
     photoIllisible: "Une photo n'a pas pu être lue (format non pris en charge).", rien: "Ajoutez au moins une photo ou un mot.",
   },
   en: {
+    albumPlein: "The wedding album is full: no more photos can be added. Thank you for sharing!",
     titre: "Your wedding memories", intro: (n: string) => `Share your favourite photos from ${n}'s wedding. They will keep them in a memory book.`,
     avant: (d: string) => `This page opens on the wedding day, ${d}. Come back that day with your photos.`,
     fermee: "Thank you! Memory sharing is now closed. The couple will soon receive their memory book.",
@@ -31,6 +33,7 @@ const T = {
     photoIllisible: "A photo could not be read (unsupported format).", rien: "Add at least one photo or a note.",
   },
   ar: {
+    albumPlein: "اكتمل ألبوم الزفاف ولم يعد بالإمكان إضافة صور. شكراً لمشاركتكم!",
     titre: "ذكريات حفل الزفاف", intro: (n: string) => `شاركوا أجمل صوركم من حفل زفاف ${n}. سيجدونها في كتاب تذكاري.`,
     avant: (d: string) => `ستفتح هذه الصفحة يوم الزفاف، ${d}. عودوا في ذلك اليوم مع صوركم.`,
     fermee: "شكراً! انتهت مشاركة الذكريات. سيتوصل العروسان قريباً بكتابهما التذكاري.",
@@ -115,7 +118,7 @@ export default function Souvenirs() {
     else setRecherche(data?.statut === "plusieurs" ? "plusieurs" : data?.statut === "refuse" ? "indispo" : "absent");
   };
 
-  const restantes = etat ? Math.max(0, MAX - etat.nb_photos - photos.length) : 0;
+  const restantes = etat && !etat.complet ? Math.max(0, MAX - etat.nb_photos - photos.length) : 0;
   const date = etat?.date_evenement ? new Date(etat.date_evenement + "T00:00:00Z").toLocaleDateString(t.locale, { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }) : "";
 
   const choisir = async (liste: FileList | null) => {
@@ -152,7 +155,7 @@ export default function Souvenirs() {
       const { data, error } = await (supabase as any).rpc("souvenir_enregistrer", { p_jeton: jeton, p_mot: mot, p_fichiers: chemins, p_consentement: consent });
       if (error) throw error;
       setFini(data?.nb_photos ?? chemins.length);
-      setEtat({ ...etat, nb_photos: data?.nb_photos ?? etat.nb_photos + chemins.length, mot: mot.trim() || etat.mot });
+      setEtat({ ...etat, complet: !!data?.complet || etat.complet, nb_photos: data?.nb_photos ?? etat.nb_photos + chemins.length, mot: mot.trim() || etat.mot });
       setPhotos([]);
     } catch { setErreur(chemins.length ? t.partiel(chemins.length, photos.length) : t.erreur); }
     setEnvoi(false); setProgres("");
@@ -209,7 +212,7 @@ export default function Souvenirs() {
         <CheckCircle2 className="h-8 w-8 mx-auto" style={{ color: "var(--inv-accent)" }} />
         <p style={{ fontWeight: 500, margin: "10px 0 4px" }}>{t.merci}</p>
         <p style={{ fontSize: 14, opacity: .8, margin: 0 }}>{t.merciSuite(fini)}</p>
-        {etat.nb_photos < MAX && <button type="button" className="inv-lien" onClick={() => setFini(null)}>{t.encore}</button>}
+        {etat.nb_photos < MAX && !etat.complet && <button type="button" className="inv-lien" onClick={() => setFini(null)}>{t.encore}</button>}
       </div>
     </>);
 
@@ -224,7 +227,7 @@ export default function Souvenirs() {
             </button>
             <p style={{ fontSize: 12, opacity: .75, textAlign: "center", margin: "6px 0 12px" }}>{t.reste(restantes)}</p>
           </>
-        ) : <p style={{ fontSize: 13, opacity: .85, textAlign: "center" }}>{t.complet}</p>}
+        ) : <p style={{ fontSize: 13, opacity: .85, textAlign: "center" }} data-testid="souvenirs-plein">{etat.complet ? t.albumPlein : t.complet}</p>}
           {lecture > 0 && <p style={{ fontSize: 13, opacity: .8, textAlign: "center" }} aria-live="polite"><Loader2 className="h-4 w-4 animate-spin" style={{ display: "inline", marginInlineEnd: 6 }} />{langue === "ar" ? "تحضير صوركم…" : langue === "en" ? "Preparing your photos…" : "Préparation de vos photos…"}</p>}
         {photos.length > 0 && (
           <ul style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(88px,1fr))", gap: 8, listStyle: "none", padding: 0, margin: "0 0 14px" }}>

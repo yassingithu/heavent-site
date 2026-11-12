@@ -13,13 +13,18 @@ export default function LivreSouvenirsAdmin({ devisId, noms, date, lieu }: { dev
   const [occupe, setOccupe] = useState(false);
   const [etape, setEtape] = useState("");
   const [erreur, setErreur] = useState("");
+  const [limite, setLimite] = useState(400);
+  const [saisie, setSaisie] = useState("");
+  const [notif, setNotif] = useState("");
 
   const charger = useCallback(async () => {
-    const [l, s, p] = await Promise.all([
+    const [l, s, p, d] = await Promise.all([
       (supabase as any).from("souvenirs_livres").select("chemin, nb_photos, nb_invites, taille_mo, created_at").eq("devis_id", devisId).maybeSingle(),
       (supabase as any).from("souvenirs_invites").select("id", { count: "exact", head: true }).eq("devis_id", devisId),
       (supabase as any).from("souvenirs_photos").select("masquee, created_at").eq("devis_id", devisId),
+      (supabase as any).from("devis").select("souvenirs_limite").eq("id", devisId).maybeSingle(),
     ]);
+    if (d.data?.souvenirs_limite != null) setLimite(d.data.souvenirs_limite);
     setLivre(l.data ?? null);
     const ph = (p.data ?? []) as { masquee: boolean; created_at: string }[];
     setNb({ photos: ph.filter((x) => !x.masquee).length, invites: s.count ?? 0, masquees: ph.filter((x) => x.masquee).length, derniere: ph.map((x) => x.created_at).sort().pop() ?? null });
@@ -44,7 +49,7 @@ export default function LivreSouvenirsAdmin({ devisId, noms, date, lieu }: { dev
         }
         invites.push({ nom: i.nom, mot: i.mot, photos });
       }
-      if (total > 280) { setErreur("Trop de photos pour un seul livre (plus de 280). Contactez Yassin."); setOccupe(false); setEtape(""); return; }
+      if (total > 800) { setErreur("Trop de photos pour un seul livre (plus de 800). Contactez Yassin."); setOccupe(false); setEtape(""); return; }
       if (!invites.some((i) => i.photos.length || i.mot)) { setErreur("Aucun souvenir à mettre dans le livre pour l'instant."); setOccupe(false); setEtape(""); return; }
       const dateTexte = date ? new Date(date + "T00:00:00Z").toLocaleDateString("fr-FR", { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" }) : "";
       const pret = await construireLivre({ noms, dateTexte, lieu: lieu || null, invites }, setEtape);
@@ -62,6 +67,14 @@ export default function LivreSouvenirsAdmin({ devisId, noms, date, lieu }: { dev
     setOccupe(false); setEtape("");
   };
 
+  const changerLimite = async (v: number) => {
+    setNotif(""); setErreur("");
+    if (!Number.isFinite(v) || v < 0 || v > 5000) { setErreur("Entrez un nombre entre 0 et 5000."); return; }
+    const { error } = await (supabase as any).from("devis").update({ souvenirs_limite: Math.round(v) }).eq("id", devisId);
+    if (error) { setErreur("Le plafond n'a pas pu être modifié."); return; }
+    setLimite(Math.round(v)); setSaisie(""); setNotif(`Plafond porté à ${Math.round(v)} photos : les invités peuvent de nouveau en ajouter.`);
+  };
+
   const telecharger = async () => {
     if (!livre) return;
     const { data } = await supabase.storage.from("livres-souvenirs").createSignedUrl(livre.chemin, 600, { download: `livre-souvenir.zip` });
@@ -69,6 +82,7 @@ export default function LivreSouvenirsAdmin({ devisId, noms, date, lieu }: { dev
   };
 
   if (livre === undefined || !nb) return null;
+  const total = nb.photos + nb.masquees;
   const vide = nb.photos === 0 && nb.invites === 0;
   const perime = !!livre && !!nb.derniere && nb.derniere > livre.created_at;
   const finPartage = date ? new Date(new Date(date + "T00:00:00Z").getTime() + 2 * 86400e3).toISOString().slice(0, 10) : null;
@@ -77,6 +91,15 @@ export default function LivreSouvenirsAdmin({ devisId, noms, date, lieu }: { dev
     <div className="rounded-lg border p-3 space-y-2" data-testid="livre-souvenirs-admin">
       <div className="font-medium flex items-center gap-2"><BookOpen className="h-4 w-4 text-[#A8933F]" /> Livre souvenir</div>
       <p className="text-xs text-muted-foreground">{vide ? "Aucun souvenir déposé pour l'instant." : `${nb.invites} invité${nb.invites > 1 ? "s" : ""} · ${nb.photos} photo${nb.photos > 1 ? "s" : ""} dans le livre${nb.masquees ? ` (${nb.masquees} retirée${nb.masquees > 1 ? "s" : ""} par les mariés)` : ""}.`}</p>
+      <div className="rounded-md bg-muted/40 p-2 space-y-2" data-testid="souvenirs-plafond">
+        <p className="text-xs"><b>{total} / {limite}</b> photos déposées{total >= limite ? " : plafond atteint, les envois sont bloqués." : "."} Au-delà du plafond, les invités ne peuvent plus rien ajouter.</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={() => void changerLimite(limite + 100)} data-testid="plafond-plus100">+ 100 photos</Button>
+          <input type="number" inputMode="numeric" min={0} max={5000} value={saisie} onChange={(e) => setSaisie(e.target.value)} placeholder="Autre plafond" aria-label="Nouveau plafond de photos" className="h-9 w-32 rounded-md border px-2 text-base" />
+          <Button type="button" size="sm" variant="outline" disabled={saisie === ""} onClick={() => void changerLimite(Number(saisie))}>Appliquer</Button>
+        </div>
+        {notif && <p className="text-xs text-[#4E6B3A]" role="status">{notif}</p>}
+      </div>
       {livre && <p className="text-xs">Livre prêt : {livre.nb_photos} photo{livre.nb_photos > 1 ? "s" : ""}, {livre.taille_mo ?? "?"} Mo, préparé le {new Date(livre.created_at).toLocaleDateString("fr-FR")}. Les mariés peuvent le télécharger depuis leur onglet Souvenirs.</p>}
       {perime && <p className="text-xs text-[#8C6D22]" role="status">Des photos ont été ajoutées depuis la préparation : refaites le livre.</p>}
       {tropTot && !vide && <p className="text-xs text-[#8C6D22]">Le partage est ouvert jusqu'au {new Date(finPartage + "T00:00:00Z").toLocaleDateString("fr-FR", { timeZone: "UTC", day: "numeric", month: "long" })} : préparez le livre après cette date pour ne rien oublier.</p>}

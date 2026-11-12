@@ -89,8 +89,8 @@ export async function construireLivre(e: EntreeLivre, progres?: (m: string) => v
   const [g, j3, j4, j5] = await Promise.all(["gloock-latin-400-normal", "jost-latin-300-normal", "jost-latin-400-normal", "jost-latin-500-normal"].map((n) => police(`/polices/${n}.woff2`)));
 
   // le ZIP contient le livre (photos en base64) ET les photos : on choisit la taille de photo pour rester sous ≈ 45 Mo (limite d'envoi 50 Mo)
-  const niveaux: [number, number, number][] = [[1600, 0.8, 350], [1200, 0.72, 170], [1000, 0.65, 110], [800, 0.6, 70]];
-  const [cote, qualite] = (niveaux.find(([, , ko]) => (nbPhotos * ko * 2.4) / 1024 <= 45) ?? niveaux[3]).slice(0, 2) as [number, number];
+  const niveaux: [number, number, number][] = [[1600, 0.8, 350], [1200, 0.72, 170], [1000, 0.65, 110], [800, 0.6, 70], [640, 0.55, 45], [520, 0.5, 30]];
+  const [cote, qualite] = (niveaux.find(([, , ko]) => (nbPhotos * ko * 2.4) / 1024 <= 45) ?? niveaux[niveaux.length - 1]).slice(0, 2) as [number, number];
   const dans: { nom: string; urls: string[] }[] = [];
   const fichiers: Record<string, Uint8Array> = {};
   let n = 0;
