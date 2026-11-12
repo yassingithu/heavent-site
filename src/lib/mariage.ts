@@ -91,16 +91,26 @@ export const nomsPersonnes = (i: Invite, n: number) => {
 
 /** Colle d'un tableur ou d'un carnet : une ligne par invité, « Nom ; numéro WhatsApp ; places » (séparateurs : tabulation, point-virgule, virgule). */
 export interface LigneImport { nom: string; telephone: string | null; nb_prevus: number }
-export const lireListeInvites = (texte: string): { lignes: LigneImport[]; ignorees: number } => {
-  const lignes: LigneImport[] = []; let ignorees = 0;
+export const lireListeInvites = (texte: string): { lignes: LigneImport[]; ignorees: string[]; exces: number } => {
+  const lignes: LigneImport[] = []; const ignorees: string[] = [];
   for (const brut of texte.split(/\r?\n/)) {
     if (!brut.trim()) continue;
-    const cases = brut.split(/\t|;|,|\s{2,}/).map((c) => c.trim()).filter(Boolean);
+    let cases: string[];
+    if (/\t|;/.test(brut)) cases = brut.split(/\t|;/).map((c) => c.trim()).filter(Boolean);
+    else {
+      // « Benali, Samir » reste un seul nom : on ne coupe sur la virgule qu'avant un numéro ou un nombre de places
+      cases = []; let nomEnCours = "";
+      for (const c of brut.split(/,|\s{2,}/).map((x) => x.trim()).filter(Boolean)) {
+        if (/^[\d+][\d\s().+-]*$/.test(c)) { if (nomEnCours) { cases.push(nomEnCours); nomEnCours = ""; } cases.push(c); }
+        else nomEnCours = nomEnCours ? `${nomEnCours} ${c}` : c;
+      }
+      if (nomEnCours) cases.push(nomEnCours);
+    }
     const tel = cases.find((c) => /^\+?[\d\s().-]{8,}$/.test(c) && c.replace(/\D/g, "").length >= 8) ?? null;
-    const places = cases.find((c) => /^\d{1,2}$/.test(c));
+    const places = cases.find((c) => c !== tel && /^\d{1,2}$/.test(c));
     const nom = cases.find((c) => c !== tel && c !== places && /[A-Za-zÀ-ÿ\u0600-\u06FF]/.test(c));
-    if (!nom) { ignorees++; continue; }
+    if (!nom) { ignorees.push(brut.trim().slice(0, 40)); continue; }
     lignes.push({ nom: nom.slice(0, 120), telephone: tel ? tel.replace(/[^\d+]/g, "") : null, nb_prevus: Math.min(20, Math.max(1, Number(places) || 1)) });
   }
-  return { lignes: lignes.slice(0, 300), ignorees: ignorees + Math.max(0, lignes.length - 300) };
+  return { lignes: lignes.slice(0, 300), ignorees, exces: Math.max(0, lignes.length - 300) };
 };

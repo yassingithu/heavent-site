@@ -11,7 +11,7 @@ interface Etat { etat: "avant" | "ouverte" | "fermee"; noms: string; nom: string
 const MAX = 8;
 const T = {
   fr: {
-    albumPlein: "L'album du mariage est complet : il n'est plus possible d'ajouter de photos. Merci pour votre partage !",
+    albumPlein: "L'album du mariage est complet : il n'est plus possible d'ajouter de photos. Merci pour votre partage ! Les mariés recevront bientôt leur livre.",
     titre: "Vos souvenirs du mariage", intro: (n: string) => `Partagez vos plus belles photos du mariage de ${n}. Ils les retrouveront dans un livre souvenir.`,
     avant: (d: string) => `Cette page s'ouvrira le jour du mariage, le ${d}. Revenez ce jour-là avec vos photos.`,
     fermee: "Merci ! Le partage de souvenirs est maintenant terminé. Les mariés recevront bientôt leur livre souvenir.",
@@ -22,7 +22,7 @@ const T = {
     photoIllisible: "Une photo n'a pas pu être lue (format non pris en charge).", rien: "Ajoutez au moins une photo ou un mot.",
   },
   en: {
-    albumPlein: "The wedding album is full: no more photos can be added. Thank you for sharing!",
+    albumPlein: "The wedding album is full: no more photos can be added. Thank you for sharing! The couple will soon receive their book.",
     titre: "Your wedding memories", intro: (n: string) => `Share your favourite photos from ${n}'s wedding. They will keep them in a memory book.`,
     avant: (d: string) => `This page opens on the wedding day, ${d}. Come back that day with your photos.`,
     fermee: "Thank you! Memory sharing is now closed. The couple will soon receive their memory book.",
@@ -227,7 +227,10 @@ export default function Souvenirs() {
             </button>
             <p style={{ fontSize: 12, opacity: .75, textAlign: "center", margin: "6px 0 12px" }}>{t.reste(restantes)}</p>
           </>
-        ) : <p style={{ fontSize: 13, opacity: .85, textAlign: "center" }} data-testid="souvenirs-plein">{etat.complet ? t.albumPlein : t.complet}</p>}
+        ) : <div style={{ textAlign: "center", borderTop: "1px solid var(--inv-accent)", borderBottom: "1px solid var(--inv-accent)", padding: "16px 8px", margin: "8px 0" }} data-testid="souvenirs-plein">
+          {etat.complet && <p style={{ fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", margin: "0 0 8px", color: "var(--inv-accent)" }}>{langue === "ar" ? "اكتمل الألبوم" : langue === "en" ? "Album complete" : "Album complet"}</p>}
+          <p style={{ fontSize: 16, margin: 0 }}>{etat.complet ? t.albumPlein : t.complet}</p>
+        </div>}
           {lecture > 0 && <p style={{ fontSize: 13, opacity: .8, textAlign: "center" }} aria-live="polite"><Loader2 className="h-4 w-4 animate-spin" style={{ display: "inline", marginInlineEnd: 6 }} />{langue === "ar" ? "تحضير صوركم…" : langue === "en" ? "Preparing your photos…" : "Préparation de vos photos…"}</p>}
         {photos.length > 0 && (
           <ul style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(88px,1fr))", gap: 8, listStyle: "none", padding: 0, margin: "0 0 14px" }}>
