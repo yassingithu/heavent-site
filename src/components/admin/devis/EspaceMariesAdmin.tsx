@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Copy, ExternalLink, Heart } from "lucide-react";
 import { lienClientDevis } from "./devisUtils";
 import LivreSouvenirsAdmin from "./LivreSouvenirsAdmin";
+import PersonnaliserInvitation from "@/components/invitation/PersonnaliserInvitation";
+import type { InvitationReglages } from "@/lib/invitation";
 
 interface Moment { id: string; heure: string; titre: string; details: string }
 interface TableM { id: string; nom: string; places: number }
@@ -22,6 +24,40 @@ function LigneLien({ libelle, aide, url }: { libelle: string; aide: string; url:
         <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border px-2.5 text-xs hover:bg-muted min-h-9" aria-label="Ouvrir"><ExternalLink className="h-3.5 w-3.5" /></a>
       </div>
     </div>
+  );
+}
+
+/** La carte d'invitation des mariés est préparée ici par l'agence : eux la voient, ils ne peuvent pas la modifier. */
+function CarteMariesAdmin({ devisId, noms, date, lieu }: { devisId: string; noms: string; date: string; lieu: string }) {
+  const [valeur, setValeur] = useState<InvitationReglages>({});
+  const [message, setMessage] = useState<string | null>(null);
+  const [etat, setEtat] = useState<"charge" | "pret" | "enregistre" | "erreur">("charge");
+  const [occupe, setOccupe] = useState(false);
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any).from("espace_maries").select("invitation, message_invites").eq("devis_id", devisId).maybeSingle();
+      setValeur((data?.invitation ?? {}) as InvitationReglages); setMessage(data?.message_invites ?? null); setEtat("pret");
+    })();
+  }, [devisId]);
+  const enregistrer = async () => {
+    setOccupe(true);
+    const { error } = await (supabase as any).from("espace_maries").upsert({ devis_id: devisId, noms, invitation: valeur, updated_at: new Date().toISOString() }, { onConflict: "devis_id" });
+    setOccupe(false); setEtat(error ? "erreur" : "enregistre");
+  };
+  if (etat === "charge") return null;
+  return (
+    <details className="rounded-lg border p-3" data-testid="carte-maries-admin">
+      <summary className="cursor-pointer font-medium min-h-11 flex items-center">Carte d'invitation des mariés</summary>
+      <div className="mt-3 space-y-3">
+        <p className="text-xs text-muted-foreground">Les mariés voient cette carte quand leurs invités ouvrent le lien. Ils ne peuvent pas la changer.</p>
+        <PersonnaliserInvitation estAdmin noms={noms || "Prénom & Prénom"} date={date || null} lieu={lieu || null} message={message} valeur={valeur} onChange={(v) => { setValeur(v); setEtat("pret"); }} />
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" disabled={occupe} onClick={() => void enregistrer()} className="rounded-full bg-[#141414] text-[#FBF6E9] border border-[#A8933F] px-4 min-h-11 text-sm font-medium disabled:opacity-60" data-testid="carte-maries-enregistrer">{occupe ? "Enregistrement…" : "Enregistrer la carte"}</button>
+          {etat === "enregistre" && <span className="text-xs text-[#4E6B3A]" role="status">Carte enregistrée : les mariés la voient.</span>}
+          {etat === "erreur" && <span className="text-xs text-[#B5483C]" role="alert">L'enregistrement a échoué. Réessayez.</span>}
+        </div>
+      </div>
+    </details>
   );
 }
 
@@ -68,6 +104,7 @@ export default function EspaceMariesAdmin({ devisId, token, statut, noms, date, 
             <LigneLien libelle="Devis à signer" aide="Le devis en ligne du client." url={lienClientDevis(token)} />
           </div>
         )}
+        {devisId && statut === "accepte" && <CarteMariesAdmin devisId={devisId} noms={noms || ""} date={date || ""} lieu={lieu || ""} />}
         {statut !== "accepte" ? (
           <p className="text-muted-foreground">Les mariés accèdent à leur espace (check-list, budget, programme, invités, plan de table) depuis le lien du devis, dès qu'il est signé.</p>
         ) : !charge ? null : !espace ? (

@@ -3,9 +3,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRef } from "react";
 import QRCode from "qrcode";
 import { Loader2 } from "lucide-react";
+import { enregistrerFichier } from "@/lib/pdf";
 
 interface Photo { id: string; chemin: string; masquee: boolean }
 interface Souvenir { id: string; nom: string; mot: string | null; date: string; photos: Photo[] }
+
+/** PDF d'une seule page A5 contenant une image JPEG (écrit à la main : aucune bibliothèque, fichier léger et net à l'impression). */
+function pdfA5(jpeg: Uint8Array, lp: number, hp: number): Blob {
+  const L = 419.53, H = 595.28; const enc = new TextEncoder(); const morceaux: Uint8Array[] = []; const pos: number[] = []; let n = 0;
+  const ajoute = (b: Uint8Array | string) => { const u = typeof b === "string" ? enc.encode(b) : b; morceaux.push(u); n += u.length; };
+  const objet = (i: number, corps: string, flux?: Uint8Array) => { pos[i] = n; ajoute(`${i} 0 obj\n${corps}`); if (flux) { ajoute("\nstream\n"); ajoute(flux); ajoute("\nendstream"); } ajoute("\nendobj\n"); };
+  const contenu = `q ${L} 0 0 ${H} 0 0 cm /Im0 Do Q`;
+  ajoute("%PDF-1.4\n");
+  objet(1, "<< /Type /Catalog /Pages 2 0 R >>");
+  objet(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+  objet(3, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${L} ${H}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`);
+  objet(4, `<< /Type /XObject /Subtype /Image /Width ${lp} /Height ${hp} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>`, jpeg);
+  objet(5, `<< /Length ${contenu.length} >>`, enc.encode(contenu));
+  const xref = n; ajoute("xref\n0 6\n0000000000 65535 f \n"); for (let i = 1; i <= 5; i++) ajoute(`${String(pos[i]).padStart(10, "0")} 00000 n \n`);
+  ajoute(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(morceaux as BlobPart[], { type: "application/pdf" });
+}
 
 const bouton = "inline-flex items-center justify-center gap-1.5 rounded-none border border-[#A8933F] px-4 min-h-11 text-xs uppercase tracking-[.12em] font-medium text-[#141414] transition hover:bg-[#141414] hover:text-[#E4D49A] disabled:opacity-50";
 const carte_ = "rounded-none bg-white border border-[#EADFC8] shadow-[0_1px_0_#fff_inset,0_18px_40px_-34px_rgba(140,109,34,0.55)]";
@@ -29,7 +47,7 @@ ${lien}`;
   useEffect(() => { QRCode.toDataURL(lien, { margin: 1, width: 640, color: { dark: "#141414", light: "#FFFFFF" } }).then(setQr).catch(() => setKo(true)); }, [lien]);
   const copier = async () => { try { await navigator.clipboard.writeText(message); setCopie(true); setTimeout(() => setCopie(false), 1500); } catch { setVoirMsg(true); } };
 
-  const carte = async () => {
+  const carte = async (format: "pdf" | "png" = "png") => {
     setPrep(true); setKo(false);
     try {
       const W = 1240, H = 1754, c = document.createElement("canvas"); c.width = W; c.height = H;
@@ -62,6 +80,13 @@ ${lien}`;
       x.fillStyle = "#4A4238"; x.font = "400 38px Jost, sans-serif"; x.fillText("Tapez votre prénom et votre nom, puis ajoutez", W / 2, bas + 60); x.fillText(`vos photos${fin ? ` · jusqu'au ${fin}` : ""}`, W / 2, bas + 108);
       x.fillStyle = "#7A5E1A"; x.font = "500 22px Jost, sans-serif"; x.fillText(espace("HEAVENT PEOPLE AGENCY", 10), W / 2, H - 170);
       x.fillStyle = "#4A4238"; x.font = "400 30px Jost, sans-serif"; x.fillText(lien.replace(/^https?:\/\//, ""), W / 2, H - 125);
+      if (format === "pdf") {
+        const jpg = await new Promise<Blob | null>((ok) => c.toBlob(ok, "image/jpeg", 0.93));
+        if (!jpg) throw new Error("jpg");
+        const nomPdf = `carte-souvenirs-A5-${noms.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "mariage"}.pdf`;
+        enregistrerFichier(pdfA5(new Uint8Array(await jpg.arrayBuffer()), W, H), nomPdf);
+        setPret(true); setPrep(false); return;
+      }
       const blob = await new Promise<Blob | null>((ok) => c.toBlob(ok, "image/png"));
       if (!blob) throw new Error("png");
       const nom = `carte-souvenirs-${noms.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "mariage"}.png`;
@@ -91,8 +116,11 @@ ${lien}`;
           </div>
           {voirMsg && <textarea readOnly value={message} rows={7} className="w-full border border-[#A8933F]/60 bg-[#1C1A16] text-[#EADFC8] p-3 text-base" aria-label="Message à envoyer à vos invités" onFocus={(e) => e.currentTarget.select()} data-testid="message-jour-j" />}
           <div className="pt-2 border-t border-[#A8933F]/30">
-            <button type="button" className={btnClair} onClick={() => void carte()} disabled={!qr || prep} data-testid="carte-qr">{prep ? "Préparation…" : pret ? "Carte prête · la refaire" : "Enregistrer la carte (à imprimer)"}</button>
-            <p className="text-xs mt-2">Image prête à imprimer (A5 ou A6) avec le QR code : à poser sur chaque table.</p>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className={btnOr} onClick={() => void carte("pdf")} disabled={!qr || prep} data-testid="carte-qr-a5">{prep ? "Préparation…" : "Télécharger la carte A5 (PDF)"}</button>
+              <button type="button" className={btnClair} onClick={() => void carte("png")} disabled={!qr || prep} data-testid="carte-qr">Image (PNG)</button>
+            </div>
+            <p className="text-xs mt-2">Carte au format A5, prête à imprimer avec le QR code, à poser sur chaque table. Le PDF se télécharge directement.</p>
           </div>
           {ko && <p className="text-xs text-[#F0B4AA]" role="alert">Un élément n'a pas pu être préparé. Réessayez dans un instant.</p>}
         </div>
