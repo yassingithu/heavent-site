@@ -226,7 +226,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
   const ouv = secours ? ouvertureDe(undefined) : ouvChoisie;
   const revId = revelationDe(reglages?.revelation).id;
   const revEnLigne = !ouv.carte && (revId === "coeur" || revId === "medaillon");
-  const avecRevelation = !revEnLigne && !!date && revId !== "aucune" && revelationsPour(ev.id).some((r) => r.id === revId) && !sansAnimation();
+  const avecRevelation = !revEnLigne && revId !== "aucune" && revelationsPour(ev.id).some((r) => r.id === revId) && !sansAnimation();
   const [phase, setPhase] = useState<"fermee" | "ouverture" | "revelation" | "ouverte">(ouverte || sansAnimation() ? "ouverte" : "fermee");
 
   useEffect(() => () => {
