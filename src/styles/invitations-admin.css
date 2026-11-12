@@ -72,3 +72,6 @@
   .ia-admin .ia-liste > li { animation: ia-entree .22s ease both; }
   @keyframes ia-entree { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 }
+
+/* Miniature de la carte (poster du film d'ouverture, 9/16) */
+.ia-admin .ia-mini { width: 44px; height: 78px; object-fit: cover; border-radius: 8px; flex: none; box-shadow: 0 0 0 1px rgba(201, 178, 122, .45); background: var(--filet); }

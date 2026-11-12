@@ -2,11 +2,18 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { evenementDe } from "@/lib/evenements";
 import "@/styles/invitations-admin.css";
+import { numeroWa as wa } from "@/lib/whatsapp";
+import { ouvertureDe } from "@/lib/invitation";
 
 const db = supabase as any;
-/** Numéro marocain saisi « 06… » ou « 6… » : on ajoute l'indicatif 212 pour que le lien WhatsApp fonctionne. */
-const wa = (t: string) => { const n = t.replace(/[^\d]/g, ""); if (t.trim().startsWith("+") || n.startsWith("00")) return n.replace(/^00/, ""); if (n.startsWith("212")) return n; return "212" + n.replace(/^0/, ""); };
 interface Demande { id: string; cree_le: string; nom: string; telephone: string | null; email: string | null; occasion: string | null; noms: string | null; date_evenement: string | null; lieu: string | null; message: string | null; invitation: any; statut: string; apercu_id: string | null }
+
+export function MiniCarte({ reglages, petite }: { reglages: any; petite?: boolean }) {
+  const o = ouvertureDe(reglages?.ouverture ?? reglages?.modele);
+  const src = o.poster || o.carte?.fin;
+  if (!src) return null;
+  return <img src={src} alt="" loading="lazy" className="ia-mini" style={petite ? { width: 28, height: 50 } : undefined} />;
+}
 
 /** Demandes reçues depuis la page publique /cartes : un clic transforme la demande en aperçu prêt à partager. */
 export default function DemandesCartes({ onApercu, onChange, onVoir, complet, resume }: { onApercu: (id?: string) => void; onChange?: () => void; onVoir?: () => void; complet?: boolean; resume?: boolean }) {
@@ -23,7 +30,7 @@ export default function DemandesCartes({ onApercu, onChange, onVoir, complet, re
     setBusy(d.id); setErr(null);
     const { noms: _n, message: _m, ...reglages } = d.invitation ?? {};
     const { data, error } = await db.from("invitations_apercu").insert({
-      noms: d.noms || "", date_evenement: d.date_evenement, lieu: d.lieu, message: d.invitation?.message ?? null, invitation: reglages, prospect: d.nom,
+      noms: d.noms || "", telephone: d.telephone || null, date_evenement: d.date_evenement, lieu: d.lieu, message: d.invitation?.message ?? null, invitation: reglages, prospect: d.nom,
     }).select().single();
     if (error) { setBusy(null); setErr("Création de l'aperçu impossible."); return; }
     await db.from("demandes_cartes").update({ apercu_id: data.id, statut: "apercu" }).eq("id", d.id);
@@ -66,7 +73,7 @@ export default function DemandesCartes({ onApercu, onChange, onVoir, complet, re
               <div className="ia-date"><b>{cree.getDate()}</b><small>{cree.toLocaleDateString("fr-FR", { month: "short", year: "numeric" }).replace(".", "")}</small></div>
               <div className="min-w-0 space-y-1.5 [overflow-wrap:anywhere]">
                 <p className="ia-titre text-xl leading-tight flex flex-wrap items-center gap-x-2 gap-y-1">{d.nom}
-                  <span className="ia-tag ia-tag-calme">{evenementDe(d.occasion === "mariage" ? undefined : (d.occasion as any)).nom}</span>
+                  <MiniCarte reglages={d.invitation} petite /><span className="ia-tag ia-tag-calme">{evenementDe(d.occasion === "mariage" ? undefined : (d.occasion as any)).nom}</span>
                   {d.statut === "nouvelle" ? <span className="ia-tag ia-tag-test">À traiter</span> : traitee ? <span className="ia-tag ia-tag-calme">Traitée</span> : <span className="ia-tag ia-tag-final">Aperçu créé</span>}
                 </p>
                 <p className="ia-meta">{infos.length ? infos.map((x, i) => <span key={i}>{i > 0 && <i>·</i>}{x}</span>) : "Informations de la carte non renseignées"}</p>

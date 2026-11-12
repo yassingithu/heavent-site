@@ -9,10 +9,11 @@ import type { InvitationReglages } from "@/lib/invitation";
 import ChoixOccasion from "@/components/invitation/ChoixOccasion";
 import { evenementDe, type TypeEvenement } from "@/lib/evenements";
 import { decorsPour } from "@/lib/decors";
-import DemandesCartes from "./DemandesCartes";
+import DemandesCartes, { MiniCarte } from "./DemandesCartes";
+import { lienWa } from "@/lib/whatsapp";
 import "@/styles/invitations-admin.css";
 
-interface Apercu { id: string; jeton: string; noms: string; date_evenement: string | null; lieu: string | null; message: string | null; invitation: InvitationReglages; prospect: string | null; expire_le: string; created_at: string; mode: "test" | "final"; avec_reponse: boolean; jeton_liste?: string | null; notif_email?: string | null }
+interface Apercu { id: string; jeton: string; noms: string; date_evenement: string | null; lieu: string | null; message: string | null; invitation: InvitationReglages; prospect: string | null; expire_le: string; created_at: string; mode: "test" | "final"; avec_reponse: boolean; jeton_liste?: string | null; notif_email?: string | null; telephone?: string | null }
 interface Confirme { apercu_id: string; nom: string; reponse: "oui" | "non"; nb_confirmes: number; accompagnants: string[]; precisions?: string | null; created_at: string }
 interface Lieu { nom: string; ville: string | null; lien_maps: string | null }
 
@@ -82,7 +83,7 @@ export default function InvitationsAdmin({ onVoirDemandes, ouvrirId, onOuvert }:
     const fenetre = window.open("about:blank", "_blank");
     if (edit?.id === a.id) await enregistrer();
     const t = `💌 Votre invitation ${evenementDe(a.invitation?.evenement).de} numérique\n\nBonjour ! Voici à quoi pourrait ressembler votre invitation. Touchez l'enveloppe pour l'ouvrir :\n${lien(a.jeton)}\n\nLes couleurs se changent à votre goût, et vos invités répondent en un clic. — Heavent People Agency`;
-    const url = `https://wa.me/?text=${encodeURIComponent(t)}`;
+    const url = lienWa(t, a.telephone);
     if (fenetre) fenetre.location.href = url; else window.location.href = url;
   };
   const manque = (a: Apercu) => !a.noms.trim() ? `Renseignez : ${evenementDe(a.invitation?.evenement).nomsLibelle.toLowerCase()}` : !a.date_evenement ? "Ajoutez la date avant de passer en finale" : a.date_evenement < new Date().toISOString().slice(0, 10) ? "La date est déjà passée : corrigez-la avant de passer en finale" : !a.lieu?.trim() ? "Ajoutez la salle avant de passer en finale" : null;
@@ -108,7 +109,7 @@ export default function InvitationsAdmin({ onVoirDemandes, ouvrirId, onOuvert }:
     const fenetre = window.open("about:blank", "_blank");
     if (edit?.id === a.id) await enregistrer();
     const t = `💌 Voici votre invitation ${evenementDe(a.invitation?.evenement).de} numérique, prête à envoyer à vos invités :\n${lien(a.jeton)}\n\n${a.avec_reponse ? "Vos invités peuvent y confirmer leur présence ; nous vous enverrons la liste des personnes qui ont confirmé." : "Vous pouvez l'envoyer à qui vous voulez (WhatsApp, SMS, e-mail)."}\n\nHeavent People Agency`;
-    const url = `https://wa.me/?text=${encodeURIComponent(t)}`;
+    const url = lienWa(t, a.telephone);
     if (fenetre) fenetre.location.href = url; else window.location.href = url;
   };
   const texteListe = (a: Apercu) => {
@@ -118,7 +119,7 @@ export default function InvitationsAdmin({ onVoirDemandes, ouvrirId, onOuvert }:
     return `✅ Invités confirmés — ${a.noms}\n${total} personne${total > 1 ? "s" : ""} (${oui.length} réponse${oui.length > 1 ? "s" : ""})\n\n${oui.map((c) => `• ${c.nom}${c.accompagnants.length ? ` + ${c.accompagnants.join(", ")}` : ""}`).join("\n") || "Aucune confirmation pour l'instant."}${non.length ? `\n\nNe viendront pas : ${non.map((c) => c.nom).join(", ")}` : ""}`;
   };
   const copierListe = async (a: Apercu) => { try { await navigator.clipboard.writeText(texteListe(a)); toast.success("Liste copiée"); } catch { toast.error("Copie impossible"); } };
-  const envoyerListe = (a: Apercu) => { window.open(`https://wa.me/?text=${encodeURIComponent(texteListe(a))}`, "_blank"); };
+  const envoyerListe = (a: Apercu) => { window.open(lienWa(texteListe(a), a.telephone), "_blank"); };
   const majCarte = (a: Apercu, champs: Partial<Apercu>) => { const maj = { ...a, ...champs }; setListe((l) => (l ?? []).map((x) => (x.id === a.id ? maj : x))); if (edit?.id === a.id) setEdit(maj); };
   const creerLienListe = async (a: Apercu) => {
     const j = crypto.randomUUID();
@@ -136,7 +137,7 @@ export default function InvitationsAdmin({ onVoirDemandes, ouvrirId, onOuvert }:
   const whatsappListe = (a: Apercu) => {
     if (!a.jeton_liste) return;
     const t = `👥 Suivez vos invités en direct :\n${lienListe(a.jeton_liste)}\n\nLa liste se met à jour toute seule à chaque réponse. Ce lien est privé : ne le partagez qu'aux personnes de confiance.\n\nHeavent People Agency`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, "_blank");
+    window.open(lienWa(t, a.telephone), "_blank");
   };
   const enregistrerMail = async (a: Apercu) => {
     const v = (mailNotif[a.id] ?? a.notif_email ?? "").trim();
@@ -268,7 +269,7 @@ export default function InvitationsAdmin({ onVoirDemandes, ouvrirId, onOuvert }:
           })()}
         </div>
       ) : (<>
-      <div className="ia-section flex flex-wrap items-start justify-between gap-3 w-full">
+      <div className="flex flex-wrap items-start justify-between gap-3 w-full">
         <div className="max-w-xl">
           <span className="ia-legende">Aperçus et cartes</span>
           <p className="text-sm text-[#5E554A] mt-1">Créez un aperçu, envoyez le lien au client par WhatsApp : l'enveloppe s'ouvre, la salle s'affiche sur Google Maps. Aperçu valable 30 jours · carte finale valable 30 jours après l'événement.</p>
@@ -280,9 +281,12 @@ export default function InvitationsAdmin({ onVoirDemandes, ouvrirId, onOuvert }:
       <ul className="space-y-2 ia-liste">
         {liste.map((a) => (
           <li key={a.id} className="ia-carte ia-ligne flex flex-wrap items-center gap-2 justify-between">
-            <button type="button" className="text-left min-w-0 flex-1" onClick={() => setEdit(a)}>
+            <button type="button" className="text-left min-w-0 flex-1 flex items-center gap-3" onClick={() => setEdit(a)}>
+              <MiniCarte reglages={a.invitation} />
+              <span className="min-w-0 flex-1">
               <span className="block ia-titre text-[19px] truncate">{a.noms} {a.invitation?.evenement && <span className="ia-tag ia-tag-calme ml-2">{evenementDe(a.invitation.evenement).nom}</span>}<span className={`ia-tag ml-2 ${a.mode === "final" ? "ia-tag-final" : "ia-tag-test"}`}>{a.mode === "final" ? "Finale" : "Test"}</span></span>
               <span className="block text-xs text-[#6B6154] truncate">{[a.prospect, a.lieu, a.expire_le && !isNaN(new Date(a.expire_le).getTime()) && `${a.mode === "final" ? "valable jusqu'au" : "expire le"} ${new Date(a.expire_le).toLocaleDateString("fr-FR")}`].filter(Boolean).join(" · ")}</span>
+              </span>
             </button>
             <div className="w-full flex flex-wrap items-center gap-2 text-xs">
               <label className="inline-flex items-center gap-1.5 rounded-full border border-[#DCCBA6] bg-white px-3 min-h-9 cursor-pointer"><input type="checkbox" checked={a.avec_reponse} onChange={(e) => basculerReponses(a, e.target.checked)} data-testid="liste-avec-reponse" /> {a.avec_reponse ? "Demande de confirmation" : "Sans confirmation"}</label>
