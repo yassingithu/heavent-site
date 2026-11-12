@@ -1,0 +1,1 @@
+const r=e=>{const t=e.replace(/[^\d]/g,"");return e.trim().startsWith("+")||t.startsWith("00")?t.replace(/^00/,""):t.startsWith("212")?t:"212"+t.replace(/^0/,"")},n=(e,t)=>`https://wa.me/${t&&t.replace(/\D/g,"").length>=6?r(t):""}?text=${encodeURIComponent(e)}`;export{n as l,r as n};
