@@ -180,7 +180,6 @@ export const OPTIONS_CARTE: OptionCarte[] = [
   { id: "programme", nom: "Programme de la journée", texte: "Les horaires de chaque moment." },
   { id: "rsvp", nom: "Confirmation de présence", texte: "Vos invités répondent d'un geste, vous suivez les réponses." },
   { id: "livre", nom: "Livre d'or", texte: "Vos invités laissent leurs vœux." },
-  { id: "musique", nom: "Musique", texte: "Une ambiance sonore à l'ouverture." },
   { id: "histoire", nom: "Notre histoire", texte: "Quelques lignes et photos sur votre histoire." },
   { id: "prenom", nom: "Invitation au prénom de chaque invité", texte: "Chaque invité reçoit sa carte personnalisée." },
 ];

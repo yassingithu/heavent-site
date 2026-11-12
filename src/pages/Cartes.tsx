@@ -12,7 +12,7 @@ import { suivre } from "@/lib/suivi";
  */
 const WHATSAPP = "https://wa.me/212610939655?text=";
 const QUESTIONS: [string, string][] = [
-  ["Combien coûte une carte ?", "Chaque carte est à 250 DH, écrite à vos prénoms avec la date et le lieu (350 DH pour les paysages animés : Salle de bal, Chalet sous la neige, Oliveraie, Côte bleue). Vous ajoutez ensuite seulement les options qu'il vous faut, 50 DH chacune : compte à rebours, cœur à gratter, plan Google Maps, programme, confirmation de présence, livre d'or, musique…"],
+  ["Combien coûte une carte ?", "Chaque carte est à 250 DH, écrite à vos prénoms avec la date et le lieu (350 DH pour les paysages animés : Salle de bal, Chalet sous la neige, Oliveraie, Côte bleue). Vous ajoutez ensuite seulement les options qu'il vous faut, 50 DH chacune : compte à rebours, cœur à gratter, plan Google Maps, programme, confirmation de présence, livre d'or… La musique est incluse."],
   ["Comment ça se passe ?", "Vous choisissez une carte et envoyez votre demande. Nous préparons l'aperçu avec vos prénoms, votre date et votre lieu, et nous vous l'envoyons sur WhatsApp. Vous le validez, vous réglez, puis votre carte est livrée sous 1 semaine à partir du paiement (sous 24 h avec le supplément « Création urgente », 150 DH)."],
   ["Comment mes invités la reçoivent-ils ?", "Par un lien que vous partagez sur WhatsApp : la carte s'ouvre sur leur téléphone, comme dans les aperçus de cette page."],
   ["Puis-je demander une modification ?", "Oui."],

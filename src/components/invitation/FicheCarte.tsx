@@ -163,6 +163,7 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
                 <label>Un message sur la carte <i>(facultatif)</i>
                   <textarea className="cv-champ" rows={2} value={v.message} onChange={(e) => maj("message", e.target.value)} maxLength={400} placeholder="Nous serions heureux de partager ce moment avec vous." data-testid="cartes-message" />
                 </label>
+                <label>Musique souhaitée <i>(incluse, facultatif)</i><input className="cv-champ" value={v.musique} onChange={(e) => maj("musique", e.target.value)} placeholder="Titre ou ambiance (nous vous proposerons)" maxLength={120} /></label>
                 <fieldset className="cv-options" data-testid="cartes-options">
                   <legend>Options <i>({PRIX_OPTION} DH chacune, facultatif)</i></legend>
                   {OPTIONS_CARTE.map((x) => (
@@ -179,7 +180,7 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
                     </div>
                   )}
                   {opts.includes("maps") && <div className="cv-option-champs"><label>Lien Google Maps<input className="cv-champ" type="url" inputMode="url" value={v.maps} onChange={(e) => maj("maps", e.target.value)} placeholder="https://maps.app.goo.gl/…" maxLength={300} /></label></div>}
-                  {opts.includes("musique") && <div className="cv-option-champs"><label>Musique souhaitée<input className="cv-champ" value={v.musique} onChange={(e) => maj("musique", e.target.value)} placeholder="Titre ou ambiance (nous vous proposerons)" maxLength={120} /></label></div>}
+
                   {(opts.includes("histoire") || opts.includes("prenom")) && <label className="cv-accord"><input type="checkbox" checked={v.photos} onChange={(e) => maj("photos", e.target.checked)} /><span>Je vous envoie photos et textes par WhatsApp</span></label>}
                 </fieldset>
                 {extrasPour(o).length > 0 && (
