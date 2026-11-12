@@ -182,7 +182,7 @@
 .inv-film-sortie { position: fixed; z-index: 30; pointer-events: none; transform-origin: 0 0; will-change: opacity, transform; animation: inv-film-sortie .7s cubic-bezier(.4, 0, .2, 1) .15s forwards; }
 .inv-film-sortie { overflow: hidden; }
 .inv-film-sortie.inv-fs-film { animation-duration: .5s; animation-delay: .3s; animation-timing-function: ease-out; }
-.inv-film-sortie.inv-fs-carte { animation-duration: .9s; animation-delay: .4s; }
+.inv-film-sortie.inv-fs-carte { animation-duration: .5s; animation-delay: .1s; }
 .inv-film-sortie .inv-film-img { display: block; width: 100%; height: 100%; object-fit: cover; }
 @keyframes inv-film-sortie { to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .inv-film-sortie { display: none; } }
@@ -216,8 +216,8 @@
 .inv-cf-v-porte-blanche .inv-film-zone > .inv-petit { font-size: max(10px, 2.7cqw); letter-spacing: .1em; line-height: 1.5; text-wrap: balance; overflow-wrap: anywhere; }
 .inv-cf-v-porte-blanche .inv-film-zone > :is(.inv-heure, .inv-lieu) { font-size: max(11.5px, 3.1cqw); }
 .inv-cf-v-porte-blanche .inv-film-zone > .inv-repondre { font-size: max(11px, 2.9cqw); letter-spacing: .1em; margin-top: 10px; }
-.inv-page .inv-carte.inv-carte-film .inv-lettre { animation-delay: calc(.15s + var(--i) * 40ms); }
-.inv-page .inv-carte.inv-carte-film .inv-film-zone > :is(.inv-petit, .inv-date, .inv-heure, .inv-lieu, .inv-repondre, .inv-defiler) { animation-delay: .45s; }
+.inv-page .inv-carte.inv-carte-film .inv-lettre { animation-delay: calc(.05s + var(--i) * 35ms); }
+.inv-page .inv-carte.inv-carte-film .inv-film-zone > :is(.inv-petit, .inv-date, .inv-heure, .inv-lieu, .inv-repondre, .inv-defiler) { animation-delay: .12s; }
 
 /* Battants : tranche en laiton à l'intérieur et ombre de charnière (portes marocaine et portail) */
 :is(.inv-o-marocaine, .inv-o-fer, .inv-o-moucharabieh, .inv-o-zellige, .inv-o-riad) .inv-o-battant::before { content: ""; position: absolute; top: 0; bottom: 0; width: 4px; z-index: 3; background: linear-gradient(180deg, #E4D49A, #8C6D22 50%, #E4D49A); box-shadow: 0 0 6px rgba(0, 0, 0, .45); }
@@ -287,7 +287,7 @@
 .inv-pag-page > :first-child { margin-top: auto; }
 .inv-pag-page > :last-child { margin-bottom: auto; }
 .inv-pag-u { display: flow-root; width: 100%; }
-.inv-pag-page > .inv-pag-u { animation: inv-pag-u .7s cubic-bezier(.2, .7, .2, 1) backwards; animation-delay: calc(var(--pag-base, .55s) + var(--k, 0) * 90ms); }
+.inv-pag-page > .inv-pag-u { animation: inv-pag-u .7s cubic-bezier(.2, .7, .2, 1) backwards; animation-delay: calc(var(--pag-base, .15s) + var(--k, 0) * 60ms); }
 .inv-pag[data-nav] .inv-pag-page { --pag-base: .04s; animation: inv-pag-nav .32s cubic-bezier(.2, .7, .2, 1) backwards; }
 .inv-pag[data-nav] .inv-pag-page > .inv-pag-u { animation-duration: .45s; animation-delay: calc(.04s + min(var(--k, 0), 4) * 55ms); }
 @keyframes inv-pag-nav { from { transform: translateX(calc(var(--s) * 14px)); } }
