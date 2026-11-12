@@ -385,6 +385,8 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
       {invite && <p className="inv-petit">{t.cher} {inviteA},</p>}
       <p className="inv-petit">{invite ? t.invites : t.invite}</p>
     </>);
+    // le décor choisi (princesse, ballon…) est posé en tête de la carte : l'ornement classique est masqué sur les cartes à film
+    if (reglages?.decor && reglages.decor !== "aucun") unitesCarte.push({ cle: "decor", avecSuivante: true, rendre: () => <Decor id={reglages.decor!} club={reglages.club} logo={reglages.club_logo} prenom={lignes[0]} /> });
     unitesCarte.push({ cle: "accueil", avecSuivante: true, rendre: accueil });
     unitesCarte.push({ cle: "noms", avecSuivante: true, rendre: (m) => (
       <h1 {...(m ? {} : { ref: nomsRef, tabIndex: -1, "data-testid": "rsvp-noms" })} className="inv-noms" aria-label={nomsA} style={{ "--nl": Math.max(6, ...lignes.map((l) => l.length * (l.length > 12 ? 1.3 : 1))) } as CSSProperties}>

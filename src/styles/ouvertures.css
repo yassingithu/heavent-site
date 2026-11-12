@@ -536,3 +536,6 @@
 .inv-galerie { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .inv-galerie img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 4px; display: block; }
 .inv-galerie img:first-child:nth-last-child(odd) { grid-column: 1 / -1; aspect-ratio: 4 / 3; }
+/* décor (personnage, ballon…) posé en tête d'une carte à film */
+.inv-carte-film .inv-decor { width: auto; max-height: 30cqw; margin: 0 auto 1.5cqw; animation: none; }
+.inv-carte-film .inv-decor img, .inv-carte-film .inv-decor svg { max-height: 30cqw; width: auto; margin: 0 auto; }
