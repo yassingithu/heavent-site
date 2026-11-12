@@ -43,7 +43,7 @@ const REGROUPES = {
   "Devis envoyés": [/Demandes$/, "Réponses envoyées"], "Envoyer un devis": [/Devis$/, "Réponse rapide"],
   "Disponibilités": [/Personnel$/, "Disponibilités"], "Prestataires": [/Prestataires et lieux$/, "Prestataires"],
   "Salles & palais": [/Prestataires et lieux$/, "Salles & palais"], "Instagram": [/Publications$/, "Instagram"],
-  "Newsletter": [/Publications$/, "Newsletter"], "Invitations digitales": [/Publications$/, "Invitations digitales"],
+  "Newsletter": [/Publications$/, "Newsletter"], "Invitations digitales": [/Heavent Studio$/, "Invitations"],
   "Démos agences": [/Heavent Studio$/, null],
 };
 async function clicOnglet(page, nom) {

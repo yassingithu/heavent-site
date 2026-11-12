@@ -22,7 +22,7 @@ const lienListe = (j: string) => `${window.location.origin}/liste/${j}`;
 const MAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const db = supabase as any;
 
-export default function InvitationsAdmin() {
+export default function InvitationsAdmin({ onVoirDemandes }: { onVoirDemandes?: () => void }) {
   const [liste, setListe] = useState<Apercu[] | null>(null);
   const [lieux, setLieux] = useState<Lieu[]>([]);
   const [edit, setEdit] = useState<Apercu | null>(null);
@@ -196,7 +196,7 @@ export default function InvitationsAdmin() {
   const finales = liste.filter((a) => a.mode === "final" && a.avec_reponse);
   return (
     <div className="space-y-4" data-testid="invitations-admin">
-      <DemandesCartes onApercu={charger} />
+      <DemandesCartes resume onVoir={onVoirDemandes} onApercu={charger} />
       <div className="flex gap-2" role="tablist">
         {([["apercus", "Aperçus et cartes"], ["confirmes", `Confirmés${finales.length ? ` (${confirmes.filter((c) => c.reponse === "oui").length})` : ""}`]] as const).map(([k, l]) => (
           <button key={k} type="button" role="tab" aria-selected={onglet === k} onClick={() => setOnglet(k)} data-testid={`onglet-${k}`} className={`${btn} border ${onglet === k ? "bg-[#141414] text-white border-[#141414]" : "bg-white border-[#DCCBA6]"}`}>{l}</button>

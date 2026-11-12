@@ -3,7 +3,7 @@ import { nePlusCompterCetAppareil } from "@/lib/suivi";
 import Seo from "@/components/Seo";
 import RemarquesCrews from "@/components/admin/equipe/RemarquesCrews";
 import SuiviSignatures from "@/components/admin/equipe/SuiviSignatures";
-import { useState, useEffect, useLayoutEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback } from "react";
 import { estAdmin, estEspaceNawar } from "@/lib/admin";
 import EspaceNawar from "@/components/admin/accueil/EspaceNawar";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +20,7 @@ import StudioAdmin from "@/components/admin/studio/StudioAdmin";
 import PrestatairesAdmin from "@/components/admin/prestataires/PrestatairesAdmin";
 import LieuxAdmin from "@/components/admin/lieux/LieuxAdmin";
 import InvitationsAdmin from "@/components/admin/invitations/InvitationsAdmin";
+import DemandesCartes from "@/components/admin/invitations/DemandesCartes";
 import RealisationsAdmin from "@/components/admin/RealisationsAdmin";
 import AgendaAdmin from "@/components/admin/agenda/AgendaAdmin";
 import VitrineAdmin from "@/components/admin/VitrineAdmin";
@@ -171,8 +172,8 @@ const MENU_ADMIN: { titre: string; items: EntreeMenu[] }[] = [
   ] },
   { titre: "Partenaires", items: [["prestataires", "Prestataires et lieux", Handshake, [["prestataires", "Prestataires"], ["lieux", "Salles & palais"]]]] },
   { titre: "Communication", items: [
-    ["instagram", "Publications", Instagram, [["instagram", "Instagram"], ["newsletter", "Newsletter"], ["invitations", "Invitations digitales"]]],
-    ["studio", "Heavent Studio", Sparkles],
+    ["instagram", "Publications", Instagram, [["instagram", "Instagram"], ["newsletter", "Newsletter"]]],
+    ["invitations", "Heavent Studio", Sparkles, [["invitations", "Invitations"], ["demandes-cartes", "Demandes de cartes"], ["studio", "Démos agences"]]],
   ] },
   { titre: "Réglages", items: [["realisations", "Site web", Globe], ["securite", "Sécurité", Shield]] },
 ];
@@ -193,9 +194,10 @@ const TITRES_ADMIN: Record<string, [string, string]> = {
   realisations: ["Site web", "Éléments de confiance, FAQ et réalisations publiées"],
   instagram: ["Instagram", "Posts conseils préparés, photos et légendes prêtes à publier"],
   prestataires: ["Prestataires", "Candidatures, validation et tarifs des prestataires partenaires"],
-  invitations: ["Invitations digitales", "Aperçus offerts aux couples : enveloppe, couleurs, lieu sur Google Maps"],
+  invitations: ["Invitations digitales", "Créer une carte, la personnaliser et suivre les réponses des invités"],
+  "demandes-cartes": ["Demandes de cartes", "Commandes reçues depuis la boutique /cartes, à transformer en aperçu"],
   lieux: ["Salles & palais", "Lieux partenaires, tarifs et localisation"],
-  studio: ["Heavent Studio", "Demandes de démo des agences et démos personnalisées à partager"],
+  studio: ["Démos agences", "Demandes de démo des agences et démos personnalisées à partager"],
   newsletter: ["Newsletter", "Abonnés venus des guides gratuits, newsletters à préparer et envoyer"],
   securite: ["Sécurité", "Mots de passe et accès du personnel"],
 };
@@ -1045,6 +1047,11 @@ const Admin = () => {
   };
   const versDevis = () => { setOngletAdmin("devis-rapide"); window.scrollTo({ top: 0 }); };
 
+  const [nouvellesCartes, setNouvellesCartes] = useState(0);
+  const compterCartes = useCallback(async () => {
+    try { const { count } = await (supabase as any).from("demandes_cartes").select("id", { count: "exact", head: true }).neq("statut", "traitee"); setNouvellesCartes(count ?? 0); } catch { setNouvellesCartes(0); }
+  }, []);
+  useEffect(() => { compterCartes(); }, [compterCartes, ongletAdmin]);
   const nouvellesEntreprise = devisEntreprise.filter((d: any) => d.statut === "en_attente").length;
   const nouvellesMariage = devisMariage.filter((d: any) => d.statut === "en_attente").length;
 
@@ -1081,7 +1088,7 @@ const Admin = () => {
           valeur, Icone,
           libelle: estDemo() && !fils ? libelleOnglet(valeur, libelleBase) : libelleBase,
           fils: sousOnglets.length > 1 ? sousOnglets : undefined,
-          badge: valeur === "entreprise" ? nouvellesEntreprise + nouvellesMariage : 0,
+          badge: valeur === "entreprise" ? nouvellesEntreprise + nouvellesMariage : valeur === "invitations" ? nouvellesCartes : 0,
         };
       }),
     }));
@@ -1158,7 +1165,7 @@ const Admin = () => {
             {entreeActive.fils.map((f) => (
               <button key={f.valeur} role="tab" aria-selected={f.valeur === ongletAdmin} onClick={() => { setOngletAdmin(f.valeur); window.scrollTo({ top: 0 }); }}
                 className={`-mb-px min-h-11 border-b-2 px-0.5 text-[13.5px] tracking-[0.02em] transition-colors ${f.valeur === ongletAdmin ? "border-[#A8933F] text-[#141414]" : "border-transparent text-[#5A5146] hover:text-[#141414]"}`}>
-                {f.libelle}{f.valeur === "entreprise" && nouvellesEntreprise > 0 ? ` (${nouvellesEntreprise})` : f.valeur === "mariage" && nouvellesMariage > 0 ? ` (${nouvellesMariage})` : ""}
+                {f.libelle}{f.valeur === "entreprise" && nouvellesEntreprise > 0 ? ` (${nouvellesEntreprise})` : f.valeur === "mariage" && nouvellesMariage > 0 ? ` (${nouvellesMariage})` : f.valeur === "demandes-cartes" && nouvellesCartes > 0 ? ` (${nouvellesCartes})` : ""}
               </button>
             ))}
           </div>
@@ -1200,7 +1207,11 @@ const Admin = () => {
         </TabsContent>
 
         <TabsContent value="invitations" className="space-y-4">
-          <InvitationsAdmin />
+          <InvitationsAdmin onVoirDemandes={() => { setOngletAdmin("demandes-cartes"); window.scrollTo({ top: 0 }); }} />
+        </TabsContent>
+
+        <TabsContent value="demandes-cartes" className="space-y-4">
+          <DemandesCartes complet onApercu={() => { setOngletAdmin("invitations"); window.scrollTo({ top: 0 }); }} onChange={compterCartes} />
         </TabsContent>
 
         <TabsContent value="lieux" className="space-y-4">
