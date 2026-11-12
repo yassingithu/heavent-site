@@ -489,6 +489,11 @@
 /* la scène (bougies, ballon, cœur…) tient dans la zone de texte de la carte, jamais sous le pli */
 .inv-rev-sur-carte > .inv-rev { box-sizing: border-box; flex: 1 1 auto; margin-left: calc(100cqw * var(--film-x, 0)); margin-right: calc(100cqw * (1 - var(--film-x, 0) - var(--film-l, 1))); margin-top: calc(var(--film-y, 0) * var(--film-r, 180) * 1cqw); height: calc(var(--film-h, 1) * var(--film-r, 180) * 1cqw); display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; }
 .inv-rev-sur-carte .inv-g-scene { zoom: .66; min-height: 0; }
+/* sur la carte, l'objet (gâteau, lanterne) s'efface et la date prend sa place : plus de superposition */
+.inv-rev-sur-carte .inv-g { position: relative; }
+.inv-rev-sur-carte .inv-g-objet { transition: opacity .4s ease; }
+.inv-rev-sur-carte .inv-g.is-fini .inv-g-objet { opacity: 0; }
+.inv-rev-sur-carte .inv-g-date { position: absolute; inset: 0; align-content: center; pointer-events: none; }
 .inv-rev-sur-carte .inv-rev { --inv-sur-fond: #3a2f22; min-height: 0 !important; padding: 0; color: #3a2f22; }
 .inv-rev-sur-carte .inv-rev-noms { color: #3a2f22; }
 @keyframes inv-rev-carte { from { opacity: 0; } to { opacity: 1; } }
