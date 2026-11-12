@@ -29,7 +29,7 @@ const formSchema = z.object({
   password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
   confirmPassword: z.string(),
   telephone: z.string().regex(/^(\+\d{1,4}\d{8,15}|00\d{1,4}\d{8,15})$/, "Le téléphone doit commencer par un indicatif pays (ex: +212, +32, +33, 00212, 0032)"),
-  age: z.string().min(1, "L'âge est requis"),
+  age: z.string().min(1, "L'âge est requis").refine((v) => !(Number(v) < 18), "L'inscription est réservée aux personnes de 18 ans ou plus."),
   genre: z.string().min(1, "Le genre est requis"),
   ville: z.string().min(1, "La ville est requise"),
   taille: z.string().min(1, "La taille est requise"),
@@ -49,7 +49,8 @@ const formSchema = z.object({
   code_postal: z.string().min(4, "Le code postal est requis"),
   nationalite: z.string().min(1, "La nationalité est requise"),
   date_naissance: z.coerce.date({ invalid_type_error: "La date de naissance est requise", required_error: "La date de naissance est requise" })
-    .refine((d) => { const a = (Date.now() - d.getTime()) / 31557600000; return a >= 16 && a <= 80; }, "Vérifiez la date de naissance"),
+    .refine((d) => { const a = (Date.now() - d.getTime()) / 31557600000; return a <= 80; }, "Vérifiez la date de naissance")
+    .refine((d) => { const m = new Date(d); m.setFullYear(m.getFullYear() + 18); return m.getTime() <= Date.now(); }, "L'inscription est réservée aux personnes de 18 ans ou plus."),
   lieu_naissance: z.string().min(1, "Le lieu de naissance est requis"),
   situation_familiale: z.string().min(1, "La situation familiale est requise"),
   numero_identite: z.string().optional().refine((v) => !v || v.trim().length === 0 || v.trim().length >= 5, "Numéro trop court (5 caractères minimum)"),
@@ -554,7 +555,7 @@ const StaffRegistration = () => {
                     <Input
                       id="date_naissance"
                       type="date"
-                      max={new Date().toISOString().slice(0, 10)}
+                      max={(() => { const m = new Date(); m.setFullYear(m.getFullYear() - 18); return m.toISOString().slice(0, 10); })()}
                       {...register("date_naissance")}
                       className={`max-w-[220px] ${errors.date_naissance ? "border-destructive" : ""}`}
                     />

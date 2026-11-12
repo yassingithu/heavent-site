@@ -31,6 +31,12 @@ const handler = async (req: Request): Promise<Response> => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "L'adresse email n'est pas valide." }, 400);
     if (password.length < 8) return json({ error: "Le mot de passe doit contenir au moins 8 caractères." }, 400);
     if (!txt(d.nom) || !txt(d.prenom)) return json({ error: "Nom et prénom requis." }, 400);
+    // Réservé aux majeurs : date de naissance obligatoire et 18 ans révolus (vérifié aussi côté serveur)
+    const naissance = date(d.date_naissance);
+    if (!naissance) return json({ error: "La date de naissance est requise." }, 400);
+    const majeur = new Date(`${naissance}T12:00:00Z`); majeur.setUTCFullYear(majeur.getUTCFullYear() + 18);
+    if (majeur.getTime() > Date.now()) return json({ error: "L'inscription est réservée aux personnes de 18 ans ou plus." }, 403);
+    if (int(d.age) !== null && (int(d.age) as number) < 18) return json({ error: "L'inscription est réservée aux personnes de 18 ans ou plus." }, 403);
 
     const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { autoRefreshToken: false, persistSession: false } });
