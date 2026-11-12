@@ -307,7 +307,7 @@ export default function PersonnaliserInvitation({ noms, date, lieu, message, val
           </label>
           <label className="block text-sm">Lien Google Maps du lieu (facultatif)
             <input className={`${champ} mt-1`} value={valeur.lieu_maps ?? ""} maxLength={300} inputMode="url" placeholder="https://maps.app.goo.gl/…" onChange={(e) => onChange({ ...valeur, lieu_maps: e.target.value })} data-testid="invitation-maps" />
-            <span className="block text-xs text-[#6B6154] mt-1">Sans lien, le bouton ouvre une recherche Google Maps avec le nom du lieu.</span>
+            <span className="block text-xs text-[#6B6154] mt-1">Sans lien, le bouton ouvre une recherche Google Maps avec le nom du lieu (formules Interactive et Prestige). En Classique, seule l'adresse écrite apparaît, sauf si vous ajoutez un lien ici.</span>
           </label>
         </section>}
 

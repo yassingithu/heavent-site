@@ -8,7 +8,7 @@ import Revelation from "./Revelation";
 import Decor from "./Decor";
 import PagesCarte, { type UnitePage } from "./PagesCarte";
 import { morceauxDeTexte, phrases } from "@/lib/pagination";
-import { couleursDe, imagesOuverture, policeDe, initiales, lienAgenda, lienMaps, modeleDe, ouvertureDe, revelationDe, revelationsPour, surCouleur, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
+import { couleursDe, formuleDe, imagesOuverture, policeDe, initiales, lienAgenda, lienMaps, modeleDe, ouvertureDe, revelationDe, revelationsPour, surCouleur, type InvitationReglages, type Langue, type Ornement } from "@/lib/invitation";
 import { evenementDe, textesDe } from "@/lib/evenements";
 import "@fontsource/pinyon-script/latin-400.css";
 import "@fontsource/pinyon-script/latin-ext-400.css";
@@ -351,7 +351,9 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
     "--inv-sur-env": surCouleur(c.enveloppe), "--inv-sur-fond": surCouleur(c.fond), "--inv-sur-accent": surCouleur(c.accent),
   } as CSSProperties;
   const ar = langue === "ar";
-  const carte = lienMaps(reglages, lieu);
+  /** Formule Classique : l'adresse reste écrite sur la carte, mais le plan Google Maps cliquable n'est inclus qu'avec les films (Interactive, Prestige) ou si le lien a été ajouté en option. */
+  const avecPlan = formuleDe(ouv) !== "classique" || !!reglages?.lieu_maps?.trim();
+  const carte = avecPlan ? lienMaps(reglages, lieu) : null;
   const heureBrute = reglages?.heure?.trim();
   const heure = heureBrute && ar ? heure_ar(heureBrute) : heureBrute;
   const nomsA = ar ? (reglages?.noms_ar?.trim() || noms_ar(noms)) : noms;
@@ -520,7 +522,7 @@ export default function Invitation({ noms, date, lieu, message, reglages, langue
             {(lieu || carte) && (
               <Section nuit titre={t.lieuTitre}>
                 {lieuA && <p className="inv-lieu" dir="auto" style={{ marginBottom: 12 }}>{lieuA}</p>}
-                {lieu && <div className="inv-carte-g"><a className="inv-voile" href={carte ?? undefined} target="_blank" rel="noopener noreferrer" aria-label={t.itineraire} /><iframe title={lieuA} loading="lazy" referrerPolicy="no-referrer-when-downgrade" src={`https://maps.google.com/maps?q=${encodeURIComponent(lieu)}&z=15&output=embed`} /></div>}
+                {lieu && avecPlan && <div className="inv-carte-g"><a className="inv-voile" href={carte ?? undefined} target="_blank" rel="noopener noreferrer" aria-label={t.itineraire} /><iframe title={lieuA} loading="lazy" referrerPolicy="no-referrer-when-downgrade" src={`https://maps.google.com/maps?q=${encodeURIComponent(lieu)}&z=15&output=embed`} /></div>}
                 {carte && <a className="inv-maps" href={carte} target="_blank" rel="noopener noreferrer"><MapPin className="h-4 w-4" aria-hidden="true" /> {t.itineraire}</a>}
               </Section>
             )}

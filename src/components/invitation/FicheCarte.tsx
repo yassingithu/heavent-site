@@ -203,7 +203,6 @@ export default function FicheCarte({ ouvert, onFermer, ouverture: o }: Props) {
                 <ul className="cv-petit">
                   <li>Aucun paiement maintenant.</li>
                   <li>Livraison 1 semaine après le paiement, par WhatsApp.</li>
-                  <li>Une modification supplémentaire après l'aperçu : 50 DH.</li>
                 </ul>
               </form>
               </div>
