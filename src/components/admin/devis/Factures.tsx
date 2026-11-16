@@ -36,7 +36,7 @@ export function useActionsFacture(params: Parametres | null, apres: () => void) 
   };
   const envoyer = async (f: Facture) => {
     if (!f.client_email) { toast({ title: "E-mail du client manquant", description: "Ajoute l'e-mail dans le devis : il sera repris sur les prochaines factures.", variant: "destructive" }); return; }
-    if (!confirm(`Envoyer la facture ${f.numero} à ${f.client_email} ?`)) return;
+    if (!confirm(`Vérifie avant l'envoi :\n\nDestinataire : ${f.client_nom ?? ""} <${f.client_email}>\nÉvénement : ${f.titre || "sans titre"}${f.date_evenement ? ` · ${f.date_evenement}` : ""}\nDocument : facture ${f.numero} (devis ${f.devis_numero ?? ""}) · lien vers le PDF, aucune pièce jointe\n\nEnvoyer ?`)) return;
     setOccupe(f.id);
     const { data, error } = await supabase.functions.invoke("envoyer-facture", { body: { factureId: f.id } });
     setOccupe(null);

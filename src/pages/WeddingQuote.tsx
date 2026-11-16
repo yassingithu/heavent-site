@@ -171,7 +171,7 @@ const WeddingQuote = () => {
                   <div>
                     <Label htmlFor="eventType">{x("Type d'événement *")}</Label>
                     <Select onValueChange={(value) => setValue("eventType", value)}>
-                      <SelectTrigger className={errors.eventType ? "border-destructive" : ""}>
+                      <SelectTrigger id="eventType" aria-label={x("Type d'événement *")} className={errors.eventType ? "border-destructive" : ""}>
                         <SelectValue placeholder={x("Sélectionner le type d'événement")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -259,7 +259,7 @@ const WeddingQuote = () => {
                   <div>
                     <Label htmlFor="eventLocation">{x("Lieu principal (ville/région) *")}</Label>
                     <Select defaultValue={villeUrl || undefined} onValueChange={(value) => setValue("eventLocation", value)}>
-                      <SelectTrigger className={errors.eventLocation ? "border-destructive" : ""}>
+                      <SelectTrigger id="eventLocation" aria-label={x("Lieu principal (ville/région) *")} className={errors.eventLocation ? "border-destructive" : ""}>
                         <SelectValue placeholder={x("Sélectionner la ville principale")} />
                       </SelectTrigger>
                       <SelectContent>

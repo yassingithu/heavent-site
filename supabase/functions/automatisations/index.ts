@@ -53,11 +53,15 @@ serve(async (req) => {
   const resend = new Resend(Deno.env.get("RESEND_API_KEY") ?? "");
   const maintenant = Date.now();
   const aujourdhui = new Date(maintenant).toISOString().slice(0, 10);
-  const rapport: { relances: string[]; avis: string[]; factures: string[]; rappels: string[] } = { relances: [], avis: [], factures: [], rappels: [] };
+  const rapport: { relances: string[]; avis: string[]; factures: string[]; rappels: string[]; suspendues?: string[] } = { relances: [], avis: [], factures: [], rappels: [] };
+  // Tâches suspendues par l'administration (table reglages_automatisations) : elles ne s'exécutent pas, le reste continue
+  const { data: reglages } = await db.from("reglages_automatisations").select("nom, actif");
+  const suspendue = (nom: string) => (reglages ?? []).some((r: any) => r.nom === nom && r.actif === false);
+  rapport.suspendues = ["relances", "avis", "factures_solde", "rappels_rdv"].filter(suspendue);
 
   // 1. Relances
   const { data: envoyes } = await db.from("devis").select("*").eq("statut", "envoye").is("signe_le", null).not("client_email", "is", null).not("date_envoi", "is", null).is("rdv_demande_le", null).lt("relances", 2);
-  for (const d of envoyes ?? []) {
+  for (const d of suspendue("relances") ? [] : envoyes ?? []) {
     if (d.date_validite && d.date_validite < aujourdhui) continue;
     // Relance déjà faite (à la main : WhatsApp, e-mail) depuis moins de 4,5 jours : on n'en envoie pas une deuxième.
     // 4,5 et non 5 : le passage quotidien arrive à la même heure que la veille, et la relance J+5 écrit son tampon
@@ -79,7 +83,7 @@ serve(async (req) => {
   {
     const debut = new Date(maintenant - 14 * JOUR).toISOString().slice(0, 10);
     const { data: acceptes } = await db.from("devis").select("*").eq("statut", "accepte").is("avis_demande_le", null).is("avis_le", null).not("client_email", "is", null);
-    for (const d of acceptes ?? []) {
+    for (const d of suspendue("avis") ? [] : acceptes ?? []) {
       const fin = d.date_fin_evenement ?? d.date_evenement;
       if (!fin || fin >= aujourdhui || fin < debut) continue;
       if (!essai) {
@@ -96,7 +100,7 @@ serve(async (req) => {
   const debutFenetre = new Date(maintenant - 30 * JOUR).toISOString().slice(0, 10);
   const { data: aFacturer } = await db.from("devis").select("id, numero, client_nom, titre, date_evenement, date_fin_evenement, total_ttc, factures(type, statut)").eq("statut", "accepte").gt("total_ttc", 0);
   const creees: any[] = [];
-  for (const d of aFacturer ?? []) {
+  for (const d of suspendue("factures_solde") ? [] : aFacturer ?? []) {
     const fin = d.date_fin_evenement ?? d.date_evenement;
     if (!fin || fin > ilYa2Jours || fin < debutFenetre) continue;
     if ((d.factures ?? []).some((f: any) => f.type !== "acompte" && f.statut !== "annulee")) continue;
@@ -125,7 +129,7 @@ serve(async (req) => {
     const { data: pa } = await db.from("agenda_parametres").select("adresse, lien_visio, afficher_adresse").eq("id", 1).maybeSingle();
     const { data: agc } = await db.from("parametres_agence").select("adresse, ville").eq("id", 1).maybeSingle();
     const adresse = pa?.afficher_adresse ? (pa?.adresse?.trim() || [agc?.adresse, agc?.ville].filter(Boolean).join(", ") || null) : null;
-    for (const r of rdvDemain) {
+    for (const r of suspendue("rappels_rdv") ? [] : rdvDemain) {
       const jourRdv = new Date(r.debut).toISOString().slice(0, 10);
       if (jourRdv !== demain) continue;
       if (!essai) {

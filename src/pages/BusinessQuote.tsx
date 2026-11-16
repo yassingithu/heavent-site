@@ -167,7 +167,7 @@ const BusinessQuote = () => {
                   <div>
                     <Label htmlFor="eventType">{x("Type d'événement *")}</Label>
                     <Select onValueChange={(value) => setValue("eventType", value)}>
-                      <SelectTrigger className={errors.eventType ? "border-destructive" : ""}>
+                      <SelectTrigger id="eventType" aria-label={x("Type d'événement *")} className={errors.eventType ? "border-destructive" : ""}>
                         <SelectValue placeholder={x("Sélectionner le type d'événement")} />
                       </SelectTrigger>
                       <SelectContent>
@@ -197,7 +197,7 @@ const BusinessQuote = () => {
                     <div>
                       <Label htmlFor="eventLocation">{x("Lieu de l'événement *")}</Label>
                       <Select onValueChange={(value) => setValue("eventLocation", value)}>
-                        <SelectTrigger className={errors.eventLocation ? "border-destructive" : ""}>
+                        <SelectTrigger id="eventLocation" aria-label={x("Lieu de l'événement *")} className={errors.eventLocation ? "border-destructive" : ""}>
                           <SelectValue placeholder={x("Sélectionner la ville")} />
                         </SelectTrigger>
                         <SelectContent>
@@ -245,7 +245,7 @@ const BusinessQuote = () => {
                     <div>
                       <Label htmlFor="budget">{x("Budget estimé (optionnel)")}</Label>
                       <Select onValueChange={(value) => setValue("budget", value)}>
-                        <SelectTrigger>
+                        <SelectTrigger id="budget" aria-label={x("Budget estimé (optionnel)")}>
                           <SelectValue placeholder={x("Sélectionner une fourchette")} />
                         </SelectTrigger>
                         <SelectContent>

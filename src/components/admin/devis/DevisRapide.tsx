@@ -461,7 +461,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     if (form.signe_le) { toast({ title: "Devis déjà signé", description: `Signé par ${form.signature_nom} le ${dateHeureFr(form.signe_le)}.` }); return; }
     const saved = await enregistrer();
     if (!saved?.id) return;
-    if (!confirm(`Envoyer le devis ${saved.numero ?? ""} à ${saved.client_email} ? Il recevra un lien pour le consulter et le signer en ligne.`)) return;
+    if (!confirm(`Vérifie avant l'envoi :\n\nDestinataire : ${form?.client_nom ?? ""} <${saved.client_email}>\nÉvénement : ${form?.titre || "sans titre"}${form?.date_evenement ? ` · ${form.date_evenement}` : ""}\nDocument : devis ${saved.numero ?? ""} (lien à consulter et signer en ligne, aucune pièce jointe)\n\nEnvoyer ?`)) return;
     setEnvoiEnCours(true);
     const { data, error } = await supabase.functions.invoke("envoyer-devis", { body: { devisId: saved.id } });
     let message = data?.error as string | undefined;

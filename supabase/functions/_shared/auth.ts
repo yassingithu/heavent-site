@@ -26,8 +26,9 @@ export async function getCaller(req: Request): Promise<Caller | null> {
   if (error || !email) return null;
 
   const { data: adm } = await admin.from("admins").select("email").ilike("email", email).maybeSingle();
-  const { data: staff } = await admin.from("staff").select("id").ilike("email", email).maybeSingle();
-  return { email, isAdmin: !!adm, staffId: staff?.id ?? null };
+  const { data: staff } = await admin.from("staff").select("id, banni").ilike("email", email).maybeSingle();
+  // Une personne bannie n'a plus aucun droit de crew, même avec une session encore ouverte
+  return { email, isAdmin: !!adm, staffId: staff && !staff.banni ? staff.id : null };
 }
 
 export function deny(status = 403, message = "Accès refusé") {

@@ -43,4 +43,14 @@ i18n.changeLanguage = (async (lng?: string, cb?: any) => { await chargerLangue(l
 // Visiteur déjà en anglais/arabe (langue mémorisée) : on charge puis on réaffiche
 void chargerLangue(i18n.language).then(() => { if (i18n.language && i18n.language !== 'fr') void changer(i18n.language); });
 
+// Langue et sens d'écriture de la page : appliqués dès le chargement (visiteur arabe déjà reconnu) et à chaque changement
+const poserSens = (l?: string) => {
+  if (typeof document === 'undefined') return;
+  const code = (l || 'fr').slice(0, 2);
+  document.documentElement.lang = code;
+  document.documentElement.dir = code === 'ar' ? 'rtl' : 'ltr';
+};
+i18n.on('languageChanged', poserSens);
+poserSens(i18n.language);
+
 export default i18n;
