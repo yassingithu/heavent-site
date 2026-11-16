@@ -1,6 +1,7 @@
 import Seo from "@/components/Seo";
 import { PageTete } from "@/components/seuil/Seuil";
 import { useTexte } from "@/i18n/textes";
+import { reinitialiserChoixAudience } from "@/lib/audience";
 
 const PrivacyPolicy = () => {
   const x = useTexte();
@@ -38,8 +39,10 @@ const PrivacyPolicy = () => {
                 <p>
                   {x("Nous mettons en place des mesures techniques et organisationnelles appropriées pour protéger vos données contre tout accès, modification, divulgation ou destruction non autorisés.")} 
                 </p>
-                <p>
-                  <strong>{x("Mesure d'audience.")}</strong> {x("Pour savoir quelles pages sont consultées, nous comptons les visites de façon anonyme, sans cookie : page vue, site d'où vient la visite (par exemple Google ou Instagram), type d'appareil et clics sur nos moyens de contact. Aucune donnée permettant de vous identifier n'est enregistrée, et ces statistiques sont supprimées au bout de 13 mois.")}
+                <p id="mesure-audience">
+                  <strong>{x("Mesure d'audience.")}</strong> {x("Pour savoir quelles pages sont consultées, nous comptons les visites de façon anonyme, sans cookie : page vue, site d'où vient la visite (par exemple Google ou Instagram), type d'appareil et clics sur nos moyens de contact. Aucune donnée permettant de vous identifier n'est enregistrée, et ces statistiques sont supprimées au bout de 13 mois.")}{" "}
+                  {x("Avec votre accord seulement (le bandeau s'affiche à votre première visite), nous utilisons aussi la balise Google Ads, qui peut déposer des cookies et envoyer des données à Google, hors du Maroc, pour mesurer les résultats de nos annonces. Si vous refusez, rien n'est envoyé à Google.")}{" "}
+                  <button type="button" data-testid="audience-changer" onClick={reinitialiserChoixAudience} className="underline underline-offset-4 text-[#7A5F1F]">{x("Modifier mon choix")}</button>
                 </p>
                 <p id="suppression-des-donnees">
                   <strong>{x("Instagram et suppression de vos données.")}</strong> {x("Si vous commentez « GUIDE » sous une de nos publications Instagram, nous recevons votre nom d'utilisateur et votre commentaire, uniquement pour vous envoyer le guide en message privé. Pour faire supprimer toutes vos données (Instagram, guides, newsletter, demandes de devis), écrivez à i.chaigari@heaventagency.com en indiquant votre e-mail ou votre nom d'utilisateur Instagram : la suppression est faite sous 30 jours.")}
