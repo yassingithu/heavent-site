@@ -600,3 +600,19 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
 /* candidats : la même invitation là où l'on clique sur l'e-mail */
 .s-candidat-ligne { display: block; margin-top: 4px; font-size: 13px; opacity: .85; }
 .s-candidat-ligne a { text-decoration: underline; text-underline-offset: 4px; }
+
+/* Bandeau de consentement à la mesure d'audience : en bas de l'écran sur téléphone, carte aux coins taillés sur ordinateur */
+.bandeau-audience { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; border-top: 1px solid rgba(228,212,154,.55); animation: audience-entree .3s ease .6s both; }
+.bandeau-audience-int { padding: 20px 20px max(20px, env(safe-area-inset-bottom)); }
+.bandeau-audience .s-surtitre { margin: 0 0 10px; }
+.bandeau-audience-texte { margin: 0; font: 400 14.5px/1.55 var(--s-texte); color: #E6DDCB; }
+.bandeau-audience-texte a { display: inline-block; padding: 10px 0; color: #E4D49A; text-decoration: underline; text-decoration-color: rgba(228,212,154,.6); text-underline-offset: 5px; }
+.bandeau-audience-actions { display: flex; gap: 12px; margin-top: 6px; }
+.bandeau-audience-actions .s-btn { flex: 1; min-height: 48px; padding: 0 16px; }
+.bandeau-audience-actions .s-btn:focus-visible { outline-offset: -5px; outline-color: #E4D49A; }
+@keyframes audience-entree { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .bandeau-audience { animation: none; } }
+@media (min-width: 640px) {
+  .bandeau-audience { left: 24px; right: auto; bottom: 24px; max-width: 26rem; border: 0; padding: 1px; background: rgba(228,212,154,.55); clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px); }
+  .bandeau-audience-int { padding: 22px; clip-path: polygon(11.4px 0, calc(100% - 11.4px) 0, 100% 11.4px, 100% calc(100% - 11.4px), calc(100% - 11.4px) 100%, 11.4px 100%, 0 calc(100% - 11.4px), 0 11.4px); }
+}

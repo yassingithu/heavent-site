@@ -1,10 +1,15 @@
 import Seo from "@/components/Seo";
 import { PageTete } from "@/components/seuil/Seuil";
 import { useTexte } from "@/i18n/textes";
-import { reinitialiserChoixAudience } from "@/lib/audience";
+import { useEffect } from "react";
+import { definirChoixAudience, useChoixAudience } from "@/lib/audience";
 
 const PrivacyPolicy = () => {
   const x = useTexte();
+  const choixAudience = useChoixAudience();
+  useEffect(() => {
+    if (window.location.hash === "#mesure-audience") setTimeout(() => document.getElementById("mesure-audience")?.scrollIntoView({ behavior: "smooth" }), 300);
+  }, []);
   return (
     <div>
       <Seo page="confidentialite" />
@@ -41,9 +46,13 @@ const PrivacyPolicy = () => {
                 </p>
                 <p id="mesure-audience">
                   <strong>{x("Mesure d'audience.")}</strong> {x("Pour savoir quelles pages sont consultées, nous comptons les visites de façon anonyme, sans cookie : page vue, site d'où vient la visite (par exemple Google ou Instagram), type d'appareil et clics sur nos moyens de contact. Aucune donnée permettant de vous identifier n'est enregistrée, et ces statistiques sont supprimées au bout de 13 mois.")}{" "}
-                  {x("Avec votre accord seulement (le bandeau s'affiche à votre première visite), nous utilisons aussi la balise Google Ads, qui peut déposer des cookies et envoyer des données à Google, hors du Maroc, pour mesurer les résultats de nos annonces. Si vous refusez, rien n'est envoyé à Google.")}{" "}
-                  <button type="button" data-testid="audience-changer" onClick={reinitialiserChoixAudience} className="underline underline-offset-4 text-[#7A5F1F]">{x("Modifier mon choix")}</button>
+                  {x("Avec votre accord seulement (le bandeau s'affiche à votre première visite, puis tous les 13 mois), nous utilisons aussi la balise Google Ads, qui peut déposer des cookies et envoyer des données à Google, hors du Maroc, pour mesurer les résultats de nos annonces. Si vous refusez, rien n'est envoyé à Google.")}
                 </p>
+                <div data-testid="audience-choix" className="flex flex-wrap items-center gap-3">
+                  <span>{x("Votre choix actuel :")} <strong>{choixAudience === "oui" ? x("accepté") : choixAudience === "non" ? x("refusé") : x("pas encore choisi")}</strong></span>
+                  <button type="button" data-testid="audience-changer-refuser" onClick={() => definirChoixAudience("non")} className="h-11 px-5 border border-[#7A5F1F] hover:bg-[#EBE2CF]">{x("Refuser")}</button>
+                  <button type="button" data-testid="audience-changer-accepter" onClick={() => definirChoixAudience("oui")} className="h-11 px-5 border border-[#7A5F1F] hover:bg-[#EBE2CF]">{x("Accepter")}</button>
+                </div>
                 <p id="suppression-des-donnees">
                   <strong>{x("Instagram et suppression de vos données.")}</strong> {x("Si vous commentez « GUIDE » sous une de nos publications Instagram, nous recevons votre nom d'utilisateur et votre commentaire, uniquement pour vous envoyer le guide en message privé. Pour faire supprimer toutes vos données (Instagram, guides, newsletter, demandes de devis), écrivez à i.chaigari@heaventagency.com en indiquant votre e-mail ou votre nom d'utilisateur Instagram : la suppression est faite sous 30 jours.")}
                 </p>

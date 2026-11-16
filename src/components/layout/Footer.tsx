@@ -91,6 +91,7 @@ const Footer = () => {
         <nav aria-label={x("Informations légales")}>
           <Link to="/mentions-legales">{x("Mentions légales")}</Link>
           <Link to="/politique-confidentialite">{x("Politique de confidentialité")}</Link>
+          <Link to="/politique-confidentialite#mesure-audience">{x("Mesure d'audience")}</Link>
           <Link to="/admin-auth" title={x("Accès Admin")}>{x("Accès Admin")}</Link>
         </nav>
       </div>

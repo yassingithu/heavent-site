@@ -1,19 +1,28 @@
+import { useEffect, useState } from "react";
+
 /**
  * Mesure d'audience Google (balise Google Ads) : elle ne se charge qu'après un « Accepter » explicite.
  * Tant que le visiteur n'a pas répondu, ou s'il refuse, aucune requête ne part vers Google.
  */
 const CLE = "heavent-audience";
 const ID_GOOGLE = "AW-11479101793";
+const EVENEMENT = "heavent-audience";
+const VALIDITE_MS = 395 * 24 * 3600 * 1000; // 13 mois, puis on redemande
 
 export type ChoixAudience = "oui" | "non" | null;
 
+// Si le navigateur bloque le stockage, le choix est gardé en mémoire tant que l'onglet reste ouvert
+let memoire: ChoixAudience = null;
+
 export const lireChoixAudience = (): ChoixAudience => {
   try {
-    const v = localStorage.getItem(CLE);
-    return v === "oui" || v === "non" ? v : null;
-  } catch {
-    return null; // stockage bloqué : on redemande à chaque visite, sans rien charger
-  }
+    const brut = localStorage.getItem(CLE);
+    if (brut) {
+      const v = JSON.parse(brut) as { c?: string; t?: number };
+      if ((v.c === "oui" || v.c === "non") && typeof v.t === "number" && Date.now() - v.t < VALIDITE_MS) return v.c;
+    }
+  } catch { /* stockage bloqué ou illisible */ }
+  return memoire;
 };
 
 export function activerGoogle() {
@@ -30,13 +39,36 @@ export function activerGoogle() {
   document.head.appendChild(s);
 }
 
-export function enregistrerChoixAudience(choix: "oui" | "non") {
-  try { localStorage.setItem(CLE, choix); } catch { /* sans mémoire : le choix vaut pour cette page seulement */ }
-  if (choix === "oui") activerGoogle();
+/** Supprime les cookies que la balise Google a pu déposer sur ce site. */
+function effacerCookiesGoogle() {
+  const hote = window.location.hostname;
+  const domaines = [hote, `.${hote}`, `.${hote.replace(/^www\./, "")}`];
+  document.cookie.split(";").map((c) => c.split("=")[0].trim()).filter((n) => /^(_gcl_.*|_gac_.*|_ga.*|_gid)$/.test(n)).forEach((nom) => {
+    domaines.forEach((d) => { document.cookie = `${nom}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${d}`; });
+    document.cookie = `${nom}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+  });
 }
 
-/** Permet de changer d'avis : efface le choix et recharge la page, le bandeau réapparaît et rien n'est chargé. */
-export function reinitialiserChoixAudience() {
-  try { localStorage.removeItem(CLE); } catch { /* rien à effacer */ }
-  window.location.reload();
+/** Enregistre le choix. Refuser après avoir accepté efface les cookies Google et recharge la page. */
+export function definirChoixAudience(choix: "oui" | "non") {
+  const dejaCharge = !!document.getElementById("balise-google");
+  memoire = choix;
+  try { localStorage.setItem(CLE, JSON.stringify({ c: choix, t: Date.now() })); } catch { /* gardé en mémoire */ }
+  if (choix === "oui") activerGoogle();
+  else {
+    effacerCookiesGoogle();
+    if (dejaCharge) { window.location.reload(); return; }
+  }
+  window.dispatchEvent(new Event(EVENEMENT));
+}
+
+/** Choix en cours, mis à jour partout (bandeau, politique de confidentialité) dès qu'il change. */
+export function useChoixAudience(): ChoixAudience {
+  const [choix, setChoix] = useState<ChoixAudience>(lireChoixAudience);
+  useEffect(() => {
+    const maj = () => setChoix(lireChoixAudience());
+    window.addEventListener(EVENEMENT, maj);
+    return () => window.removeEventListener(EVENEMENT, maj);
+  }, []);
+  return choix;
 }

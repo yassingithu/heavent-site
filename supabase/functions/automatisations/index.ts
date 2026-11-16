@@ -31,6 +31,7 @@ function emailRelance(d: any, n: number) {
       ${d.date_validite ? `<br>Valable jusqu'au ${e(dateFr(d.date_validite))}` : ""}</div>
     <p style="margin:22px 0"><a href="${lien}" style="background:#141414;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;display:inline-block">Consulter et signer mon devis</a></p>
     <p style="font-size:13px;color:#555">Une question, une modification ? Répondez simplement à cet e-mail, appelez-nous au +212 6 10 93 96 55, ou demandez un rendez-vous directement depuis la page de votre devis.</p>
+    <p style="font-size:12px;color:#777">Vous ne souhaitez plus recevoir ces rappels ? Répondez simplement « STOP » à cet e-mail : nous n'en enverrons plus. Vos données (nom, e-mail, devis) ne servent qu'à répondre à votre demande, conformément à la loi 09-08 ; vos droits d'accès, de rectification et d'opposition : i.chaigari@heaventagency.com.</p>
     <p style="font-size:12px;color:#777">Ce devis est établi d'après les informations transmises. Son montant peut évoluer en fonction des services et des prestataires retenus lors d'un premier rendez-vous.</p>
     <p>Bien à vous,<br>Imane CHAIGARI — CEO, Heavent People Agency</p></div>`;
 }
