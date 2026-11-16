@@ -69,6 +69,15 @@ export default function EspaceMariesAdmin({ devisId, token, statut, noms, date, 
   const [invites, setInvites] = useState<InviteM[]>([]);
   const [charge, setCharge] = useState(false);
   const [tokenInvites, setTokenInvites] = useState<string | null>(null);
+  const [emailVerif, setEmailVerif] = useState("");
+  const [emailClient, setEmailClient] = useState("");
+  const [etatVerif, setEtatVerif] = useState<"" | "ok" | "ko" | "invalide">("");
+  const enregistrerEmailVerif = async () => {
+    const v = emailVerif.trim();
+    if (v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return setEtatVerif("invalide");
+    const { error } = await (supabase as any).from("devis").update({ verification_email: v || null }).eq("id", devisId);
+    setEtatVerif(error ? "ko" : "ok");
+  };
 
   useEffect(() => {
     if (!devisId) return;
@@ -76,9 +85,9 @@ export default function EspaceMariesAdmin({ devisId, token, statut, noms, date, 
       const [e, i, t] = await Promise.all([
         (supabase as any).from("espace_maries").select("noms, programme, tables, checklist, updated_at").eq("devis_id", devisId).maybeSingle(),
         (supabase as any).from("invites_mariage").select("id, nom, nb_prevus, reponse, nb_confirmes, remarque, table_id, liste_statut").eq("devis_id", devisId).order("nom"),
-        (supabase as any).from("devis").select("lien_reponse_token").eq("id", devisId).maybeSingle(),
+        (supabase as any).from("devis").select("lien_reponse_token, verification_email, client_email").eq("id", devisId).maybeSingle(),
       ]);
-      setTokenInvites(t.data?.lien_reponse_token ?? null);
+      setTokenInvites(t.data?.lien_reponse_token ?? null); setEmailVerif(t.data?.verification_email ?? ""); setEmailClient(t.data?.client_email ?? "");
       setEspace(e.data ?? null); setInvites(((i.data ?? []) as InviteM[]).filter((x) => (x.liste_statut ?? "valide") === "valide")); setCharge(true);
     })();
   }, [devisId]);
@@ -104,6 +113,20 @@ export default function EspaceMariesAdmin({ devisId, token, statut, noms, date, 
           <div className="space-y-2">
             <LigneLien libelle="Espace des mariés" aide="À envoyer aux mariés : ils y gèrent invités, programme et plan de table." url={`${base}/mon-mariage/${token}`} />
             {tokenInvites && <LigneLien libelle="Lien d'invitation pour les invités" aide="Un seul lien pour tous les invités (enveloppe, nom, réponse). Il n'ouvre jamais l'espace des mariés." url={`${base}/reponse/${tokenInvites}`} />}
+            <div className="rounded-lg border p-2.5" data-testid="verif-email-admin">
+              <label htmlFor="verif-email" className="text-sm font-medium">Adresse pour le code de vérification</label>
+              <div className="text-xs text-muted-foreground mb-1.5">Avant de signer ou d'exporter, le client reçoit un code. Par défaut : {emailClient || "aucune adresse sur le devis"}. Si le client n'a plus accès à cet e-mail, indiquez une autre adresse ici (vérifiez son identité avant).</div>
+              <div className="flex gap-2">
+                <input id="verif-email" type="email" value={emailVerif} onChange={(e) => { setEmailVerif(e.target.value); setEtatVerif(""); }} placeholder="autre adresse (facultatif)" className="flex-1 min-w-0 rounded-md border bg-background px-2 py-1.5 text-base min-h-11" />
+                <button type="button" onClick={() => void enregistrerEmailVerif()} className="rounded-md border px-3 text-sm hover:bg-muted min-h-11">Enregistrer</button>
+              </div>
+              {!emailClient && !emailVerif.trim() && <div className="text-xs mt-1 text-[#B5483C]" role="alert">Aucun code ne pourra être envoyé : saisissez une adresse.</div>}
+              <div role="status" className="text-xs mt-1">
+                {etatVerif === "ok" && <span className="text-[#4E6B3A]">Enregistré{emailVerif.trim() ? " : le code ira à cette adresse." : " : le code ira à l'adresse du devis."}</span>}
+                {etatVerif === "invalide" && <span className="text-[#B5483C]">Adresse e-mail invalide.</span>}
+                {etatVerif === "ko" && <span className="text-[#B5483C]">L'enregistrement a échoué. Réessayez.</span>}
+              </div>
+            </div>
             <LigneLien libelle="Devis à signer" aide="Le devis en ligne du client." url={lienClientDevis(token)} />
           </div>
         )}

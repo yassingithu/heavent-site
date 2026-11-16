@@ -4,6 +4,7 @@ import { useRef } from "react";
 import QRCode from "qrcode";
 import { Loader2 } from "lucide-react";
 import { enregistrerFichier } from "@/lib/pdf";
+import VerificationCode, { preuveEnMemoire } from "@/components/VerificationCode";
 
 interface Photo { id: string; chemin: string; masquee: boolean }
 interface Souvenir { id: string; nom: string; mot: string | null; date: string; photos: Photo[] }
@@ -138,6 +139,7 @@ export default function SouvenirsMaries({ token, reponseToken, date, noms }: { t
   const [livre, setLivre] = useState<{ disponible: boolean; nb_photos?: number; taille_mo?: number | null } | null>(null);
   const [livreEnCours, setLivreEnCours] = useState(false);
   const [livreKo, setLivreKo] = useState(false);
+  const [verifLivre, setVerifLivre] = useState(false);
   useEffect(() => { (async () => { const { data } = await (supabase as any).rpc("souvenir_livre", { p_token: token }); setLivre(data ?? null); })(); }, [token]);
   const telechargerLivre = async () => {
     setLivreEnCours(true); setLivreKo(false);
@@ -198,7 +200,8 @@ export default function SouvenirsMaries({ token, reponseToken, date, noms }: { t
         <section className={`${carte_} p-5 border-[#C8B560]`} data-testid="livre-pret">
           <h2 className="font-titre text-xl">Votre livre souvenir est prêt</h2>
           <p className="text-sm text-[#6B6155] mt-1">{livre.nb_photos} photo{(livre.nb_photos ?? 0) > 1 ? "s" : ""} et les mots de vos invités, dans un livre qui s'ouvre sans internet. Gardez-le précieusement : il n'est conservé en ligne qu'un an. Si vous retirez une photo après l'avoir téléchargé, prévenez-nous pour que nous le refassions.</p>
-          <button type="button" className={`${bouton} mt-3`} onClick={() => void telechargerLivre()} disabled={livreEnCours} data-testid="telecharger-livre">{livreEnCours ? "Préparation du lien…" : `Télécharger le livre${livre.taille_mo ? ` (${livre.taille_mo} Mo)` : ""}`}</button>
+          <button type="button" className={`${bouton} mt-3`} onClick={() => { if (preuveEnMemoire(token)) void telechargerLivre(); else setVerifLivre(true); }} disabled={livreEnCours} data-testid="telecharger-livre">{livreEnCours ? "Préparation du lien…" : `Télécharger le livre${livre.taille_mo ? ` (${livre.taille_mo} Mo)` : ""}`}</button>
+          {verifLivre && <div className="mt-3"><VerificationCode token={token} motif="Un code vous est envoyé avant de télécharger le livre : vos souvenirs restent entre vos mains." onVerifie={() => { setVerifLivre(false); void telechargerLivre(); }} onAnnuler={() => setVerifLivre(false)} /></div>}
           {livreKo && <p className="text-xs text-[#B5483C] mt-2" role="alert">Le téléchargement n'a pas démarré. Réessayez dans un instant.</p>}
           <p className="text-xs text-[#6B6155] mt-3">Pour l'ouvrir : décompressez le fichier, puis double-cliquez sur « livre-souvenir.html ».</p>
         </section>

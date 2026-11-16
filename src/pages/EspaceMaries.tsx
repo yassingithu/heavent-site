@@ -46,6 +46,8 @@ const boutonOr = `${bouton} bg-[#141414] text-white hover:bg-[#2a2a2a]`;
 const boutonClair = `${bouton} border border-[#DCCBA6] bg-white hover:bg-[#FAF7EE]`;
 const carte = "rounded-lg bg-white border border-[#EADFC8] shadow-[0_1px_0_#fff_inset,0_18px_40px_-34px_rgba(140,109,34,0.55)]";
 
+import VerificationCode, { preuveEnMemoire } from "@/components/VerificationCode";
+
 export default function EspaceMaries() {
   const { token = "" } = useParams();
   const [etat, setEtat] = useState<"chargement" | "introuvable" | "pret">("chargement");
@@ -388,7 +390,10 @@ function Invites({ token, reponseToken, espace, invites, noms, date, maj, enregi
   const copier = async (i: Invite) => {
     try { await navigator.clipboard.writeText(lienRsvp(i.jeton)); setCopie(i.id); setTimeout(() => setCopie(null), 1500); } catch { window.prompt("Lien à copier :", lienRsvp(i.jeton)); }
   };
+  const [verifExport, setVerifExport] = useState(false);
+  const demanderExport = () => { if (preuveEnMemoire(token)) exporter(); else setVerifExport(true); };
   const exporter = () => {
+    setVerifExport(false);
     if (manquants > 0 && !window.confirm(`${manquants} nom${manquants > 1 ? "s" : ""} d'accompagnant manque${manquants > 1 ? "nt" : ""} encore. Exporter quand même ?`)) return;
     const tables = new Map(espace.tables.map((t) => [t.id, t.nom]));
     // une ligne par personne (invité puis accompagnants) : utile pour imprimer le plan de table
@@ -523,8 +528,9 @@ function Invites({ token, reponseToken, espace, invites, noms, date, maj, enregi
               <button key={k} onClick={() => setFiltre(k)} className={`rounded-full px-3 min-h-9 border ${filtre === k ? "bg-[#141414] text-white border-[#141414]" : "border-[#E3D6BA] bg-white"}`}>{l}</button>
             ))}
           </div>
-          {actives.length > 0 && <button className={boutonClair} onClick={exporter}><Download className="h-4 w-4" /> Exporter</button>}
+          {actives.length > 0 && <button className={boutonClair} onClick={demanderExport}><Download className="h-4 w-4" /> Exporter</button>}
         </div>
+        {verifExport && <VerificationCode token={token} motif="Un code vous est envoyé avant d'exporter la liste : vos invités restent entre vos mains." onVerifie={() => exporter()} onAnnuler={() => setVerifExport(false)} />}
         {manquants > 0 && <p className="text-sm text-[#5C4512] bg-[#FFF7E6] border border-[#F0D9A8] rounded-lg px-4 py-3" data-testid="noms-manquants">{manquants} nom{manquants > 1 ? "s" : ""} d'accompagnant manque{manquants > 1 ? "nt" : ""} pour vos tables : ouvrez « Noms des accompagnants » sous l'invité concerné.</p>}
         {!actives.length ? (
           <p className="text-sm text-[#6B6155] py-6 text-center">Ajoutez vos invités : chacun reçoit un lien personnel pour confirmer sa présence, à envoyer par WhatsApp.</p>

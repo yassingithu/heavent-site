@@ -11,6 +11,7 @@ import {
 import { telechargerDevisPdf, telechargerFacturePdf } from "@/components/admin/devis/devisPdf";
 import { Facture, TYPES_FACTURE } from "@/components/admin/devis/factureUtils";
 import ChoisirRendezVous from "@/components/rendez-vous/ChoisirRendezVous";
+import VerificationCode, { preuveEnMemoire } from "@/components/VerificationCode";
 import { ArrowRight, CalendarClock, CheckCircle2, Download, FileText, Heart, Loader2, MessageCircle, Receipt, Star } from "lucide-react";
 import { aujourdhuiMaroc } from "@/lib/dateMaroc";
 
@@ -358,17 +359,24 @@ function Signature({ token, devis, onSigne }: { token: string; devis: DevisForm;
   const [traits, setTraits] = useState(0);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState("");
+  const [verification, setVerification] = useState(false);
 
-  const signer = async () => {
+  /** Signature : le serveur exige la preuve obtenue avec le code reçu par e-mail. */
+  const signer = async (preuveNeuve?: string) => {
     setErreur("");
     if (nom.trim().length < 3) return setErreur("Écrivez votre nom complet.");
     if (traits < 15) return setErreur("Dessinez votre signature dans le cadre.");
     if (!lu) return setErreur("Cochez la case pour confirmer votre accord.");
+    const preuve = preuveNeuve ?? preuveEnMemoire(token);
+    if (!preuve) { setVerification(true); return; }
+    setVerification(false);
     setEnvoi(true);
-    const { data, error } = await supabase.functions.invoke("signer-devis", { body: { token, nom: nom.trim(), image: zone.current!.image(), accepte: true } });
+    const { data, error } = await supabase.functions.invoke("signer-devis", { body: { token, nom: nom.trim(), image: zone.current!.image(), accepte: true, preuve } });
     let message = data?.error as string | undefined;
-    if (error && !message) { try { message = (await (error as any).context?.json())?.error; } catch { /* */ } }
+    let besoinCode = data?.verification === true;
+    if (error && !message) { try { const c = await (error as any).context?.json(); message = c?.error; besoinCode = c?.verification === true; } catch { /* */ } }
     setEnvoi(false);
+    if (besoinCode) { try { sessionStorage.removeItem(`verif-${token.slice(0, 8)}`); } catch { /* */ } setVerification(true); return; }
     if (error || data?.error) return setErreur(message ?? "La signature n'a pas pu être enregistrée. Réessayez dans un instant.");
     onSigne();
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -391,7 +399,8 @@ function Signature({ token, devis, onSigne }: { token: string; devis: DevisForm;
         <span>J'ai lu le devis et les conditions générales de vente, et je donne mon <b>« Bon pour accord »</b>.</span>
       </label>
       {erreur && <p className="text-sm text-[#8A2E26]" role="alert">{erreur}</p>}
-      <button onClick={signer} disabled={envoi} data-testid="signer-devis"
+      {verification && <VerificationCode token={token} motif="Avant de signer, un code vous est envoyé pour nous assurer que le devis est bien entre vos mains." onVerifie={(p) => { setVerification(false); void signer(p); }} onAnnuler={() => setVerification(false)} />}
+      <button onClick={() => void signer()} disabled={envoi || verification} data-testid="signer-devis"
         className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-[#141414] text-white px-8 min-h-12 font-medium hover:bg-black disabled:opacity-60">
         {envoi && <Loader2 className="h-4 w-4 animate-spin" />} {envoi ? "Signature…" : "Signer le devis"}
       </button>

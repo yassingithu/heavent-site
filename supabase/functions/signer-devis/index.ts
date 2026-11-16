@@ -58,7 +58,7 @@ async function demanderRendezVous(token: string, message: string, disponibilites
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { token, nom, image, accepte, action, message, disponibilites } = await req.json();
+    const { token, nom, image, accepte, action, message, disponibilites, preuve } = await req.json();
     if (!/^[0-9a-f-]{36}$/i.test(String(token ?? ""))) return json({ error: "Lien invalide." }, 400);
     if (action === "rdv") return await demanderRendezVous(String(token), String(message ?? "").slice(0, 2000), String(disponibilites ?? "").slice(0, 300));
     if (!accepte) return json({ error: "Cochez « J'ai lu et j'accepte »." }, 400);
@@ -67,6 +67,10 @@ serve(async (req) => {
       return json({ error: "Dessinez votre signature dans le cadre." }, 400);
 
     const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", { auth: { persistSession: false } });
+    // Vérification par code e-mail : le lien seul ne suffit plus pour signer
+    const { data: verifie, error: errVerif } = await db.rpc("_verif_controler", { p_token: token, p_preuve: String(preuve ?? "") });
+    if (errVerif) return json({ error: "Vérification momentanément indisponible. Réessayez dans un instant ou contactez-nous." }, 500);
+    if (verifie !== true) return json({ error: "Vérification requise : saisissez le code reçu par e-mail avant de signer.", verification: true }, 403);
     const { data: d } = await db.from("devis").select("*").eq("lien_token", token).maybeSingle();
     if (!d || d.statut === "annule") return json({ error: "Ce devis n'est plus disponible. Contactez-nous." }, 404);
     if (d.signe_le) return json({ error: "Ce devis a déjà été signé." }, 409);
@@ -76,12 +80,12 @@ serve(async (req) => {
 
     const { data: lignes } = await db.from("devis_lignes").select("designation, quantite, duree, unite, prix_unitaire, remise_pct").eq("devis_id", d.id).order("ordre");
     const signeLe = new Date().toISOString();
-    const preuve = {
+    const preuveSignature = {
       ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null, navigateur: req.headers.get("user-agent"),
       total_ttc: d.total_ttc, empreinte: await empreinte(JSON.stringify({ lignes, total: d.total_ttc, remise: d.remise_globale_pct, tva: d.taux_tva })), signe_le: signeLe,
     };
     const { error } = await db.from("devis").update({
-      signe_le: signeLe, signature_nom: String(nom).trim().slice(0, 120), signature_image: image, signature_preuve: preuve, statut: "accepte",
+      signe_le: signeLe, signature_nom: String(nom).trim().slice(0, 120), signature_image: image, signature_preuve: preuveSignature, statut: "accepte",
     }).eq("id", d.id);
     if (error) return json({ error: "Signature non enregistrée : " + error.message }, 500);
 
