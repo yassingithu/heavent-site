@@ -46,7 +46,7 @@ const PrivacyPolicy = () => {
                 </p>
                 <p id="mesure-audience">
                   <strong>{x("Mesure d'audience.")}</strong> {x("Pour savoir quelles pages sont consultées, nous comptons les visites de façon anonyme, sans cookie : page vue, site d'où vient la visite (par exemple Google ou Instagram), type d'appareil et clics sur nos moyens de contact. Aucune donnée permettant de vous identifier n'est enregistrée, et ces statistiques sont supprimées au bout de 13 mois.")}{" "}
-                  {x("Avec votre accord seulement (le bandeau s'affiche à votre première visite, puis tous les 13 mois), nous utilisons aussi la balise Google Ads, qui peut déposer des cookies et envoyer des données à Google, hors du Maroc, pour mesurer les résultats de nos annonces. Si vous refusez, cette balise n'est pas chargée. Quelques pages (inscription du personnel, création d'événement, connexion) chargent aussi des polices depuis Google Fonts, ce qui transmet votre adresse IP à Google.")}
+                  {x("Avec votre accord seulement (le bandeau s'affiche à votre première visite, puis tous les 13 mois), nous utilisons aussi la balise Google Ads, qui peut déposer des cookies et envoyer des données à Google, hors du Maroc, pour mesurer les résultats de nos annonces. Si vous refusez, cette balise n'est pas chargée.")}
                 </p>
                 <div data-testid="audience-choix" className="flex flex-wrap items-center gap-3">
                   <span>{x("Votre choix actuel :")} <strong>{choixAudience === "oui" ? x("accepté") : choixAudience === "non" ? x("refusé") : x("pas encore choisi")}</strong></span>

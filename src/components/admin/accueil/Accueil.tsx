@@ -31,20 +31,10 @@ export function useAccueil() {
   return { infos, recharger: charger };
 }
 
-/** Police manuscrite de la signature de Yassin */
-function chargerPolice() {
-  if (typeof document === "undefined" || document.getElementById("police-signature")) return;
-  const l = document.createElement("link");
-  l.id = "police-signature"; l.rel = "stylesheet";
-  l.href = "https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap";
-  document.head.appendChild(l);
-}
-
 /* ---------------- Surprise de bienvenue ---------------- */
 export function SurpriseBienvenue({ surprise, prenom, onFermer }: { surprise: NonNullable<InfosAccueil["surprise"]>; prenom: string; onFermer: () => void }) {
   const [etape, setEtape] = useState(0); // 0 : enveloppe, 1 : lettre, 2 : merci
   const paragraphes = surprise.texte.split(/\n\s*\n/);
-  useEffect(chargerPolice, []);
   const fermer = async () => { setEtape(2); await marquer("surprise"); setTimeout(onFermer, 3800); };
 
   return (
@@ -112,7 +102,6 @@ export function SurpriseBienvenue({ surprise, prenom, onFermer }: { surprise: No
 /* ---------------- Accueil au prénom + mot du jour + résumé ---------------- */
 export function CarteAccueil({ infos, nouvellesDemandes }: { infos: InfosAccueil; nouvellesDemandes: number }) {
   const [jour, setJour] = useState<{ rdv: number; evenements: { titre: string; client: string }[]; semaine: number } | null>(null);
-  useEffect(chargerPolice, []);
   useEffect(() => {
     const j = aujourdhui();
     const dans7 = jourMarocPlus(7);
@@ -245,7 +234,6 @@ export function Celebrations({ infos, onVu }: { infos: InfosAccueil; onVu: () =>
 
 /* ---------------- Espace de Nawar : le mot de papa ---------------- */
 export function CarteMotPapa({ infos }: { infos: InfosAccueil }) {
-  useEffect(chargerPolice, []);
   const h = heureMaroc();
   const salut = h < 5 ? "Douce nuit" : h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : "Bonsoir";
   const dateLongue = dateLongueMaroc();

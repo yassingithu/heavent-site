@@ -8,6 +8,17 @@ All colors MUST be HSL. Color scheme: white, black, gold (#C8B560)
 
 
 /* ———— Direction « Seuil » : polices servies en local et couleurs de la marque ———— */
+/* Polices hébergées sur le site (aucune requête vers Google) — licence SIL OFL 1.1 */
+@font-face { font-family: "Inter"; src: url(/polices/inter-latin-300-normal.woff2) format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Inter"; src: url(/polices/inter-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Inter"; src: url(/polices/inter-latin-500-normal.woff2) format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Inter"; src: url(/polices/inter-latin-600-normal.woff2) format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Inter"; src: url(/polices/inter-latin-700-normal.woff2) format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Playfair Display"; src: url(/polices/playfair-display-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Playfair Display"; src: url(/polices/playfair-display-latin-500-normal.woff2) format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Playfair Display"; src: url(/polices/playfair-display-latin-600-normal.woff2) format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Playfair Display"; src: url(/polices/playfair-display-latin-700-normal.woff2) format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Great Vibes"; src: url(/polices/great-vibes-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: "Gloock"; src: url(/polices/gloock-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "Cormorant Garamond"; src: url(/polices/cormorant-garamond-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: "Cormorant Garamond"; src: url(/polices/cormorant-garamond-latin-500-normal.woff2) format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
