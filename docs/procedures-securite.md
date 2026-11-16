@@ -6,7 +6,7 @@ Aucun secret, code de secours ni mot de passe ne doit être écrit dans ce dép�
 - Deux comptes administrateurs nominatifs (Imane, Yassin), jamais un compte partagé.
 - Chacun garde ses codes de secours hors du dépôt (gestionnaire de mots de passe ou coffre papier), et la procédure « mot de passe oublié » passe par l'e-mail de son compte.
 - Si l'un perd l'accès : l'autre administrateur peut le réinitialiser depuis Supabase (Authentication > Users). Si les deux perdent l'accès : passer par la console Supabase avec le compte propriétaire du projet.
-- À décider : activer l'authentification à deux facteurs sur les comptes administrateurs et sur le compte Supabase/one.com.
+- Double authentification : activée (déclaré par Yassin le 16/11/2026, non vérifié par Claude). À vérifier pour chaque compte : Imane, Yassin, Supabase, one.com.
 
 ## 2. Liens privés
 - Consultation : /mon-devis, /mon-mariage, /reponse, /souvenirs/mariage, /rsvp (lecture et réponse).
