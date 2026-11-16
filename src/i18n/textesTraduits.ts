@@ -675,6 +675,8 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "Oui, je veux recevoir les conseils et nouveautés Heavent par e-mail (1 à 2 fois par mois). Désinscription en un clic.": { en: "Yes, I'd like to receive Heavent tips and news by email (1 to 2 times a month). Unsubscribe in one click.", ar: "نعم، أرغب في تلقي نصائح ومستجدات Heavent عبر البريد الإلكتروني (مرة أو مرتين في الشهر). يمكن إلغاء الاشتراك بنقرة واحدة." },
   "Recevez les {n} conseils suivants, gratuitement": { en: "Get the next {n} tips for free", ar: "احصل على النصائح الـ{n} التالية مجاناً" },
   "Tous les liens de Heavent People Agency : guides gratuits, devis mariage et entreprise, crée ton événement, rendez-vous et WhatsApp.": { en: "All Heavent People Agency links: free guides, wedding and corporate quotes, create your event, appointments and WhatsApp.", ar: "جميع روابط Heavent People Agency: أدلة مجانية، عروض أسعار للأعراس والشركات، صمّم مناسبتك، المواعيد وواتساب." },
+  "Vous désinscrire de la newsletter ?": { en: "Unsubscribe from the newsletter?", ar: "هل تريد إلغاء الاشتراك في النشرة الإخبارية؟" },
+  "Me désinscrire": { en: "Unsubscribe me", ar: "إلغاء اشتراكي" },
   "Un instant…": { en: "One moment…", ar: "لحظة من فضلك…" },
   "Vos données restent chez Heavent et ne sont jamais revendues.": { en: "Your data stays with Heavent and is never sold.", ar: "تبقى بياناتك لدى Heavent ولا تُباع أبداً." },
   "Votre e-mail": { en: "Your email", ar: "بريدك الإلكتروني" },

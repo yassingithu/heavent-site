@@ -20,3 +20,12 @@ Rules:
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
 - A committed graphify-out/graph.json is rewritten whole on every build, so a large diff to it in a pull request is expected. Do not flag it as churn or suggest skipping the graph rebuild or its hooks.
+
+## Sécurité et conformité (règles durables, audit du 16/11/2026)
+
+- Un jeton = un rôle. Le jeton du devis (`lien_token`) ouvre le devis ET l'espace des mariés : il ne part jamais chez les invités. Les invités reçoivent `lien_reponse_token` (liens `/reponse/…` et `/souvenirs/mariage/…`), qui ne permet que de répondre et de déposer des souvenirs.
+- Une visite GET ne change jamais rien : désinscription, confirmation prestataire, signature, RSVP passent par un clic explicite.
+- Le suivi des visites (`evenements_site`) ne garde jamais de jeton ni d'identifiant dans l'adresse : routes privées exclues côté navigateur (`src/lib/suivi.ts`) ET refusées par `suivi_enregistrer`.
+- Toute nouvelle fonction serveur sans connexion automatique doit contrôler elle-même qui appelle (`getCaller` admin, clé de tâche planifiée, jeton validé ou signature du webhook).
+- CNDP : une demande en attente n'est jamais présentée comme une autorisation, aucun numéro de récépissé n'est inventé.
+- Une migration SQL qui change une fonction appelée par le site se déploie avec la mise en ligne du site correspondant.

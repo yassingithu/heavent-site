@@ -215,11 +215,19 @@ function Bloc({ titre, numero, aide, children }: { titre: string; numero: number
 export function ConfirmerPrestataire() {
   const { jeton } = useParams();
   const [r, setR] = useState<{ societe: string; statut: string } | null | undefined>(undefined);
-  useEffect(() => { (supabase as any).rpc("prestataire_confirmer", { p_jeton: jeton }).then(({ data }: any) => setR(data ?? null)); }, [jeton]);
+  const [lance, setLance] = useState(false);
+  // La confirmation ne part qu'après un clic : un robot qui ouvre le lien (antivirus, aperçu de messagerie) ne confirme rien
+  const confirmer = () => { setLance(true); (supabase as any).rpc("prestataire_confirmer", { p_jeton: jeton }).then(({ data }: any) => setR(data ?? null)); };
   return (
     <div className="min-h-[70vh] grid place-items-center s-platre px-4 py-16" data-testid="prestataire-confirme">
       <Seo noindex />
-      {r === undefined ? <Loader2 className="h-8 w-8 animate-spin text-[#A8933F]" /> : r === null ? (
+      {r === undefined && !lance ? (
+        <div className="text-center max-w-md">
+          <h1 className="font-serif text-3xl">Confirmer votre adresse e-mail</h1>
+          <p className="text-[#5A5146] mt-3">Un clic pour valider votre demande auprès de Heavent.</p>
+          <button type="button" data-testid="prestataire-confirmer" onClick={confirmer} className="s-btn s-btn-filet mt-8">Je confirme</button>
+        </div>
+      ) : r === undefined ? <Loader2 className="h-8 w-8 animate-spin text-[#A8933F]" /> : r === null ? (
         <div className="text-center max-w-md"><h1 className="font-serif text-3xl">Lien invalide</h1><p className="text-[#5A5146] mt-3">Ce lien de confirmation n'existe pas ou n'est plus valable.</p></div>
       ) : (
         <div className="text-center max-w-md">

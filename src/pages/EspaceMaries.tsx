@@ -19,7 +19,7 @@ interface Espace {
   noms: string | null; checklist: Tache[]; budget: PosteBudget[]; programme: Moment[]; tables: TableMariage[];
   invitation?: InvitationReglages | null; budget_total: number | null; message_invites: string | null; date_limite_reponse: string | null; updated_at?: string; liste_mode?: "ouverte" | "fermee" | null;
 }
-interface InfosDevis { client_nom: string; date_evenement: string | null; lieu: string | null; nb_personnes: number | null; devise: string | null }
+interface InfosDevis { client_nom: string; date_evenement: string | null; lieu: string | null; nb_personnes: number | null; devise: string | null; reponse_token?: string }
 
 type Onglet = "checklist" | "budget" | "programme" | "invites" | "tables" | "souvenirs";
 const ONGLETS: { cle: Onglet; libelle: string; icone: typeof Heart }[] = [
@@ -187,8 +187,8 @@ export default function EspaceMaries() {
         {onglet === "checklist" && <Checklist espace={espace} date={devis.date_evenement} maj={maj} />}
         {onglet === "budget" && <Budget espace={espace} devise={devis.devise ?? "MAD"} maj={maj} />}
         {onglet === "programme" && <Programme espace={espace} noms={noms} date={devis.date_evenement} maj={maj} />}
-        {onglet === "invites" && <Invites token={token} espace={espace} invites={invites} noms={noms} date={devis.date_evenement} maj={maj} enregistrer={enregistrerInvite} supprimer={supprimerInvite} />}
-        {onglet === "souvenirs" && <SouvenirsMaries token={token} date={devis.date_evenement} noms={noms} />}
+        {onglet === "invites" && <Invites token={token} reponseToken={devis.reponse_token ?? ""} espace={espace} invites={invites} noms={noms} date={devis.date_evenement} maj={maj} enregistrer={enregistrerInvite} supprimer={supprimerInvite} />}
+        {onglet === "souvenirs" && <SouvenirsMaries token={token} reponseToken={devis.reponse_token ?? ""} date={devis.date_evenement} noms={noms} />}
         {onglet === "tables" && <PlanDeTable espace={espace} invites={actives} maj={maj} enregistrer={enregistrerInvite} />}
 
         <p className="text-center text-xs text-[#8C6D22] print:hidden">Votre espace est enregistré automatiquement. L'équipe Heavent peut consulter votre programme et votre plan de table pour coordonner la soirée.</p>
@@ -333,8 +333,8 @@ function Programme({ espace, noms, date, maj }: { espace: Espace; noms: string; 
 }
 
 /* ---------------- Invités ---------------- */
-function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprimer }: {
-  token: string; espace: Espace; invites: Invite[]; noms: string; date: string | null; maj: (m: Partial<Espace>) => void;
+function Invites({ token, reponseToken, espace, invites, noms, date, maj, enregistrer, supprimer }: {
+  token: string; reponseToken: string; espace: Espace; invites: Invite[]; noms: string; date: string | null; maj: (m: Partial<Espace>) => void;
   enregistrer: (i: Partial<Invite> & { nom: string }) => Promise<Invite | null>; supprimer: (id: string) => void;
 }) {
   const [nom, setNom] = useState(""); const [tel, setTel] = useState(""); const [cote, setCote] = useState<Invite["cote"]>("commun"); const [nb, setNb] = useState("1");
@@ -403,7 +403,7 @@ function Invites({ token, espace, invites, noms, date, maj, enregistrer, supprim
     enregistrerFichier(new Blob([csv], { type: "text/csv;charset=utf-8" }), "Invites-mariage.csv");
   };
 
-  const lienGeneral = lienReponse(token);
+  const lienGeneral = lienReponse(reponseToken); // jeton réservé aux invités : il n'ouvre jamais l'espace des mariés
   const copierGeneral = async () => {
     try { await navigator.clipboard.writeText(lienGeneral); setCopie("general"); setTimeout(() => setCopie(null), 1500); } catch { window.prompt("Lien à copier :", lienGeneral); }
   };

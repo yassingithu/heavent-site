@@ -274,16 +274,23 @@ function FormulaireGuide({ g, onDebloque }: { g: TGuide; onDebloque: () => void 
 export function Desinscription() {
   const x = useTexte();
   const { jeton } = useParams();
-  const [etat, setEtat] = useState<"attente" | "ok" | "inconnu">("attente");
-  useEffect(() => {
+  const [etat, setEtat] = useState<"confirmer" | "attente" | "ok" | "inconnu">("confirmer");
+  // La désinscription ne part qu'après un clic : un robot qui ouvre le lien (antivirus, aperçu de messagerie) ne désinscrit personne
+  const desinscrire = () => {
     if (!jeton || !/^[0-9a-f-]{36}$/i.test(jeton)) { setEtat("inconnu"); return; }
+    setEtat("attente");
     (supabase as any).rpc("newsletter_desinscrire", { p_jeton: jeton }).then(({ data }: any) => setEtat(data?.ok ? "ok" : "inconnu"));
-  }, [jeton]);
+  };
   return (
     <div className="min-h-[70vh] s-platre flex items-center justify-center px-4">
       <Seo noindex />
       <div className="max-w-md text-center s-fairepart" data-testid="desinscription">
-        {etat === "attente" ? <p className="text-muted-foreground">{x("Un instant…")}</p> : etat === "ok" ? (
+        {etat === "confirmer" ? (
+          <>
+            <h1 className="font-serif text-2xl">{x("Vous désinscrire de la newsletter ?")}</h1>
+            <button type="button" data-testid="desinscription-confirmer" onClick={desinscrire} className="s-btn s-btn-filet mt-6">{x("Me désinscrire")}</button>
+          </>
+        ) : etat === "attente" ? <p className="text-muted-foreground">{x("Un instant…")}</p> : etat === "ok" ? (
           <>
             <Check className="h-10 w-10 mx-auto text-emerald-600" />
             <h1 className="font-serif text-2xl mt-3">{x("C'est fait, vous êtes désinscrit(e)")}</h1>

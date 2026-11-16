@@ -30,6 +30,7 @@ const carte_ = "rounded-none bg-white border border-[#EADFC8] shadow-[0_1px_0_#f
 
 /** Onglet « Souvenirs » de l'espace mariés : photos et mots déposés par les invités du jour J à J+2. */
 function JourJ({ token, noms, date }: { token: string; noms: string; date: string | null }) {
+  // `token` est ici le jeton réservé aux invités, jamais celui de l'espace des mariés
   const lien = `${typeof window !== "undefined" ? window.location.origin : "https://heaventagency.com"}/souvenirs/mariage/${token}`;
   const [qr, setQr] = useState("");
   const [copie, setCopie] = useState(false);
@@ -129,7 +130,7 @@ ${lien}`;
   );
 }
 
-export default function SouvenirsMaries({ token, date, noms }: { token: string; date: string | null; noms: string }) {
+export default function SouvenirsMaries({ token, reponseToken, date, noms }: { token: string; reponseToken: string; date: string | null; noms: string }) {
   const [liste, setListe] = useState<Souvenir[] | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [dl, setDl] = useState<Record<string, string>>({});
@@ -192,7 +193,7 @@ export default function SouvenirsMaries({ token, date, noms }: { token: string; 
         <p className="text-xs text-[#6B6155] mt-3">Seules les photos que vous ne masquez pas figureront dans votre livre souvenir. Les invités ont accepté ce partage en les envoyant.</p>
       </section>
 
-      {phase === "inconnue" ? <p className="text-sm text-[#6B6155] px-1">Renseignez la date de votre mariage pour préparer le QR code et le message du jour J.</p> : phase !== "fermee" && <JourJ token={token} noms={noms} date={date} />}
+      {phase === "inconnue" ? <p className="text-sm text-[#6B6155] px-1">Renseignez la date de votre mariage pour préparer le QR code et le message du jour J.</p> : phase !== "fermee" && <JourJ token={reponseToken} noms={noms} date={date} />}
       {livre?.disponible && (
         <section className={`${carte_} p-5 border-[#C8B560]`} data-testid="livre-pret">
           <h2 className="font-titre text-xl">Votre livre souvenir est prêt</h2>

@@ -68,14 +68,17 @@ export default function EspaceMariesAdmin({ devisId, token, statut, noms, date, 
   const [espace, setEspace] = useState<{ noms: string | null; programme: Moment[]; tables: TableM[]; checklist: { fait: boolean }[]; updated_at: string } | null>(null);
   const [invites, setInvites] = useState<InviteM[]>([]);
   const [charge, setCharge] = useState(false);
+  const [tokenInvites, setTokenInvites] = useState<string | null>(null);
 
   useEffect(() => {
     if (!devisId) return;
     (async () => {
-      const [e, i] = await Promise.all([
+      const [e, i, t] = await Promise.all([
         (supabase as any).from("espace_maries").select("noms, programme, tables, checklist, updated_at").eq("devis_id", devisId).maybeSingle(),
         (supabase as any).from("invites_mariage").select("id, nom, nb_prevus, reponse, nb_confirmes, remarque, table_id, liste_statut").eq("devis_id", devisId).order("nom"),
+        (supabase as any).from("devis").select("lien_reponse_token").eq("id", devisId).maybeSingle(),
       ]);
+      setTokenInvites(t.data?.lien_reponse_token ?? null);
       setEspace(e.data ?? null); setInvites(((i.data ?? []) as InviteM[]).filter((x) => (x.liste_statut ?? "valide") === "valide")); setCharge(true);
     })();
   }, [devisId]);
@@ -100,7 +103,7 @@ export default function EspaceMariesAdmin({ devisId, token, statut, noms, date, 
         {token && (
           <div className="space-y-2">
             <LigneLien libelle="Espace des mariés" aide="À envoyer aux mariés : ils y gèrent invités, programme et plan de table." url={`${base}/mon-mariage/${token}`} />
-            <LigneLien libelle="Lien d'invitation pour les invités" aide="Un seul lien pour tous les invités (enveloppe, nom, réponse)." url={`${base}/reponse/${token}`} />
+            {tokenInvites && <LigneLien libelle="Lien d'invitation pour les invités" aide="Un seul lien pour tous les invités (enveloppe, nom, réponse). Il n'ouvre jamais l'espace des mariés." url={`${base}/reponse/${tokenInvites}`} />}
             <LigneLien libelle="Devis à signer" aide="Le devis en ligne du client." url={lienClientDevis(token)} />
           </div>
         )}
