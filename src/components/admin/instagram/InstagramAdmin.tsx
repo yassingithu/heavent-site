@@ -123,12 +123,11 @@ export default function InstagramAdmin({ famille = false }: { famille?: boolean 
         if (!photo) {
           let choix: Photo | undefined;
           // Pas de photo libre sur la 1re page de résultats : on cherche sur les suivantes, jamais de doublon
-          for (let page = 1; page <= 5 && !choix; page++) {
+          for (let page = 1; page <= 8 && !choix; page++) {
             const cle = `${p.recherche}|${page}`;
-            if (!cache.has(cle)) cache.set(cle, (await fonction({ action: "chercher", recherche: p.recherche, page })).photos as Photo[]);
+            if (!cache.has(cle)) { try { cache.set(cle, (await fonction({ action: "chercher", recherche: p.recherche, page, theme: p.theme })).photos as Photo[]); } catch { cache.set(cle, []); break; } }
             const libres = cache.get(cle)!.filter((x) => !utilisees.has(String(x.id)));
             choix = libres.find((x) => x.hauteur >= x.largeur * 0.9) ?? libres[0];
-            if (!cache.get(cle)!.length) break;
           }
           if (!choix) throw new Error("aucune photo libre");
           utilisees.add(String(choix.id));
@@ -357,7 +356,7 @@ function EditeurPost({ post: initial, pixabay, instagram, famille, onFermer }: {
   const chercher = async () => {
     setOccupe("chercher");
     try {
-      const [r, u] = await Promise.all([fonction({ action: "chercher", recherche }), fonction({ action: "utilisees" })]);
+      const [r, u] = await Promise.all([fonction({ action: "chercher", recherche, theme: p.theme }), fonction({ action: "utilisees" })]);
       // les photos déjà prises par un AUTRE post sont signalées et non choisissables ; celle de ce post reste choisissable
       const miennes = String(p.photo_url ?? "").match(/-(\d+)\.jpg/)?.[1];
       setPrises(new Set((u.ids ?? []).map(String).filter((id: string) => id !== miennes)));

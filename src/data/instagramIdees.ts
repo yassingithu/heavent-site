@@ -1,7 +1,7 @@
 // Bibliothèque d'idées de posts Instagram, pour générer un mois de publications (2 par jour) en un clic.
 // Chaque idée : thème, accroche (petit texte doré), titre (sur le visuel), conseil (légende), recherche Pixabay.
 // Nawar : toujours une recherche « parfum » (sinon Pixabay renvoie des citrons pour « bergamote », etc.).
-export const RECHERCHES_NAWAR = ["perfume bottle", "luxury perfume", "perfume gold", "fragrance bottle", "perfume flowers", "perfume roses", "perfume glass", "perfume collection", "elegant perfume", "perfume spray", "vintage perfume", "perfume luxury gift"];
+export const RECHERCHES_NAWAR = ["perfume bottle", "luxury perfume", "perfume gold", "fragrance bottle", "perfume flowers", "perfume roses", "perfume glass", "perfume collection", "perfume bottle", "perfume spray", "vintage perfume", "perfume luxury gift"];
 import { GUIDES, lienGuide } from "@/data/guides";
 
 export type Compte = "heavent" | "nawar";
@@ -73,7 +73,7 @@ export const IDEES_NAWAR: Idee[] = [
   H("parfum", "Conseil parfum", "L'oud, trésor de l'Orient", "Boisé, profond, envoûtant : l'oud est l'âme des parfums orientaux. Il se marie merveilleusement avec la rose.", "perfume roses"),
   H("parfum", "Conseil parfum", "La rose de Damas, reine des fleurs", "Délicate et puissante à la fois, elle apporte élégance et romantisme à toutes les compositions.", "perfume glass"),
   H("parfum", "Entreprise", "Un bar à parfums pour vos événements d'entreprise", "Séminaire, lancement, soirée de gala : offrez à vos invités une expérience sensorielle à l'image de votre marque.", "perfume collection"),
-  H("parfum", "Conseil parfum", "Le musc blanc, douceur absolue", "Propre, doux, enveloppant : le musc blanc est parfait pour ceux qui aiment les parfums discrets et raffinés.", "elegant perfume"),
+  H("parfum", "Conseil parfum", "Le musc blanc, douceur absolue", "Propre, doux, enveloppant : le musc blanc est parfait pour ceux qui aiment les parfums discrets et raffinés.", "perfume bottle"),
   H("parfum", "Bar à parfums", "Comment se passe un bar à parfums Nawar ?", "Vous choisissez les parfums en amont ; le jour J, notre équipe accueille vos invités, leur font découvrir vos senteurs et leur remettent leur flacon.", "perfume spray"),
   H("parfum", "Conseil parfum", "Bien conserver son parfum", "À l'abri de la lumière, de la chaleur et de l'humidité : évitez la salle de bain, préférez un tiroir de la chambre.", "vintage perfume"),
   H("parfum", "Fiançailles", "Une touche parfumée pour vos fiançailles", "Le bar à parfums sublime l'ambiance et ravit vos invités : un moment de partage autour des senteurs.", "perfume luxury gift"),
@@ -85,7 +85,7 @@ export const IDEES_NAWAR: Idee[] = [
   H("parfum", "Conseil parfum", "Combien de pulvérisations ?", "Deux à trois suffisent pour une eau de parfum. Le parfum doit se découvrir de près, pas annoncer votre arrivée.", "perfume roses"),
   H("parfum", "Conseil parfum", "La fleur d'oranger, douceur de chez nous", "Lumineuse, légèrement miellée, elle rappelle les souvenirs d'enfance et les fêtes de famille.", "perfume glass"),
   H("parfum", "Entreprise", "Un parfum signature pour votre marque", "Associez un parfum à votre événement ou à votre marque : vos invités s'en souviendront à chaque fois qu'ils le porteront.", "perfume collection"),
-  H("parfum", "Conseil parfum", "Le santal, le bois crémeux", "Doux, laiteux et boisé, le santal apporte rondeur et tenue à une composition.", "elegant perfume"),
+  H("parfum", "Conseil parfum", "Le santal, le bois crémeux", "Doux, laiteux et boisé, le santal apporte rondeur et tenue à une composition.", "perfume bottle"),
   H("parfum", "Bar à parfums", "Une animation qui rassemble", "Autour du bar à parfums, les invités échangent, comparent, sentent : une animation qui crée du lien naturellement.", "perfume spray"),
   H("parfum", "Conseil parfum", "Le cuir, audacieux et chic", "Une note de caractère, souvent associée aux bois et aux épices, pour des parfums qui ne passent pas inaperçus.", "vintage perfume"),
   H("parfum", "Conseil parfum", "Pourquoi un parfum change selon la peau", "Chaque peau a sa chimie : le même parfum peut sentir différemment sur deux personnes. D'où l'intérêt de le créer sur soi.", "perfume luxury gift"),
@@ -97,7 +97,7 @@ export const IDEES_NAWAR: Idee[] = [
   H("parfum", "Bar à parfums", "Combien d'invités pour un bar à parfums ?", "De 50 à plusieurs centaines d'invités : nous adaptons le nombre de parfumeurs et d'essences à votre événement.", "perfume roses"),
   H("parfum", "Conseil parfum", "Le patchouli, terreux et élégant", "Longtemps mal aimé, le patchouli moderne est raffiné et apporte de la profondeur aux parfums chics.", "perfume glass"),
   H("parfum", "Fêtes", "Un anniversaire qui sent bon", "Pour un anniversaire marquant, le bar à parfums offre un moment chic et original à tous les invités.", "perfume collection"),
-  H("parfum", "Conseil parfum", "Le safran, épice précieuse", "Chaud, cuiré et lumineux, le safran donne aux parfums orientaux leur éclat doré.", "elegant perfume"),
+  H("parfum", "Conseil parfum", "Le safran, épice précieuse", "Chaud, cuiré et lumineux, le safran donne aux parfums orientaux leur éclat doré.", "perfume bottle"),
   H("parfum", "Bar à parfums", "Nos essences venues du monde entier", "Oud, rose, jasmin, ambre, musc, vanille : une palette riche pour choisir les parfums qui vous ressemblent.", "perfume spray"),
   H("parfum", "Conseil parfum", "Eau de toilette ou eau de parfum ?", "L'eau de parfum est plus concentrée et tient plus longtemps. L'eau de toilette est plus légère, idéale le jour.", "vintage perfume"),
   H("parfum", "Entreprise", "Offrez une expérience, pas un objet", "Vos clients et collaborateurs garderont en mémoire le moment vécu autour du bar à parfums.", "perfume luxury gift"),
@@ -109,7 +109,7 @@ export const IDEES_NAWAR: Idee[] = [
   H("parfum", "Bar à parfums", "Le souvenir qui reste sur la peau", "Une photo s'oublie dans un téléphone, un parfum se porte : vos invités pensent à vous à chaque pulvérisation.", "perfume roses"),
   H("parfum", "Conseil parfum", "Parfumer ses vêtements, bonne idée ?", "Sur un foulard ou une écharpe, le parfum tient plus longtemps. Évitez la soie claire et les tissus fragiles.", "perfume glass"),
   H("parfum", "Fiançailles", "Le henné et le parfum, duo parfait", "Pendant la soirée de henné, le bar à parfums prolonge la magie : traditions et senteurs se rencontrent.", "perfume collection"),
-  H("parfum", "Conseil parfum", "Choisir un parfum en cadeau", "Interrogez les goûts : plutôt frais, floral ou boisé ? Le mieux reste de le créer ensemble au bar Nawar.", "elegant perfume"),
+  H("parfum", "Conseil parfum", "Choisir un parfum en cadeau", "Interrogez les goûts : plutôt frais, floral ou boisé ? Le mieux reste de le créer ensemble au bar Nawar.", "perfume bottle"),
 ];
 
 const HASHTAGS: Record<string, string> = {

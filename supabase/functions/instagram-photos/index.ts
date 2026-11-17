@@ -26,6 +26,20 @@ async function photosUtilisees() {
   return ids;
 }
 
+/**
+ * Cohérence des photos avec les marques (Heavent et Nawar : univers marocain, élégant, sobre) :
+ * - jamais de portraits, de mannequins ni de visages mis en avant (tags Pixabay) ni de références visuelles étrangères à l'agence ;
+ * - Nawar (thème « parfum ») : uniquement des photos dont les tags parlent de parfum/flacon, et jamais de personnes.
+ */
+const HORS_MARQUE = /\b(portrait|model|models|fashion|selfie|face|faces|asian|chinese|japanese|korean|thai|vietnamese|indian|glamour|sexy|lingerie|bikini|nude|tattoo)\b/i;
+const PERSONNES = /\b(woman|women|girl|girls|man|men|boy|lady|female|male|people|person|beauty|hair|lips|makeup|make-up|skin|hand|hands)\b/i;
+const PARFUM = /\b(perfume|perfumes|fragrance|cologne|bottle|bottles|scent|incense|oud|aroma|aromatherapy|essential oil|atomizer|spray)\b/i;
+const photoCoherente = (tags: string, theme: string) => {
+  if (HORS_MARQUE.test(tags)) return false;
+  if (theme === "parfum") return PARFUM.test(tags) && !PERSONNES.test(tags);
+  return true;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const appelant = await getCaller(req);
@@ -35,7 +49,7 @@ Deno.serve(async (req) => {
     const { data: profil } = await db.from("admin_profils").select("espace").eq("email", appelant.email).maybeSingle();
     if (profil?.espace !== "nawar") return deny();
   }
-  const { action, recherche, page, post_id, photo } = await req.json().catch(() => ({}));
+  const { action, recherche, page, post_id, photo, theme } = await req.json().catch(() => ({}));
   const { data: secret } = await db.from("secrets_internes").select("valeur").eq("nom", "pixabay").maybeSingle();
   if (!secret?.valeur) return json({ error: "Clé Pixabay manquante" }, 400);
 
@@ -48,7 +62,7 @@ Deno.serve(async (req) => {
     const r = await fetch(url);
     if (!r.ok) return json({ error: r.status === 400 || r.status === 401 ? "Clé Pixabay refusée" : `Pixabay indisponible (${r.status})` }, 502);
     const d = await r.json();
-    return json({ total: d.totalHits ?? 0, photos: (d.hits ?? []).map((h: any) => ({
+    return json({ total: d.totalHits ?? 0, photos: (d.hits ?? []).filter((h: any) => photoCoherente(String(h.tags ?? ""), String(theme ?? ""))).map((h: any) => ({
       id: h.id, apercu: h.webformatURL, grande: h.largeImageURL, page: h.pageURL, auteur: h.user, largeur: h.imageWidth, hauteur: h.imageHeight, tags: h.tags,
     })) });
   }
