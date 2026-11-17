@@ -21,6 +21,8 @@ import RemarquesContrat from "@/components/contrat/RemarquesContrat";
 import { BADGE_SIGNATURE, dateHeureFr, etatSignature, finSignature, limiteSignature } from "@/lib/signature";
 import { telechargerFichesPaie } from "@/components/admin/paie/FichesPaieMensuelles";
 import MesMissions from "@/components/staff/MesMissions";
+import { lireCache, lireFile, toutEffacer } from "@/lib/horsLigne";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CarteInstallerStaff, useAppStaff } from "@/components/staff/AppStaff";
 import "@/styles/admin-seuil.css";
 
@@ -81,6 +83,19 @@ const StaffDashboard = () => {
   const [staffInfo, setStaffInfo] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  // Sans réseau et sans session lisible (jeton expiré qu'on ne peut pas renouveler) : on garde l'accès aux missions du jour et au pointage de secours.
+  const [sansReseau, setSansReseau] = useState(false);
+  const [sortie, setSortie] = useState(false);
+  const sansSession = () => {
+    if (estDemo()) return;
+    if (!navigator.onLine && lireCache()) setSansReseau(true); else navigate("/auth");
+  };
+  useEffect(() => {
+    if (!sansReseau) return;
+    const retour = () => window.location.reload();
+    window.addEventListener("online", retour);
+    return () => window.removeEventListener("online", retour);
+  }, [sansReseau]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -88,7 +103,7 @@ const StaffDashboard = () => {
         setSession(session);
         setUser(session?.user ?? null);
         if (!session) {
-          if (!estDemo()) navigate("/auth");
+          sansSession();
         } else if (session?.user?.email) {
           loadData();
         }
@@ -99,7 +114,7 @@ const StaffDashboard = () => {
       setSession(session);
       setUser(session?.user ?? null);
       if (!session) {
-        if (!estDemo()) navigate("/auth");
+        sansSession();
       } else if (session.user?.email) {
         loadData();
       }
@@ -183,8 +198,11 @@ const StaffDashboard = () => {
     }
   };
 
-  const handleSignOut = async () => {
+  const handleSignOut = async (confirme = false) => {
     if (estDemo()) { window.location.href = "/studio"; return; }
+    // Des pointages faits sans réseau attendent d'être envoyés : on prévient avant de les perdre.
+    if (!confirme && lireFile().some((x) => !x.refus)) { setSortie(true); return; }
+    toutEffacer(); // missions gardées pour le mode sans réseau : effacées à la déconnexion
     await supabase.auth.signOut();
     navigate("/auth");
   };
@@ -474,6 +492,20 @@ const StaffDashboard = () => {
     return <div className="flex justify-center items-center min-h-screen">Chargement...</div>;
   }
 
+  if (!user && sansReseau) {
+    return (
+      <div className="st-espace">
+        <Seo noindex />
+        <header className="st-tete"><div className="in">
+          <div className="l1"><img src="/seuil/mono-or.png" alt="Heavent" /></div>
+          <h1>Mode sans réseau.</h1>
+          <p>Tes missions et le pointage restent disponibles. Le reste de l'espace revient avec le réseau.</p>
+        </div></header>
+        <div className="st-corps space-y-5"><MesMissions /></div>
+      </div>
+    );
+  }
+
   if (!user) {
     return null;
   }
@@ -481,12 +513,22 @@ const StaffDashboard = () => {
   return (
     <div className="st-espace">
       <Seo noindex />
+      <Dialog open={sortie} onOpenChange={setSortie}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Des pointages ne sont pas encore envoyés</DialogTitle>
+            <DialogDescription>Si tu te déconnectes maintenant, ils seront perdus. Attends le retour du réseau : ils partent tout seuls.</DialogDescription></DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button onClick={() => setSortie(false)}>Rester connecté(e)</Button>
+            <Button variant="destructive" onClick={() => { setSortie(false); void handleSignOut(true); }} data-testid="sortir-quand-meme">Me déconnecter quand même</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* En-tête noir : bonjour, déconnexion discrète */}
       <header className="st-tete">
         <div className="in">
           <div className="l1">
             <img src="/seuil/mono-or.png" alt="Heavent" />
-            <button onClick={handleSignOut} className="st-sortir">
+            <button onClick={() => void handleSignOut()} className="st-sortir">
               <LogOut className="h-4 w-4" /> {t('dashboard.logout')}
             </button>
           </div>

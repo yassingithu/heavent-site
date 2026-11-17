@@ -24,3 +24,21 @@ export function heuresPointees(arrivee: Date, depart: Date, debutPrevu: Date) {
   const h = Math.max(0, (depart.getTime() - depuis) / 3600_000);
   return Math.round(h * 4) / 4;
 }
+
+/**
+ * Heure retenue pour un pointage. En ligne : l'heure du serveur. Hors ligne (envoi différé) : l'heure relevée par le téléphone,
+ * à condition qu'elle soit plausible ; l'agence vérifie toujours ces pointages, car l'horloge d'un téléphone se modifie.
+ * - jamais dans le futur (5 min de tolérance) ; une heure future est ramenée à l'heure de réception ;
+ * - reçu plus de 24 h après : accepté mais marqué « tardif » ; au-delà de 7 jours : refusé (l'agence saisit les heures à la main).
+ */
+export const DELAI_TARDIF_MS = 24 * 3600_000;
+export const DELAI_MAX_MS = 7 * 86400_000;
+export function instantPointage(corps: { hors_ligne?: unknown; heure_appareil?: unknown }, maintenant: Date) {
+  if (corps.hors_ligne !== true) return { instant: maintenant, horsLigne: false, tardif: false, refus: null as string | null };
+  const t = Date.parse(String(corps.heure_appareil ?? ""));
+  if (!Number.isFinite(t)) return { instant: maintenant, horsLigne: true, tardif: false, refus: null };
+  const retard = maintenant.getTime() - t;
+  if (retard > DELAI_MAX_MS) return { instant: maintenant, horsLigne: true, tardif: true, refus: "Ce pointage date de plus de 7 jours : prévenez l'agence, elle saisira vos heures." };
+  const instant = t > maintenant.getTime() + 5 * 60_000 ? maintenant : new Date(Math.min(t, maintenant.getTime()));
+  return { instant, horsLigne: true, tardif: retard > DELAI_TARDIF_MS, refus: null };
+}

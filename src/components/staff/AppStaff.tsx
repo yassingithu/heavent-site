@@ -34,12 +34,22 @@ export function useAppStaff() {
     ajouterBalise("meta", { name: "mobile-web-app-capable", content: "yes" });
     ajouterBalise("meta", { name: "apple-mobile-web-app-title", content: "Heavent Staff" });
     ajouterBalise("meta", { name: "apple-mobile-web-app-status-bar-style", content: "default" });
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/staff-sw.js", { scope: "/staff-dashboard" }).catch(() => {});
+    let minuteurs: number[] = [];
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/staff-sw.js", { scope: "/staff-dashboard" }).catch(() => {});
+      // Dès la première visite, l'appli est gardée pour fonctionner sans réseau : on confie au service worker les fichiers déjà chargés.
+      const confier = () => navigator.serviceWorker.ready.then((reg) => {
+        const urls = performance.getEntriesByType("resource").map((r) => r.name).filter((u) => /\/(assets|seuil|polices)\//.test(u));
+        reg.active?.postMessage({ type: "garder", urls, page: window.location.pathname.replace(/\/?$/, "/") });
+      }).catch(() => {});
+      minuteurs = [window.setTimeout(confier, 2500), window.setTimeout(confier, 9000)];
+    }
     // iPhone : sans « viewport-fit=cover », la marge du bas (barre d'accueil) vaut 0 et les onglets touchent la ligne.
     const vue = document.querySelector('meta[name="viewport"]');
     const vueAvant = vue?.getAttribute("content") ?? null;
     if (vue && vueAvant && !vueAvant.includes("viewport-fit")) vue.setAttribute("content", `${vueAvant}, viewport-fit=cover`);
     return () => {
+      minuteurs.forEach((t) => window.clearTimeout(t));
       if (vue && vueAvant) vue.setAttribute("content", vueAvant);
       memoire.forEach(([l, h]) => h && l.setAttribute("href", h));
       document.head.querySelectorAll("[data-app-staff]").forEach((e) => e.remove());

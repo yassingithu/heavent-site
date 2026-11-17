@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 import { Resend } from "npm:resend@2.0.0";
 import { avecOriginal, htmlTraduit, versFrancais } from "../_shared/traduire.ts";
-import { distanceM, heuresPointees, horairesMission } from "../_shared/pointage.ts";
+import { distanceM, heuresPointees, horairesMission, instantPointage } from "../_shared/pointage.ts";
 
 /**
  * Espace staff : le crew confirme sa présence, signale un empêchement, pointe son arrivée (position + selfie)
@@ -61,10 +61,18 @@ serve(async (req) => {
 
     // ---------- arrivée / départ ----------
     if (corps.action !== "arrivee" && corps.action !== "depart") return json({ error: "Action inconnue" }, 400);
+    // Envoi différé (pointage fait sans réseau) : on juge le pointage à l'heure relevée par le téléphone, pas à l'heure de réception.
+    const cle = typeof corps.cle === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(corps.cle) ? corps.cle : null;
+    const { instant, horsLigne, tardif, refus } = instantPointage(corps, maintenant);
+    if (refus) return json({ error: refus }, 409);
+    // Renvoi du même pointage (même clé) : on répond comme la première fois, sans rien écrire.
+    if (cle && corps.action === "arrivee" && a.arrivee_cle === cle && a.arrivee_le) return json({ success: true, heure: a.arrivee_le, verifie: a.arrivee_verifiee, deja: true });
+    if (cle && corps.action === "depart" && a.depart_cle === cle && a.depart_le) return json({ success: true, heure: a.depart_le, heures: a.heures_pointees, verifie: a.depart_verifie, aVerifier: true, deja: true });
     const ouverture = new Date(debut.getTime() - 3 * 3600_000);
     const fermeture = new Date(fin.getTime() + 4 * 3600_000);
-    if (maintenant < ouverture) return json({ error: `Le pointage ouvre 3 h avant le début de la mission (${heure(debut)}).` }, 409);
-    if (maintenant > fermeture) return json({ error: "Le pointage de cette journée est fermé. Signale tes heures à l'agence avec une remarque sur ton contrat." }, 409);
+    if (instant < ouverture) return json({ error: `Le pointage ouvre 3 h avant le début de la mission (${heure(debut)}).` }, 409);
+    if (instant > fermeture) return json({ error: "Le pointage de cette journée est fermé. Signale tes heures à l'agence avec une remarque sur ton contrat." }, 409);
+    const marque = horsLigne ? { pointage_hors_ligne: true, pointage_recu_le: maintenant.toISOString(), pointage_tardif: tardif } : {};
 
     const { data: f } = await db.from("fiches_mission").select("latitude, longitude, rayon_m").eq("devis_id", a.devis_id).maybeSingle();
     const pos = position(corps.position);
@@ -88,36 +96,38 @@ serve(async (req) => {
         const { error: errPhoto } = await db.storage.from("pointages").upload(chemin, octets, { contentType: `image/${type}`, upsert: true });
         if (!errPhoto) photo = chemin;
       }
-      const retardMin = Math.round((maintenant.getTime() - debut.getTime()) / 60000);
+      const retardMin = Math.round((instant.getTime() - debut.getTime()) / 60000);
       await db.from("affectations").update({
-        arrivee_le: maintenant.toISOString(), arrivee_position: posJson, arrivee_verifiee: verifie, arrivee_photo: photo,
-        presence_confirmee_le: a.presence_confirmee_le ?? maintenant.toISOString(),
-        pointage_a_verifier: verifie === false,
+        arrivee_le: instant.toISOString(), arrivee_position: posJson, arrivee_verifiee: verifie, arrivee_photo: photo,
+        presence_confirmee_le: a.presence_confirmee_le ?? instant.toISOString(), arrivee_cle: cle,
+        pointage_a_verifier: verifie === false || horsLigne, ...marque,
       }).eq("id", a.id);
-      if (a.alerte_retard_le) await alerter(`🟢 ${qui} est arrivé(e) — ${quoi}`, `<p><b>${e(qui)}</b> a pointé son arrivée à <b>${heure(maintenant)}</b>${horaireConnu && retardMin > 0 ? ` (${retardMin} min de retard)` : ""}.</p>`);
-      return json({ success: true, heure: maintenant.toISOString(), verifie, distance, retard: horaireConnu ? Math.max(0, retardMin) : 0 });
+      if (a.alerte_retard_le) await alerter(`🟢 ${qui} est arrivé(e) — ${quoi}`, `<p><b>${e(qui)}</b> a pointé son arrivée à <b>${heure(instant)}</b>${horsLigne ? " (sans réseau, heure du téléphone)" : ""}${horaireConnu && retardMin > 0 ? ` (${retardMin} min de retard)` : ""}.</p>`);
+      return json({ success: true, heure: instant.toISOString(), verifie, distance, retard: horaireConnu ? Math.max(0, retardMin) : 0 });
     }
 
     // départ
     if (!a.arrivee_le) return json({ error: "Pointe d'abord ton arrivée." }, 409);
     if (a.depart_le) return json({ error: `Départ déjà pointé à ${heure(a.depart_le)}.` }, 409);
-    const h = heuresPointees(new Date(a.arrivee_le), maintenant, debut);
+    if (instant < new Date(a.arrivee_le)) return json({ error: "Le départ ne peut pas être avant l'arrivée pointée." }, 409);
+    const h = heuresPointees(new Date(a.arrivee_le), instant, debut);
     const prevues = Number(a.heures ?? 0);
-    const fiable = a.arrivee_verifiee !== false && verifie !== false;
+    // Pointage fait sans réseau : l'heure du téléphone est falsifiable, l'agence valide toujours (en attendant, les heures prévues sont comptées).
+    const fiable = a.arrivee_verifiee !== false && verifie !== false && !horsLigne && !a.pointage_hors_ligne;
     // Heures payées : les heures pointées, dans la limite des heures prévues (+ 15 min) ; au-delà, l'agence valide.
     const depasse = h > prevues + 0.25;
     const patch: Record<string, unknown> = {
-      depart_le: maintenant.toISOString(), depart_position: posJson, depart_verifie: verifie, heures_pointees: h,
+      depart_le: instant.toISOString(), depart_position: posJson, depart_verifie: verifie, heures_pointees: h, depart_cle: cle, ...marque,
       heures_validees: fiable ? (depasse ? prevues : h) : null,
       pointage_a_verifier: !fiable || depasse,
     };
     await db.from("affectations").update(patch).eq("id", a.id);
     if (depasse || !fiable) {
       await alerter(`🕒 Pointage à vérifier — ${qui} (${quoi})`,
-        `<p><b>${e(qui)}</b> a pointé <b>${h} h</b> le ${e(jour(a.date_jour))} pour ${prevues} h prévues${!fiable ? " — position hors du lieu ou non partagée" : ""}.</p>
+        `<p><b>${e(qui)}</b> a pointé <b>${h} h</b> le ${e(jour(a.date_jour))} pour ${prevues} h prévues${!fiable ? (horsLigne || a.pointage_hors_ligne ? " — pointé sans réseau (heure du téléphone) ou position hors du lieu" : " — position hors du lieu ou non partagée") : ""}.</p>
          <p>Valide ou corrige les heures dans l'administration (devis ${e(a.devis?.numero ?? "")} → Équipe). En attendant, ${fiable ? `${prevues} h` : "les heures prévues"} sont comptées dans la paie.</p>`);
     }
-    return json({ success: true, heure: maintenant.toISOString(), heures: h, verifie, distance, aVerifier: depasse || !fiable });
+    return json({ success: true, heure: instant.toISOString(), heures: h, verifie, distance, aVerifier: depasse || !fiable });
   } catch (err: any) {
     console.error("pointer:", err);
     return json({ error: "Erreur interne : " + err.message }, 500);

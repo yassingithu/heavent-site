@@ -11,6 +11,7 @@ export interface Pointage {
   presence_confirmee_le?: string | null; empechement_le?: string | null; empechement_motif?: string | null;
   arrivee_le?: string | null; arrivee_verifiee?: boolean | null; arrivee_position?: any; arrivee_photo?: string | null;
   depart_le?: string | null; depart_verifie?: boolean | null; heures_pointees?: number | null; heures_validees?: number | null; pointage_a_verifier?: boolean;
+  pointage_hors_ligne?: boolean; pointage_recu_le?: string | null; pointage_tardif?: boolean;
 }
 const heure = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
 const jourFr = (s: string) => new Date(s + "T12:00:00Z").toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" });
@@ -49,6 +50,8 @@ export default function EtatPointage({ a, plusieursJours, onChange }: { a: Point
         `Arrivée ${heure(a.arrivee_le)}${retard > 5 ? ` (+${retard} min)` : ""}${a.arrivee_verifiee === true ? " ✓" : a.arrivee_verifiee === false ? " hors lieu" : ""}`,
         dist != null ? `À ${dist} m du lieu` : a.arrivee_position ? "Position enregistrée (lieu non localisé)" : "Sans position")
         : passe && !a.empechement_le ? puce("bg-[#DCCDAA]/40 text-[#5A5146]", "Pas de pointage") : null}
+      {a.pointage_hors_ligne && puce("bg-[#2A2420]/10 text-[#2A2420]", a.pointage_tardif ? "Sans réseau · tardif" : "Sans réseau",
+        `Pointé sans réseau : heure relevée par le téléphone (falsifiable)${a.pointage_recu_le ? `, reçue par le serveur à ${heure(a.pointage_recu_le)} le ${new Date(a.pointage_recu_le).toLocaleDateString("fr-FR", { timeZone: "UTC", day: "numeric", month: "short" })}` : ""}${a.pointage_tardif ? ". Reçu plus de 24 h après." : "."} Vérifiez avec la cheffe d'équipe.`)}
       {a.arrivee_photo && <button onClick={voirPhoto} className="inline-flex items-center gap-0.5 text-[#8C6D22] underline" title="Voir le selfie"><Camera className="h-3 w-3" /> photo</button>}
       {a.depart_le && puce("bg-[#1F5A4C]/10 text-[#1F5A4C]", `Départ ${heure(a.depart_le)} · ${a.heures_pointees} h`)}
       {a.heures_validees != null && !a.pointage_a_verifier && puce("bg-[#F4E9CF] text-[#7A5F1E]", `Payé : ${a.heures_validees} h`)}
