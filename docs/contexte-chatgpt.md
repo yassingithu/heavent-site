@@ -1,78 +1,82 @@
-# CONTEXTE HEAVENT — à coller dans ChatGPT
+# HEAVENT — CONTEXTE COMPLET DU PROJET (à donner à ChatGPT)
 
-## Qui / quoi
-Heavent People Agency (heaventagency.com) : agence marocaine (Rabat) de wedding planning, événements d'entreprise et hôtes/hôtesses. Gérante : Imane Chaigari. Yassin gère le site, l'admin et la technique.
-Heavent est une AGENCE qui recrute des partenaires, jamais une plateforme.
-Marques liées : Nawar (bar à parfums : parfums choisis par les mariés/hôtes POUR leurs invités, jamais « chacun compose son parfum »), Heavent Studio, Heavent City (jeu de configuration d'événement).
-Langue de travail : français. Site en FR / EN / AR (RTL).
+Mis à jour le 17/11/2026. Colle ce fichier au début d'une conversation, puis pose ta question. Réponds toujours en français, simplement.
+Aucun mot de passe, jeton ni clé n'est dans ce document, et il ne faut jamais en demander ou en écrire dans une conversation.
 
-## Stack
-- Front : React 18 + Vite + TypeScript + Tailwind + Radix/shadcn, framer-motion, react-query, html2pdf.
-- Back : Supabase (projet mapiwnsjsluiwmnulhqk) : Postgres avec RLS sur toutes les tables, Auth, Storage, Edge Functions (Deno).
-- E-mails : Resend (noreply@heaventagency.com). Hébergement : one.com (fichiers statiques).
-- Build : `npm run build` = vite build + prérendu des pages (scripts/prerender.mjs) → dist/ → copié dans deploy/site/ → envoyé sur one.com (API du gestionnaire de fichiers).
-- Dépôt : github.com/yassingithu/heavent-site. Design system « Seuil » (classes s-nuit, s-btn, s-surtitre…), palette noir / or / crème, direction marocaine contemporaine. Rien de générique.
-- i18n : src/i18n/textesTraduits.ts (tables FR→EN/AR), hook useTexte() → x("texte français").
+## 1. Qui, quoi
+- **Heavent People Agency** (heaventagency.com), société « Heavent Agency SARL AU », basée à Rabat (Maroc). Wedding planning, événements d'entreprise, hôtes et hôtesses (« crews »).
+- **Imane Chaigari** : gérante / CEO (signature des devis, contrats, formulaires CNDP). **Yassin** : gère le site, l'administration et toute la technique. Il ne code pas lui-même : il travaille avec Claude (Claude Code) et décide.
+- **Heavent est une AGENCE qui recrute des partenaires (prestataires, crews), jamais une plateforme ni une marketplace.** Elle gagne sa marge sur son travail de wedding planner (forfaits de 10 000 à 20 000 MAD, réponse sous 24–48 h).
+- Marques et produits liés :
+  - **Nawar** : bar à parfums pour mariages et fêtes. Les parfums sont **choisis par les mariés (ou les hôtes) pour leurs invités**, jamais « chacun compose son parfum ».
+  - **Heavent Studio** : vente d'un site + outil d'administration comme le nôtre à d'autres agences ou commerces. La page /studio n'affiche **aucun prix**, seulement les possibilités. Démo personnalisée par métier.
+  - **Heavent City** : jeu « Crée ton événement de rêve » (scène isométrique, configuration d'un événement), sans prix visibles pour les clients.
+  - **Cartes / invitations numériques** : packs Classique 250 DH, Interactive 450 DH, Prestige 650–850 DH. Livraison 1 semaine, paiement avant remise du fichier final, partage par WhatsApp uniquement. Étude « Prestige Invitation Studio » (invitations 3D de luxe) sur une branche à part, rien en production sans accord explicite de Yassin.
+  - **Souvenirs** (QR code, photos des invités jusqu'à 48 h après le mariage, livre souvenir) : service vendu séparément, 1000 DH minimum, 400 photos maximum par mariage.
+- Langue de travail : français. Site en FR / EN / AR (arabe en sens droite-gauche).
+- Identité visuelle : noir, or, crème, élégant, raffiné, marocain contemporain. **Rien de générique** (pas le look « fait par une IA »). Design system « Seuil » : nuit #141414, papier #FAF6EC, or #A8933F / #7A5F1F / #E4D49A, terre #8A2E26, zellige #1F5A4C. Polices : Inter, Playfair Display, Great Vibes (hébergées sur le site).
 
-## Pages publiques
-/ accueil · /a-propos · /realisations · /prestataires · /contact · /guides et /guides/:slug (guides gratuits, newsletter) · /wedding-planner-maroc (page SEO) · /nawar · /studio et /studio/demo/:jeton · /cartes (cartes/invitations) · /liens · /mentions-legales · /politique-confidentialite (/rgpd) · 404.
-Formulaires : /devis-mariage, /devis-entreprise, /cree-ton-evenement (configurateur d'événement, avec IA via heavent-city-ia), /inscription-staff (candidature crew), /apercu/heavent-city (jeu).
+## 2. Technique
+- **Front** : React 18 + Vite + TypeScript + Tailwind + Radix/shadcn, framer-motion, react-query. i18n maison (`src/i18n/textesTraduits.ts`, hook `useTexte()`).
+- **Back** : Supabase (projet `mapiwnsjsluiwmnulhqk`, Irlande) : Postgres avec RLS sur toutes les tables, Auth, Storage, ~40 Edge Functions (Deno). Les fonctions sont déployées sans « verify_jwt » : **chacune contrôle elle-même qui l'appelle**.
+- **E-mails** : Resend (noreply@heaventagency.com). Boîtes mail et hébergement : **one.com** (fichiers statiques, pas de serveur).
+- **Build et mise en ligne** : `npm run build` (vite + prérendu des pages) → `dist/` → copie dans `deploy/site/` → commit/push GitHub → envoi des fichiers modifiés sur one.com par l'API du gestionnaire de fichiers (PUT fichier par fichier, assets d'abord, `index.html` en dernier). Pas de Vercel : Yassin préfère rester sur one.com.
+- **Dépôt** : github.com/yassingithu/heavent-site (PUBLIC : aucun secret dedans). Le site a été reconstruit hors de Lovable, sur son propre Supabase et son propre GitHub.
+- **Automatisations** : tâches planifiées Supabase (pg_cron + `net.http_post` avec une clé de rappel). Fonction `automatisations` chaque jour à 9 h (Maroc) : relances de devis J+5 / J+10, demande d'avis le lendemain, facture de solde à J+2, rappel de rendez-vous la veille. Chaque automatisation peut être suspendue (table `reglages_automatisations`).
+- **Sauvegardes** : aucun abonnement payant (ni Supabase Pro). Sauvegarde locale chiffrée sur le Mac de Yassin (`~/Sauvegardes-Heavent`, chiffrement age, restauration testée) plus copie sur disque externe.
 
-## Espaces par lien privé (jeton)
-- /mon-devis/:token : le client voit son devis, le signe, demande un rendez-vous, donne son avis (service + chaque crew).
-- /mon-mariage/:token : espace des mariés (liste d'invités, RSVP, souvenirs). Même jeton que le devis (devis.lien_token) : ne JAMAIS l'envoyer aux invités.
-- /invitation/:jeton, /rsvp/:jeton, /reponse/:token : invitation numérique et réponses des invités. Les invités reçoivent un jeton séparé (devis.lien_reponse_token) qui ne permet que de répondre et de déposer des souvenirs.
-- /liste/:jeton : saisie directe de la liste d'invités.
-- /souvenirs/:jeton et /souvenirs/mariage/:token : photos des invités, livre souvenir, purge automatique.
-- /prestataires/confirmer/:jeton : confirmation par un prestataire partenaire.
-- /desinscription/:jeton : désinscription newsletter.
+## 3. Pages publiques
+/ accueil · /a-propos · /realisations · /prestataires (inscription des partenaires) · /contact · /guides et /guides/:slug (guides gratuits + newsletter) · /wedding-planner-maroc et pages SEO par ville (hôtesses Casablanca, Marrakech, Rabat, Tanger, Agadir, Fès, salons, mariage) · /nawar · /studio et /studio/demo/:jeton · /cartes · /liens · /mentions-legales · /politique-confidentialite (/rgpd) · 404.
+Formulaires : /devis-mariage, /devis-entreprise, /cree-ton-evenement (configurateur + assistant), /inscription-staff (candidature crew, immédiate, sans attente d'approbation), /apercu/heavent-city.
+Menu principal : Accueil, Entreprises, Événement, À propos, Contact. E-mail public : info@heaventagency.com.
 
-## Espace crew / staff
-/auth, /staff-dashboard : disponibilités, missions et fiches de mission, contrats à signer, pointage (fonction pointer, suivi-pointage), fiches de paie, PDF (generate-staff-pdf…), évaluations.
+## 4. Espaces par lien privé (jeton)
+- /mon-devis/:token : le client voit, signe son devis, demande un rendez-vous, donne son avis.
+- /mon-mariage/:token : espace des mariés (invités, RSVP, souvenirs). Même jeton que le devis (`lien_token`) : **ne jamais l'envoyer aux invités**.
+- /invitation/:jeton, /rsvp/:jeton, /reponse/:token, /liste/:jeton, /souvenirs/… : invitations et réponses des invités. Les invités reçoivent un jeton séparé (`lien_reponse_token`) qui permet seulement de répondre et de déposer des souvenirs.
+- /prestataires/confirmer/:jeton, /desinscription/:jeton.
 
-## Administration (/admin, /admin-auth ; admins uniquement)
-- Devis (catalogue de 101 prestations, lignes, envoi par e-mail, signature en ligne, lien client), acomptes/soldes, factures numérotées (compteur), PDF facture et contrat.
-- Équipe : candidatures (validation → e-mail), affectations, contrats, signatures, fiches de paie, paiements de salaires (registre en ajout seul), notes/évaluations crew.
-- Agenda : horaires, indisponibilités, prise de rendez-vous en ligne (prendre-rdv), rappels, export calendrier .ics.
-- Dépenses (catégories, photo de ticket), rapports.
-- Contenu : réalisations, vitrine, témoignages, références clients, textes d'accueil modifiables, Instagram (posts, publication, webhook « GUIDE » → envoi du guide en message privé).
-- Newsletter (abonnés, envoi, désinscription en un clic).
-- Lieux (136), prestataires partenaires, demandes Studio, demandes de cartes.
-- Notifications (e-mail + push), résumé du matin (resume-matin), résumé RSVP.
-- Statistiques de visites anonymes (table evenements_site, sans cookie, purge à 13 mois).
-- Bureau des agents (/bureau-prive, privé, jamais indexé) : journal_agents trace chaque appel d'agent IA.
+## 5. Espace crew / staff (application web installable, PWA ; pas d'APK Android)
+/auth, /staff-dashboard : disponibilités, missions, contrats à signer avant chaque mission, pointage, fiches de paie, évaluations. Les crews sont payés **à la fin du mois** au tarif convenu, jamais d'avance (les prestataires, eux, reçoivent un acompte puis le solde, au prix qu'ils ont eux-mêmes indiqué). Les clients ne voient que prénom, initiale et rôle d'un crew, jamais sa photo.
 
-## Automatisations (fonction `automatisations`, tous les jours à 9 h Maroc)
-1. Relance des devis envoyés sans réponse à J+5 puis J+10 (avec mention STOP + loi 09-08).
-2. Lendemain d'un événement : demande d'avis au client.
-3. J+2 après l'événement : création de la facture de solde, récap envoyé à l'agence.
-4. Rappel aux clients ayant rendez-vous le lendemain, dans leur langue.
-Autres : rappel-signatures, rappel-souvenirs, souvenirs-purge, newsletter, notifier-admin.
+## 6. Administration (/admin et /admin-auth ; administrateurs uniquement, jamais liée ni indexée)
+Devis (catalogue de prestations, prix fixés par Yassin dans Admin → Devis → Catalogue ; les devis ne partent jamais automatiquement : seulement après approbation), acomptes/soldes, factures numérotées, PDF · Équipe (candidatures, affectations, contrats, signatures, paie, paiements, évaluations) · Agenda et rendez-vous (export .ics) · Dépenses · Contenu (réalisations, témoignages, Instagram, newsletter) · Lieux et palais (136) · Prestataires partenaires · Demandes Studio et cartes · Notifications · Statistiques de visites anonymes · Sécurité (double authentification) · « Bureau des agents » (`/bureau-prive`) qui journalise chaque appel d'agent IA. Une application Mac (.dmg) reprend l'administration.
 
-## Conformité Maroc (loi 09-08, CNDP)
-- Bandeau de consentement : la balise Google Ads (AW-11479101793) ne se charge qu'après « Accepter ». Choix gardé 13 mois (localStorage). Refuser efface les cookies. Revenir sur son choix possible dans la politique de confidentialité.
-- Mesure d'audience maison : anonyme, sans cookie.
-- Formulaires CNDP F113 et F118 remplis, cachet + signature d'Imane ; réponse de la CNDP attendue (numéro de récépissé et autorisation pour la CIN à ajouter ensuite).
-- Polices (Inter, Playfair Display, Great Vibes) hébergées sur le site : plus aucune requête Google avant accord.
-- Point ouvert : bandeau absent sur /nawar et /studio (décision d'Imane).
+## 7. Conformité Maroc (loi 09-08, CNDP)
+- Bandeau de consentement : la balise Google Ads ne se charge qu'après « Accepter ». Mesure d'audience maison, anonyme, sans cookie.
+- Formulaires CNDP F-113 (RH) et F-118 (transfert vers l'Irlande) **envoyés** ; signature d'Imane. **En attente de la réponse** (numéro de récépissé, autorisation pour la copie de CIN). **Ne jamais inventer un numéro** ni présenter une demande en attente comme une autorisation. La copie de CIN des crews est temporaire jusqu'à cette autorisation. Mineurs (moins de 18 ans) interdits d'inscription.
+- Un crew approuvé n'est supprimé que sur sa demande par e-mail ou par décision de l'administration.
+- Nom légal à utiliser partout : « Heavent Agency SARL AU ». Le capital n'est pas affiché sur le site.
 
-## Règles de travail
-- Répondre en français, simple.
-- Avant de livrer un écran : relecture ergonomie, puis design/motion, puis bêta-test.
-- Questions de métier (prix, prestataires, déroulé, contrats) : avis d'un expert événementiel avant de décider.
-- Ne jamais inventer : tout chiffre ou fait vient de la base ou du code.
+## 8. Règles de sécurité durables
+- Un jeton = un rôle. Une visite GET ne change jamais rien (désinscription, confirmation, signature, RSVP : clic explicite).
+- Le suivi des visites ne garde jamais de jeton dans l'adresse.
+- Toute fonction serveur sans connexion automatique contrôle elle-même l'appelant (admin, clé de tâche, jeton validé ou signature de webhook).
+- Factures et paiements non modifiables (corrections en lignes séparées). Documents signés conservés à part, avec empreinte SHA-256.
+- Un crew « banni » perd l'accès à la requête suivante, même avec une session ouverte.
+- Une migration SQL qui change une fonction appelée par le site se déploie avec la mise en ligne du site correspondant.
 
-## Sécurité (audit du 16/11/2026) — règles durables
-- Un jeton = un rôle (voir ci-dessus). Une visite GET ne change jamais rien : désinscription, confirmation prestataire, signature, RSVP passent par un clic explicite.
-- Le suivi des visites ne garde jamais de jeton dans l'adresse ; routes privées exclues côté navigateur et refusées côté base.
-- Toute fonction serveur sans connexion automatique contrôle elle-même qui appelle (admin, clé de tâche planifiée, jeton validé, signature du webhook).
-- Factures : numérotation atomique, factures et paiements non modifiables (corrections en lignes séparées).
-- Documents signés (devis, contrat crew) : version exacte conservée à part (table documents_signes, ajout seul, empreinte SHA-256) ; une modification crée une nouvelle version.
-- Membre crew « banni » : perd l'accès à ses données à la requête suivante, même session ouverte (un fichier déjà téléchargé ne se révoque pas).
-- Dépôts de fichiers anonymes (identités, photos, prestataires, photos-crew) : dossier imposé et limite de dépôts.
-- Chaque automatisation peut être suspendue (table reglages_automatisations) sans couper le site.
-- Avant envoi d'un devis/facture : confirmation affichant destinataire, événement, pièces jointes.
-- Accessibilité : français/anglais/arabe, sens droite-gauche correct, mouvement réduit respecté, listes des formulaires de devis nommées.
+## 9. Double authentification administrateur (en production depuis le 17/11/2026)
+- **Principe** : TOTP (code à 6 chiffres) avec l'appli « Mots de passe » d'Apple ou tout autre gestionnaire. Après le mot de passe, l'écran de connexion demande le code. Pas de codes de secours.
+- **Côté base** : la fonction `is_admin()` exige un jeton de niveau « aal2 » **si l'administrateur a un code vérifié** ; sans code enregistré, rien ne change. La protection est donc **par administrateur** (migration `20261117040000`).
+- **Côté fonctions serveur** : `getCaller` (`_shared/auth.ts`) lit le niveau du jeton et refuse un administrateur sans code s'il en a un (dans le doute, refus). Deux fonctions ont le même contrôle en ligne.
+- **Appareils** : le même code synchronisé par iCloud sur iPhone et Mac couvre la perte d'un appareil, pas celle du compte Apple. Un **second facteur distinct** (autre appareil, autre iCloud) existe pour Yassin : son iPhone et son iPad, deux enregistrements séparés, tous deux déjà validés.
+- **Imane** n'a pas encore de code : son compte reste protégé par le mot de passe seul jusqu'à ce qu'elle l'enregistre (à faire avec Yassin).
+- **Retrait** : le site interdit de retirer le dernier code. Seul Supabase (tableau de bord ou SQL `delete from auth.mfa_factors …`) peut tout réinitialiser, après vérification d'identité hors ligne. Procédure et retour arrière : `docs/recuperation-2fa-administrateur.md`.
+- **Incident corrigé le jour même** : une boucle de rafraîchissement de session sur l'écran de connexion atteignait la limite de requêtes et déconnectait à tort (« Code retiré »). Corrigé et remis en ligne avant d'appliquer la migration (commit `72569f26`).
+- **Testé** : accès base refusé sans code, accordé avec code ; jetons sans niveau refusés ; non-administrateurs refusés ; connexion avec chaque appareil. **Non testé** : appel réel des fonctions avec un jeton sans code, retrait d'un code depuis le site, parcours client/invité/crew/webhook/tâches rejoués après coup (non modifiés).
+- Deux fonctions PDF (`generate-invoice-pdf`, `generate-staff-professional-pdf`) n'existaient pas sur le serveur et ont été créées le 17/11 (admin avec code uniquement).
 
-## Encore ouvert (ne pas présenter comme fait)
-Double authentification admin ; vérification supplémentaire avant signature/export ; mode jour J sans réseau ; signalement/retrait de photos et photos de mineurs ; alertes de quota ; test de restauration des sauvegardes ; récépissé CNDP et autorisation CIN (en attente, aucun numéro à inventer) ; validation juriste/comptable des durées de 13 mois et de la TVA des factures.
+## 10. Règles de travail avec Claude
+- Réponses en français, simples.
+- Avant de livrer un écran ou une fonctionnalité visible : relecture ergonomie → design (et mouvement) → corrections → bêta-test.
+- Questions de métier (prestataires, prix, déroulé, contrats, recrutement) : avis d'un expert événementiel avant de décider.
+- Jeu Heavent City : tout changement de rendu passe par l'agent 3D.
+- Ne rien inventer : tout chiffre vient de la base ou du code. Aucune migration destructive en production. Aucune publication, notification ou paiement rejoué.
+- Aucun service externe payant ni transfert de données vers un nouveau service sans accord écrit de Yassin.
+
+## 11. Encore ouvert (ne pas présenter comme fait)
+Double authentification d'Imane · vérification supplémentaire avant signature/export · mode jour J sans réseau · signalement/retrait de photos et photos de mineurs · alertes de quota · test de restauration des sauvegardes sur un projet séparé · récépissé CNDP et autorisation CIN (en attente) · validation par un juriste / comptable des durées de conservation et de la TVA des factures · bandeau de consentement absent sur /nawar et /studio (décision d'Imane) · paie et déclarations CNSS/IR (bloquées : règles et statuts à vérifier) · Heavent Studio : démo montrant aussi le site public et l'espace crew, générée par type de métier.
+
+## 12. Comment aider utilement
+Pose des questions précises, propose des options chiffrées ou des plans par étapes, signale les risques (sécurité, conformité marocaine, coût) et ce que tu ne sais pas. Ne propose jamais d'écrire des identifiants ou des clés dans une conversation ni dans le dépôt, et ne présente pas comme certain un fait que tu n'as pas vérifié.
