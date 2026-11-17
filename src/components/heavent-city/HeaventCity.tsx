@@ -9,7 +9,7 @@ import { ArrowLeft, Hand, Maximize2, Phone, Redo2, Undo2, DoorOpen } from "lucid
 import { useReducedMotion } from "framer-motion";
 import logoHeavent from "@/assets/logo-heavent-or.png";
 import logoNawar from "@/assets/logo-nawar.png";
-import { LIEUX, MESSAGE_BIENVENUE, MENTION_LIEUX, TYPES, infoTable, type OptionId } from "./donnees";
+import { LIEUX, MESSAGE_BIENVENUE, MENTION_LIEUX, TYPES, COMPOSITION_DEPART, infoTable, type OptionId, type TypeEvt } from "./donnees";
 import {
   ETAT_INITIAL, aUneSauvegarde, avancement, ecrireSauvegarde, effacerSauvegarde, lireSauvegarde, missionsDuType, optionsActives, reducteur, rendu, resume,
   type Action, type Choix, type Etat,
@@ -131,7 +131,9 @@ export default function HeaventCity() {
   const recommencer = () => { effacerSauvegarde(); sauvegarde.current = null; setTelOuvert(false); setDemande(false); setCine(null); dispatch({ t: "recommencer" }); setEcran("titre"); };
 
   const choisirLieu = (l: (typeof LIEUX)[number]["id"]) => {
-    dispatch({ t: "choisir", patch: { lieu: l } });
+    const depart = COMPOSITION_DEPART[choix.type as TypeEvt];
+    const vierge = !choix.manuels.length && !choix.retires.length && !choix.style && !choix.palette;
+    dispatch({ t: "choisir", patch: depart && vierge ? { lieu: l, manuels: depart } : { lieu: l } });
     dispatch({ t: "phase", phase: "scene" });
     dispatch({ t: "onglet", onglet: "style" });
     setCine(l);

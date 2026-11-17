@@ -33,6 +33,13 @@ export const TYPES: InfoType[] = traduit([
   { id: "conference", nom: "Conférence ou séminaire", court: "Conférence", emoji: "🎤", nomPlaceholder: "Nom de la conférence (facultatif)", article: "ta conférence" },
 ]);
 
+/** Décor de départ : une première salle déjà vivante, que le joueur peut retirer ou annuler. Rien n'est ajouté s'il a déjà fait un choix. */
+export const COMPOSITION_DEPART: Partial<Record<TypeEvt, OptionId[]>> = {
+  mariage: ["fauteuils", "gateau", "livre_dor"],
+  fete: ["gateau", "candy_bar"],
+  pro: ["ecran", "buffet_sandwichs"],
+};
+
 export const VILLES = ["Casablanca", "Marrakech", "Rabat", "Tanger", "Fès", "Agadir", "Autre ville"];
 export const INVITES = { min: 2, max: 500, defaut: 120 };
 
