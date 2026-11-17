@@ -89,3 +89,10 @@ Devis (catalogue de prestations, prix fixés par Yassin dans Admin → Devis →
 | Paie, CNSS, IR | – | – | – | bloqué : règles et statuts à vérifier, aucun calcul activé |
 | Bandeau de consentement /nawar et /studio | – | – | – | analyse des traceurs à faire (lot 5), pas de bandeau ajouté automatiquement |
 | Démo Heavent Studio par métier | partielle (12 métiers) | oui | – | site public et espace crew dans la démo |
+
+## Consentement /nawar et /studio (analysé et testé le 17/11/2026, aucun changement de code)
+- Constat : ces deux pages (comme /souvenirs, /rsvp, /staff-dashboard…) n'utilisent pas la mise en page qui porte le bandeau. La balise Google Ads n'y est donc jamais chargée, avec ou sans choix déjà enregistré ailleurs (6 essais : aucun choix / « oui » / « non », 0 requête Google, 0 cookie).
+- Traitement réel sur ces pages : mesure maison sans cookie (identifiant de session aléatoire en sessionStorage + page, provenance, appareil, langue envoyés à Supabase ; ni IP ni navigateur gardés dans la table). Formulaires : mention « coordonnées servent uniquement… » + lien vers la politique.
+- Décision : pas de bandeau ajouté (rien ne le justifie sur ces pages). Si un jour la balise Google doit y mesurer des conversions, il faudra y monter le bandeau.
+- À demander à la CNDP / au juriste (lot 9) : la mesure maison (identifiant de session pseudonyme) est-elle couverte par la déclaration en cours ou exige-t-elle une information renforcée ?
+- Parcours testés sur /contact (build réel) : première visite sans requête Google ; Refuser puis rechargement : 0 requête ; Accepter : la balise se charge seulement à cet instant ; retrait du choix dans la politique : cookies Google effacés, plus de requête. Test rejouable : tests/beta/consentement-nawar-studio.mjs.
