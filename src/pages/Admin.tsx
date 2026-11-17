@@ -2185,7 +2185,7 @@ const Admin = () => {
             <CardContent className="space-y-6">
               <div className="bg-[#A8933F]/15 border border-[#A8933F]/40 rounded-lg p-4">
                 <div className="flex items-start space-x-2">
-                  <Shield className="h-5 w-5 text-yellow-600 mt-0.5" />
+                  <Shield className="h-5 w-5 text-[#7A5F1F] mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-[#7A5F1F]">Information de sécurité</h4>
                     <p className="text-sm text-[#7A5F1F] mt-1">
