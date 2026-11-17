@@ -164,6 +164,8 @@ export async function demanderAssistant(message: string, type: TypeEvt, lieu: Li
   try {
     const r = await fetch(`${FUNCTIONS_URL}/heavent-city-ia`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: texte, type, lieu }), signal: ctrl.signal });
     const j = await r.json().catch(() => null);
+    // L'assistant ne traite pas cette demande (prix, dates, réservation) ou veut une précision : on le dit simplement, sans rien appliquer
+    if (j?.statut === "impossible" || j?.statut === "precision") throw new Error(tr(String(j.message ?? "Dis-m'en un peu plus sur l'ambiance que tu imagines.")));
     if (j?.disponible === false) return { proposition: auto() }; // IA non activée : suggestions automatiques, sans message d'excuse
     if (r.ok) {
       const p = validerProposition(j?.proposition, type, lieu, "ia");

@@ -240,7 +240,7 @@ html.ouv-pret .s-pan .rf { animation: s-rideau-reflet 1.3s ease-in-out .5s forwa
 @keyframes s-pan-g { to { transform: translateX(-4%) scaleX(.13); } }
 @keyframes s-pan-d { to { transform: translateX(4%) scaleX(.12); } }
 @keyframes s-rideau-reflet { 0% { opacity: 0; transform: translateX(-60%); } 35% { opacity: 1; } 100% { opacity: 0; transform: translateX(60%); } }
-html.ouv-rideau .s-passer { animation: none; bottom: auto; top: calc(14px + env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); }
+html.ouv-rideau .s-passer { animation: none; bottom: auto; top: calc(14px + env(safe-area-inset-top)); right: auto; inset-inline-end: max(16px, env(safe-area-inset-right)); }
 html.ouv-rideau.ouv-pret .s-passer { animation: s-efface .3s 2.1s forwards; }
 
 /* ———————— Accueil ———————— */
@@ -665,10 +665,10 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
 
 /* Pied de page plus compact sur ordinateur (souris) : mêmes liens, moins de hauteur. Les cibles tactiles gardent leur taille sur téléphone. */
 @media (hover: hover) and (pointer: fine) {
-  .s-pied li a, .s-pied li span { min-height: 30px; }
+  .s-pied li a, .s-pied li span { min-height: 36px; }
   .s-pied-wp { padding-top: 24px; }
-  .s-pied-wp li a { min-height: 30px; }
-  .s-pied-bas a, .s-pied-bas button { min-height: 32px; }
+  .s-pied-wp li a { min-height: 36px; }
+  .s-pied-bas a, .s-pied-bas button { min-height: 36px; }
 }
 .s-pied-wp .s-surtitre { margin-top: 2px; }
 

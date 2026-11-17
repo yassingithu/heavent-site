@@ -706,7 +706,7 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "Fêtes de famille": { en: "Family celebrations", ar: "الحفلات العائلية" },
   "Vous êtes une agence ? Heavent Studio": { en: "Are you an agency? Heavent Studio", ar: "هل أنتم وكالة؟ Heavent Studio" },
   "Devenir prestataire partenaire": { en: "Become a partner supplier", ar: "كن مزوّدًا شريكًا" },
-  "Équipe et partenaires": { en: "Team and partners", ar: "الفريق والشركاء" },
+  "Espace équipe": { en: "Team area", ar: "فضاء الفريق" },
   "Devenir prestataire": { en: "Become a partner supplier", ar: "كن مقدّم خدمة شريكاً" },
   "Nawar — bar à parfums": { en: "Nawar — perfume bar", ar: "نوار — بار العطور" },
   "Vitrine": { en: "Showcase", ar: "الواجهة" },

@@ -31,13 +31,16 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
   const feuille = useRef<HTMLDivElement>(null);
   const boutonPlus = useRef<HTMLButtonElement>(null);
   const jamaisOuvert = useRef(true);
+  const apresChoix = useRef(false);
 
   // La feuille « Toutes les rubriques » se referme dès que la rubrique change (bouton, retour du navigateur, lien interne),
   // rend le focus au bouton « Plus », garde le focus à l'intérieur tant qu'elle est ouverte et bloque le défilement de la page derrière.
   useEffect(() => { setPlusOuvert(false); }, [onglet]);
   useEffect(() => {
     if (!plusOuvert) {
-      if (!jamaisOuvert.current) boutonPlus.current?.focus({ preventScroll: true });
+      // le focus revient à « Plus » après Échap, la croix ou le fond ; après le choix d'une rubrique, il reste sur la nouvelle page
+      if (!jamaisOuvert.current && !apresChoix.current) boutonPlus.current?.focus({ preventScroll: true });
+      apresChoix.current = false;
       return;
     }
     jamaisOuvert.current = false;
@@ -58,6 +61,7 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
   }, [plusOuvert]);
 
   const choisir = (v: string) => {
+    apresChoix.current = true;
     setPlusOuvert(false);
     onChoisir(v);
     // la nouvelle rubrique s'ouvre en haut, pas à l'endroit où l'ancienne était défilée
@@ -72,7 +76,7 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
           <div ref={feuille} className="relative max-h-[82vh] overflow-y-auto overscroll-contain bg-[#F3ECDD] border-t-2 border-[#A8933F] px-4 pt-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] shadow-2xl">
             <div className="flex items-center justify-between mb-3">
               <p className="font-serif text-xl text-[#141414]">Toutes les rubriques</p>
-              <button onClick={() => setPlusOuvert(false)} className="h-10 w-10 rounded-full hover:bg-black/5 flex items-center justify-center" aria-label="Fermer"><X className="h-5 w-5" /></button>
+              <button onClick={() => setPlusOuvert(false)} className="h-11 w-11 rounded-full hover:bg-black/5 flex items-center justify-center" aria-label="Fermer"><X className="h-5 w-5" /></button>
             </div>
             {groupes.map((g) => (
               <section key={g.titre} className="mb-4">

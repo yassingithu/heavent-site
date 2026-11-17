@@ -184,7 +184,7 @@ export default function Studio() {
           <div className="flex items-center gap-2 sm:gap-4">
             <Link to="/" className="hidden sm:inline text-sm text-white/60 hover:text-white">heaventagency.com</Link>
             <LanguageSelector />
-            <button onClick={versDemo} className="s-btn s-btn-plein !min-h-10 !px-4 !text-[13px]" data-testid="studio-cta-entete">{x("Demander une démo")}</button>
+            <button onClick={versDemo} className="s-btn s-btn-plein !min-h-11 !px-4 !text-[13px]" data-testid="studio-cta-entete">{x("Demander une démo")}</button>
           </div>
         </div>
       </header>

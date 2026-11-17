@@ -46,8 +46,8 @@ function MenuAcces() {
     return () => { document.removeEventListener("pointerdown", dehors); document.removeEventListener("keydown", echap); };
   }, []);
   return (
-    <details ref={ref} className="s-nav-acces">
-      <summary>{x("Équipe et partenaires")}</summary>
+    <details ref={ref} className="s-nav-acces" onBlur={(e) => { if (ref.current?.open && !ref.current.contains(e.relatedTarget as Node | null)) ref.current.open = false; }}>
+      <summary>{x("Espace équipe")}</summary>
       <div className="s-nav-acces-liste">
         <Link to="/auth">{t("nav.staffSpace")}</Link>
         <Link to="/inscription-staff">{t("nav.joinTeam")}</Link>
