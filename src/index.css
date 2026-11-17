@@ -324,3 +324,4 @@ body.jeu-tiroir .bouton-whatsapp { display: none !important; }
 .inv-signal { margin-top: 18px; padding: 18px 16px 16px; text-align: start; background: var(--inv-papier, #1C1A16); border-block: 1px solid var(--inv-accent, #E4D49A); color: var(--inv-texte, #fff); }
 .inv .inv-signal .inv-champ { text-align: start; }
 @media (prefers-reduced-motion: reduce) { .sr-entre, .sr-filet { animation: none; } }
+.inv-signal .inv-lien, .inv-lien[data-testid="signaler-ouvrir"] { min-height: 44px; padding: 10px 8px; font-size: 14px; }

@@ -16,14 +16,17 @@ function SignalementsPhotos({ devisId, onChange }: { devisId: string; onChange: 
   const [occupe, setOccupe] = useState<string | null>(null);
   const [confirmer, setConfirmer] = useState<string | null>(null);
   const [apercu, setApercu] = useState<Record<string, string>>({});
+  const [etatPhoto, setEtatPhoto] = useState<Record<string, { masquee: boolean; chemin: string }>>({});
   const [erreur, setErreur] = useState("");
   const charger = useCallback(async () => {
-    const { data } = await (supabase as any).from("souvenirs_signalements").select("id, photo_id, source, motif, message, contact, invite_nom, cree_le").eq("devis_id", devisId).eq("statut", "nouveau").order("cree_le");
+    const { data, error: errL } = await (supabase as any).from("souvenirs_signalements").select("id, photo_id, source, motif, message, contact, invite_nom, cree_le").eq("devis_id", devisId).eq("statut", "nouveau").order("cree_le");
+    if (errL) { setErreur("Impossible de charger les demandes de retrait : " + errL.message); return; }
     const l = ((data ?? []) as Signalement[]).sort((a, b) => Number(b.motif === "mineur") - Number(a.motif === "mineur"));
     const ids = l.map((x) => x.photo_id).filter(Boolean) as string[];
     if (ids.length) {
-      const { data: ph } = await (supabase as any).from("souvenirs_photos").select("id, chemin").in("id", ids);
-      const chemins = (ph ?? []) as { id: string; chemin: string }[];
+      const { data: ph } = await (supabase as any).from("souvenirs_photos").select("id, chemin, masquee").in("id", ids);
+      const chemins = (ph ?? []) as { id: string; chemin: string; masquee: boolean }[];
+      setEtatPhoto(Object.fromEntries(chemins.map((c) => [c.id, { masquee: c.masquee, chemin: c.chemin }])));
       const { data: urls } = await supabase.storage.from("souvenirs").createSignedUrls(chemins.map((c) => c.chemin), 600);
       const m: Record<string, string> = {};
       chemins.forEach((c) => { const u = (urls ?? []).find((x: any) => x.path === c.chemin)?.signedUrl; if (u) m[c.id] = u; });
@@ -34,12 +37,16 @@ function SignalementsPhotos({ devisId, onChange }: { devisId: string; onChange: 
   useEffect(() => { void charger(); }, [charger]);
   const decider = async (id: string, decision: "conservee" | "masquee" | "supprimee") => {
     setOccupe(id); setErreur("");
+    const s0 = liste.find((x) => x.id === id);
+    const chemin = s0?.photo_id ? etatPhoto[s0.photo_id]?.chemin : undefined;
     const { error } = await (supabase as any).rpc("souvenir_signalement_traiter", { p_id: id, p_decision: decision, p_note: note[id] ?? "" });
     setOccupe(null); setConfirmer(null);
     if (error) { setErreur("Décision non enregistrée : " + error.message); return; }
+    // suppression : le fichier est effacé tout de suite (à défaut, la purge nocturne s'en charge)
+    if (decision === "supprimee" && chemin) { try { await supabase.storage.from("souvenirs").remove([chemin]); } catch { /* purge nocturne */ } }
     await charger(); onChange();
   };
-  if (!liste.length) return null;
+  if (!liste.length) return erreur ? <p className="text-xs text-[#B5483C]" role="alert">{erreur}</p> : null;
   const nbMineurs = liste.filter((s) => s.motif === "mineur").length;
   return (
     <div className="border border-[#EADFC8] border-t-2 border-t-[#A8933F] bg-[#FBF6E9] p-3 space-y-3" data-testid="signalements-photos" role="region" aria-label="Demandes de retrait de photos">
@@ -55,6 +62,7 @@ function SignalementsPhotos({ devisId, onChange }: { devisId: string; onChange: 
             <div className="sm:flex gap-3">
               {s.photo_id && (apercu[s.photo_id] ? <a href={apercu[s.photo_id]} target="_blank" rel="noopener noreferrer" className="shrink-0"><img src={apercu[s.photo_id]} alt="Photo signalée" className="h-32 w-32 object-cover ring-1 ring-[#EADFC8]" /></a> : <p className="text-xs text-muted-foreground">Photo concernée : aperçu indisponible.</p>)}
               <div className="space-y-1 min-w-0">
+                {s.photo_id && etatPhoto[s.photo_id] && <p className="text-xs">{etatPhoto[s.photo_id].masquee ? "État : photo masquée du livre." : "État : photo visible dans le livre (les mariés ont pu la remettre)."}</p>}
                 {s.message && <p className="text-xs whitespace-pre-line">{s.message}</p>}
                 {s.contact && <p className="text-xs">Contact : {href ? <a href={href} className="underline">{s.contact}</a> : s.contact}</p>}
                 {!s.photo_id && <p className="text-xs text-muted-foreground">Demande d'un invité, sans photo précise. Règle : seuls les mariés décident du retrait. Transmettez-leur la demande (sans donner les coordonnées de l'invité sans son accord) : ils masquent ou demandent la suppression depuis leur espace. Marquez ensuite la demande traitée.</p>}
@@ -63,7 +71,7 @@ function SignalementsPhotos({ devisId, onChange }: { devisId: string; onChange: 
             <input value={note[s.id] ?? ""} onChange={(e) => setNote((n) => ({ ...n, [s.id]: e.target.value }))} placeholder={mineur || s.source === "maries" ? "Note interne (obligatoire pour ne pas donner suite)" : "Note interne (facultatif)"} aria-label="Note interne" className="h-11 w-full border border-[#DCCBA6] px-2 text-base" />
             <div className="flex flex-wrap items-center gap-2">
               {s.photo_id ? <button type="button" className={btn} disabled={occupe === s.id} onClick={() => void decider(s.id, "masquee")}>Masquer du livre</button> : null}
-              <button type="button" className={btn} disabled={occupe === s.id || ((mineur || s.source === "maries") && !!s.photo_id && !noteOk)} onClick={() => void decider(s.id, "conservee")}>{s.photo_id ? "Ne pas supprimer" : "Marquer traitée"}</button>
+              <button type="button" className={btn} disabled={occupe === s.id || ((mineur || s.source === "maries") && !noteOk)} onClick={() => void decider(s.id, "conservee")}>{s.photo_id ? "Ne pas supprimer" : "Marquer traitée"}</button>
             </div>
             {s.photo_id && (
               <div className="border-t pt-2">
@@ -177,7 +185,7 @@ export default function LivreSouvenirsAdmin({ devisId, noms, date, lieu }: { dev
   return (
     <div className="rounded-lg border p-3 space-y-2" data-testid="livre-souvenirs-admin">
       <div className="font-medium flex items-center gap-2"><BookOpen className="h-4 w-4 text-[#A8933F]" /> Livre souvenir</div>
-      <p className="text-xs text-muted-foreground">{vide ? "Aucun souvenir déposé pour l'instant." : `${nb.invites} invité${nb.invites > 1 ? "s" : ""} · ${nb.photos} photo${nb.photos > 1 ? "s" : ""} dans le livre${nb.masquees ? ` (${nb.masquees} retirée${nb.masquees > 1 ? "s" : ""} par les mariés)` : ""}.`}</p>
+      <p className="text-xs text-muted-foreground">{vide ? "Aucun souvenir déposé pour l'instant." : `${nb.invites} invité${nb.invites > 1 ? "s" : ""} · ${nb.photos} photo${nb.photos > 1 ? "s" : ""} dans le livre${nb.masquees ? ` (${nb.masquees} masquée${nb.masquees > 1 ? "s" : ""})` : ""}.`}</p>
       <div className="rounded-md bg-muted/40 p-2 space-y-2" data-testid="souvenirs-plafond">
         <p className="text-sm"><b className="text-xl font-titre">{total} / {limite}</b> photos déposées{total >= limite ? " : plafond atteint, les envois sont bloqués." : "."} Au-delà du plafond, les invités ne peuvent plus rien ajouter.</p>
         <div className="flex flex-wrap items-center gap-2">

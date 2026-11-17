@@ -57,7 +57,7 @@ begin
   if s.photo_id is not null then
     if p_decision = 'masquee' then update public.souvenirs_photos set masquee = true where id = s.photo_id and devis_id = s.devis_id; end if;
     if p_decision = 'supprimee' then
-      -- la ligne disparaît ; le fichier est effacé par la purge de 3 h (photos sans ligne). Le livre déjà généré est retiré pour être refait sans la photo.
+      -- la ligne disparaît ; le fichier est effacé tout de suite par l'administration (sinon par la purge des photos sans ligne, après 3 jours). Le livre déjà généré est retiré pour être refait sans la photo.
       delete from public.souvenirs_photos where id = s.photo_id and devis_id = s.devis_id;
       delete from public.souvenirs_livres where devis_id = s.devis_id;
     end if;

@@ -39,9 +39,9 @@ const T = {
   },
 };
 
-export default function SignalerRetrait({ token, photoId, source, langue = "fr", sombre = false, onOuvre, onEnvoye }: {
-  token: string; photoId?: string; source: "maries" | "invite"; langue?: Langue; sombre?: boolean;
-  onOuvre?: (ouvert: boolean) => void; onEnvoye?: (motif: string) => void;
+export default function SignalerRetrait({ token, photoId, source, langue = "fr", sombre = false, ferme = false, onOuvre, onEnvoye }: {
+  token: string; photoId?: string; source: "maries" | "invite"; langue?: Langue; sombre?: boolean; ferme?: boolean;
+  onOuvre?: (ouvert: boolean) => void; onEnvoye?: (motif: string) => void | boolean | Promise<void | boolean>;
 }) {
   const t = T[langue];
   const ar = langue === "ar";
@@ -57,18 +57,21 @@ export default function SignalerRetrait({ token, photoId, source, langue = "fr",
   const refLien = useRef<HTMLButtonElement>(null);
   const refMerci = useRef<HTMLDivElement>(null);
   useEffect(() => { if (ouvert) refMotif.current?.focus(); }, [ouvert]);
+  useEffect(() => { if (ferme) setOuvert(false); }, [ferme]);
   useEffect(() => { if (etat === "fait") refMerci.current?.focus(); }, [etat]);
   const bascule = (v: boolean) => { setOuvert(v); onOuvre?.(v); if (!v) setTimeout(() => refLien.current?.focus(), 0); };
 
   const envoyer = async () => {
     setErreur(null);
     if (!photoId && message.trim().length < 5) { setErreur(t.court); return; }
-    if (source === "invite" && contact.trim().length < 5) { setErreur(t.contactRequis); return; }
+    const c = contact.trim();
+    const contactValide = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c) || (c.replace(/\D/g, "").length >= 6 && /^[+\d][\d\s().-]+$/.test(c));
+    if (source === "invite" && !contactValide) { setErreur(t.contactRequis); return; }
     setEtat("envoi");
     const { data, error } = await (supabase as any).rpc("souvenir_signaler", { p_token: token, p_photo: photoId ?? null, p_motif: motif === "erreur_envoi" ? "retrait" : motif, p_message: motif === "erreur_envoi" ? `(Photo envoyée par erreur) ${message}` : message, p_contact: contact });
     if (error || !data?.ok) { setEtat("saisie"); setErreur(data?.erreur === "trop" ? t.trop : t.erreur); return; }
-    setMasquee(!!photoId && (motif === "mineur" || motif === "retrait"));
-    onEnvoye?.(motif);
+    const ok = await onEnvoye?.(motif);
+    setMasquee(!!photoId && (motif === "mineur" || motif === "retrait") && ok !== false);
     setEtat("fait");
     onOuvre?.(false);
   };

@@ -172,10 +172,12 @@ export default function SouvenirsMaries({ token, reponseToken, date, noms }: { t
   useEffect(() => { if (!ouverte) return; const i = window.setInterval(() => void charger(), 60000); return () => window.clearInterval(i); }, [ouverte, charger]);
 
   const [signalOuvert, setSignalOuvert] = useState<string | null>(null);
+  const [signalees, setSignalees] = useState<string[]>([]);
   const masquer = async (p: Photo, masquee: boolean) => {
     setListe((l) => (l ?? []).map((s) => ({ ...s, photos: s.photos.map((x) => (x.id === p.id ? { ...x, masquee } : x)) })));
     const { error } = await (supabase as any).rpc("souvenir_masquer", { p_token: token, p_photo: p.id, p_masquee: masquee });
     if (error) void charger();
+    return !error;
   };
 
   const auj = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Casablanca" });
@@ -197,7 +199,7 @@ export default function SouvenirsMaries({ token, reponseToken, date, noms }: { t
           {phase === "fermee" && "Le partage est terminé. Retrouvez ci-dessous tout ce que vos invités ont partagé. Heavent prépare votre livre souvenir : rien à faire de votre côté."}
           {phase === "inconnue" && "Renseignez la date de votre mariage pour ouvrir le partage de souvenirs."}
         </p>
-        <p className="text-xs text-[#6B6155] mt-3">Seules les photos que vous ne masquez pas figureront dans votre livre souvenir. Les invités ont accepté ce partage en les envoyant. « Masquer dans le livre » est réversible : la photo reste chez nous. « Demander la suppression » : Heavent examine puis l'efface.</p>
+        <p className="text-xs text-[#6B6155] mt-3">Seules les photos que vous ne masquez pas figureront dans votre livre souvenir. Les invités ont accepté ce partage en les envoyant. « Masquer dans le livre » est réversible : la photo reste chez nous. « Demander la suppression » : Heavent examine votre demande.</p>
       </section>
 
       {phase === "inconnue" ? <p className="text-sm text-[#6B6155] px-1">Renseignez la date de votre mariage pour préparer le QR code et le message du jour J.</p> : phase !== "fermee" && <JourJ token={reponseToken} noms={noms} date={date} />}
@@ -221,7 +223,7 @@ export default function SouvenirsMaries({ token, reponseToken, date, noms }: { t
               {nbMasquees > 0 && <button type="button" className={`${bouton} border border-[#DCCBA6] bg-white hover:bg-[#FAF7EE]`} onClick={() => setVoirMasquees((v) => !v)}>{voirMasquees ? "Cacher les photos retirées" : "Voir les photos retirées"}</button>}
             </div>
             {avecContenu.map((s) => {
-              const visibles = s.photos.filter((p) => voirMasquees || !p.masquee);
+              const visibles = s.photos.filter((p) => voirMasquees || !p.masquee || signalees.includes(p.id));
               return (
                 <section key={s.id} className={`${carte_} p-5`} data-testid="souvenir-invite">
                   <h3 className="font-titre text-xl">{s.nom}</h3>
@@ -237,7 +239,7 @@ export default function SouvenirsMaries({ token, reponseToken, date, noms }: { t
                             <button type="button" onClick={() => void masquer(p, !p.masquee)} className="flex-1 min-h-11 px-1 hover:bg-[#FAF7EE]">{p.masquee ? "Remettre dans le livre" : "Masquer dans le livre"}</button>
                             {(dl[p.id] ?? urls[p.id]) && <a href={dl[p.id] ?? urls[p.id]} className="flex-1 min-h-11 px-1 grid place-items-center border-s border-[#EADFC8] hover:bg-[#FAF7EE]">Télécharger</a>}
                           </div>
-                          <div className="border-t border-[#EADFC8] px-2"><SignalerRetrait token={token} photoId={p.id} source="maries" onOuvre={(o) => setSignalOuvert(o ? p.id : null)} onEnvoye={(m) => { if ((m === "mineur" || m === "retrait") && !p.masquee) void masquer(p, true); }} /></div>
+                          <div className="border-t border-[#EADFC8] px-2"><SignalerRetrait token={token} photoId={p.id} source="maries" ferme={signalOuvert !== null && signalOuvert !== p.id} onOuvre={(o) => setSignalOuvert(o ? p.id : null)} onEnvoye={async (m) => { setSignalees((l) => [...l, p.id]); if ((m === "mineur" || m === "retrait") && !p.masquee) return !!(await masquer(p, true)); return true; }} /></div>
                         </li>
                       ))}
                     </ul>
