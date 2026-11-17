@@ -9,7 +9,7 @@ Pas de code de secours : si tous les codes sont perdus, l'accès se rétablit c�
 
 ## Procédure si tous les codes sont perdus
 1. Se connecter au tableau de bord Supabase (compte propriétaire du projet, lui-même protégé).
-2. Authentication → Users → l'administrateur concerné → Factors → supprimer chaque facteur (ou SQL ci-dessous, rôle postgres uniquement).
+2. Supprimer les facteurs par le SQL ci-dessous (SQL editor du tableau de bord, rôle postgres). Depuis le 17/11/2026, le bouton « supprimer » du tableau de bord ne retire plus le DERNIER facteur d'un administrateur : un déclencheur de base le refuse.
 3. L'administrateur se reconnecte avec son mot de passe seul, puis réactive la double authentification immédiatement.
 4. Noter l'intervention (date, qui, pourquoi).
 
@@ -27,5 +27,6 @@ Les fonctions serveur (`getCaller`) refuseraient toujours un jeton aal1 d'un adm
 
 ## Règle sur le retrait d'un facteur
 - Retrait possible seulement avec une session aal2 (Supabase l'impose côté serveur quand un facteur est vérifié).
-- Le site refuse de retirer le DERNIER facteur : une session ouverte ne peut pas désactiver la double authentification depuis l'interface. Limite connue : un appel direct à l'API avec une session aal2 pourrait encore le faire ; il faut déjà posséder le code, donc ce n'est pas un contournement par mot de passe seul. Le tableau de bord Supabase reste la seule voie pour réinitialiser.
-- La protection est PAR administrateur : un administrateur sans facteur (aujourd'hui Imane et Yassin n'en ont aucun) reste accepté en mot de passe seul. Les deux administrateurs doivent activer leur code pour que la protection soit complète.
+- Le DERNIER facteur d'un administrateur ne peut être retiré ni depuis le site, ni par appel direct à l'API (même avec une session aal2), ni depuis le tableau de bord : déclencheur `garder_dernier_facteur` sur `auth.mfa_factors` (migration `20261117060000`). Testé le 17/11/2026 : retrait du dernier facteur refusé ; retrait avec un autre facteur vérifié accepté. Seul le SQL exécuté en rôle postgres (procédure ci-dessus) le contourne.
+- Retour arrière du déclencheur : `drop trigger garder_dernier_facteur on auth.mfa_factors; drop function public._garder_dernier_facteur();`
+- La protection est PAR administrateur : un administrateur sans facteur (au 17/11/2026 : Yassin a 2 facteurs ; Imane n'en a pas, activation volontairement reportée) reste accepté en mot de passe seul. Imane doit activer son code pour que la protection soit complète.
