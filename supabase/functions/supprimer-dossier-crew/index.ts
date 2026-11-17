@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
+const lit = (s: string) => s.replace(/[\\%_]/g, "\\$&"); // échappe % et _ : comparaison exacte (insensible à la casse), sans jokers
 
 /**
  * Suppression du dossier d'un crew (réservé aux administrateurs), à sa demande ou par décision de l'administration.
@@ -24,7 +25,7 @@ Deno.serve(async (req) => {
     const { data: u } = token ? await db.auth.getUser(token) : { data: null };
     const email = u?.user?.email?.toLowerCase();
     if (!email) return json({ error: "Accès refusé" }, 403);
-    const { data: adm } = await db.from("admins").select("email").ilike("email", email).maybeSingle();
+    const { data: adm } = await db.from("admins").select("email").ilike("email", lit(email)).maybeSingle();
     if (!adm) return json({ error: "Accès refusé" }, 403);
 
     const { staffId } = await req.json();
@@ -33,7 +34,7 @@ Deno.serve(async (req) => {
     if (!s) return json({ error: "Personne introuvable" }, 404);
     const emailFiche = (s.email ?? "").toLowerCase();
     if (emailFiche && emailFiche === email) return json({ error: "Tu ne peux pas supprimer ton propre dossier ici" }, 400);
-    const { data: ficheEstAdmin } = emailFiche ? await db.from("admins").select("email").ilike("email", emailFiche).maybeSingle() : { data: null };
+    const { data: ficheEstAdmin } = emailFiche ? await db.from("admins").select("email").ilike("email", lit(emailFiche)).maybeSingle() : { data: null };
     if (ficheEstAdmin) return json({ error: "Cette fiche est celle d'un administrateur : elle ne peut pas être supprimée ici" }, 400);
 
     const [{ data: ctr }, { data: paie }] = await Promise.all([

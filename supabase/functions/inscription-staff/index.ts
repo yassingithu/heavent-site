@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 import { Resend } from "npm:resend@2.0.0";
 import { avecOriginal, traduireChamps } from "../_shared/traduire.ts";
+const lit = (s: string) => s.replace(/[\\%_]/g, "\\$&"); // échappe % et _ : comparaison exacte (insensible à la casse), sans jokers
 
 /**
  * Inscription d'un crew depuis le site : crée le compte de connexion (déjà confirmé, pas d'email de
@@ -46,7 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { count: recentes } = await admin.from("staff").select("id", { count: "exact", head: true }).gte("created_at", depuis);
     if ((recentes ?? 0) >= 15) return json({ error: "Beaucoup d'inscriptions en ce moment : réessayez dans quelques minutes." }, 429);
 
-    const { data: existe } = await admin.from("staff").select("id").ilike("email", email).maybeSingle();
+    const { data: existe } = await admin.from("staff").select("id").ilike("email", lit(email)).maybeSingle();
     if (existe) return json({ error: "Un compte avec cet email existe déjà. Connectez-vous, ou utilisez « Mot de passe oublié »." }, 409);
 
     // 1. Compte de connexion, directement confirmé

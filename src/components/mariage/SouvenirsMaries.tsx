@@ -143,8 +143,11 @@ export default function SouvenirsMaries({ token, reponseToken, date, noms }: { t
   useEffect(() => { (async () => { const { data } = await (supabase as any).rpc("souvenir_livre", { p_token: token }); setLivre(data ?? null); })(); }, [token]);
   const telechargerLivre = async () => {
     setLivreEnCours(true); setLivreKo(false);
-    const r = await supabase.functions.invoke("souvenirs", { body: { token, livre: true } });
-    const url = (r.data as any)?.url;
+    const r = await supabase.functions.invoke("souvenirs", { body: { token, livre: true, preuve: preuveEnMemoire(token) ?? "" } });
+    let url = (r.data as any)?.url as string | undefined;
+    let besoinCode = (r.data as any)?.verification === true;
+    if (r.error && !url) { try { besoinCode = (await (r.error as any).context?.json())?.verification === true; } catch { /* */ } }
+    if (besoinCode) { try { sessionStorage.removeItem(`verif-${token.slice(0, 8)}`); } catch { /* */ } setVerifLivre(true); setLivreEnCours(false); return; }
     if (url) window.location.href = url; else setLivreKo(true);
     setLivreEnCours(false);
   };

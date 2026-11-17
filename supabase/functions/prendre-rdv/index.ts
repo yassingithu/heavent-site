@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 import { Resend } from "npm:resend@2.0.0";
 import { avecOriginal, htmlTraduit, versFrancais } from "../_shared/traduire.ts";
 import { TYPES, base64, calendrierIcs, emailClient, infosPratiques, langueDe, quand, t } from "../_shared/agenda.ts";
+const lit = (s: string) => s.replace(/[\\%_]/g, "\\$&"); // échappe % et _ : comparaison exacte (insensible à la casse), sans jokers
 
 /**
  * Agenda de rendez-vous.
@@ -68,7 +69,7 @@ serve(async (req) => {
     if (!creneau) return json({ error: "pris" }, 409);
 
     const { count } = await db.from("rendez_vous").select("id", { count: "exact", head: true })
-      .ilike("client_email", email).eq("statut", "confirme").gte("debut", new Date().toISOString());
+      .ilike("client_email", lit(email)).eq("statut", "confirme").gte("debut", new Date().toISOString());
     if ((count ?? 0) >= 2) return json({ error: "limite" }, 429);
 
     // Devis concerné (lien secret de la page du client)

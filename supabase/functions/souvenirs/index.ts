@@ -6,13 +6,17 @@ const rep = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
-  const { token, livre } = await req.json().catch(() => ({}));
+  const { token, livre, preuve } = await req.json().catch(() => ({}));
   if (!token || !/^[0-9a-f-]{36}$/i.test(String(token))) return rep({ error: "Lien invalide" }, 400);
   const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     { auth: { autoRefreshToken: false, persistSession: false } });
   const { data: devisId } = await db.rpc("_devis_mariage", { p_token: token });
   if (!devisId) return rep({ error: "Lien invalide" }, 404);
   if (livre) {
+    // Le téléchargement du livre exige la vérification par code e-mail (contrôlée ici, pas seulement à l'écran)
+    const { data: ok, error: errV } = await db.rpc("_verif_controler", { p_token: token, p_preuve: String(preuve ?? "") });
+    if (errV) return rep({ error: "Vérification momentanément indisponible. Réessayez dans un instant." }, 500);
+    if (ok !== true) return rep({ error: "Vérification requise", verification: true }, 403);
     const { data: l } = await db.from("souvenirs_livres").select("chemin").eq("devis_id", devisId).maybeSingle();
     if (!l) return rep({ error: "Livre pas encore prêt" }, 404);
     const { data: u } = await db.storage.from("livres-souvenirs").createSignedUrl(l.chemin, 600, { download: "livre-souvenir.zip" });

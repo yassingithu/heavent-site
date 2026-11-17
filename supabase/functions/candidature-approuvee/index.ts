@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 import { Resend } from "npm:resend@2.0.0";
+const lit = (s: string) => s.replace(/[\\%_]/g, "\\$&"); // échappe % et _ : comparaison exacte (insensible à la casse), sans jokers
 
 /**
  * Prévient un candidat par e-mail que sa candidature est approuvée (appelé par l'administration quand le statut passe à « Approuvé »).
@@ -23,7 +24,7 @@ Deno.serve(async (req) => {
     const { data: u } = token ? await db.auth.getUser(token) : { data: null };
     const email = u?.user?.email?.toLowerCase();
     if (!email) return json({ error: "Connexion requise" }, 401);
-    const { data: adm } = await db.from("admins").select("email").ilike("email", email).maybeSingle();
+    const { data: adm } = await db.from("admins").select("email").ilike("email", lit(email)).maybeSingle();
     if (!adm) return json({ error: "Accès réservé aux administrateurs" }, 403);
 
     const { staffId } = await req.json();

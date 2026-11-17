@@ -1,6 +1,7 @@
 import { getCaller, deny, corsHeaders } from "../_shared/auth.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
+const lit = (s: string) => s.replace(/[\\%_]/g, "\\$&"); // échappe % et _ : comparaison exacte (insensible à la casse), sans jokers
 
 /**
  * Gestion du compte de connexion d'un crew (réservé aux administrateurs).
@@ -58,7 +59,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
       const { error } = await admin.from("staff").update({
         banni, banni_le: banni ? new Date().toISOString() : null, motif_bannissement: banni ? (motif || null) : null,
-      }).ilike("email", cible);
+      }).ilike("email", lit(cible));
       if (error) return json({ error: "Erreur : " + error.message }, 500);
       return json({ success: true, compte: !!compte });
     }
