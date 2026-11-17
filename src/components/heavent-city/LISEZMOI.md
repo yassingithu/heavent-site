@@ -21,8 +21,11 @@ La demande part vers `send-email` (type « jeu ») **sans estimation** : l'équi
 
 ## Assistant IA (optionnel)
 Sans rien faire, le jeu propose des **suggestions automatiques** (étiquetées comme telles).
-Pour activer l'IA : secret serveur `ANTHROPIC_API_KEY`, déployer `heavent-city-ia`, construire le site avec `VITE_HEAVENT_CITY_IA=1`.
-Coût variable : un petit appel par message envoyé volontairement (limité : 280 caractères, 10 appels / 10 min / IP, 400 / jour).
+Fournisseur : **Groq** (offre gratuite, sous réserve des quotas affichés dans la console Groq, page « Limits » : ni illimité ni garanti).
+Modèle par défaut : `openai/gpt-oss-20b` (production chez Groq, réponse structurée stricte), modifiable par le secret `HEAVENT_CITY_IA_MODELE`.
+Activation : secret Supabase `GROQ_API_KEY` (à saisir dans Supabase → Edge Functions → Secrets, jamais dans le dépôt ni dans `VITE_*`), puis déployer `heavent-city-ia`. **Interdit avant accord écrit du propriétaire (nouveau transfert de données vers Groq).**
+Mode simulé : secret `HEAVENT_CITY_IA_MODE=simule` → aucun appel sortant, réponses fabriquées localement (essais : `node tests/heavent-city/assistant-simule.mjs`).
+Un appel par message envoyé volontairement (280 caractères, 10 appels / 10 min / IP, 400 / jour, délai 8 s, un seul essai). Une demande de prix, de date ou de réservation reçoit une réponse simple sans appel au modèle.
 
 ## Remplacer l'ancien jeu / revenir en arrière
 Remplacer : dans `src/App.tsx`, faire pointer la route `/cree-ton-evenement` vers `HeaventCityPage` (et ajouter la route au prérendu si souhaité).
@@ -31,7 +34,7 @@ Revenir en arrière : remettre l'ancienne ligne de route ; rien d'autre n'est mo
 ## Mise en production (27/10/2026)
 `/cree-ton-evenement` affiche maintenant Heavent City. L'ancien jeu reste sur `/cree-ton-evenement-ancien` (non indexé).
 Retour en arrière : dans `src/App.tsx`, remettre `<CreeTonEvenement />` sur la route `/cree-ton-evenement` (et `Seo page="jeu"` dans `CreeTonEvenement.tsx`), reconstruire, renvoyer chez one.com.
-Assistant IA : la fonction `heavent-city-ia` répond « indisponible » tant que le secret `ANTHROPIC_API_KEY` n'existe pas ; le site utilise alors les suggestions automatiques.
+Assistant IA : la fonction `heavent-city-ia` répond « indisponible » tant que le secret `GROQ_API_KEY` n'existe pas (et que le mode simulé n'est pas activé) ; le site utilise alors les suggestions automatiques.
 
 ## Salle, tables et déplacements
 - Le nombre de tables est automatique : une table ronde pour 10 invités (120 → 12 tables, 400 → 40 tables), 6 places pour les tables rectangulaires et hautes.
