@@ -1,7 +1,7 @@
 import { clientEnModeDemo } from "@/integrations/supabase/client";
 import { ReactNode, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Header from "./Header";
+import Header, { LangueFlottante } from "./Header";
 import Footer from "./Footer";
 import BoutonWhatsApp from "@/components/BoutonWhatsApp";
 import BandeauAudience from "@/components/BandeauAudience";
@@ -105,7 +105,7 @@ const Layout = ({ children }: LayoutProps) => {
         {children}
       </main>
       <Footer />
-      {pathname !== "/cartes" && <BoutonWhatsApp />}
+      {pathname !== "/cartes" && <><LangueFlottante /><BoutonWhatsApp /></>}
     </div>
   );
 };

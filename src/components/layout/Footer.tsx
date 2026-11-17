@@ -56,7 +56,6 @@ const Footer = () => {
             <h2>{x("Nos services")}</h2>
             <ul className="s-pied-liens">
               {SERVICES.map((v) => <li key={v.chemin}><Link to={v.chemin}>{x(v.nomCourt)}</Link></li>)}
-              <li><Link to="/realisations">{x("Réalisations")}</Link></li>
               <li><Link to="/guides">{x("Guides gratuits")}</Link></li>
               <li><Link to="/nawar" data-testid="lien-nawar">{x("Nawar — bar à parfums")}</Link></li>
               <li><Link to="/prestataires" data-testid="lien-prestataires">{x("Devenir prestataire partenaire")}</Link></li>

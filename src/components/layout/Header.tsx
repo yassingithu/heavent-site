@@ -32,10 +32,12 @@ export function lienDevis(chemin: string) {
   return /mariage|marrakech|nawar/.test(chemin) ? "/devis-mariage" : "/devis-entreprise";
 }
 
-/** Accès équipe et partenaires : trois liens regroupés en un seul menu discret (secondaires, mais toujours faciles à trouver). */
-function MenuAcces() {
-  const { t } = useTranslation();
-  const x = useTexte();
+/**
+ * Menu déroulant de la barre du haut (Événement, Se connecter).
+ * Safari ne donne pas le focus aux liens au clic : on ne ferme donc sur « perte de focus » que si le focus part vraiment ailleurs
+ * (sinon le menu se refermait avant que le clic sur le lien n'aboutisse : « Espace Staff ne fait rien »).
+ */
+function MenuDeroulant({ titre, liens, actif, discret }: { titre: string; liens: { nom: string; href: string; id?: string }[]; actif?: boolean; discret?: boolean }) {
   const ref = useRef<HTMLDetailsElement>(null);
   const { pathname } = useLocation();
   useEffect(() => { if (ref.current) ref.current.open = false; }, [pathname]);
@@ -46,14 +48,52 @@ function MenuAcces() {
     return () => { document.removeEventListener("pointerdown", dehors); document.removeEventListener("keydown", echap); };
   }, []);
   return (
-    <details ref={ref} className="s-nav-acces" onBlur={(e) => { if (ref.current?.open && !ref.current.contains(e.relatedTarget as Node | null)) ref.current.open = false; }}>
-      <summary>{x("Espace équipe")}</summary>
+    <details ref={ref} className={`s-nav-acces${discret ? "" : " s-nav-menu"}${actif ? " actif" : ""}`}
+      onBlur={(e) => { const vers = e.relatedTarget as Node | null; if (ref.current?.open && vers && !ref.current.contains(vers)) ref.current.open = false; }}>
+      <summary>{titre}</summary>
       <div className="s-nav-acces-liste">
-        <Link to="/auth">{t("nav.staffSpace")}</Link>
-        <Link to="/inscription-staff">{t("nav.joinTeam")}</Link>
-        <Link to="/prestataires" data-testid="bouton-prestataires-ordi">{x("Devenir prestataire")}</Link>
+        {liens.map((l) => <Link key={l.href} to={l.href} data-testid={l.id} aria-current={pathname === l.href ? "page" : undefined}>{l.nom}</Link>)}
       </div>
     </details>
+  );
+}
+
+/** Bouton flottant de langue (FR · EN · ع) : un rond avec la langue actuelle, qui s'ouvre en trois choix. Au-dessus du bouton WhatsApp. */
+export function LangueFlottante() {
+  const { i18n } = useTranslation();
+  const x = useTexte();
+  const [ouvert, setOuvert] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const bouton = useRef<HTMLButtonElement>(null);
+  const actuelle = (i18n.language || "fr").slice(0, 2);
+  const courante = LANGUES_SITE.find((l) => l.code === actuelle) ?? LANGUES_SITE[0];
+  useEffect(() => {
+    if (!ouvert) return;
+    const dehors = (e: Event) => { if (!ref.current?.contains(e.target as Node)) setOuvert(false); };
+    const echap = (e: KeyboardEvent) => { if (e.key === "Escape") setOuvert(false); };
+    document.addEventListener("pointerdown", dehors); document.addEventListener("keydown", echap);
+    return () => { document.removeEventListener("pointerdown", dehors); document.removeEventListener("keydown", echap); };
+  }, [ouvert]);
+  const changer = (code: string) => {
+    i18n.changeLanguage(code);
+    document.documentElement.dir = code === "ar" ? "rtl" : "ltr";
+    document.documentElement.lang = code;
+    setOuvert(false);
+    bouton.current?.focus({ preventScroll: true });
+  };
+  return (
+    <div ref={ref} className={`s-langue-flot${ouvert ? " ouvert" : ""}`} data-testid="langue-flottante">
+      <button type="button" ref={bouton} className="s-langue-flot-btn" aria-expanded={ouvert} aria-label={`${x("Changer de langue")} (${courante.nom})`} onClick={() => setOuvert((o) => !o)}>
+        <span lang={courante.code}>{courante.abr}</span>
+      </button>
+      {ouvert && (
+        <div className="s-langue-flot-liste" role="group" aria-label={"Langue / Language / اللغة"}>
+          {LANGUES_SITE.filter((l) => l.code !== actuelle).map((l) => (
+            <button key={l.code} type="button" lang={l.code} aria-label={l.nom} onClick={() => changer(l.code)}>{l.abr}</button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -64,20 +104,18 @@ const Header = () => {
   const x = useTexte();
   const boutonMenu = useRef<HTMLButtonElement>(null);
   const boutonFermer = useRef<HTMLButtonElement>(null);
-  // « Réalisations » n'apparaît qu'une fois au moins une réalisation publiée (jamais de page vide)
-  const [realisations, setRealisations] = useState(false);
-  useEffect(() => {
-    let annule = false;
-    supabase.from("realisations").select("id", { count: "exact", head: true }).eq("publie", true)
-      .then(({ count }) => { if (!annule) setRealisations((count ?? 0) > 0); }, () => {});
-    return () => { annule = true; };
-  }, []);
-
+  // « Réalisations » reste cachée tant que la galerie n'est pas assez fournie (la page existe toujours, mais n'est plus proposée).
+  const evenements = [
+    { nom: x("Mariage"), href: "/devis-mariage", id: "menu-evenement-mariage" },
+    { nom: x("Entreprise"), href: "/devis-entreprise", id: "menu-evenement-entreprise" },
+  ];
+  const connexion = [
+    { nom: x("Espace crew"), href: "/auth", id: "menu-connexion-crew" },
+    { nom: t("nav.joinTeam"), href: "/inscription-staff", id: "menu-connexion-rejoindre" },
+  ];
+  const evenementActif = evenements.some((e) => e.href === pathname);
   const navigation = [
     { name: t("nav.home"), href: "/" },
-    { name: t("nav.business"), href: "/devis-entreprise" },
-    { name: t("nav.weddings"), href: "/devis-mariage" },
-    ...(realisations ? [{ name: t("nav.realisations"), href: "/realisations" }] : []),
     { name: t("nav.about"), href: "/a-propos" },
     { name: t("nav.contact"), href: "/contact" },
   ];
@@ -114,12 +152,14 @@ const Header = () => {
         </Link>
 
         <nav className="s-nav" aria-label={x("Navigation principale")}>
-          {navigation.map((item) => (
+          <Link to="/" aria-current={pathname === "/" ? "page" : undefined}>{t("nav.home")}</Link>
+          <MenuDeroulant titre={x("Événement")} liens={evenements} actif={evenementActif} />
+          {navigation.slice(1).map((item) => (
             <Link key={item.href} to={item.href} aria-current={pathname === item.href ? "page" : undefined}>{item.name}</Link>
           ))}
           <span className="s-nav-sep" aria-hidden="true" />
-          <MenuAcces />
-          <Langues />
+          <Link to="/prestataires" className="s-nav-sec" aria-current={pathname === "/prestataires" ? "page" : undefined} data-testid="bouton-prestataires-ordi">{x("Devenir prestataire")}</Link>
+          <MenuDeroulant titre={x("Se connecter")} liens={connexion} discret />
           <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-filet" data-testid="entete-devis">{x("Demander un devis")}</Link>
         </nav>
 
@@ -137,15 +177,20 @@ const Header = () => {
           <button ref={boutonFermer} type="button" className="fermer" onClick={fermer} tabIndex={ouvert ? 0 : -1}>{x("Fermer")}</button>
         </div>
         <nav aria-label={x("Navigation principale")}>
-          {navigation.map((item) => (
+          <Link to="/" onClick={() => setOuvert(false)} aria-current={pathname === "/" ? "page" : undefined} tabIndex={ouvert ? 0 : -1}>{t("nav.home")}</Link>
+          {navigation.slice(1).map((item) => (
             <Link key={item.href} to={item.href} onClick={() => setOuvert(false)} aria-current={pathname === item.href ? "page" : undefined} tabIndex={ouvert ? 0 : -1}>{item.name}</Link>
+          ))}
+          <Link to="/prestataires" onClick={() => setOuvert(false)} aria-current={pathname === "/prestataires" ? "page" : undefined} tabIndex={ouvert ? 0 : -1} data-testid="bouton-prestataires">{x("Devenir prestataire")}</Link>
+          <p className="s-panneau-groupe">{x("Événement")}</p>
+          {evenements.map((item) => (
+            <Link key={item.href} to={item.href} onClick={() => setOuvert(false)} aria-current={pathname === item.href ? "page" : undefined} tabIndex={ouvert ? 0 : -1}>{item.nom}</Link>
           ))}
         </nav>
         <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-plein">{x("Demander un devis")} <span className="fl" aria-hidden="true">→</span></Link>
         <div className="s-panneau-pied">
-          <Link to="/inscription-staff" onClick={() => setOuvert(false)} tabIndex={ouvert ? 0 : -1}>{t("nav.joinTeam")}</Link>
-          <Link to="/auth" onClick={() => setOuvert(false)} tabIndex={ouvert ? 0 : -1}>{t("nav.staffSpace")}</Link>
-          <Link to="/prestataires" onClick={() => setOuvert(false)} tabIndex={ouvert ? 0 : -1} data-testid="bouton-prestataires">{x("Devenir prestataire")}</Link>
+          <p className="s-panneau-groupe">{x("Se connecter")}</p>
+          {connexion.map((l) => <Link key={l.href} to={l.href} onClick={() => setOuvert(false)} tabIndex={ouvert ? 0 : -1}>{l.nom}</Link>)}
         </div>
         <Langues />
       </div>
