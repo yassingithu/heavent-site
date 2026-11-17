@@ -152,7 +152,7 @@ const WeddingQuote = () => {
   return (
     <div>
       <Seo page="mariage" />
-      <PageTete surtitre={x("Mariages & fêtes")} titre={<>{x("Demande de devis")} {x("Événement")}</>} chapo={x("Créons ensemble l'événement de vos rêves")} />
+      <PageTete court surtitre={x("Mariages & fêtes")} titre={<>{x("Demande de devis")} {x("Événement")}</>} chapo={x("Créons ensemble l'événement de vos rêves")} />
       <section className="s-platre">
         <div className="s-section s-wrap s-colonnes">
           <div className="s-col-r s-r1">

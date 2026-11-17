@@ -89,7 +89,7 @@ export default function Prestataires() {
     <div className="s-platre min-h-screen">
       <Seo perso={{ chemin: "/prestataires", titre: "Devenir prestataire partenaire | Heavent People Agency",
         description: "DJ, traiteurs, photographes, décorateurs, loueurs de matériel : inscription gratuite : rejoignez le réseau de prestataires de Heavent People Agency au Maroc." }} />
-      <PageTete surtitre="Prestataires partenaires" titre="Travaillons ensemble sur nos prochains événements"
+      <PageTete court surtitre="Prestataires partenaires" titre="Travaillons ensemble sur nos prochains événements"
         chapo="DJ, traiteurs, photographes, décorateurs, loueurs de matériel… Inscription gratuite. Présentez vos prestations et vos tarifs : une fois validé, vous êtes proposé dans nos devis mariages, fêtes et événements d'entreprise." />
 
       <section className="max-w-3xl mx-auto px-4 pt-12 sm:pt-16" data-testid="presta-avantages" aria-labelledby="presta-pourquoi">

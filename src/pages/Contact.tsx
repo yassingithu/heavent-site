@@ -145,7 +145,7 @@ const Contact = () => {
   return (
     <div>
       <Seo page="contact" />
-      <PageTete surtitre={x("Contact")} titre={t('contact.title')} chapo={t('contact.subtitle')}>
+      <PageTete court surtitre={x("Contact")} titre={t('contact.title')} chapo={t('contact.subtitle')}>
         <div className="s-actions s-entree-heros" style={{ animationDelay: ".2s" }}>
           <Bouton href="#rendez-vous" variante="plein" fleche>{{ fr: "Prendre rendez-vous", en: "Book an appointment", ar: "احجز موعداً" }[langueRdv]}</Bouton>
           <Bouton href="https://wa.me/212610939655" variante="filet" externe>{x("Chattez avec nous")} · WhatsApp</Bouton>

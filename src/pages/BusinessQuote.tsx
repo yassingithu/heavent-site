@@ -120,7 +120,7 @@ const BusinessQuote = () => {
   return (
     <div>
       <Seo page="entreprise" />
-      <PageTete surtitre={x("Entreprises")} titre={<>{x("Demande de devis")} {x("Entreprise")}</>} chapo={x("Obtenez un devis personnalisé pour votre événement d'entreprise")} />
+      <PageTete court surtitre={x("Entreprises")} titre={<>{x("Demande de devis")} {x("Entreprise")}</>} chapo={x("Obtenez un devis personnalisé pour votre événement d'entreprise")} />
       <section className="s-platre">
         <div className="s-section s-wrap s-colonnes">
           <div className="s-col-r s-r1">

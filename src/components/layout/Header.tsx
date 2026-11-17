@@ -32,6 +32,31 @@ export function lienDevis(chemin: string) {
   return /mariage|marrakech|nawar/.test(chemin) ? "/devis-mariage" : "/devis-entreprise";
 }
 
+/** Accès équipe et partenaires : trois liens regroupés en un seul menu discret (secondaires, mais toujours faciles à trouver). */
+function MenuAcces() {
+  const { t } = useTranslation();
+  const x = useTexte();
+  const ref = useRef<HTMLDetailsElement>(null);
+  const { pathname } = useLocation();
+  useEffect(() => { if (ref.current) ref.current.open = false; }, [pathname]);
+  useEffect(() => {
+    const dehors = (e: Event) => { if (ref.current?.open && !ref.current.contains(e.target as Node)) ref.current.open = false; };
+    const echap = (e: KeyboardEvent) => { if (e.key === "Escape" && ref.current?.open) { ref.current.open = false; ref.current.querySelector("summary")?.focus(); } };
+    document.addEventListener("pointerdown", dehors); document.addEventListener("keydown", echap);
+    return () => { document.removeEventListener("pointerdown", dehors); document.removeEventListener("keydown", echap); };
+  }, []);
+  return (
+    <details ref={ref} className="s-nav-acces">
+      <summary>{x("Équipe et partenaires")}</summary>
+      <div className="s-nav-acces-liste">
+        <Link to="/auth">{t("nav.staffSpace")}</Link>
+        <Link to="/inscription-staff">{t("nav.joinTeam")}</Link>
+        <Link to="/prestataires" data-testid="bouton-prestataires-ordi">{x("Devenir prestataire")}</Link>
+      </div>
+    </details>
+  );
+}
+
 const Header = () => {
   const [ouvert, setOuvert] = useState(false);
   const { pathname } = useLocation();
@@ -93,9 +118,7 @@ const Header = () => {
             <Link key={item.href} to={item.href} aria-current={pathname === item.href ? "page" : undefined}>{item.name}</Link>
           ))}
           <span className="s-nav-sep" aria-hidden="true" />
-          <Link to="/auth" className="s-nav-sec">{t("nav.staffSpace")}</Link>
-          <Link to="/inscription-staff" className="s-nav-sec">{t("nav.joinTeam")}</Link>
-          <Link to="/prestataires" className="s-nav-sec" data-testid="bouton-prestataires-ordi">{x("Devenir prestataire")}</Link>
+          <MenuAcces />
           <Langues />
           <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-filet" data-testid="entete-devis">{x("Demander un devis")}</Link>
         </nav>

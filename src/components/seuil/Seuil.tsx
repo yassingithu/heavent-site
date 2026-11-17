@@ -76,10 +76,10 @@ export function HaloNawar() {
 }
 
 /** En-tête de page intérieure, sur fond nuit : fil d'Ariane, surtitre, titre, chapeau, actions. */
-export function PageTete({ surtitre, titre, chapo, ariane, children, testid }: { surtitre?: ReactNode; titre: ReactNode; chapo?: ReactNode; ariane?: ReactNode; children?: ReactNode; testid?: string }) {
+export function PageTete({ surtitre, titre, chapo, ariane, children, testid, court }: { court?: boolean; surtitre?: ReactNode; titre: ReactNode; chapo?: ReactNode; ariane?: ReactNode; children?: ReactNode; testid?: string }) {
   return (
     <section className="s-nuit" data-testid={testid}>
-      <div className="s-page-tete s-wrap">
+      <div className={`s-page-tete s-wrap${court ? " court" : ""}`}>
         {ariane}
         {surtitre ? <Surtitre className="s-entree-heros">{surtitre}</Surtitre> : null}
         <h1 className="s-h1 s-entree-heros">{titre}</h1>
