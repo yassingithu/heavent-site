@@ -21,7 +21,7 @@ import RemarquesContrat from "@/components/contrat/RemarquesContrat";
 import { BADGE_SIGNATURE, dateHeureFr, etatSignature, finSignature, limiteSignature } from "@/lib/signature";
 import { telechargerFichesPaie } from "@/components/admin/paie/FichesPaieMensuelles";
 import MesMissions from "@/components/staff/MesMissions";
-import { lireCache, lireFile, toutEffacer } from "@/lib/horsLigne";
+import { lireCache, lireFile, toutEffacer, useHorsLigne } from "@/lib/horsLigne";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CarteInstallerStaff, useAppStaff } from "@/components/staff/AppStaff";
 import "@/styles/admin-seuil.css";
@@ -85,6 +85,7 @@ const StaffDashboard = () => {
   const { toast } = useToast();
   // Sans réseau et sans session lisible (jeton expiré qu'on ne peut pas renouveler) : on garde l'accès aux missions du jour et au pointage de secours.
   const [sansReseau, setSansReseau] = useState(false);
+  const { enLigne } = useHorsLigne();
   const [sortie, setSortie] = useState(false);
   const sansSession = () => {
     if (estDemo()) return;
@@ -542,6 +543,13 @@ const StaffDashboard = () => {
 
         <CarteInstallerStaff />
 
+        {!enLigne && (
+          <section className="rounded-lg border border-[#EADFC8] bg-[#FAF7EE] p-4 text-sm" data-testid="espace-sans-reseau">
+            <p className="font-medium">Contrats, fiches de paie et disponibilités</p>
+            <p className="mt-1 text-muted-foreground">Ils ne se chargent pas sans réseau, et ils ne sont jamais gardés sur ton téléphone. Tu les retrouves dès que le réseau revient.</p>
+          </section>
+        )}
+        {enLigne && (
         <Tabs defaultValue="contrats" className="space-y-4">
           <TabsList className="st-onglets">
             <TabsTrigger value="contrats" className="text-xs sm:text-sm py-2"><FileText className="st-icone" aria-hidden />{t('dashboard.contracts_tab')}</TabsTrigger>
@@ -894,6 +902,7 @@ const StaffDashboard = () => {
           </TabsContent>
         <SignatureContrat contrat={aSigner} nomStaff={staffInfo ? `${staffInfo.prenom} ${staffInfo.nom}` : ""} onClose={() => setASigner(null)} onSigne={loadData} />
         </Tabs>
+        )}
 
       </div>
     </div>
