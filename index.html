@@ -20,19 +20,33 @@
     <link rel="preload" as="font" type="font/woff2" href="/polices/jost-latin-400-normal.woff2" crossorigin>
     <!-- Polices de l'administration et de l'espace staff : chargées sans bloquer l'affichage -->
     <script>
-      // Ouverture « le seuil » : sur l'accueil seulement, une fois par visite, jamais si « Réduire les animations » est activé.
-      // Elle dure 1,5 s, se touche pour passer, et ne bloque jamais le chargement de la page (balisage statique ci-dessous).
+      // Ouverture du site : sur l'accueil seulement, une fois par visite, jamais si « Réduire les animations » est activé.
+      // Variante par défaut : « rideau » (tissu noir qui s'ouvre depuis le milieu). Retour arrière : mettre VARIANTE = "seuil"
+      // (ancienne ouverture à deux battants) ou ajouter ?ouverture=seuil à l'adresse. Le contenu est chargé derrière : rien ne bloque la page.
       (function () {
+        var VARIANTE = "rideau";
         var d = document.documentElement;
-        d.classList.remove("s-anime", "ouverture-finie", "avec-ouverture");
+        d.classList.remove("s-anime", "ouverture-finie", "avec-ouverture", "ouv-rideau", "ouv-seuil", "ouv-pret", "ouv-sans-texture");
         try {
           var ok = location.pathname === "/" && !sessionStorage.getItem("heavent-splash-vu") && navigator.userAgent.indexOf("HeaventAdminApp") < 0
             && !matchMedia("(prefers-reduced-motion: reduce)").matches && !/[?&]sans-ouverture/.test(location.search);
           if (!ok) return;
           sessionStorage.setItem("heavent-splash-vu", "1");
-          d.classList.add("avec-ouverture");
+          var rideau = (/[?&]ouverture=seuil/.test(location.search) ? "seuil" : VARIANTE) === "rideau";
+          d.classList.add("avec-ouverture", rideau ? "ouv-rideau" : "ouv-seuil");
           window.finOuverture = function (passer) { d.classList.add("ouverture-finie"); if (passer) d.classList.remove("avec-ouverture"); };
-          setTimeout(window.finOuverture, 1500);
+          if (!rideau) { setTimeout(window.finOuverture, 1500); return; }
+          // Le tissu est préparé (deux images légères) avant de bouger ; sans lui, un tissu dégradé le remplace. Garde-fou : jamais plus de 3,6 s.
+          var prets = 0, lance = false;
+          var go = function (sans) { if (lance) return; lance = true; if (sans) d.classList.add("ouv-sans-texture"); d.classList.add("ouv-pret"); setTimeout(window.finOuverture, 2300); };
+          ["g", "d"].forEach(function (c) {
+            var im = new Image();
+            im.onload = function () { if (++prets === 2) go(false); };
+            im.onerror = function () { go(true); };
+            im.src = "/ouvertures/site-rideau-" + c + ".webp";
+          });
+          setTimeout(function () { go(prets < 2); }, 700);
+          setTimeout(window.finOuverture, 3600);
         } catch (e) { /* navigation privée : pas d'ouverture */ }
       })();
     </script>
@@ -55,6 +69,10 @@
     <div class="s-ouverture" aria-hidden="true" onclick="window.finOuverture && window.finOuverture(true)">
       <div class="s-battant g"></div><div class="s-battant d"></div>
       <div class="s-sceau"><img src="/seuil/mono-or.png" alt="" width="158" height="212"><div class="nom"><i></i><span>HEAVENT</span><i></i></div></div>
+    </div>
+    <div class="s-rideau" aria-hidden="true" onclick="window.finOuverture && window.finOuverture(true)">
+      <div class="s-pan g"><i class="rf"></i></div><div class="s-pan d"><i class="rf"></i></div>
+      <img class="s-rideau-mono" src="/seuil/mono-or.png" alt="" width="158" height="212">
     </div>
     <button class="s-passer" type="button" onclick="window.finOuverture && window.finOuverture(true)">Passer →</button>
     <div id="root"></div>
