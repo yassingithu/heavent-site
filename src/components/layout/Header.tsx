@@ -49,6 +49,16 @@ function MenuDeroulant({ titre, liens, actif, discret }: { titre: string; liens:
   }, []);
   return (
     <details ref={ref} className={`s-nav-acces${discret ? "" : " s-nav-menu"}${actif ? " actif" : ""}`}
+      onKeyDown={(e) => {
+        if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+        const el = ref.current; if (!el) return;
+        const liens = Array.from(el.querySelectorAll<HTMLElement>(".s-nav-acces-liste a"));
+        const i = liens.indexOf(document.activeElement as HTMLElement);
+        if (!el.open) { if (e.key === "ArrowDown") { e.preventDefault(); el.open = true; setTimeout(() => liens[0]?.focus(), 0); } return; }
+        e.preventDefault();
+        const suivant = e.key === "ArrowDown" ? liens[Math.min(liens.length - 1, i + 1)] : i <= 0 ? el.querySelector<HTMLElement>("summary") : liens[i - 1];
+        suivant?.focus();
+      }}
       onBlur={(e) => { const vers = e.relatedTarget as Node | null; if (ref.current?.open && vers && !ref.current.contains(vers)) ref.current.open = false; }}>
       <summary>{titre}</summary>
       <div className="s-nav-acces-liste">

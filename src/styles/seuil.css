@@ -171,7 +171,7 @@ html.s-anime .vu .s-ruban { transition: clip-path .6s var(--s-courbe) .25s; }
 .s-panneau-groupe { margin: 18px 0 0; font: 500 11px var(--s-texte); letter-spacing: .22em; text-transform: uppercase; color: #BDB3A0; }
 .s-panneau-pied .s-panneau-groupe { margin: 0 0 4px; }
 /* Langue : bouton flottant, au-dessus du bouton WhatsApp (en bas à droite) */
-.s-langue-flot { position: fixed; z-index: 40; inset-inline-end: 16px; bottom: calc(16px + 56px + 12px); display: flex; flex-direction: column-reverse; align-items: center; gap: 8px; font-family: var(--s-texte); }
+.s-langue-flot { position: fixed; z-index: 40; right: 16px; bottom: calc(16px + 56px + 12px); display: flex; flex-direction: column-reverse; align-items: center; gap: 8px; font-family: var(--s-texte); }
 .s-langue-flot-btn, .s-langue-flot-liste button { width: 48px; height: 48px; border-radius: 0; clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px); display: grid; place-items: center; background: #141414; color: var(--s-laiton-clair); border: 0; box-shadow: inset 0 0 0 1px rgba(228,212,154,.55); font: 500 13px var(--s-texte); letter-spacing: .1em; cursor: pointer; transition: background .2s, transform .2s; }
 .s-langue-flot-btn:hover, .s-langue-flot-liste button:hover { background: #211d17; }
 .s-langue-flot-btn:focus-visible, .s-langue-flot-liste button:focus-visible { box-shadow: inset 0 0 0 2px var(--s-laiton-clair); }
@@ -179,7 +179,8 @@ html.s-anime .vu .s-ruban { transition: clip-path .6s var(--s-courbe) .25s; }
 .s-langue-flot [lang="ar"] { font-size: 18px; letter-spacing: 0; }
 .s-langue-flot-liste { display: flex; flex-direction: column; gap: 8px; animation: s-langue-ouvre .22s var(--s-courbe, ease) both; }
 @keyframes s-langue-ouvre { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@media (min-width: 640px) { .s-langue-flot { inset-inline-end: 24px; bottom: calc(24px + 56px + 12px); } }
+@media (min-width: 640px) { .s-langue-flot { right: 24px; bottom: calc(24px + 56px + 12px); } }
+@media (max-width: 639px) { .s-langue-flot { bottom: calc(16px + 56px + 12px + var(--bandeau-h, 0px)); } .bouton-whatsapp { bottom: calc(16px + var(--bandeau-h, 0px)) !important; } }
 @media (max-width: 639px) { .s-langue-flot { flex-direction: row-reverse; align-items: center; } .s-langue-flot-liste { flex-direction: row; } }
 @media (prefers-reduced-motion: reduce) { .s-langue-flot-liste { animation: none; } }
 
