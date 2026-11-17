@@ -63,11 +63,11 @@ serve(async (req) => {
     if (corps.action !== "arrivee" && corps.action !== "depart") return json({ error: "Action inconnue" }, 400);
     // Envoi différé (pointage fait sans réseau) : on juge le pointage à l'heure relevée par le téléphone, pas à l'heure de réception.
     const cle = typeof corps.cle === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(corps.cle) ? corps.cle : null;
-    const { instant, horsLigne, tardif, refus } = instantPointage(corps, maintenant);
-    if (refus) return json({ error: refus }, 409);
-    // Renvoi du même pointage (même clé) : on répond comme la première fois, sans rien écrire.
+    // Renvoi du même pointage (même clé) : on répond comme la première fois, sans rien écrire (avant tout autre contrôle).
     if (cle && corps.action === "arrivee" && a.arrivee_cle === cle && a.arrivee_le) return json({ success: true, heure: a.arrivee_le, verifie: a.arrivee_verifiee, deja: true });
     if (cle && corps.action === "depart" && a.depart_cle === cle && a.depart_le) return json({ success: true, heure: a.depart_le, heures: a.heures_pointees, verifie: a.depart_verifie, aVerifier: true, deja: true });
+    const { instant, horsLigne, tardif, refus } = instantPointage(corps, maintenant);
+    if (refus) return json({ error: refus }, 409);
     const ouverture = new Date(debut.getTime() - 3 * 3600_000);
     const fermeture = new Date(fin.getTime() + 4 * 3600_000);
     if (instant < ouverture) return json({ error: `Le pointage ouvre 3 h avant le début de la mission (${heure(debut)}).` }, 409);
@@ -97,11 +97,14 @@ serve(async (req) => {
         if (!errPhoto) photo = chemin;
       }
       const retardMin = Math.round((instant.getTime() - debut.getTime()) / 60000);
-      await db.from("affectations").update({
+      const { data: ecrit } = await db.from("affectations").update({
         arrivee_le: instant.toISOString(), arrivee_position: posJson, arrivee_verifiee: verifie, arrivee_photo: photo,
         presence_confirmee_le: a.presence_confirmee_le ?? instant.toISOString(), arrivee_cle: cle,
         pointage_a_verifier: verifie === false || horsLigne, ...marque,
-      }).eq("id", a.id);
+      }).eq("id", a.id).is("arrivee_le", null).select("id");
+      // deux envois simultanés (deux onglets) : un seul écrit, l'autre est reconnu comme déjà reçu
+      if (!ecrit?.length) return json({ success: true, heure: instant.toISOString(), deja: true });
+      if (horsLigne && tardif) await alerter(`🕒 Arrivée pointée tardivement sans réseau — ${qui} (${quoi})`, `<p><b>${e(qui)}</b> a pointé son arrivée sans réseau (heure du téléphone : ${heure(instant)}), reçue avec plus de 24 h de retard. À vérifier dans l'administration.</p>`);
       if (a.alerte_retard_le) await alerter(`🟢 ${qui} est arrivé(e) — ${quoi}`, `<p><b>${e(qui)}</b> a pointé son arrivée à <b>${heure(instant)}</b>${horsLigne ? " (sans réseau, heure du téléphone)" : ""}${horaireConnu && retardMin > 0 ? ` (${retardMin} min de retard)` : ""}.</p>`);
       return json({ success: true, heure: instant.toISOString(), verifie, distance, retard: horaireConnu ? Math.max(0, retardMin) : 0 });
     }
@@ -121,7 +124,8 @@ serve(async (req) => {
       heures_validees: fiable ? (depasse ? prevues : h) : null,
       pointage_a_verifier: !fiable || depasse,
     };
-    await db.from("affectations").update(patch).eq("id", a.id);
+    const { data: ecritDepart } = await db.from("affectations").update(patch).eq("id", a.id).is("depart_le", null).select("id");
+    if (!ecritDepart?.length) return json({ success: true, heure: instant.toISOString(), deja: true });
     if (depasse || !fiable) {
       await alerter(`🕒 Pointage à vérifier — ${qui} (${quoi})`,
         `<p><b>${e(qui)}</b> a pointé <b>${h} h</b> le ${e(jour(a.date_jour))} pour ${prevues} h prévues${!fiable ? (horsLigne || a.pointage_hors_ligne ? " — pointé sans réseau (heure du téléphone) ou position hors du lieu" : " — position hors du lieu ou non partagée") : ""}.</p>

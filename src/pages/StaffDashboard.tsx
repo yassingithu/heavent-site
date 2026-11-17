@@ -500,7 +500,7 @@ const StaffDashboard = () => {
         <header className="st-tete"><div className="in">
           <div className="l1"><img src="/seuil/mono-or.png" alt="Heavent" /></div>
           <h1>Mode sans réseau.</h1>
-          <p>Tes missions et le pointage restent disponibles. Le reste de l'espace revient avec le réseau.</p>
+          <p>Tu n'es pas connecté(e) pour le moment : ce téléphone affiche les missions gardées lors de ta dernière connexion. Tes missions et le pointage restent disponibles. Le reste de l'espace revient avec le réseau.</p>
         </div></header>
         <div className="st-corps space-y-5"><MesMissions /></div>
       </div>

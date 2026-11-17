@@ -12,6 +12,7 @@ const CLE_CACHE = "heavent-staff-hl-missions";
 const CLE_FILE = "heavent-staff-hl-file";
 const GARDE_APRES_FIN_MS = 48 * 3600e3;
 const EVT = "heavent-staff-hl";
+const CLE_PROPRIO = "heavent-staff-hl-proprio";
 
 export interface FicheCache { tenue: string | null; point_rdv: string | null; heure_rdv: string | null; latitude: number | null; longitude: number | null; contact_nom: string | null; contact_telephone: string | null; consignes: string | null }
 export interface MissionCache {
@@ -23,6 +24,7 @@ export interface Cache { synchro: string; missions: MissionCache[] }
 export interface PointageEnAttente {
   cle: string; id: string; sens: "arrivee" | "depart"; heure: string;
   position: { lat: number; lng: number; precision: number } | null; photo?: string | null;
+  proprio?: string | null; // compte qui a pointé : un autre compte sur le même téléphone ne peut pas les envoyer
   refus?: string | null; // message du serveur si le pointage a été refusé (il reste visible : le crew prévient l'agence)
 }
 
@@ -74,6 +76,15 @@ export function lireCache(maintenant = new Date()): Cache | null {
 }
 export function effacerCache() { try { localStorage.removeItem(CLE_CACHE); } catch { /* */ } prevenir(); }
 
+/** Compte propriétaire des données gardées. Un autre compte sur le même téléphone ne voit pas les missions du premier ; ses pointages en attente restent gardés pour lui. */
+export const lireProprietaire = (): string | null => { try { return localStorage.getItem(CLE_PROPRIO); } catch { return null; } };
+export function definirProprietaire(id: string) {
+  const actuel = lireProprietaire();
+  if (actuel && actuel !== id) { try { localStorage.removeItem(CLE_CACHE); } catch { /* */ } }
+  try { localStorage.setItem(CLE_PROPRIO, id); } catch { /* */ }
+  prevenir();
+}
+
 export const lireFile = (): PointageEnAttente[] => lire<PointageEnAttente[]>(CLE_FILE) ?? [];
 function ecrireFile(f: PointageEnAttente[]) {
   if (!f.length) { try { localStorage.removeItem(CLE_FILE); } catch { /* */ } prevenir(); return true; }
@@ -91,7 +102,7 @@ export function mettreEnAttente(p: Omit<PointageEnAttente, "cle" | "heure"> & { 
   const deja = f.find((x) => x.id === p.id && x.sens === p.sens);
   if (deja) { ecrireFile(f); return { ok: true, cle: deja.cle }; }
   const cle = p.cle ?? nouvelleCle();
-  f = [...f, { id: p.id, sens: p.sens, position: p.position, photo: p.photo, cle, heure: p.heure ?? new Date().toISOString() }];
+  f = [...f, { proprio: lireProprietaire(), id: p.id, sens: p.sens, position: p.position, photo: p.photo, cle, heure: p.heure ?? new Date().toISOString() }];
   return { ok: ecrireFile(f), cle };
 }
 /** Retire de la file un pointage refusé (le crew a prévenu l'agence). */
@@ -123,7 +134,8 @@ export async function synchroniser(envoyer: Envoyeur): Promise<BilanEnvoi> {
   enCours = true;
   const ids: string[] = []; let session = false;
   try {
-    for (const p of lireFile().filter((x) => !x.refus)) {
+    const moi = lireProprietaire();
+    for (const p of lireFile().filter((x) => !x.refus && (!x.proprio || !moi || x.proprio === moi))) {
       try {
         await envoyer({ action: p.sens, id: p.id, position: p.position, photo: p.photo ?? undefined, cle: p.cle, hors_ligne: true, heure_appareil: p.heure });
         ecrireFile(lireFile().filter((x) => x.cle !== p.cle));
@@ -140,7 +152,7 @@ export async function synchroniser(envoyer: Envoyeur): Promise<BilanEnvoi> {
 
 /** Efface tout ce que l'appli garde sur ce téléphone pour le mode hors ligne (missions et pointages en attente). */
 export function toutEffacer() {
-  try { localStorage.removeItem(CLE_CACHE); localStorage.removeItem(CLE_FILE); } catch { /* */ }
+  try { localStorage.removeItem(CLE_CACHE); localStorage.removeItem(CLE_FILE); localStorage.removeItem(CLE_PROPRIO); } catch { /* */ }
   prevenir();
 }
 

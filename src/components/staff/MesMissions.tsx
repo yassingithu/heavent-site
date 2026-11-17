@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Camera, CheckCircle2, ChevronDown, Clock, LogIn, LogOut, MapPin, Phone, RefreshCw, Shirt, Trash2, WifiOff, XCircle } from "lucide-react";
-import { abandonner, appliquerFile, enregistrerMissions, estErreurReseau, lireCache, lireFile, mettreEnAttente, nouvelleCle, synchroniser, toutEffacer, useHorsLigne } from "@/lib/horsLigne";
+import { abandonner, appliquerFile, enregistrerMissions, estErreurReseau, lireCache, lireFile, definirProprietaire, mettreEnAttente, nouvelleCle, synchroniser, toutEffacer, useHorsLigne } from "@/lib/horsLigne";
 
 /**
  * Espace staff — « Mes missions » : fiche mission (tenue, point de rendez-vous, contact sur place),
@@ -67,7 +67,7 @@ async function appeler(body: Record<string, unknown>) {
     const statut = Number((error as any)?.context?.status ?? 0);
     // Pas de réseau, panne du serveur ou session expirée : ce n'est pas un refus, le pointage reste gardé et pourra être renvoyé.
     if (statut === 401) { err.name = "SessionExpiree"; err.message = "Ta session a expiré : reconnecte-toi pour envoyer ton pointage."; }
-    else if (error && ((error as any).name === "FunctionsFetchError" || (error as any).name === "FunctionsRelayError" || statut >= 500)) err.name = "FunctionsFetchError";
+    else if (error && ((error as any).name === "FunctionsFetchError" || (error as any).name === "FunctionsRelayError" || statut >= 500 || statut === 408 || statut === 425 || statut === 429)) err.name = "FunctionsFetchError";
     throw err;
   }
   return data;
@@ -117,6 +117,7 @@ export default function MesMissions() {
 
   // Réseau coupé ou faible : on affiche la dernière copie gardée sur le téléphone (missions d'hier à après-demain seulement).
   const charger = async () => {
+    try { const { data: { session } } = await supabase.auth.getSession(); if (session?.user?.id) definirProprietaire(session.user.id); } catch { /* hors ligne : on garde le propriétaire connu */ }
     try {
       const { data, error } = await (supabase as any).rpc("mes_missions");
       if (error) throw error;
@@ -153,7 +154,8 @@ export default function MesMissions() {
 
   if (!missions) return null;
   const maintenant = new Date();
-  const vues = depuisCache || !enLigne ? (appliquerFile(missions as any, file) as unknown as Mission[]) : missions;
+  // un pointage qui attend l'envoi s'affiche toujours (signal faible : le réseau semble présent mais l'envoi n'a pas abouti)
+  const vues = (appliquerFile(missions as any, file) as unknown as Mission[]);
   const visibles = vues.filter((m) => horaires(m).fin.getTime() + 4 * 3600e3 > maintenant.getTime());
   if (!visibles.length && !file.length) return null;
   const horsReseau = !enLigne || depuisCache;
