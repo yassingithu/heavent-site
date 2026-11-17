@@ -57,7 +57,7 @@ function SignalementsPhotos({ devisId, onChange }: { devisId: string; onChange: 
               <div className="space-y-1 min-w-0">
                 {s.message && <p className="text-xs whitespace-pre-line">{s.message}</p>}
                 {s.contact && <p className="text-xs">Contact : {href ? <a href={href} className="underline">{s.contact}</a> : s.contact}</p>}
-                {!s.photo_id && <p className="text-xs text-muted-foreground">Demande générale : aucune photo précise. Répondez à la personne pour savoir de quelle photo il s'agit, puis marquez-la traitée.</p>}
+                {!s.photo_id && <p className="text-xs text-muted-foreground">Demande d'un invité, sans photo précise. Règle : seuls les mariés décident du retrait. Transmettez-leur la demande (sans donner les coordonnées de l'invité sans son accord) : ils masquent ou demandent la suppression depuis leur espace. Marquez ensuite la demande traitée.</p>}
               </div>
             </div>
             <input value={note[s.id] ?? ""} onChange={(e) => setNote((n) => ({ ...n, [s.id]: e.target.value }))} placeholder={mineur || s.source === "maries" ? "Note interne (obligatoire pour ne pas donner suite)" : "Note interne (facultatif)"} aria-label="Note interne" className="h-11 w-full border border-[#DCCBA6] px-2 text-base" />
