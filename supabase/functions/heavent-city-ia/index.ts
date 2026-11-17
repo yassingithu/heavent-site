@@ -73,6 +73,11 @@ Interdits : tout prix, tarif, budget, chiffre d'argent, promesse de disponibilit
   const ctrl = new AbortController();
   const minuteur = setTimeout(() => ctrl.abort(), 8000);
   try {
+    // Compteur d'appels IA (mesure réelle, pour l'alerte de quota) : sans effet sur la réponse en cas d'échec.
+    fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/rpc/quota_compter`, {
+      method: "POST", headers: { apikey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""}`, "content-type": "application/json" },
+      body: JSON.stringify({ p_ressource: "appels_ia" }),
+    }).catch(() => {});
     const rep = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST", signal: ctrl.signal,
       headers: { "x-api-key": cle, "anthropic-version": "2023-06-01", "content-type": "application/json" },

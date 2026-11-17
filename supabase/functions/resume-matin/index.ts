@@ -35,6 +35,8 @@ Deno.serve(async (req) => {
     db.from("staff").select("id, prenom, nom, ville, admin_notifie_le").gte("created_at", hier).order("created_at"),
   ]);
   if (!profils?.length) return new Response(JSON.stringify({ envoyes: 0, raison: "personne" }));
+  // Limites des comptes (stockage, base, e-mails, IA) : seulement les alertes nouvelles ou à rappeler (jamais en « essai »).
+  const { data: quotas } = essai ? { data: [] as any[] } : await db.rpc("quota_resume");
 
   const crews = (id: string) => (equipes ?? []).filter((a: any) => a.devis_id === id).length;
   const demandes = [
@@ -64,6 +66,7 @@ Deno.serve(async (req) => {
           ${bloc("Rendez-vous", (rdv ?? []).map((r: any) => `<b>${heure(r.debut)}</b> · ${esc(r.client_nom)}${r.type ? ` · ${esc(r.type)}` : ""}`), "Aucun rendez-vous.")}
           ${nouveauxCrews?.length ? bloc(`Nouveaux crews (${nouveauxCrews.length})`, (nouveauxCrews as any[]).map(lienCrew), "") : ""}
           ${bloc("Nouvelles demandes (24 h)", demandes, "Aucune nouvelle demande.")}
+          ${quotas?.length ? bloc("Limites des comptes", (quotas as any[]).map((q) => `<b>${esc(q.libelle)}</b> · ${esc(q.texte)}`), "") : ""}
           ${calme ? `<p style="margin-top:20px;color:#5E554A">Une journée calme : profites-en pour souffler un peu. Tu le mérites.</p>` : ""}
           <p style="text-align:center;margin:28px 0 4px"><a href="https://heaventagency.com/admin" style="background:#141414;color:#fff;text-decoration:none;border-radius:999px;padding:12px 26px;display:inline-block">Ouvrir mon espace</a></p>
         </div>
