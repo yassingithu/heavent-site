@@ -744,8 +744,8 @@ const StaffDashboard = () => {
                         weekStartsOn={1}
                         selected={selectedDatesForSlots}
                         onSelect={(dates) => setSelectedDatesForSlots(dates || [])}
-                        modifiers={{ dispo: (d: Date) => hasAnySlotForDate(d) }}
-                        modifiersClassNames={{ dispo: "st-jour-dispo" }}
+                        modifiers={{ dispo: (d: Date) => hasAnySlotForDate(d), aujourdhui: (d: Date) => isSameDay(d, new Date()) }}
+                        modifiersClassNames={{ dispo: "st-jour-dispo", aujourdhui: "st-jour-aujourdhui" }}
                         className="st-cal pointer-events-auto flex justify-center"
                         data-testid="calendrier-dispos"
                       />
