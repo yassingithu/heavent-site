@@ -10,7 +10,7 @@ import { construireFixes, estPartagee, formeParId, libererCache, mt } from "./fo
 import { chevauche, objetsDeplacables, RAYON_TABLE, type Objet3D } from "./objets";
 
 export interface Entree { final?: null | "avant" | "arrive" | "assis"; r: Rendu; nuit: number; deplacable: boolean; reduit: boolean; focus?: { cle: string; n: number } | null }
-export interface Rappels { onDeplacer: (id: string, dx: number, dy: number) => void; onRefus: () => void; /** la vue n'est plus celle d'ensemble (zoom ou déplacement) */ onDecalee?: (decalee: boolean) => void; /** contexte WebGL perdu : repli sur le SVG */ onPerdu?: () => void }
+export interface Rappels { onDeplacer: (id: string, dx: number, dy: number) => void; onRefus: (motif?: "occupe" | "bord") => void; /** la vue n'est plus celle d'ensemble (zoom ou déplacement) */ onDecalee?: (decalee: boolean) => void; /** contexte WebGL perdu : repli sur le SVG */ onPerdu?: () => void }
 export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** objets restés en pavé générique (doit être vide) */ generiques(): string[]; /** position monde (cases) d'un objet, pour les tests */ position(id: string): [number, number] | null; /** position écran (px client) d'un point du sol ou d'un objet, pour les tests */ ecran(x: number, z: number): [number, number]; ecranObjet(id: string): [number, number] | null; /** chaises d'un objet (position locale, direction du dossier), pour les tests */ chaises(id: string): { x: number; z: number; dos: [number, number] }[]; dims(id: string): { w: number; d: number } | null; /** cadre un objet de près (tests, captures) */ vers(id: string, zoom: number): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[]; invites: number } }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -414,7 +414,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
 
   // ── Glisser-déposer ───────────────────────────────────────────────────────
   const rayon = new THREE.Raycaster(), ndc = new THREE.Vector2(), plan = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-  let prise: { id: string; grp: any; depart: [number, number]; decal: any; dernier: [number, number]; bloque: boolean; pointeur: number } | null = null;
+  let prise: { id: string; grp: any; depart: [number, number]; decal: any; dernier: [number, number]; bloque: boolean; bord?: boolean; pointeur: number } | null = null;
   const versSol = (cx: number, cy: number) => { const r = canvas.getBoundingClientRect(); ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1); rayon.setFromCamera(ndc, cam); const p = new THREE.Vector3(); return rayon.ray.intersectPlane(plan, p) ? p : null; };
   function objetSous(cx: number, cy: number): string | null {
     const r = canvas.getBoundingClientRect(); ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1); rayon.setFromCamera(ndc, cam);
@@ -465,7 +465,11 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     const p = versSol(ev.clientX, ev.clientY), o = objets.find((x) => x.id === t.id)!, N = courant.r.salle.n; if (!p) return;
     let dgx = p.x - t.decal.x - o.a[0], dgy = p.z - t.decal.z - o.a[1];
     dgx = Math.round(dgx * 4) / 4; dgy = Math.round(dgy * 4) / 4;
-    dgx = Math.max(0.6 - o.a[0], Math.min(N - 0.6 - o.a[0], dgx)); dgy = Math.max(0.6 - o.a[1], Math.min(N - 0.6 - o.a[1], dgy));
+    // l'objet reste dans la salle selon SA taille (un bord à 10 cm du mur) ; on ne force jamais un objet déjà placé à bouger
+    const bx0 = Math.min(0, 0.1 + o.hw - o.a[0]), bx1 = Math.max(0, N - 0.1 - o.hw - o.a[0]), by0 = Math.min(0, 0.1 + o.hd - o.a[1]), by1 = Math.max(0, N - 0.1 - o.hd - o.a[1]);
+    const avantX = dgx, avantY = dgy;
+    dgx = Math.max(bx0, Math.min(bx1, dgx)); dgy = Math.max(by0, Math.min(by1, dgy));
+    t.bord = Math.abs(dgx - avantX) > 0.3 || Math.abs(dgy - avantY) > 0.3;
     if (dgx !== t.dernier[0] || dgy !== t.dernier[1]) {
       t.dernier = [dgx, dgy]; t.grp.position.x = o.a[0] + dgx; t.grp.position.z = o.a[1] + dgy;
       t.bloque = chevauche(t.id, dgx, dgy, objets, courant.r); t.grp.userData.zone.material = t.bloque ? mat.refus : mat.libre;
@@ -482,12 +486,13 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     const o = objets.find((x) => x.id === t.id)!;
     const depart: [number, number] = [o.a[0] + t.depart[0], o.a[1] + t.depart[1]];
     if (t.bloque) {
-      rap.onRefus();
+      rap.onRefus("occupe");
       if (courant.reduit) { t.grp.position.set(depart[0], 0, depart[1]); majHalos(); }
       else refusAnim = { id: t.id, t0: performance.now(), de: [o.a[0] + t.dernier[0], o.a[1] + t.dernier[1]], vers: depart };
     } else {
       t.grp.userData.zone.material = mat.halo; t.grp.userData.zone.visible = courant.deplacable;
       if (t.dernier[0] !== t.depart[0] || t.dernier[1] !== t.depart[1]) rap.onDeplacer(t.id, t.dernier[0], t.dernier[1]);
+      if (t.bord) rap.onRefus("bord"); // l'objet est posé contre le mur, on l'explique
       // la pose est rejouée par identifiant : elle survit à la reconstruction des groupes qui suit l'enregistrement
       if (courant.reduit) t.grp.position.y = 0; else poses.set(t.id, { t0: performance.now() });
     }

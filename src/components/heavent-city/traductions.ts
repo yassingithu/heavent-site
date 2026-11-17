@@ -122,6 +122,7 @@ export const TRADUCTIONS: Record<string, { en: string; ar: string }> = {
   "Faire se rencontrer": { en: "Bringing people together", ar: "تقريب الضيوف من بعضهم" },
   "Fais glisser une table ou un objet. Un doigt sur le sol déplace la vue.": { en: "Drag a table or an object. One finger on the floor moves the view.", ar: "اسحب طاولة أو عنصرًا. إصبع على الأرض يحرّك العرض." },
   "Place occupée, l'objet est revenu.": { en: "Spot taken, the item came back.", ar: "المكان مشغول، عاد العنصر." },
+  "Contre le mur : l'objet s'est arrêté au bord de la salle.": { en: "Against the wall: the item stopped at the edge of the room.", ar: "عند الحائط: توقف العنصر عند حافة القاعة." },
   "Options repliées pendant le déplacement": { en: "Options folded while moving", ar: "الخيارات مطوية أثناء التحريك" },
   "Rouvrir": { en: "Reopen", ar: "إعادة الفتح" },
   "Pince pour zoomer": { en: "Pinch to zoom", ar: "اقرص للتكبير" },

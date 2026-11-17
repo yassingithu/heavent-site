@@ -5,7 +5,7 @@
  */
 import { suivreSimulation } from "@/lib/suivi";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { ArrowLeft, Hand, Phone, Redo2, Undo2, DoorOpen } from "lucide-react";
+import { ArrowLeft, Hand, Maximize2, Phone, Redo2, Undo2, DoorOpen } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
 import logoHeavent from "@/assets/logo-heavent-or.png";
 import logoNawar from "@/assets/logo-nawar.png";
@@ -56,6 +56,9 @@ export default function HeaventCity() {
     window.addEventListener("keydown", f); return () => window.removeEventListener("keydown", f);
   }, [presentation]);
   const [refus, setRefus] = useState(0);
+  const [motifRefus, setMotifRefus] = useState<"occupe" | "bord">("occupe");
+  // le message s'efface seul (3,5 s) ; un nouveau refus est de nouveau annoncé (clé sur le texte)
+  useEffect(() => { if (!refus) return; const t = window.setTimeout(() => setRefus(0), 3500); return () => window.clearTimeout(t); }, [refus]);
   const { choix, phase } = etat;
 
   // Sauvegarde locale (jamais de coordonnées : voir etat.ts)
@@ -189,8 +192,8 @@ export default function HeaventCity() {
 
       {phase === "scene" && r && (
         <div className="absolute inset-0 flex flex-col lg:flex-row" data-testid="scene">
-          <div className={`relative shrink-0 overflow-hidden transition-[height] duration-300 motion-reduce:transition-none lg:h-auto lg:flex-1 ${presentation ? "h-full flex-1" : deplacer ? "h-[55dvh]" : "h-[40dvh]"}`}>
-            <SceneChoix reduit={reduit} r={r} nuit={nuit} focus={focus} logos={LOGOS} animer={!reduit} deplacable={deplacer} onDeplacer={(id, dx, dy) => { setRefus(0); dispatch({ t: "deplacer", id, dx, dy }); }} onRefus={() => { setRefus(Date.now()); try { if (!reduit) navigator.vibrate?.(30); } catch { /* */ } }} />
+          <div className={`relative shrink-0 overflow-hidden transition-[height] duration-300 motion-reduce:transition-none lg:h-auto lg:flex-1 ${presentation ? "h-full flex-1" : deplacer ? "h-[55dvh]" : "h-[46dvh]"}`}>
+            <SceneChoix reduit={reduit} r={r} nuit={nuit} focus={focus} logos={LOGOS} animer={!reduit} deplacable={deplacer} onDeplacer={(id, dx, dy) => { setRefus(0); dispatch({ t: "deplacer", id, dx, dy }); }} onRefus={(m) => { setMotifRefus(m ?? "occupe"); setRefus(Date.now()); try { if (!reduit && m !== "bord") navigator.vibrate?.(30); } catch { /* */ } }} />
             <div className={`absolute inset-x-0 top-0 flex items-center justify-between gap-2 bg-gradient-to-b from-black/55 to-transparent px-3 pb-6 pt-3 ${presentation ? "hidden" : ""}`}>
               <button onClick={() => dispatch({ t: "phase", phase: "ville" })} className={`${btnContour} bg-black/35 !px-3`} data-testid="changer-lieu"><ArrowLeft className="h-4 w-4 rtl:rotate-180" /><span className="hidden sm:inline">{tr("Changer de lieu")}</span><span className="sm:hidden">{tr("Lieu")}</span></button>
               <div className="flex items-center gap-1.5">
@@ -203,11 +206,11 @@ export default function HeaventCity() {
               </div>
             </div>
             <div className="pointer-events-none absolute bottom-2 start-3 rounded-full bg-black/45 px-3 py-1 text-[12px] text-[#F0E8D6]" aria-live="polite">{r.tables === "conference" ? tr("{n} chaises · {n} participants", { n: r.invites }) : tr("{nb} {type} · {n} invités", { nb: r.tablesTotal, type: infoTable(r.tables).compte, n: r.invites })}</div>
-            {!presentation && !deplacer && <button onClick={() => setPresentation(true)} data-testid="mode-presentation" className="absolute bottom-2 end-3 rounded-full border border-[#A8933F]/60 bg-black/60 px-3.5 min-h-10 text-[13px] text-[#F0E8D6] hover:bg-black/75">{tr("Mode présentation")}</button>}
+            {!presentation && !deplacer && <button onClick={() => setPresentation(true)} data-testid="mode-presentation" aria-label={tr("Mode présentation")} title={tr("Mode présentation")} className="absolute bottom-2 end-[9rem] flex items-center gap-1.5 rounded-full border border-[#A8933F]/60 bg-black/60 px-3 min-h-11 text-[13px] text-[#F0E8D6] hover:bg-black/75"><Maximize2 className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">{tr("Mode présentation")}</span></button>}
             {presentation && <button onClick={() => setPresentation(false)} data-testid="quitter-presentation" aria-label={tr("Quitter le mode présentation")} className="hc-fondu absolute end-3 top-3 z-20 rounded-full border border-[#A8933F]/60 bg-black/55 px-3.5 min-h-11 text-[13px] text-[#F0E8D6] hover:bg-black/75">{tr("Quitter (Échap)")}</button>}
             {deplacer && (
-              <div className={`absolute inset-x-3 top-[64px] z-10 mx-auto flex max-w-md items-center justify-between gap-2 rounded-2xl border bg-[#17141a]/95 px-3 py-1.5 shadow-xl ${refus ? "border-[#E24E4E]" : "border-[#F4D774]/60"}`} data-testid="bandeau-deplacer" role="status">
-                <span className={`min-w-0 text-[12.5px] leading-tight ${refus ? "font-medium text-white" : "text-[#F6EFDD]"}`} data-testid="message-deplacer">{refus ? tr("Place occupée, l'objet est revenu.") : tr("Fais glisser une table ou un objet. Un doigt sur le sol déplace la vue.")}</span>
+              <div className={`absolute inset-x-3 top-[64px] z-10 mx-auto flex max-w-md items-center justify-between gap-2 rounded-2xl border bg-[#17141a]/95 px-3 py-1.5 shadow-xl ${refus && motifRefus === "occupe" ? "border-[#E24E4E]" : "border-[#F4D774]/60"}`} data-testid="bandeau-deplacer" role="status">
+                <span className={`min-w-0 text-[12.5px] leading-tight ${refus ? "font-medium text-white" : "text-[#F6EFDD]"}`} key={refus} data-testid="message-deplacer">{refus ? (motifRefus === "bord" ? tr("Contre le mur : l'objet s'est arrêté au bord de la salle.") : tr("Place occupée, l'objet est revenu."))  : tr("Fais glisser une table ou un objet. Un doigt sur le sol déplace la vue.")}</span>
                 <span className="flex shrink-0 gap-1.5">
                   {Object.keys(choix.deplacements).length > 0 && <button onClick={() => dispatch({ t: "remettre" })} data-testid="remettre" className="min-h-10 rounded-full border border-white/25 px-3 text-[12.5px] text-[#F0E8D6]">{tr("Tout remettre")}</button>}
                   <button onClick={() => setDeplacer(false)} data-testid="termine-deplacer" className="min-h-10 rounded-full bg-[#C9A74E] px-3.5 text-[12.5px] font-semibold text-[#17141a]">{tr("Terminé")}</button>

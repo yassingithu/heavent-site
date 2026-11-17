@@ -21,7 +21,7 @@ export interface SceneProps {
   /** mode « déplacer » : le visiteur peut faire glisser les objets (onDeplacer est appelé au relâchement) */
   deplacable?: boolean; onDeplacer?: (id: string, dx: number, dy: number) => void;
   /** appelé quand le visiteur lâche un objet sur une place déjà occupée (l'objet revient à sa place) */
-  onRefus?: () => void;
+  onRefus?: (motif?: "occupe" | "bord") => void;
 }
 
 const H_MUR = 128;
