@@ -58,3 +58,6 @@ verify_jwt = false
 
 [functions.liste-invites-notif]
 verify_jwt = false
+
+[functions.assistant-site]
+verify_jwt = false

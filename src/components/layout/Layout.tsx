@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Header, { LangueFlottante } from "./Header";
 import Footer from "./Footer";
 import BoutonWhatsApp from "@/components/BoutonWhatsApp";
+import AssistantSite from "@/components/assistant/AssistantSite";
 import BandeauAudience from "@/components/BandeauAudience";
 import { AnimationsSeuil } from "@/components/seuil/Seuil";
 import { PAGES_LOCALES } from "@/lib/pagesLocales";
@@ -105,7 +106,7 @@ const Layout = ({ children }: LayoutProps) => {
         {children}
       </main>
       <Footer />
-      {pathname !== "/cartes" && <><LangueFlottante /><BoutonWhatsApp /></>}
+      {pathname !== "/cartes" && <><LangueFlottante /><BoutonWhatsApp /><AssistantSite /></>}
     </div>
   );
 };
