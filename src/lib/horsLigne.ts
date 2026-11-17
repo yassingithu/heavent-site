@@ -81,17 +81,21 @@ function ecrireFile(f: PointageEnAttente[]) {
   prevenir();
   return ok;
 }
-const nouvelleCle = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40).padEnd(8, "0");
+export const nouvelleCle = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40).padEnd(8, "0");
 
-/** Met un pointage en attente. Retourne false si le téléphone n'a plus de place (le crew est prévenu : il doit prévenir l'agence). */
-export function mettreEnAttente(p: Omit<PointageEnAttente, "cle" | "heure"> & { heure?: string }): { ok: boolean; cle: string } {
-  const cle = nouvelleCle();
-  const f = lireFile();
-  // un seul pointage de chaque sens par mission
-  if (f.some((x) => x.id === p.id && x.sens === p.sens)) return { ok: true, cle: f.find((x) => x.id === p.id && x.sens === p.sens)!.cle };
-  f.push({ ...p, cle, heure: p.heure ?? new Date().toISOString() });
+/** Met un pointage en attente (avec la clé déjà utilisée pour le premier essai, si elle existe : le serveur reconnaît alors un envoi déjà arrivé).
+ * Retourne ok=false si le téléphone n'a plus de place (le crew est prévenu : il doit prévenir l'agence). */
+export function mettreEnAttente(p: Omit<PointageEnAttente, "cle" | "heure"> & { heure?: string; cle?: string }): { ok: boolean; cle: string } {
+  // un pointage refusé qu'on refait remplace l'ancien ; un pointage encore en attente n'est jamais doublé
+  let f = lireFile().filter((x) => !(x.id === p.id && x.sens === p.sens && x.refus));
+  const deja = f.find((x) => x.id === p.id && x.sens === p.sens);
+  if (deja) { ecrireFile(f); return { ok: true, cle: deja.cle }; }
+  const cle = p.cle ?? nouvelleCle();
+  f = [...f, { id: p.id, sens: p.sens, position: p.position, photo: p.photo, cle, heure: p.heure ?? new Date().toISOString() }];
   return { ok: ecrireFile(f), cle };
 }
+/** Retire de la file un pointage refusé (le crew a prévenu l'agence). */
+export const abandonner = (cle: string) => { ecrireFile(lireFile().filter((x) => x.cle !== cle)); };
 
 /** Missions telles que le crew les voit hors ligne : le cache, complété par les pointages en attente. */
 export function appliquerFile(missions: MissionCache[], file: PointageEnAttente[]): (MissionCache & { enAttente?: { arrivee?: boolean; depart?: boolean } })[] {
@@ -105,30 +109,33 @@ export function appliquerFile(missions: MissionCache[], file: PointageEnAttente[
 
 export type Envoyeur = (corps: Record<string, unknown>) => Promise<any>;
 /** Erreurs qui veulent dire « pas de réseau » : on garde le pointage et on réessaiera. */
-export const estErreurReseau = (e: any) => !navigator.onLine || /FunctionsFetchError|Failed to fetch|NetworkError|Load failed|fetch failed|AbortError|timeout/i.test(`${e?.name ?? ""} ${e?.message ?? ""}`);
+export const estErreurReseau = (e: any) => !navigator.onLine || /FunctionsFetchError|SessionExpiree|Failed to fetch|NetworkError|Load failed|fetch failed|AbortError|timeout/i.test(`${e?.name ?? ""} ${e?.message ?? ""}`);
 
 let enCours = false;
+export interface BilanEnvoi { envoyes: number; ids: string[]; restants: number; session: boolean }
 /**
  * Envoie les pointages en attente, dans l'ordre. Sans doublon : le serveur reconnaît la clé.
- * Réseau coupé : on s'arrête et on réessaiera. Refus du serveur (mission annulée, pointage fermé…) : le pointage reste affiché avec le message.
+ * Réseau coupé ou session expirée : on s'arrête, le pointage reste gardé et on réessaiera (session=true : le crew doit se reconnecter).
+ * Refus du serveur (mission annulée, pointage fermé…) : le pointage reste affiché avec le message.
  */
-export async function synchroniser(envoyer: Envoyeur): Promise<{ envoyes: number; restants: number }> {
-  if (enCours) return { envoyes: 0, restants: lireFile().length };
+export async function synchroniser(envoyer: Envoyeur): Promise<BilanEnvoi> {
+  if (enCours) return { envoyes: 0, ids: [], restants: lireFile().length, session: false };
   enCours = true;
-  let envoyes = 0;
+  const ids: string[] = []; let session = false;
   try {
     for (const p of lireFile().filter((x) => !x.refus)) {
       try {
         await envoyer({ action: p.sens, id: p.id, position: p.position, photo: p.photo ?? undefined, cle: p.cle, hors_ligne: true, heure_appareil: p.heure });
         ecrireFile(lireFile().filter((x) => x.cle !== p.cle));
-        envoyes++;
+        ids.push(p.id);
       } catch (e: any) {
+        if (e?.name === "SessionExpiree") session = true;
         if (estErreurReseau(e)) break;
         ecrireFile(lireFile().map((x) => (x.cle === p.cle ? { ...x, refus: String(e?.message ?? "Refusé par l'agence").slice(0, 200) } : x)));
       }
     }
   } finally { enCours = false; }
-  return { envoyes, restants: lireFile().filter((x) => !x.refus).length };
+  return { envoyes: ids.length, ids, restants: lireFile().filter((x) => !x.refus).length, session };
 }
 
 /** Efface tout ce que l'appli garde sur ce téléphone pour le mode hors ligne (missions et pointages en attente). */

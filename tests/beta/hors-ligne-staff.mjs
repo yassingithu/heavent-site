@@ -25,12 +25,13 @@ const mission = {
 const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" };
 
 // État du faux serveur
-const serveur = { appels: [], cles: new Set(), perdreReponse: 0, mission: { ...mission } };
+const serveur = { appels: [], cles: new Set(), perdreReponse: 0, mode: "ok", mission: { ...mission } };
 
 async function nouveauContexte(browser, { avecSession = true } = {}) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, geolocation: { latitude: 34.02, longitude: -6.84, accuracy: 20 }, permissions: ["geolocation"] });
   await ctx.addInitScript(([cle, s, avec]) => { window.__suiviTest = false; if (avec && !localStorage.getItem(cle)) localStorage.setItem(cle, JSON.stringify(s)); localStorage.setItem("heavent-ne-pas-compter", "1"); }, [`sb-${REF}-auth-token`, session, avecSession]);
   ctx.coupe = false;
+  serveur.mission = { ...mission };
   await ctx.route(/supabase\.co/, async (route) => {
     if (ctx.coupe) return route.abort("internetdisconnected"); // réseau coupé : la base ne répond pas, comme en vrai
     const r = route.request(); const u = new URL(r.url());
@@ -43,10 +44,15 @@ async function nouveauContexte(browser, { avecSession = true } = {}) {
     if (u.pathname.endsWith("/functions/v1/pointer")) {
       const corps = JSON.parse(r.postData() || "{}");
       serveur.appels.push(corps);
+      if (serveur.mode === "401") return json({ error: "Connecte-toi à ton espace staff." }, 401);
+      if (serveur.mode === "409") return json({ error: "Le pointage de cette journée est fermé." }, 409);
+      if (serveur.mode === "pendre") return; // le réseau « répond » jamais : la requête reste en suspens
       const deja = corps.cle && serveur.cles.has(corps.cle);
       if (corps.cle) serveur.cles.add(corps.cle);
       if (serveur.perdreReponse > 0) { serveur.perdreReponse--; return route.abort("failed"); } // le serveur a reçu, mais la réponse n'arrive jamais
-      return json({ success: true, heure: corps.heure_appareil || new Date().toISOString(), verifie: true, heures: 6.5, deja: !!deja });
+      const heureOk = corps.heure_appareil || new Date().toISOString();
+      if (corps.action === "arrivee") serveur.mission.arrivee_le = heureOk; else if (corps.action === "depart") serveur.mission.depart_le = heureOk;
+      return json({ success: true, heure: heureOk, verifie: true, heures: 6.5, deja: !!deja });
     }
     return json({});
   });
@@ -86,25 +92,26 @@ const cacheLocal = (p) => p.evaluate(() => ({ cache: localStorage.getItem("heave
   verif("date de mise à jour visible", /mises à jour (aujourd'hui|hier)/.test(txt), txt.slice(0, 300));
   verif("tenue, contact et consignes visibles sans réseau", /Caftan crème/.test(txt) && /Sara/.test(txt) && /gardien/.test(txt));
   verif("aucune fiche de paie ni contrat affichés sans réseau", !/fiche de paie|Contrats?\b/i.test(await p.getByTestId("mes-missions").innerText()));
-  verif("« confirmer ma présence » grisé sans réseau", await p.getByTestId("confirmer-presence").isDisabled());
+  verif("« confirmer ma présence » remplacé par une phrase visible sans réseau", await p.getByTestId("confirmer-presence").count() === 0 && /possible quand le réseau revient/.test(await p.getByTestId("note-reseau-requis").innerText()));
+  verif("le bouton de pointage vient avant la fiche mission", await p.evaluate(() => { const b = document.querySelector('[data-testid="pointer-arrivee"]'), f = document.querySelector('[data-testid="fiche-mission"]'); return !!b && !!f && !!(b.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING); }));
 
   console.log("3. Pointage d'arrivée sans réseau");
   await p.getByTestId("pointer-arrivee").click();
   await p.getByTestId("valider-pointage").click();
   await p.waitForSelector('[data-testid="pointages-a-envoyer"]', { timeout: 15000 });
-  verif("« 1 pointage à envoyer » s'affiche", /1 pointage à envoyer/.test(await p.getByTestId("pointages-a-envoyer").innerText()));
-  verif("badge « en attente d'envoi » sur la mission", /en attente d'envoi/.test(await p.getByTestId("mission").innerText()));
+  verif("« 1 pointage à envoyer » s'affiche", /1\s+En attente d'envoi\s+pointage gardé/i.test(await p.getByTestId("pointages-a-envoyer").innerText()));
+  verif("badge « en attente d'envoi » sur la mission", /en attente d'envoi/i.test(await p.getByTestId("mission").innerText()));
   verif("aucun appel serveur pendant la coupure", serveur.appels.length === 0);
   verif("le bouton « J'ai terminé » apparaît", await p.getByTestId("pointer-depart").count() === 1);
 
   console.log("4. Pointage de départ, puis redémarrage de l'appli");
   await p.getByTestId("pointer-depart").click();
   await p.getByTestId("valider-pointage").click();
-  await p.waitForFunction(() => /2 pointages à envoyer/.test(document.querySelector('[data-testid="pointages-a-envoyer"]')?.textContent || ""));
+  await p.waitForFunction(() => /2\s*En attente d'envoi\s*pointages gardés/i.test(document.querySelector('[data-testid="pointages-a-envoyer"]')?.textContent || ""));
   verif("2 pointages en attente", true);
   await p.reload({ waitUntil: "domcontentloaded" });
   await p.waitForSelector('[data-testid="pointages-a-envoyer"]');
-  verif("les pointages survivent au redémarrage", /2 pointages à envoyer/.test(await p.getByTestId("pointages-a-envoyer").innerText()));
+  verif("les pointages survivent au redémarrage", /2\s+En attente d'envoi\s+pointages gardés/i.test(await p.getByTestId("pointages-a-envoyer").innerText()));
   const f = JSON.parse((await cacheLocal(p)).file);
   verif("chaque pointage a une clé unique et l'heure du téléphone", f.length === 2 && f[0].cle !== f[1].cle && f.every((x) => x.heure && x.cle.length >= 8));
   verif("la position est gardée avec le pointage", f[0].position && Math.abs(f[0].position.lat - 34.02) < 0.01);
@@ -146,7 +153,13 @@ const cacheLocal = (p) => p.evaluate(() => ({ cache: localStorage.getItem("heave
   await p.getByTestId("pointer-arrivee").click(); await p.getByTestId("valider-pointage").click();
   await p.waitForSelector('[data-testid="pointages-a-envoyer"]');
   await p.getByTestId("effacer-donnees").click();
-  verif("l'effacement prévient qu'un pointage serait perdu", /ne sont pas encore envoyés|n'est pas encore envoyé/.test(await p.getByRole("dialog").innerText()));
+  const dlg = await p.getByRole("dialog").innerText();
+  verif("l'effacement prévient qu'un pointage serait perdu", /pas encore envoyé/.test(dlg));
+  verif("sans réseau et avec un pointage en attente, « Effacer » n'est pas proposé", await p.getByTestId("confirmer-effacement").count() === 0 && await p.getByTestId("garder-donnees").count() === 1);
+  await p.getByTestId("garder-donnees").click();
+  await ctx.setOffline(false); // signal faible : le téléphone se croit en ligne mais la base ne répond pas (ctx.coupe reste vrai)
+  await p.getByTestId("effacer-donnees").click();
+  verif("avec un faux « en ligne », l'effacement reste possible après avertissement", await p.getByTestId("confirmer-effacement").count() === 1);
   await p.getByTestId("confirmer-effacement").click();
   await p.waitForTimeout(500);
   const apres = await cacheLocal(p);
@@ -173,12 +186,83 @@ const cacheLocal = (p) => p.evaluate(() => ({ cache: localStorage.getItem("heave
   ctx.coupe = true; // navigator.onLine reste vrai
   await p.getByTestId("pointer-arrivee").click(); await p.getByTestId("valider-pointage").click();
   await p.waitForSelector('[data-testid="pointages-a-envoyer"]', { timeout: 30000 });
-  verif("le pointage est gardé (et non perdu) malgré un réseau qui ne répond pas", /1 pointage à envoyer/.test(await p.getByTestId("pointages-a-envoyer").innerText()));
+  verif("le pointage est gardé (et non perdu) malgré un réseau qui ne répond pas", /1\s+En attente d'envoi\s+pointage gardé/i.test(await p.getByTestId("pointages-a-envoyer").innerText()));
   verif("aucune erreur « pointage impossible » affichée", !/Pointage impossible/.test(await p.locator("body").innerText()));
   ctx.coupe = false;
   await p.getByTestId("envoyer-maintenant").click();
   await p.waitForFunction(() => !document.querySelector('[data-testid="pointages-a-envoyer"]'), null, { timeout: 30000 });
   verif("« Envoyer maintenant » envoie le pointage au retour du signal", serveur.appels.length === 1 && serveur.appels[0].hors_ligne === true);
+  await ctx.close();
+
+  console.log("10. Session expirée (401) : le pointage n'est pas perdu");
+  serveur.cles.clear(); serveur.appels.length = 0; serveur.mode = "401";
+  ctx = await nouveauContexte(browser); p = await ctx.newPage();
+  await p.goto(BASE + "/staff-dashboard/", { waitUntil: "networkidle" });
+  await p.waitForSelector('[data-testid="mission"]');
+  await p.getByTestId("pointer-arrivee").click(); await p.getByTestId("valider-pointage").click();
+  await p.waitForSelector('[data-testid="pointages-a-envoyer"]', { timeout: 30000 });
+  verif("le pointage reste en attente (pas de refus définitif)", await p.getByTestId("pointage-refuse").count() === 0);
+  verif("message « Ta session a expiré : reconnecte-toi »", /session a expiré/.test(await p.getByTestId("pointages-a-envoyer").innerText()));
+  serveur.mode = "ok"; await p.getByTestId("envoyer-maintenant").click();
+  await p.waitForFunction(() => !document.querySelector('[data-testid="pointages-a-envoyer"]'), null, { timeout: 30000 });
+  verif("une fois reconnecté, le pointage part", serveur.appels.some((a) => a.cle && a.action === "arrivee"));
+  await p.waitForFunction(() => /envoyé ✓/i.test(document.querySelector('[data-testid="mission"]')?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+  verif("« envoyé ✓ » reste visible sur la carte", /envoyé ✓/i.test(await p.getByTestId("mission").innerText()));
+  await ctx.close();
+
+  console.log("11. Refus du serveur : message clair, fermable");
+  serveur.cles.clear(); serveur.appels.length = 0; serveur.mode = "ok";
+  ctx = await nouveauContexte(browser); p = await ctx.newPage();
+  await p.goto(BASE + "/staff-dashboard/", { waitUntil: "networkidle" });
+  await p.waitForSelector('[data-testid="mission"]');
+  ctx.coupe = true; await p.getByTestId("pointer-arrivee").click(); await p.getByTestId("valider-pointage").click();
+  await p.waitForSelector('[data-testid="pointages-a-envoyer"]', { timeout: 30000 });
+  ctx.coupe = false; serveur.mode = "409"; await p.getByTestId("envoyer-maintenant").click();
+  await p.waitForSelector('[data-testid="pointage-refuse"]', { timeout: 30000 });
+  const refus = await p.getByTestId("pointage-refuse").innerText();
+  verif("le refus nomme la mission et la raison", /Mariage test/.test(refus) && /fermé/.test(refus), refus);
+  await p.getByTestId("pointage-refuse-vu").click();
+  verif("« J'ai prévenu l'agence » retire le refus", await p.getByTestId("pointage-refuse").count() === 0 && !(await cacheLocal(p)).file);
+  await ctx.close();
+
+  console.log("12. Réponse perdue dès le premier essai en ligne : même clé au renvoi, pas de doublon");
+  serveur.cles.clear(); serveur.appels.length = 0; serveur.mode = "ok"; serveur.perdreReponse = 1;
+  ctx = await nouveauContexte(browser); p = await ctx.newPage();
+  await p.goto(BASE + "/staff-dashboard/", { waitUntil: "networkidle" });
+  await p.waitForSelector('[data-testid="mission"]');
+  await p.getByTestId("pointer-arrivee").click(); await p.getByTestId("valider-pointage").click();
+  await p.waitForSelector('[data-testid="pointages-a-envoyer"]', { timeout: 30000 });
+  await p.getByTestId("envoyer-maintenant").click();
+  await p.waitForFunction(() => !document.querySelector('[data-testid="pointages-a-envoyer"]'), null, { timeout: 30000 });
+  verif("le premier envoi (en ligne) portait déjà une clé", !!serveur.appels[0].cle && serveur.appels[0].hors_ligne === undefined);
+  verif("le renvoi réutilise la même clé (le serveur le reconnaît)", serveur.appels.length === 2 && serveur.appels[0].cle === serveur.appels[1].cle);
+  verif("aucun message de refus à tort", await p.getByTestId("pointage-refuse").count() === 0);
+  await ctx.close();
+
+  console.log("13. Réseau « présent mais mort » : le bouton ne reste pas bloqué");
+  serveur.cles.clear(); serveur.appels.length = 0; serveur.mode = "pendre";
+  ctx = await nouveauContexte(browser); p = await ctx.newPage();
+  await p.goto(BASE + "/staff-dashboard/", { waitUntil: "networkidle" });
+  await p.waitForSelector('[data-testid="mission"]');
+  const t0 = Date.now();
+  await p.getByTestId("pointer-arrivee").click(); await p.getByTestId("valider-pointage").click();
+  await p.waitForSelector('[data-testid="pointages-a-envoyer"]', { timeout: 30000 });
+  const dt = (Date.now() - t0) / 1000;
+  verif("au bout de ~12 s le pointage est gardé (pas de blocage)", dt >= 10 && dt <= 20, dt + " s");
+  serveur.mode = "ok"; await ctx.close();
+
+  console.log("14. Le bandeau ne décale pas le bouton sous le pouce");
+  serveur.mode = "ok"; serveur.appels.length = 0;
+  ctx = await nouveauContexte(browser); p = await ctx.newPage();
+  await p.goto(BASE + "/staff-dashboard/", { waitUntil: "networkidle" });
+  await p.waitForSelector('[data-testid="pointer-arrivee"]');
+  await p.evaluate(() => window.scrollTo(0, 220)); await p.waitForTimeout(300);
+  const avant = await p.getByTestId("pointer-arrivee").evaluate((b) => b.getBoundingClientRect().top);
+  await reseau(ctx, true); await p.waitForSelector('[data-testid="bandeau-hors-ligne"]'); await p.waitForTimeout(600);
+  const apresPos = await p.getByTestId("pointer-arrivee").evaluate((b) => b.getBoundingClientRect().top);
+  const hBandeau = await p.getByTestId("bandeau-hors-ligne").evaluate((b) => b.getBoundingClientRect().height);
+  // sans compensation, le bouton descendrait de la hauteur du bandeau (≈ 130 px) ; la page raccourcit sans réseau, d'où une marge de quelques pixels
+  verif("le bouton « Je suis arrivé(e) » ne bouge pas sous le pouce (décalage < 10 px au lieu de " + Math.round(hBandeau) + " px)", Math.abs(apresPos - avant) < 10, `${avant} → ${apresPos}`);
   await ctx.close();
 
   verif("aucune erreur JavaScript dans la page", erreursPage.length === 0, erreursPage.join(" | "));

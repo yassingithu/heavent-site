@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Camera, CheckCircle2, ChevronDown, Clock, LogIn, LogOut, MapPin, Phone, RefreshCw, Shirt, Trash2, WifiOff, XCircle } from "lucide-react";
-import { appliquerFile, enregistrerMissions, estErreurReseau, lireCache, lireFile, mettreEnAttente, synchroniser, toutEffacer, useHorsLigne } from "@/lib/horsLigne";
+import { abandonner, appliquerFile, enregistrerMissions, estErreurReseau, lireCache, lireFile, mettreEnAttente, nouvelleCle, synchroniser, toutEffacer, useHorsLigne } from "@/lib/horsLigne";
 
 /**
  * Espace staff — « Mes missions » : fiche mission (tenue, point de rendez-vous, contact sur place),
@@ -52,15 +52,22 @@ function maPosition(): Promise<{ lat: number; lng: number; precision: number } |
   });
 }
 
+/** Attend au plus `ms` : un réseau « présent mais mort » ne doit jamais laisser le bouton bloqué. */
+const avecDelai = <T,>(p: Promise<T>, ms: number) => new Promise<T>((res, rej) => {
+  const t = setTimeout(() => { const e = new Error("Le réseau ne répond pas."); e.name = "FunctionsFetchError"; rej(e); }, ms);
+  p.then((v) => { clearTimeout(t); res(v); }, (e) => { clearTimeout(t); rej(e); });
+});
+
 async function appeler(body: Record<string, unknown>) {
-  const { data, error } = await supabase.functions.invoke("pointer", { body });
+  const { data, error } = await avecDelai(supabase.functions.invoke("pointer", { body }), 12000);
   let msg = data?.error as string | undefined;
   if (error && !msg) { try { msg = (await (error as any).context?.json())?.error; } catch { /* */ } }
   if (error || data?.error) {
     const err = new Error(msg ?? "Action impossible pour le moment. Réessaie.");
-    // Pas de réseau, ou panne du serveur : ce n'est pas un refus, le pointage pourra être renvoyé.
     const statut = Number((error as any)?.context?.status ?? 0);
-    if (error && ((error as any).name === "FunctionsFetchError" || (error as any).name === "FunctionsRelayError" || statut >= 500)) err.name = "FunctionsFetchError";
+    // Pas de réseau, panne du serveur ou session expirée : ce n'est pas un refus, le pointage reste gardé et pourra être renvoyé.
+    if (statut === 401) { err.name = "SessionExpiree"; err.message = "Ta session a expiré : reconnecte-toi pour envoyer ton pointage."; }
+    else if (error && ((error as any).name === "FunctionsFetchError" || (error as any).name === "FunctionsRelayError" || statut >= 500)) err.name = "FunctionsFetchError";
     throw err;
   }
   return data;
@@ -79,6 +86,27 @@ export default function MesMissions() {
   const [depuisCache, setDepuisCache] = useState(false);
   const [effacer, setEffacer] = useState(false);
   const [synchro, setSynchro] = useState(false);
+  const [sessionExpiree, setSessionExpiree] = useState(false);
+  // missions dont le pointage vient d'être envoyé : mention « envoyé à l'agence » gardée tant que l'appli reste ouverte
+  const [envoyes, setEnvoyes] = useState<string[]>(() => { try { return JSON.parse(sessionStorage.getItem("hv-hl-envoyes") || "[]"); } catch { return []; } });
+  // Un bandeau qui apparaît en haut ne doit jamais faire descendre le bouton « Je suis arrivé(e) » sous le pouce :
+  // on garde la première mission à la même place à l'écran en compensant le défilement (sans animer la hauteur).
+  const refSection = useRef<HTMLElement>(null);
+  const ancre = useRef<number | null>(null);
+  const ancrer = () => {
+    const el = refSection.current?.querySelector('[data-testid="mission"]') as HTMLElement | null;
+    const haut = el ? el.getBoundingClientRect().top + window.scrollY : null;
+    if (haut != null && ancre.current != null && haut !== ancre.current && window.scrollY > 0) window.scrollBy(0, haut - ancre.current);
+    ancre.current = haut;
+  };
+  useLayoutEffect(ancrer);
+  // aussi quand la taille change sans rendu (police qui se charge, texte qui passe à la ligne)
+  useEffect(() => {
+    if (!refSection.current || typeof ResizeObserver === "undefined") return;
+    const o = new ResizeObserver(() => ancrer());
+    o.observe(refSection.current);
+    return () => o.disconnect();
+  }, [missions !== null]);
   const [ouverte, setOuverte] = useState<string | null>(null);
   const [empechement, setEmpechement] = useState<Mission | null>(null);
   const [motif, setMotif] = useState("");
@@ -104,7 +132,12 @@ export default function MesMissions() {
     setSynchro(true);
     const r = await synchroniser(appeler);
     setSynchro(false);
-    if (r.envoyes) { toast({ title: r.envoyes > 1 ? `${r.envoyes} pointages envoyés ✅` : "Pointage envoyé ✅", description: "L'agence l'a bien reçu. Elle vérifie les pointages faits sans réseau." }); charger(); }
+    setSessionExpiree(r.session);
+    if (r.envoyes) {
+      setEnvoyes((a) => { const n = [...new Set([...a, ...r.ids])]; try { sessionStorage.setItem("hv-hl-envoyes", JSON.stringify(n)); } catch { /* */ } return n; });
+      toast({ title: r.envoyes > 1 ? `${r.envoyes} pointages envoyés` : "Pointage envoyé", description: "L'agence l'a bien reçu. Elle vérifie les pointages faits sans réseau." });
+      charger();
+    }
   };
   useEffect(() => { charger(); const t = setInterval(() => tic((x) => x + 1), 60000); return () => clearInterval(t); }, []);
   // Envoi automatique des pointages en attente : au retour du réseau, au retour dans l'appli, et toutes les minutes tant qu'il en reste.
@@ -128,7 +161,7 @@ export default function MesMissions() {
   const refuses = file.filter((x) => x.refus);
 
   const confirmer = async (m: Mission) => {
-    try { await appeler({ action: "confirmer", id: m.id }); toast({ title: "Présence confirmée ✅", description: "Merci ! À bientôt sur la mission." }); charger(); }
+    try { await appeler({ action: "confirmer", id: m.id }); toast({ title: "Présence confirmée", description: "Merci ! À bientôt sur la mission." }); charger(); }
     catch (e: any) { toast({ title: "Oups", description: e.message, variant: "destructive" }); }
   };
   const envoyerEmpechement = async () => {
@@ -144,51 +177,69 @@ export default function MesMissions() {
     const { m, sens } = pointage;
     const position = await maPosition();
     const heureLocale = new Date().toISOString();
-    // Sans réseau : le pointage est gardé sur le téléphone (heure, position, selfie) et envoyé dès que le réseau revient.
+    // Une clé unique dès le premier essai : si l'envoi a abouti mais que la réponse s'est perdue, le renvoi est reconnu et ne crée pas de refus ni de doublon.
+    const cle = nouvelleCle();
     const garder = () => {
-      const r = mettreEnAttente({ id: m.id, sens, position, photo: sens === "arrivee" ? photo : null, heure: heureLocale });
+      const r = mettreEnAttente({ id: m.id, sens, position, photo: sens === "arrivee" ? photo : null, heure: heureLocale, cle });
       if (!r.ok) { toast({ title: "Pointage non enregistré", description: "Le téléphone n'a plus de place. Préviens ta cheffe d'équipe ou l'agence : elle notera ton heure.", variant: "destructive" }); return; }
-      toast({ title: sens === "arrivee" ? "Arrivée enregistrée sur ton téléphone" : "Départ enregistré sur ton téléphone", description: "En attente d'envoi : il part tout seul dès que le réseau revient. Ne vide pas les données de l'appli d'ici là." });
+      toast({ title: sens === "arrivee" ? "Arrivée enregistrée sur ton téléphone" : "Départ enregistré sur ton téléphone", description: "Il part dès que le réseau revient. Ouvre l'appli pour l'envoyer et ne te déconnecte pas d'ici là." });
       setPointage(null); setPhoto(null);
     };
     try {
       if (!navigator.onLine) { garder(); return; }
-      const r = await appeler({ action: sens, id: m.id, position, photo: sens === "arrivee" ? photo : undefined });
-      const lieu = r.verifie === true ? "sur le lieu de la mission ✓" : r.verifie === false ? (position ? "hors du lieu prévu : l'agence vérifiera" : "sans position : l'agence vérifiera") : "position enregistrée";
+      const r = await appeler({ action: sens, id: m.id, position, photo: sens === "arrivee" ? photo : undefined, cle });
+      const lieu = r.verifie === true ? "sur le lieu de la mission" : r.verifie === false ? (position ? "hors du lieu prévu : l'agence vérifiera" : "sans position : l'agence vérifiera") : "position enregistrée";
       toast({
         title: sens === "arrivee" ? `Arrivée pointée à ${heure(r.heure)}` : `Départ pointé à ${heure(r.heure)} — ${r.heures} h`,
         description: sens === "depart" && r.aVerifier ? `${lieu}. Les heures au-delà du prévu seront validées par l'agence.` : lieu,
       });
       setPointage(null); setPhoto(null); charger();
     } catch (e: any) {
-      if (estErreurReseau(e)) garder();
+      if (estErreurReseau(e)) { if (e?.name === "SessionExpiree") setSessionExpiree(true); garder(); }
       else toast({ title: "Pointage impossible", description: e.message, variant: "destructive" });
     } finally { setEnvoi(false); }
   };
 
   return (
-    <section className="bg-white rounded-lg shadow-sm p-3 sm:p-5 space-y-3" data-testid="mes-missions">
+    <section ref={refSection} className="bg-white rounded-lg shadow-sm p-3 sm:p-5 space-y-3" data-testid="mes-missions">
       <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2"><Clock className="h-5 w-5 text-[#A8933F]" /> Mes prochaines missions</h2>
 
-      {horsReseau && (
-        <div className="rounded-lg border border-[#C8B560] bg-[#FFFCF2] p-3 text-sm space-y-1" role="status" data-testid="bandeau-hors-ligne">
-          <div className="flex items-center gap-2 font-medium text-[#7A5F1F]"><WifiOff className="h-4 w-4 shrink-0" /> Pas de réseau : tu peux quand même pointer.</div>
-          <p className="text-muted-foreground">
-            {cache ? <>Informations mises à jour {quand(cache.synchro)}. Elles ont pu changer : en cas de doute, appelle ta cheffe d'équipe.</> : <>Aucune information gardée sur ce téléphone.</>}
-          </p>
-        </div>
-      )}
-      {(aEnvoyer > 0 || refuses.length > 0) && (
-        <div className="rounded-lg border border-[#1F5A4C]/40 bg-[#1F5A4C]/5 p-3 text-sm space-y-2" role="status" data-testid="pointages-a-envoyer">
-          {aEnvoyer > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-medium text-[#1F5A4C]">{aEnvoyer === 1 ? "1 pointage à envoyer" : `${aEnvoyer} pointages à envoyer`} <span className="font-normal text-muted-foreground">· gardé{aEnvoyer > 1 ? "s" : ""} sur ton téléphone</span></span>
-              <Button size="sm" variant="outline" disabled={!enLigne || synchro} onClick={() => void envoyerFile()} data-testid="envoyer-maintenant"><RefreshCw className={`h-4 w-4 mr-1 ${synchro ? "animate-spin motion-reduce:animate-none" : ""}`} /> {synchro ? "Envoi…" : "Envoyer maintenant"}</Button>
+      <div className="space-y-3">
+        {horsReseau && (
+          <div className="hl-etat hl-reseau" role="status" aria-live="polite" data-testid="bandeau-hors-ligne">
+            <div className="hl-lib"><WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" /> Pas de réseau</div>
+            <p className="hl-grand">Pointe normalement : ton pointage part dès que le réseau revient.</p>
+            <p>{cache ? <>Informations mises à jour {quand(cache.synchro)}. Elles ont pu changer : en cas de doute, appelle ta cheffe d'équipe.</> : <>Aucune information gardée sur ce téléphone.</>}</p>
+          </div>
+        )}
+        {aEnvoyer > 0 && (
+          <div className="hl-etat hl-attente" role="status" aria-live="polite" data-testid="pointages-a-envoyer">
+            <div className="flex items-center gap-3">
+              <span className="hl-nb" aria-hidden="true">{aEnvoyer}</span>
+              <div className="min-w-0">
+                <div className="hl-lib"><Clock className="h-4 w-4 shrink-0" aria-hidden="true" /> En attente d'envoi</div>
+                <p>{aEnvoyer === 1 ? "pointage gardé sur ton téléphone" : "pointages gardés sur ton téléphone"}</p>
+              </div>
             </div>
-          )}
-          {refuses.map((r) => <p key={r.cle} className="text-[#9C4A2C]" role="alert">Un pointage n'a pas été accepté : {r.refus} Préviens l'agence.</p>)}
-        </div>
-      )}
+            <p>Il part dès que le réseau revient : ouvre l'appli pour l'envoyer et ne te déconnecte pas d'ici là.</p>
+            {sessionExpiree && <p role="alert" className="font-medium text-[#7A2E16]">Ta session a expiré : reconnecte-toi pour envoyer ton pointage.</p>}
+            <Button size="lg" disabled={!enLigne || synchro} onClick={() => void envoyerFile()} className={enLigne ? "mt-2 bg-[#141414] text-[#E4D49A] hover:bg-[#2a2a2a]" : "mt-2"} variant={enLigne ? "default" : "outline"} data-testid="envoyer-maintenant">
+              <RefreshCw className={`h-4 w-4 mr-2 ${synchro ? "animate-spin motion-reduce:animate-none" : ""}`} aria-hidden="true" /> {synchro ? "Envoi…" : enLigne ? "Envoyer maintenant" : "Envoi dès le retour du réseau"}
+            </Button>
+          </div>
+        )}
+        {refuses.map((r) => {
+          const mm: any = vues.find((x) => x.id === r.id);
+          return (
+            <div key={r.cle} className="hl-etat hl-refus" role="alert" data-testid="pointage-refuse">
+              <div className="hl-lib"><XCircle className="h-4 w-4 shrink-0" aria-hidden="true" /> Pointage non accepté</div>
+              <p>{mm ? `${mm.evenement}, ${jourLong(mm.date_jour)}` : "Une mission"} : {r.refus}</p>
+              <p>Préviens l'agence ou ta cheffe d'équipe.</p>
+              <Button variant="outline" className="mt-2 min-h-11" onClick={() => abandonner(r.cle)} data-testid="pointage-refuse-vu">J'ai prévenu l'agence</Button>
+            </div>
+          );
+        })}
+      </div>
       {visibles.map((m: any) => {
         const { debut, fin } = horaires(m);
         const fenetre = maintenant.getTime() >= debut.getTime() - 3 * 3600e3 && maintenant.getTime() <= fin.getTime() + 4 * 3600e3;
@@ -197,23 +248,43 @@ export default function MesMissions() {
         const carte = f?.latitude != null && f?.longitude != null
           ? `https://www.google.com/maps/search/?api=1&query=${f.latitude},${f.longitude}`
           : m.lieu || f?.point_rdv ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f?.point_rdv || m.lieu || "")}` : null;
+        const actions = (
+          <div className="flex flex-wrap gap-2">
+            {horsReseau && ((!m.arrivee_le && !m.presence_confirmee_le && maintenant < fin) || (!m.arrivee_le && !m.empechement_le && maintenant < debut)) && (
+              <p className="hl-note w-full" data-testid="note-reseau-requis">Confirmer ta présence ou signaler un empêchement : possible quand le réseau revient.</p>
+            )}
+            {!horsReseau && !m.arrivee_le && !m.presence_confirmee_le && maintenant < fin && (
+              <Button size="sm" className="min-h-11" onClick={() => confirmer(m)} data-testid="confirmer-presence"><CheckCircle2 className="h-4 w-4 mr-1" /> Je confirme ma présence</Button>
+            )}
+            {!horsReseau && !m.arrivee_le && !m.empechement_le && maintenant < debut && (
+              <Button size="sm" variant="ghost" className="min-h-11" onClick={() => setEmpechement(m)} data-testid="signaler-empechement"><XCircle className="h-4 w-4 mr-1" /> Je ne pourrai pas venir</Button>
+            )}
+            {fenetre && !m.arrivee_le && (
+              <Button size="lg" className="w-full sm:w-auto bg-[#141414] text-[#E4D49A] hover:bg-[#2a2a2a]" onClick={() => setPointage({ m, sens: "arrivee" })} data-testid="pointer-arrivee"><LogIn className="h-5 w-5 mr-2" /> Je suis arrivé(e)</Button>
+            )}
+            {fenetre && m.arrivee_le && !m.depart_le && (
+              <Button size="lg" variant="outline" className="w-full sm:w-auto" onClick={() => setPointage({ m, sens: "depart" })} data-testid="pointer-depart"><LogOut className="h-5 w-5 mr-2" /> J'ai terminé</Button>
+            )}
+          </div>
+        );
         return (
           <div key={m.id} className={`rounded-lg border p-3 sm:p-4 space-y-3 ${aujourdHui ? "border-[#C8B560] bg-[#FFFCF2]" : ""}`} data-testid="mission">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <div className="font-semibold">{m.evenement}{aujourdHui && <span className="ml-2 text-xs rounded-full bg-[#C8B560] text-white px-2 py-0.5">Aujourd'hui</span>}</div>
+                <div className="font-semibold">{m.evenement}{aujourdHui && <span className="hl-badge hl-badge-aujourdhui ml-2">Aujourd'hui</span>}</div>
                 <div className="text-sm text-muted-foreground capitalize">{jourLong(m.date_jour)}{m.heure_debut ? ` · ${hhmm(m.heure_debut)}${m.heure_fin ? ` – ${hhmm(m.heure_fin)}` : ""}` : ""} · {m.poste}</div>
                 {m.lieu && <div className="text-sm text-muted-foreground">{m.lieu}</div>}
               </div>
               <div className="text-xs font-medium">
-                {m.depart_le ? <span className="rounded-full bg-[#1F5A4C]/10 text-[#1F5A4C] px-2.5 py-1">{m.enAttente?.depart ? "Départ en attente d'envoi" : m.heures_pointees != null ? `Terminé · ${m.heures_pointees} h` : "Terminé"}</span>
-                  : m.arrivee_le ? <span className="rounded-full bg-[#1F5A4C]/10 text-[#1F5A4C] px-2.5 py-1">Arrivé(e) à {heure(m.arrivee_le)}{m.enAttente?.arrivee ? " · en attente d'envoi" : ""}</span>
-                  : m.empechement_le ? <span className="rounded-full bg-[#9C4A2C]/10 text-[#9C4A2C] px-2.5 py-1">Empêchement signalé</span>
-                  : m.presence_confirmee_le ? <span className="rounded-full bg-[#1F5A4C]/10 text-[#1F5A4C] px-2.5 py-1">Présence confirmée</span>
-                  : <span className="rounded-full bg-[#A8933F]/15 text-[#7A5F1F] px-2.5 py-1">À confirmer</span>}
+                {m.depart_le ? <span key={`d${m.enAttente?.depart}`} className="hl-badge text-[#1F5A4C]">{m.enAttente?.depart ? "Départ en attente d'envoi" : (m.heures_pointees != null ? `Terminé · ${m.heures_pointees} h` : "Terminé") + (envoyes.includes(m.id) ? " · envoyé ✓" : "")}</span>
+                  : m.arrivee_le ? <span key={`a${m.enAttente?.arrivee}`} className="hl-badge text-[#1F5A4C]">Arrivé(e) à {heure(m.arrivee_le)}{m.enAttente?.arrivee ? " · en attente d'envoi" : envoyes.includes(m.id) ? " · envoyé ✓" : ""}</span>
+                  : m.empechement_le ? <span className="hl-badge text-[#7A2E16]">Empêchement signalé</span>
+                  : m.presence_confirmee_le ? <span className="hl-badge text-[#1F5A4C]">Présence confirmée</span>
+                  : <span className="hl-badge text-[#7A5F1F]">À confirmer</span>}
               </div>
             </div>
 
+            {aujourdHui && actions}
             {/* Fiche mission */}
             <button className="w-full flex items-center justify-between text-sm font-medium text-[#8C6D22]" onClick={() => setOuverte(ouverte === m.id ? null : m.id)} aria-expanded={ouverte === m.id} data-testid="ouvrir-fiche">
               Fiche mission <ChevronDown className={`h-4 w-4 transition-transform ${ouverte === m.id ? "rotate-180" : ""}`} />
@@ -237,37 +308,24 @@ export default function MesMissions() {
               </div>
             )}
 
-            {/* Actions */}
-            <div className="flex flex-wrap gap-2">
-              {!m.arrivee_le && !m.presence_confirmee_le && maintenant < fin && (
-                <Button size="sm" disabled={horsReseau} title={horsReseau ? "Disponible quand le réseau revient" : undefined} onClick={() => confirmer(m)} data-testid="confirmer-presence"><CheckCircle2 className="h-4 w-4 mr-1" /> Je confirme ma présence</Button>
-              )}
-              {!m.arrivee_le && !m.empechement_le && maintenant < debut && (
-                <Button size="sm" variant="ghost" disabled={horsReseau} title={horsReseau ? "Disponible quand le réseau revient" : undefined} onClick={() => setEmpechement(m)} data-testid="signaler-empechement"><XCircle className="h-4 w-4 mr-1" /> Je ne pourrai pas venir</Button>
-              )}
-              {fenetre && !m.arrivee_le && (
-                <Button size="lg" className="w-full sm:w-auto bg-[#141414] hover:bg-[#2a2a2a]" onClick={() => setPointage({ m, sens: "arrivee" })} data-testid="pointer-arrivee"><LogIn className="h-5 w-5 mr-2" /> Je suis arrivé(e)</Button>
-              )}
-              {fenetre && m.arrivee_le && !m.depart_le && (
-                <Button size="lg" variant="outline" className="w-full sm:w-auto" onClick={() => setPointage({ m, sens: "depart" })} data-testid="pointer-depart"><LogOut className="h-5 w-5 mr-2" /> J'ai terminé</Button>
-              )}
-            </div>
+            {!aujourdHui && actions}
           </div>
         );
       })}
-      <details className="text-xs text-muted-foreground" data-testid="aide-hors-ligne">
-        <summary className="cursor-pointer min-h-11 flex items-center font-medium text-[#8C6D22]">Sans réseau, comment ça marche ?</summary>
-        <div className="space-y-1.5 pb-2">
+      <details className="text-sm text-[#4A4137]" data-testid="aide-hors-ligne">
+        <summary className="cursor-pointer min-h-11 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[.14em] text-[#7A5F1F]">Sans réseau, comment ça marche ?<span aria-hidden="true" style={{ fontFamily: "var(--s-titre)", fontSize: 20 }}>+</span></summary>
+        <div className="space-y-2 pb-2">
           <p>Ce téléphone garde seulement tes missions d'hier à après-demain : lieu, horaires, tenue, contact sur place, consignes. Jamais ton contrat, ta carte d'identité ni ta paie.</p>
-          <p>Sans réseau, tu pointes comme d'habitude : l'heure, ta position et ton selfie restent sur le téléphone et partent tout seuls au retour du réseau, une seule fois. L'agence vérifie ces pointages, car l'heure vient du téléphone ; en attendant, tes heures prévues sont comptées.</p>
+          <p>Sans réseau, tu pointes comme d'habitude : l'heure, ta position et ton selfie restent sur le téléphone. Ils partent dès que le réseau revient, une seule fois, à condition d'ouvrir l'appli. L'agence vérifie ces pointages, car l'heure vient du téléphone ; en attendant, tes heures prévues sont comptées.</p>
           <p>Si l'agence modifie ou retire une mission, ce téléphone peut garder l'ancienne version jusqu'à la prochaine connexion. Tout s'efface seul 48 h après ta dernière mission, et à ta déconnexion.</p>
+          <p>Si tu changes de téléphone, ce qui n'est pas encore envoyé est perdu : préviens l'agence.</p>
         </div>
       </details>
-      <button type="button" onClick={() => setEffacer(true)} className="inline-flex min-h-11 items-center gap-1.5 text-xs text-muted-foreground underline underline-offset-4" data-testid="effacer-donnees"><Trash2 className="h-3.5 w-3.5" /> Effacer les données de ce téléphone</button>
-      <p className="text-xs text-muted-foreground">Le jour J, le pointage s'ouvre 3 h avant le début. Ta position n'est enregistrée qu'au moment où tu pointes (jamais en continu) et sert seulement à vérifier que tu es sur le lieu de la mission.</p>
+      <button type="button" onClick={() => setEffacer(true)} className="inline-flex min-h-11 items-center gap-1.5 text-sm text-[#6B5318] underline underline-offset-4" data-testid="effacer-donnees"><Trash2 className="h-4 w-4" aria-hidden="true" /> Effacer les données de ce téléphone</button>
+      <p className="text-sm text-[#4A4137]">Le jour J, le pointage s'ouvre 3 h avant le début. Ta position n'est enregistrée qu'au moment où tu pointes (jamais en continu) et sert seulement à vérifier que tu es sur le lieu de la mission.</p>
 
       <Dialog open={!!empechement} onOpenChange={(o) => !o && setEmpechement(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md st-dialogue">
           <DialogHeader><DialogTitle>Tu ne pourras pas venir ?</DialogTitle>
             <DialogDescription>L'agence est prévenue tout de suite pour organiser un remplacement. Merci de prévenir le plus tôt possible.</DialogDescription></DialogHeader>
           <textarea value={motif} onChange={(e) => setMotif(e.target.value)} rows={3} placeholder="Motif (facultatif)" className="w-full rounded-md border px-3 py-2 text-sm" data-testid="motif-empechement" />
@@ -276,10 +334,10 @@ export default function MesMissions() {
       </Dialog>
 
       <Dialog open={!!pointage} onOpenChange={(o) => { if (!o) { setPointage(null); setPhoto(null); } }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md st-dialogue">
           <DialogHeader>
             <DialogTitle>{pointage?.sens === "arrivee" ? "Pointer mon arrivée" : "Pointer mon départ"}</DialogTitle>
-            <DialogDescription>{horsReseau ? "Pas de réseau : ton pointage sera gardé sur ton téléphone et envoyé tout seul au retour du réseau. Ton téléphone peut te demander de partager ta position : accepte." : "Ton téléphone va te demander l'autorisation de partager ta position : accepte pour que ton pointage soit validé automatiquement."}</DialogDescription>
+            <DialogDescription>{horsReseau ? "Pas de réseau : ton pointage sera gardé sur ton téléphone et envoyé dès que le réseau revient (ouvre l'appli à ce moment-là). Ton téléphone peut te demander de partager ta position : accepte." : "Ton téléphone va te demander l'autorisation de partager ta position : accepte pour que ton pointage soit validé automatiquement."}</DialogDescription>
           </DialogHeader>
           {pointage?.sens === "arrivee" && (
             <div className="space-y-2">
@@ -300,13 +358,15 @@ export default function MesMissions() {
       </Dialog>
 
       <Dialog open={effacer} onOpenChange={setEffacer}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md st-dialogue">
           <DialogHeader><DialogTitle>Effacer les données de ce téléphone ?</DialogTitle>
             <DialogDescription>Tes missions gardées pour le mode sans réseau seront supprimées de ce téléphone. Elles reviendront à ta prochaine connexion.</DialogDescription></DialogHeader>
-          {aEnvoyer > 0 && <p className="rounded-md border border-[#9C4A2C]/40 bg-[#9C4A2C]/5 p-3 text-sm text-[#9C4A2C]" role="alert">{aEnvoyer === 1 ? "1 pointage n'est pas encore envoyé : il sera perdu." : `${aEnvoyer} pointages ne sont pas encore envoyés : ils seront perdus.`} Attends le retour du réseau pour ne rien perdre.</p>}
+          {aEnvoyer > 0 && <p className="hl-etat hl-refus" role="alert">{aEnvoyer === 1 ? "1 pointage n'est pas encore envoyé : il serait perdu." : `${aEnvoyer} pointages ne sont pas encore envoyés : ils seraient perdus.`} Attends le retour du réseau pour ne rien perdre.</p>}
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="ghost" onClick={() => setEffacer(false)}>Garder</Button>
-            <Button variant="destructive" onClick={() => { toutEffacer(); setEffacer(false); charger(); toast({ title: "Données effacées", description: "Ce téléphone ne garde plus tes missions." }); }} data-testid="confirmer-effacement">{aEnvoyer > 0 ? "Effacer quand même" : "Effacer"}</Button>
+            <Button className="hl-bouton-sur" onClick={() => setEffacer(false)} data-testid="garder-donnees">Garder</Button>
+            {!(aEnvoyer > 0 && !enLigne) && (
+              <Button variant="outline" className="hl-bouton-risque" onClick={() => { toutEffacer(); setEffacer(false); charger(); toast({ title: "Données effacées", description: "Ce téléphone ne garde plus tes missions." }); }} data-testid="confirmer-effacement">{aEnvoyer > 0 ? "Effacer quand même" : "Effacer"}</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

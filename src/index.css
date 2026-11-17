@@ -325,3 +325,32 @@ body.jeu-tiroir .bouton-whatsapp { display: none !important; }
 .inv .inv-signal .inv-champ { text-align: start; }
 @media (prefers-reduced-motion: reduce) { .sr-entre, .sr-filet { animation: none; } }
 .inv-signal .inv-lien, .inv-lien[data-testid="signaler-ouvrir"] { min-height: 44px; padding: 10px 8px; font-size: 14px; }
+
+/* ── Mode hors ligne du staff : quatre états qu'on distingue d'un coup d'œil (plein soleil compris) ──
+   hors réseau (or) · en attente (or plein) · refusé (terre) · envoyé (zellige). Filet gauche + capitales espacées, angles droits. */
+.hl-etat { border-left: 3px solid var(--s-laiton); background: var(--s-papier); padding: 12px 14px; font-family: var(--s-texte); color: #2A2420; animation: hl-fondu .3s var(--s-courbe) both; }
+.hl-etat .hl-lib { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--s-laiton-texte); }
+.hl-etat p { margin: 4px 0 0; font-size: 14px; line-height: 1.45; color: var(--s-texte-2); }
+.hl-etat .hl-grand { font-family: var(--s-titre); font-size: 18px; line-height: 1.3; color: #2A2420; margin-top: 6px; }
+.hl-reseau { border-left-color: var(--s-laiton-texte); background: #FFFCF2; }
+.hl-attente { border-left-color: var(--s-laiton); background: #F4EFE3; }
+.hl-attente .hl-nb { font-family: var(--s-titre); font-size: 32px; line-height: 1; color: #2A2420; }
+.hl-refus { border-left-color: var(--s-terre); background: #FBF5F1; }
+.hl-refus .hl-lib { color: #7A2E16; }
+.hl-ok { border-left-color: var(--s-zellige); }
+.hl-ok .hl-lib { color: var(--s-zellige); }
+.hl-badge { display: inline-flex; align-items: center; gap: 4px; border: 1px solid currentColor; border-radius: 0; padding: 3px 8px; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; animation: hl-fondu .3s var(--s-courbe) both; }
+.hl-badge-aujourdhui { background: #141414; color: var(--s-laiton-clair); border-color: #141414; }
+.hl-note { font-size: 13px; line-height: 1.4; color: #4A4137; border-left: 3px solid var(--s-filet); padding: 6px 10px; background: transparent; }
+/* Apparition en fondu SEUL (aucun glissement : un bandeau qui bouge sous le pouce fait rater le bouton) */
+@keyframes hl-fondu { from { opacity: 0 } to { opacity: 1 } }
+/* Boîtes de dialogue du staff : langage Seuil (angles droits, filet, typo de l'espace) */
+.st-dialogue { border-radius: 0 !important; border: 1px solid var(--s-filet) !important; border-top: 3px solid var(--s-laiton) !important; font-family: var(--s-texte); background: var(--s-papier) !important; }
+.st-dialogue h2 { font-family: var(--s-titre); font-weight: 400; letter-spacing: 0; }
+.st-dialogue button { border-radius: 0; min-height: 44px; }
+.st-dialogue .hl-bouton-sur { background: #141414; color: var(--s-laiton-clair); }
+.st-dialogue .hl-bouton-risque { background: transparent; color: #7A2E16; border: 1px solid #7A2E16; }
+@media (prefers-reduced-motion: reduce) {
+  .hl-etat, .hl-badge { animation: none; }
+  [data-state] { animation: none !important; transition: none !important; }
+}

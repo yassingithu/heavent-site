@@ -515,12 +515,12 @@ const StaffDashboard = () => {
     <div className="st-espace">
       <Seo noindex />
       <Dialog open={sortie} onOpenChange={setSortie}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md st-dialogue">
           <DialogHeader><DialogTitle>Des pointages ne sont pas encore envoyés</DialogTitle>
-            <DialogDescription>Si tu te déconnectes maintenant, ils seront perdus. Attends le retour du réseau : ils partent tout seuls.</DialogDescription></DialogHeader>
+            <DialogDescription>Si tu te déconnectes maintenant, ils seront perdus. Ils partent dès que le réseau revient : reste connecté(e) et ouvre l'appli à ce moment-là.</DialogDescription></DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button onClick={() => setSortie(false)}>Rester connecté(e)</Button>
-            <Button variant="destructive" onClick={() => { setSortie(false); void handleSignOut(true); }} data-testid="sortir-quand-meme">Me déconnecter quand même</Button>
+            <Button className="hl-bouton-sur" onClick={() => setSortie(false)} data-testid="rester-connecte">Rester connecté(e)</Button>
+            {enLigne && <Button variant="outline" className="hl-bouton-risque" onClick={() => { setSortie(false); void handleSignOut(true); }} data-testid="sortir-quand-meme">Me déconnecter quand même</Button>}
           </DialogFooter>
         </DialogContent>
       </Dialog>
