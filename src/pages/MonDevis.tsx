@@ -186,6 +186,12 @@ export default function MonDevis() {
           </section>
         ) : (
           <>
+            {(devis as any).resignature_requise_le && (
+              <div className="rounded-2xl border border-[#F0D9A8] bg-[#FFF7E6] p-4 text-sm text-[#5C4512] flex gap-3" data-testid="resignature-requise" role="status">
+                <FileText className="h-5 w-5 shrink-0" />
+                <div>Ce devis a été modifié depuis votre première signature. Relisez-le, puis signez-le à nouveau pour confirmer la nouvelle version. La version que vous aviez signée est conservée.</div>
+              </div>
+            )}
             {devis.rdv_demande_le && (
               <div className="rounded-2xl border border-[#F0D9A8] bg-[#FFF7E6] p-4 text-sm text-[#5C4512] flex gap-3" data-testid="rdv-envoye" role="status">
                 <CalendarClock className="h-5 w-5 shrink-0" />

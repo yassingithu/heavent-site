@@ -20,3 +20,14 @@ Environnement : base de production, transactions annulées, données fictives (@
 
 ## Non vérifié
 Réglages Supabase Auth (inscriptions ouvertes, mots de passe) ; clé de l'assistant IA ; authenticité du webhook Instagram en conditions réelles ; envois réels (e-mails) ; concurrence réelle de deux signatures simultanées (seule la logique séquentielle est testée) ; fonction purge-donnees-staff (déployée, source absente du dépôt) ; génération de PDF et contenus administrables (non examinés).
+
+
+## Mise à jour — seconde signature exigée (décision de Yassin)
+
+Un devis signé dont le contenu commercial change (lignes, montants, dates, lieu, conditions, identité du client) perd sa signature : le client doit le signer à nouveau.
+- Appliqué par la base (migration `20261117050000_devis_resignature.sql`, **non appliquée** : elle part avec la mise en ligne du site), donc valable quel que soit l'outil de modification, y compris un appel direct à l'API par un compte administrateur.
+- Comparaison avec l'instantané figé à la signature : un enregistrement sans changement ne déclenche rien ; changer l'e-mail, le téléphone ou les notes internes non plus.
+- Même si une facture d'acompte existe : la signature tombe aussi, et aucune facture ne peut être créée avant la seconde signature. L'ancienne version signée et son ancienne preuve restent conservées.
+- Preuves (transaction annulée, données fictives) : signature sans fausse alerte ; enregistrement identique = reste signé ; changement de prix = signature levée, indicateur posé, statut « envoyé », 2 versions conservées après re-signature ; facture refusée tant que la seconde signature manque, acceptée ensuite.
+- Limites : la suppression puis réinsertion de lignes identiques n'a pas été testée en base (test sans suppression) ; l'écran évite ce cas en ne réécrivant pas des lignes inchangées. Si la date de validité est dépassée, le client ne peut pas re-signer tant qu'elle n'est pas prolongée.
+- Le point 4 « à décider » devient « corrigé, en attente de mise en ligne ».

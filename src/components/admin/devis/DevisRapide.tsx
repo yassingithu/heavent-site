@@ -322,18 +322,36 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     const lignes = form.lignes.filter((l) => l.designation.trim());
     if (lignes.length === 0) { toast({ title: "Ajoute au moins une ligne", variant: "destructive" }); return null; }
 
-    // Devis déjà facturé (acompte) : on peut encore l'ajuster (heures en plus…), la signature reste valable
-    // et la facture de solde tiendra compte du nouveau montant.
+    // Devis signé : tout changement de contenu (lignes, montants, dates, lieu, conditions, identité du client) annule la signature,
+    // quelle que soit la façon dont le devis est modifié : la base l'impose (seconde signature exigée).
+    // Un enregistrement sans changement ne touche à rien.
     let dejaFacture = false;
+    let contenuModifie = false;
+    let lignesIdentiques = false;
     if (form.id) {
       const { count } = await (supabase as any).from("factures").select("id", { count: "exact", head: true }).eq("devis_id", form.id).neq("statut", "annulee");
       dejaFacture = (count ?? 0) > 0;
-    }
-    if (form.signe_le && form.id && !dejaFacture) {
-      const { data: avant } = await supabase.from("devis").select("total_ttc").eq("id", form.id).single();
-      const t = calculerTotaux(lignes, form.remise_globale_pct, form.taux_tva);
-      if (avant && Math.abs(Number(avant.total_ttc) - t.ttc) > 0.009 &&
-        !confirm("Ce devis a été signé par le client. Le modifier annule sa signature : il faudra le lui renvoyer pour qu'il signe la nouvelle version. Continuer ?")) return null;
+      const [{ data: avant }, { data: lignesAvant }] = await Promise.all([
+        supabase.from("devis").select("titre, date_evenement, date_fin_evenement, lieu, nb_personnes, remise_globale_pct, taux_tva, acompte_pct, devise, conditions, client_nom, client_societe, client_adresse, client_ice").eq("id", form.id).single(),
+        supabase.from("devis_lignes").select("designation, description, quantite, duree, unite, prix_unitaire, remise_pct").eq("devis_id", form.id).order("ordre"),
+      ]);
+      const cle = (l: any) => [String(l.designation ?? "").trim(), l.description || "", Number(l.quantite || 0), Number(l.duree || 0), l.unite ?? "", Number(l.prix_unitaire || 0), Number(l.remise_pct || 0)].join("|");
+      lignesIdentiques = !!lignesAvant && lignesAvant.length === lignes.length && lignesAvant.every((l: any, i: number) => cle(l) === cle(lignes[i]));
+      const t = (v: any) => String(v ?? "");
+      const n = (v: any) => String(Number(v || 0));
+      const champsIdentiques = !!avant &&
+        t(avant.titre) === t(form.titre || null) && t(avant.date_evenement) === t(form.date_evenement || null) &&
+        t(avant.date_fin_evenement) === t(form.date_fin_evenement || null) && t(avant.lieu) === t(form.lieu || null) &&
+        t(avant.nb_personnes) === t(form.nb_personnes ? parseInt(form.nb_personnes) : null) &&
+        n(avant.remise_globale_pct) === n(form.remise_globale_pct) && n(avant.taux_tva) === n(form.taux_tva ?? 20) && n(avant.acompte_pct) === n(form.acompte_pct) &&
+        t(avant.devise) === t(devise) && t(avant.conditions) === t(form.conditions || null) &&
+        t(avant.client_nom) === t(form.client_nom.trim()) && t(avant.client_societe) === t(form.client_societe || null) &&
+        t(avant.client_adresse) === t(form.client_adresse || null) && t(avant.client_ice) === t(form.client_ice || null);
+      contenuModifie = !!form.signe_le && !(lignesIdentiques && champsIdentiques);
+      if (contenuModifie && !confirm(
+        "Ce devis a été signé par le client. Le modifier annule sa signature : il devra le signer à nouveau" +
+        (dejaFacture ? ", et aucune nouvelle facture (solde) ne pourra être créée avant cette seconde signature" : "") +
+        ". Sa version signée reste conservée comme preuve. Continuer ?")) return null;
     }
 
     setSaving(true);
@@ -354,29 +372,23 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
         ...(statut === "envoye" ? { date_envoi: new Date().toISOString() } : {}),
       };
 
-      // Signature invalidée si le montant signé a changé
-      let signatureAnnulee = false;
-      if (form.signe_le && form.id && !dejaFacture) {
-        const { data: avant } = await supabase.from("devis").select("total_ttc").eq("id", form.id).single();
-        const t = calculerTotaux(lignes, form.remise_globale_pct, form.taux_tva);
-        if (avant && Math.abs(Number(avant.total_ttc) - t.ttc) > 0.009) {
-          Object.assign(payload, { signe_le: null, signature_nom: null, signature_image: null, signature_preuve: null, statut: "envoye" });
-          signatureAnnulee = true;
-        }
-      }
+      // La base annule la signature d'elle-même si le contenu signé a changé (voir plus haut) ; ici on prévient seulement.
+      const signatureAnnulee = contenuModifie;
 
       let id = form.id;
       if (id) {
         const { error } = await supabase.from("devis").update(payload).eq("id", id);
         if (error) throw error;
-        const { error: delErr } = await supabase.from("devis_lignes").delete().eq("devis_id", id);
-        if (delErr) throw delErr;
+        if (!lignesIdentiques) {
+          const { error: delErr } = await supabase.from("devis_lignes").delete().eq("devis_id", id);
+          if (delErr) throw delErr;
+        }
       } else {
         const { data, error } = await supabase.from("devis").insert(payload).select("id").single();
         if (error) throw error;
         id = data.id;
       }
-      const { error: lErr } = await supabase.from("devis_lignes").insert(
+      const { error: lErr } = lignesIdentiques ? { error: null } : await supabase.from("devis_lignes").insert(
         lignes.map((l, i) => ({
           devis_id: id!, ordre: i, designation: l.designation.trim(), description: l.description || null,
           quantite: l.quantite || 0, duree: l.duree || 0, unite: l.unite, prix_unitaire: l.prix_unitaire || 0, remise_pct: l.remise_pct || 0,
@@ -400,7 +412,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
         lien_token: saved?.lien_token ?? form.lien_token, date_envoi: saved?.date_envoi ?? form.date_envoi,
         signe_le: saved?.signe_le ?? null, signature_nom: saved?.signature_nom ?? null, signature_image: saved?.signature_image ?? null,
       };
-      if (signatureAnnulee) toast({ title: "Signature du client annulée", description: "Le montant a changé : renvoie le devis au client pour qu'il signe la nouvelle version." });
+      if (signatureAnnulee) toast({ title: "Signature du client annulée", description: "Le contenu a changé : renvoie le devis au client, il devra le signer à nouveau (sa version signée reste conservée). Vérifie que la date de validité n’est pas dépassée, sinon il ne pourra pas signer." });
       setForm(next);
       toast({ title: "Devis enregistré", description: next.numero ?? "" });
       devisModifie();
