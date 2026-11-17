@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FUNCTIONS_URL } from "@/integrations/supabase/client";
 import { useTexte } from "@/i18n/textes";
@@ -15,7 +15,9 @@ type Pose = "assise" | "debout" | "salue";
 type Profil = "maries" | "entreprise" | "crew" | "prestataire" | "nawar" | "autre";
 type LienId = "devis-mariage" | "devis-entreprise" | "inscription-staff" | "espace-staff" | "prestataires" | "nawar" | "contact" | "whatsapp" | "heavent-city";
 
-const PAGES_PRIVEES = ["/admin", "/auth", "/staff-dashboard", "/cartes", "/rsvp/", "/invitation/", "/liste/", "/reponse/", "/souvenirs/"];
+const PAGES_PRIVEES = ["/admin", "/auth", "/staff-dashboard", "/cartes", "/rsvp/", "/invitation/", "/liste/", "/reponse/", "/souvenirs/", "/mon-devis/"];
+// Pages où la personne remplit déjà un formulaire : l'hôtesse reste assise, sans invitation animée
+const PAGES_FORMULAIRE = ["/devis-mariage", "/devis-entreprise", "/inscription-staff", "/prestataires"];
 const CLE_VUE = "heavent-hotesse-vue";
 const CLE_APPELS = "heavent-hotesse-appels";
 const CLE_BADGE = "heavent-hotesse-badge";
@@ -46,58 +48,29 @@ const PROFILS: { id: Profil; label: string }[] = [
 
 interface Reponse { reponse: string; liens: LienId[] }
 
-/** Hôtesse d'accueil (dessin original Heavent) : blazer noir, chemisier crème, jupe crayon, cheveux longs ondulés, talons.
- *  Trois poses : assise sur un tabouret, debout, debout en présentant de la main. `buste` = cadrage tête et épaules (en-tête du panneau). */
-function Hotesse({ pose, buste }: { pose: Pose; buste?: boolean }) {
-  const or = "#A8933F", orC = "#E4D49A", nuit = "#141414", peau = "#D8AE88", cheveux = "#3a2417", creme = "#F3ECDD";
-  const manche = (d: string) => (<><path d={d} fill="none" stroke={or} strokeWidth="8.6" strokeLinecap="round" strokeLinejoin="round" /><path d={d} fill="none" stroke={nuit} strokeWidth="6.8" strokeLinecap="round" strokeLinejoin="round" /></>);
-  const jambe = (d: string) => <path d={d} fill="none" stroke={peau} strokeWidth="6" strokeLinecap="round" />;
-  const talon = (x: number, y: number) => <path d={`M${x} ${y} h9 l-1 5 h-9 z M${x} ${y + 5} v3`} fill={nuit} stroke={nuit} strokeWidth="1.6" strokeLinejoin="round" />;
-  return (
-    <svg className="hot-svg" data-pose={pose} viewBox={buste ? "14 6 72 66" : "0 0 100 190"} aria-hidden focusable="false">
-      {!buste && <ellipse cx="50" cy="185" rx="26" ry="3.2" fill="#000" opacity=".28" />}
-      {!buste && (
-        <g className="hot-tabouret" fill="none" stroke={or} strokeWidth="1.4" strokeLinecap="round">
-          <ellipse cx="50" cy="118" rx="19" ry="4" fill="#26211a" />
-          <path d="M36 121 L30 184 M64 121 L70 184 M50 122 V184 M33 160 H67" />
-        </g>
-      )}
-      <g className="hot-fig">
-        {/* cheveux longs ondulés (derrière) */}
-        <path d="M37 29 C33 6 67 6 63 29 C69 42 66 58 70 76 C65 70 62 79 58 68 L42 68 C38 79 35 70 30 76 C34 58 31 42 37 29 Z" fill={cheveux} />
-        {!buste && <g className="hot-assise">
-          {jambe("M44 128 L40 172")}{jambe("M57 128 L52 172")}
-          {talon(33, 172)}{talon(46, 172)}
-          <path d="M35 98 L65 98 L69 124 L31 124 Z" fill={nuit} stroke={or} strokeWidth="1.1" strokeLinejoin="round" />
-        </g>}
-        {!buste && <g className="hot-debout">
-          {jambe("M43 135 L43 176")}{jambe("M57 135 L57 176")}
-          {talon(36, 176)}{talon(56, 176)}
-          <path d="M35 98 L65 98 L63 138 L37 138 Z" fill={nuit} stroke={or} strokeWidth="1.1" strokeLinejoin="round" />
-        </g>}
-        {/* buste */}
-        <rect x="45" y="39" width="10" height="11" fill={peau} />
-        <path d="M45 44 L50 62 L55 44 Z" fill={creme} />
-        <path d="M36 52 Q36 45 45 44 L50 66 L49 100 L34 100 Z M64 52 Q64 45 55 44 L50 66 L51 100 L66 100 Z" fill={nuit} stroke={or} strokeWidth="1.1" strokeLinejoin="round" />
-        <path d="M45 44 L50 66 L55 44" fill="none" stroke={orC} strokeWidth="1.1" strokeLinejoin="round" />
-        <rect x="55.5" y="63" width="7" height="4.6" rx=".6" fill={orC} /><path d="M57.6 64.4v1.8M60.4 64.4v1.8M57.6 65.3h2.8" stroke={nuit} strokeWidth=".9" fill="none" />
-        {/* bras */}
-        {!buste && <g className="hot-assise">{manche("M38 51 L35 78 L44 112")}{manche("M62 51 L65 78 L56 112")}<circle cx="44" cy="115" r="3.4" fill={peau} /><circle cx="56" cy="115" r="3.4" fill={peau} /></g>}
-        {!buste && <g className="hot-debout">{manche("M38 51 L34 76 L37 97")}<circle cx="37.5" cy="100" r="3.4" fill={peau} />
-          <g className="hot-bras-d">{manche("M62 51 L66 76 L63 97")}<circle cx="62.5" cy="100" r="3.4" fill={peau} /></g>
-          <g className="hot-presente"><g className="hot-main">{manche("M62 51 L74 66 L87 60")}<ellipse cx="90" cy="58.5" rx="4.6" ry="3" fill={peau} transform="rotate(-18 90 58.5)" /></g></g>
-        </g>}
-        {buste && <>{manche("M38 51 L34 76")}{manche("M62 51 L66 76")}</>}
-        {/* tête */}
-        <ellipse cx="50" cy="30" rx="9.6" ry="11.6" fill={peau} />
-        <path d="M40 30 C39 14 61 14 60 30 C58 22 53 20 48 20.5 C44 21 41 24 40 30 Z" fill={cheveux} />
-        <circle cx="45.2" cy="34" r="1.2" fill={orC} /><circle cx="54.8" cy="34" r="1.2" fill={orC} />
-        <circle cx="46.6" cy="30.5" r="1.15" fill={nuit} /><circle cx="53.4" cy="30.5" r="1.15" fill={nuit} />
-        <path d="M46.8 36.4 Q50 39.4 53.2 36.4" fill="none" stroke="#7a2e2a" strokeWidth="1.3" strokeLinecap="round" />
-      </g>
-    </svg>
-  );
-}
+/** Réponses des boutons de profil : écrites ici (aucun réseau, aucune IA) ; le serveur ne sert que pour la saisie libre. */
+const LOCAL: Record<Exclude<Profil, "autre">, { liens: LienId[]; texte: Record<"fr" | "en" | "ar", string> }> = {
+  maries: { liens: ["devis-mariage", "whatsapp"], texte: {
+    fr: "Pour un mariage, un henné ou une fête, le plus simple est de demander votre devis : donnez la ville, la période et ce dont vous avez besoin. L'équipe répond sous 24 h.",
+    en: "For a wedding, henna night or party, the simplest is to request your quote: share the city, the period and what you need. The team replies within 24 hours.",
+    ar: "للأعراس والحنّاء والحفلات، الأبسط أن تطلبوا عرضكم: اذكروا المدينة والفترة وما تحتاجونه. يردّ الفريق خلال 24 ساعة." } },
+  entreprise: { liens: ["devis-entreprise", "whatsapp"], texte: {
+    fr: "Pour un salon, un séminaire ou un congrès, demandez un devis entreprise : hôtesses, staff ou organisation complète. L'équipe répond sous 24 h.",
+    en: "For a trade show, seminar or conference, request a business quote: hostesses, staff or full organisation. The team replies within 24 hours.",
+    ar: "للمعارض والندوات والمؤتمرات، اطلبوا عرضاً للشركات: مضيفات أو طاقم أو تنظيم كامل. يردّ الفريق خلال 24 ساعة." } },
+  crew: { liens: ["inscription-staff", "espace-staff"], texte: {
+    fr: "Pour travailler avec nous comme hôtesse ou staff, inscrivez-vous (18 ans ou plus). L'inscription ne garantit pas de mission, mais elle vous met dans notre équipe. Déjà inscrite ? Connectez-vous à votre espace.",
+    en: "To work with us as a hostess or staff member, register (18 or over). Registering doesn't guarantee a mission, but it puts you in our team. Already registered? Sign in to your space.",
+    ar: "للعمل معنا كمضيفة أو ضمن الطاقم، سجّلوا (18 سنة فما فوق). التسجيل لا يضمن مهمة لكنه يضعكم ضمن فريقنا. مسجّلة من قبل؟ ادخلوا إلى فضائكم." } },
+  prestataire: { liens: ["prestataires"], texte: {
+    fr: "Heavent recrute des partenaires (traiteurs, DJ, photographes, décorateurs…). L'inscription est gratuite et sans commission sur vos prix. L'équipe étudie votre dossier et répond sous 48 h.",
+    en: "Heavent recruits partners (caterers, DJs, photographers, decorators…). Registration is free, with no commission on your prices. The team reviews your file and replies within 48 hours.",
+    ar: "تبحث Heavent عن شركاء (متعهدو حفلات، دي جي، مصورون، مصممو ديكور…). التسجيل مجاني ودون عمولة على أسعاركم. يدرس الفريق ملفكم ويردّ خلال 48 ساعة." } },
+  nawar: { liens: ["nawar", "whatsapp"], texte: {
+    fr: "Nawar est notre bar à parfums : les mariés ou les hôtes choisissent les parfums qu'ils offrent à leurs invités, et chacun repart avec son flacon. Demandez une formule sur mesure.",
+    en: "Nawar is our perfume bar: the couple or hosts choose the fragrances they offer their guests, and everyone leaves with a bottle. Ask for a tailored formula.",
+    ar: "نوّار هو ركن العطور لدينا: يختار العروسان أو المضيفون العطور التي يقدّمونها لضيوفهم، ويغادر كل ضيف بقارورته. اطلبوا صيغة على مقاسكم." } },
+};
 
 export default function AssistantSite() {
   const x = useTexte();
@@ -111,58 +84,111 @@ export default function AssistantSite() {
   const [charge, setCharge] = useState(false);
   const [erreur, setErreur] = useState(false);
   const [texte, setTexte] = useState("");
-  const [clique, setClique] = useState(false);
+  const [dernier, setDernier] = useState("");
+  const [clavier, setClavier] = useState(0);
   const [badge, setBadge] = useState(() => lire(CLE_BADGE) === "1");
   const survol = useRef(false);
   const bouton = useRef<HTMLButtonElement>(null);
+  const video = useRef<HTMLVideoElement>(null);
+  const toile = useRef<HTMLCanvasElement>(null);
+  const travail = useRef<HTMLCanvasElement | null>(null);
+  const images = useRef<Record<string, HTMLImageElement>>({});
+  const boucle = useRef(0);
   const titre = useRef<HTMLHeadingElement>(null);
   const panneau = useRef<HTMLDivElement>(null);
+  const corps = useRef<HTMLDivElement>(null);
   const minuteurs = useRef<number[]>([]);
   const prive = PAGES_PRIVEES.some((p) => pathname === p.replace(/\/$/, "") || pathname.startsWith(p));
+  const formulaire = PAGES_FORMULAIRE.some((p) => pathname.startsWith(p));
   const reduit = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+  // Affichage : images à fond transparent, et vidéo « paquet » (couleur à gauche, transparence à droite) recomposée sur la toile
+  const poser = useCallback((nom: "assise" | "presente") => {
+    const c = toile.current, g = c?.getContext("2d"), img = images.current[nom];
+    if (!c || !g || !img?.complete) return;
+    g.clearRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+  }, []);
+  const composer = useCallback(() => {
+    const v = video.current, c = toile.current, g = c?.getContext("2d");
+    if (!v || !c || !g || v.readyState < 2) return;
+    const t = (travail.current ??= document.createElement("canvas"));
+    t.width = 520; t.height = 360;
+    const w = t.getContext("2d", { willReadFrequently: true });
+    if (!w) return;
+    w.drawImage(v, 0, 0, 520, 360);
+    const src = w.getImageData(0, 0, 520, 360).data, out = g.createImageData(260, 360), d = out.data;
+    for (let y = 0; y < 360; y++) for (let x = 0; x < 260; x++) {
+      const i = (y * 520 + x) * 4, k = i + 260 * 4, j = (y * 260 + x) * 4;
+      d[j] = src[i]; d[j + 1] = src[i + 1]; d[j + 2] = src[i + 2]; d[j + 3] = src[k];
+    }
+    g.putImageData(out, 0, 0);
+  }, []);
+  const lire_ = useCallback(() => {
+    const v = video.current;
+    if (!v) return;
+    const tick = () => { composer(); if (!v.paused && !v.ended) boucle.current = requestAnimationFrame(tick); };
+    cancelAnimationFrame(boucle.current); boucle.current = requestAnimationFrame(tick);
+  }, [composer]);
+  useEffect(() => {
+    ["assise", "presente"].forEach((n) => {
+      const img = new Image(); img.onload = () => { if (n === "assise") poser("assise"); }; img.src = `/assistant/hotesse-${n}.webp`; images.current[n] = img;
+    });
+    return () => cancelAnimationFrame(boucle.current);
+  }, [poser]);
 
   const nettoyer = () => { minuteurs.current.forEach((m) => window.clearTimeout(m)); minuteurs.current = []; };
   const apres = (ms: number, f: () => void) => { minuteurs.current.push(window.setTimeout(f, ms)); };
 
-  // Invitation : une seule fois par visite, après le choix sur le bandeau d'audience, jamais pendant l'ouverture du site
+  // Invitation : une seule fois par visite, après le choix sur le bandeau d'audience, jamais pendant l'ouverture du site,
+  // jamais sur une page de formulaire ni quand la personne est en train d'écrire.
   const inviter = useCallback(() => {
-    if (lire(CLE_VUE) === "1") return;
+    if (lire(CLE_VUE) === "1" || document.hidden) return;
     const racine = document.documentElement;
     if (racine.classList.contains("avec-ouverture") && !racine.classList.contains("ouverture-finie")) return;
+    const actif = document.activeElement;
+    if (actif && /^(INPUT|TEXTAREA|SELECT)$/.test(actif.tagName)) return;
     ecrire(CLE_VUE, "1");
-    setPose(reduit ? "salue" : "debout");
-    if (!reduit) apres(350, () => setPose("salue"));
-    apres(reduit ? 0 : 1300, () => setBulle(true));
+    const v = video.current;
+    const sansVideo = () => { setPose("salue"); poser("presente"); setBulle(true); };
+    if (reduit || !v) sansVideo();
+    else {
+      setPose("debout");
+      v.currentTime = 0;
+      v.play().then(lire_).catch(sansVideo);
+      apres(4300, () => { setPose("salue"); setBulle(true); });
+    }
     const seRassoit = () => {
       if (survol.current) { apres(3000, seRassoit); return; }
       setBulle(false);
-      apres(250, () => setPose("assise"));
+      apres(250, () => { setPose("assise"); video.current?.pause(); cancelAnimationFrame(boucle.current); poser("assise"); });
     };
-    apres(7000 + (reduit ? 0 : 1300), seRassoit);
-  }, [reduit]);
+    apres(reduit ? 7000 : 10500, seRassoit);
+  }, [reduit, poser, lire_]);
 
   useEffect(() => {
-    if (prive || !choix || ouvert) return;
+    if (prive || formulaire || !choix || ouvert) return;
     if (lire(CLE_VUE) === "1") return;
+    const charge3 = window.setTimeout(() => video.current?.load(), 3000);
     const minuteur = window.setTimeout(inviter, 8000);
     const defiler = () => {
       const haut = document.documentElement.scrollHeight - window.innerHeight;
       if (haut > 0 && window.scrollY / haut > 0.35) inviter();
     };
     window.addEventListener("scroll", defiler, { passive: true });
-    return () => { window.clearTimeout(minuteur); window.removeEventListener("scroll", defiler); };
-  }, [prive, choix, ouvert, inviter]);
+    return () => { window.clearTimeout(charge3); window.clearTimeout(minuteur); window.removeEventListener("scroll", defiler); };
+  }, [prive, formulaire, choix, ouvert, inviter]);
 
   useEffect(() => () => nettoyer(), []);
 
   const ouvrir = () => {
     nettoyer(); ecrire(CLE_VUE, "1");
-    setBulle(false); setPose("debout"); setOuvert(true);
+    video.current?.pause(); cancelAnimationFrame(boucle.current); poser("presente");
+    setBulle(false); setPose("salue"); setOuvert(true);
   };
   const fermer = useCallback(() => {
-    setOuvert(false); setPose("assise");
+    setOuvert(false); setPose("assise"); poser("assise");
     window.setTimeout(() => bouton.current?.focus(), 0);
-  }, []);
+  }, [poser]);
 
   useEffect(() => {
     if (!ouvert) return;
@@ -180,32 +206,51 @@ export default function AssistantSite() {
     return () => document.removeEventListener("keydown", touche);
   }, [ouvert, fermer]);
 
+  // Téléphone : le clavier ne doit pas cacher le champ de saisie
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!ouvert || !vv) return;
+    const suivre = () => setClavier(Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)));
+    suivre();
+    vv.addEventListener("resize", suivre); vv.addEventListener("scroll", suivre);
+    return () => { vv.removeEventListener("resize", suivre); vv.removeEventListener("scroll", suivre); setClavier(0); };
+  }, [ouvert]);
+
   // Changer de page referme le panneau
   useEffect(() => { setOuvert(false); setPose("assise"); }, [pathname]);
 
-  const demander = async (corps: { profil?: Profil; message?: string }) => {
-    setErreur(false); setClique(false);
+  const afficher = (r: Reponse) => {
+    setReponse(r);
+    window.setTimeout(() => (corps.current?.querySelector<HTMLElement>(".hot-lien") ?? titre.current)?.focus(), 60);
+  };
+
+  // Boutons de profil : réponse immédiate, sans réseau
+  const choisir = (p: Exclude<Profil, "autre">) => {
+    setErreur(false);
+    const l = LOCAL[p];
+    afficher({ reponse: l.texte[x.langue], liens: l.liens });
+  };
+
+  const demander = async (message: string) => {
+    setErreur(false); setDernier(message);
     const nb = Number(lire(CLE_APPELS) ?? 0) || 0;
-    // Les boutons de profil n'appellent aucun modèle : ils ne comptent pas dans la limite de la visite
-    if (corps.message) {
-      if (nb >= MAX_APPELS) { setReponse({ reponse: x("Beaucoup de questions pour cette visite ! L'équipe vous répondra mieux que moi : écrivez-lui."), liens: ["contact", "whatsapp"] }); return; }
-      ecrire(CLE_APPELS, String(nb + 1));
-    }
+    if (nb >= MAX_APPELS) { afficher({ reponse: x("Beaucoup de questions pour cette visite ! L'équipe vous répondra mieux que moi : écrivez-lui."), liens: ["contact", "whatsapp"] }); return; }
+    ecrire(CLE_APPELS, String(nb + 1));
     setCharge(true);
     const ctrl = new AbortController();
     const minuteur = window.setTimeout(() => ctrl.abort(), 10000);
     try {
       const r = await fetch(`${FUNCTIONS_URL}/assistant-site`, {
         method: "POST", headers: { "Content-Type": "application/json" }, signal: ctrl.signal,
-        body: JSON.stringify({ ...corps, langue: x.langue }),
+        body: JSON.stringify({ message, langue: x.langue }),
       });
       const j = await r.json().catch(() => null);
       const ids = (Array.isArray(j?.liens) ? j.liens : []).filter((l: unknown): l is LienId => typeof l === "string" && l in LIENS).slice(0, 2);
-      if (j?.disponible && typeof j.reponse === "string" && j.reponse) setReponse({ reponse: j.reponse, liens: ids.length ? ids : ["contact", "whatsapp"] });
+      if (j?.disponible && typeof j.reponse === "string" && j.reponse) { setTexte(""); afficher({ reponse: j.reponse, liens: ids.length ? ids : ["contact", "whatsapp"] }); }
       else throw new Error("indisponible");
     } catch {
-      setErreur(true);
-      setReponse({ reponse: x("Imane est indisponible pour le moment. L'équipe Heavent vous répondra sous 24 h."), liens: ["whatsapp", "contact"] });
+      setErreur(true); // le texte reste dans le champ : un clic sur « Réessayer » suffit
+      afficher({ reponse: x("Imane est indisponible pour le moment. L'équipe Heavent vous répondra sous 24 h."), liens: ["whatsapp", "contact"] });
     } finally {
       window.clearTimeout(minuteur); setCharge(false);
     }
@@ -215,12 +260,12 @@ export default function AssistantSite() {
     e.preventDefault();
     const m = texte.trim();
     if (!m || charge) return;
-    setTexte(""); setReponse(null);
-    void demander({ message: m });
+    setReponse(null);
+    void demander(m);
   };
 
   const suivre = (id: LienId) => {
-    ecrire(CLE_BADGE, "1"); setBadge(true); setClique(true);
+    ecrire(CLE_BADGE, "1"); setBadge(true);
     const l = LIENS[id];
     if (l.externe) {
       const msg = x("Bonjour Heavent People Agency, j'aimerais avoir des informations.");
@@ -230,35 +275,40 @@ export default function AssistantSite() {
     if (l.chemin) { fermer(); navigate(l.chemin); }
   };
 
-  const recommencer = () => { setReponse(null); setErreur(false); setClique(false); setTexte(""); titre.current?.focus(); };
+  const recommencer = () => { setReponse(null); setErreur(false); setTexte(""); window.setTimeout(() => titre.current?.focus(), 30); };
 
   if (prive) return null;
   // L'hôtesse n'apparaît qu'après le choix sur le bandeau d'audience (jamais par-dessus lui)
   if (!choix && !ouvert) return null;
 
-  const etape = clique ? 3 : reponse ? 2 : 1;
   const dir = x.langue === "ar" ? "rtl" : "ltr";
 
   return (
     <>
-      {!ouvert && (
-        <div className="hot-zone" data-pose={pose}>
-          {bulle && (
-            <p className="hot-bulle" role="status" dir={dir}>{x("Besoin d'un coup de main ?")}</p>
-          )}
-          <button ref={bouton} type="button" className="hot-btn" data-testid="bouton-assistant" aria-label={x("Parler à Imane, l'assistante virtuelle Heavent")} aria-haspopup="dialog" aria-expanded={false}
-            onClick={ouvrir}
-            onMouseEnter={() => { survol.current = true; }} onMouseLeave={() => { survol.current = false; }}
-            onFocus={() => { survol.current = true; }} onBlur={() => { survol.current = false; }}>
-            <Hotesse pose={pose} />
-          </button>
-        </div>
-      )}
+      {/* La zone reste montée pendant l'ouverture du panneau : la vidéo garde sa position et se rejoue proprement */}
+      <div className={"hot-zone" + (ouvert ? " cachee" : "")} data-pose={pose}>
+        {bulle && !ouvert && (
+          <button type="button" className="hot-bulle" dir={dir} onClick={ouvrir} tabIndex={-1} aria-hidden>{x("Besoin d'un coup de main ?")}</button>
+        )}
+        <span className="sr-only" role="status">{bulle && !ouvert ? x("Besoin d'un coup de main ?") : ""}</span>
+        <button ref={bouton} type="button" className="hot-btn" data-testid="bouton-assistant" aria-label={x("Parler à Imane, l'assistante virtuelle Heavent")} aria-haspopup="dialog" aria-expanded={ouvert}
+          tabIndex={ouvert ? -1 : 0} onClick={ouvrir}
+          onMouseEnter={() => { survol.current = true; }} onMouseLeave={() => { survol.current = false; }}
+          onFocus={() => { survol.current = true; }} onBlur={() => { survol.current = false; }}>
+          <span className="hot-scene" aria-hidden>
+            <canvas ref={toile} className="hot-toile" width="260" height="360" />
+            <video ref={video} className="hot-video" muted playsInline preload="none" disablePictureInPicture tabIndex={-1} width="520" height="360" onEnded={() => { cancelAnimationFrame(boucle.current); composer(); }}>
+              <source src="/assistant/hotesse-paquet.mp4" type="video/mp4" />
+            </video>
+          </span>
+          <span className="hot-etiquette" aria-hidden>{x("Aide")}</span>
+        </button>
+      </div>
       {ouvert && (
-        <div className="hot-panneau" role="dialog" aria-modal="true" aria-labelledby="hot-titre" dir={dir} ref={panneau} data-testid="assistant-panneau">
-          <div className="hot-panneau-int">
+        <div className="hot-panneau" role="dialog" aria-modal="true" aria-labelledby="hot-titre" aria-describedby="hot-accueil" dir={dir} ref={panneau} data-testid="assistant-panneau" style={clavier ? { bottom: clavier } : undefined}>
+          <div className="hot-panneau-int s-nuit">
             <header className="hot-tete">
-              <span className="hot-tete-fig" aria-hidden><Hotesse pose="debout" buste /></span>
+              <span className="hot-tete-fig" aria-hidden><img src="/assistant/hotesse-visage.webp" alt="" width="56" height="56" /></span>
               <div className="hot-tete-txt">
                 <p className="hot-surtitre">{x("Assistante virtuelle Heavent")}{badge && <span className="hot-badge">{x("Invité·e Heavent")}</span>}</p>
                 <h2 id="hot-titre" ref={titre} tabIndex={-1}>Imane</h2>
@@ -267,39 +317,34 @@ export default function AssistantSite() {
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M5 5l14 14M19 5L5 19" /></svg>
               </button>
             </header>
-            <ol className="hot-etapes" aria-label={x("Progression")}>
-              {[x("Votre profil"), x("Ma réponse"), x("C'est parti")].map((t, i) => (
-                <li key={t} className={i < etape ? "ok" : ""} aria-current={i + 1 === etape ? "step" : undefined}><span>{t}</span></li>
-              ))}
-            </ol>
-            <div className="hot-corps" aria-live="polite">
+            <div className="hot-corps" ref={corps}>
               {!reponse && !charge && (
                 <>
-                  <p className="hot-mot">{x("Bonjour, je suis Imane, l'assistante virtuelle de Heavent. Qui êtes-vous ? Je vous envoie au bon endroit en un clic.")}</p>
+                  <p className="hot-mot" id="hot-accueil">{x("Bonjour, je suis Imane, l'assistante virtuelle de Heavent. Qui êtes-vous ? Je vous envoie au bon endroit en un clic.")}</p>
                   <div className="hot-choix">
                     {PROFILS.map((p) => (
-                      <button key={p.id} type="button" className="hot-chip" data-testid={`assistant-profil-${p.id}`} onClick={() => void demander({ profil: p.id })}>{x(p.label)}</button>
+                      <button key={p.id} type="button" className="hot-chip" data-testid={`assistant-profil-${p.id}`} onClick={() => choisir(p.id as Exclude<Profil, "autre">)}>{x(p.label)}</button>
                     ))}
                   </div>
                 </>
               )}
-              {charge && <p className="hot-mot hot-attente">{x("Je réfléchis…")}</p>}
+              {charge && <p className="hot-mot hot-attente" role="status">{x("Je réfléchis…")}</p>}
               {reponse && !charge && (
                 <>
-                  <p className="hot-reponse" data-testid="assistant-reponse">{reponse.reponse}</p>
+                  <p className="hot-reponse" data-testid="assistant-reponse" role="status">{reponse.reponse}</p>
                   <div className="hot-liens">
-                    {reponse.liens.map((id) => (
-                      <button key={id} type="button" className="s-btn s-btn-filet hot-lien" data-testid={`assistant-lien-${id}`} onClick={() => suivre(id)}>{x(LIENS[id].label)}</button>
+                    {reponse.liens.map((id, i) => (
+                      <button key={id} type="button" className={"s-btn hot-lien " + (i === 0 ? "s-btn-plein" : "s-btn-filet")} data-testid={`assistant-lien-${id}`} onClick={() => suivre(id)}>{x(LIENS[id].label)}</button>
                     ))}
                   </div>
-                  {clique && <p className="hot-merci">{x("Merci ! L'équipe Heavent est là si besoin.")}</p>}
+                  {erreur && dernier && <button type="button" className="hot-retour" onClick={() => { setReponse(null); void demander(dernier); }}>{x("Réessayer")}</button>}
                   <button type="button" className="hot-retour" onClick={recommencer}>{x("Poser une autre question")}</button>
                 </>
               )}
             </div>
             <form className="hot-saisie" onSubmit={envoyer}>
               <label className="sr-only" htmlFor="hot-texte">{x("Votre question")}</label>
-              <input id="hot-texte" value={texte} onChange={(e) => setTexte(e.target.value.slice(0, MESSAGE_MAX))} placeholder={x("Écrivez votre question")} maxLength={MESSAGE_MAX} autoComplete="off" enterKeyHint="send" disabled={charge && !erreur} />
+              <input id="hot-texte" value={texte} onChange={(e) => setTexte(e.target.value.slice(0, MESSAGE_MAX))} placeholder={x("Écrivez votre question")} maxLength={MESSAGE_MAX} autoComplete="off" enterKeyHint="send" readOnly={charge} />
               <button type="submit" disabled={!texte.trim() || charge} aria-label={x("Envoyer")}>
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12h15M13 6l6 6-6 6" /></svg>
               </button>
