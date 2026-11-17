@@ -188,15 +188,15 @@
 .st-espace .st-cal .rdp-head_cell, .st-espace .st-cal th { color: var(--s-laiton-texte); font: 500 10.5px var(--s-texte); letter-spacing: .1em; text-transform: uppercase; }
 .st-espace .st-cal button[aria-selected="true"], .st-espace .st-cal .rdp-day_selected { background: var(--s-nuit) !important; color: var(--s-papier) !important; border-radius: 0; }
 .st-jour-dispo { position: relative; }
-.st-jour-dispo::after { content: ""; position: absolute; bottom: 4px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; background: var(--s-zellige); transform: rotate(45deg); }
+.st-jour-dispo::after { content: ""; position: absolute; bottom: 4px; left: 50%; width: 7px; height: 7px; margin-left: -3.5px; background: var(--s-zellige); transform: rotate(45deg); }
 .st-legende i { display: inline-block; width: 7px; height: 7px; transform: rotate(45deg); margin-inline-end: 8px; }
 .st-legende i.rond { transform: none; border-radius: 50%; width: 10px; height: 10px; border: 1.5px solid var(--s-laiton-texte); background: transparent; }
 .st-legende i.coche { transform: none; width: 12px; height: 12px; background: var(--s-nuit); position: relative; }
 .st-legende i.coche::after { content: "✓"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 9px; color: var(--s-papier); }
 /* Trois états lisibles sans la couleur : aujourd'hui = anneau, jour choisi = fond plein + coche, disponibilité enregistrée = losange */
-.st-espace .st-cal .st-jour-aujourdhui:not([aria-selected="true"]) { box-shadow: inset 0 0 0 1.5px var(--s-laiton-texte); border-radius: 999px; font-weight: 600; }
+.st-espace .st-cal .st-jour-aujourdhui:not([aria-selected="true"]) { box-shadow: inset 0 0 0 1.5px var(--s-laiton-texte); border-radius: 0; font-weight: 600; }
 .st-espace .st-cal button[aria-selected="true"] { position: relative; }
-.st-espace .st-cal button[aria-selected="true"]::before { content: "✓"; position: absolute; top: 1px; inset-inline-end: 3px; font-size: 9px; line-height: 1; color: var(--s-laiton-clair); }
+.st-espace .st-cal button[aria-selected="true"]::before { content: "✓"; position: absolute; top: 1px; inset-inline-end: 3px; font-size: 11px; line-height: 1; color: var(--s-laiton-clair); }
 .st-espace .st-cal.border { border: 0; }
 .st-espace .st-cal { padding: 4px 0; }
 

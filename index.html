@@ -41,6 +41,9 @@
           document.addEventListener("keydown", echap);
           var posee = function () { var r = racine(); if (r && !d.classList.contains("ouverture-finie")) r.setAttribute("inert", ""); };
           posee(); document.addEventListener("DOMContentLoaded", posee);
+          // onglet masqué puis revenu après la fin prévue : on retire le rideau tout de suite
+          var t0 = Date.now();
+          document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible" && Date.now() - t0 > 2300) window.finOuverture(true); });
           if (!rideau) { setTimeout(window.finOuverture, 1500); return; }
           // Le tissu est préparé (deux images légères) avant de bouger ; sans lui, un tissu dégradé le remplace. Garde-fou : jamais plus de 3,6 s.
           var prets = 0, lance = false;

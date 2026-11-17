@@ -28,7 +28,7 @@ function Carte({ id, nom, phrase, on, onClick, res, radio, testid, pastilles }: 
         {on && <Check className="ms-auto h-4 w-4 shrink-0 text-[#E4D49A]" aria-hidden="true" />}
       </span>
       <span className="text-[12px] leading-snug text-[#B9B09C]">{phrase}</span>
-      {pastilles && <span className="flex gap-1" aria-hidden="true">{pastilles.map((c, i) => <i key={i} className="h-4 w-4 rounded-full border border-white/25" style={{ background: c }} />)}</span>}
+      {pastilles && <span className="flex gap-1" aria-hidden="true">{pastilles.map((c, i) => <i key={i} className="h-[18px] w-[18px] rounded-full border border-[#A8933F]" style={{ background: c }} />)}</span>}
       <Pastille reservable={res} court />
     </button>
   );

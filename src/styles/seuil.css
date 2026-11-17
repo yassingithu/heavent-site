@@ -223,19 +223,22 @@ html.avec-ouverture.ouv-rideau .s-rideau { display: block; position: fixed; inse
 .ouv-sans-texture .s-pan { background-image: repeating-linear-gradient(90deg, #0a0a09 0, #1d1b18 5%, #0a0a09 9%, #151412 14%, #060606 17%) !important; }
 /* ombre portée au milieu et sur les bords, qui se resserre avec le tissu */
 .s-pan::before { content: ""; position: absolute; inset: 0; pointer-events: none; }
-.s-pan.g::before { background: linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,0) 22%, rgba(0,0,0,0) 78%, rgba(0,0,0,.5)); }
-.s-pan.d::before { background: linear-gradient(90deg, rgba(0,0,0,.5), rgba(0,0,0,0) 22%, rgba(0,0,0,0) 78%, rgba(0,0,0,.55)); }
+.s-pan.g::before { background: linear-gradient(90deg, rgba(0,0,0,.7), rgba(0,0,0,0) 14%, rgba(0,0,0,0) 80%, rgba(0,0,0,.6)); }
+.s-pan.d::before { background: linear-gradient(90deg, rgba(0,0,0,.6), rgba(0,0,0,0) 20%, rgba(0,0,0,0) 86%, rgba(0,0,0,.7)); }
 /* reflet satiné qui traverse le tissu pendant qu'il bouge */
-.s-pan .rf { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: linear-gradient(100deg, rgba(255,246,214,0) 30%, rgba(255,246,214,.10) 48%, rgba(255,246,214,0) 62%); transform: translateX(-60%); }
+.s-pan .rf { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: linear-gradient(100deg, rgba(228,212,154,0) 40%, rgba(228,212,154,.20) 50%, rgba(228,212,154,0) 60%); transform: translateX(-60%); }
 /* Le monogramme est DERRIÈRE le rideau : il se découvre au milieu quand le tissu s'écarte, puis la scène s'efface sur le site. */
 .s-rideau-scene { position: absolute; inset: 0; z-index: 0; display: grid; place-items: center; background: var(--s-nuit, #141414); }
-.s-rideau-mono { height: clamp(72px, 10vw, 110px); width: auto; filter: drop-shadow(0 0 24px rgba(212,190,110,.28)); }
+.s-rideau-mono { height: clamp(92px, 14vw, 150px); width: auto; }
 html.ouv-pret .s-rideau-scene { animation: s-rideau-scene 1.9s linear forwards; }
 @keyframes s-rideau-scene { 0%, 66% { opacity: 1; } 100% { opacity: 0; } }
 html.ouv-pret .s-rideau-mono { animation: s-rideau-mono 1.6s cubic-bezier(.3,.1,.2,1) both; }
 @keyframes s-rideau-mono { 0% { transform: scale(.96); } 100% { transform: scale(1.03); } }
-html.ouv-pret .s-pan.g { animation: s-pan-g 1.25s cubic-bezier(.62,.02,.18,1) .45s forwards; }
-html.ouv-pret .s-pan.d { animation: s-pan-d 1.3s cubic-bezier(.62,.02,.18,1) .5s forwards; }
+html.ouv-pret .s-pan.g { animation: s-pan-g 1.25s cubic-bezier(.62,.02,.18,1) .45s forwards, s-pan-sortie .35s ease 1.75s forwards; }
+html.ouv-pret .s-pan.d { animation: s-pan-d 1.3s cubic-bezier(.62,.02,.18,1) .55s forwards, s-pan-sortie .35s ease 1.85s forwards; }
+@keyframes s-pan-sortie { to { opacity: 0; } }
+/* le bandeau d'audience attend la fin de l'ouverture (il ne se superpose pas au tissu) */
+html.avec-ouverture:not(.ouverture-finie) .bandeau-audience { visibility: hidden; }
 html.ouv-pret .s-pan .rf { animation: s-rideau-reflet 1.3s ease-in-out .5s forwards; }
 @keyframes s-pan-g { to { transform: translateX(-4%) scaleX(.13); } }
 @keyframes s-pan-d { to { transform: translateX(4%) scaleX(.12); } }
@@ -435,8 +438,8 @@ html.s-anime .s-deroule.vu .s-etape::after { transition: transform .5s var(--s-c
   .s-nav a:not(.s-btn):hover::after, .s-nav a[aria-current="page"]::after { transform: scaleX(1); }
   .s-nav a[aria-current="page"] { color: var(--s-laiton-clair); }
   .s-nav .s-btn { min-height: 44px; padding: 0 20px; font-size: 13px; }
-  .s-nav-acces { position: relative; font-size: 12.5px; letter-spacing: .08em; }
-  .s-nav-acces summary { list-style: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; cursor: pointer; color: var(--s-gris-nuit); }
+  .s-nav-acces { position: relative; font-size: 13px; letter-spacing: .08em; }
+  .s-nav-acces summary { list-style: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; cursor: pointer; color: #BDB3A0; }
   .s-nav-acces summary::-webkit-details-marker { display: none; }
   .s-nav-acces summary::after { content: ""; width: 6px; height: 6px; border-right: 1px solid currentColor; border-bottom: 1px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .2s; }
   .s-nav-acces[open] summary::after { transform: translateY(1px) rotate(-135deg); }
@@ -673,4 +676,4 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
 .s-pied-wp .s-surtitre { margin-top: 2px; }
 
 /* Heavent Studio : boutons Seuil sur fond sombre */
-.studio-filet { --ligne: rgba(228,212,154,.55); --btn-texte: #E6DDCB; --fond: #141414; }
+.studio-filet { --ligne: rgba(228,212,154,.75); --btn-texte: #E6DDCB; --fond: #141414; }
