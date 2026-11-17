@@ -244,7 +244,7 @@ html.ouv-pret .s-pan .rf { animation: s-rideau-reflet 1.3s ease-in-out .5s forwa
 @keyframes s-pan-d { to { transform: translateX(4%) scaleX(.12); } }
 @keyframes s-rideau-reflet { 0% { opacity: 0; transform: translateX(-60%); } 35% { opacity: 1; } 100% { opacity: 0; transform: translateX(60%); } }
 html.ouv-rideau .s-passer { animation: none; bottom: auto; top: calc(14px + env(safe-area-inset-top)); right: auto; inset-inline-end: max(16px, env(safe-area-inset-right)); }
-html.ouv-rideau.ouv-pret .s-passer { animation: s-efface .3s 2.1s forwards; }
+html.ouv-rideau.ouv-pret .s-passer { animation: s-efface .3s 1.4s forwards; }
 
 /* ———————— Accueil ———————— */
 .s-heros { position: relative; padding: 20px var(--s-g) 64px; --d: calc(var(--d0, 0s) + var(--t0, 0ms)); }

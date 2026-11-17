@@ -534,7 +534,7 @@ const StaffDashboard = () => {
             </button>
           </div>
           <h1>{staffInfo?.prenom?.trim() ? `Bonjour ${staffInfo.prenom.trim()}.` : "Bonjour."}</h1>
-          <p>{t('dashboard.staff_space')}{staffInfo?.nom ? ` · ${[staffInfo.prenom, staffInfo.nom].filter(Boolean).join(' ')}` : ''}</p>
+          <p>{t('dashboard.staff_space')}{staffInfo?.nom ? ` · ${[staffInfo.prenom, staffInfo.nom].map((x) => x?.trim()).filter(Boolean).join(' ')}` : ''}</p>
         </div>
       </header>
       <div className="st-corps space-y-5">

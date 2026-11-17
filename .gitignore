@@ -35,3 +35,4 @@ design-captures/
 
 # Graphify : graphe local, régénéré par « graphify update . »
 graphify-out/
+tests/heavent-city/.assistant-simule.bundle.mjs

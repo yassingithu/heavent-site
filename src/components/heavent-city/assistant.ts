@@ -16,7 +16,7 @@ import {
 
 export const MESSAGE_MAX = 280;
 /** L'assistant tente toujours la fonction serveur ; sans clé côté serveur elle répond « indisponible » et le jeu reste sur ses suggestions automatiques. VITE_HEAVENT_CITY_IA=0 coupe tout appel. */
-export const IA_CONFIGUREE = import.meta.env.VITE_HEAVENT_CITY_IA !== "0";
+export const IA_CONFIGUREE = import.meta.env.VITE_HEAVENT_CITY_IA === "1";
 const DELAI_MS = 9000;
 const MAX_APPELS = 8;
 
@@ -153,7 +153,8 @@ const noterAppel = () => { try { sessionStorage.setItem(cleAppels, String(lireAp
 export interface ReponseAssistant { proposition: Proposition; note?: string }
 
 export async function demanderAssistant(message: string, type: TypeEvt, lieu: LieuId | null): Promise<ReponseAssistant> {
-  const texte = message.replace(/\s+/g, " ").trim().slice(0, MESSAGE_MAX);
+  // Aucun numéro de téléphone, e-mail ni suite de chiffres ne part vers le service d'IA
+  const texte = message.replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, " ").replace(/\+?\d[\d\s().-]{5,}\d/g, " ").replace(/\s+/g, " ").trim().slice(0, MESSAGE_MAX);
   if (!texte) throw new Error(tr("Écris quelques mots sur l'ambiance que tu imagines."));
   const auto = () => suggestionAutomatique(texte, type, lieu);
   if (!IA_CONFIGUREE) return { proposition: auto() };
@@ -161,11 +162,12 @@ export async function demanderAssistant(message: string, type: TypeEvt, lieu: Li
   noterAppel();
   const ctrl = new AbortController();
   const minuteur = window.setTimeout(() => ctrl.abort(), DELAI_MS);
+  let refus: string | null = null;
   try {
     const r = await fetch(`${FUNCTIONS_URL}/heavent-city-ia`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: texte, type, lieu }), signal: ctrl.signal });
     const j = await r.json().catch(() => null);
     // L'assistant ne traite pas cette demande (prix, dates, réservation) ou veut une précision : on le dit simplement, sans rien appliquer
-    if (j?.statut === "impossible" || j?.statut === "precision") throw new Error(tr(String(j.message ?? "Dis-m'en un peu plus sur l'ambiance que tu imagines.")));
+    if (j?.statut === "impossible" || j?.statut === "precision") { refus = tr(String(j.message ?? "Dis-m'en un peu plus sur l'ambiance que tu imagines.")); return { proposition: auto(), note: refus }; }
     if (j?.disponible === false) return { proposition: auto() }; // IA non activée : suggestions automatiques, sans message d'excuse
     if (r.ok) {
       const p = validerProposition(j?.proposition, type, lieu, "ia");

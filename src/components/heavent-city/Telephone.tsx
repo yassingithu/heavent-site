@@ -9,7 +9,7 @@ import {
 } from "./donnees";
 import { missionsDuType, type Choix } from "./etat";
 import { MissionCarte } from "./Missions";
-import { MESSAGE_MAX, demanderAssistant, type Proposition } from "./assistant";
+import { IA_CONFIGUREE, MESSAGE_MAX, demanderAssistant, type Proposition } from "./assistant";
 import { Pastille, SelecteurLangue, btnContour, btnOr, champ } from "./ui";
 import { tr } from "./langue";
 
@@ -145,6 +145,7 @@ function Assistant({ choix, onAppliquer }: { choix: Choix; onAppliquer: (p: Prop
       <p className="text-[13.5px] leading-snug text-[#D9D0BC]">{tr("Décris l'ambiance que tu imagines : je te propose une combinaison que tu peux accepter ou modifier. Aucun prix ici — l'équipe Heavent établit le devis.")}</p>
       <label htmlFor="assistant-texte" className="sr-only">{tr("Décris ton ambiance")}</label>
       <textarea id="assistant-texte" value={texte} maxLength={MESSAGE_MAX} onChange={(e) => setTexte(e.target.value)} rows={3} placeholder={tr("Ex. un mariage marocain chic, beige et doré, festif mais pas bling-bling")} className={`${champ} py-2 leading-snug`} data-testid="assistant-texte" />
+      {IA_CONFIGUREE && <p className="text-[11.5px] text-[#8f8777]">{tr("Ton texte est envoyé à un service d'IA : n'y mets ni nom, ni téléphone, ni e-mail.")}</p>}
       <div className="flex flex-wrap gap-1.5">
         {EXEMPLES().map((e) => <button key={e} type="button" onClick={() => setTexte(e)} className="rounded-full border border-white/15 px-2.5 py-1 text-start text-[12px] text-[#D9D0BC] hover:bg-white/10">{e}</button>)}
       </div>

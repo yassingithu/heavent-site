@@ -24,7 +24,7 @@ const MODELE = Deno.env.get("HEAVENT_CITY_IA_MODELE") ?? "openai/gpt-oss-20b";
 const SIMULE = Deno.env.get("HEAVENT_CITY_IA_MODE") === "simule";
 // json_schema strict pris en charge (documentation Groq « structured outputs ») ; autre modèle : json_object + validation ci-dessous
 const SCHEMA_STRICT = /^(openai\/gpt-oss-(20b|120b)|qwen\/qwen3\.8-27b|meta-models\/muse-spark-open)$/.test(MODELE);
-const IMPOSSIBLE = /(disponibilit|dispo\b|r[ée]serv|date libre|devis|prix|tarif|budget|promo|code ?promo|gratuit|contrat)/i;
+const IMPOSSIBLE = /(disponibilit|dispo\b|r[ée]server|r[ée]servation|date libre|devis|\bprix\b|tarif|quel(?:le)? (?:est le )?budget|\bbudget (?:de|total|max)|promo|gratuit|\bcontrat (?:de |signé)|signer)/i;
 const PRIX = /\d[\d\s.,]*\s?(mad|dh|dhs|dirhams?|€|eur|euros?|\$)|\b(mad|dh|dirhams?)\s?\d|tarif|prix|co[uû]t|budget|remise|gratuit/i;
 
 const json = (req: Request, body: unknown, status = 200) =>
