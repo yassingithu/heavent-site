@@ -120,10 +120,10 @@ export function CarteAccueil({ infos, nouvellesDemandes }: { infos: InfosAccueil
   return (
     <section className="a-nuit a-grain-nuit relative overflow-hidden text-[#F3ECDD] -mx-3 -mt-4 px-4 pt-3 pb-5 sm:mx-0 sm:mt-0 sm:px-7 sm:py-7 lg:px-10" data-testid="carte-accueil">
       <div className="relative grid lg:grid-cols-[1.3fr_1fr] gap-5 lg:gap-10 items-end">
-        <div className="space-y-4 min-w-0">
+        <div className="space-y-3 sm:space-y-4 min-w-0">
           <div>
             <p className="a-surtitre whitespace-nowrap first-letter:uppercase">{dateLongue}</p>
-            <h2 className="font-serif text-[52px] sm:text-[60px] leading-[.95] tracking-[-0.025em] mt-4 text-[#FAF6EC]">
+            <h2 className="font-serif text-[36px] sm:text-[60px] leading-[1] sm:leading-[.95] tracking-[-0.025em] mt-2 sm:mt-4 text-[#FAF6EC]">
               <span className="a-monte"><span>{salut}</span></span>
               <span className="a-monte"><span className="text-[#E4D49A]" style={{ ["--r" as string]: ".1s" }}>{infos.prenom}.</span></span>
             </h2>
