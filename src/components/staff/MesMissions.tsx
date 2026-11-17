@@ -95,11 +95,26 @@ export default function MesMissions() {
   const ancre = useRef<number | null>(null);
   const ancrer = () => {
     const el = refSection.current?.querySelector('[data-testid="mission"]') as HTMLElement | null;
-    const haut = el ? el.getBoundingClientRect().top + window.scrollY : null;
-    if (haut != null && ancre.current != null && haut !== ancre.current && window.scrollY > 0) window.scrollBy(0, haut - ancre.current);
+    const haut = el ? el.getBoundingClientRect().top : null; // position à l'écran (indépendante de l'ancrage de défilement du navigateur)
+    if (haut != null && ancre.current != null && Math.abs(haut - ancre.current) > 1 && window.scrollY > 0) {
+      const delta = haut - ancre.current;
+      const cale = refSection.current;
+      const place = () => document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+      // page trop courte pour compenser : on ajoute (puis on retire) un peu de place en bas, sinon le bouton descendrait sous le pouce
+      if (cale && delta > 0 && place() < delta) cale.style.marginBottom = `${(parseFloat(cale.style.marginBottom) || 0) + (delta - place())}px`;
+      if (cale && delta < 0) cale.style.marginBottom = `${Math.max(0, (parseFloat(cale.style.marginBottom) || 0) + delta)}px`;
+      window.scrollBy(0, delta);
+      ancre.current = el!.getBoundingClientRect().top;
+      return;
+    }
     ancre.current = haut;
   };
   useLayoutEffect(ancrer);
+  useEffect(() => {
+    const suivre = () => { const el = refSection.current?.querySelector('[data-testid="mission"]') as HTMLElement | null; if (el) ancre.current = el.getBoundingClientRect().top; };
+    window.addEventListener("scroll", suivre, { passive: true });
+    return () => window.removeEventListener("scroll", suivre);
+  }, []);
   // aussi quand la taille change sans rendu (police qui se charge, texte qui passe à la ligne)
   useEffect(() => {
     if (!refSection.current || typeof ResizeObserver === "undefined") return;
