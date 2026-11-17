@@ -218,7 +218,7 @@ export default function HeaventCity() {
               </div>
             )}
             {toast && !deplacer && (
-              <button onClick={() => { setToast(null); setTelOnglet("missions"); setTelOuvert(true); }} data-testid="toast-mission" className="hc-fondu absolute inset-x-3 top-[64px] z-10 mx-auto flex max-w-sm items-center gap-3 rounded-2xl border border-[#C9A74E]/60 bg-[#17141a]/95 px-3.5 py-3 text-start shadow-xl">
+              <button onClick={() => { setToast(null); setTelOnglet("missions"); setTelOuvert(true); }} data-testid="toast-mission" className="hc-fondu absolute inset-x-3 top-[64px] z-10 max-lg:hidden mx-auto flex max-w-sm items-center gap-3 rounded-2xl border border-[#C9A74E]/60 bg-[#17141a]/95 px-3.5 py-3 text-start shadow-xl">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#C9A74E] text-[#17141a]"><Phone className="h-4 w-4" /></span>
                 <span className="min-w-0"><span className="block text-[11px] uppercase tracking-wider text-[#E4D49A]">{tr("Nouveau message")}</span><span className="block truncate text-[14px] text-[#F6EFDD]">{tr("Mission {n} — {titre}", { n: toast, titre: missions[toast - 1]?.titre ?? "" })}</span></span>
               </button>
