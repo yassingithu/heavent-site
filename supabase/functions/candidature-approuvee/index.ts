@@ -25,6 +25,12 @@ Deno.serve(async (req) => {
     const email = u?.user?.email?.toLowerCase();
     if (!email) return json({ error: "Connexion requise" }, 401);
     const { data: adm } = await db.from("admins").select("email").ilike("email", lit(email)).maybeSingle();
+    // Double authentification : un administrateur qui a un code vérifié doit l'avoir donné (jeton aal2)
+    let aal = "aal1"; try { aal = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).aal ?? "aal1"; } catch { /* aal1 */ }
+    if (adm && aal !== "aal2") {
+      const { data: fa, error: ef } = await db.auth.admin.mfa.listFactors({ userId: u!.user!.id });
+      if (ef || (fa?.factors ?? []).some((x: any) => x.status === "verified")) return json({ error: "Double authentification requise : reconnectez-vous avec votre code" }, 403);
+    }
     if (!adm) return json({ error: "Accès réservé aux administrateurs" }, 403);
 
     const { staffId } = await req.json();

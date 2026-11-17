@@ -9,7 +9,7 @@ import { ChampCode, messageCode } from "./ChampCode";
 /**
  * Double authentification de l'administrateur : un code à 6 chiffres généré par l'app « Mots de passe » de l'iPhone
  * (déverrouillée par Face ID) ou toute application d'authentification. Une fois activée, la connexion à l'administration
- * demande ce code, et la base refuse l'accès à toute session qui ne l'a pas donné (voir la fonction is_admin).
+ * demande ce code, et la base comme les fonctions serveur refusent toute session qui ne l'a pas donné (is_admin et getCaller).
  */
 type Facteur = { id: string; friendly_name?: string | null; created_at?: string };
 type Inscription = { id: string; qr: string; secret: string; uri: string };
@@ -25,11 +25,14 @@ export default function DoubleAuthentification() {
   const [erreur, setErreur] = useState<string | null>(null);
   const [occupe, setOccupe] = useState(false);
   const [niveauOk, setNiveauOk] = useState(true);
+  const [erreurChargement, setErreurChargement] = useState(false);
   const champ = useRef<HTMLInputElement>(null);
   const formulaire = useRef<HTMLFormElement>(null);
 
   const charger = useCallback(async () => {
-    const { data } = await supabase.auth.mfa.listFactors();
+    const { data, error } = await supabase.auth.mfa.listFactors();
+    if (error) { setFacteurs([]); setErreurChargement(true); return; }
+    setErreurChargement(false);
     setFacteurs((data?.totp ?? []).map((f: any) => ({ id: f.id, friendly_name: f.friendly_name, created_at: f.created_at })));
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     // Retirer ou ajouter un facteur exige d'avoir donné le code pendant cette session
@@ -74,7 +77,7 @@ export default function DoubleAuthentification() {
   };
 
   const retirer = async (f: Facteur) => {
-    if (!window.confirm(`Retirer « ${f.friendly_name || "cet appareil"} » ? L'administration ne sera plus protégée que par le mot de passe.`)) return;
+    if (!window.confirm(`Retirer « ${f.friendly_name || "cet appareil"} » ?${(facteurs?.length ?? 0) <= 1 ? " L'administration ne sera plus protégée que par le mot de passe." : " Les autres appareils restent actifs."}`)) return;
     setOccupe(true);
     const { error } = await supabase.auth.mfa.unenroll({ factorId: f.id });
     setOccupe(false);
@@ -127,7 +130,11 @@ export default function DoubleAuthentification() {
           </div>
         )}
 
-        {facteurs && !inscription && (
+        {facteurs && erreurChargement && !inscription && (
+          <p className="text-sm text-[#8A2E26]">Impossible de lire l'état de la double authentification (réseau ?). <button type="button" onClick={charger} className="min-h-11 underline">Réessayer</button></p>
+        )}
+
+        {facteurs && !inscription && !erreurChargement && (
           <Button onClick={commencer} disabled={occupe || (active && !niveauOk)} data-testid="double-auth-commencer"
             className="min-h-12 w-full sm:w-auto rounded-none bg-[#141414] px-8 text-[#E4D49A] hover:bg-[#2a2420]">
             {occupe && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}

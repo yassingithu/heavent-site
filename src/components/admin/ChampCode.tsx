@@ -14,8 +14,8 @@ export const ChampCode = forwardRef<HTMLInputElement, {
   <div>
     <label htmlFor={id} className="text-xs uppercase tracking-[0.18em] text-[#6B6155]">Code à 6 chiffres</label>
     <input ref={ref} id={id} name="code" type="text" value={value} autoFocus={autoFocus}
-      onChange={(e) => onChange(chiffres(e.target.value).slice(0, 6))}
-      inputMode="numeric" autoComplete="one-time-code" enterKeyHint="go" maxLength={12} dir="ltr" placeholder="······"
+      onChange={(e) => onChange(chiffres(e.target.value).slice(-6))}
+      inputMode="numeric" autoComplete="one-time-code" enterKeyHint="go" dir="ltr" placeholder="······"
       aria-invalid={!!erreur}
       className={`mt-1 block w-full max-w-[16rem] rounded-none border-0 border-b-2 ${erreur ? "border-[#8A2E26]" : "border-[#A8933F]"} bg-transparent px-1 min-h-14 !font-serif !text-3xl tabular-nums tracking-[0.4em] text-[#141414] placeholder:text-[#C9BFA8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#8C6D22]`} />
     <p className="min-h-5 pt-2 text-sm" aria-live="polite">

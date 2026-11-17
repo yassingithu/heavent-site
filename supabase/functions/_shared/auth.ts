@@ -21,6 +21,11 @@ const admin = createClient(
 /** Échappe % et _ pour une comparaison ilike exacte (sans jokers). */
 export const lit = (s: string) => s.replace(/[\\%_]/g, "\\$&");
 
+/** Niveau d'authentification inscrit dans le jeton (déjà validé par getUser). */
+export function aalDuJeton(token: string): string {
+  try { return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).aal ?? "aal1"; } catch { return "aal1"; }
+}
+
 export async function getCaller(req: Request): Promise<Caller | null> {
   const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
   if (!token) return null;
@@ -29,9 +34,15 @@ export async function getCaller(req: Request): Promise<Caller | null> {
   if (error || !email) return null;
 
   const { data: adm } = await admin.from("admins").select("email").ilike("email", lit(email)).maybeSingle();
+  // Double authentification : un administrateur qui a un code vérifié doit l'avoir donné (jeton aal2), comme dans is_admin() côté base
+  let isAdmin = !!adm;
+  if (isAdmin && aalDuJeton(token) !== "aal2") {
+    const { data: f, error: ef } = await admin.auth.admin.mfa.listFactors({ userId: data!.user!.id });
+    if (ef || (f?.factors ?? []).some((x: any) => x.status === "verified")) isAdmin = false; // dans le doute, refus
+  }
   const { data: staff } = await admin.from("staff").select("id, banni").ilike("email", lit(email)).maybeSingle();
   // Une personne bannie n'a plus aucun droit de crew, même avec une session encore ouverte
-  return { email, isAdmin: !!adm, staffId: staff && !staff.banni ? staff.id : null };
+  return { email, isAdmin, staffId: staff && !staff.banni ? staff.id : null };
 }
 
 export function deny(status = 403, message = "Accès refusé") {

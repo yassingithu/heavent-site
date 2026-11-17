@@ -53,7 +53,9 @@ const AdminAuth = () => {
   useEffect(() => {
     if (user && session) {
       (async () => {
-        if (await codeRequis()) { setEtapeCode(true); return; }
+        const r = await codeRequis();
+        if (r === null) return;
+        if (r) { setEtapeCode(true); return; }
         if ((await estAdmin()) || (await estEspaceNawar())) navigate("/admin");
       })();
     }
@@ -62,12 +64,14 @@ const AdminAuth = () => {
   // Validation automatique dès le sixième chiffre (le code proposé par l'iPhone remplit la case d'un coup)
   useEffect(() => { if (etapeCode && code.length === 6 && !loading) formCode.current?.requestSubmit(); }, [code]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /** Vrai si la session a donné le mot de passe mais pas encore le code de la double authentification. */
-  const codeRequis = async () => {
+  /** Vrai si la session a donné le mot de passe mais pas encore le code ; null si on n'a pas pu le savoir (réseau). */
+  const codeRequis = async (): Promise<boolean | null> => {
+    // La copie locale de la session peut ignorer un code activé ailleurs : on la rafraîchit d'abord
+    await supabase.auth.refreshSession();
     const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (error) {
       toast({ title: "Connexion impossible", description: "Vérifiez votre réseau puis réessayez.", variant: "destructive" });
-      return false;
+      return null;
     }
     return !!data && data.nextLevel === "aal2" && data.currentLevel !== "aal2";
   };
@@ -85,6 +89,14 @@ const AdminAuth = () => {
         const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: f.id, code });
         if (!error) { ok = true; break; }
         derniere = error;
+        // Limite d'essais ou réseau : inutile d'essayer l'autre appareil (cela consommerait un essai de plus)
+        if (error.status === 429 || (error as any).code?.includes?.("rate_limit") || !(error as any).code) break;
+      }
+      if (!ok && !(liste?.totp?.length)) {
+        // Le code a été retiré ailleurs entre-temps : on repart d'une session propre
+        await supabase.auth.signOut(); setEtapeCode(false); setCode(""); setPassword("");
+        toast({ title: "Code retiré", description: "La double authentification n'est plus active : reconnectez-vous avec votre mot de passe." });
+        return;
       }
       if (!ok) {
         setErreurCode(messageCode(derniere ?? { code: "mfa_verification_failed" }));
@@ -93,7 +105,7 @@ const AdminAuth = () => {
         return;
       }
       if ((await estAdmin()) || (await estEspaceNawar())) navigate("/admin");
-      else { await supabase.auth.signOut(); setEtapeCode(false); toast({ title: "Accès refusé", description: "Seul l'administrateur peut accéder à cette section", variant: "destructive" }); }
+      else { await supabase.auth.signOut(); setEtapeCode(false); setCode(""); toast({ title: "Accès refusé", description: "Seul l'administrateur peut accéder à cette section", variant: "destructive" }); }
     } catch {
       setErreurCode("Pas de connexion : votre code n'a pas été envoyé. Réessayez.");
     } finally { setLoading(false); }
@@ -128,7 +140,11 @@ const AdminAuth = () => {
         return;
       }
 
-      if (data.user && (await codeRequis())) { setEtapeCode(true); return; }
+      if (data.user) {
+        const r = await codeRequis();
+        if (r === null) return; // réseau : message déjà affiché, on ne déconnecte pas et on n'annonce pas de refus
+        if (r) { setEtapeCode(true); return; }
+      }
 
       if (data.user && ((await estAdmin()) || (await estEspaceNawar()))) {
         toast({

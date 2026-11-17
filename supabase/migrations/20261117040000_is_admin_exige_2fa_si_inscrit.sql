@@ -11,8 +11,7 @@ language sql stable security definer set search_path to 'public' as $$
     where lower(a.email) = lower(auth.jwt() ->> 'email')
       and (
         coalesce(auth.jwt() ->> 'aal', 'aal1') = 'aal2'
-        or not exists (select 1 from auth.mfa_factors f join auth.users u on u.id = f.user_id
-                       where lower(u.email) = lower(a.email) and f.status = 'verified')
+        or not exists (select 1 from auth.mfa_factors f where f.user_id = auth.uid() and f.status = 'verified')
       )
   )
 $$;
