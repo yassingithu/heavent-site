@@ -39,11 +39,26 @@ function SignalementsPhotos({ devisId, onChange }: { devisId: string; onChange: 
     setOccupe(id); setErreur("");
     const s0 = liste.find((x) => x.id === id);
     const chemin = s0?.photo_id ? etatPhoto[s0.photo_id]?.chemin : undefined;
+    // livre déjà préparé : la base l'efface avec la photo, on retient son fichier pour l'effacer aussi
+    let cheminLivre: string | undefined;
+    if (decision !== "conservee") {
+      const { data: lv } = await (supabase as any).from("souvenirs_livres").select("chemin").eq("devis_id", devisId).maybeSingle();
+      cheminLivre = lv?.chemin;
+    }
     const { error } = await (supabase as any).rpc("souvenir_signalement_traiter", { p_id: id, p_decision: decision, p_note: note[id] ?? "" });
     setOccupe(null); setConfirmer(null);
     if (error) { setErreur("Décision non enregistrée : " + error.message); return; }
-    // suppression : le fichier est effacé tout de suite (à défaut, la purge nocturne s'en charge)
-    if (decision === "supprimee" && chemin) { try { await supabase.storage.from("souvenirs").remove([chemin]); } catch { /* purge nocturne */ } }
+    // fichiers effacés tout de suite ; si le stockage refuse, la purge nocturne s'en charge et on le dit
+    let reste = false;
+    if (decision === "supprimee" && chemin) {
+      const r = await supabase.storage.from("souvenirs").remove([chemin]);
+      if (r.error) reste = true;
+    }
+    if (cheminLivre) {
+      const r = await supabase.storage.from("livres-souvenirs").remove([cheminLivre]);
+      if (r.error) reste = true;
+    }
+    if (reste) setErreur("Décision enregistrée. Un fichier n'a pas pu être effacé tout de suite : la purge automatique de nuit l'effacera.");
     await charger(); onChange();
   };
   if (!liste.length) return erreur ? <p className="text-xs text-[#B5483C]" role="alert">{erreur}</p> : null;
@@ -65,7 +80,7 @@ function SignalementsPhotos({ devisId, onChange }: { devisId: string; onChange: 
                 {s.photo_id && etatPhoto[s.photo_id] && <p className="text-xs">{etatPhoto[s.photo_id].masquee ? "État : photo masquée du livre." : "État : photo visible dans le livre (les mariés ont pu la remettre)."}</p>}
                 {s.message && <p className="text-xs whitespace-pre-line">{s.message}</p>}
                 {s.contact && <p className="text-xs">Contact : {href ? <a href={href} className="underline">{s.contact}</a> : s.contact}</p>}
-                {!s.photo_id && <p className="text-xs text-muted-foreground">Demande d'un invité, sans photo précise. Règle : seuls les mariés décident du retrait. Transmettez-leur la demande (sans donner les coordonnées de l'invité sans son accord) : ils masquent ou demandent la suppression depuis leur espace. Marquez ensuite la demande traitée.</p>}
+                {!s.photo_id && s.source === "invite" && <p className="text-xs text-muted-foreground">Demande d'un invité, sans photo précise. Règle : seuls les mariés décident du retrait. Transmettez-leur la demande (sans donner les coordonnées de l'invité sans son accord) : ils masquent ou demandent la suppression depuis leur espace. Marquez ensuite la demande traitée.</p>}
               </div>
             </div>
             <input value={note[s.id] ?? ""} onChange={(e) => setNote((n) => ({ ...n, [s.id]: e.target.value }))} placeholder={mineur || s.source === "maries" ? "Note interne (obligatoire pour ne pas donner suite)" : "Note interne (facultatif)"} aria-label="Note interne" className="h-11 w-full border border-[#DCCBA6] px-2 text-base" />

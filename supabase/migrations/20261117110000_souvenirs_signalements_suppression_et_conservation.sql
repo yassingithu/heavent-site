@@ -1,4 +1,5 @@
 -- L'administration peut effacer un fichier du bucket « souvenirs » (suppression immédiate d'une photo après décision).
+drop policy if exists souvenirs_suppression_admin on storage.objects;
 create policy souvenirs_suppression_admin on storage.objects for delete to authenticated using (bucket_id = 'souvenirs' and public.is_admin());
 -- Conservation des contacts et messages des demandes traitées : 12 mois (durée alignée sur celle des albums ; À VALIDER par un juriste).
 create or replace function public.signalements_photos_purger() returns void language sql security definer set search_path to 'public' as $$
