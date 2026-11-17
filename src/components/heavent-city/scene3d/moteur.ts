@@ -73,7 +73,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     bougie: new THREE.MeshBasicMaterial({ color: 0xffd98a }),
     refusAnim: new THREE.MeshBasicMaterial({ color: 0xe24e4e, transparent: true, opacity: 0.45, depthWrite: false }),
     refus: new THREE.MeshBasicMaterial({ color: 0xe24e4e, transparent: true, opacity: 0.45, depthWrite: false }),
-    halo: new THREE.MeshBasicMaterial({ color: 0xf4d774, transparent: true, opacity: 0.14, depthWrite: false }),
+    halo: new THREE.MeshBasicMaterial({ color: 0xf4d774, transparent: true, opacity: 0.22, depthWrite: false }),
     libre: new THREE.MeshBasicMaterial({ color: 0xf4d774, transparent: true, opacity: 0.35, depthWrite: false }),
   };
   const g = {
@@ -106,9 +106,9 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     const zell = lieu === "riad" || lieu === "salle";
     const etoile8 = (c: CanvasRenderingContext2D, cx: number, cy: number, R: number, r2: number) => { c.beginPath(); for (let k = 0; k < 16; k++) { const t = (k / 16) * Math.PI * 2 - Math.PI / 2, rr = k % 2 ? r2 : R; c.lineTo(cx + Math.cos(t) * rr, cy + Math.sin(t) * rr); } c.closePath(); };
     const sol = zell ? texture(384, 384, (c, l, h) => {
-      // motif de 3 × 3 cases : damier discret + étoile à 8 branches en zellige vert, filet laiton (alpha 0,55)
+      // motif de 3 × 3 cases : damier discret + étoile à 8 branches en zellige vert, filet laiton (alpha 0,28 : le sol reste en retrait des tables et des fleurs)
       for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { c.fillStyle = (i + j) % 2 ? L.b : L.a; c.fillRect(i * 128, j * 128, 128, 128); }
-      c.globalAlpha = 0.55; etoile8(c, 192, 192, 62, 30); c.fillStyle = "#1F5A4C"; c.fill(); c.strokeStyle = "#A8933F"; c.lineWidth = 3; c.stroke();
+      c.globalAlpha = 0.28; etoile8(c, 192, 192, 62, 30); c.fillStyle = "#1F5A4C"; c.fill(); c.strokeStyle = "#A8933F"; c.lineWidth = 3; c.stroke();
       c.globalAlpha = 0.07; c.strokeStyle = "#000"; c.lineWidth = 2; for (let i = 0; i < 3; i++) { c.strokeRect(i * 128, 0, 128, h); c.strokeRect(0, i * 128, l, 128); }
     }) : texture(256, 256, (c, l, h) => {
       c.fillStyle = L.a; c.fillRect(0, 0, l, h); c.fillStyle = L.b; c.fillRect(0, 0, l / 2, h / 2); c.fillRect(l / 2, h / 2, l / 2, h / 2);

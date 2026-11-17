@@ -1,6 +1,6 @@
 /** Panneau de personnalisation : style, couleurs, lumière, musique, accueil, décoration, expériences, missions */
 import { Check } from "lucide-react";
-import { useMemo, useState, type Dispatch } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch } from "react";
 import {
   ACCUEILS, DECORS, EXPERIENCES, FOLKLORES, INVITES, LUMIERES, MUSIQUES, PALETTES, STYLES, TABLES_TYPES, disponiblePour, reservable, type TableId, type AccueilId, type InfoOption, type MusiqueId, type OptionId,
 } from "./donnees";
@@ -18,7 +18,7 @@ export const ONGLETS = [
   { id: "accueil", nom: "Accueil" }, { id: "decor", nom: "Décor" }, { id: "experiences", nom: "Expériences" }, { id: "missions", nom: "Missions" },
 ] as const;
 
-function Carte({ id, nom, phrase, on, onClick, res, radio, testid }: { id: string; nom: string; phrase: string; on: boolean; onClick: () => void; res: boolean; radio?: boolean; testid: string }) {
+function Carte({ id, nom, phrase, on, onClick, res, radio, testid, pastilles }: { pastilles?: string[]; id: string; nom: string; phrase: string; on: boolean; onClick: () => void; res: boolean; radio?: boolean; testid: string }) {
   return (
     <button type="button" role={radio ? "radio" : "checkbox"} aria-checked={on} onClick={() => { petitSon("clic"); onClick(); }} data-testid={testid}
       className={`relative flex min-h-[84px] flex-col items-start gap-1 rounded-2xl border p-3 text-start transition active:scale-[.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F4D774] ${on ? "border-[#C9A74E] bg-[#C9A74E]/15" : "border-white/12 bg-white/[0.04] hover:bg-white/[0.09]"}`}>
@@ -28,6 +28,7 @@ function Carte({ id, nom, phrase, on, onClick, res, radio, testid }: { id: strin
         {on && <Check className="ms-auto h-4 w-4 shrink-0 text-[#E4D49A]" aria-hidden="true" />}
       </span>
       <span className="text-[12px] leading-snug text-[#B9B09C]">{phrase}</span>
+      {pastilles && <span className="flex gap-1" aria-hidden="true">{pastilles.map((c, i) => <i key={i} className="h-4 w-4 rounded-full border border-white/25" style={{ background: c }} />)}</span>}
       <Pastille reservable={res} court />
     </button>
   );
@@ -110,6 +111,9 @@ export default function Panneau({ choix, dispatch, onglet, onOnglet, onRepondre,
   choix: Choix; dispatch: Dispatch<Action>; onglet: string; onOnglet: (o: string) => void; onRepondre: (m: string, r: string) => void; missionsOuvertes: number; className?: string;
 }) {
   const type = choix.type!;
+  const rangee = useRef<HTMLDivElement>(null);
+  // l'onglet choisi reste visible : on le ramène au centre de la rangée (les neuf catégories défilent)
+  useEffect(() => { rangee.current?.querySelector<HTMLElement>('[aria-selected="true\"]')?.scrollIntoView({ inline: "center", block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }, [onglet]);
   const actives = useMemo(() => new Set<OptionId>(optionsActives(choix)), [choix]);
   const lum = lumiereEffective(choix), mus = choix.musiques, acc = accueilsEffectifs(choix);
   const dispo = <T extends InfoOption>(l: T[]) => l.filter((o) => disponiblePour(o, type, choix.lieu));
@@ -134,7 +138,7 @@ export default function Panneau({ choix, dispatch, onglet, onOnglet, onRepondre,
 
   return (
     <div className={`flex min-h-0 flex-col ${className}`}>
-      <div role="tablist" aria-label={tr("Personnaliser l'événement")} className="flex gap-1.5 overflow-x-auto px-3 pb-2 pt-1 [scrollbar-width:none]">
+      <div role="tablist" aria-label={tr("Personnaliser l'événement")} ref={rangee} className="flex gap-1.5 overflow-x-auto px-3 pb-2 pt-1 [scrollbar-width:none] [mask-image:linear-gradient(to_right,#000_90%,transparent)] rtl:[mask-image:linear-gradient(to_left,#000_90%,transparent)]">
         {ONGLETS.map((o) => {
           const on = onglet === o.id;
           return (
@@ -149,7 +153,7 @@ export default function Panneau({ choix, dispatch, onglet, onOnglet, onRepondre,
       <div id="panneau-contenu" role="tabpanel" aria-labelledby={`onglet-${onglet}`} className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-1">
         {onglet === "style" && (
           <div className={grille} role="radiogroup" aria-label={tr("Style")}>
-            {STYLES.map((s) => <Carte key={s.id} id={s.id} nom={s.nom} phrase={s.phrase} on={choix.style === s.id} res={false} radio testid={`style-${s.id}`} onClick={() => dispatch({ t: "choisir", patch: { style: s.id } })} />)}
+            {STYLES.map((s) => { const pal = PALETTES.find((x) => x.id === s.palette); return <Carte key={s.id} id={s.id} nom={s.nom} phrase={s.phrase} pastilles={pal ? [pal.nappe, pal.fleurs, pal.accent, pal.deco] : undefined} on={choix.style === s.id} res={false} radio testid={`style-${s.id}`} onClick={() => dispatch({ t: "choisir", patch: { style: s.id } })} />; })}
           </div>
         )}
         {onglet === "salle" && <Salle choix={choix} dispatch={dispatch} />}

@@ -48,6 +48,13 @@ export default function HeaventCity() {
   const [toast, setToast] = useState<number | null>(null);
   const [demande, setDemande] = useState(false);
   const [deplacer, setDeplacer] = useState(false);
+  const [presentation, setPresentation] = useState(false);
+  // Mode présentation : on ne montre que la scène (commandes masquées) ; Échap ou le petit bouton pour en sortir. Rien n'est enregistré.
+  useEffect(() => {
+    if (!presentation) return;
+    const f = (e: KeyboardEvent) => { if (e.key === "Escape") setPresentation(false); };
+    window.addEventListener("keydown", f); return () => window.removeEventListener("keydown", f);
+  }, [presentation]);
   const [refus, setRefus] = useState(0);
   const { choix, phase } = etat;
 
@@ -182,9 +189,9 @@ export default function HeaventCity() {
 
       {phase === "scene" && r && (
         <div className="absolute inset-0 flex flex-col lg:flex-row" data-testid="scene">
-          <div className={`relative shrink-0 overflow-hidden transition-[height] duration-300 motion-reduce:transition-none lg:h-auto lg:flex-1 ${deplacer ? "h-[55dvh]" : "h-[40dvh]"}`}>
-            <SceneChoix reduit={reduit} r={r} nuit={nuit} focus={focus} logos={LOGOS} animer={!reduit} deplacable={deplacer} onDeplacer={(id, dx, dy) => { setRefus(0); dispatch({ t: "deplacer", id, dx, dy }); }} onRefus={() => setRefus(Date.now())} />
-            <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 bg-gradient-to-b from-black/55 to-transparent px-3 pb-6 pt-3">
+          <div className={`relative shrink-0 overflow-hidden transition-[height] duration-300 motion-reduce:transition-none lg:h-auto lg:flex-1 ${presentation ? "h-full flex-1" : deplacer ? "h-[55dvh]" : "h-[40dvh]"}`}>
+            <SceneChoix reduit={reduit} r={r} nuit={nuit} focus={focus} logos={LOGOS} animer={!reduit} deplacable={deplacer} onDeplacer={(id, dx, dy) => { setRefus(0); dispatch({ t: "deplacer", id, dx, dy }); }} onRefus={() => { setRefus(Date.now()); try { if (!reduit) navigator.vibrate?.(30); } catch { /* */ } }} />
+            <div className={`absolute inset-x-0 top-0 flex items-center justify-between gap-2 bg-gradient-to-b from-black/55 to-transparent px-3 pb-6 pt-3 ${presentation ? "hidden" : ""}`}>
               <button onClick={() => dispatch({ t: "phase", phase: "ville" })} className={`${btnContour} bg-black/35 !px-3`} data-testid="changer-lieu"><ArrowLeft className="h-4 w-4 rtl:rotate-180" /><span className="hidden sm:inline">{tr("Changer de lieu")}</span><span className="sm:hidden">{tr("Lieu")}</span></button>
               <div className="flex items-center gap-1.5">
                 <button onClick={() => setDeplacer((v) => !v)} aria-pressed={deplacer} data-testid="deplacer" className={`flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-[13.5px] font-medium ${deplacer ? "bg-[#F4D774] text-[#17141a]" : "bg-black/40 text-[#F0E8D6]"}`}><Hand className="h-4 w-4" />{tr("Déplacer")}</button>
@@ -196,6 +203,8 @@ export default function HeaventCity() {
               </div>
             </div>
             <div className="pointer-events-none absolute bottom-2 start-3 rounded-full bg-black/45 px-3 py-1 text-[12px] text-[#F0E8D6]" aria-live="polite">{r.tables === "conference" ? tr("{n} chaises · {n} participants", { n: r.invites }) : tr("{nb} {type} · {n} invités", { nb: r.tablesTotal, type: infoTable(r.tables).compte, n: r.invites })}</div>
+            {!presentation && !deplacer && <button onClick={() => setPresentation(true)} data-testid="mode-presentation" className="absolute bottom-2 end-3 rounded-full bg-black/45 px-3 min-h-9 text-[12px] text-[#F0E8D6] hover:bg-black/60">{tr("Mode présentation")}</button>}
+            {presentation && <button onClick={() => setPresentation(false)} data-testid="quitter-presentation" aria-label={tr("Quitter le mode présentation")} className="absolute end-3 top-3 z-20 rounded-full bg-black/35 px-3 min-h-10 text-[12px] text-[#F0E8D6] opacity-70 hover:opacity-100 focus-visible:opacity-100">{tr("Quitter (Échap)")}</button>}
             {deplacer && (
               <div className={`absolute inset-x-3 top-[64px] z-10 mx-auto flex max-w-md items-center justify-between gap-2 rounded-2xl border bg-[#17141a]/95 px-3 py-1.5 shadow-xl ${refus ? "border-[#E24E4E]" : "border-[#F4D774]/60"}`} data-testid="bandeau-deplacer" role="status">
                 <span className={`min-w-0 text-[12.5px] leading-tight ${refus ? "font-medium text-white" : "text-[#F6EFDD]"}`} data-testid="message-deplacer">{refus ? tr("Place occupée, l'objet est revenu.") : tr("Fais glisser une table ou un objet. Un doigt sur le sol déplace la vue.")}</span>
@@ -218,7 +227,7 @@ export default function HeaventCity() {
               </div>
             )}
           </div>
-          <aside className="flex min-h-0 flex-1 flex-col border-t border-white/10 bg-[#17141a] lg:w-[410px] lg:flex-none lg:border-l lg:border-t-0" aria-label={tr("Personnalisation")}>
+          <aside className={`min-h-0 flex-1 flex-col border-t border-white/10 bg-[#17141a] lg:w-[410px] lg:flex-none lg:border-l lg:border-t-0 ${presentation ? "hidden" : "flex"}`} aria-label={tr("Personnalisation")}>
             <div className="flex items-center justify-between px-4 pb-1 pt-3"><p className="font-serif text-[18px] text-[#F6EFDD]">{tr("Donne vie à ton événement")}</p><p className="text-[12px] text-[#B9B09C]" data-testid="progression">{tr("{n} choix · {r}/{total} missions", { n: nbEtapes, r: repondues, total: missions.length })}</p></div>
             <div className={`flex min-h-0 flex-1 flex-col ${deplacer ? "max-lg:hidden" : ""}`}><Panneau choix={choix} dispatch={agir as never} onglet={etat.onglet} onOnglet={(o) => dispatch({ t: "onglet", onglet: o })} onRepondre={repondre} missionsOuvertes={missionsOuvertes} className="min-h-0 flex-1" /></div>
             {deplacer && <button onClick={() => setDeplacer(false)} className="flex min-h-12 items-center justify-between gap-2 border-t border-white/10 px-4 text-start text-[13px] text-[#E4D49A] lg:hidden" data-testid="options-repliees"><span>{tr("Options repliées pendant le déplacement")}</span><span className="font-semibold">{tr("Rouvrir")}</span></button>}
