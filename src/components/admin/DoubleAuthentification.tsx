@@ -120,9 +120,10 @@ export default function DoubleAuthentification() {
                   <p className="truncate text-sm font-medium">{f.friendly_name || "Application d'authentification"}</p>
                   {f.created_at && <p className="text-xs text-[#6B6155]">Activée le {dateLongue(f.created_at)}</p>}
                 </div>
-                <button type="button" disabled={occupe || !niveauOk} onClick={() => retirer(f)} className="min-h-11 px-2 text-sm underline disabled:no-underline disabled:opacity-50">Retirer</button>
+                <button type="button" disabled={occupe || !niveauOk || facteurs.length <= 1} title={facteurs.length <= 1 ? "Le dernier appareil ne se retire pas depuis le site" : undefined} onClick={() => retirer(f)} className="min-h-11 px-2 text-sm underline disabled:no-underline disabled:opacity-50">Retirer</button>
               </div>
             ))}
+            {facteurs.length <= 1 && <p className="text-sm text-[#6B6155]">Le dernier appareil ne peut pas être retiré depuis le site : la double authentification ne peut pas être désactivée par une simple session ouverte. Procédure de secours : docs/recuperation-2fa-administrateur.md.</p>}
             {!niveauOk && <p className="text-sm text-[#6B6155]">Pour retirer ou ajouter un appareil, reconnectez-vous d'abord avec votre code.</p>}
             <p className="border-l-2 border-[#A8933F] bg-[#A8933F]/10 py-2 pl-3 text-sm text-[#7A5F1F]">
               Téléphone perdu ? Il n'y a pas de code de secours : gardez un second appareil enregistré. Sinon, seul le tableau de bord Supabase permet de rétablir l'accès.
@@ -145,8 +146,9 @@ export default function DoubleAuthentification() {
         {inscription && (
           <form ref={formulaire} onSubmit={confirmer} className="space-y-5 animate-in fade-in-0 duration-300" aria-busy={occupe}>
             <div className="border-l-2 border-[#8A2E26] bg-[#8A2E26]/5 py-2 pl-3 text-sm text-[#5E2018]">
-              Avant de terminer : ajoutez aussi ce code sur un <strong>deuxième appareil</strong> (un second téléphone, ou notez la clé de saisie manuelle en lieu sûr).
-              Sans code de secours, un téléphone perdu bloque l'administration.
+              Avant de terminer, prévoyez une panne de téléphone. L'app Mots de passe synchronise ce même code sur vos appareils Apple (iCloud) : cela couvre un iPhone perdu, pas la perte du compte Apple.
+              Pour une vraie seconde protection, ajoutez ensuite un <strong>autre appareil</strong> avec « Ajouter un autre appareil » (code distinct, autre application), et notez la clé de saisie manuelle en lieu sûr.
+              Sans code de secours, perdre tous les codes bloque l'administration.
             </div>
 
             <ol className="m-0 list-none p-0">
