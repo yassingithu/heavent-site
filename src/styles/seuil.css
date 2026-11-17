@@ -703,8 +703,8 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
 @media (max-width: 639px) { .bandeau-audience-int { padding-right: 88px; } }
 
 /* ── Assistant du site : hôtesse qui se lève près de WhatsApp + panneau ── */
-.hot-zone { position: fixed; z-index: 40; right: 24px; bottom: 152px; width: 96px; font-family: var(--s-texte); }
-.hot-btn { display: block; width: 96px; padding: 0; margin: 0; border: 0; background: none; cursor: pointer; filter: drop-shadow(0 8px 14px rgba(0,0,0,.35)); -webkit-tap-highlight-color: transparent; }
+.hot-zone { position: fixed; z-index: 40; right: 24px; bottom: 152px; width: 120px; font-family: var(--s-texte); }
+.hot-btn { display: block; width: 120px; padding: 0; margin: 0; border: 0; background: none; cursor: pointer; filter: drop-shadow(0 8px 14px rgba(0,0,0,.35)); -webkit-tap-highlight-color: transparent; }
 .hot-btn:focus-visible { outline: 2px solid #E4D49A; outline-offset: 3px; }
 .hot-svg { display: block; width: 100%; height: auto; overflow: visible; }
 .hot-fig { transform: translateY(8px); transition: transform .6s cubic-bezier(.2,.7,.2,1); }
@@ -715,7 +715,7 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
 [data-pose="debout"] .hot-assise, [data-pose="salue"] .hot-assise, [data-pose="salue"] .hot-bras-d { opacity: 0; }
 [data-pose="salue"] .hot-main { transform-origin: 62px 51px; animation: hot-salut 1s ease-in-out 2; }
 @keyframes hot-salut { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-9deg); } 75% { transform: rotate(7deg); } }
-.hot-bulle { position: absolute; right: 104px; top: 24px; width: 220px; margin: 0; padding: 12px 16px; background: #141414; color: #F3ECDD; font: 500 14.5px/1.4 var(--s-texte); clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px); box-shadow: inset 0 0 0 1px rgba(228,212,154,.55); animation: hot-bulle .35s var(--s-courbe, ease) both; }
+.hot-bulle { position: absolute; right: 128px; top: 30px; width: 220px; margin: 0; padding: 12px 16px; background: #141414; color: #F3ECDD; font: 500 14.5px/1.4 var(--s-texte); clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px); box-shadow: inset 0 0 0 1px rgba(228,212,154,.55); animation: hot-bulle .35s var(--s-courbe, ease) both; }
 @keyframes hot-bulle { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: none; } }
 .hot-panneau { position: fixed; z-index: 45; right: 24px; bottom: 152px; width: 360px; max-width: calc(100vw - 32px); filter: drop-shadow(0 14px 30px rgba(0,0,0,.45)); font-family: var(--s-texte); color: #F3ECDD; animation: hot-ouvre .28s var(--s-courbe, ease) both; }
 @keyframes hot-ouvre { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
@@ -753,9 +753,9 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
 .hot-saisie button:disabled { opacity: .4; cursor: default; }
 .hot-notice { margin: 0; padding: 4px 16px 12px; background: #1d1920; font: 400 11.5px/1.45 var(--s-texte); color: #9d9484; }
 @media (max-width: 639px) {
-  .hot-zone { right: 12px; bottom: 144px; width: 64px; }
-  .hot-btn { width: 64px; }
-  .hot-bulle { right: 76px; width: auto; max-width: calc(100vw - 104px); top: 8px; }
+  .hot-zone { right: 8px; bottom: 144px; width: 76px; }
+  .hot-btn { width: 76px; }
+  .hot-bulle { right: 84px; width: 190px; max-width: calc(100vw - 110px); top: 14px; }
   .hot-panneau { right: 0; left: 0; bottom: 0; width: auto; max-width: none; z-index: 70; }
   .hot-panneau-int { max-height: 80dvh; padding-bottom: env(safe-area-inset-bottom, 0px); background-color: #141414; }
   .hot-notice { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
