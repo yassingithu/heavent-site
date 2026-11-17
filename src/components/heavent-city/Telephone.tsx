@@ -141,18 +141,9 @@ function Assistant({ choix, onAppliquer }: { choix: Choix; onAppliquer: (p: Prop
 
   const p = res?.p;
   return (
-    <div className="grid gap-3">
+    <div className="flex min-h-full flex-col gap-3">
+      <div className="grid flex-1 content-start gap-3">
       <p className="text-[13.5px] leading-snug text-[#D9D0BC]">{tr("Décris l'ambiance que tu imagines : je te propose une combinaison que tu peux accepter ou modifier. Aucun prix ici — l'équipe Heavent établit le devis.")}</p>
-      <label htmlFor="assistant-texte" className="sr-only">{tr("Décris ton ambiance")}</label>
-      <textarea id="assistant-texte" value={texte} maxLength={MESSAGE_MAX} onChange={(e) => setTexte(e.target.value)} rows={3} placeholder={tr("Ex. un mariage marocain chic, beige et doré, festif mais pas bling-bling")} className={`${champ} py-2 leading-snug`} data-testid="assistant-texte" />
-      {IA_CONFIGUREE && <p className="text-[11.5px] text-[#8f8777]">{tr("Ton texte est envoyé à un service d'IA : n'y mets ni nom, ni téléphone, ni e-mail.")}</p>}
-      <div className="flex flex-wrap gap-1.5">
-        {EXEMPLES().map((e) => <button key={e} type="button" onClick={() => setTexte(e)} className="rounded-full border border-white/15 px-2.5 py-1 text-start text-[12px] text-[#D9D0BC] hover:bg-white/10">{e}</button>)}
-      </div>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11.5px] text-[#8f8777]">{texte.length}/{MESSAGE_MAX}</span>
-        <button onClick={envoyer} disabled={charge || !texte.trim()} className={btnOr} data-testid="assistant-envoyer">{charge ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}{charge ? tr("Je réfléchis…") : tr("Proposer une ambiance")}</button>
-      </div>
       {erreur && <p role="alert" className="text-[13px] text-[#F2A8A0]">{erreur}</p>}
       {p && (
         <section aria-label={tr("Proposition")} className="grid gap-2.5 rounded-2xl border border-[#C9A74E]/40 bg-white/[0.04] p-3" data-testid="proposition">
@@ -176,6 +167,19 @@ function Assistant({ choix, onAppliquer }: { choix: Choix; onAppliquer: (p: Prop
           {applique && <p className="text-[13px] text-[#E4D49A]" role="status">{tr("C'est appliqué : regarde ta scène. Tu peux encore tout modifier.")}</p>}
         </section>
       )}
+      </div>
+      <div className="sticky bottom-0 -mx-1 grid gap-3 bg-[#1d1920] px-1 pb-1 pt-2">
+      <label htmlFor="assistant-texte" className="sr-only">{tr("Décris ton ambiance")}</label>
+      <textarea id="assistant-texte" value={texte} maxLength={MESSAGE_MAX} onChange={(e) => setTexte(e.target.value)} rows={3} placeholder={tr("Ex. un mariage marocain chic, beige et doré, festif mais pas bling-bling")} className={`${champ} py-2 leading-snug`} data-testid="assistant-texte" />
+      {IA_CONFIGUREE && <p className="text-[11.5px] text-[#8f8777]">{tr("Ton texte est envoyé à un service d'IA : n'y mets ni nom, ni téléphone, ni e-mail.")}</p>}
+      <div className="flex flex-wrap gap-1.5">
+        {EXEMPLES().map((e) => <button key={e} type="button" onClick={() => setTexte(e)} className="rounded-full border border-white/15 px-2.5 py-1 text-start text-[12px] text-[#D9D0BC] hover:bg-white/10">{e}</button>)}
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11.5px] text-[#8f8777]">{texte.length}/{MESSAGE_MAX}</span>
+        <button onClick={envoyer} disabled={charge || !texte.trim()} className={btnOr} data-testid="assistant-envoyer">{charge ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}{charge ? tr("Je réfléchis…") : tr("Proposer une ambiance")}</button>
+      </div>
+      </div>
     </div>
   );
 }

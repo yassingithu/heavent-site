@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTexte } from "@/i18n/textes";
 import { activerGoogle, definirChoixAudience, useChoixAudience } from "@/lib/audience";
@@ -10,21 +10,10 @@ const BandeauAudience = () => {
 
   useEffect(() => { if (choix === "oui") activerGoogle(); }, [choix]);
 
-  // Sur téléphone le bandeau couvre toute la largeur : les boutons flottants (langue, WhatsApp) montent au-dessus de lui
-  const bandeau = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = bandeau.current; if (!el) return;
-    const racine = document.documentElement;
-    const mesurer = () => racine.style.setProperty("--bandeau-h", `${el.offsetHeight}px`);
-    mesurer();
-    const ro = new ResizeObserver(mesurer); ro.observe(el);
-    return () => { ro.disconnect(); racine.style.removeProperty("--bandeau-h"); };
-  }, [choix]);
-
   if (choix) return null;
 
   return (
-    <div ref={bandeau} role="region" aria-label={x("Mesure d'audience")} data-testid="bandeau-audience" className="bandeau-audience print:hidden">
+    <div role="region" aria-label={x("Mesure d'audience")} data-testid="bandeau-audience" className="bandeau-audience print:hidden">
       <div className="bandeau-audience-int s-nuit">
         <p className="s-surtitre vu">{x("Mesure d'audience")} <i className="s-filet" /></p>
         <p className="bandeau-audience-texte">

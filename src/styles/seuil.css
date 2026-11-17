@@ -180,7 +180,8 @@ html.s-anime .vu .s-ruban { transition: clip-path .6s var(--s-courbe) .25s; }
 .s-langue-flot-liste { display: flex; flex-direction: column; gap: 8px; animation: s-langue-ouvre .22s var(--s-courbe, ease) both; }
 @keyframes s-langue-ouvre { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (min-width: 640px) { .s-langue-flot { right: 24px; bottom: calc(24px + 56px + 12px); } }
-@media (max-width: 639px) { .s-langue-flot { bottom: calc(16px + 56px + 12px + var(--bandeau-h, 0px)); } .bouton-whatsapp { bottom: calc(16px + var(--bandeau-h, 0px)) !important; } }
+/* Téléphone : les deux boutons restent en bas à droite, même quand le bandeau d'audience est affiché (il leur laisse une bande libre à droite) */
+@media (max-width: 639px) { .s-langue-flot, .bouton-whatsapp { z-index: 52 !important; } }
 @media (max-width: 639px) { .s-langue-flot { flex-direction: row-reverse; align-items: center; } .s-langue-flot-liste { flex-direction: row; } }
 @media (prefers-reduced-motion: reduce) { .s-langue-flot-liste { animation: none; } }
 
@@ -698,3 +699,5 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
 
 /* Heavent Studio : boutons Seuil sur fond sombre */
 .studio-filet { --ligne: rgba(228,212,154,.75); --btn-texte: #E6DDCB; --fond: #141414; }
+
+@media (max-width: 639px) { .bandeau-audience-int { padding-right: 88px; } }
