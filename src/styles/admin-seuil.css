@@ -165,13 +165,13 @@
 .st-espace { min-height: 100vh; font-family: var(--s-texte); color: var(--s-nuit); background: url(/seuil/grain-platre.png) 0 0/128px, var(--s-platre); font-synthesis: none; }
 .st-espace .font-serif, .st-espace h2 { font-family: var(--s-titre); font-weight: 400; letter-spacing: -.01em; }
 .st-tete { background: url(/seuil/grain-nuit.png) 0 0/128px, var(--s-nuit); color: var(--s-platre); }
-.st-tete .in { max-width: 64rem; margin: 0 auto; padding: 12px 16px 26px; }
+.st-tete .in { max-width: 64rem; margin: 0 auto; padding: 8px 16px 16px; }
 .st-tete .l1 { display: flex; align-items: center; justify-content: space-between; min-height: 48px; }
 .st-tete .l1 img { height: 28px; width: auto; }
 .st-sortir { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 2px; font: 500 12.5px var(--s-texte); letter-spacing: .06em; color: var(--s-gris-nuit); }
 .st-sortir:hover { color: var(--s-laiton-clair); }
-.st-tete h1 { font: 400 clamp(40px, 12vw, 64px)/1 var(--s-titre); letter-spacing: -.02em; margin-top: 16px; overflow-wrap: anywhere; }
-.st-tete p { margin-top: 8px; font: 400 13.5px var(--s-texte); color: var(--s-gris-nuit); overflow-wrap: anywhere; }
+.st-tete h1 { font: 400 clamp(30px, 8vw, 48px)/1.05 var(--s-titre); letter-spacing: -.02em; margin-top: 6px; overflow-wrap: anywhere; }
+.st-tete p { margin-top: 4px; font: 400 12.5px var(--s-texte); color: var(--s-gris-nuit); overflow-wrap: anywhere; }
 .st-corps { max-width: 64rem; margin: 0 auto; padding: 20px 16px 48px; }
 .st-espace .rounded-lg.border.bg-card { background: var(--s-papier); border-color: var(--s-filet); border-radius: 2px; box-shadow: 0 24px 50px -38px rgba(60,40,10,.55); }
 .st-espace .rounded-lg.border.bg-card h3.font-semibold, .st-espace .rounded-lg.border.bg-card h3.text-2xl { font-family: var(--s-titre); font-weight: 400; letter-spacing: -.01em; }

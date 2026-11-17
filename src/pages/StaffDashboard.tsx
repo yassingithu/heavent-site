@@ -533,8 +533,8 @@ const StaffDashboard = () => {
               <LogOut className="h-4 w-4" /> {t('dashboard.logout')}
             </button>
           </div>
-          <h1>Bonjour {staffInfo?.prenom ?? ""}.</h1>
-          <p>{t('dashboard.staff_space')} · {staffInfo ? `${staffInfo.prenom} ${staffInfo.nom}` : user.email}</p>
+          <h1>{staffInfo?.prenom?.trim() ? `Bonjour ${staffInfo.prenom.trim()}.` : "Bonjour."}</h1>
+          <p>{t('dashboard.staff_space')}{staffInfo?.nom ? ` · ${staffInfo.prenom ?? ''} ${staffInfo.nom}`.replace('  ', ' ') : ''}</p>
         </div>
       </header>
       <div className="st-corps space-y-5">

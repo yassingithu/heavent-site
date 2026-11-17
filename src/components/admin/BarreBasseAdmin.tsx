@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import { Ellipsis, House, CalendarDays, Users, Inbox, X } from "lucide-react";
 
 type Icone = ComponentType<{ className?: string }>;
@@ -28,21 +28,48 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
   const badgeTotal = tous.filter((i) => i.valeur !== "entreprise").reduce((t, i) => t + (i.badge ?? 0), 0);
   const dansPlus = !PRINCIPAUX.some((p) => dans(p.valeur, onglet));
 
+  const feuille = useRef<HTMLDivElement>(null);
+  const boutonPlus = useRef<HTMLButtonElement>(null);
+  const jamaisOuvert = useRef(true);
+
+  // La feuille « Toutes les rubriques » se referme dès que la rubrique change (bouton, retour du navigateur, lien interne),
+  // rend le focus au bouton « Plus », garde le focus à l'intérieur tant qu'elle est ouverte et bloque le défilement de la page derrière.
+  useEffect(() => { setPlusOuvert(false); }, [onglet]);
   useEffect(() => {
-    if (!plusOuvert) return;
-    const touche = (e: KeyboardEvent) => e.key === "Escape" && setPlusOuvert(false);
+    if (!plusOuvert) {
+      if (!jamaisOuvert.current) boutonPlus.current?.focus({ preventScroll: true });
+      return;
+    }
+    jamaisOuvert.current = false;
+    const fond = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const cibles = () => Array.from(feuille.current?.querySelectorAll<HTMLElement>("button, a[href]") ?? []).filter((x) => !x.hasAttribute("disabled"));
+    cibles().find((x) => x.dataset.testid?.startsWith("plus-"))?.focus({ preventScroll: true });
+    const touche = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setPlusOuvert(false); return; }
+      if (e.key !== "Tab") return;
+      const l = cibles(); if (!l.length) return;
+      const premier = l[0], dernier = l[l.length - 1];
+      if (e.shiftKey && document.activeElement === premier) { e.preventDefault(); dernier.focus(); }
+      else if (!e.shiftKey && document.activeElement === dernier) { e.preventDefault(); premier.focus(); }
+    };
     window.addEventListener("keydown", touche);
-    return () => window.removeEventListener("keydown", touche);
+    return () => { window.removeEventListener("keydown", touche); document.body.style.overflow = fond; };
   }, [plusOuvert]);
 
-  const choisir = (v: string) => { setPlusOuvert(false); onChoisir(v); };
+  const choisir = (v: string) => {
+    setPlusOuvert(false);
+    onChoisir(v);
+    // la nouvelle rubrique s'ouvre en haut, pas à l'endroit où l'ancienne était défilée
+    try { window.scrollTo({ top: 0, behavior: "auto" }); } catch { /* */ }
+  };
 
   return (
     <div className="lg:hidden" data-testid="barre-basse">
       {plusOuvert && (
         <div className="fixed inset-0 z-[44] flex flex-col justify-end" role="dialog" aria-modal="true" aria-label="Toutes les rubriques">
           <button className="absolute inset-0 bg-black/50" aria-label="Fermer" onClick={() => setPlusOuvert(false)} />
-          <div className="relative max-h-[82vh] overflow-y-auto bg-[#F3ECDD] border-t-2 border-[#A8933F] px-4 pt-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] shadow-2xl">
+          <div ref={feuille} className="relative max-h-[82vh] overflow-y-auto overscroll-contain bg-[#F3ECDD] border-t-2 border-[#A8933F] px-4 pt-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] shadow-2xl">
             <div className="flex items-center justify-between mb-3">
               <p className="font-serif text-xl text-[#141414]">Toutes les rubriques</p>
               <button onClick={() => setPlusOuvert(false)} className="h-10 w-10 rounded-full hover:bg-black/5 flex items-center justify-center" aria-label="Fermer"><X className="h-5 w-5" /></button>
@@ -85,7 +112,7 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
             );
           })}
           <li>
-            <button onClick={() => setPlusOuvert((o) => !o)} aria-expanded={plusOuvert} data-testid="bas-plus"
+            <button ref={boutonPlus} onClick={() => setPlusOuvert((o) => !o)} aria-expanded={plusOuvert} aria-haspopup="dialog" data-testid="bas-plus"
               className={`relative w-full min-h-14 flex flex-col items-center justify-center gap-1 text-[11px] font-medium tracking-[0.04em] transition-colors ${plusOuvert || dansPlus ? "text-[#E4D49A]" : "text-[#BDB29C]"}`}>
               <Ellipsis className="h-5 w-5 [stroke-width:1.4]" />Plus
               {badgeTotal > 0 && !plusOuvert && <span className="absolute top-1 left-1/2 ml-2.5 text-[10.5px] leading-none font-medium tabular-nums text-[#E4D49A]" aria-label={`${badgeTotal} nouvelle(s) demande(s)`}>{badgeTotal}</span>}
