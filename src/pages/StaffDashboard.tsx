@@ -746,12 +746,13 @@ const StaffDashboard = () => {
                         onSelect={(dates) => setSelectedDatesForSlots(dates || [])}
                         modifiers={{ dispo: (d: Date) => hasAnySlotForDate(d) }}
                         modifiersClassNames={{ dispo: "st-jour-dispo" }}
-                        className="st-cal border pointer-events-auto flex justify-center"
+                        className="st-cal pointer-events-auto flex justify-center"
                         data-testid="calendrier-dispos"
                       />
                       <div className="st-legende">
-                        <span><i style={{ background: "var(--s-zellige)" }} />Disponibilité déjà donnée</span>
-                        <span><i style={{ background: "var(--s-nuit)" }} />Jour choisi</span>
+                        <span><i className="rond" />Aujourd'hui</span>
+                        <span><i style={{ background: "var(--s-zellige)" }} />Disponibilité enregistrée</span>
+                        <span><i className="coche" />Jour choisi</span>
                       </div>
                       
                       {selectedDatesForSlots.length > 0 && (
