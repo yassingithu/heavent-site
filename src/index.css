@@ -314,3 +314,13 @@ body.jeu-tiroir .bouton-whatsapp { display: none !important; }
 .jeu-futur button[aria-pressed="false"].jeu-tuile:hover, .jeu-futur ul[aria-label] button:hover { box-shadow: 0 8px 22px -10px rgba(201,167,78,.75); }
 .jeu-futur [data-testid="tiroir"] { box-shadow: 0 -1px 0 0 rgba(228,212,154,.9), 0 -14px 34px -16px rgba(201,167,78,.6); }
 @media (prefers-reduced-motion: reduce) { .jeu-futur *, .jeu-futur *::before { animation: none !important; transition: none !important; } .jeu-aurore, .jeu-grille { transform: none !important; } }
+
+/* Signalement de photos : apparition sobre et filet de confirmation (aucun mouvement si l'utilisateur le refuse) */
+@keyframes sr-entre { from { opacity: 0; transform: translateY(6px); } }
+.sr-entre { animation: sr-entre .3s cubic-bezier(.2,.7,.2,1) backwards; }
+@keyframes sr-trace { from { transform: scaleX(0); } }
+.sr-filet { display: block; height: 1px; width: 48px; margin-bottom: 10px; background: var(--inv-accent, #A8933F); transform-origin: left; animation: sr-trace .6s cubic-bezier(.2,.7,.2,1) backwards; }
+[dir="rtl"] .sr-filet { transform-origin: right; }
+.inv-signal { margin-top: 18px; padding: 18px 16px 16px; text-align: start; background: var(--inv-papier, #1C1A16); border-block: 1px solid var(--inv-accent, #E4D49A); color: var(--inv-texte, #fff); }
+.inv .inv-signal .inv-champ { text-align: start; }
+@media (prefers-reduced-motion: reduce) { .sr-entre, .sr-filet { animation: none; } }

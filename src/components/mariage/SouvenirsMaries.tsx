@@ -171,6 +171,7 @@ export default function SouvenirsMaries({ token, reponseToken, date, noms }: { t
   const ouverte = !!date && new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Casablanca" }) >= date;
   useEffect(() => { if (!ouverte) return; const i = window.setInterval(() => void charger(), 60000); return () => window.clearInterval(i); }, [ouverte, charger]);
 
+  const [signalOuvert, setSignalOuvert] = useState<string | null>(null);
   const masquer = async (p: Photo, masquee: boolean) => {
     setListe((l) => (l ?? []).map((s) => ({ ...s, photos: s.photos.map((x) => (x.id === p.id ? { ...x, masquee } : x)) })));
     const { error } = await (supabase as any).rpc("souvenir_masquer", { p_token: token, p_photo: p.id, p_masquee: masquee });
@@ -196,7 +197,7 @@ export default function SouvenirsMaries({ token, reponseToken, date, noms }: { t
           {phase === "fermee" && "Le partage est terminé. Retrouvez ci-dessous tout ce que vos invités ont partagé. Heavent prépare votre livre souvenir : rien à faire de votre côté."}
           {phase === "inconnue" && "Renseignez la date de votre mariage pour ouvrir le partage de souvenirs."}
         </p>
-        <p className="text-xs text-[#6B6155] mt-3">Seules les photos que vous ne masquez pas figureront dans votre livre souvenir. Les invités ont accepté ce partage en les envoyant. « Retirer du livre » masque seulement la photo : pour la faire supprimer des serveurs (ou signaler un enfant), utilisez « Signaler cette photo ».</p>
+        <p className="text-xs text-[#6B6155] mt-3">Seules les photos que vous ne masquez pas figureront dans votre livre souvenir. Les invités ont accepté ce partage en les envoyant. « Masquer dans le livre » est réversible : la photo reste chez nous. « Demander la suppression » : Heavent examine puis l'efface.</p>
       </section>
 
       {phase === "inconnue" ? <p className="text-sm text-[#6B6155] px-1">Renseignez la date de votre mariage pour préparer le QR code et le message du jour J.</p> : phase !== "fermee" && <JourJ token={reponseToken} noms={noms} date={date} />}
@@ -228,15 +229,15 @@ export default function SouvenirsMaries({ token, reponseToken, date, noms }: { t
                   {visibles.length > 0 && (
                     <ul className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 list-none p-0">
                       {visibles.map((p) => (
-                        <li key={p.id} className={`overflow-hidden bg-white ring-1 ring-[#EADFC8] ${p.masquee ? "opacity-60" : ""}`}>
-                          <div className="aspect-square bg-[#F1ECDD]">
+                        <li key={p.id} className={`overflow-hidden bg-white ring-1 ring-[#EADFC8] ${p.masquee ? "opacity-60" : ""} ${signalOuvert === p.id ? "col-span-full" : ""}`}>
+                          <div className={`${signalOuvert === p.id ? "aspect-[3/1]" : "aspect-square"} bg-[#F1ECDD]`}>
                             {urls[p.id] ? <a href={urls[p.id]} target="_blank" rel="noopener noreferrer"><img src={urls[p.id]} alt={`Photo de ${s.nom}`} loading="lazy" className="h-full w-full object-cover" /></a> : <div className="h-full grid place-items-center px-2 text-center text-xs text-[#6B6155]">{urlsKo ? <button type="button" className="underline" onClick={() => void charger()}>Photo indisponible · Réessayer</button> : <Loader2 className="h-4 w-4 animate-spin text-[#8C6D22]" />}</div>}
                           </div>
                           <div className="flex border-t border-[#EADFC8] text-[11px] uppercase tracking-[.12em]">
-                            <button type="button" onClick={() => void masquer(p, !p.masquee)} className="flex-1 min-h-11 px-1 hover:bg-[#FAF7EE]">{p.masquee ? "Remettre" : "Retirer du livre"}</button>
+                            <button type="button" onClick={() => void masquer(p, !p.masquee)} className="flex-1 min-h-11 px-1 hover:bg-[#FAF7EE]">{p.masquee ? "Remettre dans le livre" : "Masquer dans le livre"}</button>
                             {(dl[p.id] ?? urls[p.id]) && <a href={dl[p.id] ?? urls[p.id]} className="flex-1 min-h-11 px-1 grid place-items-center border-s border-[#EADFC8] hover:bg-[#FAF7EE]">Télécharger</a>}
                           </div>
-                          <div className="border-t border-[#EADFC8] px-2"><SignalerRetrait token={token} photoId={p.id} source="maries" /></div>
+                          <div className="border-t border-[#EADFC8] px-2"><SignalerRetrait token={token} photoId={p.id} source="maries" onOuvre={(o) => setSignalOuvert(o ? p.id : null)} onEnvoye={(m) => { if ((m === "mineur" || m === "retrait") && !p.masquee) void masquer(p, true); }} /></div>
                         </li>
                       ))}
                     </ul>

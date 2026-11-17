@@ -4,18 +4,21 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Loader2 } from "lucide-react";
 import { construireLivre } from "@/lib/livreSouvenirs";
 
-interface Signalement { id: string; photo_id: string | null; source: string; motif: string; message: string | null; contact: string | null; cree_le: string; chemin: string | null }
-const MOTIFS: Record<string, string> = { mineur: "Un mineur apparaît", retrait: "Suppression demandée par les mariés", moi_sur_photo: "Un invité demande le retrait de sa photo", inapproprie: "Photo inappropriée", autre: "Autre" };
+interface Signalement { id: string; photo_id: string | null; source: string; motif: string; message: string | null; contact: string | null; invite_nom: string | null; cree_le: string }
+const MOTIFS: Record<string, string> = { mineur: "Un mineur apparaît", retrait: "Suppression demandée", moi_sur_photo: "Un invité demande le retrait de sa photo", inapproprie: "Photo inappropriée", autre: "Autre" };
+const btn = "inline-flex items-center justify-center border border-[#A8933F] px-4 min-h-11 text-xs uppercase tracking-[.12em] text-[#141414] transition hover:bg-[#141414] hover:text-[#E4D49A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50";
+const lienContact = (c: string) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c) ? `mailto:${c}` : /^[+\d][\d\s().-]{5,}$/.test(c) ? `tel:${c.replace(/[^\d+]/g, "")}` : null);
 
 /** Demandes de retrait de photos de CE mariage. Rien n'est supprimé sans décision ici ; les demandes concernant un mineur passent en premier. */
 function SignalementsPhotos({ devisId, onChange }: { devisId: string; onChange: () => void }) {
   const [liste, setListe] = useState<Signalement[]>([]);
   const [note, setNote] = useState<Record<string, string>>({});
   const [occupe, setOccupe] = useState<string | null>(null);
+  const [confirmer, setConfirmer] = useState<string | null>(null);
   const [apercu, setApercu] = useState<Record<string, string>>({});
   const [erreur, setErreur] = useState("");
   const charger = useCallback(async () => {
-    const { data } = await (supabase as any).from("souvenirs_signalements").select("id, photo_id, source, motif, message, contact, cree_le").eq("devis_id", devisId).eq("statut", "nouveau").order("cree_le");
+    const { data } = await (supabase as any).from("souvenirs_signalements").select("id, photo_id, source, motif, message, contact, invite_nom, cree_le").eq("devis_id", devisId).eq("statut", "nouveau").order("cree_le");
     const l = ((data ?? []) as Signalement[]).sort((a, b) => Number(b.motif === "mineur") - Number(a.motif === "mineur"));
     const ids = l.map((x) => x.photo_id).filter(Boolean) as string[];
     if (ids.length) {
@@ -30,33 +33,54 @@ function SignalementsPhotos({ devisId, onChange }: { devisId: string; onChange: 
   }, [devisId]);
   useEffect(() => { void charger(); }, [charger]);
   const decider = async (id: string, decision: "conservee" | "masquee" | "supprimee") => {
-    if (decision === "supprimee" && !window.confirm("Supprimer définitivement cette photo ? Le livre déjà préparé sera retiré et devra être refait. Action irréversible.")) return;
     setOccupe(id); setErreur("");
     const { error } = await (supabase as any).rpc("souvenir_signalement_traiter", { p_id: id, p_decision: decision, p_note: note[id] ?? "" });
-    setOccupe(null);
+    setOccupe(null); setConfirmer(null);
     if (error) { setErreur("Décision non enregistrée : " + error.message); return; }
     await charger(); onChange();
   };
   if (!liste.length) return null;
+  const nbMineurs = liste.filter((s) => s.motif === "mineur").length;
   return (
-    <div className="rounded-md border border-[#B5483C]/40 bg-[#B5483C]/5 p-2 space-y-2" data-testid="signalements-photos" role="region" aria-label="Demandes de retrait de photos">
-      <p className="text-sm font-medium">{liste.length} demande{liste.length > 1 ? "s" : ""} de retrait à traiter</p>
+    <div className="border border-[#EADFC8] border-t-2 border-t-[#A8933F] bg-[#FBF6E9] p-3 space-y-3" data-testid="signalements-photos" role="region" aria-label="Demandes de retrait de photos">
+      <p className="font-titre text-xl"><span className="text-3xl text-[#8C6D22] align-middle mr-1">{liste.length}</span>demande{liste.length > 1 ? "s" : ""} de retrait à traiter{nbMineurs > 0 && <span className="block text-sm font-sans text-[#B5483C]">dont {nbMineurs} concernant un mineur : à traiter en priorité</span>}</p>
       {erreur && <p className="text-xs text-[#B5483C]" role="alert">{erreur}</p>}
-      {liste.map((s) => (
-        <div key={s.id} className="rounded border bg-background p-2 space-y-1.5 text-sm">
-          <p className="font-medium">{s.motif === "mineur" && <span className="mr-1 rounded bg-[#B5483C] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-white">Mineur</span>}{MOTIFS[s.motif] ?? s.motif} <span className="text-xs font-normal text-muted-foreground">· {s.source === "maries" ? "mariés" : "invité"} · {new Date(s.cree_le).toLocaleDateString("fr-FR")}</span></p>
-          {s.message && <p className="text-xs whitespace-pre-line">{s.message}</p>}
-          {s.contact && <p className="text-xs text-muted-foreground">Contact : {s.contact}</p>}
-          {s.photo_id ? (apercu[s.photo_id] ? <a href={apercu[s.photo_id]} target="_blank" rel="noopener noreferrer"><img src={apercu[s.photo_id]} alt="Photo signalée" className="h-24 w-24 rounded object-cover" /></a> : <p className="text-xs text-muted-foreground">Photo concernée : aperçu indisponible.</p>) : <p className="text-xs text-muted-foreground">Demande générale : aucune photo précise (à traiter avec la personne, puis à masquer ou supprimer depuis l'espace des mariés).</p>}
-          <input value={note[s.id] ?? ""} onChange={(e) => setNote((n) => ({ ...n, [s.id]: e.target.value }))} placeholder="Note interne (facultatif)" aria-label="Note interne" className="h-9 w-full rounded-md border px-2 text-base" />
-          <div className="flex flex-wrap gap-2">
-            {s.photo_id && <Button type="button" size="sm" variant="outline" disabled={occupe === s.id} onClick={() => void decider(s.id, "conservee")}>Conserver</Button>}
-            {s.photo_id && <Button type="button" size="sm" variant="outline" disabled={occupe === s.id} onClick={() => void decider(s.id, "masquee")}>Masquer du livre</Button>}
-            {s.photo_id && <Button type="button" size="sm" variant="destructive" disabled={occupe === s.id} onClick={() => void decider(s.id, "supprimee")}>Supprimer définitivement</Button>}
-            {!s.photo_id && <Button type="button" size="sm" variant="outline" disabled={occupe === s.id} onClick={() => void decider(s.id, "conservee")}>Marquer traitée</Button>}
+      {liste.map((s) => {
+        const mineur = s.motif === "mineur";
+        const noteOk = (note[s.id] ?? "").trim().length >= 3;
+        const href = s.contact ? lienContact(s.contact) : null;
+        return (
+          <div key={s.id} className={`bg-white border border-[#EADFC8] p-3 space-y-2 text-sm ${mineur ? "border-s-4 border-s-[#B5483C]" : ""}`}>
+            <p className="font-medium">{mineur ? "Mineur · priorité — " : ""}{MOTIFS[s.motif] ?? s.motif} <span className="text-xs font-normal text-muted-foreground">· {s.source === "maries" ? "mariés" : `invité${s.invite_nom ? ` (${s.invite_nom})` : ""}`} · {new Date(s.cree_le).toLocaleDateString("fr-FR")}</span></p>
+            <div className="sm:flex gap-3">
+              {s.photo_id && (apercu[s.photo_id] ? <a href={apercu[s.photo_id]} target="_blank" rel="noopener noreferrer" className="shrink-0"><img src={apercu[s.photo_id]} alt="Photo signalée" className="h-32 w-32 object-cover ring-1 ring-[#EADFC8]" /></a> : <p className="text-xs text-muted-foreground">Photo concernée : aperçu indisponible.</p>)}
+              <div className="space-y-1 min-w-0">
+                {s.message && <p className="text-xs whitespace-pre-line">{s.message}</p>}
+                {s.contact && <p className="text-xs">Contact : {href ? <a href={href} className="underline">{s.contact}</a> : s.contact}</p>}
+                {!s.photo_id && <p className="text-xs text-muted-foreground">Demande générale : aucune photo précise. Répondez à la personne pour savoir de quelle photo il s'agit, puis marquez-la traitée.</p>}
+              </div>
+            </div>
+            <input value={note[s.id] ?? ""} onChange={(e) => setNote((n) => ({ ...n, [s.id]: e.target.value }))} placeholder={mineur || s.source === "maries" ? "Note interne (obligatoire pour ne pas donner suite)" : "Note interne (facultatif)"} aria-label="Note interne" className="h-11 w-full border border-[#DCCBA6] px-2 text-base" />
+            <div className="flex flex-wrap items-center gap-2">
+              {s.photo_id ? <button type="button" className={btn} disabled={occupe === s.id} onClick={() => void decider(s.id, "masquee")}>Masquer du livre</button> : null}
+              <button type="button" className={btn} disabled={occupe === s.id || ((mineur || s.source === "maries") && !!s.photo_id && !noteOk)} onClick={() => void decider(s.id, "conservee")}>{s.photo_id ? "Ne pas supprimer" : "Marquer traitée"}</button>
+            </div>
+            {s.photo_id && (
+              <div className="border-t pt-2">
+                {confirmer === s.id ? (
+                  <div className="space-y-2" role="alert">
+                    <p className="text-xs">Supprimer cette photo pour toujours ? Le livre déjà préparé sera retiré et devra être refait. Les mariés qui l'ont déjà téléchargé en gardent leur copie.</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" className={`${btn} border-[#B5483C] text-[#B5483C]`} disabled={occupe === s.id} onClick={() => void decider(s.id, "supprimee")}>Oui, supprimer pour toujours</button>
+                      <button type="button" className={btn} onClick={() => setConfirmer(null)}>Annuler</button>
+                    </div>
+                  </div>
+                ) : <button type="button" className="min-h-11 text-xs uppercase tracking-[.12em] underline underline-offset-4 text-[#B5483C]" onClick={() => setConfirmer(s.id)}>Supprimer définitivement…</button>}
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
