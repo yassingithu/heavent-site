@@ -6,7 +6,7 @@ Aucun secret, code de secours ni mot de passe ne doit être écrit dans ce dép�
 - Deux comptes administrateurs nominatifs (Imane, Yassin), jamais un compte partagé.
 - Chacun garde ses codes de secours hors du dépôt (gestionnaire de mots de passe ou coffre papier), et la procédure « mot de passe oublié » passe par l'e-mail de son compte.
 - Si l'un perd l'accès : l'autre administrateur peut le réinitialiser depuis Supabase (Authentication > Users). Si les deux perdent l'accès : passer par la console Supabase avec le compte propriétaire du projet.
-- Double authentification : déclarée activée par Yassin (16/11/2026) sur des comptes extérieurs, non vérifiée par Claude. IMPORTANT : l'écran de connexion admin du site n'a pas de second facteur (contre-vérification du 17/11/2026) et aucun administrateur n'a de facteur TOTP enregistré dans Supabase. La double authentification d'un compte extérieur (e-mail, Supabase, one.com) ne protège pas l'accès direct à la base. Correctif préparé : migration 20261117040000 (non appliquée) + écran à construire.
+- Double authentification admin (17/11/2026) : site et 15 fonctions serveur en ligne, migration 20261117040000 appliquée à 15:00 (Bruxelles). y.selassi a un code TOTP vérifié et se connecte avec ; i.chaigari n'en a pas encore (compte protégé par le mot de passe seul tant qu'elle n'en a pas). Récupération : docs/recuperation-2fa-administrateur.md. Retour arrière : voir la migration.
 
 ## 2. Liens privés
 - Consultation : /mon-devis, /mon-mariage, /reponse, /souvenirs/mariage, /rsvp (lecture et réponse).
