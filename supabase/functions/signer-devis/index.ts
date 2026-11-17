@@ -93,7 +93,9 @@ serve(async (req) => {
     const acompte = Math.round(Number(d.total_ttc) * Number(d.acompte_pct || 0)) / 100;
     // Facture d'acompte créée automatiquement (numéro définitif FAC-…), téléchargeable depuis la page du client
     let facture: { id: string; numero: string } | null = null;
-    if (acompte > 0) {
+    // Re-signature après modification : si une facture d'acompte valable existe déjà, on la garde (le solde s'ajuste au nouveau total)
+    const { data: acompteExistant } = await db.from("factures").select("id, numero").eq("devis_id", d.id).eq("type", "acompte").neq("statut", "annulee").limit(1).maybeSingle();
+    if (acompte > 0 && !acompteExistant) {
       const { data: fa, error: errFa } = await db.rpc("facture_creer", { p_devis_id: d.id, p_type: "acompte", p_par: "signature en ligne" });
       if (errFa) console.error("facture d'acompte :", errFa.message); else facture = fa as any;
     }
@@ -106,6 +108,7 @@ serve(async (req) => {
         html: `<p><b>${e(d.client_nom)}</b>${d.client_societe ? ` (${e(d.client_societe)})` : ""} a signé en ligne le devis <b>${e(d.numero)}</b> « ${e(d.titre ?? "")} »
           le ${new Date(signeLe).toLocaleString("fr-FR", { timeZone: "UTC" })}.</p>
           <p>Total TTC : <b>${mad(d.total_ttc)}</b>${acompte ? ` · acompte attendu : <b>${mad(acompte)}</b>` : ""}</p>
+          ${acompteExistant ? `<p>🔁 Devis signé à nouveau après modification : la facture d'acompte <b>${e(acompteExistant.numero)}</b> existante est conservée, le solde sera calculé sur le nouveau total.</p>` : ""}
           ${facture ? `<p>🧾 La facture d'acompte <b>${e(facture.numero)}</b> a été créée et envoyée au client. Pense à la marquer « payée » à réception du virement (onglet Devis → Factures).</p>` : ""}
           <p>Le devis est passé en « Accepté » dans l'administration ; la signature figure sur le PDF.</p>`,
       }).catch(() => {});
@@ -114,7 +117,8 @@ serve(async (req) => {
         html: `<div style="font-family:Arial,sans-serif;max-width:620px;color:#2a2420">
           <p>Bonjour ${e(d.client_nom)},</p>
           <p>Merci ! Votre accord sur le devis <b>${e(d.numero)}</b>${d.titre ? ` « ${e(d.titre)} »` : ""} est bien enregistré.</p>
-          ${acompte ? `<div style="background:#FAF7EE;border:1px solid #ece6d3;border-radius:8px;padding:12px 16px">
+          ${acompteExistant ? `<p>Votre acompte reste inchangé (facture <b>${e(acompteExistant.numero)}</b>) : le solde sera ajusté au nouveau total de <b>${mad(d.total_ttc)}</b>.</p>` : ""}
+          ${acompte && !acompteExistant ? `<div style="background:#FAF7EE;border:1px solid #ece6d3;border-radius:8px;padding:12px 16px">
             <b>Acompte à régler : ${mad(acompte)}</b> (${e(d.acompte_pct)} % du total TTC de ${mad(d.total_ttc)})<br>
             ${ag?.rib ? `Par virement — RIB : <b>${e(ag.rib)}</b><br>` : ""}Référence à indiquer : <b>${e(facture?.numero ?? d.numero)}</b></div>` : ""}
           ${facture ? `<p>Votre facture d'acompte <b>${e(facture.numero)}</b> est téléchargeable sur votre page : <a href="https://heaventagency.com/mon-devis/${e(d.lien_token)}#factures">télécharger ma facture</a>.</p>` : ""}
