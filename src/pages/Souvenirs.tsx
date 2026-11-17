@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
+import SignalerRetrait from "@/components/SignalerRetrait";
 import { Camera, CheckCircle2, Loader2, X } from "lucide-react";
 import "@/styles/invitation.css";
 
@@ -169,6 +170,7 @@ export default function Souvenirs() {
           {(["fr", "en", "ar"] as Langue[]).map((l) => <button key={l} type="button" aria-pressed={langue === l} onClick={() => setLangue(l)}>{l === "fr" ? "FR" : l === "en" ? "EN" : "عربي"}</button>)}
         </div>
         {contenu}
+        {jeton && <div style={{ textAlign: "center", marginTop: 18 }}><SignalerRetrait token={jeton} source="invite" langue={langue} sombre /></div>}
         <p className="inv-pied">Heavent People Agency</p>
       </div>
     </div>

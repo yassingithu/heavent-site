@@ -4,6 +4,63 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Loader2 } from "lucide-react";
 import { construireLivre } from "@/lib/livreSouvenirs";
 
+interface Signalement { id: string; photo_id: string | null; source: string; motif: string; message: string | null; contact: string | null; cree_le: string; chemin: string | null }
+const MOTIFS: Record<string, string> = { mineur: "Un mineur apparaît", retrait: "Suppression demandée par les mariés", moi_sur_photo: "Un invité demande le retrait de sa photo", inapproprie: "Photo inappropriée", autre: "Autre" };
+
+/** Demandes de retrait de photos de CE mariage. Rien n'est supprimé sans décision ici ; les demandes concernant un mineur passent en premier. */
+function SignalementsPhotos({ devisId, onChange }: { devisId: string; onChange: () => void }) {
+  const [liste, setListe] = useState<Signalement[]>([]);
+  const [note, setNote] = useState<Record<string, string>>({});
+  const [occupe, setOccupe] = useState<string | null>(null);
+  const [apercu, setApercu] = useState<Record<string, string>>({});
+  const [erreur, setErreur] = useState("");
+  const charger = useCallback(async () => {
+    const { data } = await (supabase as any).from("souvenirs_signalements").select("id, photo_id, source, motif, message, contact, cree_le").eq("devis_id", devisId).eq("statut", "nouveau").order("cree_le");
+    const l = ((data ?? []) as Signalement[]).sort((a, b) => Number(b.motif === "mineur") - Number(a.motif === "mineur"));
+    const ids = l.map((x) => x.photo_id).filter(Boolean) as string[];
+    if (ids.length) {
+      const { data: ph } = await (supabase as any).from("souvenirs_photos").select("id, chemin").in("id", ids);
+      const chemins = (ph ?? []) as { id: string; chemin: string }[];
+      const { data: urls } = await supabase.storage.from("souvenirs").createSignedUrls(chemins.map((c) => c.chemin), 600);
+      const m: Record<string, string> = {};
+      chemins.forEach((c) => { const u = (urls ?? []).find((x: any) => x.path === c.chemin)?.signedUrl; if (u) m[c.id] = u; });
+      setApercu(m);
+    }
+    setListe(l);
+  }, [devisId]);
+  useEffect(() => { void charger(); }, [charger]);
+  const decider = async (id: string, decision: "conservee" | "masquee" | "supprimee") => {
+    if (decision === "supprimee" && !window.confirm("Supprimer définitivement cette photo ? Le livre déjà préparé sera retiré et devra être refait. Action irréversible.")) return;
+    setOccupe(id); setErreur("");
+    const { error } = await (supabase as any).rpc("souvenir_signalement_traiter", { p_id: id, p_decision: decision, p_note: note[id] ?? "" });
+    setOccupe(null);
+    if (error) { setErreur("Décision non enregistrée : " + error.message); return; }
+    await charger(); onChange();
+  };
+  if (!liste.length) return null;
+  return (
+    <div className="rounded-md border border-[#B5483C]/40 bg-[#B5483C]/5 p-2 space-y-2" data-testid="signalements-photos" role="region" aria-label="Demandes de retrait de photos">
+      <p className="text-sm font-medium">{liste.length} demande{liste.length > 1 ? "s" : ""} de retrait à traiter</p>
+      {erreur && <p className="text-xs text-[#B5483C]" role="alert">{erreur}</p>}
+      {liste.map((s) => (
+        <div key={s.id} className="rounded border bg-background p-2 space-y-1.5 text-sm">
+          <p className="font-medium">{s.motif === "mineur" && <span className="mr-1 rounded bg-[#B5483C] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-white">Mineur</span>}{MOTIFS[s.motif] ?? s.motif} <span className="text-xs font-normal text-muted-foreground">· {s.source === "maries" ? "mariés" : "invité"} · {new Date(s.cree_le).toLocaleDateString("fr-FR")}</span></p>
+          {s.message && <p className="text-xs whitespace-pre-line">{s.message}</p>}
+          {s.contact && <p className="text-xs text-muted-foreground">Contact : {s.contact}</p>}
+          {s.photo_id ? (apercu[s.photo_id] ? <a href={apercu[s.photo_id]} target="_blank" rel="noopener noreferrer"><img src={apercu[s.photo_id]} alt="Photo signalée" className="h-24 w-24 rounded object-cover" /></a> : <p className="text-xs text-muted-foreground">Photo concernée : aperçu indisponible.</p>) : <p className="text-xs text-muted-foreground">Demande générale : aucune photo précise (à traiter avec la personne, puis à masquer ou supprimer depuis l'espace des mariés).</p>}
+          <input value={note[s.id] ?? ""} onChange={(e) => setNote((n) => ({ ...n, [s.id]: e.target.value }))} placeholder="Note interne (facultatif)" aria-label="Note interne" className="h-9 w-full rounded-md border px-2 text-base" />
+          <div className="flex flex-wrap gap-2">
+            {s.photo_id && <Button type="button" size="sm" variant="outline" disabled={occupe === s.id} onClick={() => void decider(s.id, "conservee")}>Conserver</Button>}
+            {s.photo_id && <Button type="button" size="sm" variant="outline" disabled={occupe === s.id} onClick={() => void decider(s.id, "masquee")}>Masquer du livre</Button>}
+            {s.photo_id && <Button type="button" size="sm" variant="destructive" disabled={occupe === s.id} onClick={() => void decider(s.id, "supprimee")}>Supprimer définitivement</Button>}
+            {!s.photo_id && <Button type="button" size="sm" variant="outline" disabled={occupe === s.id} onClick={() => void decider(s.id, "conservee")}>Marquer traitée</Button>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface Livre { chemin: string; nb_photos: number; nb_invites: number; taille_mo: number | null; created_at: string }
 
 /** Préparation du livre souvenir d'un mariage : livre HTML hors ligne + photos, en ZIP, mis à disposition des mariés. */
@@ -110,6 +167,7 @@ export default function LivreSouvenirsAdmin({ devisId, noms, date, lieu }: { dev
       {perime && <p className="text-xs text-[#8C6D22]" role="status">Des photos ont été ajoutées depuis la préparation : refaites le livre.</p>}
       {tropTot && !vide && <p className="text-xs text-[#8C6D22]">Le partage est ouvert jusqu'au {new Date(finPartage + "T00:00:00Z").toLocaleDateString("fr-FR", { timeZone: "UTC", day: "numeric", month: "long" })} : préparez le livre après cette date pour ne rien oublier.</p>}
       {livre && <p className="text-xs text-muted-foreground">Si les mariés retirent une photo après la préparation, refaites le livre.</p>}
+      <SignalementsPhotos devisId={devisId} onChange={() => void charger()} />
       {erreur && <p className="text-xs text-[#B5483C]" role="alert">{erreur}</p>}
       <div className="flex flex-wrap gap-2">
         <Button type="button" size="sm" disabled={occupe || vide} onClick={() => void preparer()} data-testid="preparer-livre">

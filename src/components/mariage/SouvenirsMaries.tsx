@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { Loader2 } from "lucide-react";
 import { enregistrerFichier } from "@/lib/pdf";
 import VerificationCode, { preuveEnMemoire } from "@/components/VerificationCode";
+import SignalerRetrait from "@/components/SignalerRetrait";
 
 interface Photo { id: string; chemin: string; masquee: boolean }
 interface Souvenir { id: string; nom: string; mot: string | null; date: string; photos: Photo[] }
@@ -195,7 +196,7 @@ export default function SouvenirsMaries({ token, reponseToken, date, noms }: { t
           {phase === "fermee" && "Le partage est terminé. Retrouvez ci-dessous tout ce que vos invités ont partagé. Heavent prépare votre livre souvenir : rien à faire de votre côté."}
           {phase === "inconnue" && "Renseignez la date de votre mariage pour ouvrir le partage de souvenirs."}
         </p>
-        <p className="text-xs text-[#6B6155] mt-3">Seules les photos que vous ne masquez pas figureront dans votre livre souvenir. Les invités ont accepté ce partage en les envoyant.</p>
+        <p className="text-xs text-[#6B6155] mt-3">Seules les photos que vous ne masquez pas figureront dans votre livre souvenir. Les invités ont accepté ce partage en les envoyant. « Retirer du livre » masque seulement la photo : pour la faire supprimer des serveurs (ou signaler un enfant), utilisez « Signaler cette photo ».</p>
       </section>
 
       {phase === "inconnue" ? <p className="text-sm text-[#6B6155] px-1">Renseignez la date de votre mariage pour préparer le QR code et le message du jour J.</p> : phase !== "fermee" && <JourJ token={reponseToken} noms={noms} date={date} />}
@@ -235,6 +236,7 @@ export default function SouvenirsMaries({ token, reponseToken, date, noms }: { t
                             <button type="button" onClick={() => void masquer(p, !p.masquee)} className="flex-1 min-h-11 px-1 hover:bg-[#FAF7EE]">{p.masquee ? "Remettre" : "Retirer du livre"}</button>
                             {(dl[p.id] ?? urls[p.id]) && <a href={dl[p.id] ?? urls[p.id]} className="flex-1 min-h-11 px-1 grid place-items-center border-s border-[#EADFC8] hover:bg-[#FAF7EE]">Télécharger</a>}
                           </div>
+                          <div className="border-t border-[#EADFC8] px-2"><SignalerRetrait token={token} photoId={p.id} source="maries" /></div>
                         </li>
                       ))}
                     </ul>
