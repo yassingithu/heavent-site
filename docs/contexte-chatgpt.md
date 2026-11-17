@@ -62,7 +62,7 @@ Devis (catalogue de prestations, prix fixés par Yassin dans Admin → Devis →
 - **Côté fonctions serveur** : `getCaller` (`_shared/auth.ts`) lit le niveau du jeton et refuse un administrateur sans code s'il en a un (dans le doute, refus). Deux fonctions ont le même contrôle en ligne.
 - **Appareils** : le même code synchronisé par iCloud sur iPhone et Mac couvre la perte d'un appareil, pas celle du compte Apple. Un **second facteur distinct** (autre appareil, autre iCloud) existe pour Yassin : son iPhone et son iPad, deux enregistrements séparés, tous deux déjà validés.
 - **Imane** n'a pas encore de code : son compte reste protégé par le mot de passe seul jusqu'à ce qu'elle l'enregistre (à faire avec Yassin).
-- **Retrait** : le site interdit de retirer le dernier code. Seul Supabase (tableau de bord ou SQL `delete from auth.mfa_factors …`) peut tout réinitialiser, après vérification d'identité hors ligne. Procédure et retour arrière : `docs/recuperation-2fa-administrateur.md`.
+- **Retrait** : le dernier code d'un administrateur ne peut être retiré ni par le site, ni par l'API, ni par le tableau de bord (déclencheur `garder_dernier_facteur`, testé le 17/11). Seul le SQL en rôle postgres (`delete from auth.mfa_factors …`) réinitialise, après vérification d'identité hors ligne. Procédure et retour arrière : `docs/recuperation-2fa-administrateur.md`.
 - **Incident corrigé le jour même** : une boucle de rafraîchissement de session sur l'écran de connexion atteignait la limite de requêtes et déconnectait à tort (« Code retiré »). Corrigé et remis en ligne avant d'appliquer la migration (commit `72569f26`).
 - **Testé** : accès base refusé sans code, accordé avec code ; jetons sans niveau refusés ; non-administrateurs refusés ; connexion avec chaque appareil. **Non testé** : appel réel des fonctions avec un jeton sans code, retrait d'un code depuis le site, parcours client/invité/crew/webhook/tâches rejoués après coup (non modifiés).
 - Deux fonctions PDF (`generate-invoice-pdf`, `generate-staff-professional-pdf`) n'existaient pas sur le serveur et ont été créées le 17/11 (admin avec code uniquement).
@@ -75,8 +75,17 @@ Devis (catalogue de prestations, prix fixés par Yassin dans Admin → Devis →
 - Ne rien inventer : tout chiffre vient de la base ou du code. Aucune migration destructive en production. Aucune publication, notification ou paiement rejoué.
 - Aucun service externe payant ni transfert de données vers un nouveau service sans accord écrit de Yassin.
 
-## 11. Encore ouvert (ne pas présenter comme fait)
-Double authentification d'Imane · vérification supplémentaire avant signature/export · mode jour J sans réseau · signalement/retrait de photos et photos de mineurs · alertes de quota · test de restauration des sauvegardes sur un projet séparé · récépissé CNDP et autorisation CIN (en attente) · validation par un juriste / comptable des durées de conservation et de la TVA des factures · bandeau de consentement absent sur /nawar et /studio (décision d'Imane) · paie et déclarations CNSS/IR (bloquées : règles et statuts à vérifier) · Heavent Studio : démo montrant aussi le site public et l'espace crew, générée par type de métier.
-
-## 12. Comment aider utilement
-Pose des questions précises, propose des options chiffrées ou des plans par étapes, signale les risques (sécurité, conformité marocaine, coût) et ce que tu ne sais pas. Ne propose jamais d'écrire des identifiants ou des clés dans une conversation ni dans le dépôt, et ne présente pas comme certain un fait que tu n'as pas vérifié.
+## 11. État réel au 17/11/2026 (développé / déployé / testé / restant)
+| Point | Développé | Déployé | Testé | Restant |
+|---|---|---|---|---|
+| Double authentification (Yassin) | oui | oui | oui (aal1 refusé, aal2 accepté, dernier facteur protégé) | Imane : volontairement reportée |
+| Code e-mail avant signature | oui (devis) ; livre de souvenirs aussi | oui | oui (expiration 10 min, 5 essais, 3 envois/h, limité au devis, preuve invalidée à la signature depuis le 17/11) | preuve non liée à une action précise ; export invités = côté navigateur seulement (décision : laissé tel quel) |
+| Alertes de quota | NON (rien dans le code ni la base) | non | non | tout : stockage, e-mails, appels IA, résumé du matin |
+| Signalement / retrait de photos | NON (tables souvenirs_photos existent, aucun mécanisme de signalement) | non | non | tout, + règles photos de mineurs à valider par un juriste |
+| Mode jour J sans réseau | NON (le service worker staff n'a volontairement aucun cache) | non | non | tout |
+| Restauration | test local réussi le 25/10 (Postgres local + clé de secours, 1 401 références, 437 fichiers) | outils en service | oui en local | test sur un projet Supabase isolé : NON fait (voir blocage) |
+| Récépissé CNDP / autorisation CIN | – | – | – | en attente côté Yassin/Imane |
+| Durées de conservation, TVA des factures | – | – | – | validation juriste / comptable |
+| Paie, CNSS, IR | – | – | – | bloqué : règles et statuts à vérifier, aucun calcul activé |
+| Bandeau de consentement /nawar et /studio | – | – | – | analyse des traceurs à faire (lot 5), pas de bandeau ajouté automatiquement |
+| Démo Heavent Studio par métier | partielle (12 métiers) | oui | – | site public et espace crew dans la démo |
