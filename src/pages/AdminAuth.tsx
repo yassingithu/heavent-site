@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
-import { Shield } from "lucide-react";
+import { Shield, ArrowLeft } from "lucide-react";
 import { estAdmin, estEspaceNawar } from "@/lib/admin";
 
 
@@ -22,6 +22,9 @@ const AdminAuth = () => {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  // Étape « code » : le mot de passe est bon, la double authentification demande encore le code à 6 chiffres
+  const [etapeCode, setEtapeCode] = useState(false);
+  const [code, setCode] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -46,9 +49,41 @@ const AdminAuth = () => {
   // Redirect if already authenticated and is admin
   useEffect(() => {
     if (user && session) {
-      estAdmin().then(async (ok) => (ok || (await estEspaceNawar())) && navigate("/admin"));
+      (async () => {
+        if (await codeRequis()) { setEtapeCode(true); return; }
+        if ((await estAdmin()) || (await estEspaceNawar())) navigate("/admin");
+      })();
     }
   }, [user, session, navigate]);
+
+  /** Vrai si la session a donné le mot de passe mais pas encore le code de la double authentification. */
+  const codeRequis = async () => {
+    const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    return !!data && data.nextLevel === "aal2" && data.currentLevel !== "aal2";
+  };
+
+  const verifierCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (code.length !== 6) return;
+    setLoading(true);
+    try {
+      const { data: liste } = await supabase.auth.mfa.listFactors();
+      const facteur = liste?.totp?.[0];
+      if (!facteur) throw new Error("aucun facteur");
+      const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: facteur.id, code });
+      if (error) {
+        toast({ title: "Code incorrect", description: "Vérifiez le code affiché sur votre iPhone puis réessayez.", variant: "destructive" });
+        setCode("");
+        return;
+      }
+      if ((await estAdmin()) || (await estEspaceNawar())) navigate("/admin");
+      else { await supabase.auth.signOut(); setEtapeCode(false); toast({ title: "Accès refusé", description: "Seul l'administrateur peut accéder à cette section", variant: "destructive" }); }
+    } catch {
+      toast({ title: "Erreur", description: "Une erreur inattendue s'est produite", variant: "destructive" });
+    } finally { setLoading(false); }
+  };
+
+  const recommencer = async () => { await supabase.auth.signOut(); setEtapeCode(false); setCode(""); setPassword(""); };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +111,8 @@ const AdminAuth = () => {
         }
         return;
       }
+
+      if (data.user && (await codeRequis())) { setEtapeCode(true); return; }
 
       if (data.user && ((await estAdmin()) || (await estEspaceNawar()))) {
         toast({
@@ -117,6 +154,23 @@ const AdminAuth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
+          {etapeCode ? (
+            <form onSubmit={verifierCode} className="space-y-4" data-testid="etape-code">
+              <div className="space-y-2">
+                <Label htmlFor="code">Code de vérification</Label>
+                <p className="text-sm text-muted-foreground">Ouvrez l'app « Mots de passe » de votre iPhone (Face ID) et tapez le code à 6 chiffres.</p>
+                <Input id="code" inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={6} placeholder="000000"
+                  value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="h-12 text-center text-2xl tracking-[0.4em]" />
+              </div>
+              <Button type="submit" className="w-full h-11 sm:h-12 text-base font-medium" disabled={loading || code.length !== 6}>
+                {loading ? t('auth.connecting') : "Valider"}
+              </Button>
+              <button type="button" onClick={recommencer} className="mx-auto flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4" /> Changer de compte
+              </button>
+            </form>
+          ) : (
           <form onSubmit={handleSignIn} className="space-y-3 sm:space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email Administrateur</Label>
@@ -146,6 +200,7 @@ const AdminAuth = () => {
               {loading ? t('auth.connecting') : t('auth.sign_in')}
             </Button>
           </form>
+          )}
         </CardContent>
       </Card>
     </div>

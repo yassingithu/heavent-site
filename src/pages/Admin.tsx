@@ -55,6 +55,7 @@ import ContratsManuels from "@/components/admin/equipe/ContratsManuels";
 import ContratsEvenements from "@/components/admin/equipe/ContratsEvenements";
 import DevisParStatut from "@/components/admin/devis/DevisParStatut";
 import { CartesDemandes, CartesDevisSuivis } from "@/components/admin/CartesDemandes";
+import DoubleAuthentification from "@/components/admin/DoubleAuthentification";
 import "@/styles/admin-seuil.css";
 
 
@@ -2173,6 +2174,7 @@ const Admin = () => {
         {/* Sécurité Tab */}
         <TabsContent value="securite" className="space-y-4">
           {!estDemo() && <CarteAppTelephone email={user?.email} mode="reglage" />}
+          {!estDemo() && <DoubleAuthentification />}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
