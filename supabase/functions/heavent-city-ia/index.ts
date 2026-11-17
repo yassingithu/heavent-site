@@ -83,7 +83,7 @@ serve(async (req) => {
 
   let corps: Record<string, unknown>;
   try { corps = await req.json(); } catch { return json(req, { error: "Requête invalide" }, 400); }
-  const message = typeof corps.message === "string" ? corps.message.replace(/\s+/g, " ").trim().slice(0, MESSAGE_MAX) : "";
+  const message = typeof corps.message === "string" ? corps.message.replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, " ").replace(/\+?\d[\d\s().-]{5,}\d/g, " ").replace(/\s+/g, " ").trim().slice(0, MESSAGE_MAX) : "";
   const type = garde(corps.type, TYPES);
   const lieu = garde(corps.lieu, IDS.lieux);
   if (!message || !type) return json(req, { error: "Message ou type manquant" }, 400);
