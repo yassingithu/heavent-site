@@ -26,11 +26,18 @@ function lignes(c: CanvasRenderingContext2D, t: string, max: number): string[] {
 
 export async function creerCarte(choix: Choix, logos: { nawar: string; heavent: string }): Promise<Blob> {
   const r = rendu(choix); if (!r) throw new Error("Rien à illustrer");
-  const [{ renderToStaticMarkup }, { SceneSvg }] = await Promise.all([import("react-dom/server"), import("./Scene")]);
-  const [nawar, heavent] = await Promise.all([enDonnees(logos.nawar), enDonnees(logos.heavent)]);
-  let svg = renderToStaticMarkup(createElement(SceneSvg, { r, nuit: 1, animer: false, final: "assis", logos: { nawar, heavent }, cadrage: "slice" }));
-  svg = svg.replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="960" height="720" ');
-  const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+  const heavent = await enDonnees(logos.heavent);
+  // La carte montre ce que le client vient de voir : la scène 3D si elle est affichée, sinon le dessin (conférence, sans WebGL)
+  let url = "";
+  const png = await (window as unknown as { __hc3d?: { capturer?: () => Promise<Blob | null> } }).__hc3d?.capturer?.().catch(() => null);
+  if (png) url = URL.createObjectURL(png);
+  else {
+    const [{ renderToStaticMarkup }, { SceneSvg }] = await Promise.all([import("react-dom/server"), import("./Scene")]);
+    const nawar = await enDonnees(logos.nawar);
+    let svg = renderToStaticMarkup(createElement(SceneSvg, { r, nuit: 1, animer: false, final: "assis", logos: { nawar, heavent }, cadrage: "slice" }));
+    svg = svg.replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="960" height="720" ');
+    url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+  }
   try {
     const [scene, logo] = await Promise.all([charger(url), charger(heavent)]);
     const cv = document.createElement("canvas"); cv.width = L; cv.height = H;
@@ -39,7 +46,10 @@ export async function creerCarte(choix: Choix, logos: { nawar: string; heavent: 
     const fond = c.createLinearGradient(0, 0, 0, H); fond.addColorStop(0, "#1f1a22"); fond.addColorStop(1, "#0f0d12");
     c.fillStyle = fond; c.fillRect(0, 0, L, H);
     // cadre de la scène
-    c.save(); coins(c, 60, 150, 960, 760, 34); c.clip(); c.drawImage(scene, 60, 150, 960, 760); c.restore();
+    c.save(); coins(c, 60, 150, 960, 760, 34); c.clip();
+    // recadrage « cover » : l'image (3D ou dessin) remplit le cadre sans déformation
+    const k = Math.max(960 / scene.width, 760 / scene.height), sw = 960 / k, sh = 760 / k;
+    c.drawImage(scene, (scene.width - sw) / 2, (scene.height - sh) / 2, sw, sh, 60, 150, 960, 760); c.restore();
     c.strokeStyle = "#C9A74E"; c.lineWidth = 3; coins(c, 60, 150, 960, 760, 34); c.stroke();
     // marque
     const hl = 56, wl = Math.min(260, (logo.width / logo.height) * hl);

@@ -11,7 +11,7 @@ import { chevauche, objetsDeplacables, RAYON_TABLE, type Objet3D } from "./objet
 
 export interface Entree { final?: null | "avant" | "arrive" | "assis"; r: Rendu; nuit: number; deplacable: boolean; reduit: boolean; focus?: { cle: string; n: number } | null }
 export interface Rappels { onDeplacer: (id: string, dx: number, dy: number) => void; onRefus: (motif?: "occupe" | "bord") => void; /** la vue n'est plus celle d'ensemble (zoom ou déplacement) */ onDecalee?: (decalee: boolean) => void; /** contexte WebGL perdu : repli sur le SVG */ onPerdu?: () => void }
-export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** objets restés en pavé générique (doit être vide) */ generiques(): string[]; /** position monde (cases) d'un objet, pour les tests */ position(id: string): [number, number] | null; /** position écran (px client) d'un point du sol ou d'un objet, pour les tests */ ecran(x: number, z: number): [number, number]; ecranObjet(id: string): [number, number] | null; /** chaises d'un objet (position locale, direction du dossier), pour les tests */ chaises(id: string): { x: number; z: number; dos: [number, number] }[]; dims(id: string): { w: number; d: number } | null; /** cadre un objet de près (tests, captures) */ vers(id: string, zoom: number): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[]; invites: number } }
+export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** image PNG de la scène 3D seule (fond compris, sans interface) ; null si impossible */ capturer(): Promise<Blob | null>; /** objets restés en pavé générique (doit être vide) */ generiques(): string[]; /** position monde (cases) d'un objet, pour les tests */ position(id: string): [number, number] | null; /** position écran (px client) d'un point du sol ou d'un objet, pour les tests */ ecran(x: number, z: number): [number, number]; ecranObjet(id: string): [number, number] | null; /** chaises d'un objet (position locale, direction du dossier), pour les tests */ chaises(id: string): { x: number; z: number; dos: [number, number] }[]; dims(id: string): { w: number; d: number } | null; /** cadre un objet de près (tests, captures) */ vers(id: string, zoom: number): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[]; invites: number } }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const couleur = (a: string, b: string, t: number) => new THREE.Color(a).lerp(new THREE.Color(b), t);
@@ -55,6 +55,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.shadowMap.autoUpdate = false;
   const tactile = matchMedia("(pointer: coarse)").matches;
 
+  let fond: [string, string] = ["#1f1a22", "#0f0d12"]; // dégradé du décor (le canvas est transparent), repris à la capture
   const scene = new THREE.Scene();
   const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 300);
   const hemi = new THREE.HemisphereLight(0xffe6c8, 0x8a7a66, 1.0); scene.add(hemi);
@@ -327,7 +328,8 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     const n = nuit;
     soleil.color.copy(couleur("#FFE2B8", "#9AA3C0", n)); soleil.intensity = lerp(1.9, 0.5, n);
     hemi.color.copy(couleur("#FFE6C8", "#9AA3C0", n)); hemi.groundColor.copy(couleur("#8A7A66", "#2A2E48", n)); hemi.intensity = lerp(1.0, 0.65, n);
-    conteneur.style.background = `linear-gradient(180deg, ${couleur("#F3ECDD", "#141414", n).getStyle()}, ${couleur("#E9DCC2", "#1B1A22", n).getStyle()})`;
+    fond = [couleur("#F3ECDD", "#141414", n).getStyle(), couleur("#E9DCC2", "#1B1A22", n).getStyle()];
+    conteneur.style.background = `linear-gradient(180deg, ${fond[0]}, ${fond[1]})`;
     lampes.forEach((l) => { l.intensity = l.userData.actif ? (l.userData.nawar ? lerp(1.8, 7, n) : lerp(0.2, 7, n)) : 0; });
     renderer.toneMappingExposure = lerp(1.08, 1.1, n);
     renderer.shadowMap.needsUpdate = true;
@@ -519,6 +521,28 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
       demander();
     },
     vueEnsemble: () => recadrer(),
+    capturer: () => {
+      try {
+        if (!canvas.isConnected) return Promise.resolve(null);
+        // on redessine puis on copie dans la même tâche : le tampon du canvas est encore plein (pas de preserveDrawingBuffer, plus léger sur mobile)
+        // vue d'ensemble de la salle pour la carte (la caméra du jeu peut être sur la porte), puis retour à la vue du joueur
+        // rendu dédié au format paysage de la carte (1440×1140), indépendant de la forme de l'écran du joueur
+        const N = courant?.r.salle.n ?? 12, W = 1440, H = 1140;
+        const gauche = cam.left, droite = cam.right, haut = cam.top, bas = cam.bottom, pos = cam.position.clone(), pr = renderer.getPixelRatio();
+        const restaurer = () => { renderer.setPixelRatio(pr); cam.left = gauche; cam.right = droite; cam.top = haut; cam.bottom = bas; cam.position.copy(pos); cam.lookAt(vue.cible); cam.updateProjectionMatrix(); redim(); };
+        renderer.setPixelRatio(1); renderer.setSize(W, H, false);
+        const centre = new THREE.Vector3(N / 2, 0.8, N / 2), demiL = N * 0.78, demiH = demiL * H / W;
+        cam.left = -demiL; cam.right = demiL; cam.top = demiH; cam.bottom = -demiH;
+        cam.position.copy(centre).addScaledVector(DIR, 80); cam.lookAt(centre); cam.updateProjectionMatrix();
+        renderer.render(scene, cam);
+        const c2 = document.createElement("canvas"); c2.width = W; c2.height = H;
+        const g = c2.getContext("2d"); if (!g) { restaurer(); return Promise.resolve(null); }
+        const d = g.createLinearGradient(0, 0, 0, H); d.addColorStop(0, fond[0]); d.addColorStop(1, fond[1]); g.fillStyle = d; g.fillRect(0, 0, W, H);
+        g.drawImage(canvas, 0, 0);
+        restaurer(); demander();
+        return new Promise<Blob | null>((ok) => c2.toBlob((b) => ok(b), "image/png"));
+      } catch { return Promise.resolve(null); }
+    },
     position: (id) => { const g2 = groupes.get(id); return g2 ? [g2.position.x, g2.position.z] : null; },
     ecran: (x, z) => { const v = new THREE.Vector3(x, 0, z).project(cam), r = canvas.getBoundingClientRect(); return [r.left + ((v.x + 1) / 2) * r.width, r.top + ((1 - v.y) / 2) * r.height]; },
     ecranObjet: (id) => { const g2 = groupes.get(id); if (!g2) return null; const v = new THREE.Vector3(g2.position.x, 0.3, g2.position.z).project(cam), r = canvas.getBoundingClientRect(); return [r.left + ((v.x + 1) / 2) * r.width, r.top + ((1 - v.y) / 2) * r.height]; },

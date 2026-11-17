@@ -30,7 +30,7 @@ export default function Scene3D({ r, nuit: nuitJeu, deplacable = false, onDeplac
         requestAnimationFrame(() => requestAnimationFrame(() => { if (!mort) { conteneur.current?.setAttribute("data-pret", "1"); rap.current.onPret(); } }));
       } catch { if (!mort) rap.current.onEchec(); }
     })();
-    return () => { mort = true; m?.detruire(); moteur.current = null; };
+    return () => { mort = true; const w = window as unknown as { __hc3d?: Moteur }; if (w.__hc3d === m) delete w.__hc3d; m?.detruire(); moteur.current = null; };
   }, []);
 
   useEffect(() => { moteur.current?.maj({ r, nuit, deplacable, reduit, focus, final }); }, [r, nuit, deplacable, reduit, focus, final]);
