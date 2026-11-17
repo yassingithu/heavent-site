@@ -216,7 +216,7 @@ html.avec-ouverture.ouverture-finie .s-ouverture, html.avec-ouverture.ouverture-
 /* ———————— Ouverture « rideau » : deux pans de tissu noir (texture préparée, plis irréguliers, reflets satinés) ————————
    Ouverture depuis le milieu ; en s'écartant, chaque pan se resserre vers son bord et les plis s'accumulent. Transformations seulement (rapide, sans repeindre). */
 html.avec-ouverture.ouv-rideau .s-rideau { display: block; position: fixed; inset: 0; z-index: 90; cursor: pointer; overflow: hidden; }
-.s-pan { position: absolute; top: 0; bottom: 0; width: 50.4%; background: #0f0e0d; will-change: transform; transform: translateZ(0); }
+.s-pan { z-index: 1; position: absolute; top: 0; bottom: 0; width: 50.4%; background: #0f0e0d; will-change: transform; transform: translateZ(0); }
 .s-pan.g { left: 0; transform-origin: 0 50%; background-image: url(/ouvertures/site-rideau-g.webp); background-size: cover; background-position: 100% 0; }
 .s-pan.d { right: 0; transform-origin: 100% 50%; background-image: url(/ouvertures/site-rideau-d.webp); background-size: cover; background-position: 0 0; }
 /* secours si l'image ne charge pas : plis dessinés en dégradés */
@@ -227,15 +227,19 @@ html.avec-ouverture.ouv-rideau .s-rideau { display: block; position: fixed; inse
 .s-pan.d::before { background: linear-gradient(90deg, rgba(0,0,0,.5), rgba(0,0,0,0) 22%, rgba(0,0,0,0) 78%, rgba(0,0,0,.55)); }
 /* reflet satiné qui traverse le tissu pendant qu'il bouge */
 .s-pan .rf { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: linear-gradient(100deg, rgba(255,246,214,0) 30%, rgba(255,246,214,.10) 48%, rgba(255,246,214,0) 62%); transform: translateX(-60%); }
-.s-rideau-mono { position: absolute; left: 50%; top: 50%; height: clamp(64px, 9vw, 96px); width: auto; transform: translate(-50%, -50%); opacity: 0; z-index: 2; pointer-events: none; }
-html.ouv-pret .s-rideau-mono { animation: s-rideau-mono 1.5s cubic-bezier(.3,.1,.2,1) both; }
-@keyframes s-rideau-mono { 0% { opacity: 0; transform: translate(-50%, -48%) scale(.97); } 22% { opacity: .95; transform: translate(-50%, -50%); } 52% { opacity: .95; } 78%, 100% { opacity: 0; } }
+/* Le monogramme est DERRIÈRE le rideau : il se découvre au milieu quand le tissu s'écarte, puis la scène s'efface sur le site. */
+.s-rideau-scene { position: absolute; inset: 0; z-index: 0; display: grid; place-items: center; background: var(--s-nuit, #141414); }
+.s-rideau-mono { height: clamp(72px, 10vw, 110px); width: auto; filter: drop-shadow(0 0 24px rgba(212,190,110,.28)); }
+html.ouv-pret .s-rideau-scene { animation: s-rideau-scene 1.9s linear forwards; }
+@keyframes s-rideau-scene { 0%, 66% { opacity: 1; } 100% { opacity: 0; } }
+html.ouv-pret .s-rideau-mono { animation: s-rideau-mono 1.6s cubic-bezier(.3,.1,.2,1) both; }
+@keyframes s-rideau-mono { 0% { transform: scale(.96); } 100% { transform: scale(1.03); } }
 html.ouv-pret .s-pan.g { animation: s-pan-g 1.25s cubic-bezier(.62,.02,.18,1) .45s forwards; }
 html.ouv-pret .s-pan.d { animation: s-pan-d 1.3s cubic-bezier(.62,.02,.18,1) .5s forwards; }
-html.ouv-pret .s-pan .rf { animation: s-reflet 1.3s ease-in-out .5s forwards; }
+html.ouv-pret .s-pan .rf { animation: s-rideau-reflet 1.3s ease-in-out .5s forwards; }
 @keyframes s-pan-g { to { transform: translateX(-4%) scaleX(.13); } }
 @keyframes s-pan-d { to { transform: translateX(4%) scaleX(.12); } }
-@keyframes s-reflet { 0% { opacity: 0; transform: translateX(-60%); } 35% { opacity: 1; } 100% { opacity: 0; transform: translateX(60%); } }
+@keyframes s-rideau-reflet { 0% { opacity: 0; transform: translateX(-60%); } 35% { opacity: 1; } 100% { opacity: 0; transform: translateX(60%); } }
 html.ouv-rideau .s-passer { animation: none; bottom: auto; top: calc(14px + env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); }
 html.ouv-rideau.ouv-pret .s-passer { animation: s-efface .3s 2.1s forwards; }
 
@@ -667,3 +671,6 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
   .s-pied-bas a, .s-pied-bas button { min-height: 32px; }
 }
 .s-pied-wp .s-surtitre { margin-top: 2px; }
+
+/* Heavent Studio : boutons Seuil sur fond sombre */
+.studio-filet { --ligne: rgba(228,212,154,.55); --btn-texte: #E6DDCB; --fond: #141414; }

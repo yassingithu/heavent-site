@@ -52,7 +52,7 @@ const Surtitre = ({ children, clair = false }: { children: React.ReactNode; clai
 
 function Ecran({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
   return (
-    <figure className={`rounded-2xl overflow-hidden border border-[#EADFC8] bg-white shadow-[0_20px_60px_-25px_rgba(20,20,20,0.35)] ${className}`}>
+    <figure className={`rounded-none overflow-hidden border border-[#EADFC8] bg-white shadow-[0_20px_60px_-25px_rgba(20,20,20,0.35)] ${className}`}>
       <div className="flex gap-1.5 px-3 py-2 border-b border-[#F1ECDD] bg-[#FBF8F1]">{[0, 1, 2].map((i) => <span key={i} className="h-2 w-2 rounded-full bg-[#DCCBA6]" />)}</div>
       <img src={src} alt={alt} loading="lazy" className="w-full h-auto block" />
     </figure>
@@ -89,7 +89,7 @@ function FormulaireDemo() {
   const [etat, setEtat] = useState<"saisie" | "envoi" | "ok" | "erreur">("saisie");
   const [f, setF] = useState({ nom: "", agence: "", email: "", telephone: "", ville: "", formule: "Gestion", secteur: "evenementiel", message: "", site: "" });
   const [logo, setLogo] = useState<File | null>(null);
-  const champ = "w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 h-12 text-white placeholder:text-white/40 focus:outline-none focus:border-[#C8B560]";
+  const champ = "w-full rounded-none border border-white/20 bg-white/[0.06] px-4 h-12 text-white placeholder:text-white/40 focus:outline-none focus:border-[#C8B560]";
   const valide = f.nom.trim() && f.agence.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.trim());
 
   const envoyer = async (e: React.FormEvent) => {
@@ -149,10 +149,10 @@ function FormulaireDemo() {
       <textarea className={`${champ} h-28 py-3 sm:col-span-2 resize-none`} placeholder={x("Parlez-nous de votre agence (activité, taille de l'équipe, outils actuels…)")} value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} />
       <input tabIndex={-1} autoComplete="off" aria-hidden className="hidden" value={f.site} onChange={(e) => setF({ ...f, site: e.target.value })} />
       <div className="sm:col-span-2 flex flex-wrap items-center gap-3 mt-1">
-        <button type="submit" disabled={!valide || etat === "envoi"} className="inline-flex items-center gap-2 rounded-full bg-[#C8B560] text-[#141414] font-medium px-7 h-12 disabled:opacity-50 hover:bg-[#d6c477] transition" data-testid="studio-envoyer">
+        <button type="submit" disabled={!valide || etat === "envoi"} className="s-btn s-btn-plein" data-testid="studio-envoyer">
           {etat === "envoi" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />} {x("Demander ma démo")}
         </button>
-        <a href={WHATSAPP(x("Bonjour, je souhaite une démonstration de Heavent Studio."))} target="_blank" rel="noreferrer" onClick={() => suivre("clic", "whatsapp")} className="inline-flex items-center gap-2 rounded-full border border-white/20 px-6 h-12 text-white/90 hover:bg-white/10 transition">
+        <a href={WHATSAPP(x("Bonjour, je souhaite une démonstration de Heavent Studio."))} target="_blank" rel="noreferrer" onClick={() => suivre("clic", "whatsapp")} className="s-btn s-btn-filet studio-filet">
           <MessageCircle className="h-4 w-4" /> {x("Ou sur WhatsApp")}
         </a>
       </div>
@@ -184,7 +184,7 @@ export default function Studio() {
           <div className="flex items-center gap-2 sm:gap-4">
             <Link to="/" className="hidden sm:inline text-sm text-white/60 hover:text-white">heaventagency.com</Link>
             <LanguageSelector />
-            <button onClick={versDemo} className="rounded-full bg-[#C8B560] text-[#141414] text-sm font-medium px-4 h-10" data-testid="studio-cta-entete">{x("Demander une démo")}</button>
+            <button onClick={versDemo} className="s-btn s-btn-plein !min-h-10 !px-4 !text-[13px]" data-testid="studio-cta-entete">{x("Demander une démo")}</button>
           </div>
         </div>
       </header>
@@ -198,8 +198,8 @@ export default function Studio() {
             <h1 className="font-serif text-4xl sm:text-6xl leading-[1.08] mt-5">{x("Votre agence, entièrement digitalisée.")}</h1>
             <p className="text-white/70 text-lg mt-6 max-w-xl leading-relaxed">{x("Un site qui attire vos clients, et une administration qui gère tout le reste : devis signés en ligne, factures, agenda, équipes, paie, Instagram. Conçu par une agence événementielle, pour les agences événementielles.")}</p>
             <div className="flex flex-wrap gap-3 mt-8">
-              <button onClick={versDemo} className="inline-flex items-center gap-2 rounded-full bg-[#C8B560] text-[#141414] font-medium px-7 h-12 hover:bg-[#d6c477] transition">{x("Demander une démo")} <ArrowRight className="h-4 w-4" /></button>
-              <a href="#formules" className="inline-flex items-center rounded-full border border-white/20 px-7 h-12 text-white/90 hover:bg-white/10 transition">{x("Voir les formules")}</a>
+              <button onClick={versDemo} className="s-btn s-btn-plein">{x("Demander une démo")} <ArrowRight className="h-4 w-4" /></button>
+              <a href="#formules" className="s-btn s-btn-filet studio-filet">{x("Voir les formules")}</a>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 mt-10 text-sm text-white/60">
               {[x("Français · anglais · arabe"), x("Sur ordinateur et téléphone"), x("Vos données restent à vous")].map((t) => <span key={t} className="flex items-center gap-2"><Check className="h-4 w-4 text-[#E4D49A]" />{t}</span>)}
@@ -221,7 +221,7 @@ export default function Studio() {
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-12">
           {[["24 h", x("pour répondre à chaque demande, même le week-end")], ["3", x("langues, dont l'arabe, pour vos clients du monde entier")], ["0", x("ressaisie entre devis, contrat et facture")], ["1", x("seul outil, sur ordinateur et téléphone")]].map(([c, t]) => (
-            <div key={t} className="rounded-2xl bg-[#141414] text-white p-6"><div className="font-serif text-4xl text-[#E4D49A]">{c}</div><p className="text-white/70 text-sm mt-2">{t}</p></div>
+            <div key={t} className="rounded-none bg-[#141414] text-white p-6"><div className="font-serif text-4xl text-[#E4D49A]">{c}</div><p className="text-white/70 text-sm mt-2">{t}</p></div>
           ))}
         </div>
         <blockquote className="mt-14 border-y border-[#EADFC8] py-10 text-center font-serif italic text-2xl sm:text-3xl text-[#3d362d] leading-snug max-w-4xl mx-auto">
@@ -240,11 +240,11 @@ export default function Studio() {
           <Bloc icone={Globe} surtitre={x("Votre site")} titre={x("Un site à la hauteur de vos événements")}
             texte={x("Élégant, rapide, pensé pour le téléphone, et construit pour transformer chaque visite en demande de devis.")}
             points={[x("Design sur mesure, vos vraies réalisations en photos"), x("Plusieurs langues ; les messages étrangers vous arrivent traduits"), x("Pages dédiées à vos villes et services, pour Google"), x("Formulaires de devis, rendez-vous en ligne, WhatsApp")]}
-            image={<div className="rounded-2xl bg-[#141414] p-6 sm:p-8 text-white relative overflow-hidden"><Halo />
+            image={<div className="rounded-none bg-[#141414] p-6 sm:p-8 text-white relative overflow-hidden"><Halo />
               <div className="relative"><Surtitre clair>{x("Essayez-le en direct")}</Surtitre>
                 <h4 className="font-serif text-2xl sm:text-3xl mt-3">{x("Le configurateur « Créez votre événement »")}</h4>
                 <p className="text-white/70 mt-3">{x("Vos visiteurs composent leur événement sur un plan, voient une estimation en direct avec vos tarifs, et vous envoient une demande prête à chiffrer. Celui de Heavent est en ligne : testez-le.")}</p>
-                <Link to="/cree-ton-evenement" onClick={() => suivre("clic", "studio:jeu")} className="inline-flex items-center gap-2 mt-6 rounded-full bg-[#C8B560] text-[#141414] font-medium px-6 h-11"><Sparkles className="h-4 w-4" /> {x("Ouvrir le configurateur")}</Link>
+                <Link to="/cree-ton-evenement" onClick={() => suivre("clic", "studio:jeu")} className="s-btn s-btn-plein mt-6 !min-h-11"><Sparkles className="h-4 w-4" /> {x("Ouvrir le configurateur")}</Link>
               </div></div>} />
           <Bloc inverse icone={FileSignature} surtitre={x("Commercial")} titre={x("De la demande à la facture, sans ressaisie")}
             texte={x("Chaque demande devient un devis en un clic. Le client le signe sur son téléphone, l'acompte et les relances suivent tout seuls.")}
@@ -273,7 +273,7 @@ export default function Studio() {
             [BarChart3, x("Demande d'avis le lendemain"), x("Plus d'avis Google, une meilleure réputation")], [CalendarDays, x("Rappels de rendez-vous et de signatures"), x("Moins d'oublis, moins d'appels")],
             [Smartphone, x("Notifications sur votre téléphone"), x("Vous répondez en premier")], [ShieldCheck, x("Sauvegardes et sécurité"), x("Chacun ne voit que ce qui le concerne")]].map(([I, t, d]) => {
             const Icone = I as typeof Globe;
-            return <div key={t as string} className="rounded-2xl border border-[#EADFC8] bg-white p-6"><Icone className="h-6 w-6 text-[#A8933F]" /><h3 className="font-serif text-xl text-[#141414] mt-4">{t as string}</h3><p className="text-[#5E554A] text-sm mt-1.5">{d as string}</p></div>;
+            return <div key={t as string} className="rounded-none border border-[#EADFC8] bg-white p-6"><Icone className="h-6 w-6 text-[#A8933F]" /><h3 className="font-serif text-xl text-[#141414] mt-4">{t as string}</h3><p className="text-[#5E554A] text-sm mt-1.5">{d as string}</p></div>;
           })}
         </div>
       </section>
@@ -287,7 +287,7 @@ export default function Studio() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
             {[[x("Écoute"), x("Un atelier pour comprendre votre activité, vos clients et vos priorités.")], [x("Maquettes"), x("Vous validez le design et le parcours avant toute construction.")],
               [x("Construction"), x("Des livraisons régulières : vous testez au fur et à mesure.")], [x("Mise en ligne"), x("Reprise de vos contenus, formation de votre équipe, accompagnement.")]].map(([t, d], i) => (
-              <div key={t} className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+              <div key={t} className="rounded-none border border-white/10 bg-white/[0.04] p-6">
                 <div className="font-serif text-4xl text-[#C8B560]">{String(i + 1).padStart(2, "0")}</div>
                 <h3 className="font-serif text-xl mt-3">{t}</h3><p className="text-white/65 text-sm mt-1.5">{d}</p>
               </div>
@@ -312,7 +312,7 @@ export default function Studio() {
                 <ul className={`space-y-2 ${o.plus ? "mt-2" : "mt-5"} flex-1`}>
                   {o.points.map((p) => <li key={p} className={`flex gap-2.5 text-sm ${vedette ? "text-white/85" : "text-[#3d362d]"}`}><Check className="h-4 w-4 text-[#C8B560] shrink-0 mt-0.5" />{p}</li>)}
                 </ul>
-                <button onClick={versDemo} className={`mt-7 rounded-full h-11 font-medium ${vedette ? "bg-[#C8B560] text-[#141414]" : "border border-[#141414] text-[#141414] hover:bg-[#141414] hover:text-white transition"}`}>{x("Demander une démo")}</button>
+                <button onClick={versDemo} className={`mt-7 s-btn !min-h-11 ${vedette ? "s-btn-plein" : "s-btn-filet"}`} style={vedette ? undefined : ({ ["--fond" as string]: "#FFFFFF" } as React.CSSProperties)}>{x("Demander une démo")}</button>
               </div>
             );
           })}
