@@ -28,6 +28,7 @@ const AdminAuth = () => {
   const [erreurCode, setErreurCode] = useState<string | null>(null);
   const champCode = useRef<HTMLInputElement>(null);
   const formCode = useRef<HTMLFormElement>(null);
+  const controle = useRef<string | null>(null); // identifiant déjà contrôlé : un rafraîchissement de session ne relance pas le contrôle
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -51,15 +52,19 @@ const AdminAuth = () => {
 
   // Redirect if already authenticated and is admin
   useEffect(() => {
-    if (user && session) {
+    if (!user) { controle.current = null; return; }
+    // Une seule vérification par session ouverte (la connexion par mot de passe fait la sienne) : sans cela, le rafraîchissement
+    // de la session relançait la vérification en boucle, jusqu'à la limite de requêtes du serveur
+    if (session && !loading && controle.current !== user.id) {
+      controle.current = user.id;
       (async () => {
         const r = await codeRequis();
-        if (r === null) return;
+        if (r === null) { controle.current = null; return; }
         if (r) { setEtapeCode(true); return; }
         if ((await estAdmin()) || (await estEspaceNawar())) navigate("/admin");
       })();
     }
-  }, [user, session, navigate]);
+  }, [user?.id, session, loading, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Validation automatique dès le sixième chiffre (le code proposé par l'iPhone remplit la case d'un coup)
   useEffect(() => { if (etapeCode && code.length === 6 && !loading) formCode.current?.requestSubmit(); }, [code]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -81,7 +86,9 @@ const AdminAuth = () => {
     if (code.length !== 6 || loading) return;
     setLoading(true);
     try {
-      const { data: liste } = await supabase.auth.mfa.listFactors();
+      const { data: liste, error: errListe } = await supabase.auth.mfa.listFactors();
+      // Liste illisible (réseau, limite de requêtes) : ce n'est pas la preuve que le code a été retiré
+      if (errListe || !liste) { setErreurCode("Impossible de vérifier le code pour le moment. Patientez quelques secondes puis réessayez."); setCode(""); return; }
       // Chaque appareil enregistré est essayé : le code peut venir de n'importe lequel
       let ok = false;
       let derniere: any = null;
@@ -141,6 +148,7 @@ const AdminAuth = () => {
       }
 
       if (data.user) {
+        controle.current = data.user.id; // cette connexion fait elle-même le contrôle
         const r = await codeRequis();
         if (r === null) return; // réseau : message déjà affiché, on ne déconnecte pas et on n'annonce pas de refus
         if (r) { setEtapeCode(true); return; }
