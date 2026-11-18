@@ -80,7 +80,7 @@ const b = await chromium.launch({ args: GL });
   const c0 = await p.evaluate(() => window.__hc3d.stats().cible);
   await touch("touchStart", [[200, 150]]); for (let i = 1; i <= 6; i++) await touch("touchMove", [[200 - i * 15, 150]]); await touch("touchEnd", []); await p.waitForTimeout(300);
   const c1 = await p.evaluate(() => window.__hc3d.stats().cible); ok(Math.hypot(c1[0] - c0[0], c1[1] - c0[1]) > 0.5, "un doigt sur le décor déplace la vue");
-  await p.getByTestId("vue-ensemble").tap(); await p.waitForTimeout(1000);
+  await p.getByTestId("vue-ensemble").tap(); await p.waitForTimeout(1800);
   const z2 = await p.evaluate(() => window.__hc3d.stats().zoom); ok(z2 < z1 * 0.8, `« Vue d'ensemble » recadre (zoom ${z2})`);
   await ctx.close();
 }
