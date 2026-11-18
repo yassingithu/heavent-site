@@ -129,6 +129,12 @@ Réponds dans la langue du visiteur pour "explication". Interdits : tout prix, t
       });
       if (!rep.ok) return json(req, { disponible: false, raison: rep.status === 429 ? "quota" : "erreur" });
       const donnees = await rep.json();
+      // Jetons consommés (le quota gratuit est aussi limité en jetons par jour) : sans effet sur la réponse en cas d'échec.
+      const jetons = Number(donnees?.usage?.total_tokens);
+      if (Number.isFinite(jetons) && jetons > 0) fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/rpc/quota_compter_n`, {
+        method: "POST", headers: { apikey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""}`, "content-type": "application/json" },
+        body: JSON.stringify({ p_ressource: "jetons_ia", p_n: Math.round(jetons) }),
+      }).catch(() => {});
       texte = donnees?.choices?.[0]?.message?.content ?? "";
     }
     const m = texte.match(/\{[\s\S]*\}/);

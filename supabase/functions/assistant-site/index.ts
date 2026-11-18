@@ -76,7 +76,7 @@ const PAR_PROFIL: Record<string, { liens: string[]; texte: Record<string, string
 
 /** Orientation par mots-clés (sans modèle) : sert au mode simulé, au repli si Groq est indisponible, et aux boutons. */
 function profilDe(message: string): typeof PROFILS[number] {
-  const t = message.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const t = message.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const a = (...m: string[]) => m.some((x) => t.includes(x));
   if (a("parfum", "nawar", "perfume", "fragrance", "عطر")) return "nawar";
   if (a("traiteur", "dj ", "photograph", "videast", "prestataire", "partenaire", "negafa", "caterer", "supplier", "vendor", "partner", "شريك")) return "prestataire";
@@ -177,6 +177,12 @@ serve(async (req) => {
     });
     if (!rep.ok) return json({ ...parRegles(), quota: rep.status === 429 });
     const donnees = await rep.json();
+    // Jetons consommés (le quota gratuit est aussi limité en jetons par jour) : sans effet sur la réponse en cas d'échec.
+    const jetons = Number(donnees?.usage?.total_tokens);
+    if (Number.isFinite(jetons) && jetons > 0) fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/rpc/quota_compter_n`, {
+      method: "POST", headers: { apikey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""}`, "content-type": "application/json" },
+      body: JSON.stringify({ p_ressource: "jetons_ia", p_n: Math.round(jetons) }),
+    }).catch(() => {});
     const texte: string = donnees?.choices?.[0]?.message?.content ?? "";
     const m = texte.match(/\{[\s\S]*\}/);
     const brut = m ? JSON.parse(m[0]) : null;
