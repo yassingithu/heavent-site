@@ -9,18 +9,30 @@ import { useReducedMotion } from "framer-motion";
 import { tr } from "./langue";
 
 /**
- * Filigrane de l'écran final : « HEAVENT · heaventagency.com · date » répété en diagonale, par-dessus la scène et le bilan.
+ * Filigrane de l'écran final : « HEAVENT / heaventagency.com · date » en quinconce, à -22°.
  * Un site web ne peut pas empêcher une capture d'écran ; le filigrane la rend identifiable (marque et jour d'origine).
- * Décoratif : ne reçoit aucun clic, n'est pas lu par les lecteurs d'écran.
+ * Posé sur la scène et DERRIÈRE le texte du bilan (jamais par-dessus le texte ni les boutons). Décoratif : aucun clic, ignoré des lecteurs d'écran.
+ * Largeur des marques fixée (textLength) pour qu'elles tiennent entières sur un iPhone (390 px).
  */
-function Filigrane() {
-  const fond = useMemo(() => {
-    const date = new Date().toLocaleDateString("fr-FR");
-    const texte = `HEAVENT · heaventagency.com · ${date}`;
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="440" height="230"><g transform="rotate(-24 220 115)" font-family="Georgia,serif" font-size="17" letter-spacing="2" text-anchor="middle"><text x="221" y="117" fill="#000" fill-opacity=".16">${texte}</text><text x="220" y="116" fill="#E4D49A" fill-opacity=".30">${texte}</text></g></svg>`;
-    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-  }, []);
-  return <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-30 select-none" style={{ backgroundImage: fond, backgroundSize: "440px 230px" }} data-testid="filigrane" />;
+function motifFiligrane(): string {
+  const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
+  const d = new Date(), date = `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+  const [w, h, t1, t2, f1, f2] = mobile ? [300, 200, 104, 150, 13, 11] : [360, 250, 124, 176, 15, 12];
+  const marque = (cx: number, cy: number) => {
+    const ligne = (dy: number, taille: number, long: number, texte: string, style: string, dx: number, op: string, couleur: string) =>
+      `<text x="${dx}" y="${dy}" font-size="${taille}" textLength="${long}" lengthAdjust="spacing" text-anchor="middle" ${style} fill="${couleur}" fill-opacity="${op}">${texte}</text>`;
+    const u = `HEAVENT`, v = `heaventagency.com · ${date}`;
+    return `<g transform="translate(${cx} ${cy}) rotate(-22)" font-family="Georgia,'Times New Roman',serif">`
+      + ligne(1, f1, t1, u, 'font-weight="600"', 0, ".30", "#141414") + ligne(f1 + 3, f2, t2, v, 'font-style="italic"', 0, ".30", "#141414")
+      + ligne(0, f1, t1, u, 'font-weight="600"', 0, ".26", "#E4D49A") + ligne(f1 + 2, f2, t2, v, 'font-style="italic"', 0, ".26", "#E4D49A") + `</g>`;
+  };
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">${marque(w / 4, h / 4)}${marque((3 * w) / 4, (3 * h) / 4)}</svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+const tailleMotif = () => (typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches ? "300px 200px" : "360px 250px");
+
+function Filigrane({ fond, taille }: { fond: string; taille: string }) {
+  return <div aria-hidden="true" className="hc-fondu pointer-events-none absolute inset-0 z-10 select-none" style={{ backgroundImage: fond, backgroundSize: taille }} data-testid="filigrane" />;
 }
 
 /** Le grand final : les lumières s'allument, les invités arrivent, les zones s'animent, puis le bilan */
@@ -70,10 +82,12 @@ export default function Final({ choix, logos, onModifier, onDemande, onRecommenc
   };
 
   const lignes = [...res.decors, ...res.experiences];
+  const fond = useMemo(motifFiligrane, []); const taille = useMemo(tailleMotif, []);
   return (
     <div className="absolute inset-0 overflow-hidden bg-black" data-testid="final">
       <div className={`absolute inset-0 select-none overflow-hidden [-webkit-touch-callout:none] ${bilan ? "lg:end-[420px]" : ""}`} onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()}>
         <SceneChoix r={r} nuit={1} final={etape} logos={logos} animer={!reduit} reduit={reduit} />
+        {bilan && <Filigrane fond={fond} taille={taille} />}
       </div>
       {/* bandes de cinéma */}
       <div className={`pointer-events-none absolute inset-x-0 top-0 bg-black transition-all duration-1000 ${bilan ? "h-0" : "h-[9vh]"}`} />
@@ -88,7 +102,7 @@ export default function Final({ choix, logos, onModifier, onDemande, onRecommenc
       {!bilan && <button onClick={() => { setEtape("assis"); setTitre(true); setBilan(true); }} className="absolute end-3 top-[11vh] rounded-full bg-black/50 px-3 min-h-10 text-[13px] text-[#F0E8D6]" data-testid="passer-final">{tr("Passer l'animation")}</button>}
 
       {bilan && (
-        <aside className="absolute inset-x-0 bottom-0 top-[36dvh] overflow-y-auto rounded-t-3xl border-t border-white/15 bg-[#17141a]/97 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl lg:inset-y-0 lg:start-auto lg:end-0 lg:top-0 lg:w-[420px] lg:rounded-none lg:border-s lg:border-t-0" aria-label={tr("Bilan de ton événement")} data-testid="bilan">
+        <aside className="absolute inset-x-0 bottom-0 top-[36dvh] overflow-y-auto rounded-t-3xl border-t border-white/15 bg-[#17141a]/97 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl lg:inset-y-0 lg:start-auto lg:end-0 lg:top-0 lg:w-[420px] lg:rounded-none lg:border-s lg:border-t-0" aria-label={tr("Bilan de ton événement")} data-testid="bilan" style={{ backgroundImage: fond, backgroundSize: taille }}>
           <p className="text-[11px] uppercase tracking-[0.22em] text-[#E4D49A]">{res.type} · {res.lieu}</p>
           <h2 className="mt-1 font-serif text-3xl leading-tight text-[#F6EFDD]">{res.titre}</h2>
           <p className="mt-1 text-[14px] text-[#D9D0BC]">{tr("Style {style} · {palette} · environ {n} invités", { style: res.style.toLowerCase(), palette: res.palette.toLowerCase(), n: res.invites })}</p>
@@ -123,7 +137,6 @@ export default function Final({ choix, logos, onModifier, onDemande, onRecommenc
           <p className="mt-4 text-[12px] leading-snug text-[#8f8777]">{tr("Heavent City est une inspiration : les lieux sont des ambiances, pas des réservations. Aucun prix n'est affiché — l'équipe établit ton devis et tu reçois ton prix final dès sa validation.")}</p>
         </aside>
       )}
-      <Filigrane />
     </div>
   );
 }
