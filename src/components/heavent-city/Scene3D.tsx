@@ -24,8 +24,8 @@ export default function Scene3D({ r, nuit: nuitJeu, deplacable = false, onDeplac
       try {
         const { creerMoteur } = await import("./scene3d/moteur");
         if (mort || !canvas.current || !conteneur.current) return;
-        m = creerMoteur(canvas.current, conteneur.current, { onDeplacer: (id, dx, dy) => rap.current.onDeplacer?.(id, dx, dy), onRefus: (m) => rap.current.onRefus?.(m), onDecalee: setDecalee, onPerdu: () => rap.current.onEchec() });
-        try { if (matchMedia("(pointer: coarse)").matches && !localStorage.getItem(CLE_PINCE)) { localStorage.setItem(CLE_PINCE, "1"); setPince(true); setTimeout(() => setPince(false), 4000); } } catch { /* stockage indisponible */ }
+        m = creerMoteur(canvas.current, conteneur.current, { onDeplacer: (id, dx, dy) => rap.current.onDeplacer?.(id, dx, dy), onRefus: (m) => rap.current.onRefus?.(m), onDecalee: (d) => { setDecalee(d); if (d) setPince(false); }, onPerdu: () => rap.current.onEchec() });
+        try { if (matchMedia("(pointer: coarse)").matches && !localStorage.getItem(CLE_PINCE)) { localStorage.setItem(CLE_PINCE, "1"); setPince(true); setTimeout(() => setPince(false), 8000); } } catch { /* stockage indisponible */ }
         moteur.current = m; (window as unknown as { __hc3d?: Moteur }).__hc3d = m; m.maj(dernier.current);
         requestAnimationFrame(() => requestAnimationFrame(() => { if (!mort) { conteneur.current?.setAttribute("data-pret", "1"); rap.current.onPret(); } }));
       } catch { if (!mort) rap.current.onEchec(); }

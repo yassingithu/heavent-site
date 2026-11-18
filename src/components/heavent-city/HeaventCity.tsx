@@ -128,7 +128,9 @@ export default function HeaventCity() {
     const s = sauvegarde.current; if (!s) return;
     dispatch({ t: "restaurer", etat: { ...s, phase: s.phase === "accueil" ? "ville" : s.phase === "final" ? "scene" : s.phase } });
   };
-  const recommencer = () => { effacerSauvegarde(); sauvegarde.current = null; setTelOuvert(false); setDemande(false); setCine(null); dispatch({ t: "recommencer" }); setEcran("titre"); };
+  const [confirmerRaz, setConfirmerRaz] = useState(false);
+  const recommencerDirect = () => { setConfirmerRaz(false); effacerSauvegarde(); sauvegarde.current = null; setTelOuvert(false); setDemande(false); setCine(null); dispatch({ t: "recommencer" }); setEcran("titre"); };
+  const recommencer = () => { if (phase === "accueil" && !aUneSauvegarde(sauvegarde.current ?? null)) recommencerDirect(); else setConfirmerRaz(true); };
 
   const choisirLieu = (l: (typeof LIEUX)[number]["id"]) => {
     const depart = COMPOSITION_DEPART[choix.type as TypeEvt];
@@ -207,7 +209,7 @@ export default function HeaventCity() {
                 </button>
               </div>
             </div>
-            <div className="pointer-events-none absolute bottom-2 start-3 max-w-[calc(100%-13rem)] rounded-xl border border-[#A8933F]/35 bg-black/60 px-3 py-1 text-[12px] leading-tight whitespace-pre-line text-[#F0E8D6]" aria-live="polite">{(r.tables === "conference" ? tr("{n} chaises · {n} participants", { n: r.invites }) : tr("{nb} {type} · {n} invités", { nb: r.tablesTotal, type: infoTable(r.tables).compte, n: r.invites })).replace(" · ", "\n")}</div>
+            <div className="pointer-events-none absolute bottom-2 start-3 max-w-[calc(100%-13rem)] rounded-xl border border-[#A8933F]/35 bg-black/60 px-3 py-1 text-[12px] leading-tight whitespace-pre-line text-[#F0E8D6]" aria-live="polite">{(r.tables === "conference" ? tr("{n} chaises · {n} participants", { n: r.invites }) : tr("{nb} {type} · {n} invités", { nb: r.tablesTotal, type: infoTable(r.tables).compte, n: r.invites })).replace(" · ", "\n").replace(lng === "ar" && r.tablesTotal > 10 ? "طاولات" : "\u0000", "طاولة")}</div>
             {!presentation && !deplacer && <button onClick={() => setPresentation(true)} data-testid="mode-presentation" aria-label={tr("Mode présentation")} title={tr("Mode présentation")} className="absolute bottom-2 end-[9rem] flex items-center gap-1.5 rounded-full border border-[#A8933F]/60 bg-black/60 px-3 min-h-11 text-[13px] text-[#F0E8D6] hover:bg-black/75"><Maximize2 className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">{tr("Mode présentation")}</span></button>}
             {presentation && <button onClick={() => setPresentation(false)} data-testid="quitter-presentation" aria-label={tr("Quitter le mode présentation")} className="hc-fondu absolute end-3 top-3 z-20 rounded-full border border-[#A8933F]/60 bg-black/55 px-3.5 min-h-11 text-[13px] text-[#F0E8D6] hover:bg-black/75">{tr("Quitter (Échap)")}</button>}
             {deplacer && (
@@ -243,6 +245,18 @@ export default function HeaventCity() {
         </div>
       )}
 
+      {confirmerRaz && (
+        <div className="fixed inset-0 z-[90] grid place-items-center bg-black/70 p-5" role="alertdialog" aria-modal="true" aria-labelledby="raz-titre" data-testid="confirmer-recommencer">
+          <div className="w-full max-w-sm rounded-2xl border border-[#A8933F]/50 bg-[#17141a] p-5 text-center shadow-2xl">
+            <p id="raz-titre" className="font-serif text-[20px] text-[#F6EFDD]">{tr("Recommencer à zéro ?")}</p>
+            <p className="mt-2 text-[14px] leading-snug text-[#B9B09C]">{tr("Ton projet actuel sera effacé.")}</p>
+            <div className="mt-4 flex flex-col gap-2">
+              <button autoFocus onClick={() => setConfirmerRaz(false)} className={`${btnOr} min-h-12 w-full`} data-testid="recommencer-annuler">{tr("Garder mon projet")}</button>
+              <button onClick={recommencerDirect} className={`${btnContour} min-h-12 w-full`} data-testid="recommencer-confirmer">{tr("Oui, recommencer")}</button>
+            </div>
+          </div>
+        </div>
+      )}
       {phase === "final" && <Final choix={choix} logos={LOGOS} onModifier={() => dispatch({ t: "phase", phase: "scene" })} onDemande={() => setDemande(true)} onRecommencer={recommencer} />}
 
       {phase !== "accueil" && (

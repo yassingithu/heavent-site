@@ -103,7 +103,7 @@ export default function Final({ choix, logos, onModifier, onDemande, onRecommenc
       {!bilan && <button onClick={() => { setEtape("assis"); setTitre(true); setBilan(true); }} className="absolute end-3 top-[11vh] rounded-full bg-black/50 px-3 min-h-10 text-[13px] text-[#F0E8D6]" data-testid="passer-final">{tr("Passer l'animation")}</button>}
 
       {bilan && (
-        <aside className="absolute inset-x-0 bottom-0 top-[36dvh] overflow-y-auto rounded-t-3xl border-t border-white/15 bg-[#17141a]/97 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl lg:inset-y-0 lg:start-auto lg:end-0 lg:top-0 lg:w-[420px] lg:rounded-none lg:border-s lg:border-t-0" aria-label={tr("Bilan de ton événement")} data-testid="bilan" style={{ backgroundImage: fond, backgroundSize: taille }}>
+        <aside className="absolute inset-x-0 bottom-0 top-[36dvh] overflow-y-auto rounded-t-3xl border-t border-white/15 bg-[#17141a] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl lg:inset-y-0 lg:start-auto lg:end-0 lg:top-0 lg:w-[420px] lg:rounded-none lg:border-s lg:border-t-0" aria-label={tr("Bilan de ton événement")} data-testid="bilan" style={{ backgroundImage: fond, backgroundSize: taille }}>
           <p className="text-[11px] uppercase tracking-[0.22em] text-[#E4D49A]">{res.type} · {res.lieu}</p>
           <h2 className="mt-1 font-serif text-3xl leading-tight text-[#F6EFDD]">{res.titre}</h2>
           <p className="mt-1 text-[14px] text-[#D9D0BC]">{tr("Style {style} · {palette} · environ {n} invités", { style: res.style.toLowerCase(), palette: res.palette.toLowerCase(), n: res.invites })}</p>

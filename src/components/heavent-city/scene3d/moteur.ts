@@ -352,7 +352,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   }
   let decaleeAvant = false;
   /** zoom de la vue d'ensemble : un peu plus serré sur un écran peu large (mobile), la scène occupe mieux la hauteur disponible */
-  const zoomBase = () => { const asp = (conteneur.clientWidth || 1) / (conteneur.clientHeight || 1); return asp < 1.5 ? Math.min(1.25, 1 + (1.5 - asp) * 0.4) : 1; };
+  const zoomBase = () => { const asp = (conteneur.clientWidth || 1) / (conteneur.clientHeight || 1); return 1; /* la salle entière dans le cadre (le zoom > 1 coupait les coins) */ void asp; };
   function recadrer(immediat = false) {
     const N = vue.N = courant?.r.salle.n ?? 12;
     cibleVoulue = new THREE.Vector3(N / 2, 0.8, N / 2 + (zoomBase() > 1 ? 0.4 : 0)); zoomVoulu = zoomBase(); transition = immediat || courant?.reduit ? 1 : 0; lancerCam(); if (immediat || courant?.reduit) { vue.cible.copy(cibleVoulue); vue.zoom = zoomVoulu; placerCamera(); }
