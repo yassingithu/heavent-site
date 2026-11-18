@@ -709,7 +709,7 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
 .hot-btn:focus-visible { outline: 2px solid #E4D49A; outline-offset: 3px; }
 /* Debout, l'hôtesse grandit (ancrée en bas à droite) : on voit bien qu'elle se lève. Le menu et la bulle s'écartent d'autant. */
 .hot-btn { transform-origin: 100% 100%; transition: transform .45s var(--s-courbe, cubic-bezier(.2,.7,.2,1)); }
-.hot-zone[data-pose="debout"] .hot-btn, .hot-zone[data-pose="salue"] .hot-btn { transition-duration: 1.2s; transition-timing-function: cubic-bezier(.35,0,.2,1); }
+.hot-zone[data-pose="debout"] .hot-btn, .hot-zone[data-pose="salue"] .hot-btn { transition-duration: 1.5s; transition-timing-function: cubic-bezier(.45,0,.25,1); }
 .hot-zone[data-pose="debout"] .hot-btn, .hot-zone[data-pose="salue"] .hot-btn { transform: scale(1.42); }
 .hot-zone[data-pose="debout"] .hot-menu, .hot-zone[data-pose="salue"] .hot-menu, .hot-zone[data-pose="debout"] .hot-bulle, .hot-zone[data-pose="salue"] .hot-bulle { right: 190px; }
 .hot-zone[data-pose="debout"] .hot-bulle, .hot-zone[data-pose="salue"] .hot-bulle { top: -44px; }
