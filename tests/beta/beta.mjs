@@ -1535,7 +1535,7 @@ for (const utm of ["", "instagram"]) await scenario(`Prestataires mobile : avant
   await v.page.getByTestId("presta-contact").fill("Mehdi Sound"); await attendu("e-mail");
   await v.page.getByTestId("presta-email").fill("dj@prestataire"); await attendu("e-mail");
   await v.page.getByTestId("presta-email").fill("dj@prestataire.test"); await attendu("prestation");
-  const det = v.page.locator("details").first();
+  const det = v.page.getByTestId("formulaire-prestataire").locator("details").first();
   verifier(!(await det.evaluate((d) => d.open)), "« Pour mieux vous présenter » doit être replié au départ");
   await det.locator("summary").tap(); verifier(await det.evaluate((d) => d.open), "la section ne s'ouvre pas");
   await v.page.getByPlaceholder("Ville", { exact: true }).fill("Casablanca");
@@ -1576,6 +1576,8 @@ await scenario("Prestataires : inscription avec logo et photos, confirmation e-m
   verifier(base.appelsFonctions.some((a) => a.nom === "prestataires" && a.corps.action === "inscription"), "l'e-mail de confirmation n'est pas demandé");
   verifier(await v.page.getByTestId("prestataire-merci").count(), "pas de message « plus qu'une étape »");
   await v.page.goto(BASE + "/prestataires/confirmer/" + r.jeton); await v.page.waitForTimeout(1500);
+  verifier(r.statut === "email_a_confirmer", "une simple visite ne doit rien confirmer");
+  await v.page.getByTestId("prestataire-confirmer").tap(); await v.page.waitForTimeout(1500);
   verifier(r.statut === "en_attente" && (await v.page.locator("body").innerText()).includes("c'est confirmé"), "la confirmation par e-mail ne marche pas");
   notes.push("inscription sur téléphone (métier, tarif 8 000 MAD, logo + 2 photos) → e-mail de confirmation → lien cliqué : dossier « à valider »");
   verifier(!v.erreurs.length, "erreurs JavaScript (visiteur) : " + v.erreurs.join(" ; "));
