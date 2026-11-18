@@ -420,6 +420,8 @@ await scenario("Devis envoyé au client → signature en ligne sur smartphone �
   const largeur = await client.page.evaluate(() => document.documentElement.scrollWidth);
   verifier(largeur <= 392, `la page déborde sur smartphone (${largeur} px)`);
   await client.page.screenshot({ path: `${CAPTURES}/8-devis-client.png`, fullPage: true });
+  // Le serveur exige la preuve du code reçu par e-mail : on la dépose comme si le client l'avait déjà saisi (le simulateur accepte toute preuve)
+  await client.page.evaluate((t) => sessionStorage.setItem(`verif-${t.slice(0, 8)}`, JSON.stringify({ preuve: "preuve-test", jusqua: Date.now() + 20 * 60_000 })), token);
   await client.page.getByTestId("signer-devis").tap(); await client.page.waitForTimeout(300);
   verifier(await client.page.getByText("Dessinez votre signature dans le cadre.").count(), "signer sans signature n'est pas refusé");
   const zone = client.page.getByTestId("zone-signature"); await zone.scrollIntoViewIfNeeded();
@@ -499,7 +501,7 @@ await scenario("Admin : bilan de l'activité, puis réalisations en photos publi
   await v.page.goto(`${BASE}/realisations`); await v.page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await v.page.reload(); await v.page.waitForTimeout(1800);
   verifier(await v.page.getByTestId("galerie").getByText("Mariage de Salma & Karim").count(), "la réalisation n'apparaît pas dans la galerie");
   await v.page.getByRole("button", { name: "Ouvrir le menu" }).tap(); await v.page.waitForTimeout(500);
-  verifier(await v.page.getByRole("link", { name: "Réalisations" }).count(), "le lien « Réalisations » n'apparaît pas dans le menu");
+  verifier(!(await v.page.getByRole("link", { name: "Réalisations" }).count()), "le lien « Réalisations » devrait rester caché du menu tant que la galerie est peu fournie");
   await v.page.keyboard.press("Escape").catch(() => {});
   await v.page.goto(`${BASE}/realisations`); await v.page.waitForTimeout(1500);
   await v.page.getByTestId("galerie").locator("button").first().tap(); await v.page.waitForTimeout(600);
@@ -1265,6 +1267,8 @@ await scenario("Guides gratuits et newsletter : guide débloqué contre l'e-mail
   // Désinscription
   const d = await contexte(navigateur, base, "anon@x");
   await d.page.goto(BASE + "/desinscription/" + ab.jeton); await d.page.waitForTimeout(1200);
+  verifier(!ab.desinscrit_le, "la simple visite du lien ne doit pas désinscrire");
+  await d.page.getByTestId("desinscription-confirmer").click(); await d.page.waitForTimeout(1200);
   verifier(/désinscrit/.test(await d.page.getByTestId("desinscription").innerText()) && !ab.consentement && ab.desinscrit_le, "désinscription non prise en compte");
   notes.push("lien de désinscription : confirmé, plus aucun envoi");
   await d.ctx.close();
