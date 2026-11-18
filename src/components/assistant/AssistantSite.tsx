@@ -226,8 +226,8 @@ export default function AssistantSite() {
     const v = video.current;
     if (reduit || !v) { setPose("salue"); poser("presente"); return; }
     jouer(() => apres(4300, () => setPose("salue")), () => { setPose("salue"); poser("presente"); });
-    // Connexion lente : après 1,5 s sans image qui bouge, on l'affiche debout (pose fixe) pour ne pas laisser un clic sans réponse
-    apres(1500, () => { if (v.paused || v.readyState < 2) { jeton.current++; v.pause(); setPose("salue"); poser("presente"); } });
+    // Connexion très lente : après 8 s sans vidéo, pose fixe (le menu, lui, est déjà affiché dès le clic)
+    apres(8000, () => { if (v.paused || v.readyState < 2) { jeton.current++; v.pause(); setPose("salue"); poser("presente"); } });
   };
   const assoir = () => {
     nettoyer(); jeton.current++; setMenu(false); setPose("assise");
