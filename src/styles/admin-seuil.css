@@ -4,9 +4,9 @@
    Le reste est rangé sous .admin-seuil (posé sur la coque de src/pages/Admin.tsx).
    Couleurs : zellige = prêt / ok ; terre = retard / urgent ; laiton = décor.
    ———————————————————————————————————————————————————————————————— */
-.admin-seuil { font-family: var(--s-texte); color: var(--s-nuit); background: url(/seuil/grain-platre.png) 0 0/128px, var(--s-platre); font-synthesis: none; }
+.admin-seuil { font-family: var(--s-texte); color: var(--s-nuit); background: url(/seuil/grain-platre.webp) 0 0/128px, var(--s-platre); font-synthesis: none; }
 .admin-seuil .font-serif { font-family: var(--s-titre); font-weight: 400 !important; letter-spacing: -.01em; }
-.admin-seuil .a-grain-nuit { background: url(/seuil/grain-nuit.png) 0 0/128px, var(--s-nuit); }
+.admin-seuil .a-grain-nuit { background: url(/seuil/grain-nuit.webp) 0 0/128px, var(--s-nuit); }
 
 /* Cartes génériques (shadcn) : papier, filet, coins nets */
 .admin-seuil .rounded-lg.border.bg-card { background: var(--s-papier); border-color: var(--s-filet); border-radius: 2px; box-shadow: 0 24px 50px -38px rgba(60,40,10,.55); }
@@ -18,7 +18,7 @@
 .admin-seuil table tbody tr:hover { background: rgba(228,212,154,.18); }
 
 /* Carte à liseré or (le bord des assiettes) */
-.a-carte { position: relative; background: url(/seuil/grain-platre.png) 0 0/128px, var(--s-papier); border: 1px solid var(--s-filet); box-shadow: 0 24px 50px -38px rgba(60,40,10,.55); }
+.a-carte { position: relative; background: url(/seuil/grain-platre.webp) 0 0/128px, var(--s-papier); border: 1px solid var(--s-filet); box-shadow: 0 24px 50px -38px rgba(60,40,10,.55); }
 .a-carte::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: 2px; background: var(--s-laiton); transform-origin: left; animation: a-trace .8s var(--s-courbe) both; }
 @keyframes a-trace { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
@@ -63,8 +63,8 @@
 
 /* ———————— Instagram (onglet admin, et espace Nawar en mode famille) ———————— */
 .ig { font-family: var(--s-texte); color: var(--s-nuit); }
-.ig-famille { background: url(/seuil/grain-platre.png) 0 0/128px, var(--s-platre); padding: 16px; }
-.ig-tete { background: url(/seuil/grain-nuit.png) 0 0/128px, var(--s-nuit); color: var(--s-platre); padding: 18px 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+.ig-famille { background: url(/seuil/grain-platre.webp) 0 0/128px, var(--s-platre); padding: 16px; }
+.ig-tete { background: url(/seuil/grain-nuit.webp) 0 0/128px, var(--s-nuit); color: var(--s-platre); padding: 18px 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
 .ig-tete small { display: block; font: 500 10.5px/1.3 var(--s-texte); letter-spacing: .3em; text-transform: uppercase; color: var(--s-gris-nuit); }
 .ig-tete h2 { font: 400 26px/1 var(--s-titre); letter-spacing: -.02em; margin-top: 4px; }
 /* bascule de compte : le biseau glisse */
@@ -94,7 +94,7 @@
 /* vignettes */
 .ig-vis { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: var(--s-nuit); }
 .ig-vis img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.ig-couv { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 12%; text-align: center; background: url(/seuil/grain-nuit.png) 0 0/96px, var(--s-nuit); color: var(--s-papier); font: 400 14px/1.15 var(--s-titre); overflow: hidden; }
+.ig-couv { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 12%; text-align: center; background: url(/seuil/grain-nuit.webp) 0 0/96px, var(--s-nuit); color: var(--s-papier); font: 400 14px/1.15 var(--s-titre); overflow: hidden; }
 .ig-couv::after { content: ""; width: 40%; height: 1px; background: currentColor; opacity: .5; }
 .ig-bilan { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; font: 400 12.5px var(--s-texte); color: var(--s-texte-2); }
 .ig-bilan b { font: 400 28px var(--s-titre); color: var(--s-nuit); margin-right: 5px; font-variant-numeric: tabular-nums; }
@@ -122,7 +122,7 @@
 
 /* ———————— Espace Nawar : nuit ambrée, brume, petites lumières ———————— */
 .n-espace { position: relative; min-height: 100vh; overflow-x: hidden; isolation: isolate; font-family: var(--s-texte); color: #F7ECD6;
-  background: url(/seuil/grain-nuit.png) 0 0/128px, radial-gradient(120% 55% at 50% 0%, #3D2B16 0%, #21180F 50%, #16110C 100%); }
+  background: url(/seuil/grain-nuit.webp) 0 0/128px, radial-gradient(120% 55% at 50% 0%, #3D2B16 0%, #21180F 50%, #16110C 100%); }
 .n-brume { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
 .n-nappe { position: absolute; border-radius: 50%; opacity: .55; will-change: transform; }
 .n-nappe.a { width: 520px; height: 300px; left: -180px; top: 120px; background: radial-gradient(closest-side, rgba(214,168,108,.32), transparent); animation: n-derive 22s ease-in-out infinite alternate; }
@@ -162,9 +162,9 @@
 .n-demain::before, .n-demain::after { content: ""; width: 22px; height: 1px; background: rgba(240,214,160,.26); flex: none; }
 
 /* ———————— Espace staff ———————— */
-.st-espace { min-height: 100vh; font-family: var(--s-texte); color: var(--s-nuit); background: url(/seuil/grain-platre.png) 0 0/128px, var(--s-platre); font-synthesis: none; }
+.st-espace { min-height: 100vh; font-family: var(--s-texte); color: var(--s-nuit); background: url(/seuil/grain-platre.webp) 0 0/128px, var(--s-platre); font-synthesis: none; }
 .st-espace .font-serif, .st-espace h2 { font-family: var(--s-titre); font-weight: 400; letter-spacing: -.01em; }
-.st-tete { background: url(/seuil/grain-nuit.png) 0 0/128px, var(--s-nuit); color: var(--s-platre); }
+.st-tete { background: url(/seuil/grain-nuit.webp) 0 0/128px, var(--s-nuit); color: var(--s-platre); }
 .st-tete .in { max-width: 64rem; margin: 0 auto; padding: 8px 16px 16px; }
 .st-tete .l1 { display: flex; align-items: center; justify-content: space-between; min-height: 48px; }
 .st-tete .l1 img { height: 28px; width: auto; }
@@ -269,7 +269,7 @@
 @media (prefers-reduced-motion: reduce) { .aj *, .aj-ligne.a-entre, .aj-ligne.sort { animation: none !important; transition: none !important; } .aj-ligne.sort { display: none; } }
 
 /* ———————— Fenêtre « Réponses WhatsApp » (.wa-) : papier, filet, onglets de langue à trait laiton ———————— */
-.wa-fenetre, .wa-tiroir { background: url(/seuil/grain-platre.png) 0 0/128px, var(--s-papier) !important; border: 1px solid var(--s-filet) !important; border-radius: 0 !important; box-shadow: 0 30px 60px -30px rgba(60,40,10,.55); font-family: var(--s-texte); color: var(--s-nuit); }
+.wa-fenetre, .wa-tiroir { background: url(/seuil/grain-platre.webp) 0 0/128px, var(--s-papier) !important; border: 1px solid var(--s-filet) !important; border-radius: 0 !important; box-shadow: 0 30px 60px -30px rgba(60,40,10,.55); font-family: var(--s-texte); color: var(--s-nuit); }
 .wa-tiroir { max-height: 88vh; overflow-y: auto; border-width: 1px 0 0 !important; }
 .wa-titre { padding: 14px 16px 6px; font: 400 20px/1.15 var(--s-titre); }
 .wa-onglets { display: flex; padding: 0 8px; border-bottom: 1px solid var(--s-filet); }

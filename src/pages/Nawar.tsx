@@ -79,7 +79,7 @@ export default function Nawar() {
       <section className="s-nawar">
         <Lumieres />
         <div className="s-wrap s-g" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 64, borderBottom: "1px solid rgba(240,214,160,.14)" }}>
-          <Link to="/" className="inline-flex items-center min-h-[44px]" aria-label="Heavent People Agency"><img src="/seuil/logo-heavent-or.png" alt="Heavent People Agency" width={726} height={214} style={{ height: 26, width: "auto" }} /></Link>
+          <Link to="/" className="inline-flex items-center min-h-[44px]" aria-label="Heavent People Agency"><img src="/seuil/logo-heavent-or.webp" alt="Heavent People Agency" width={520} height={153} style={{ height: 26, width: "auto" }} /></Link>
           <a href="#devis" className="s-devis-court" style={{ display: "inline-flex" }}>Devis</a>
         </div>
         <div className="s-nawar-s s-wrap s-grille" style={{ paddingTop: 40 }}>

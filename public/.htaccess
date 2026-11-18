@@ -52,6 +52,11 @@ AddType application/manifest+json .webmanifest
   <If "%{REQUEST_URI} =~ m#^/assets/#">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </If>
+  # Images, polices, vidéos : cache de 30 jours (une photo remplacée sous le même nom met jusqu'à 30 jours
+  # à se mettre à jour chez un visiteur qui l'a déjà vue → pour un changement immédiat, changer le nom du fichier)
+  <FilesMatch "\.(webp|avif|png|jpe?g|gif|svg|ico|woff2?|ttf|otf|mp4|webm|mp3)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
   # Appli admin : le service worker et le manifeste doivent toujours être frais
   <FilesMatch "^(admin-sw\.js|admin\.webmanifest)$">
     Header set Cache-Control "no-cache"

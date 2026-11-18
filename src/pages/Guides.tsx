@@ -317,7 +317,7 @@ export function Liens() {
       <Seo perso={{ chemin: "/liens", titre: "Heavent People Agency | Guides gratuits, devis et rendez-vous", description: "Tous les liens de Heavent People Agency : guides gratuits, devis mariage et entreprise, crée ton événement, rendez-vous et WhatsApp." }} />
       <div className="max-w-md mx-auto px-4 py-12 space-y-3">
         <div className="text-center mb-6">
-          <img src="/seuil/logo-heavent-or.png" alt="Heavent People Agency" className="h-12 w-auto mx-auto" width={726} height={214} />
+          <img src="/seuil/logo-heavent-or.webp" alt="Heavent People Agency" className="h-12 w-auto mx-auto" width={520} height={153} />
           <h1 className="sr-only">Heavent People Agency</h1>
           <p className="text-[#BDB29C] text-sm mt-4">{x("Mariages, fêtes et événements d'entreprise au Maroc")}</p>
         </div>

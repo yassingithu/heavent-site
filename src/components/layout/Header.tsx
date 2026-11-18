@@ -119,7 +119,7 @@ const Header = () => {
     <header className="s-entete">
       <div className="s-entete-in">
         <Link to="/" className="s-marque" aria-label={x("Heavent People Agency, accueil")}>
-          <img src="/seuil/logo-heavent-or.png" alt="Heavent People Agency" width={726} height={214} />
+          <img src="/seuil/logo-heavent-or.webp" alt="Heavent People Agency" width={520} height={153} />
         </Link>
 
         <nav className="s-nav" aria-label={x("Navigation principale")}>
@@ -145,7 +145,7 @@ const Header = () => {
 
       <div id="menu-site" className={`s-panneau s-nuit${ouvert ? " ouvert" : ""}`} role="dialog" aria-modal="true" aria-label={x("Menu")} aria-hidden={!ouvert}>
         <div className="s-panneau-tete">
-          <img src="/seuil/logo-heavent-or.png" alt="" width={726} height={214} />
+          <img src="/seuil/logo-heavent-or.webp" alt="" width={520} height={153} />
           <button ref={boutonFermer} type="button" className="fermer" onClick={fermer} tabIndex={ouvert ? 0 : -1}>{x("Fermer")}</button>
         </div>
         <nav aria-label={x("Navigation principale")}>

@@ -16,7 +16,7 @@ const Footer = () => {
       <div className="s-pied-haut s-wrap">
         <div>
           <Link to="/" aria-label={x("Heavent People Agency, accueil")}>
-            <img src="/seuil/logo-heavent-or.png" alt="Heavent People Agency" className="s-logo-pied" width={726} height={214} loading="lazy" />
+            <img src="/seuil/logo-heavent-or.webp" alt="Heavent People Agency" className="s-logo-pied" width={520} height={153} loading="lazy" />
           </Link>
           <p style={{ marginTop: 22, maxWidth: "38ch" }}>{x("Hôtesses, staff événementiel et mariages, de Rabat à Marrakech et partout au Maroc.")}</p>
         </div>
@@ -64,7 +64,7 @@ const Footer = () => {
           <div>
             {/* Offre professionnelle Heavent Studio (pour les autres agences) */}
             <Link to="/studio" data-testid="lien-studio" className="s-pied-studio">
-              <img src="/marque-or.png" alt="" width={30} height={30} loading="lazy" />
+              <img src="/marque-or.png" alt="" width={22} height={30} loading="lazy" />
               <span>{x("Vous êtes une agence ? Heavent Studio")}</span>
               <span aria-hidden="true" style={{ color: "var(--s-laiton-clair)" }}>→</span>
             </Link>
