@@ -11,7 +11,7 @@ import { chevauche, objetsDeplacables, RAYON_TABLE, type Objet3D } from "./objet
 
 export interface Entree { final?: null | "avant" | "arrive" | "assis"; r: Rendu; nuit: number; deplacable: boolean; reduit: boolean; focus?: { cle: string; n: number } | null }
 export interface Rappels { onDeplacer: (id: string, dx: number, dy: number) => void; onRefus: (motif?: "occupe" | "bord") => void; /** la vue n'est plus celle d'ensemble (zoom ou déplacement) */ onDecalee?: (decalee: boolean) => void; /** contexte WebGL perdu : repli sur le SVG */ onPerdu?: () => void }
-export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** image PNG de la scène 3D seule (fond compris, sans interface) ; null si impossible */ capturer(): Promise<Blob | null>; /** objets restés en pavé générique (doit être vide) */ generiques(): string[]; /** position monde (cases) d'un objet, pour les tests */ position(id: string): [number, number] | null; /** position écran (px client) d'un point du sol ou d'un objet, pour les tests */ ecran(x: number, z: number): [number, number]; ecranObjet(id: string): [number, number] | null; /** chaises d'un objet (position locale, direction du dossier), pour les tests */ chaises(id: string): { x: number; z: number; dos: [number, number] }[]; dims(id: string): { w: number; d: number } | null; /** cadre un objet de près (tests, captures) */ vers(id: string, zoom: number): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[]; invites: number } }
+export interface Moteur { maj(e: Entree): void; vueEnsemble(): void; /** image PNG de la scène 3D seule (fond compris, sans interface) ; null si impossible */ capturer(): Promise<Blob | null>; /** objets restés en pavé générique (doit être vide) */ generiques(): string[]; /** position monde (cases) d'un objet, pour les tests */ position(id: string): [number, number] | null; /** position écran (px client) d'un point du sol ou d'un objet, pour les tests */ ecran(x: number, z: number): [number, number]; ecranObjet(id: string): [number, number] | null; /** chaises d'un objet (position locale, direction du dossier), pour les tests */ chaises(id: string): { x: number; z: number; dos: [number, number] }[]; dims(id: string): { w: number; d: number } | null; /** cadre un objet de près (tests, captures) */ vers(id: string, zoom: number): void; /** objet sous un point de l'écran (tests) */ sous(x: number, y: number): string | null; detruire(): void; stats(): { appels: number; triangles: number; objets: number; zoom: number; cible: number[]; invites: number; qualite: number } }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const couleur = (a: string, b: string, t: number) => new THREE.Color(a).lerp(new THREE.Color(b), t);
@@ -62,6 +62,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   const soleil = new THREE.DirectionalLight(0xffc48a, 2.2);
   soleil.castShadow = true; soleil.shadow.mapSize.set(tactile ? 1024 : 2048, tactile ? 1024 : 2048); soleil.shadow.radius = 6; soleil.shadow.bias = -0.0006; soleil.shadow.normalBias = 0.03;
   scene.add(soleil, soleil.target);
+  let maxLampes = 4; // abaissé par la qualité adaptative (voir surveiller) ; deux paliers seulement (pixels puis lampes), jamais de repli SVG automatique
   const lampes = [0, 1, 2, 3].map(() => { const l = new THREE.PointLight(0xffb866, 0, 8, 1.6); scene.add(l); return l; });
 
   // matières partagées (jamais recréées)
@@ -330,7 +331,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     hemi.color.copy(couleur("#FFE6C8", "#9AA3C0", n)); hemi.groundColor.copy(couleur("#8A7A66", "#2A2E48", n)); hemi.intensity = lerp(1.0, 0.65, n);
     fond = [couleur("#F3ECDD", "#141414", n).getStyle(), couleur("#E9DCC2", "#1B1A22", n).getStyle()];
     conteneur.style.background = `linear-gradient(180deg, ${fond[0]}, ${fond[1]})`;
-    lampes.forEach((l) => { l.intensity = l.userData.actif ? (l.userData.nawar ? lerp(1.8, 7, n) : lerp(0.2, 7, n)) : 0; });
+    lampes.forEach((l, i) => { l.intensity = l.userData.actif && i < maxLampes ? (l.userData.nawar ? lerp(1.8, 7, n) : lerp(0.2, 7, n)) : 0; });
     renderer.toneMappingExposure = lerp(1.08, 1.1, n);
     renderer.shadowMap.needsUpdate = true;
   }
@@ -379,9 +380,24 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   let refusAnim: { id: string; t0: number; de: [number, number]; vers: [number, number] } | null = null;
   let nuitAff = 0, lumAnim: { t0: number; de: number; vers: number } | null = null;
   let appels = 0, tris = 0;
-  function demander() { if (!enCours) { enCours = true; requestAnimationFrame(boucle); } }
+  // Qualité adaptative : si l'appareil tient mal les 30 images/s pendant une animation continue, on allège par paliers
+  let niveauQualite = 0, chaine = 0, lentes = 0, mesures = 0;
+  // Mesure : coût du rendu (toujours) et écart entre images d'une animation continue ; premières images ignorées (compilation des shaders)
+  let imagesVues = 0;
+  function surveiller(ecartMs: number, coutMs: number) {
+    imagesVues++; chaine++; if (imagesVues <= 4 || niveauQualite >= 2) return;
+    mesures++; if (coutMs > 26 || (ecartMs > 34 && ecartMs < 250)) lentes++;
+    if (mesures < 24) return;
+    const mal = lentes >= mesures * 0.6; mesures = 0; lentes = 0;
+    if (!mal) return;
+    niveauQualite++;
+    if (niveauQualite === 1) { renderer.setPixelRatio(1); redim(); }
+    else { maxLampes = 1; lampes.forEach((l, i) => { if (i >= maxLampes) l.intensity = 0; }); }
+    renderer.shadowMap.needsUpdate = true;
+  }
+  function demander() { if (!enCours) { enCours = true; chaine = 0; requestAnimationFrame(boucle); } }
   function boucle(t: number) {
-    const dt = Math.min(0.05, (t - tPrec) / 1000 || 0.016); tPrec = t;
+    const dt = Math.min(0.05, (t - tPrec) / 1000 || 0.016); const ecart = t - tPrec; tPrec = t;
     let anime = false;
     if (cibleVoulue && transition < 1) {
       // interpolation à sortie douce sur ~600 ms
@@ -409,7 +425,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     }
     if (invites && poserInvites(performance.now())) anime = true;
     if (prise) anime = true;
-    renderer.render(scene, cam);
+    const t0r = performance.now(); renderer.render(scene, cam); surveiller(chaine > 0 ? ecart : 0, performance.now() - t0r);
     appels = renderer.info.render.calls; tris = renderer.info.render.triangles;
     if (anime) requestAnimationFrame(boucle); else enCours = false;
   }
@@ -551,7 +567,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     dims: (id) => { const u = groupes.get(id)?.userData; return u ? { w: u.w, d: u.d } : null; },
     vers(id, zoom) { const g2 = groupes.get(id); if (!g2) return; cibleVoulue = null; transition = 1; vue.cible.set(g2.position.x, 0.4, g2.position.z); vue.zoom = zoom; placerCamera(); demander(); },
     sous: (x, y) => objetSous(x, y),
-    stats: () => ({ appels, triangles: tris, objets: objets.length, zoom: +vue.zoom.toFixed(3), cible: [+vue.cible.x.toFixed(2), +vue.cible.z.toFixed(2)], invites: invites?.cibles.length ?? 0 }),
+    stats: () => ({ appels, triangles: tris, objets: objets.length, zoom: +vue.zoom.toFixed(3), cible: [+vue.cible.x.toFixed(2), +vue.cible.z.toFixed(2)], invites: invites?.cibles.length ?? 0, qualite: niveauQualite }),
     detruire() {
       ro.disconnect(); canvas.removeEventListener("webglcontextlost", perdu); canvas.removeEventListener("webglcontextrestored", demander);
       for (const r2 of [decor, fixes, objetsGroupe]) if (r2) liberer(r2);
