@@ -1,9 +1,8 @@
 import { clientEnModeDemo } from "@/integrations/supabase/client";
 import { ReactNode, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Header, { LangueFlottante } from "./Header";
+import Header from "./Header";
 import Footer from "./Footer";
-import BoutonWhatsApp from "@/components/BoutonWhatsApp";
 import AssistantSite from "@/components/assistant/AssistantSite";
 import BandeauAudience from "@/components/BandeauAudience";
 import { AnimationsSeuil } from "@/components/seuil/Seuil";
@@ -106,7 +105,7 @@ const Layout = ({ children }: LayoutProps) => {
         {children}
       </main>
       <Footer />
-      {pathname !== "/cartes" && <><LangueFlottante /><BoutonWhatsApp /><AssistantSite /></>}
+      {pathname !== "/cartes" && <AssistantSite />}
     </div>
   );
 };

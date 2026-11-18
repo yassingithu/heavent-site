@@ -394,7 +394,7 @@ export default function AssistantSite() {
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12h15M13 6l6 6-6 6" /></svg>
               </button>
             </form>
-            <p className="hot-notice">{x("Ne saisissez ni coordonnées, ni pièce d'identité, ni données de santé. Vos questions libres sont traitées par un service d'IA hors du Maroc ; les boutons ne le sont pas.")}</p>
+            <p className="hot-notice">{x("Ne saisissez ni coordonnées, ni pièce d'identité, ni données de santé.")}</p>
           </div>
         </div>
       )}

@@ -170,6 +170,7 @@ const Header = () => {
           <span className="s-nav-sep" aria-hidden="true" />
           <Link to="/prestataires" className="s-nav-sec" aria-current={pathname === "/prestataires" ? "page" : undefined} data-testid="bouton-prestataires-ordi">{x("Devenir prestataire")}</Link>
           <MenuDeroulant titre={x("Se connecter")} liens={connexion} discret />
+          <Langues />
           <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-filet" data-testid="entete-devis">{x("Demander un devis")}</Link>
         </nav>
 

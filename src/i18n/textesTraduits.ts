@@ -1163,7 +1163,7 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "Écrivez votre question": { en: "Type your question", ar: "اكتبوا سؤالكم" },
   "Envoyer": { en: "Send", ar: "إرسال" },
   "Beaucoup de questions pour cette visite ! L'équipe vous répondra mieux que moi : écrivez-lui.": { en: "That's a lot of questions for one visit! The team will answer better than I can: write to them.", ar: "أسئلة كثيرة في زيارة واحدة! الفريق سيجيبكم أفضل مني: راسلوهم." },
-  "Ne saisissez ni coordonnées, ni pièce d'identité, ni données de santé. Vos questions libres sont traitées par un service d'IA hors du Maroc ; les boutons ne le sont pas.": { en: "Don't enter contact details, ID documents or health data. Free-text questions are processed by an AI service outside Morocco; the buttons are not.", ar: "لا تدخلوا بيانات الاتصال أو وثائق الهوية أو معطيات صحية. الأسئلة المكتوبة تعالجها خدمة ذكاء اصطناعي خارج المغرب، أما الأزرار فلا." },
+  "Ne saisissez ni coordonnées, ni pièce d'identité, ni données de santé.": { en: "Don't enter contact details, ID documents or health data.", ar: "لا تدخلوا بيانات الاتصال أو وثائق الهوية أو معطيات صحية." },
   "Demander mon devis mariage ou fête": { en: "Request my wedding or party quote", ar: "طلب عرض العرس أو الحفلة" },
   "Demander un devis entreprise": { en: "Request a business quote", ar: "طلب عرض للشركات" },
   "M'inscrire comme hôtesse ou staff": { en: "Register as hostess or staff", ar: "التسجيل كمضيفة أو ضمن الطاقم" },

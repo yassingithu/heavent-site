@@ -1270,15 +1270,11 @@ await scenario("Guides gratuits et newsletter : guide débloqué contre l'e-mail
   await d.ctx.close();
 });
 
-await scenario("Bouton WhatsApp (pages publiques uniquement, message adapté)", async (notes) => {
+await scenario("Bouton WhatsApp : plus de bouton flottant, WhatsApp est proposé par l'hôtesse Imane", async (notes) => {
   const base = nouvelleBase();
   const { page, ctx } = await contexte(navigateur, base, ADMIN, { mobile: true });
   await page.goto(BASE + "/devis-mariage"); await page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await page.reload(); await page.waitForTimeout(800);
-  const lien = await page.getByTestId("bouton-whatsapp").getAttribute("href");
-  verifier(lien?.startsWith("https://wa.me/212610939655?text=") && decodeURIComponent(lien).includes("mariage"), "lien WhatsApp incorrect : " + lien);
-  await connecter(page, BASE, ADMIN, "/admin");
-  verifier(!(await page.getByTestId("bouton-whatsapp").count()), "le bouton WhatsApp ne doit pas apparaître dans l'admin");
-  notes.push("présent sur /devis-mariage avec message « mariage », absent de l'admin");
+  verifier(!(await page.getByTestId("bouton-whatsapp").count()), "le bouton WhatsApp flottant ne doit plus exister");
   await ctx.close();
 });
 
