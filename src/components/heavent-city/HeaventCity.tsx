@@ -156,7 +156,7 @@ export default function HeaventCity() {
     return m;
   }, [choix, missions, missionsOuvertes, phase, lng]);
 
-  const r = rendu(choix);
+  const r = useMemo(() => rendu(choix), [choix]);
   const nbEtapes = (choix.style ? 1 : 0) + (choix.palette ? 1 : 0) + (choix.lumiere ? 1 : 0) + (choix.musiques.length ? 1 : 0) + (choix.accueils.length ? 1 : 0) + (choix.manuels.length ? 1 : 0) + repondues;
 
   return (
@@ -203,7 +203,7 @@ export default function HeaventCity() {
                 <button onClick={() => dispatch({ t: "annuler" })} disabled={!etat.passe.length} aria-label={tr("Annuler le dernier choix")} data-testid="annuler" className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-[#F0E8D6] disabled:opacity-35"><Undo2 className="h-5 w-5" /></button>
                 <button onClick={() => dispatch({ t: "refaire" })} disabled={!etat.futur.length} aria-label={tr("Rétablir")} data-testid="refaire" className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-[#F0E8D6] disabled:opacity-35"><Redo2 className="h-5 w-5" /></button>
                 <button onClick={() => { setToast(null); setTelOnglet("messages"); setTelOuvert(true); }} aria-label={tr("Ouvrir le téléphone")} data-testid="ouvrir-telephone" className="relative flex h-11 w-11 items-center justify-center rounded-full bg-[#C9A74E] text-[#17141a] shadow-lg">
-                  <Phone className="h-5 w-5" />{toast && <span className="absolute -end-0.5 -top-0.5 h-3.5 w-3.5 animate-ping rounded-full bg-[#E24E8B]" />}
+                  <Phone className="h-5 w-5" />{toast && <span className="absolute -end-0.5 -top-0.5 h-3.5 w-3.5 animate-ping motion-reduce:animate-none rounded-full bg-[#E24E8B]" />}
                 </button>
               </div>
             </div>
