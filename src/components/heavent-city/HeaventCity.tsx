@@ -207,7 +207,7 @@ export default function HeaventCity() {
                 </button>
               </div>
             </div>
-            <div className="pointer-events-none absolute bottom-2 start-3 rounded-full bg-black/45 px-3 py-1 text-[12px] text-[#F0E8D6]" aria-live="polite">{r.tables === "conference" ? tr("{n} chaises · {n} participants", { n: r.invites }) : tr("{nb} {type} · {n} invités", { nb: r.tablesTotal, type: infoTable(r.tables).compte, n: r.invites })}</div>
+            <div className="pointer-events-none absolute bottom-2 start-3 max-w-[calc(100%-13rem)] rounded-2xl bg-black/45 px-3 py-1 text-[12px] leading-tight text-[#F0E8D6]" aria-live="polite">{r.tables === "conference" ? tr("{n} chaises · {n} participants", { n: r.invites }) : tr("{nb} {type} · {n} invités", { nb: r.tablesTotal, type: infoTable(r.tables).compte, n: r.invites })}</div>
             {!presentation && !deplacer && <button onClick={() => setPresentation(true)} data-testid="mode-presentation" aria-label={tr("Mode présentation")} title={tr("Mode présentation")} className="absolute bottom-2 end-[9rem] flex items-center gap-1.5 rounded-full border border-[#A8933F]/60 bg-black/60 px-3 min-h-11 text-[13px] text-[#F0E8D6] hover:bg-black/75"><Maximize2 className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">{tr("Mode présentation")}</span></button>}
             {presentation && <button onClick={() => setPresentation(false)} data-testid="quitter-presentation" aria-label={tr("Quitter le mode présentation")} className="hc-fondu absolute end-3 top-3 z-20 rounded-full border border-[#A8933F]/60 bg-black/55 px-3.5 min-h-11 text-[13px] text-[#F0E8D6] hover:bg-black/75">{tr("Quitter (Échap)")}</button>}
             {deplacer && (

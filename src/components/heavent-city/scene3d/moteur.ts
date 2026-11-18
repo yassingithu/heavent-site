@@ -449,7 +449,8 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   }
   // Doigts : un doigt sur un objet (mode « déplacer ») le fait glisser ; un doigt ailleurs déplace la vue ; deux doigts zooment.
   const doigts = new Map<number, { x: number; y: number }>();
-  let pince: { d0: number; z0: number } | null = null, pan: { p: any } | null = null;
+  let pince: { d0: number; z0: number; g0: THREE.Vector3 | null } | null = null, pan: { p: any } | null = null;
+  const milieu = () => { const [a, b] = [...doigts.values()]; return [(a.x + b.x) / 2, (a.y + b.y) / 2] as const; };
   const dist = () => { const [a, b] = [...doigts.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
   function annulerPrise() {
     const t = prise; prise = null; if (!t) return;
@@ -462,7 +463,7 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
     doigts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
     try { canvas.setPointerCapture(ev.pointerId); } catch { /* ignoré */ }
     cibleVoulue = null; transition = 1; // le doigt reprend la main sur une transition en cours
-    if (doigts.size === 2) { annulerPrise(); pan = null; pince = { d0: dist(), z0: vue.zoom }; return; }
+    if (doigts.size === 2) { annulerPrise(); pan = null; pince = { d0: dist(), z0: vue.zoom, g0: versSol(...milieu()) }; return; }
     if (doigts.size > 2) return;
     const id = courant.deplacable ? objetSous(ev.clientX, ev.clientY) : null, grp = id ? groupes.get(id) : null, p = versSol(ev.clientX, ev.clientY);
     if (!p) return;
@@ -474,7 +475,13 @@ export function creerMoteur(canvas: HTMLCanvasElement, conteneur: HTMLElement, r
   });
   canvas.addEventListener("pointermove", (ev) => {
     if (doigts.has(ev.pointerId)) doigts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-    if (pince && doigts.size >= 2) { vue.zoom = Math.max(0.9, Math.min(3.2, pince.z0 * dist() / pince.d0)); placerCamera(); demander(); return; }
+    if (pince && doigts.size >= 2) {
+      vue.zoom = Math.max(0.9, Math.min(3.2, pince.z0 * dist() / pince.d0)); placerCamera();
+      // le point du sol sous les doigts reste sous les doigts (zoom entre les deux doigts, et déplacement à deux doigts)
+      const g1 = pince.g0 ? versSol(...milieu()) : null;
+      if (pince.g0 && g1) { vue.cible.x += pince.g0.x - g1.x; vue.cible.z += pince.g0.z - g1.z; borneCible(); placerCamera(); }
+      demander(); return;
+    }
     if (pan) {
       const p = versSol(ev.clientX, ev.clientY); if (!p) return;
       vue.cible.x += pan.p.x - p.x; vue.cible.z += pan.p.z - p.z; borneCible(); placerCamera(); demander(); return;
