@@ -126,6 +126,7 @@ export const TRADUCTIONS: Record<string, { en: string; ar: string }> = {
   "Options repliées pendant le déplacement": { en: "Options folded while moving", ar: "الخيارات مطوية أثناء التحريك" },
   "Rouvrir": { en: "Reopen", ar: "إعادة الفتح" },
   "Pince pour zoomer": { en: "Pinch to zoom", ar: "اقرص للتكبير" },
+  "Deux doigts : zoomer et déplacer": { en: "Two fingers: zoom and move", ar: "إصبعان للتكبير والتحريك" },
   "Vue d'ensemble": { en: "Overview", ar: "عرض شامل" },
   "Fais glisser un objet pour le déplacer.": { en: "Drag an object to move it.", ar: "اسحب عنصرًا لتحريكه." },
   "Fauteuils des mariés": { en: "Bride and groom's armchairs", ar: "كرسيا العروسين" },

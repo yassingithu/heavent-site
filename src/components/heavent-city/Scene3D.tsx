@@ -38,9 +38,9 @@ export default function Scene3D({ r, nuit: nuitJeu, deplacable = false, onDeplac
   return (
     <div ref={conteneur} className={className} data-testid="scene-3d" style={{ position: "absolute", inset: 0, opacity: visible ? 1 : 0, transition: reduit ? "none" : "opacity 300ms ease" }} onTransitionEnd={(e) => { if (e.target === e.currentTarget && visible) onFondu(); }}>
       <canvas ref={canvas} role="img" aria-label={r.titre} style={{ width: "100%", height: "100%", display: "block", touchAction: "none" }} />
-      {pince && <p className="pointer-events-none absolute inset-x-0 bottom-12 mx-auto w-fit rounded-full bg-black/55 px-3 py-1 text-[12px] text-[#F0E8D6]" role="status">{tr("Pince pour zoomer")}</p>}
+      {pince && <p className="pointer-events-none absolute inset-x-0 bottom-[3.75rem] mx-auto w-fit rounded-lg bg-black/65 px-3 py-1 text-[12px] text-[#F0E8D6]" role="status">{tr("Deux doigts : zoomer et déplacer")}</p>}
       {!final && <button type="button" onClick={() => moteur.current?.vueEnsemble()} data-testid="vue-ensemble" data-decalee={decalee ? "1" : "0"} aria-disabled={!decalee}
-        className={`absolute bottom-2 end-3 rounded-full px-3 text-[12px] transition-colors ${decalee ? "bg-[#E8D49A] font-semibold text-[#17141a] shadow-lg" : "bg-black/35 text-[#F0E8D6]/55"}`} style={{ minHeight: 44 }}>{tr("Vue d'ensemble")}</button>}
+        className={`absolute bottom-2 end-3 rounded-full px-3 text-[12px] transition-colors ${decalee ? "bg-[#E8D49A] font-semibold text-[#17141a] shadow-lg" : "border border-[#A8933F]/60 bg-black/55 text-[13px] text-[#F0E8D6]"}`} style={{ minHeight: 44 }}>{tr("Vue d'ensemble")}</button>}
     </div>
   );
 }

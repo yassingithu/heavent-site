@@ -35,8 +35,8 @@ export { Check, Lightbulb, Palette, DoorOpen, Music2 };
 /** Marque « disponible chez Heavent » ou « inspiration à discuter » : honnête sur ce qui est réservable */
 export function Pastille({ reservable, court }: { reservable: boolean; court?: boolean }) {
   return reservable
-    ? <span className="inline-flex items-center gap-1 text-[12px] uppercase tracking-wider text-[#E4D49A]"><span className="h-1.5 w-1.5 rounded-full bg-[#C9A74E]" />{court ? "Heavent" : tr("Proposé par Heavent")}</span>
-    : <span className="inline-flex items-center gap-1 text-[12px] uppercase tracking-wider text-[#B9B09C]"><span className="h-1.5 w-1.5 rounded-full border border-[#B9B09C]" />{court ? tr("Idée") : tr("Inspiration à discuter")}</span>;
+    ? <span className="inline-flex items-center gap-1 text-[12px] uppercase tracking-wide rtl:tracking-normal rtl:normal-case whitespace-nowrap text-[#E4D49A]"><span className="h-1.5 w-1.5 rounded-full bg-[#C9A74E]" />{court ? "Heavent" : tr("Proposé par Heavent")}</span>
+    : <span className="inline-flex items-center gap-1 text-[12px] uppercase tracking-wide rtl:tracking-normal rtl:normal-case whitespace-nowrap text-[#B9B09C]"><span className="h-1.5 w-1.5 rounded-full border border-[#B9B09C]" />{court ? tr("Idée") : tr("Inspiration à discuter")}</span>;
 }
 
 export const C = { anthracite: "#17141a", anthraciteClair: "#241f27", creme: "#F6EFDD", or: "#C9A74E", orClair: "#E4D49A", texte: "#F0E8D6", doux: "#B9B09C" };
