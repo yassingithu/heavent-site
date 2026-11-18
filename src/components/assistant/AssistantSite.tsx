@@ -18,6 +18,7 @@ type LienId = "devis-mariage" | "devis-entreprise" | "inscription-staff" | "espa
 const PAGES_PRIVEES = ["/admin", "/auth", "/staff-dashboard", "/cartes", "/rsvp/", "/invitation/", "/liste/", "/reponse/", "/souvenirs/", "/mon-devis/"];
 // Pages où la personne remplit déjà un formulaire : l'hôtesse reste assise, sans invitation animée
 const PAGES_FORMULAIRE = ["/devis-mariage", "/devis-entreprise", "/inscription-staff", "/prestataires"];
+const VER = "20261118b"; // à changer quand la vidéo ou les images de l'hôtesse changent (contourne le cache des navigateurs)
 const CLE_VUE = "heavent-hotesse-vue";
 const CLE_APPELS = "heavent-hotesse-appels";
 const CLE_BADGE = "heavent-hotesse-badge";
@@ -132,7 +133,7 @@ export default function AssistantSite() {
   }, [composer]);
   useEffect(() => {
     ["assise", "presente"].forEach((n) => {
-      const img = new Image(); img.onload = () => { if (n === "assise") poser("assise"); }; img.src = `/assistant/hotesse-${n}.webp`; images.current[n] = img;
+      const img = new Image(); img.onload = () => { if (n === "assise") poser("assise"); }; img.src = `/assistant/hotesse-${n}.webp?v=${VER}`; images.current[n] = img;
     });
     return () => cancelAnimationFrame(boucle.current);
   }, [poser]);
@@ -169,10 +170,21 @@ export default function AssistantSite() {
     apres(reduit ? 7000 : 10500, seRassoit);
   }, [reduit, poser, lire_]);
 
+  // Préchargement de la vidéo : sans lui, le clic attend son téléchargement et l'hôtesse reste figée un instant.
+  const precharger = useCallback(() => {
+    const v = video.current;
+    if (v && v.readyState === 0 && v.paused) { v.preload = "auto"; v.load(); }
+  }, []);
+  useEffect(() => {
+    if (prive || formulaire || !choix) return;
+    const t = window.setTimeout(precharger, 1200);
+    return () => window.clearTimeout(t);
+  }, [prive, formulaire, choix, precharger]);
+
   useEffect(() => {
     if (prive || formulaire || !choix || ouvert) return;
     if (lire(CLE_VUE) === "1") return;
-    const charge3 = window.setTimeout(() => { const v = video.current; if (v && v.readyState === 0 && v.paused) v.load(); }, 3000);
+    const charge3 = window.setTimeout(precharger, 3000);
     const minuteur = window.setTimeout(inviter, 8000);
     const defiler = () => {
       const haut = document.documentElement.scrollHeight - window.innerHeight;
@@ -340,13 +352,13 @@ export default function AssistantSite() {
         )}
         <button ref={bouton} type="button" className="hot-btn" data-testid="bouton-assistant" aria-label={x("Parler à Imane, l'assistante virtuelle Heavent")} aria-haspopup="menu" aria-expanded={menu || ouvert}
           tabIndex={ouvert ? -1 : 0} onClick={lever}
-          onMouseEnter={() => { survol.current = true; }} onMouseLeave={() => { survol.current = false; }}
-          onFocus={() => { survol.current = true; }} onBlur={() => { survol.current = false; }}>
+          onMouseEnter={() => { survol.current = true; precharger(); }} onTouchStart={precharger} onMouseLeave={() => { survol.current = false; }}
+          onFocus={() => { survol.current = true; precharger(); }} onBlur={() => { survol.current = false; }}>
           <span className="hot-scene" aria-hidden>
             <canvas ref={toile} className="hot-toile" width="390" height="540" />
             <video ref={video} className="hot-video" muted playsInline preload="none" disablePictureInPicture tabIndex={-1} width="780" height="540" onEnded={() => { cancelAnimationFrame(boucle.current); composer(); }}>
-              <source src="/assistant/hotesse-paquet.mp4" type="video/mp4" />
-              <source src="/assistant/hotesse-paquet.webm" type="video/webm" />
+              <source src={`/assistant/hotesse-paquet.mp4?v=${VER}`} type="video/mp4" />
+              <source src={`/assistant/hotesse-paquet.webm?v=${VER}`} type="video/webm" />
             </video>
           </span>
           <span className="hot-etiquette" aria-hidden>{x("Aide")}</span>
