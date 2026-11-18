@@ -169,6 +169,7 @@ html.s-anime .vu .s-ruban { transition: clip-path .6s var(--s-courbe) .25s; }
 .s-panneau-pied a { display: flex; align-items: center; min-height: 44px; font: 400 15px var(--s-texte); color: var(--s-laiton-clair); }
 .s-panneau .s-langues { margin-top: 12px; }
 .s-panneau-groupe { margin: 18px 0 0; font: 500 11px var(--s-texte); letter-spacing: .22em; text-transform: uppercase; color: #BDB3A0; }
+.s-panneau-sep { display: block; height: 14px; }
 .s-panneau-pied .s-panneau-groupe { margin: 0 0 4px; }
 /* Langue : bouton flottant, au-dessus du bouton WhatsApp (en bas à droite) */
 .s-langue-flot { position: fixed; z-index: 40; right: 16px; bottom: calc(16px + 56px + 12px); display: flex; flex-direction: column-reverse; align-items: center; gap: 8px; font-family: var(--s-texte); }

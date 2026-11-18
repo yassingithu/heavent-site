@@ -150,14 +150,15 @@ const Header = () => {
         </div>
         <nav aria-label={x("Navigation principale")}>
           <Link to="/" onClick={() => setOuvert(false)} aria-current={pathname === "/" ? "page" : undefined} tabIndex={ouvert ? 0 : -1}>{t("nav.home")}</Link>
-          {navigation.slice(1).map((item) => (
-            <Link key={item.href} to={item.href} onClick={() => setOuvert(false)} aria-current={pathname === item.href ? "page" : undefined} tabIndex={ouvert ? 0 : -1}>{item.name}</Link>
-          ))}
-          <Link to="/prestataires" onClick={() => setOuvert(false)} aria-current={pathname === "/prestataires" ? "page" : undefined} tabIndex={ouvert ? 0 : -1} data-testid="bouton-prestataires">{x("Devenir prestataire")}</Link>
           <p className="s-panneau-groupe">{x("Événement")}</p>
           {evenements.map((item) => (
             <Link key={item.href} to={item.href} onClick={() => setOuvert(false)} aria-current={pathname === item.href ? "page" : undefined} tabIndex={ouvert ? 0 : -1}>{item.nom}</Link>
           ))}
+          <span className="s-panneau-sep" aria-hidden="true" />
+          {navigation.slice(1).map((item) => (
+            <Link key={item.href} to={item.href} onClick={() => setOuvert(false)} aria-current={pathname === item.href ? "page" : undefined} tabIndex={ouvert ? 0 : -1}>{item.name}</Link>
+          ))}
+          <Link to="/prestataires" onClick={() => setOuvert(false)} aria-current={pathname === "/prestataires" ? "page" : undefined} tabIndex={ouvert ? 0 : -1} data-testid="bouton-prestataires">{x("Devenir prestataire")}</Link>
         </nav>
         <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-plein">{x("Demander un devis")} <span className="fl" aria-hidden="true">→</span></Link>
         <div className="s-panneau-pied">
