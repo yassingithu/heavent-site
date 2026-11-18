@@ -761,9 +761,9 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
   .hot-scene { height: 128px; }
   .hot-menu { right: 0; left: auto; bottom: calc(100% + 12px); width: min(320px, calc(100vw - 28px)); }
   .hot-bulle { right: 100px; width: max-content; max-width: min(190px, calc(100vw - 130px)); top: 18px; }
-  .hot-panneau { right: 0; left: 0; bottom: 0; width: auto; max-width: none; z-index: 70; transform-origin: 50% 100%; }
-  .hot-panneau-int { max-height: 80dvh; padding-bottom: env(safe-area-inset-bottom, 0px); background-color: #141414; }
-  .hot-notice { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .hot-panneau { right: 12px; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: auto; max-width: none; z-index: 70; transform-origin: 50% 100%; }
+  .hot-panneau-int { max-height: 78dvh; padding-bottom: 0; background-color: #141414; }
+  .hot-notice { padding-bottom: 12px; }
   @keyframes hot-ouvre { from { opacity: 0; transform: translateY(32px); } to { opacity: 1; transform: none; } }
   .hot-zone { transition: opacity .2s ease, translate .25s var(--s-courbe, ease); translate: 0 calc(var(--candidats-h, 0px) * -1); }
 }

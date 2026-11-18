@@ -254,7 +254,10 @@ export default function AssistantSite() {
 
   const afficher = (r: Reponse) => {
     setReponse(r);
-    window.setTimeout(() => (corps.current?.querySelector<HTMLElement>(".hot-lien") ?? titre.current)?.focus(), 60);
+    window.setTimeout(() => {
+      (corps.current?.querySelector<HTMLElement>(".hot-lien") ?? titre.current)?.focus({ preventScroll: true });
+      if (corps.current) corps.current.scrollTop = 0;
+    }, 60);
   };
 
   // Boutons de profil : réponse immédiate, sans réseau
@@ -355,8 +358,8 @@ export default function AssistantSite() {
             <header className="hot-tete">
               <span className="hot-tete-fig" aria-hidden><img src="/assistant/hotesse-visage.webp" alt="" width="56" height="56" /></span>
               <div className="hot-tete-txt">
-                <p className="hot-surtitre">{x("Assistante virtuelle Heavent")}{badge && <span className="hot-badge">{x("Invité·e Heavent")}</span>}</p>
-                <h2 id="hot-titre" ref={titre} tabIndex={-1}>Imane</h2>
+                <p className="hot-surtitre">{x("Assistante virtuelle Heavent")}</p>
+                <h2 id="hot-titre" ref={titre} tabIndex={-1}>{x("Imane")}</h2>
               </div>
               <button type="button" className="hot-fermer" onClick={fermer} aria-label={x("Fermer")} data-testid="assistant-fermer">
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M5 5l14 14M19 5L5 19" /></svg>

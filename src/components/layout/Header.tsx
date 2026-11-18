@@ -68,45 +68,6 @@ function MenuDeroulant({ titre, liens, actif, discret }: { titre: string; liens:
   );
 }
 
-/** Bouton flottant de langue (FR · EN · ع) : un rond avec la langue actuelle, qui s'ouvre en trois choix. Au-dessus du bouton WhatsApp. */
-export function LangueFlottante() {
-  const { i18n } = useTranslation();
-  const x = useTexte();
-  const [ouvert, setOuvert] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const bouton = useRef<HTMLButtonElement>(null);
-  const actuelle = (i18n.language || "fr").slice(0, 2);
-  const courante = LANGUES_SITE.find((l) => l.code === actuelle) ?? LANGUES_SITE[0];
-  useEffect(() => {
-    if (!ouvert) return;
-    const dehors = (e: Event) => { if (!ref.current?.contains(e.target as Node)) setOuvert(false); };
-    const echap = (e: KeyboardEvent) => { if (e.key === "Escape") setOuvert(false); };
-    document.addEventListener("pointerdown", dehors); document.addEventListener("keydown", echap);
-    return () => { document.removeEventListener("pointerdown", dehors); document.removeEventListener("keydown", echap); };
-  }, [ouvert]);
-  const changer = (code: string) => {
-    i18n.changeLanguage(code);
-    document.documentElement.dir = code === "ar" ? "rtl" : "ltr";
-    document.documentElement.lang = code;
-    setOuvert(false);
-    bouton.current?.focus({ preventScroll: true });
-  };
-  return (
-    <div ref={ref} className={`s-langue-flot${ouvert ? " ouvert" : ""}`} data-testid="langue-flottante">
-      <button type="button" ref={bouton} className="s-langue-flot-btn" aria-expanded={ouvert} aria-label={`${x("Changer de langue")} (${courante.nom})`} onClick={() => setOuvert((o) => !o)}>
-        <span lang={courante.code}>{courante.abr}</span>
-      </button>
-      {ouvert && (
-        <div className="s-langue-flot-liste" role="group" aria-label={"Langue / Language / اللغة"}>
-          {LANGUES_SITE.filter((l) => l.code !== actuelle).map((l) => (
-            <button key={l.code} type="button" lang={l.code} aria-label={l.nom} onClick={() => changer(l.code)}>{l.abr}</button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 const Header = () => {
   const [ouvert, setOuvert] = useState(false);
   const { pathname } = useLocation();
