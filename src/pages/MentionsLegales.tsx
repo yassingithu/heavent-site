@@ -32,6 +32,7 @@ const MentionsLegales = () => {
       </Bloc>
       <Bloc titre="Propriété intellectuelle">
         <p>{x("Les textes, logos, photos et éléments graphiques de ce site appartiennent à Heavent Agency SARL AU ou sont utilisés avec autorisation. Toute reproduction sans accord écrit préalable est interdite.")}</p>
+        <p>{x("La marque Heavent, le site, le jeu Heavent City, leurs visuels, leurs textes et leur code sont protégés. Toute copie, reproduction, imitation ou utilisation non autorisée peut donner lieu à des poursuites civiles et pénales devant les tribunaux compétents.")}</p>
       </Bloc>
       <Bloc titre="Données personnelles">
         <p>{x("Les informations transmises via les formulaires (demandes de devis, inscription du personnel) sont traitées conformément à la loi marocaine n° 09-08 relative à la protection des personnes physiques à l'égard du traitement des données à caractère personnel. Vous disposez d'un droit d'accès, de rectification et d'opposition en écrivant à i.chaigari@heaventagency.com.")}</p>

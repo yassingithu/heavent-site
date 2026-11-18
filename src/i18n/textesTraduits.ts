@@ -558,6 +558,7 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "Toi": { en: "You", ar: "أنت" },
   "Ton accès à l'espace staff": { en: "Your access to the staff area", ar: "دخولك إلى فضاء الطاقم" },
   "Ton style et ton expérience": { en: "Your style and your experience", ar: "أسلوبك وخبرتك" },
+  "La marque Heavent, le site, le jeu Heavent City, leurs visuels, leurs textes et leur code sont protégés. Toute copie, reproduction, imitation ou utilisation non autorisée peut donner lieu à des poursuites civiles et pénales devant les tribunaux compétents.": { en: "The Heavent brand, the website, the Heavent City game, their visuals, texts and code are protected. Any unauthorised copying, reproduction, imitation or use may lead to civil and criminal proceedings before the competent courts.", ar: "العلامة Heavent والموقع ولعبة Heavent City وصورها ونصوصها وشيفرتها البرمجية محمية. أي نسخ أو إعادة إنتاج أو تقليد أو استخدام غير مرخّص قد يعرّض صاحبه لدعاوى مدنية وجنائية أمام المحاكم المختصة." },
   "Tous droits réservés.": { en: "All rights reserved.", ar: "جميع الحقوق محفوظة." },
   "Traiter vos candidatures et demandes de devis": { en: "Processing your applications and quote requests", ar: "معالجة ترشيحاتكم وطلبات عروض الأسعار" },
   "Traiteur": { en: "Catering", ar: "ممون الحفلات" },

@@ -136,6 +136,7 @@ export default function Final({ choix, logos, onModifier, onDemande, onRecommenc
             <a href="/" className="mt-3 block text-center text-[13px] text-[#E4D49A] underline underline-offset-4" data-testid="retour-site-final">{tr("Retour au site Heavent")}</a>
           </div>
           <p className="mt-4 text-[12px] leading-snug text-[#8f8777]">{tr("Heavent City est une inspiration : les lieux sont des ambiances, pas des réservations. Aucun prix n'est affiché — l'équipe établit ton devis et tu reçois ton prix final dès sa validation.")}</p>
+          <p className="mt-2 text-[11.5px] leading-snug text-[#8f8777]">© {new Date().getFullYear()} Heavent People Agency · {tr("Tous droits réservés. Toute copie ou utilisation non autorisée de Heavent City, de ses visuels ou de son code peut donner lieu à des poursuites.")}</p>
         </aside>
       )}
     </div>
