@@ -708,17 +708,22 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
 .hot-btn { display: block; width: 132px; padding: 0; margin: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .hot-btn:focus-visible { outline: 2px solid #E4D49A; outline-offset: 3px; }
 /* Debout, l'hôtesse grandit (ancrée en bas à droite) : on voit bien qu'elle se lève. Le menu et la bulle s'écartent d'autant. */
-.hot-btn { transform-origin: 100% 100%; transition: transform .5s var(--s-courbe, cubic-bezier(.2,.7,.2,1)); }
+.hot-btn { transform-origin: 100% 100%; transition: transform .45s var(--s-courbe, cubic-bezier(.2,.7,.2,1)); }
+.hot-zone[data-pose="debout"] .hot-btn, .hot-zone[data-pose="salue"] .hot-btn { transition-duration: 1.2s; transition-timing-function: cubic-bezier(.35,0,.2,1); }
 .hot-zone[data-pose="debout"] .hot-btn, .hot-zone[data-pose="salue"] .hot-btn { transform: scale(1.42); }
-.hot-zone[data-pose="debout"] .hot-menu, .hot-zone[data-pose="salue"] .hot-menu, .hot-zone[data-pose="debout"] .hot-bulle, .hot-zone[data-pose="salue"] .hot-bulle { right: 204px; }
+.hot-zone[data-pose="debout"] .hot-menu, .hot-zone[data-pose="salue"] .hot-menu, .hot-zone[data-pose="debout"] .hot-bulle, .hot-zone[data-pose="salue"] .hot-bulle { right: 190px; }
+.hot-zone[data-pose="debout"] .hot-bulle, .hot-zone[data-pose="salue"] .hot-bulle { top: -44px; }
+/* L'étiquette garde sa taille normale quand le bouton grandit */
+.hot-zone[data-pose="debout"] .hot-etiquette, .hot-zone[data-pose="salue"] .hot-etiquette { scale: .704; transform-origin: 50% 0; }
+.hot-voile { position: absolute; inset: -100vmax; z-index: -1; border: 0; padding: 0; background: transparent; touch-action: pan-y; cursor: default; }
 .hot-scene { position: relative; display: block; width: 132px; height: 183px; }
 .hot-scene::after { content: ""; position: absolute; left: 12%; right: 12%; bottom: -3px; height: 8px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.4), transparent); z-index: -1; }
 .hot-chaise { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 4px 6px rgba(0,0,0,.25)); }
-.hot-toile { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.3)); }
+.hot-toile { position: absolute; inset: 0; width: 100%; height: 100%; -webkit-mask-image: linear-gradient(#000 84%, transparent); mask-image: linear-gradient(#000 84%, transparent); filter: drop-shadow(0 6px 10px rgba(0,0,0,.3)); }
 .hot-video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .hot-etiquette { position: absolute; left: 50%; bottom: -13px; translate: -50% 0; padding: 3px 14px; background: #141414; color: #E4D49A; font: 500 11px/1.4 var(--s-texte); letter-spacing: .24em; text-transform: uppercase; box-shadow: inset 0 0 0 1px rgba(228,212,154,.55); }
 .hot-bulle { position: absolute; right: 142px; top: 30px; width: 210px; margin: 0; padding: 12px 16px; background: #141414; color: #F3ECDD; border: 0; text-align: start; cursor: pointer; font: 500 14.5px/1.4 var(--s-texte); clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px); box-shadow: inset 0 0 0 1px rgba(228,212,154,.55); animation: hot-bulle .4s var(--s-courbe, ease) both; }
-.hot-menu { position: absolute; right: 142px; bottom: 0; width: 250px; display: grid; gap: 8px; padding: 14px; background: #141414; color: #F3ECDD; clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px); box-shadow: inset 0 0 0 1px rgba(228,212,154,.55); animation: hot-bulle .35s var(--s-courbe, ease) both; z-index: 2; }
+.hot-menu { position: absolute; right: 142px; bottom: 0; width: 280px; display: grid; gap: 8px; padding: 14px; background: #141414; color: #F3ECDD; clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px); box-shadow: inset 0 0 0 1px rgba(228,212,154,.55); animation: hot-bulle .35s var(--s-courbe, ease) both; z-index: 2; }
 .hot-menu-t { margin: 0 0 2px; font: 500 14px/1.4 var(--s-texte); color: #E4D49A; }
 .hot-menu-b { display: grid; gap: 2px; text-align: start; padding: 11px 14px; min-height: 48px; background: transparent; color: #F3ECDD; border: 1px solid rgba(228,212,154,.5); cursor: pointer; font: inherit; }
 .hot-menu-b strong { font: 600 14.5px/1.3 var(--s-texte); }
@@ -760,13 +765,13 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
 [dir="rtl"].hot-panneau .hot-saisie svg { transform: scaleX(-1); }
 .hot-etiquette:lang(ar) { letter-spacing: 0; }
 @media (max-width: 639px) {
-  .hot-zone { right: 14px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: 92px; }
+  .hot-zone { right: 14px; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); width: 92px; }
   .hot-btn, .hot-scene { width: 92px; }
   .hot-scene { height: 128px; }
   .hot-menu { right: 0; left: auto; bottom: calc(100% + 12px); width: min(320px, calc(100vw - 28px)); }
   .hot-zone[data-pose="debout"] .hot-menu, .hot-zone[data-pose="salue"] .hot-menu { right: 0; bottom: calc(100% + 70px); }
-  .hot-zone[data-pose="debout"] .hot-bulle, .hot-zone[data-pose="salue"] .hot-bulle { right: 138px; }
-  .hot-bulle { right: 100px; width: max-content; max-width: min(190px, calc(100vw - 130px)); top: 18px; }
+  .hot-zone[data-pose="debout"] .hot-bulle, .hot-zone[data-pose="salue"] .hot-bulle { right: 138px; top: -40px; }
+  .hot-bulle { right: 100px; width: max-content; max-width: min(190px, calc(100vw - 170px)); top: 18px; }
   .hot-panneau { right: 12px; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: auto; max-width: none; z-index: 70; transform-origin: 50% 100%; }
   .hot-panneau-int { max-height: 78dvh; padding-bottom: 0; background-color: #141414; }
   .hot-notice { padding-bottom: 12px; }

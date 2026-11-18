@@ -141,6 +141,16 @@ export default function AssistantSite() {
   // Le canvas n'existe qu'après le choix d'audience : on y redépose la pose assise dès qu'il apparaît
   useEffect(() => { if (choix || ouvert) poser("assise"); }, [choix, ouvert, poser]);
 
+  const jeton = useRef(0);
+  // Lance la vidéo : l'hôtesse ne passe « debout » (et ne grandit) que quand l'image bouge vraiment. Un jeton ignore les réponses tardives.
+  const jouer = (ok: () => void, ko: () => void) => {
+    const v = video.current;
+    if (!v) { ko(); return; }
+    const id = ++jeton.current;
+    v.currentTime = 0;
+    v.play().then(() => { if (id !== jeton.current) return; setPose("debout"); lire_(); ok(); })
+      .catch((e: unknown) => { if (id !== jeton.current || (e as { name?: string })?.name === "AbortError") return; ko(); });
+  };
   const nettoyer = () => { minuteurs.current.forEach((m) => window.clearTimeout(m)); minuteurs.current = []; };
   const apres = (ms: number, f: () => void) => { minuteurs.current.push(window.setTimeout(f, ms)); };
 
@@ -157,17 +167,15 @@ export default function AssistantSite() {
     const sansVideo = () => { setPose("salue"); poser("presente"); setBulle(true); };
     if (reduit || !v) sansVideo();
     else {
-      setPose("debout");
-      v.currentTime = 0;
-      v.play().then(lire_).catch(sansVideo);
-      apres(4300, () => { setPose("salue"); setBulle(true); });
+      jouer(() => apres(4300, () => { setPose("salue"); setBulle(true); }), sansVideo);
     }
     const seRassoit = () => {
       if (survol.current) { apres(3000, seRassoit); return; }
       setBulle(false);
-      apres(250, () => { setPose("assise"); video.current?.pause(); cancelAnimationFrame(boucle.current); poser("assise"); });
+      apres(250, () => { jeton.current++; setPose("assise"); video.current?.pause(); cancelAnimationFrame(boucle.current); poser("assise"); });
     };
     apres(reduit ? 7000 : 10500, seRassoit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduit, poser, lire_]);
 
   // Préchargement de la vidéo : sans lui, le clic attend son téléchargement et l'hôtesse reste figée un instant.
@@ -176,25 +184,30 @@ export default function AssistantSite() {
     if (v && v.readyState === 0 && v.paused) { v.preload = "auto"; v.load(); }
   }, []);
   useEffect(() => {
-    if (prive || formulaire || !choix) return;
-    const t = window.setTimeout(precharger, 1200);
+    if (prive || formulaire || !choix || reduit) return;
+    const c = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    if (c?.saveData || (c?.effectiveType && /^(slow-2g|2g|3g)$/.test(c.effectiveType))) return;
+    const ric = (window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    if (ric) { const id = ric(precharger, { timeout: 4000 }); return () => (window as Window & { cancelIdleCallback?: (i: number) => void }).cancelIdleCallback?.(id); }
+    const t = window.setTimeout(precharger, 2500);
     return () => window.clearTimeout(t);
-  }, [prive, formulaire, choix, precharger]);
+  }, [prive, formulaire, choix, reduit, precharger]);
 
   useEffect(() => {
     if (prive || formulaire || !choix || ouvert) return;
     if (lire(CLE_VUE) === "1") return;
-    const charge3 = window.setTimeout(precharger, 3000);
     const minuteur = window.setTimeout(inviter, 8000);
     const defiler = () => {
       const haut = document.documentElement.scrollHeight - window.innerHeight;
       if (haut > 0 && window.scrollY / haut > 0.35) inviter();
     };
     window.addEventListener("scroll", defiler, { passive: true });
-    return () => { window.clearTimeout(charge3); window.clearTimeout(minuteur); window.removeEventListener("scroll", defiler); };
+    return () => { window.clearTimeout(minuteur); window.removeEventListener("scroll", defiler); };
   }, [prive, formulaire, choix, ouvert, inviter]);
 
   useEffect(() => () => nettoyer(), []);
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (menu) menuRef.current?.querySelector<HTMLElement>("button")?.focus(); }, [menu]);
   useEffect(() => {
     if (!menu) return;
     const t = (e: KeyboardEvent) => { if (e.key === "Escape") { assoir(); bouton.current?.focus(); } };
@@ -211,18 +224,19 @@ export default function AssistantSite() {
     setBulle(false); setMenu(true);
     const v = video.current;
     if (reduit || !v) { setPose("salue"); poser("presente"); return; }
-    setPose("debout"); v.currentTime = 0;
-    v.play().then(lire_).catch(() => { setPose("salue"); poser("presente"); });
-    apres(4300, () => setPose("salue"));
+    jouer(() => apres(4300, () => setPose("salue")), () => { setPose("salue"); poser("presente"); });
+    // Connexion lente : après 1,5 s sans image qui bouge, on l'affiche debout (pose fixe) pour ne pas laisser un clic sans réponse
+    apres(1500, () => { if (v.paused || v.readyState < 2) { jeton.current++; v.pause(); setPose("salue"); poser("presente"); } });
   };
   const assoir = () => {
-    nettoyer(); setMenu(false); setPose("assise");
+    nettoyer(); jeton.current++; setMenu(false); setPose("assise");
     video.current?.pause(); cancelAnimationFrame(boucle.current); poser("assise");
+    try { if (video.current) video.current.currentTime = 0; } catch { /* sans effet */ }
   };
   const whatsapp = () => {
     const msg = x("Bonjour Heavent People Agency, j'aimerais avoir des informations.");
     window.open(`https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
-    assoir();
+    assoir(); bouton.current?.focus();
   };
   const ouvrir = () => {
     setMenu(false);
@@ -335,24 +349,25 @@ export default function AssistantSite() {
     <>
       {/* La zone reste montée pendant l'ouverture du panneau : la vidéo garde sa position et se rejoue proprement */}
       <div className={"hot-zone" + (ouvert ? " cachee" : "")} data-pose={pose}>
+        {menu && !ouvert && <button type="button" className="hot-voile" aria-hidden tabIndex={-1} onClick={assoir} />}
         {bulle && !ouvert && (
           <button type="button" className="hot-bulle" dir={dir} onClick={ouvrir} tabIndex={-1} aria-hidden>{x("Besoin d'un coup de main ?")}</button>
         )}
         <span className="sr-only" role="status">{bulle && !ouvert ? x("Besoin d'un coup de main ?") : ""}</span>
         {menu && !ouvert && (
-          <div className="hot-menu" role="menu" aria-label={x("Comment souhaitez-vous poser vos questions ?")}>
+          <div className="hot-menu" ref={menuRef} role="group" aria-label={x("Comment souhaitez-vous poser vos questions ?")}>
             <p className="hot-menu-t">{x("Comment souhaitez-vous poser vos questions ?")}</p>
-            <button type="button" role="menuitem" className="hot-menu-b hot-menu-imane" data-testid="assistant-menu-imane" onClick={ouvrir}>
+            <button type="button" className="hot-menu-b hot-menu-imane" data-testid="assistant-menu-imane" onClick={ouvrir}>
               <strong>{x("Poser mes questions à Imane")}</strong><span>{x("Assistante virtuelle, réponse immédiate")}</span>
             </button>
-            <button type="button" role="menuitem" className="hot-menu-b" data-testid="assistant-menu-whatsapp" onClick={whatsapp}>
+            <button type="button" className="hot-menu-b" data-testid="assistant-menu-whatsapp" onClick={whatsapp}>
               <strong>{x("Écrire sur WhatsApp")}</strong><span>{x("L'équipe Heavent vous répond")}</span>
             </button>
           </div>
         )}
-        <button ref={bouton} type="button" className="hot-btn" data-testid="bouton-assistant" aria-label={x("Parler à Imane, l'assistante virtuelle Heavent")} aria-haspopup="menu" aria-expanded={menu || ouvert}
+        <button ref={bouton} type="button" className="hot-btn" data-testid="bouton-assistant" aria-label={x("Parler à Imane, l'assistante virtuelle Heavent")} aria-expanded={menu || ouvert}
           tabIndex={ouvert ? -1 : 0} onClick={lever}
-          onMouseEnter={() => { survol.current = true; precharger(); }} onTouchStart={precharger} onMouseLeave={() => { survol.current = false; }}
+          onMouseEnter={() => { if (window.matchMedia?.("(hover:none)").matches) return; survol.current = true; precharger(); }} onTouchStart={precharger} onMouseLeave={() => { survol.current = false; }}
           onFocus={() => { survol.current = true; precharger(); }} onBlur={() => { survol.current = false; }}>
           <span className="hot-scene" aria-hidden>
             <canvas ref={toile} className="hot-toile" width="390" height="540" />
