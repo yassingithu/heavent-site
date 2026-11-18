@@ -377,7 +377,7 @@ export default function AssistantSite() {
               <source src={`/assistant/hotesse-paquet.webm?v=${VER}`} type="video/webm" />
             </video>
           </span>
-          <span className="hot-etiquette" aria-hidden>{x("Une question ?")}</span>
+          <span className="hot-etiquette" aria-hidden><span>{x("Une question ?")}</span></span>
         </button>
       </div>
       {ouvert && (
