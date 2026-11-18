@@ -113,13 +113,13 @@ export default function AssistantSite() {
     const v = video.current, c = toile.current, g = c?.getContext("2d");
     if (!v || !c || !g || v.readyState < 2) return;
     const t = (travail.current ??= document.createElement("canvas"));
-    t.width = 520; t.height = 360;
+    t.width = 780; t.height = 540;
     const w = t.getContext("2d", { willReadFrequently: true });
     if (!w) return;
-    w.drawImage(v, 0, 0, 520, 360);
-    const src = w.getImageData(0, 0, 520, 360).data, out = g.createImageData(260, 360), d = out.data;
-    for (let y = 0; y < 360; y++) for (let x = 0; x < 260; x++) {
-      const i = (y * 520 + x) * 4, k = i + 260 * 4, j = (y * 260 + x) * 4;
+    w.drawImage(v, 0, 0, 780, 540);
+    const src = w.getImageData(0, 0, 780, 540).data, out = g.createImageData(390, 540), d = out.data;
+    for (let y = 0; y < 540; y++) for (let x = 0; x < 390; x++) {
+      const i = (y * 780 + x) * 4, k = i + 390 * 4, j = (y * 390 + x) * 4;
       d[j] = src[i]; d[j + 1] = src[i + 1]; d[j + 2] = src[i + 2]; d[j + 3] = src[k];
     }
     g.putImageData(out, 0, 0);
@@ -340,8 +340,8 @@ export default function AssistantSite() {
           onMouseEnter={() => { survol.current = true; }} onMouseLeave={() => { survol.current = false; }}
           onFocus={() => { survol.current = true; }} onBlur={() => { survol.current = false; }}>
           <span className="hot-scene" aria-hidden>
-            <canvas ref={toile} className="hot-toile" width="260" height="360" />
-            <video ref={video} className="hot-video" muted playsInline preload="none" disablePictureInPicture tabIndex={-1} width="520" height="360" onEnded={() => { cancelAnimationFrame(boucle.current); composer(); }}>
+            <canvas ref={toile} className="hot-toile" width="390" height="540" />
+            <video ref={video} className="hot-video" muted playsInline preload="none" disablePictureInPicture tabIndex={-1} width="780" height="540" onEnded={() => { cancelAnimationFrame(boucle.current); composer(); }}>
               <source src="/assistant/hotesse-paquet.mp4" type="video/mp4" />
               <source src="/assistant/hotesse-paquet.webm" type="video/webm" />
             </video>
