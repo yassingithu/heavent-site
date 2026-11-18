@@ -18,13 +18,14 @@ function motifFiligrane(): string {
   const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
   const d = new Date(), date = `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
   const [w, h, t1, t2, f1, f2] = mobile ? [300, 200, 104, 150, 13, 11] : [360, 250, 124, 176, 15, 12];
+  const [opNoir, opOr] = mobile ? [".24", ".24"] : [".30", ".26"];
   const marque = (cx: number, cy: number) => {
     const ligne = (dy: number, taille: number, long: number, texte: string, style: string, dx: number, op: string, couleur: string) =>
       `<text x="${dx}" y="${dy}" font-size="${taille}" textLength="${long}" lengthAdjust="spacing" text-anchor="middle" ${style} fill="${couleur}" fill-opacity="${op}">${texte}</text>`;
     const u = `HEAVENT`, v = `heaventagency.com · ${date}`;
     return `<g transform="translate(${cx} ${cy}) rotate(-22)" font-family="Georgia,'Times New Roman',serif">`
-      + ligne(1, f1, t1, u, 'font-weight="600"', 0, ".30", "#141414") + ligne(f1 + 3, f2, t2, v, 'font-style="italic"', 0, ".30", "#141414")
-      + ligne(0, f1, t1, u, 'font-weight="600"', 0, ".26", "#E4D49A") + ligne(f1 + 2, f2, t2, v, 'font-style="italic"', 0, ".26", "#E4D49A") + `</g>`;
+      + ligne(1, f1, t1, u, 'font-weight="600"', 0, opNoir, "#141414") + ligne(f1 + 3, f2, t2, v, 'font-style="italic"', 0, opNoir, "#141414")
+      + ligne(0, f1, t1, u, 'font-weight="600"', 0, opOr, "#E4D49A") + ligne(f1 + 2, f2, t2, v, 'font-style="italic"', 0, opOr, "#E4D49A") + `</g>`;
   };
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">${marque(w / 4, h / 4)}${marque((3 * w) / 4, (3 * h) / 4)}</svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
