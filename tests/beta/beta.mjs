@@ -1270,7 +1270,7 @@ await scenario("Guides gratuits et newsletter : guide débloqué contre l'e-mail
   await d.ctx.close();
 });
 
-await scenario("Bouton WhatsApp : plus de bouton flottant, WhatsApp est proposé par l'hôtesse Imane", async (notes) => {
+await scenario("Bouton WhatsApp : plus de bouton flottant, WhatsApp est proposé par l'hôtesse Salma", async (notes) => {
   const base = nouvelleBase();
   const { page, ctx } = await contexte(navigateur, base, ADMIN, { mobile: true });
   await page.goto(BASE + "/devis-mariage"); await page.evaluate(() => sessionStorage.setItem("heavent-splash-vu", "1")); await page.reload(); await page.waitForTimeout(800);

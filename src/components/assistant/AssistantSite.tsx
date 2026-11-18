@@ -218,7 +218,7 @@ export default function AssistantSite() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menu]);
 
-  // Clic sur l'hôtesse : elle se lève et propose deux chemins (Imane ou WhatsApp)
+  // Clic sur l'hôtesse : elle se lève et propose deux chemins (Salma ou WhatsApp)
   const lever = () => {
     if (menu) { assoir(); return; }
     nettoyer(); ecrire(CLE_VUE, "1");
@@ -313,7 +313,7 @@ export default function AssistantSite() {
       else throw new Error("indisponible");
     } catch {
       setErreur(true); // le texte reste dans le champ : un clic sur « Réessayer » suffit
-      afficher({ reponse: x("Imane est indisponible pour le moment. L'équipe Heavent vous répondra sous 24 h."), liens: ["whatsapp", "contact"] });
+      afficher({ reponse: x("Salma est indisponible pour le moment. L'équipe Heavent vous répondra sous 24 h."), liens: ["whatsapp", "contact"] });
     } finally {
       window.clearTimeout(minuteur); setCharge(false);
     }
@@ -359,14 +359,14 @@ export default function AssistantSite() {
           <div className="hot-menu" ref={menuRef} role="group" aria-label={x("Comment souhaitez-vous poser vos questions ?")}>
             <p className="hot-menu-t">{x("Comment souhaitez-vous poser vos questions ?")}</p>
             <button type="button" className="hot-menu-b hot-menu-imane" data-testid="assistant-menu-imane" onClick={ouvrir}>
-              <strong>{x("Poser mes questions à Imane")}</strong><span>{x("Assistante virtuelle, réponse immédiate")}</span>
+              <strong>{x("Poser mes questions à Salma")}</strong><span>{x("Assistante virtuelle, réponse immédiate")}</span>
             </button>
             <button type="button" className="hot-menu-b" data-testid="assistant-menu-whatsapp" onClick={whatsapp}>
               <strong>{x("Écrire sur WhatsApp")}</strong><span>{x("L'équipe Heavent vous répond")}</span>
             </button>
           </div>
         )}
-        <button ref={bouton} type="button" className="hot-btn" data-testid="bouton-assistant" aria-label={x("Parler à Imane, l'assistante virtuelle Heavent")} aria-expanded={menu || ouvert}
+        <button ref={bouton} type="button" className="hot-btn" data-testid="bouton-assistant" aria-label={x("Parler à Salma, l'assistante virtuelle Heavent")} aria-expanded={menu || ouvert}
           tabIndex={ouvert ? -1 : 0} onClick={lever}
           onMouseEnter={() => { if (window.matchMedia?.("(hover:none)").matches) return; survol.current = true; precharger(); }} onTouchStart={precharger} onMouseLeave={() => { survol.current = false; }}
           onFocus={() => { survol.current = true; precharger(); }} onBlur={() => { survol.current = false; }}>
@@ -387,7 +387,7 @@ export default function AssistantSite() {
               <span className="hot-tete-fig" aria-hidden><img src="/assistant/hotesse-visage.webp" alt="" width="56" height="56" /></span>
               <div className="hot-tete-txt">
                 <p className="hot-surtitre">{x("Assistante virtuelle Heavent")}</p>
-                <h2 id="hot-titre" ref={titre} tabIndex={-1}>{x("Imane")}</h2>
+                <h2 id="hot-titre" ref={titre} tabIndex={-1}>{x("Salma")}</h2>
               </div>
               <button type="button" className="hot-fermer" onClick={fermer} aria-label={x("Fermer")} data-testid="assistant-fermer">
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M5 5l14 14M19 5L5 19" /></svg>
@@ -396,7 +396,7 @@ export default function AssistantSite() {
             <div className="hot-corps" ref={corps}>
               {!reponse && !charge && (
                 <>
-                  <p className="hot-mot" id="hot-accueil">{x("Bonjour, je suis Imane, l'assistante virtuelle de Heavent. Qui êtes-vous ? Je vous envoie au bon endroit en un clic.")}</p>
+                  <p className="hot-mot" id="hot-accueil">{x("Bonjour, je suis Salma, l'assistante virtuelle de Heavent. Qui êtes-vous ? Je vous envoie au bon endroit en un clic.")}</p>
                   <div className="hot-choix">
                     {PROFILS.map((p) => (
                       <button key={p.id} type="button" className="hot-chip" data-testid={`assistant-profil-${p.id}`} onClick={() => choisir(p.id as Exclude<Profil, "autre">)}>{x(p.label)}</button>
