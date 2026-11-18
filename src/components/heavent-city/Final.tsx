@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, Pencil, RotateCcw, Share2, Sparkles, Send, Loader2 } from "lucide-react";
 import { resume, rendu, type Choix } from "./etat";
 import type { EtapeFinal } from "./Scene";
@@ -7,6 +7,21 @@ import { creerCarte, partagerOuTelecharger } from "./carte";
 import { Pastille, btnContour, btnOr } from "./ui";
 import { useReducedMotion } from "framer-motion";
 import { tr } from "./langue";
+
+/**
+ * Filigrane de l'écran final : « HEAVENT · heaventagency.com · date » répété en diagonale, par-dessus la scène et le bilan.
+ * Un site web ne peut pas empêcher une capture d'écran ; le filigrane la rend identifiable (marque et jour d'origine).
+ * Décoratif : ne reçoit aucun clic, n'est pas lu par les lecteurs d'écran.
+ */
+function Filigrane() {
+  const fond = useMemo(() => {
+    const date = new Date().toLocaleDateString("fr-FR");
+    const texte = `HEAVENT · heaventagency.com · ${date}`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="440" height="230"><g transform="rotate(-24 220 115)" font-family="Georgia,serif" font-size="17" letter-spacing="2" text-anchor="middle"><text x="221" y="117" fill="#000" fill-opacity=".16">${texte}</text><text x="220" y="116" fill="#E4D49A" fill-opacity=".30">${texte}</text></g></svg>`;
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  }, []);
+  return <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-30 select-none" style={{ backgroundImage: fond, backgroundSize: "440px 230px" }} data-testid="filigrane" />;
+}
 
 /** Le grand final : les lumières s'allument, les invités arrivent, les zones s'animent, puis le bilan */
 export default function Final({ choix, logos, onModifier, onDemande, onRecommencer }: {
@@ -57,7 +72,7 @@ export default function Final({ choix, logos, onModifier, onDemande, onRecommenc
   const lignes = [...res.decors, ...res.experiences];
   return (
     <div className="absolute inset-0 overflow-hidden bg-black" data-testid="final">
-      <div className={`absolute inset-0 overflow-hidden ${bilan ? "lg:end-[420px]" : ""}`}>
+      <div className={`absolute inset-0 select-none overflow-hidden [-webkit-touch-callout:none] ${bilan ? "lg:end-[420px]" : ""}`} onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()}>
         <SceneChoix r={r} nuit={1} final={etape} logos={logos} animer={!reduit} reduit={reduit} />
       </div>
       {/* bandes de cinéma */}
@@ -108,6 +123,7 @@ export default function Final({ choix, logos, onModifier, onDemande, onRecommenc
           <p className="mt-4 text-[12px] leading-snug text-[#8f8777]">{tr("Heavent City est une inspiration : les lieux sont des ambiances, pas des réservations. Aucun prix n'est affiché — l'équipe établit ton devis et tu reçois ton prix final dès sa validation.")}</p>
         </aside>
       )}
+      <Filigrane />
     </div>
   );
 }
