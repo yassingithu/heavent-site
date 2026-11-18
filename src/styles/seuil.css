@@ -466,7 +466,7 @@ html.s-anime .s-deroule.vu .s-etape::after { transition: transform .5s var(--s-c
   .s-nav-acces[open] summary::after { transform: translateY(1px) rotate(-135deg); }
   .s-nav-acces summary:hover, .s-nav-acces[open] summary { color: var(--s-laiton-clair); }
   .s-nav-acces summary:focus-visible { outline: 1px solid var(--s-laiton); outline-offset: 4px; }
-  .s-nav-acces-liste { position: absolute; inset-inline-end: 0; top: calc(100% + 10px); min-width: 230px; display: grid; padding: 6px 0; background: #1B1812; border: 1px solid rgba(228,212,154,.45); border-top: 2px solid var(--s-laiton); box-shadow: 0 24px 48px -12px rgba(0,0,0,.7); z-index: 60; }
+  .s-nav-acces-liste { position: absolute; inset-inline-end: 0; top: calc(100% + 10px); min-width: 230px; display: grid; padding: 6px 0; background: url(/seuil/grain-nuit.png) 0 0/128px, var(--s-nuit); border: 1px solid rgba(228,212,154,.45); border-top: 2px solid var(--s-laiton); box-shadow: 0 24px 48px -12px rgba(0,0,0,.7); z-index: 60; }
   .s-nav .s-nav-acces-liste a:not(.s-btn) { display: flex; align-items: center; min-height: 44px; padding: 8px 22px; letter-spacing: .04em; font-size: 13.5px; color: #E6DDCB; border-inline-start: 2px solid transparent; }
   .s-nav .s-nav-acces-liste a + a { border-top: 1px solid rgba(228,212,154,.12); }
   .s-nav .s-nav-acces-liste a[aria-current="page"] { border-inline-start-color: var(--s-laiton); color: var(--s-laiton-clair); background: rgba(228,212,154,.06); }
