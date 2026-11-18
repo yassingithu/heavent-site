@@ -181,8 +181,8 @@ export default function AssistantSite() {
   // Préchargement de la vidéo : sans lui, le clic attend son téléchargement et l'hôtesse reste figée un instant.
   const precharger = useCallback(() => {
     const v = video.current;
-    if (v && v.readyState === 0 && v.paused) { v.preload = "auto"; v.load(); }
-  }, []);
+    if (v && !reduit && v.readyState === 0 && v.paused) { v.preload = "auto"; v.load(); }
+  }, [reduit]);
   useEffect(() => {
     if (prive || formulaire || !choix || reduit) return;
     const c = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
@@ -212,8 +212,9 @@ export default function AssistantSite() {
     if (!menu) return;
     const t = (e: KeyboardEvent) => { if (e.key === "Escape") { assoir(); bouton.current?.focus(); } };
     const hors = (e: PointerEvent) => { if (!(e.target as HTMLElement).closest?.(".hot-zone")) assoir(); };
-    document.addEventListener("keydown", t); document.addEventListener("pointerdown", hors);
-    return () => { document.removeEventListener("keydown", t); document.removeEventListener("pointerdown", hors); };
+    const sortie = (e: FocusEvent) => { const n = e.relatedTarget as HTMLElement | null; if (n && !n.closest?.(".hot-zone")) assoir(); };
+    document.addEventListener("keydown", t); document.addEventListener("pointerdown", hors); document.addEventListener("focusout", sortie);
+    return () => { document.removeEventListener("keydown", t); document.removeEventListener("pointerdown", hors); document.removeEventListener("focusout", sortie); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menu]);
 
