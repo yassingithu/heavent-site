@@ -80,6 +80,7 @@ export default function AssistantSite() {
   const [pose, setPose] = useState<Pose>("assise");
   const [bulle, setBulle] = useState(false);
   const [ouvert, setOuvert] = useState(false);
+  const [menu, setMenu] = useState(false);
   const [reponse, setReponse] = useState<Reponse | null>(null);
   const [charge, setCharge] = useState(false);
   const [erreur, setErreur] = useState(false);
@@ -171,7 +172,7 @@ export default function AssistantSite() {
   useEffect(() => {
     if (prive || formulaire || !choix || ouvert) return;
     if (lire(CLE_VUE) === "1") return;
-    const charge3 = window.setTimeout(() => video.current?.load(), 3000);
+    const charge3 = window.setTimeout(() => { const v = video.current; if (v && v.readyState === 0 && v.paused) v.load(); }, 3000);
     const minuteur = window.setTimeout(inviter, 8000);
     const defiler = () => {
       const haut = document.documentElement.scrollHeight - window.innerHeight;
@@ -182,8 +183,37 @@ export default function AssistantSite() {
   }, [prive, formulaire, choix, ouvert, inviter]);
 
   useEffect(() => () => nettoyer(), []);
+  useEffect(() => {
+    if (!menu) return;
+    const t = (e: KeyboardEvent) => { if (e.key === "Escape") { assoir(); bouton.current?.focus(); } };
+    const hors = (e: PointerEvent) => { if (!(e.target as HTMLElement).closest?.(".hot-zone")) assoir(); };
+    document.addEventListener("keydown", t); document.addEventListener("pointerdown", hors);
+    return () => { document.removeEventListener("keydown", t); document.removeEventListener("pointerdown", hors); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menu]);
 
+  // Clic sur l'hôtesse : elle se lève et propose deux chemins (Imane ou WhatsApp)
+  const lever = () => {
+    if (menu) { assoir(); return; }
+    nettoyer(); ecrire(CLE_VUE, "1");
+    setBulle(false); setMenu(true);
+    const v = video.current;
+    if (reduit || !v) { setPose("salue"); poser("presente"); return; }
+    setPose("debout"); v.currentTime = 0;
+    v.play().then(lire_).catch(() => { setPose("salue"); poser("presente"); });
+    apres(4300, () => setPose("salue"));
+  };
+  const assoir = () => {
+    nettoyer(); setMenu(false); setPose("assise");
+    video.current?.pause(); cancelAnimationFrame(boucle.current); poser("assise");
+  };
+  const whatsapp = () => {
+    const msg = x("Bonjour Heavent People Agency, j'aimerais avoir des informations.");
+    window.open(`https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
+    assoir();
+  };
   const ouvrir = () => {
+    setMenu(false);
     nettoyer(); ecrire(CLE_VUE, "1");
     video.current?.pause(); cancelAnimationFrame(boucle.current); poser("presente");
     setBulle(false); setPose("salue"); setOuvert(true);
@@ -220,7 +250,7 @@ export default function AssistantSite() {
   }, [ouvert]);
 
   // Changer de page referme le panneau
-  useEffect(() => { setOuvert(false); setPose("assise"); }, [pathname]);
+  useEffect(() => { setOuvert(false); setMenu(false); setPose("assise"); }, [pathname]);
 
   const afficher = (r: Reponse) => {
     setReponse(r);
@@ -294,8 +324,19 @@ export default function AssistantSite() {
           <button type="button" className="hot-bulle" dir={dir} onClick={ouvrir} tabIndex={-1} aria-hidden>{x("Besoin d'un coup de main ?")}</button>
         )}
         <span className="sr-only" role="status">{bulle && !ouvert ? x("Besoin d'un coup de main ?") : ""}</span>
-        <button ref={bouton} type="button" className="hot-btn" data-testid="bouton-assistant" aria-label={x("Parler à Imane, l'assistante virtuelle Heavent")} aria-haspopup="dialog" aria-expanded={ouvert}
-          tabIndex={ouvert ? -1 : 0} onClick={ouvrir}
+        {menu && !ouvert && (
+          <div className="hot-menu" role="menu" aria-label={x("Comment souhaitez-vous poser vos questions ?")}>
+            <p className="hot-menu-t">{x("Comment souhaitez-vous poser vos questions ?")}</p>
+            <button type="button" role="menuitem" className="hot-menu-b hot-menu-imane" data-testid="assistant-menu-imane" onClick={ouvrir}>
+              <strong>{x("Poser mes questions à Imane")}</strong><span>{x("Assistante virtuelle, réponse immédiate")}</span>
+            </button>
+            <button type="button" role="menuitem" className="hot-menu-b" data-testid="assistant-menu-whatsapp" onClick={whatsapp}>
+              <strong>{x("Écrire sur WhatsApp")}</strong><span>{x("L'équipe Heavent vous répond")}</span>
+            </button>
+          </div>
+        )}
+        <button ref={bouton} type="button" className="hot-btn" data-testid="bouton-assistant" aria-label={x("Parler à Imane, l'assistante virtuelle Heavent")} aria-haspopup="menu" aria-expanded={menu || ouvert}
+          tabIndex={ouvert ? -1 : 0} onClick={lever}
           onMouseEnter={() => { survol.current = true; }} onMouseLeave={() => { survol.current = false; }}
           onFocus={() => { survol.current = true; }} onBlur={() => { survol.current = false; }}>
           <span className="hot-scene" aria-hidden>

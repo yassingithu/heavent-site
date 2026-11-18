@@ -1176,4 +1176,9 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "Bonjour, je suis Imane, l'assistante virtuelle de Heavent. Qui êtes-vous ? Je vous envoie au bon endroit en un clic.": { en: "Hello, I'm Imane, Heavent's virtual assistant. Who are you? I'll send you to the right place in one click.", ar: "مرحباً، أنا إيمان، المساعدة الافتراضية لـ Heavent. من أنتم؟ سأوجهكم إلى المكان المناسب بنقرة واحدة." },
   "Imane est indisponible pour le moment. L'équipe Heavent vous répondra sous 24 h.": { en: "Imane is unavailable right now. The Heavent team will reply within 24 hours.", ar: "إيمان غير متاحة حالياً. سيردّ عليكم فريق Heavent خلال 24 ساعة." },
   "Aide": { en: "Help", ar: "مساعدة" },
+  "Comment souhaitez-vous poser vos questions ?": { en: "How would you like to ask your questions?", ar: "كيف تودّون طرح أسئلتكم؟" },
+  "Poser mes questions à Imane": { en: "Ask Imane my questions", ar: "اطرحوا أسئلتكم على إيمان" },
+  "Assistante virtuelle, réponse immédiate": { en: "Virtual assistant, instant answer", ar: "مساعدة افتراضية، ردّ فوري" },
+  "Écrire sur WhatsApp": { en: "Write on WhatsApp", ar: "المراسلة عبر واتساب" },
+  "L'équipe Heavent vous répond": { en: "The Heavent team replies", ar: "فريق Heavent يردّ عليكم" },
 };
