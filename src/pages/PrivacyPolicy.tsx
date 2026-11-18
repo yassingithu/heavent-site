@@ -53,6 +53,9 @@ const PrivacyPolicy = () => {
                   <button type="button" data-testid="audience-changer-refuser" onClick={() => definirChoixAudience("non")} className="h-11 px-5 border border-[#7A5F1F] hover:bg-[#EBE2CF]">{x("Refuser")}</button>
                   <button type="button" data-testid="audience-changer-accepter" onClick={() => definirChoixAudience("oui")} className="h-11 px-5 border border-[#7A5F1F] hover:bg-[#EBE2CF]">{x("Accepter")}</button>
                 </div>
+                <p id="assistant-imane">
+                  <strong>{x("Imane, l'assistante virtuelle.")}</strong> {x("Si vous écrivez une question à Imane, ce texte (320 caractères au maximum, sans adresse e-mail ni numéro de téléphone, retirés avant l'envoi) est transmis à un service d'intelligence artificielle situé hors du Maroc, uniquement pour préparer la réponse. Nous ne conservons pas votre message. Les boutons de choix ne transmettent rien. Ne saisissez ni coordonnées, ni pièce d'identité, ni données de santé.")}
+                </p>
                 <p id="suppression-des-donnees">
                   <strong>{x("Instagram et suppression de vos données.")}</strong> {x("Si vous commentez « GUIDE » sous une de nos publications Instagram, nous recevons votre nom d'utilisateur et votre commentaire, uniquement pour vous envoyer le guide en message privé. Pour faire supprimer toutes vos données (Instagram, guides, newsletter, demandes de devis), écrivez à i.chaigari@heaventagency.com en indiquant votre e-mail ou votre nom d'utilisateur Instagram : la suppression est faite sous 30 jours.")}
                 </p>
