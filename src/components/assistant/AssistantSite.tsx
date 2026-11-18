@@ -340,18 +340,6 @@ export default function AssistantSite() {
           onMouseEnter={() => { survol.current = true; }} onMouseLeave={() => { survol.current = false; }}
           onFocus={() => { survol.current = true; }} onBlur={() => { survol.current = false; }}>
           <span className="hot-scene" aria-hidden>
-            <svg className="hot-chaise" viewBox="0 0 520 720" preserveAspectRatio="none" focusable="false">
-              <defs>
-                <linearGradient id="hot-ch-a" x1="0" x2="1"><stop offset="0" stopColor="#f4f1ea" /><stop offset="1" stopColor="#d9d4c8" /></linearGradient>
-                <linearGradient id="hot-ch-b" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#efebe2" /><stop offset="1" stopColor="#cfc9ba" /></linearGradient>
-              </defs>
-              <path d="M18 372 Q18 360 34 360 L58 360 Q74 360 74 376 L84 620 L26 610 Z" fill="url(#hot-ch-a)" />
-              <path d="M8 520 Q8 514 20 514 L70 520 L76 560 L30 556 Q16 556 16 640 L26 654 L14 656 Q4 540 8 520Z" fill="#e6e1d4" />
-              <path d="M36 598 Q150 586 244 654 Q252 662 238 666 L74 668 Q36 660 30 628 Z" fill="url(#hot-ch-b)" />
-              <path d="M38 662 L240 668 L236 676 L44 672 Z" fill="#b9b3a3" />
-              <rect x="170" y="672" width="14" height="36" rx="5" fill="#cfc9ba" />
-              <path d="M82 706 Q176 692 270 706 L270 714 L82 714 Z" fill="#d6d1c3" />
-            </svg>
             <canvas ref={toile} className="hot-toile" width="260" height="360" />
             <video ref={video} className="hot-video" muted playsInline preload="none" disablePictureInPicture tabIndex={-1} width="520" height="360" onEnded={() => { cancelAnimationFrame(boucle.current); composer(); }}>
               <source src="/assistant/hotesse-paquet.mp4" type="video/mp4" />
