@@ -713,11 +713,10 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
 .hot-zone[data-pose="debout"] .hot-btn, .hot-zone[data-pose="salue"] .hot-btn { transform: scale(1.42); }
 .hot-zone[data-pose="debout"] .hot-menu, .hot-zone[data-pose="salue"] .hot-menu, .hot-zone[data-pose="debout"] .hot-bulle, .hot-zone[data-pose="salue"] .hot-bulle { right: 200px; }
 .hot-zone[data-pose="debout"] .hot-bulle, .hot-zone[data-pose="salue"] .hot-bulle { top: -44px; }
-.hot-etiquette, .hot-etiquette > span { transition: scale .45s var(--s-courbe, cubic-bezier(.2,.7,.2,1)); }
-.hot-etiquette > span { display: block; white-space: nowrap; }
-/* Debout, le bouton grandit mais pas le texte : la plaque s'élargit avec le corps (elle cache la découpe), sa hauteur et son texte gardent la taille normale */
-.hot-zone[data-pose="debout"] .hot-etiquette, .hot-zone[data-pose="salue"] .hot-etiquette { scale: 1 .704; transform-origin: 50% 0; transition: scale 1.5s cubic-bezier(.45,0,.25,1); }
-.hot-zone[data-pose="debout"] .hot-etiquette > span, .hot-zone[data-pose="salue"] .hot-etiquette > span { scale: .704 1; transition: scale 1.5s cubic-bezier(.45,0,.25,1); }
+.hot-etiquette { transition: scale .45s var(--s-courbe, cubic-bezier(.2,.7,.2,1)); }
+/* Debout, le bouton grandit mais pas la plaque : largeur, hauteur et texte restent identiques (contre-échelle). La découpe du bas du corps est estompée. */
+.hot-zone[data-pose="debout"] .hot-etiquette, .hot-zone[data-pose="salue"] .hot-etiquette { scale: .704; transform-origin: 50% 0; transition: scale 1.5s cubic-bezier(.45,0,.25,1); }
+.hot-zone[data-pose="debout"] .hot-toile, .hot-zone[data-pose="salue"] .hot-toile { -webkit-mask-image: linear-gradient(#000 84%, transparent); mask-image: linear-gradient(#000 84%, transparent); }
 .hot-voile { position: absolute; inset: -100vmax; z-index: -1; border: 0; padding: 0; background: transparent; touch-action: pan-y; cursor: default; }
 .hot-scene { position: relative; display: block; width: 132px; height: 183px; }
 .hot-scene::after { content: ""; position: absolute; left: 12%; right: 12%; bottom: -3px; height: 8px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.4), transparent); z-index: -1; }
@@ -785,6 +784,6 @@ html.s-anime .s-wp-page [data-revele].vu { transition-duration: .5s; }
 }
 body.jeu-tiroir .hot-zone { display: none; }
 @media (prefers-reduced-motion: reduce) {
-  .hot-zone, .hot-btn, .hot-etiquette, .hot-etiquette > span { transition: none !important; }
+  .hot-zone, .hot-btn, .hot-etiquette { transition: none !important; }
   .hot-bulle, .hot-menu, .hot-panneau, .hot-reponse { animation: none; }
 }
