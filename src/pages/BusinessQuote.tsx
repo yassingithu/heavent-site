@@ -22,7 +22,7 @@ const formSchema = z.object({
   eventType: z.string().min(1, "Veuillez sélectionner un type d'événement"),
   eventDate: z.string().min(1, "La date de l'événement est requise"),
   eventLocation: z.string().min(2, "Le lieu de l'événement est requis"),
-  staffCount: z.number().min(1, "Le nombre de personnel est requis").max(100, "Maximum 100 personnes"),
+  staffCount: z.preprocess((v) => (typeof v === "number" && !Number.isNaN(v) ? v : 0), z.number().min(0).max(100, "Maximum 100 personnes")),
   requirements: z.string().optional(),
   contactName: z.string().min(2, "Le nom du responsable est requis"),
   contactEmail: z.string().email("Email invalide"),
@@ -229,11 +229,11 @@ const BusinessQuote = () => {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="staffCount">{x("Nombre d'hôtes/hôtesses *")}</Label>
+                      <Label htmlFor="staffCount">{x("Nombre d'hôtes/hôtesses (facultatif)")}</Label>
                       <Input
                         id="staffCount"
                         type="number"
-                        min="1"
+                        min="0"
                         max="100"
                         {...register("staffCount", { valueAsNumber: true })}
                         className={errors.staffCount ? "border-destructive" : ""}
