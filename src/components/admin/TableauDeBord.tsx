@@ -108,7 +108,8 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onA
     const acceptes = devis.filter((d) => d.statut === "accepte");
     const dateAccord = (d: DevisLigne) => d.signe_le ?? d.date_envoi ?? d.date_emission;
     const ca = cles.map((cle) => ({ cle, valeur: acceptes.filter((d) => dateAccord(d)?.slice(0, 7) === cle).reduce((t, d) => t + Number(d.total_ttc || 0), 0) }));
-    const envoyes6 = devis.filter((d) => d.date_envoi && d.date_envoi.slice(0, 7) >= cles[0]);
+    // « Envoyé » = statut réellement envoyé, accepté ou refusé (un brouillon qui a une date d'envoi n'est pas compté)
+    const envoyes6 = devis.filter((d) => ["envoye", "accepte", "refuse"].includes(d.statut) && d.date_envoi && d.date_envoi.slice(0, 7) >= cles[0]);
     const acceptes6 = envoyes6.filter((d) => d.statut === "accepte");
     const enAttente = devis.filter((d) => d.statut === "envoye" && !d.signe_le);
     const aujourdhui = aujourdhuiMaroc();
