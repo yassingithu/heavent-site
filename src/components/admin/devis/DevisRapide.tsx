@@ -47,6 +47,8 @@ interface DevisRow {
   titre: string | null; date_evenement: string | null; total_ttc: number; statut: string; date_emission: string;
   devise: string; signe_le?: string | null; relances?: number | null; rdv_demande_le?: string | null;
   archive?: boolean; nbFactures?: number; contratsSignes?: number; equipe?: number;
+  /** Réponse rapide (« Envoyer un devis ») : vit dans cette table, numéro REP-… */
+  reponseRapide?: "devis_mariage" | "devis_entreprise";
 }
 
 interface Props {
@@ -70,19 +72,32 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   const [filtreStatut, setFiltreStatut] = useState("tous");
 
   const charger = async () => {
-    const [d, c, p] = await Promise.all([
+    const [d, c, p, rm, re] = await Promise.all([
       supabase.from("devis").select("id, numero, type, marque, client_nom, client_societe, titre, date_evenement, total_ttc, statut, date_emission, devise, signe_le, relances, rdv_demande_le, archive, factures(id), contrats(signe_le), affectations(staff_id, statut)").order("created_at", { ascending: false }),
       supabase.from("catalogue_prestations").select("*").order("categorie").order("ordre").order("designation"),
       supabase.from("parametres_agence").select("*").eq("id", 1).maybeSingle(),
+      (supabase as any).from("devis_mariage").select("id, numero, prenom, nom, lieu, date_mariage, montant_total, statut, date_envoi_devis, created_at").not("numero", "is", null),
+      (supabase as any).from("devis_entreprise").select("id, numero, prenom, nom, entreprise, lieu, date_evenement, montant_total, statut, date_envoi_devis, created_at").not("numero", "is", null),
     ]);
     if (d.error || c.error || p.error) {
       toast({ title: "Erreur", description: "Impossible de charger les devis", variant: "destructive" });
       return;
     }
-    setDevisList(((d.data ?? []) as any[]).map(({ factures, contrats, affectations, ...x }) => ({
+    const rapides: DevisRow[] = [
+      ...((rm.data ?? []) as any[]).map((r) => ({ r, t: "devis_mariage" as const })),
+      ...((re.data ?? []) as any[]).map((r) => ({ r, t: "devis_entreprise" as const })),
+    ].map(({ r, t }) => ({
+      id: r.id, numero: r.numero, type: t === "devis_entreprise" ? "entreprise" : "evenement",
+      client_nom: [r.prenom, r.nom].filter(Boolean).join(" ") || "—", client_societe: r.entreprise ?? null,
+      titre: r.lieu ? `Réponse rapide · ${r.lieu}` : "Réponse rapide", date_evenement: r.date_mariage ?? r.date_evenement ?? null,
+      total_ttc: Number(r.montant_total || 0), statut: r.statut ?? "envoye", date_emission: (r.date_envoi_devis ?? r.created_at ?? "").slice(0, 10),
+      devise: "MAD", reponseRapide: t,
+    }));
+    const devisNormaux = ((d.data ?? []) as any[]).map(({ factures, contrats, affectations, ...x }) => ({
       ...x, nbFactures: (factures ?? []).length, contratsSignes: (contrats ?? []).filter((c: any) => c.signe_le).length,
       equipe: new Set((affectations ?? []).filter((a: any) => a.statut !== "annule").map((a: any) => a.staff_id)).size,
-    })) as DevisRow[]);
+    })) as DevisRow[];
+    setDevisList([...devisNormaux, ...rapides].sort((a, b) => (b.date_emission ?? "").localeCompare(a.date_emission ?? "")));
     setCatalogue((c.data ?? []) as Prestation[]);
     setParams(p.data as Parametres | null);
     setCharge(true);
@@ -527,6 +542,12 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
 
   const changerStatut = async (id: string, statut: string) => {
     const d = devisList.find((x) => x.id === id);
+    if (d?.reponseRapide) {
+      const { error } = await (supabase as any).from(d.reponseRapide).update({ statut }).eq("id", id);
+      if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+      devisModifie();
+      return;
+    }
     if (d && (statut === "annule" || statut === "refuse") && d.statut !== "annule" && d.statut !== "refuse") {
       const consequences = [
         d.equipe ? `• ${d.equipe} personne${d.equipe > 1 ? "s" : ""} de l'équipe ser${d.equipe > 1 ? "ont libérées" : "a libérée"} (plus de mission, de pointage ni de paie pour cet événement)` : "",
@@ -668,8 +689,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 </TableHeader>
                 <TableBody>
                   {filtres.map((d) => (
-                    <TableRow key={d.id} className="cursor-pointer" onClick={() => ouvrir(d.id)}>
-                      <TableCell className="font-mono text-xs">{d.numero}{(d as any).marque === "nawar" && <span className="ml-1 font-sans rounded bg-[#f5ecd2] text-[#8a6d1f] px-1.5 py-0.5 text-[10px]">Nawar</span>}<div className="text-muted-foreground">{dateFr(d.date_emission)}</div></TableCell>
+                    <TableRow key={d.id} className={d.reponseRapide ? "" : "cursor-pointer"} onClick={() => { if (!d.reponseRapide) ouvrir(d.id); }}>
+                      <TableCell className="font-mono text-xs">{d.numero}{d.reponseRapide && <span className="ml-1 font-sans rounded bg-[#e9efe9] text-[#1F5A4C] px-1.5 py-0.5 text-[10px]">Réponse rapide</span>}{(d as any).marque === "nawar" && <span className="ml-1 font-sans rounded bg-[#f5ecd2] text-[#8a6d1f] px-1.5 py-0.5 text-[10px]">Nawar</span>}<div className="text-muted-foreground">{dateFr(d.date_emission)}</div></TableCell>
                       <TableCell>{d.client_societe || d.client_nom}{d.client_societe && <div className="text-xs text-muted-foreground">{d.client_nom}</div>}</TableCell>
                       <TableCell>{d.titre || "—"}<div className="text-xs text-muted-foreground">{dateFr(d.date_evenement)}</div></TableCell>
                       <TableCell className="text-right font-medium whitespace-nowrap">{money(d.total_ttc, d.devise)}
@@ -687,6 +708,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                         {d.archive && <div className="text-[11px] text-muted-foreground mt-0.5">🗄️ archivé</div>}
                       </TableCell>
                       <TableCell className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        {d.reponseRapide ? <span className="text-[11px] text-muted-foreground">E-mail envoyé · détail dans Demandes</span> : <>
                         <Button size="icon" variant="ghost" title="Télécharger le PDF" disabled={pdfEnCours} onClick={() => telechargerPdfDepuisListe(d.id)}><Download className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" title="Image à partager (PNG)" disabled={imageEnCours} onClick={() => imageDepuisListe(d.id, "png")} data-testid="image-devis-liste"><ImageIcon className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" title="Dupliquer" onClick={() => ouvrir(d.id, true)}><Copy className="h-4 w-4" /></Button>
@@ -698,6 +720,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                         {!devisSupprimable(d) && (
                           <Button size="icon" variant="ghost" title="Supprimer définitivement (devis de test)" onClick={() => supprimerTest(d)} data-testid="supprimer-devis-test"><Trash2 className="h-4 w-4 text-[#9C4A2C]" /></Button>
                         )}
+                        </>}
                       </TableCell>
                     </TableRow>
                   ))}
