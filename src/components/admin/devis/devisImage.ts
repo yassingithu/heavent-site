@@ -47,7 +47,13 @@ export function imageDevisHtml(d: DevisForm, params: Parametres | null, logoSrc:
   const infos = cols.length
     ? `<div class="cols">${cols.map(([l, v], k) => `${k ? '<i class="sep"></i>' : ""}<div class="col"><div class="cl">${esc(l)}</div><div class="cv">${esc(v)}</div></div>`).join("")}</div>`
     : "";
-  const inclus = [...new Set(d.lignes.map((l) => (l.designation || "").replace(/\s+/g, " ").trim()).filter(Boolean).filter((x) => x.length <= 24 && !/[()]/.test(x)))].slice(0, 3);
+  // « Inclus » : les 3 premières prestations courtes, et TOUJOURS le personnel (hôtesse, steward, animateur…) même si sa désignation est longue ou entre parenthèses
+  const estPersonnel = (x: string) => /h[oô]tesses?|stewards?|\bh[oô]tes?\b|animat(?:eur|rice)/i.test(x);
+  const nettoye = (x: string) => x.replace(/\s+/g, " ").trim();
+  const noms = [...new Set(d.lignes.map((l) => nettoye(l.designation || "")).filter(Boolean))];
+  const personnel = noms.filter(estPersonnel).map((x) => nettoye(x.replace(/\s*\([^)]*\)/g, "")) || x).slice(0, 3);
+  const autres = noms.filter((x) => !estPersonnel(x) && x.length <= 24 && !/[()]/.test(x)).slice(0, 3);
+  const inclus = [...new Set([...autres, ...personnel])];
   const validite = d.date_validite ? `Offre valable jusqu'au ${new Date(d.date_validite.slice(0, 10) + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}` : "";
   const acompte = t.acompte > 0 ? `Réservez votre date avec un acompte de ${montant(t.acompte)} ${devise}` : "Réservez votre date dès maintenant";
   const contact = [params?.telephone, params?.site_web?.replace(/^https?:\/\//, "")].filter(Boolean).join("   ·   ");

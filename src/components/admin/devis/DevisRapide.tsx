@@ -195,9 +195,9 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       const lignesCat = catalogue.filter((c) => c.actif && (c as any).jeu_element === type).sort((a, b) => a.ordre - b.ordre);
       if (!lignesCat.length) { sansPrix.push(conf.libelles?.[type] ?? type); continue; }
       for (const c of lignesCat) {
-        // Parfums Nawar : un par invité, 50 minimum
+        // Parfums Nawar : un par invité (le minimum de 50 reste un simple avertissement : devis entreprise possibles dès 40)
         const parPersonne = c.unite === "personne" || type === "nawar";
-        const qte = type === "nawar" ? Math.max(invites, 50) : invites;
+        const qte = type === "nawar" ? Math.max(invites, 1) : invites;
         res.push({ ...ligneVide(), designation: type === "honneur" && conf.libelles?.honneur ? conf.libelles.honneur : c.designation,
           description: c.description ?? "", quantite: parPersonne ? qte : n, duree: 1, unite: c.unite as Ligne["unite"], prix_unitaire: Number(c.prix_unitaire) });
       }
