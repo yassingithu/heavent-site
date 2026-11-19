@@ -21,3 +21,10 @@ Calculer la liste avec `git diff --no-renames --name-only --diff-filter=AM <anci
 ## Tester sur la version de production
 
 L'ordre des feuilles de style n'est pas le même en développement (`vite`) et en production (`vite build`) : deux règles de même force dans `invitation.css` et `ouvertures.css` peuvent s'inverser (10/11/2026 : sélecteur de langues décalé, puis consigne du cœur sous le bouton). Avant un envoi qui touche aux styles des invitations, vérifier avec `npm run build` puis `npx vite preview`, pas seulement avec le serveur de développement.
+
+
+## Politique de sécurité des contenus (CSP)
+
+`public/.htaccess` envoie `Content-Security-Policy-Report-Only` : le navigateur signale (console) tout script, image ou connexion hors liste, sans rien bloquer. La liste autorise le site lui-même, Supabase et la balise Google (chargée seulement après « Accepter »).
+Les 2 scripts écrits dans `index.html` sont autorisés par empreinte sha256. Si on les modifie, recalculer : `python3` sur le contenu de chaque `<script>` sans `src` de `dist/index.html` (sha256 en base64) et mettre à jour le `.htaccess`.
+Test local (20 pages, bureau et mobile, avec et sans consentement) : servir `dist/` avec le même en-tête et écouter l'événement `securitypolicyviolation` avec Playwright. Dernier résultat (19/11/2026) : aucune violation. Passer en blocage (`Content-Security-Policy`) seulement après quelques jours sans signalement.
