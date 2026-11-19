@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { estDemo } from "@/demo/mode";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -102,7 +102,18 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   const devise = params?.devise ?? "MAD";
 
   // ---------- ouverture d'un devis ----------
-  const nouveau = () => { setForm(nouveauDevis(params)); setOnglet("editeur"); };
+  // Devis ouvert : copie de l'état enregistré, pour prévenir avant d'abandonner des modifications
+  const etatEnregistre = useRef("");
+  useEffect(() => { etatEnregistre.current = form ? JSON.stringify(form) : ""; }, [form?.id, form === null]); // eslint-disable-line react-hooks/exhaustive-deps
+  const ouvrirForm = (f: DevisForm) => { if (!abandonOk()) return; etatEnregistre.current = JSON.stringify(f); setForm(f); };
+  const nonEnregistre = () => !!form && JSON.stringify(form) !== etatEnregistre.current;
+  const abandonOk = () => !nonEnregistre() || confirm("Ce devis a des modifications non enregistrées. Les abandonner ?");
+  useEffect(() => {
+    const avant = (e: BeforeUnloadEvent) => { if (nonEnregistre()) { e.preventDefault(); e.returnValue = ""; } };
+    window.addEventListener("beforeunload", avant);
+    return () => window.removeEventListener("beforeunload", avant);
+  });
+  const nouveau = () => { ouvrirForm(nouveauDevis(params)); setOnglet("editeur"); };
 
   /**
    * Devis bar à parfums Nawar (logo Nawar) : parfums à 80 MAD l'unité (prix et quantité modifiables),
@@ -117,7 +128,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     };
     const parfums: Ligne = { ...ligneVide(), designation: "Parfums — bar à parfums Nawar", description: "Prix par parfum",
       quantite: 50, duree: 1, unite: "unite", prix_unitaire: 80 };
-    setForm({
+    ouvrirForm({
       ...f, type: "evenement", marque: "nawar", titre: "Bar à parfums Nawar", acompte_pct: 50,
       lignes: [parfums, cat("Animateur / animatrice promotionnel(le)", 2) ?? cat("Hôtesse d'accueil", 2), cat("Transport du staff (même ville)", 2)]
         .filter(Boolean) as Ligne[],
@@ -128,7 +139,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
 
   const depuisDemandeEntreprise = (dem: DemandeEntreprise) => {
     const f = nouveauDevis(params);
-    setForm({
+    ouvrirForm({
       ...f, type: "entreprise", demande_entreprise_id: dem.id,
       client_nom: `${dem.prenom} ${dem.nom}`.trim(), client_societe: dem.entreprise ?? "",
       client_email: dem.email ?? "", client_telephone: dem.telephone ?? "",
@@ -221,7 +232,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
 
   const depuisDemandeMariage = (dem: DemandeMariage) => {
     const f = nouveauDevis(params);
-    setForm({
+    ouvrirForm({
       ...f, type: "mariage", demande_mariage_id: dem.id,
       client_nom: `${dem.prenom} ${dem.nom}`.trim(), client_email: dem.email ?? "", client_telephone: dem.telephone ?? "",
       titre: `${dem.type_evenement || "Mariage"} ${[dem.nom, dem.prenom].filter(Boolean).join(" & ")}`.trim(),
@@ -252,7 +263,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   const ouvrir = async (id: string, dupliquer = false) => {
     const f = await chargerDevis(id, dupliquer);
     if (!f) return;
-    setForm(f);
+    ouvrirForm(f);
     setOnglet("editeur");
   };
 
@@ -413,6 +424,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
         signe_le: saved?.signe_le ?? null, signature_nom: saved?.signature_nom ?? null, signature_image: saved?.signature_image ?? null,
       };
       if (signatureAnnulee) toast({ title: "Signature du client annulée", description: "Le contenu a changé : renvoie le devis au client, il devra le signer à nouveau (sa version signée reste conservée). Vérifie que la date de validité n’est pas dépassée, sinon il ne pourra pas signer." });
+      etatEnregistre.current = JSON.stringify(next);
       setForm(next);
       toast({ title: "Devis enregistré", description: next.numero ?? "" });
       devisModifie();
@@ -480,7 +492,9 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     if (error && !message) { try { message = (await (error as any).context?.json())?.error; } catch { /* */ } }
     setEnvoiEnCours(false);
     if (error || data?.error) { toast({ title: "Devis non envoyé", description: message ?? "Réessaie dans un instant.", variant: "destructive" }); return; }
-    setForm({ ...saved, statut: saved.statut === "brouillon" ? "envoye" : saved.statut, date_envoi: new Date().toISOString(), relances: 0 });
+    const apresEnvoi = { ...saved, statut: saved.statut === "brouillon" ? "envoye" : saved.statut, date_envoi: new Date().toISOString(), relances: 0 };
+    etatEnregistre.current = JSON.stringify(apresEnvoi);
+    setForm(apresEnvoi);
     toast({ title: "Devis envoyé ✉️", description: "Le client a reçu son lien de signature. Relances automatiques à J+5 et J+10 s'il ne répond pas." });
     devisModifie(); charger();
   };
@@ -507,6 +521,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     if ((v === "annule" || v === "refuse") && ligne?.equipe && !["annule", "refuse"].includes(ligne.statut)
       && !confirm(`En enregistrant ce devis « ${STATUTS[v].label} », l'équipe prévue (${ligne.equipe} personne${ligne.equipe > 1 ? "s" : ""}) sera libérée : plus de mission, de pointage ni de paie pour cet événement. Continuer ?`)) return;
     set("statut", v);
+    // Le statut choisi est enregistré tout de suite : sinon il se perd si on ferme le devis sans cliquer sur « Enregistrer »
+    void enregistrer(v);
   };
 
   const changerStatut = async (id: string, statut: string) => {
@@ -905,7 +921,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   evenement: form.type === "mariage" ? "votre mariage" : form.titre ? `« ${form.titre} »` : "votre événement",
                   date: dateFr(form.date_evenement), dateIso: form.date_evenement || null, lienDevis: lienClientDevis(form.lien_token) || null }} />
                 <Button variant="ghost" size="sm" onClick={() => enregistrer("envoye")} disabled={saving}>Marquer comme envoyé (sans e-mail)</Button>
-                <Button variant="ghost" onClick={() => { setForm(null); setOnglet("liste"); }}>Fermer</Button>
+                <Button variant="ghost" onClick={() => { if (!abandonOk()) return; setForm(null); setOnglet("liste"); }}>Fermer</Button>
               </div>
               <FacturesDevis devis={form} params={params} avantCreation={() => enregistrer()} />
             </div>

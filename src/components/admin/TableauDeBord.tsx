@@ -6,10 +6,15 @@ import { CATALOGUE, TypeElement } from "@/components/jeu-evenement/config";
 import MissionsDuJour from "@/components/admin/equipe/MissionsDuJour";
 import Aujourdhui from "@/components/admin/accueil/Aujourdhui";
 
-interface Demande { id: string; created_at?: string | null; statut?: string | null; configuration?: any }
+interface Demande {
+  id: string; created_at?: string | null; statut?: string | null; configuration?: any;
+  nom?: string | null; prenom?: string | null; montant_total?: number | null; date_envoi_devis?: string | null; date_evenement?: string | null; date_mariage?: string | null;
+}
 interface DevisLigne {
   id: string; numero: string | null; client_nom: string; titre: string | null; statut: string; total_ttc: number;
   date_emission: string; date_envoi: string | null; signe_le: string | null; date_evenement: string | null; relances: number | null;
+  /** Réponse rapide envoyée directement depuis une demande (pas de devis dans l'éditeur) */
+  orphelin?: boolean;
 }
 
 const OR = "#A8933F";
@@ -68,15 +73,31 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onA
   demandesMariage: Demande[]; demandesEntreprise: Demande[]; onAller?: (onglet: string) => void; haut?: ReactNode; bas?: ReactNode;
   onChiffrer?: (kind: "entreprise" | "mariage", id: string) => void; onOuvrirDevis?: (id: string) => void;
 }) {
-  const [devis, setDevis] = useState<DevisLigne[]>([]);
+  const [devisBase, setDevisBase] = useState<DevisLigne[]>([]);
+  const [demandesLiees, setDemandesLiees] = useState<Set<string>>(new Set());
   const [bulletinsAValider, setBulletinsAValider] = useState<number | null>(null);
   useEffect(() => {
     supabase.from("fiches_paie").select("id", { count: "exact", head: true }).eq("statut", "en_attente")
       .then(({ count }) => setBulletinsAValider(count ?? 0));
-    supabase.from("devis").select("id, numero, client_nom, titre, statut, total_ttc, date_emission, date_envoi, signe_le, date_evenement, relances")
+    supabase.from("devis").select("id, numero, client_nom, titre, statut, total_ttc, date_emission, date_envoi, signe_le, date_evenement, relances, demande_entreprise_id, demande_mariage_id")
       .order("date_emission", { ascending: false })
-      .then(({ data }) => setDevis((data ?? []) as any));
+      .then(({ data }) => {
+        setDevisBase((data ?? []) as any);
+        setDemandesLiees(new Set((data ?? []).flatMap((d: any) => [d.demande_entreprise_id, d.demande_mariage_id]).filter(Boolean)));
+      });
   }, []);
+
+  // Les réponses rapides (« Envoyer un devis ») sont comptées comme des devis envoyés, sans double compte avec un devis lié.
+  const devis = useMemo<DevisLigne[]>(() => {
+    const orphelins = [...demandesMariage, ...demandesEntreprise]
+      .filter((d) => ["envoye", "accepte", "refuse"].includes(d.statut ?? "") && !demandesLiees.has(d.id))
+      .map((d): DevisLigne => ({
+        id: d.id, numero: null, client_nom: [d.prenom, d.nom].filter(Boolean).join(" ") || "Réponse rapide", titre: "Réponse rapide",
+        statut: d.statut as string, total_ttc: Number(d.montant_total || 0), date_emission: (d.date_envoi_devis ?? d.created_at ?? "").slice(0, 10),
+        date_envoi: d.date_envoi_devis ?? d.created_at ?? null, signe_le: null, date_evenement: d.date_evenement ?? d.date_mariage ?? null, relances: null, orphelin: true,
+      }));
+    return [...devisBase, ...orphelins];
+  }, [devisBase, demandesLiees, demandesMariage, demandesEntreprise]);
 
   const s = useMemo(() => {
     const now = new Date();
@@ -92,7 +113,7 @@ export default function TableauDeBord({ demandesMariage, demandesEntreprise, onA
     const enAttente = devis.filter((d) => d.statut === "envoye" && !d.signe_le);
     const aujourdhui = aujourdhuiMaroc();
     const aVenir = acceptes.filter((d) => d.date_evenement && d.date_evenement >= aujourdhui).sort((a, b) => a.date_evenement!.localeCompare(b.date_evenement!));
-    const sansReponse = enAttente.filter((d) => d.date_envoi && (now.getTime() - new Date(d.date_envoi).getTime()) / 864e5 >= 5)
+    const sansReponse = enAttente.filter((d) => !d.orphelin && d.date_envoi && (now.getTime() - new Date(d.date_envoi).getTime()) / 864e5 >= 5)
       .sort((a, b) => (a.date_envoi ?? "").localeCompare(b.date_envoi ?? ""));
     // Jeu : ce que les visiteurs choisissent
     const jeu = demandesMariage.filter((d) => d.configuration?.elements);
