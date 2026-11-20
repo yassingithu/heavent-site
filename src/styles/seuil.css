@@ -801,9 +801,9 @@ body.jeu-tiroir .hot-zone { display: none; }
 }
 
 /* Boutons « Devenir hôtesse / staff » : or plein, distinct du bouton crème « Demander un devis », avec un reflet qui balaie (pause longue, jamais de clignotement) */
-.s-btn-staff { background: var(--s-laiton-clair); color: var(--s-nuit); font-weight: 600; overflow: hidden; }
-.s-btn-staff::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(100deg, transparent 38%, rgba(255,250,230,.85) 50%, transparent 62%); transform: translateX(-120%); pointer-events: none; }
-.s-btn-staff:hover { background: #EBDDA8; }
+.s-btn-staff { background: #C9B26A; color: var(--s-nuit); font-weight: 600; overflow: hidden; }
+.s-btn-staff::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(100deg, transparent 40%, rgba(255,248,224,.6) 50%, transparent 60%); transform: translateX(-120%); pointer-events: none; }
+.s-btn-staff:hover { background: var(--s-laiton-clair); }
 .s-nav .s-btn-staff { min-height: 40px; padding: 0 16px; font-size: 13px; letter-spacing: .04em; white-space: nowrap; }
 .s-staff-zone { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: 28px; padding-top: 18px; max-width: 34rem; border-top: 1px solid rgba(228,212,154,.22); }
 .s-staff-etiquette { font: 400 14px/1.4 var(--s-texte); letter-spacing: .02em; color: var(--s-gris-nuit); }

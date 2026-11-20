@@ -1628,12 +1628,9 @@ const Admin = () => {
                 </Select>
                 <p className="self-center text-[10.5px] font-medium uppercase tracking-[.16em] text-[#7A5F1F]" data-testid="crews-compte">{staffAffiche.length} crew{staffAffiche.length > 1 ? "s" : ""}{staffAffiche.length !== staff.length ? ` sur ${staff.length}` : ""}</p>
               </div>
-              <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Filtrer par statut" data-testid="crews-filtres">
+              <div className="mb-4 aj-filtres" role="group" aria-label="Filtrer par statut" data-testid="crews-filtres">
                 {([["tous", "Tous"], ["en_attente", "À traiter"], ["approuve", "Approuvés"], ["refuse", "Refusés"]] as const).map(([k, l]) => (
-                  <button key={k} type="button" aria-pressed={filtreStaff === k} onClick={() => { setFiltreStaff(k); setNbStaffAffiches(20); }}
-                    className={`min-h-[44px] border px-4 text-sm transition-colors ${filtreStaff === k ? "border-[#141414] bg-[#141414] text-[#FBF6E9]" : "border-[#DCCDAA] bg-white text-[#141414] hover:bg-[#F5ECD2]"}`}>
-                    {l} <span className={filtreStaff === k ? "text-[#E4D49A]" : "text-[#7A5F1F]"}>({comptesStaff[k]})</span>
-                  </button>
+                  <button key={k} type="button" aria-pressed={filtreStaff === k} onClick={() => { setFiltreStaff(k); setNbStaffAffiches(20); }}>{l}<b>{comptesStaff[k]}</b></button>
                 ))}
               </div>
               {staffAffiche.length === 0 && (
@@ -1705,7 +1702,7 @@ const Admin = () => {
                               size="sm"
                               onClick={() => generateStaffPDF(person.id)}
                             >
-                              📄 Fiche PDF
+                              <FileText className="h-4 w-4 mr-1" /> Fiche PDF
                             </Button>
                             <Button
                               variant="ghost"
@@ -1728,7 +1725,7 @@ const Admin = () => {
                   const st = person.statut_candidature || "en_attente";
                   const ouvert = ouvertStaff === person.id;
                   return (
-                  <div key={person.id} className={`border border-[#DCCDAA] bg-[#FAF6EC] shadow-[0_18px_40px_-34px_rgba(60,40,10,.55)] ${st === "approuve" ? "border-l-2 border-l-[#1F5A4C]" : st === "refuse" ? "border-l-2 border-l-[#9C4A2C]" : ""}`}>
+                  <div key={person.id} className={`border border-[#DCCDAA] bg-[#FAF6EC] shadow-[0_18px_40px_-34px_rgba(60,40,10,.55)] ${st === "approuve" ? "border-l-2 border-l-[var(--s-zellige)]" : st === "refuse" ? "border-l-2 border-l-[var(--s-terre)]" : ""}`}>
                     <button type="button" aria-expanded={ouvert} onClick={() => setOuvertStaff(ouvert ? null : person.id)} className="flex w-full min-h-[56px] items-center justify-between gap-3 p-4 text-left">
                       <span className="min-w-0">
                         <span className="block font-serif text-[19px] leading-tight break-words">{person.prenom} {person.nom}</span>

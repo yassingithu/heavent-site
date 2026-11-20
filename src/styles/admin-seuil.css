@@ -321,3 +321,11 @@ nav[aria-label="Navigation principale"] button:active { transform: scale(.94); }
   [role="dialog"], [role="alertdialog"], [data-radix-popper-content-wrapper] *, [data-state][class*="animate-"] { animation: none !important; transition: none !important; }
   .s-btn:active, nav[aria-label="Navigation principale"] button:active { transform: none; }
 }
+
+/* Gestion du personnel : filtres par statut en onglets soulignés, comme le reste de l'admin */
+.aj-filtres { display: flex; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid var(--s-filet); }
+.aj-filtres button { position: relative; min-height: 44px; padding: 0 14px; font: 500 13.5px var(--s-texte); color: var(--s-nuit); background: none; border: 0; cursor: pointer; }
+.aj-filtres button:hover { background: rgba(228,212,154,.2); }
+.aj-filtres button[aria-pressed="true"] { background: rgba(228,212,154,.32); }
+.aj-filtres button[aria-pressed="true"]::after { content: ""; position: absolute; inset-inline: 14px; bottom: -1px; height: 2px; background: var(--s-laiton); }
+.aj-filtres b { font: 400 13px var(--s-texte); font-variant-numeric: tabular-nums; color: var(--s-laiton-texte); margin-inline-start: 6px; }
