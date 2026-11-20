@@ -703,7 +703,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                           <SelectTrigger className="h-8 w-[120px] border-0 p-0 shadow-none">
                             <Badge className={STATUTS[d.statut]?.className}>{STATUTS[d.statut]?.label ?? d.statut}</Badge>
                           </SelectTrigger>
-                          <SelectContent>{statutsPermis(d).map((k) => <SelectItem key={k} value={k}>{STATUTS[k].label}</SelectItem>)}</SelectContent>
+                          <SelectContent>{(d.reponseRapide ? ["en_attente", "envoye", "accepte", "refuse"] : statutsPermis(d)).map((k) => <SelectItem key={k} value={k}>{d.reponseRapide && k === "refuse" ? "Refusé / annulé" : STATUTS[k].label}</SelectItem>)}</SelectContent>
                         </Select>
                         {d.archive && <div className="text-[11px] text-muted-foreground mt-0.5">🗄️ archivé</div>}
                       </TableCell>
