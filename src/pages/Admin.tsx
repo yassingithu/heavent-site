@@ -222,12 +222,17 @@ const Admin = () => {
   // Liste des crews : tri (mémorisé sur cet appareil) et recherche
   const [triStaff, setTriStaff] = useState<string>(() => { try { return localStorage.getItem("heavent-tri-crews") || "az"; } catch { return "az"; } });
   const [rechercheStaff, setRechercheStaff] = useState("");
-  const choisirTriStaff = (v: string) => { setTriStaff(v); try { localStorage.setItem("heavent-tri-crews", v); } catch { /* sans stockage : le choix ne sera pas retenu */ } };
+  const [filtreStaff, setFiltreStaff] = useState<"tous" | "en_attente" | "approuve" | "refuse">("tous");
+  const [nbStaffAffiches, setNbStaffAffiches] = useState(20);
+  const [ouvertStaff, setOuvertStaff] = useState<string | null>(null);
+  const choisirTriStaff = (v: string) => { setTriStaff(v); setNbStaffAffiches(20); try { localStorage.setItem("heavent-tri-crews", v); } catch { /* sans stockage : le choix ne sera pas retenu */ } };
   const staffAffiche = (() => {
     const norm = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     const mots = norm(rechercheStaff).split(/\s+/).filter(Boolean);
     const botte = (x: Staff) => norm(`${x.prenom} ${x.nom} ${x.email} ${x.telephone || ""} ${x.ville || ""}`).replace(/\s+/g, "");
-    const liste = mots.length ? staff.filter((x) => { const b = botte(x); return mots.every((m) => b.includes(m)); }) : [...staff];
+    const trouves = mots.length ? staff.filter((x) => { const b = botte(x); return mots.every((m) => b.includes(m)); }) : [...staff];
+    const statutDe = (x: Staff) => x.statut_candidature || "en_attente";
+    const liste = filtreStaff === "tous" ? trouves : trouves.filter((x) => statutDe(x) === filtreStaff);
     const nomComplet = (x: Staff) => `${x.prenom} ${x.nom}`.trim();
     const rang = (x: Staff) => ({ en_attente: 0, approuve: 1, refuse: 2 } as Record<string, number>)[x.statut_candidature || "en_attente"] ?? 3;
     if (triStaff === "az") liste.sort((a, b) => nomComplet(a).localeCompare(nomComplet(b), "fr", { sensitivity: "base" }));
@@ -237,6 +242,15 @@ const Admin = () => {
     else if (triStaff === "statut") liste.sort((a, b) => rang(a) - rang(b) || nomComplet(a).localeCompare(nomComplet(b), "fr", { sensitivity: "base" }));
     return liste;
   })();
+  const comptesStaff = (() => {
+    const norm = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const mots = norm(rechercheStaff).split(/\s+/).filter(Boolean);
+    const trouves = mots.length ? staff.filter((x) => { const b = norm(`${x.prenom} ${x.nom} ${x.email} ${x.telephone || ""} ${x.ville || ""}`).replace(/\s+/g, ""); return mots.every((m) => b.includes(m)); }) : staff;
+    const c = { tous: trouves.length, en_attente: 0, approuve: 0, refuse: 0 };
+    trouves.forEach((x) => { const k = (x.statut_candidature || "en_attente") as "en_attente" | "approuve" | "refuse"; if (k in c) c[k] += 1; });
+    return c;
+  })();
+  const staffVisible = staffAffiche.slice(0, nbStaffAffiches);
   const [searchDate, setSearchDate] = useState<Date | undefined>(undefined);
   const [availableStaff, setAvailableStaff] = useState<Staff[]>([]);
   const navigate = useNavigate();
@@ -1602,7 +1616,7 @@ const Admin = () => {
             </CardHeader>
             <CardContent>
               <div className="mb-4 flex flex-col gap-2 sm:flex-row">
-                <Input value={rechercheStaff} onChange={(e) => setRechercheStaff(e.target.value)} type="search" inputMode="search" placeholder="Rechercher un nom, un e-mail, une ville…" className="h-11 rounded-none border-[#DCCDAA] bg-white sm:max-w-xs" data-testid="crews-recherche" />
+                <Input value={rechercheStaff} onChange={(e) => { setRechercheStaff(e.target.value); setNbStaffAffiches(20); }} type="search" inputMode="search" placeholder="Rechercher un nom, un e-mail, une ville…" className="h-11 rounded-none border-[#DCCDAA] bg-white sm:max-w-xs" data-testid="crews-recherche" />
                 <Select value={triStaff} onValueChange={choisirTriStaff}>
                   <SelectTrigger className="h-11 rounded-none border-[#DCCDAA] bg-white sm:w-[210px]" data-testid="crews-tri"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -1612,10 +1626,18 @@ const Admin = () => {
                     <SelectItem value="recent">Trier : plus récents</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="self-center text-[10.5px] font-medium uppercase tracking-[.16em] text-[#7A5F1F]" data-testid="crews-compte">{staffAffiche.length} crew{staffAffiche.length > 1 ? "s" : ""}{rechercheStaff.trim() ? ` sur ${staff.length}` : ""}</p>
+                <p className="self-center text-[10.5px] font-medium uppercase tracking-[.16em] text-[#7A5F1F]" data-testid="crews-compte">{staffAffiche.length} crew{staffAffiche.length > 1 ? "s" : ""}{staffAffiche.length !== staff.length ? ` sur ${staff.length}` : ""}</p>
+              </div>
+              <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Filtrer par statut" data-testid="crews-filtres">
+                {([["tous", "Tous"], ["en_attente", "À traiter"], ["approuve", "Approuvés"], ["refuse", "Refusés"]] as const).map(([k, l]) => (
+                  <button key={k} type="button" aria-pressed={filtreStaff === k} onClick={() => { setFiltreStaff(k); setNbStaffAffiches(20); }}
+                    className={`min-h-[44px] border px-4 text-sm transition-colors ${filtreStaff === k ? "border-[#141414] bg-[#141414] text-[#FBF6E9]" : "border-[#DCCDAA] bg-white text-[#141414] hover:bg-[#F5ECD2]"}`}>
+                    {l} <span className={filtreStaff === k ? "text-[#E4D49A]" : "text-[#7A5F1F]"}>({comptesStaff[k]})</span>
+                  </button>
+                ))}
               </div>
               {staffAffiche.length === 0 && (
-                <p className="py-6 text-center text-sm text-muted-foreground">Aucun crew ne correspond à cette recherche. <button type="button" className="underline underline-offset-4 text-[#7A5F1F]" onClick={() => setRechercheStaff("")}>Effacer la recherche</button></p>
+                <p className="py-6 text-center text-sm text-muted-foreground">Aucun crew ne correspond. <button type="button" className="underline underline-offset-4 text-[#7A5F1F]" onClick={() => { setRechercheStaff(""); setFiltreStaff("tous"); }}>Tout afficher</button></p>
               )}
               <div className="hidden md:block overflow-x-auto">
                 <Table>
@@ -1632,7 +1654,7 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                 <TableBody>
-                  {staffAffiche.map((person) => (
+                  {staffVisible.map((person) => (
                      <TableRow key={person.id}>
                        <TableCell className="whitespace-nowrap">
                          <div className="font-medium">{person.prenom} {person.nom}</div>
@@ -1702,50 +1724,63 @@ const Admin = () => {
               </div>
               {/* Téléphone : une fiche par crew, sans défilement sur le côté */}
               <div className="grid gap-3 md:hidden" data-testid="crews-fiches">
-                {staffAffiche.map((person) => {
+                {staffVisible.map((person) => {
                   const st = person.statut_candidature || "en_attente";
+                  const ouvert = ouvertStaff === person.id;
                   return (
-                  <div key={person.id} className={`border border-[#DCCDAA] bg-[#FAF6EC] p-4 space-y-3 shadow-[0_18px_40px_-34px_rgba(60,40,10,.55)] ${st === "approuve" ? "border-l-2 border-l-[#1F5A4C]" : st === "refuse" ? "border-l-2 border-l-[#9C4A2C]" : ""}`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="font-serif text-[19px] leading-tight break-words">{person.prenom} {person.nom}</div>
-                        <div className="mt-1 text-sm text-muted-foreground [overflow-wrap:anywhere]">{person.email}</div>
+                  <div key={person.id} className={`border border-[#DCCDAA] bg-[#FAF6EC] shadow-[0_18px_40px_-34px_rgba(60,40,10,.55)] ${st === "approuve" ? "border-l-2 border-l-[#1F5A4C]" : st === "refuse" ? "border-l-2 border-l-[#9C4A2C]" : ""}`}>
+                    <button type="button" aria-expanded={ouvert} onClick={() => setOuvertStaff(ouvert ? null : person.id)} className="flex w-full min-h-[56px] items-center justify-between gap-3 p-4 text-left">
+                      <span className="min-w-0">
+                        <span className="block font-serif text-[19px] leading-tight break-words">{person.prenom} {person.nom}</span>
+                        <span className="mt-0.5 block text-sm text-muted-foreground">{person.ville || "Ville non renseignée"}</span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-3">
+                        <span className={`a-st ${st === "approuve" ? "vert" : st === "refuse" ? "terre" : "vide"}`}>{st === "approuve" ? "Approuvé" : st === "refuse" ? "Refusé" : "En attente"}</span>
+                        <span aria-hidden="true" className={`text-[#7A5F1F] transition-transform ${ouvert ? "rotate-180" : ""}`}>▾</span>
+                      </span>
+                    </button>
+                    {ouvert && (
+                    <div className="space-y-3 border-t border-[#DCCDAA] p-4">
+                      <div className="text-sm text-muted-foreground [overflow-wrap:anywhere]">{person.email}</div>
+                      <div className="text-sm">
+                        <span>{person.telephone || <span className="text-muted-foreground">Téléphone non renseigné</span>}</span>
+                        {person.permis && <span className="ml-2 text-[10.5px] font-medium uppercase tracking-[.16em] text-[#7A5F1F]">Permis</span>}
                       </div>
-                      <span className={`a-st shrink-0 ${st === "approuve" ? "vert" : st === "refuse" ? "terre" : "vide"}`}>{st === "approuve" ? "Approuvé" : st === "refuse" ? "Refusé" : "En attente"}</span>
-                    </div>
-                    <div className="text-sm">
-                      <span>{person.telephone || <span className="text-muted-foreground">Téléphone non renseigné</span>}</span> · <span>{person.ville || <span className="text-muted-foreground">Ville non renseignée</span>}</span>
-                      {person.permis && <span className="ml-2 text-[10.5px] font-medium uppercase tracking-[.16em] text-[#7A5F1F]">Permis</span>}
-                    </div>
-                    <div className="flex items-start gap-2">
                       <Textarea
                         value={remarques[person.id] || ""}
                         onChange={(e) => setRemarques(prev => ({ ...prev, [person.id]: e.target.value }))}
                         placeholder="Ajouter des remarques..."
-                        className="min-h-[60px] flex-1 rounded-none border-[#DCCDAA]"
+                        className="min-h-[60px] rounded-none border-[#DCCDAA]"
                       />
+                      {(remarques[person.id] ?? "") !== (person.remarques || "") && (
+                        <Button size="sm" className="h-11 w-full rounded-none" onClick={() => updateStaffRemarques(person.id, remarques[person.id] || "")}><MessageSquare className="h-4 w-4 mr-2" /> Enregistrer la remarque</Button>
+                      )}
+                      <Select disabled={statutEnCours === person.id} value={st} onValueChange={(v) => changerStatutCandidat(person.id, v)}>
+                        <SelectTrigger className="h-11 w-full rounded-none border-[#DCCDAA] bg-white" aria-label="Statut de la candidature"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="en_attente" className="text-[#8C6D22]">En attente</SelectItem>
+                          <SelectItem value="approuve" className="text-[#2f6b3d]">Approuvé</SelectItem>
+                          <SelectItem value="refuse" className="text-[#9b3b2f]">Refusé</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="flex flex-wrap items-center gap-2 border-t border-[#DCCDAA] pt-3">
+                        <Button variant="outline" size="sm" className="h-11 rounded-none border-[#141414]" onClick={() => generateStaffPDF(person.id)}><FileText className="h-4 w-4 mr-1" /> Fiche PDF</Button>
+                        <Button variant="ghost" size="sm" className="ml-auto h-11 px-3 text-[#9C4A2C] underline-offset-4 hover:bg-transparent hover:text-[#832f25] hover:underline" onClick={() => setDossierASupprimer({ id: person.id, nom: `${person.prenom} ${person.nom}` })}>
+                          <Trash2 className="h-4 w-4 mr-1" /> Supprimer
+                        </Button>
+                      </div>
                     </div>
-                    {(remarques[person.id] ?? "") !== (person.remarques || "") && (
-                      <Button size="sm" className="h-11 w-full rounded-none" onClick={() => updateStaffRemarques(person.id, remarques[person.id] || "")} aria-label="Enregistrer la remarque"><MessageSquare className="h-4 w-4 mr-2" /> Enregistrer la remarque</Button>
                     )}
-                    <Select disabled={statutEnCours === person.id} value={st} onValueChange={(v) => changerStatutCandidat(person.id, v)}>
-                      <SelectTrigger className="h-11 w-full rounded-none border-[#DCCDAA] bg-white" aria-label="Statut de la candidature"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="en_attente" className="text-[#8C6D22]">En attente</SelectItem>
-                        <SelectItem value="approuve" className="text-[#2f6b3d]">Approuvé</SelectItem>
-                        <SelectItem value="refuse" className="text-[#9b3b2f]">Refusé</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <div className="flex flex-wrap items-center gap-2 border-t border-[#DCCDAA] pt-3">
-                      <Button variant="outline" size="sm" className="h-11 rounded-none border-[#141414]" onClick={() => generateStaffPDF(person.id)}><FileText className="h-4 w-4 mr-1" /> Fiche PDF</Button>
-                      <Button variant="ghost" size="sm" className="ml-auto h-11 px-3 text-[#9C4A2C] underline-offset-4 hover:bg-transparent hover:text-[#832f25] hover:underline" onClick={() => setDossierASupprimer({ id: person.id, nom: `${person.prenom} ${person.nom}` })}>
-                        <Trash2 className="h-4 w-4 mr-1" /> Supprimer
-                      </Button>
-                    </div>
                   </div>
                   );
                 })}
               </div>
+              {staffAffiche.length > staffVisible.length && (
+                <div className="mt-4 flex flex-col items-center gap-1">
+                  <Button variant="outline" className="h-11 rounded-none border-[#141414]" onClick={() => setNbStaffAffiches((n) => n + 20)} data-testid="crews-voir-plus">Voir 20 de plus</Button>
+                  <p className="text-xs text-muted-foreground">{staffVisible.length} affichés sur {staffAffiche.length}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
           <AlertDialog open={!!dossierASupprimer} onOpenChange={(o) => { if (!o && !suppressionEnCours) setDossierASupprimer(null); }}>
