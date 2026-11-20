@@ -850,6 +850,10 @@ const Admin = () => {
 
   const [statutEnCours, setStatutEnCours] = useState<string | null>(null);
   const changerStatutCandidat = async (staffId: string, statut: string) => {
+    const personne = staff.find((x) => x.id === staffId);
+    const nomPersonne = personne ? `${personne.prenom} ${personne.nom}`.trim() : "Le candidat";
+    // approuver envoie un e-mail : une confirmation évite l'envoi par un mauvais toucher
+    if (statut === "approuve" && !window.confirm(`Approuver ${nomPersonne} ?\n\nUn e-mail « candidature approuvée » lui sera envoyé.`)) return;
     setStatutEnCours(staffId);
     const { error } = await supabase.from('staff').update({ statut_candidature: statut }).eq('id', staffId);
     setStatutEnCours(null);
@@ -862,14 +866,14 @@ const Admin = () => {
       const { data, error: errMail } = await supabase.functions.invoke("candidature-approuvee", { body: { staffId } });
       const msg = (data as any)?.error || errMail?.message;
       toast(msg
-        ? { title: "Candidat approuvé, mais e-mail non envoyé", description: `${msg}. Repasse-le en attente puis en approuvé pour réessayer.`, variant: "destructive" }
+        ? { title: `${nomPersonne} approuvé(e), mais e-mail non envoyé`, description: `${msg}. Retrouvez-la dans « Approuvés », repassez-la en attente puis en approuvé pour réessayer.`, variant: "destructive" }
         : (data as any)?.dejaEnvoye
-          ? { title: "Candidat approuvé", description: "Il a déjà reçu l'e-mail d'approbation." }
-          : { title: "Candidat approuvé", description: "Un e-mail « candidature approuvée » vient de lui être envoyé." });
+          ? { title: `${nomPersonne} approuvé(e)`, description: "Elle/il a déjà reçu l'e-mail d'approbation." }
+          : { title: `${nomPersonne} approuvé(e)`, description: "Un e-mail « candidature approuvée » vient de lui être envoyé." });
       return;
     }
     toast({
-      title: statut === "refuse" ? "Candidat refusé" : "Remis en attente",
+      title: statut === "refuse" ? `${nomPersonne} refusé(e)` : `${nomPersonne} remis(e) en attente`,
       description: statut === "refuse" ? "Aucun message envoyé. Il n'apparaît plus dans le choix des équipes." : "Aucun message envoyé au candidat.",
     });
   };
@@ -1634,7 +1638,7 @@ const Admin = () => {
                 ))}
               </div>
               {staffAffiche.length === 0 && (
-                <p className="py-6 text-center text-sm text-muted-foreground">Aucun crew ne correspond. <button type="button" className="underline underline-offset-4 text-[#7A5F1F]" onClick={() => { setRechercheStaff(""); setFiltreStaff("tous"); }}>Tout afficher</button></p>
+                <p className="py-6 text-center text-sm text-muted-foreground">Aucun crew ne correspond. <button type="button" className="underline underline-offset-4 text-[#7A5F1F]" onClick={() => { setRechercheStaff(""); setFiltreStaff("tous"); setNbStaffAffiches(20); }}>Tout afficher</button></p>
               )}
               <div className="hidden md:block overflow-x-auto">
                 <Table>
@@ -1740,7 +1744,7 @@ const Admin = () => {
                     <div className="space-y-3 border-t border-[#DCCDAA] p-4">
                       <div className="text-sm text-muted-foreground [overflow-wrap:anywhere]">{person.email}</div>
                       <div className="text-sm">
-                        <span>{person.telephone || <span className="text-muted-foreground">Téléphone non renseigné</span>}</span>
+                        <span>{person.telephone ? <a href={`tel:${person.telephone.replace(/\s+/g, "")}`} className="underline underline-offset-4">{person.telephone}</a> : <span className="text-muted-foreground">Téléphone non renseigné</span>}</span>
                         {person.permis && <span className="ml-2 text-[10.5px] font-medium uppercase tracking-[.16em] text-[#7A5F1F]">Permis</span>}
                       </div>
                       <Textarea
