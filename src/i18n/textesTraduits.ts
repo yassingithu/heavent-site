@@ -986,7 +986,6 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "personne ne voit": { en: "no one sees", ar: "لا يرى أحد" },
   "souvenir.": { en: "memory.", ar: "ذكرى." },
   "villes": { en: "cities", ar: "مدن" },
-  "Écrire sur WhatsApp": { en: "Message us on WhatsApp", ar: "راسلونا على واتساب" },
   // Admin : écran « Aujourd'hui »
   "1 bulletin de paie à valider": { en: "1 payslip to approve", ar: "1 كشف راتب في انتظار المصادقة" },
   "1 chose à faire": { en: "1 thing to do", ar: "مهمة واحدة" },
@@ -1072,7 +1071,6 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "Acompte à encaisser": { en: "Deposit to collect", ar: "عربون في انتظار الاستلام" },
   "Solde à encaisser": { en: "Balance to collect", ar: "رصيد في انتظار الاستلام" },
   "Facture à encaisser": { en: "Invoice to collect", ar: "فاتورة في انتظار الأداء" },
-  "Annuler": { en: "Undo", ar: "تراجع" },
   "Chargement": { en: "Loading", ar: "جارٍ التحميل" },
   "Créer la facture {type} de {client} ({montant}) ?\n\nElle ne sera envoyée au client que si tu le décides.": { en: "Create the {type} invoice for {client} ({montant})?\n\nIt will only be sent to the client if you decide so.", ar: "هل تريدون إنشاء الفاتورة {type} الخاصة بـ {client} ({montant})؟\n\nلن تُرسل إلى العميل إلا إذا قررتم ذلك." },
   "Devis, paiements, équipes, contrats et demandes sont à jour.": { en: "Quotes, payments, teams, contracts and requests are all up to date.", ar: "عروض الأسعار والمدفوعات والفرق والعقود والطلبات كلها محدَّثة." },
@@ -1128,6 +1126,7 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "Non merci": { en: "No thanks", ar: "لا، شكرًا" },
   "Candidat(e) ?": { en: "Looking for work?", ar: "تبحثون عن عمل؟" },
   "Inscription ici": { en: "Sign up here", ar: "سجّلوا هنا" },
+  "Devenir hôtesse / staff": { en: "Become a hostess / staff member", ar: "كوني مضيفة / عضوة في الفريق" },
   "Vous cherchez une mission d'hôte ou d'hôtesse ?": { en: "Looking for work as a host or hostess?", ar: "هل تبحثون عن مهمة كمضيف أو مضيفة؟" },
   "Inscrivez-vous ici": { en: "Sign up here", ar: "سجّلوا هنا" },
   "Les candidatures se font en ligne, pas par e-mail.": { en: "Applications are made online, not by email.", ar: "الترشيحات تتم عبر الموقع وليس عبر البريد الإلكتروني." },

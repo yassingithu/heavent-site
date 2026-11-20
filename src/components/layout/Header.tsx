@@ -130,6 +130,7 @@ const Header = () => {
           ))}
           <span className="s-nav-sep" aria-hidden="true" />
           <Link to="/prestataires" className="s-nav-sec" aria-current={pathname === "/prestataires" ? "page" : undefined} data-testid="bouton-prestataires-ordi">{x("Devenir prestataire")}</Link>
+          <Link to="/inscription-staff" className="s-nav-sec" aria-current={pathname === "/inscription-staff" ? "page" : undefined} data-testid="bouton-staff-ordi">{x("Devenir hôtesse / staff")}</Link>
           <MenuDeroulant titre={x("Se connecter")} liens={connexion} discret />
           <Langues />
           <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-filet" data-testid="entete-devis">{x("Demander un devis")}</Link>
@@ -159,6 +160,7 @@ const Header = () => {
             <Link key={item.href} to={item.href} onClick={() => setOuvert(false)} aria-current={pathname === item.href ? "page" : undefined} tabIndex={ouvert ? 0 : -1}>{item.name}</Link>
           ))}
           <Link to="/prestataires" onClick={() => setOuvert(false)} aria-current={pathname === "/prestataires" ? "page" : undefined} tabIndex={ouvert ? 0 : -1} data-testid="bouton-prestataires">{x("Devenir prestataire")}</Link>
+          <Link to="/inscription-staff" onClick={() => setOuvert(false)} aria-current={pathname === "/inscription-staff" ? "page" : undefined} tabIndex={ouvert ? 0 : -1} data-testid="bouton-staff">{x("Devenir hôtesse / staff")}</Link>
         </nav>
         <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-plein">{x("Demander un devis")} <span className="fl" aria-hidden="true">→</span></Link>
         <div className="s-panneau-pied">
