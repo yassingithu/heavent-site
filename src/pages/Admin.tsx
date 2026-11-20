@@ -225,12 +225,15 @@ const Admin = () => {
   const choisirTriStaff = (v: string) => { setTriStaff(v); try { localStorage.setItem("heavent-tri-crews", v); } catch { /* sans stockage : le choix ne sera pas retenu */ } };
   const staffAffiche = (() => {
     const norm = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    const q = norm(rechercheStaff.trim());
-    const liste = q ? staff.filter((x) => norm(`${x.prenom} ${x.nom} ${x.email} ${x.telephone || ""} ${x.ville || ""}`).includes(q)) : [...staff];
+    const mots = norm(rechercheStaff).split(/\s+/).filter(Boolean);
+    const botte = (x: Staff) => norm(`${x.prenom} ${x.nom} ${x.email} ${x.telephone || ""} ${x.ville || ""}`).replace(/\s+/g, "");
+    const liste = mots.length ? staff.filter((x) => { const b = botte(x); return mots.every((m) => b.includes(m)); }) : [...staff];
     const nomComplet = (x: Staff) => `${x.prenom} ${x.nom}`.trim();
     const rang = (x: Staff) => ({ en_attente: 0, approuve: 1, refuse: 2 } as Record<string, number>)[x.statut_candidature || "en_attente"] ?? 3;
     if (triStaff === "az") liste.sort((a, b) => nomComplet(a).localeCompare(nomComplet(b), "fr", { sensitivity: "base" }));
     else if (triStaff === "za") liste.sort((a, b) => nomComplet(b).localeCompare(nomComplet(a), "fr", { sensitivity: "base" }));
+    // « plus récents » : même ordre que la requête (created_at décroissant), rendu explicite ici
+    else if (triStaff === "recent") liste.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
     else if (triStaff === "statut") liste.sort((a, b) => rang(a) - rang(b) || nomComplet(a).localeCompare(nomComplet(b), "fr", { sensitivity: "base" }));
     return liste;
   })();
@@ -673,7 +676,8 @@ const Admin = () => {
         description: "Les remarques ont été sauvegardées",
       });
 
-      fetchData();
+      // mise à jour sur place : pas de rechargement de la page, les autres remarques en cours de saisie restent
+      setStaff((prev) => prev.map((x) => (x.id === staffId ? { ...x, remarques: newRemarques } : x)));
     } catch (error) {
       toast({
         title: "Erreur",
@@ -1598,9 +1602,9 @@ const Admin = () => {
             </CardHeader>
             <CardContent>
               <div className="mb-4 flex flex-col gap-2 sm:flex-row">
-                <Input value={rechercheStaff} onChange={(e) => setRechercheStaff(e.target.value)} placeholder="Rechercher un nom, un e-mail, une ville…" className="sm:max-w-xs" data-testid="crews-recherche" />
+                <Input value={rechercheStaff} onChange={(e) => setRechercheStaff(e.target.value)} type="search" inputMode="search" placeholder="Rechercher un nom, un e-mail, une ville…" className="h-11 rounded-none border-[#DCCDAA] bg-white sm:max-w-xs" data-testid="crews-recherche" />
                 <Select value={triStaff} onValueChange={choisirTriStaff}>
-                  <SelectTrigger className="sm:w-[210px]" data-testid="crews-tri"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-11 rounded-none border-[#DCCDAA] bg-white sm:w-[210px]" data-testid="crews-tri"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="az">Trier : A → Z</SelectItem>
                     <SelectItem value="za">Trier : Z → A</SelectItem>
@@ -1608,13 +1612,16 @@ const Admin = () => {
                     <SelectItem value="recent">Trier : plus récents</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="self-center text-sm text-muted-foreground" data-testid="crews-compte">{staffAffiche.length} crew{staffAffiche.length > 1 ? "s" : ""}{rechercheStaff.trim() ? ` sur ${staff.length}` : ""}</p>
+                <p className="self-center text-[10.5px] font-medium uppercase tracking-[.16em] text-[#7A5F1F]" data-testid="crews-compte">{staffAffiche.length} crew{staffAffiche.length > 1 ? "s" : ""}{rechercheStaff.trim() ? ` sur ${staff.length}` : ""}</p>
               </div>
+              {staffAffiche.length === 0 && (
+                <p className="py-6 text-center text-sm text-muted-foreground">Aucun crew ne correspond à cette recherche. <button type="button" className="underline underline-offset-4 text-[#7A5F1F]" onClick={() => setRechercheStaff("")}>Effacer la recherche</button></p>
+              )}
               <div className="hidden md:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="whitespace-nowrap min-w-[120px]">Nom & Prénom</TableHead>
+                      <TableHead className="whitespace-nowrap min-w-[120px]">Prénom & nom</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[150px]">Email</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[100px]">Téléphone</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[80px]">Ville</TableHead>
@@ -1659,7 +1666,7 @@ const Admin = () => {
                              placeholder="Ajouter des remarques..."
                              className="min-h-[60px] max-w-[200px]"
                            />
-                           {remarques[person.id] !== (person.remarques || "") && (
+                           {(remarques[person.id] ?? "") !== (person.remarques || "") && (
                              <Button
                                size="sm"
                                onClick={() => updateStaffRemarques(person.id, remarques[person.id] || "")}
@@ -1695,44 +1702,49 @@ const Admin = () => {
               </div>
               {/* Téléphone : une fiche par crew, sans défilement sur le côté */}
               <div className="grid gap-3 md:hidden" data-testid="crews-fiches">
-                {staffAffiche.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Aucun crew ne correspond à cette recherche.</p>}
-                {staffAffiche.map((person) => (
-                  <div key={person.id} className="border border-[#EADFC8] bg-[#FBF6E9]/60 p-4 space-y-3">
+                {staffAffiche.map((person) => {
+                  const st = person.statut_candidature || "en_attente";
+                  return (
+                  <div key={person.id} className={`border border-[#DCCDAA] bg-[#FAF6EC] p-4 space-y-3 shadow-[0_18px_40px_-34px_rgba(60,40,10,.55)] ${st === "approuve" ? "border-l-2 border-l-[#1F5A4C]" : st === "refuse" ? "border-l-2 border-l-[#9C4A2C]" : ""}`}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="font-medium break-words">{person.prenom} {person.nom}</div>
-                        <div className="text-sm text-muted-foreground break-all">{person.email}</div>
+                        <div className="font-serif text-[19px] leading-tight break-words">{person.prenom} {person.nom}</div>
+                        <div className="mt-1 text-sm text-muted-foreground [overflow-wrap:anywhere]">{person.email}</div>
                       </div>
-                      <Badge variant={person.permis ? "default" : "secondary"} className="shrink-0">{person.permis ? "Permis" : "Sans permis"}</Badge>
+                      <span className={`a-st shrink-0 ${st === "approuve" ? "vert" : st === "refuse" ? "terre" : "vide"}`}>{st === "approuve" ? "Approuvé" : st === "refuse" ? "Refusé" : "En attente"}</span>
                     </div>
-                    <div className="text-sm">{person.telephone || "Téléphone non renseigné"} · {person.ville || "Ville non renseignée"}</div>
-                    <Select disabled={statutEnCours === person.id} value={person.statut_candidature || "en_attente"} onValueChange={(v) => changerStatutCandidat(person.id, v)}>
-                      <SelectTrigger className="h-10 w-full rounded-none"><SelectValue /></SelectTrigger>
+                    <div className="text-sm">
+                      <span>{person.telephone || <span className="text-muted-foreground">Téléphone non renseigné</span>}</span> · <span>{person.ville || <span className="text-muted-foreground">Ville non renseignée</span>}</span>
+                      {person.permis && <span className="ml-2 text-[10.5px] font-medium uppercase tracking-[.16em] text-[#7A5F1F]">Permis</span>}
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Textarea
+                        value={remarques[person.id] || ""}
+                        onChange={(e) => setRemarques(prev => ({ ...prev, [person.id]: e.target.value }))}
+                        placeholder="Ajouter des remarques..."
+                        className="min-h-[60px] flex-1 rounded-none border-[#DCCDAA]"
+                      />
+                    </div>
+                    {(remarques[person.id] ?? "") !== (person.remarques || "") && (
+                      <Button size="sm" className="h-11 w-full rounded-none" onClick={() => updateStaffRemarques(person.id, remarques[person.id] || "")} aria-label="Enregistrer la remarque"><MessageSquare className="h-4 w-4 mr-2" /> Enregistrer la remarque</Button>
+                    )}
+                    <Select disabled={statutEnCours === person.id} value={st} onValueChange={(v) => changerStatutCandidat(person.id, v)}>
+                      <SelectTrigger className="h-11 w-full rounded-none border-[#DCCDAA] bg-white" aria-label="Statut de la candidature"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="en_attente" className="text-[#8C6D22]">En attente</SelectItem>
                         <SelectItem value="approuve" className="text-[#2f6b3d]">Approuvé</SelectItem>
                         <SelectItem value="refuse" className="text-[#9b3b2f]">Refusé</SelectItem>
                       </SelectContent>
                     </Select>
-                    <div className="flex items-start gap-2">
-                      <Textarea
-                        value={remarques[person.id] || ""}
-                        onChange={(e) => setRemarques(prev => ({ ...prev, [person.id]: e.target.value }))}
-                        placeholder="Ajouter des remarques..."
-                        className="min-h-[60px] flex-1"
-                      />
-                      {remarques[person.id] !== (person.remarques || "") && (
-                        <Button size="sm" onClick={() => updateStaffRemarques(person.id, remarques[person.id] || "")}><MessageSquare className="h-4 w-4" /></Button>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm" onClick={() => generateStaffPDF(person.id)}>📄 Fiche PDF</Button>
-                      <Button variant="ghost" size="sm" className="h-9 px-2 text-[#9b3b2f] underline-offset-4 hover:bg-transparent hover:text-[#832f25] hover:underline" onClick={() => setDossierASupprimer({ id: person.id, nom: `${person.prenom} ${person.nom}` })}>
+                    <div className="flex flex-wrap items-center gap-2 border-t border-[#DCCDAA] pt-3">
+                      <Button variant="outline" size="sm" className="h-11 rounded-none border-[#141414]" onClick={() => generateStaffPDF(person.id)}><FileText className="h-4 w-4 mr-1" /> Fiche PDF</Button>
+                      <Button variant="ghost" size="sm" className="ml-auto h-11 px-3 text-[#9C4A2C] underline-offset-4 hover:bg-transparent hover:text-[#832f25] hover:underline" onClick={() => setDossierASupprimer({ id: person.id, nom: `${person.prenom} ${person.nom}` })}>
                         <Trash2 className="h-4 w-4 mr-1" /> Supprimer
                       </Button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
