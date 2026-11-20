@@ -82,7 +82,6 @@ const Header = () => {
   ];
   const connexion = [
     { nom: x("Espace crew"), href: "/auth", id: "menu-connexion-crew" },
-    { nom: t("nav.joinTeam"), href: "/inscription-staff", id: "menu-connexion-rejoindre" },
   ];
   const evenementActif = evenements.some((e) => e.href === pathname);
   const navigation = [
@@ -131,7 +130,7 @@ const Header = () => {
           <span className="s-nav-sep" aria-hidden="true" />
           <Link to="/prestataires" className="s-nav-sec" aria-current={pathname === "/prestataires" ? "page" : undefined} data-testid="bouton-prestataires-ordi">{x("Devenir prestataire")}</Link>
           <Link to="/inscription-staff" className="s-nav-sec" aria-current={pathname === "/inscription-staff" ? "page" : undefined} data-testid="bouton-staff-ordi">{x("Devenir hôtesse / staff")}</Link>
-          <MenuDeroulant titre={x("Se connecter")} liens={connexion} discret />
+          <Link to="/auth" className="s-nav-sec" aria-current={pathname === "/auth" ? "page" : undefined} data-testid="menu-connexion-crew">{x("Espace crew")}</Link>
           <Langues />
           <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-filet" data-testid="entete-devis">{x("Demander un devis")}</Link>
         </nav>
@@ -159,8 +158,10 @@ const Header = () => {
           {navigation.slice(1).map((item) => (
             <Link key={item.href} to={item.href} onClick={() => setOuvert(false)} aria-current={pathname === item.href ? "page" : undefined} tabIndex={ouvert ? 0 : -1}>{item.name}</Link>
           ))}
-          <Link to="/prestataires" onClick={() => setOuvert(false)} aria-current={pathname === "/prestataires" ? "page" : undefined} tabIndex={ouvert ? 0 : -1} data-testid="bouton-prestataires">{x("Devenir prestataire")}</Link>
+          <span className="s-panneau-sep" aria-hidden="true" />
+          <p className="s-panneau-groupe">{x("Travailler avec nous")}</p>
           <Link to="/inscription-staff" onClick={() => setOuvert(false)} aria-current={pathname === "/inscription-staff" ? "page" : undefined} tabIndex={ouvert ? 0 : -1} data-testid="bouton-staff">{x("Devenir hôtesse / staff")}</Link>
+          <Link to="/prestataires" onClick={() => setOuvert(false)} aria-current={pathname === "/prestataires" ? "page" : undefined} tabIndex={ouvert ? 0 : -1} data-testid="bouton-prestataires">{x("Devenir prestataire")}</Link>
         </nav>
         <Link to={cibleDevis} onClick={versDevis} className="s-btn s-btn-plein">{x("Demander un devis")} <span className="fl" aria-hidden="true">→</span></Link>
         <div className="s-panneau-pied">

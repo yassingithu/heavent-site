@@ -70,7 +70,7 @@ const Home = () => {
               <a ref={cta} className="s-btn s-btn-plein" href="#devis" data-testid="accueil-devis">{x("Demander un devis")} <span className="fl" aria-hidden="true">→</span></a>
               <Bouton to="/cree-ton-evenement" variante="filet">{x("Imaginer mon événement")}</Bouton>
             </div>
-            <p className="s-candidat-ligne s-entree-heros" data-testid="accueil-candidats">{x("Vous cherchez une mission ?")} <Link to="/inscription-staff">{x("Devenir hôtesse / staff")} →</Link></p>
+            <p className="s-candidat-ligne s-entree-heros" data-testid="accueil-candidats">{x("Vous cherchez une mission ?")} <Link to="/inscription-staff">{x("Devenir hôtesse / staff")} <span className="fl" aria-hidden="true">→</span></Link></p>
           </div>
           <Photo prioritaire nom="table-honneur" l={900} h={1204} legende={x("Table d'honneur · gypsophile suspendue")}
             alt={x("Table d'honneur d'un mariage devant de grandes verrières en arche, un nuage de gypsophile suspendu au-dessus de la nappe ivoire")} />

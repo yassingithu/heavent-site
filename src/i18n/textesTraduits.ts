@@ -1126,6 +1126,7 @@ export const TEXTES: Record<string, { en: string; ar: string }> = {
   "Non merci": { en: "No thanks", ar: "لا، شكرًا" },
   "Candidat(e) ?": { en: "Looking for work?", ar: "تبحثون عن عمل؟" },
   "Inscription ici": { en: "Sign up here", ar: "سجّلوا هنا" },
+  "Travailler avec nous": { en: "Work with us", ar: "اعملوا معنا" },
   "Devenir hôtesse / staff": { en: "Become a hostess / staff member", ar: "كوني مضيفة / عضوة في الفريق" },
   "Vous cherchez une mission d'hôte ou d'hôtesse ?": { en: "Looking for work as a host or hostess?", ar: "هل تبحثون عن مهمة كمضيف أو مضيفة؟" },
   "Inscrivez-vous ici": { en: "Sign up here", ar: "سجّلوا هنا" },
