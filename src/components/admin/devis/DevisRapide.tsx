@@ -701,9 +701,9 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <Select value={d.statut} onValueChange={(v) => changerStatut(d.id, v)}>
                           <SelectTrigger className="h-8 w-[120px] border-0 p-0 shadow-none">
-                            <Badge className={STATUTS[d.statut]?.className}>{STATUTS[d.statut]?.label ?? d.statut}</Badge>
+                            <Badge className={STATUTS[d.statut]?.className}>{d.statut === "en_attente" ? "En attente" : STATUTS[d.statut]?.label ?? d.statut}</Badge>
                           </SelectTrigger>
-                          <SelectContent>{(d.reponseRapide ? ["en_attente", "envoye", "accepte", "refuse"] : statutsPermis(d)).map((k) => <SelectItem key={k} value={k}>{d.reponseRapide && k === "refuse" ? "Refusé / annulé" : STATUTS[k].label}</SelectItem>)}</SelectContent>
+                          <SelectContent>{(d.reponseRapide ? ["en_attente", "envoye", "accepte", "refuse"] : statutsPermis(d)).map((k) => <SelectItem key={k} value={k}>{d.reponseRapide && k === "refuse" ? "Refusé / annulé" : k === "en_attente" ? "En attente" : STATUTS[k]?.label ?? k}</SelectItem>)}</SelectContent>
                         </Select>
                         {d.archive && <div className="text-[11px] text-muted-foreground mt-0.5">🗄️ archivé</div>}
                       </TableCell>
