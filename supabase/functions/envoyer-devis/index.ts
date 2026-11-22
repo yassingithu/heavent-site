@@ -46,6 +46,14 @@ serve(async (req) => {
     });
     if ((r as any)?.error) return json({ error: "L'e-mail n'a pas pu être envoyé" }, 502);
     await db.from("devis").update({ statut: d.statut === "brouillon" ? "envoye" : d.statut, date_envoi: new Date().toISOString(), relances: 0, derniere_relance_le: null }).eq("id", d.id);
+    // Historique : le déclencheur n'a pas d'adresse (clé de service) ; on y inscrit la personne qui a envoyé le devis. Sans incidence sur l'envoi.
+    if (d.statut === "brouillon") {
+      try {
+        await db.from("historique_changements").update({ par_email: caller.email })
+          .eq("table_name", "devis").eq("ligne_id", d.id).eq("apres", "envoye").eq("par_email", "automatique")
+          .gte("created_at", new Date(Date.now() - 60_000).toISOString());
+      } catch (_) { /* le journal ne bloque jamais l'envoi */ }
+    }
     return json({ success: true, lien: `https://heaventagency.com/mon-devis/${d.lien_token}` });
   } catch (err: any) {
     return json({ error: "Erreur interne : " + err.message }, 500);
