@@ -38,6 +38,20 @@ export default function DepensesAdmin() {
   const [nouvelleCategorie, setNouvelleCategorie] = useState("");
   const [gererCategories, setGererCategories] = useState(false);
   const entree = useRef<HTMLInputElement>(null);
+  const [facturesMois, setFacturesMois] = useState<FactureCompta[] | null>(null);
+  useEffect(() => {
+    let annule = false;
+    setFacturesMois(null);
+    const debut = `${mois}-01`;
+    const fin = `${moisPrecedentSuivant(mois).suivant}-01`;
+    (supabase as any).from("factures")
+      .select("numero, type, date_emission, client_nom, client_societe, client_ice, devis_numero, total_ht, total_tva, total_ttc, deduction_ttc, net_a_payer, statut, payee_le, mode_paiement, devise")
+      .or(`and(date_emission.gte.${debut},date_emission.lt.${fin}),and(payee_le.gte.${debut},payee_le.lt.${fin})`)
+      .then(({ data, error }: any) => { if (!annule) setFacturesMois(error ? [] : dansLeMois((data ?? []) as FactureCompta[], mois)); });
+    return () => { annule = true; };
+  }, [mois]);
+  const emisesMois = (facturesMois ?? []).filter((x) => x.date_emission?.slice(0, 7) === mois);
+  const payeesMois = (facturesMois ?? []).filter((x) => x.payee_le?.slice(0, 7) === mois);
 
   const charger = useCallback(async () => {
     setChargement(true);
@@ -131,27 +145,13 @@ export default function DepensesAdmin() {
   };
   const exporterCsv = () => telecharger("﻿" + csvDepenses(lignes, nomEvenement), `depenses-${mois}.csv`, "text/csv;charset=utf-8");
   /** « Pour le comptable » : factures émises et paiements encaissés dans le mois affiché (2 tableaux Excel dans un ZIP). */
-  const exporterRecettes = async () => {
-    setOccupe(true);
-    try {
-      const debut = `${mois}-01`;
-      const suivantMois = moisPrecedentSuivant(mois).suivant;
-      const fin = `${suivantMois}-01`;
-      const { data, error } = await (supabase as any).from("factures")
-        .select("numero, type, date_emission, client_nom, client_societe, client_ice, devis_numero, total_ht, total_tva, total_ttc, deduction_ttc, net_a_payer, statut, payee_le, mode_paiement, devise")
-        .or(`and(date_emission.gte.${debut},date_emission.lt.${fin}),and(payee_le.gte.${debut},payee_le.lt.${fin})`);
-      if (error) throw error;
-      const toutes = dansLeMois((data ?? []) as FactureCompta[], mois);
-      const emises = toutes.filter((x) => x.date_emission?.slice(0, 7) === mois);
-      const payees = toutes.filter((x) => x.payee_le?.slice(0, 7) === mois);
-      if (!emises.length && !payees.length) { toast({ title: "Rien à exporter", description: `Aucune facture émise ni paiement encaissé en ${moisLong(mois)}.` }); setOccupe(false); return; }
-      telecharger(zipSync({
-        [`factures-${mois}.csv`]: strToU8("\uFEFF" + csvFactures(emises)),
-        [`paiements-${mois}.csv`]: strToU8("\uFEFF" + csvPaiements(payees)),
-      }, { level: 0 }), `recettes-${mois}.zip`, "application/zip");
-      toast({ title: "Export prêt", description: `${emises.length} facture${emises.length > 1 ? "s" : ""} émise${emises.length > 1 ? "s" : ""}, ${payees.length} paiement${payees.length > 1 ? "s" : ""} encaissé${payees.length > 1 ? "s" : ""}.` });
-    } catch (e: any) { toast({ title: "Export impossible", description: e?.message, variant: "destructive" }); }
-    setOccupe(false);
+  const exporterRecettes = () => {
+    if (!emisesMois.length && !payeesMois.length) return;
+    telecharger(zipSync({
+      [`factures-${mois}.csv`]: strToU8("\uFEFF" + csvFactures(emisesMois)),
+      [`paiements-${mois}.csv`]: strToU8("\uFEFF" + csvPaiements(payeesMois)),
+    }, { level: 0 }), `recettes-${mois}.zip`, "application/zip");
+    toast({ title: "Export prêt", description: "Un ZIP avec 2 tableaux Excel : à envoyer à ton comptable." });
   };
   const exporterZip = async () => {
     setOccupe(true);
@@ -207,10 +207,14 @@ export default function DepensesAdmin() {
             <p className="text-xs text-muted-foreground">{lignes.length} dépense{lignes.length > 1 ? "s" : ""}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={exporterCsv} disabled={!lignes.length} data-testid="export-csv"><FileText className="h-4 w-4" /> Tableau (Excel)</Button>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={exporterZip} disabled={!lignes.length || occupe} data-testid="export-zip"><Download className="h-4 w-4" /> Tableau + photos (ZIP)</Button>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={exporterRecettes} disabled={occupe} data-testid="export-recettes" title="Factures émises et paiements encaissés ce mois-ci, pour le comptable"><FileText className="h-4 w-4" /> Recettes du mois (ZIP)</Button>
+            <Button variant="outline" size="sm" className="h-11 gap-1.5 sm:h-9" onClick={exporterCsv} disabled={!lignes.length} data-testid="export-csv"><FileText className="h-4 w-4" /> Tableau (Excel)</Button>
+            <Button variant="outline" size="sm" className="h-11 gap-1.5 sm:h-9" onClick={exporterZip} disabled={!lignes.length || occupe} data-testid="export-zip"><Download className="h-4 w-4" /> Tableau + photos (ZIP)</Button>
           </div>
+        </div>
+        <div className="mt-4 border-t border-[#EADFC8] pt-4" data-testid="pour-le-comptable">
+          <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-[#8C6D22]">Pour le comptable</p>
+          <Button variant="outline" className="mt-2 h-11 gap-2 sm:h-9" onClick={exporterRecettes} disabled={!facturesMois || (!emisesMois.length && !payeesMois.length)} data-testid="export-recettes"><Receipt className="h-4 w-4" /> Factures et paiements de {moisLong(mois)} (ZIP)</Button>
+          <p className="mt-1.5 text-xs text-muted-foreground" data-testid="export-recettes-aide">{!facturesMois ? "Chargement…" : emisesMois.length || payeesMois.length ? `${emisesMois.length} facture${emisesMois.length > 1 ? "s" : ""} émise${emisesMois.length > 1 ? "s" : ""} · ${payeesMois.length} paiement${payeesMois.length > 1 ? "s" : ""} encaissé${payeesMois.length > 1 ? "s" : ""}. 2 tableaux Excel dans un ZIP.` : "Aucune facture émise ni paiement encaissé ce mois-ci. Change de mois avec les flèches."}</p>
         </div>
         {parCategorie.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2" data-testid="depenses-categories">

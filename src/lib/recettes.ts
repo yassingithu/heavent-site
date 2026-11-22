@@ -4,6 +4,8 @@ import { libelleStatut } from "@/lib/statuts";
 /**
  * Exports « recettes » pour le comptable : les factures émises dans le mois et les paiements encaissés dans le mois.
  * Même format que l'export des dépenses : CSV pour Excel, séparateur « ; », virgule décimale (l'appelant ajoute le BOM UTF-8).
+ * Une facture de solde porte le total complet du devis avec les acomptes déduits à part : les montants « facturés » ci-dessous
+ * sont donc ramenés à la part réellement facturée (net à payer), pour que les totaux ne comptent jamais deux fois un acompte.
  * Une facture annulée reste dans la liste (elle garde son numéro) mais n'entre dans aucun total.
  */
 export interface FactureCompta {
@@ -13,26 +15,47 @@ export interface FactureCompta {
 }
 const TYPES: Record<string, string> = { acompte: "Acompte", solde: "Solde", totale: "Facture" };
 const jour = (d: string | null) => (d ? d.slice(0, 10).split("-").reverse().join("/") : "");
-const somme = (l: FactureCompta[], c: (f: FactureCompta) => number) => l.filter((f) => f.statut !== "annulee").reduce((t, f) => t + (Number(c(f)) || 0), 0);
-const assembler = (l: (string | number)[][]) => l.map((r) => r.map(cellule).join(";")).join("\r\n") + "\r\n";
+const arrondi = (n: number) => Math.round(n * 100) / 100;
+
+/** Part réellement facturée : HT, TVA et TTC (net à payer, acomptes déduits). */
+export function partFacturee(f: FactureCompta) {
+  const ttc = Number(f.net_a_payer) || 0;
+  const total = Number(f.total_ttc) || 0;
+  const r = total > 0 ? ttc / total : 1;
+  const ht = arrondi((Number(f.total_ht) || 0) * r);
+  return { ht, tva: arrondi(ttc - ht), ttc };
+}
+
+type Brut = { brut: string };
+const assembler = (l: (string | number | Brut)[][]) => l.map((r) => r.map((c) => (typeof c === "object" ? c.brut : cellule(c))).join(";")).join("\r\n") + "\r\n";
+/** ICE : 15 chiffres, souvent avec des zéros devant ; écrit en texte pour qu'Excel ne les efface pas. */
+const ice = (v: string | null): string | Brut => (v && /^\d{5,}$/.test(v.trim()) ? { brut: `"=""${v.trim()}"""` } : v ?? "");
+const hors = (l: FactureCompta[]) => l.filter((f) => f.statut !== "annulee");
 
 export function csvFactures(l: FactureCompta[]): string {
-  const tete = ["N° facture", "Date d'émission", "Type", "Client", "Société", "ICE", "Devis", "Total HT", "TVA", "Total TTC", "Déduit (acomptes)", "Net à payer", "Statut", "Payée le", "Mode de paiement", "Devise"];
-  const lignes = [...l].sort((a, b) => a.date_emission.localeCompare(b.date_emission) || a.numero.localeCompare(b.numero)).map((f) => [
-    f.numero, jour(f.date_emission), TYPES[f.type] ?? f.type, f.client_nom ?? "", f.client_societe ?? "", f.client_ice ?? "", f.devis_numero ?? "",
-    nb(f.total_ht), nb(f.total_tva), nb(f.total_ttc), nb(f.deduction_ttc ?? 0), nb(f.net_a_payer), libelleStatut("facture", f.statut), jour(f.payee_le), f.mode_paiement ?? "", f.devise ?? "MAD",
-  ]);
-  const total = ["", "", "", "", "", "", "TOTAL (hors annulées)", nb(somme(l, (f) => f.total_ht)), nb(somme(l, (f) => f.total_tva)), nb(somme(l, (f) => f.total_ttc)), nb(somme(l, (f) => f.deduction_ttc ?? 0)), nb(somme(l, (f) => f.net_a_payer)), "", "", "", ""];
+  const tete = ["N° facture", "Date d'émission", "Type", "Client", "Société", "ICE", "Devis", "HT facturé", "TVA", "TTC facturé", "Total TTC du devis", "Déduit (acomptes)", "Statut", "Payée le", "Mode de paiement", "Devise", "Remarque"];
+  const lignes = [...l].sort((a, b) => a.date_emission.localeCompare(b.date_emission) || a.numero.localeCompare(b.numero)).map((f) => {
+    const p = partFacturee(f);
+    return [
+      f.numero, jour(f.date_emission), TYPES[f.type] ?? f.type, f.client_nom ?? "", f.client_societe ?? "", ice(f.client_ice), f.devis_numero ?? "",
+      nb(p.ht), nb(p.tva), nb(p.ttc), nb(f.total_ttc), nb(f.deduction_ttc ?? 0), libelleStatut("facture", f.statut), jour(f.payee_le), f.mode_paiement ?? "", f.devise ?? "MAD",
+      f.statut === "annulee" && f.payee_le ? "Annulée après paiement" : "",
+    ];
+  });
+  const somme = (c: "ht" | "tva" | "ttc") => hors(l).reduce((t, f) => t + partFacturee(f)[c], 0);
+  const total = ["", "", "", "", "", "", "TOTAL (hors annulées)", nb(somme("ht")), nb(somme("tva")), nb(somme("ttc")), "", "", "", "", "", "", ""];
   return assembler([tete, ...lignes, total]);
 }
 
 export function csvPaiements(l: FactureCompta[]): string {
   const payees = l.filter((f) => f.statut === "payee" && f.payee_le);
-  const tete = ["Date du paiement", "N° facture", "Client", "Société", "Mode de paiement", "Montant encaissé", "Devise"];
-  const lignes = [...payees].sort((a, b) => String(a.payee_le).localeCompare(String(b.payee_le))).map((f) => [
-    jour(f.payee_le), f.numero, f.client_nom ?? "", f.client_societe ?? "", f.mode_paiement ?? "", nb(f.net_a_payer), f.devise ?? "MAD",
-  ]);
-  const total = ["", "", "", "", "TOTAL encaissé", nb(payees.reduce((t, f) => t + (Number(f.net_a_payer) || 0), 0)), ""];
+  const tete = ["Date du paiement", "N° facture", "Client", "Société", "Mode de paiement", "Montant HT", "TVA", "Montant TTC encaissé", "Devise"];
+  const lignes = [...payees].sort((a, b) => String(a.payee_le).localeCompare(String(b.payee_le))).map((f) => {
+    const p = partFacturee(f);
+    return [jour(f.payee_le), f.numero, f.client_nom ?? "", f.client_societe ?? "", f.mode_paiement ?? "", nb(p.ht), nb(p.tva), nb(p.ttc), f.devise ?? "MAD"];
+  });
+  const s = (c: "ht" | "tva" | "ttc") => payees.reduce((t, f) => t + partFacturee(f)[c], 0);
+  const total = ["", "", "", "", "TOTAL encaissé", nb(s("ht")), nb(s("tva")), nb(s("ttc")), ""];
   return assembler([tete, ...lignes, total]);
 }
 
