@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useToast, toast as toastGlobal } from "@/hooks/use-toast";
+import { envoyerAvecAnnulation } from "@/lib/envoiDiffere";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,8 +37,15 @@ export function useActionsFacture(params: Parametres | null, apres: () => void) 
   };
   const envoyer = async (f: Facture) => {
     if (!f.client_email) { toast({ title: "E-mail du client manquant", description: "Ajoute l'e-mail dans le devis : il sera repris sur les prochaines factures.", variant: "destructive" }); return; }
-    if (!confirm(`Vérifie avant l'envoi :\n\nDestinataire : ${f.client_nom ?? ""} <${f.client_email}>\nÉvénement : ${f.titre || "sans titre"}${f.date_evenement ? ` · ${f.date_evenement}` : ""}\nDocument : facture ${f.numero} (devis ${f.devis_numero ?? ""}) · lien vers le PDF, aucune pièce jointe\n\nEnvoyer ?`)) return;
     setOccupe(f.id);
+    envoyerAvecAnnulation(toastGlobal, {
+      titre: `Envoi de la facture ${f.numero} dans quelques secondes`,
+      description: `À ${f.client_nom ?? ""} <${f.client_email}>${f.titre ? ` · ${f.titre}` : ""}. Lien vers le PDF, sans pièce jointe.`,
+      quandAnnule: () => setOccupe(null),
+      envoyer: () => expedierFacture(f),
+    });
+  };
+  const expedierFacture = async (f: Facture) => {
     const { data, error } = await supabase.functions.invoke("envoyer-facture", { body: { factureId: f.id } });
     setOccupe(null);
     if (error || data?.error) { toast({ title: "Facture non envoyée", description: await messageErreur(error, data), variant: "destructive" }); return; }

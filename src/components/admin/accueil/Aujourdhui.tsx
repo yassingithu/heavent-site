@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ToastAction } from "@/components/ui/toast";
+import { toast as toastGlobal } from "@/hooks/use-toast";
+import { envoyerAvecAnnulation } from "@/lib/envoiDiffere";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTexte } from "@/i18n/textes";
@@ -105,13 +107,22 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
   const soumettre = async (cle: string, travail: () => Promise<void>) => { setOccupe(cle); try { await travail(); } finally { setOccupe(null); } };
   const nom = (v: any) => v.client_societe || v.client_nom;
 
-  const relancerParEmail = (v: any) => soumettre("m" + v.id, async () => {
+  const relancerParEmail = (v: any) => {
     if (!v.client_email) { toast({ title: x("E-mail du client manquant"), description: x("Ajoute-le dans le devis."), variant: "destructive" }); return; }
-    if (!confirm(x("Renvoyer le devis {numero} à {email} ?\n\nLes relances automatiques repartent de zéro (J+5, J+10).", { numero: v.numero ?? "", email: v.client_email }))) return;
-    const { data, error } = await supabase.functions.invoke("envoyer-devis", { body: { devisId: v.id } });
-    if (error || (data as any)?.error) { toast({ title: x("Devis non renvoyé"), description: x("Réessaie dans un instant."), variant: "destructive" }); return; }
-    toast({ title: x("Devis renvoyé"), description: v.client_email }); charger();
-  });
+    setOccupe("m" + v.id);
+    envoyerAvecAnnulation(toastGlobal, {
+      titre: x("Renvoi du devis {numero} dans quelques secondes", { numero: v.numero ?? "" }),
+      description: x("À {email}. Les relances automatiques repartent de zéro (J+5, J+10).", { email: v.client_email }),
+      quandAnnule: () => setOccupe(null),
+      envoyer: async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke("envoyer-devis", { body: { devisId: v.id } });
+          if (error || (data as any)?.error) { toast({ title: x("Devis non renvoyé"), description: x("Réessaie dans un instant."), variant: "destructive" }); return; }
+          toast({ title: x("Devis renvoyé"), description: v.client_email }); charger();
+        } finally { setOccupe(null); }
+      },
+    });
+  };
   const noterRelance = async (v: any) => {
     const avant = v.derniere_relance_le ?? null;
     const { error } = await (supabase as any).from("devis").update({ derniere_relance_le: new Date().toISOString() }).eq("id", v.id);

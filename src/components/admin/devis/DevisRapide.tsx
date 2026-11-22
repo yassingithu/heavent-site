@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { estDemo } from "@/demo/mode";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useToast, toast as toastGlobal } from "@/hooks/use-toast";
+import { envoyerAvecAnnulation } from "@/lib/envoiDiffere";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -502,16 +503,22 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     if (form.signe_le) { toast({ title: "Devis déjà signé", description: `Signé par ${form.signature_nom} le ${dateHeureFr(form.signe_le)}.` }); return; }
     const saved = await enregistrer();
     if (!saved?.id) return;
-    if (!confirm(`Vérifie avant l'envoi :\n\nDestinataire : ${form?.client_nom ?? ""} <${saved.client_email}>\nÉvénement : ${form?.titre || "sans titre"}${form?.date_evenement ? ` · ${form.date_evenement}` : ""}\nDocument : devis ${saved.numero ?? ""} (lien à consulter et signer en ligne, aucune pièce jointe)\n\nEnvoyer ?`)) return;
     setEnvoiEnCours(true);
+    envoyerAvecAnnulation(toastGlobal, {
+      titre: `Envoi du devis ${saved.numero ?? ""} dans quelques secondes`,
+      description: `À ${form?.client_nom ?? ""} <${saved.client_email}>${form?.titre ? ` · ${form.titre}` : ""}. Lien à consulter et signer en ligne, sans pièce jointe.`,
+      quandAnnule: () => setEnvoiEnCours(false),
+      envoyer: () => expedierDevis(saved),
+    });
+  };
+  const expedierDevis = async (saved: any) => {
     const { data, error } = await supabase.functions.invoke("envoyer-devis", { body: { devisId: saved.id } });
     let message = data?.error as string | undefined;
     if (error && !message) { try { message = (await (error as any).context?.json())?.error; } catch { /* */ } }
     setEnvoiEnCours(false);
     if (error || data?.error) { toast({ title: "Devis non envoyé", description: message ?? "Réessaie dans un instant.", variant: "destructive" }); return; }
     const apresEnvoi = { ...saved, statut: saved.statut === "brouillon" ? "envoye" : saved.statut, date_envoi: new Date().toISOString(), relances: 0 };
-    etatEnregistre.current = JSON.stringify(apresEnvoi);
-    setForm(apresEnvoi);
+    if (!nonEnregistre()) { etatEnregistre.current = JSON.stringify(apresEnvoi); setForm(apresEnvoi); }
     toast({ title: "Devis envoyé ✉️", description: "Le client a reçu son lien de signature. Relances automatiques à J+5 et J+10 s'il ne répond pas." });
     devisModifie(); charger();
   };
