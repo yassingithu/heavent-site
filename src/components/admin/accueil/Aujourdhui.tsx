@@ -41,6 +41,28 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
   const [donnees, setDonnees] = useState<Donnees | null>(null);
   const [erreur, setErreur] = useState(false);
   const [rappels, setRappels] = useState<Record<string, string>>(lireRappels);
+  // Les rappels sont gardés en base : Yassin et Imane voient les mêmes, quel que soit le téléphone (le stockage de l'appareil ne sert que de secours)
+  const chargerRappels = useCallback(async () => {
+    try {
+      const { data, error } = await (supabase as any).from("rappels_admin").select("cle, fait_le");
+      if (error) return;
+      const m: Record<string, string> = {};
+      (data ?? []).forEach((r: { cle: string; fait_le: string }) => { if (!m[r.cle] || r.fait_le > m[r.cle]) m[r.cle] = r.fait_le; });
+      const locaux = lireRappels();
+      const aRemonter = Object.entries(locaux).filter(([k]) => !m[k]);
+      if (aRemonter.length) {
+        await (supabase as any).from("rappels_admin").upsert(aRemonter.map(([cle, fait_le]) => ({ cle, fait_le })), { onConflict: "cle" });
+        aRemonter.forEach(([k, v]) => { m[k] = v; });
+      }
+      setRappels(m);
+    } catch { /* on garde ce que l'appareil connaît */ }
+  }, []);
+  useEffect(() => {
+    chargerRappels();
+    const revenu = () => { if (document.visibilityState === "visible") chargerRappels(); };
+    document.addEventListener("visibilitychange", revenu);
+    return () => document.removeEventListener("visibilitychange", revenu);
+  }, [chargerRappels]);
   const [filtre, setFiltre] = useState<Genre | null>(null);
   const [occupe, setOccupe] = useState<string | null>(null);
   const loc = x.langue === "ar" ? "ar-MA-u-nu-latn" : x.langue === "en" ? "en-GB" : "fr-FR";
@@ -73,7 +95,12 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
 
   const { dialogue, envoyer: envoyerFacture, demanderPaiement } = useActionsFacture(null, () => { charger(); });
   const quand = (iso: string) => { const n = joursDepuis(iso); return n === 0 ? x("aujourd'hui") : n === 1 ? x("hier") : x("il y a {n} jours", { n }); };
-  const noterRappel = (cle: string) => { const n = { ...rappels, [cle]: new Date().toISOString() }; setRappels(n); try { localStorage.setItem(CLE_RAPPELS, JSON.stringify(n)); } catch { /* */ } };
+  const noterRappel = (cle: string) => {
+    const maintenant = new Date().toISOString();
+    const n = { ...rappels, [cle]: maintenant }; setRappels(n);
+    try { localStorage.setItem(CLE_RAPPELS, JSON.stringify(n)); } catch { /* */ }
+    (supabase as any).from("rappels_admin").upsert({ cle, fait_le: maintenant }, { onConflict: "cle" }).then(() => {}, () => {});
+  };
 
   const soumettre = async (cle: string, travail: () => Promise<void>) => { setOccupe(cle); try { await travail(); } finally { setOccupe(null); } };
   const nom = (v: any) => v.client_societe || v.client_nom;
