@@ -27,7 +27,10 @@ function correspond(ligne, params) {
     if (op === "neq" && String(c) === val) return false;
     if (op === "gte" && !(String(c) >= val)) return false;
     if (op === "lte" && !(String(c) <= val)) return false;
-    if (op === "ilike" && String(c).toLowerCase() !== val.toLowerCase()) return false;
+    if (op === "ilike") { // comme PostgREST : % = n'importe quoi, _ = un caractère, \ protège le caractère suivant
+      let re = ""; for (let i = 0; i < val.length; i++) { const ch = val[i]; if (ch === "\\" && i + 1 < val.length) re += val[++i].replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); else if (ch === "%") re += ".*"; else if (ch === "_") re += "."; else re += ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+      if (c == null || !new RegExp("^" + re + "$", "is").test(String(c))) return false;
+    }
     if (op === "is" && val === "null" && c != null) return false;
     if (op === "not" && val === "is.null" && c == null) return false;
     if (op === "in") { const l = val.replace(/^\(|\)$/g, "").split(",").map((x) => x.replace(/"/g, "")); if (!l.includes(String(c))) return false; }
@@ -477,6 +480,7 @@ export async function contexte(navigateur, base, email, { mobile = false, agent 
       const ins = corps.map((b) => ({ id: t + Math.random().toString(36).slice(2), statut: t === "affectations" ? "confirme" : t === "remarques_contrat" ? "nouvelle" : b.statut ?? "brouillon", created_at: new Date().toISOString(), ...b }));
       if (t === "studio_demos") ins.forEach((d) => { d.secteur ??= "evenementiel"; d.jeton = crypto.randomUUID(); d.vues = 0; d.active = true; d.cree_le = new Date().toISOString(); d.expire_le = new Date(Date.now() + 30 * 864e5).toISOString(); });
       if (t === "devis") ins.forEach((d) => { d.numero = "DEV-2026-0099"; d.date_validite = "2099-11-12"; d.total_ttc = 0; d.lien_token = crypto.randomUUID(); d.relances = 0; });
+      if (t === "messages_contact") ins.forEach((d) => { d.cree_le = new Date().toISOString(); d.traite ??= false; delete d.statut; delete d.created_at; });
       if (t === "depenses") ins.forEach((d) => { d.cree_par = email; d.cree_le = new Date().toISOString(); });
       if (t === "paiements_paie") ins.forEach((p) => { delete p.statut; p.enregistre_par = email; p.enregistre_le = new Date().toISOString(); });
       base[t].push(...ins);

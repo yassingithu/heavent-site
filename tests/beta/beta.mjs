@@ -44,7 +44,7 @@ const REGROUPES = {
   "Disponibilités": [/Personnel$/, "Disponibilités"], "Prestataires": [/Prestataires et lieux$/, "Prestataires"],
   "Salles & palais": [/Prestataires et lieux$/, "Salles & palais"], "Instagram": [/Publications$/, "Instagram"],
   "Newsletter": [/Publications$/, "Newsletter"], "Invitations digitales": [/Heavent Studio$/, "Invitations"],
-  "Démos agences": [/Heavent Studio$/, "Démos agences"],
+  "Démos agences": [/Heavent Studio$/, "Démos agences"], "Messages": [/Demandes$/, "Messages"],
 };
 async function clicOnglet(page, nom) {
   const cle = nom instanceof RegExp ? nom.source.replace(/^\^/, "").replace(/\$$/, "") : nom;
@@ -1755,6 +1755,148 @@ if (process.env.BETA_LIVE) {
     await ctx.close();
   });
 }
+
+// Messages du formulaire de contact : gardés en base, listés dans l'admin, traités (avec annulation)
+await scenario("Contact : le message est gardé en base, listé dans Demandes → Messages, marqué traité (annulable)", async (notes) => {
+  const base = nouvelleBase();
+  const pub = await contexte(navigateur, base, "visiteur@test.ma", { mobile: true });
+  await pub.page.goto(BASE + "/contact"); await pub.page.waitForTimeout(2000);
+  await pub.page.locator("#name").fill("  Karim Alaoui  "); await pub.page.locator("#email").fill("karim@test.ma");
+  await pub.page.locator("#subject").fill("Question sur les tarifs"); await pub.page.locator("#message").fill("Bonjour, pouvez-vous me rappeler au sujet d'un mariage en juin ?");
+  await pub.page.getByRole("button", { name: /Envoyer le message/ }).click(); await pub.page.waitForTimeout(2000);
+  verifier(base.messages_contact?.length === 1, "le message n'est pas gardé en base (" + (base.messages_contact?.length ?? 0) + ")");
+  const m = base.messages_contact[0];
+  verifier(m.nom === "Karim Alaoui" && m.email === "karim@test.ma" && m.sujet.includes("Question sur les tarifs") && m.traite === false, "message mal enregistré : " + JSON.stringify(m));
+  verifier(base.appelsFonctions.some((a) => a.nom === "send-email"), "l'e-mail n'est plus envoyé en plus de la base");
+  notes.push("formulaire public : nom nettoyé, message gardé en base (traite=non) et e-mail toujours envoyé");
+  await pub.ctx.close();
+  base.messages_contact.unshift({ id: "mAncien", cree_le: new Date(Date.now() - 5 * 864e5).toISOString(), nom: "Nadia Ancienne", email: "nadia@test.ma", sujet: "Devis henné", message: "Toujours en attente", traite: false });
+  base.messages_contact.push({ id: "mFait", cree_le: new Date(Date.now() - 9 * 864e5).toISOString(), nom: "Omar Déjà", email: "omar@test.ma", sujet: null, message: "Réglé", traite: true });
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN, { mobile: true });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await clicOnglet(page, "Messages"); await page.waitForTimeout(1200);
+  const cartes = page.getByTestId("message-contact");
+  verifier((await cartes.count()) === 2, "« À traiter » doit montrer 2 messages, trouvés " + (await cartes.count()));
+  verifier((await cartes.first().innerText()).includes("Nadia Ancienne"), "le plus ancien non traité doit venir en premier");
+  await page.getByTestId("msg-filtre-tous").click(); await page.waitForTimeout(800);
+  verifier((await page.getByTestId("message-contact").count()) === 3, "« Tous » doit montrer 3 messages");
+  await page.getByTestId("msg-filtre-a-traiter").click(); await page.waitForTimeout(800);
+  await page.getByTestId("message-contact").first().getByTestId("message-traite").click(); await page.waitForTimeout(900);
+  verifier(base.messages_contact.find((x) => x.id === "mAncien").traite === true, "le message n'est pas marqué traité en base");
+  verifier((await page.getByTestId("message-contact").count()) === 1, "le message traité doit quitter « À traiter »");
+  verifier((await toasts(page)).includes("Message traité"), "pas de confirmation « Message traité »");
+  await page.getByRole("button", { name: "Annuler" }).first().click(); await page.waitForTimeout(900);
+  verifier(base.messages_contact.find((x) => x.id === "mAncien").traite === false && (await page.getByTestId("message-contact").count()) === 2, "l'annulation ne remet pas le message à traiter");
+  verifier(await page.getByTestId("message-repondre").first().getAttribute("href").then((h) => h.startsWith("mailto:") && h.includes("Re%20")), "le lien Répondre est faux");
+  await page.screenshot({ path: `${CAPTURES}/messages-contact-iphone.png` });
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  notes.push("admin : 2 à traiter (le plus ancien d'abord), 3 au total, « traité » puis « Annuler » : OK");
+  await ctx.close();
+});
+
+// Un devis ouvert montre les autres devis de la même personne (même e-mail sans tenir compte des majuscules, ou mêmes 9 derniers chiffres du téléphone)
+await scenario("Devis : « Autres documents » retrouve les devis du même e-mail ou téléphone (sans confondre « _ » avec un joker)", async (notes) => {
+  const base = nouvelleBase();
+  const L = (x) => ({ type: "entreprise", marque: "heavent", remise_globale_pct: 0, taux_tva: 20, acompte_pct: 50, date_emission: "2026-10-01", date_validite: "2099-12-31", relances: 0, devise: "MAD", archive: false, lien_token: crypto.randomUUID(), ...x });
+  base.devis = [
+    L({ id: "dA", numero: "DEV-2026-0101", client_nom: "Sara Test", client_email: "a_b@test.ma", client_telephone: "+212 6 00 11 22 33", titre: "Henné de Sara", statut: "envoye", total_ttc: 4000 }),
+    L({ id: "dB", numero: "DEV-2026-0102", client_nom: "Sara Test", client_email: "A_B@Test.ma", titre: "Mariage de Sara", statut: "accepte", total_ttc: 5000, signe_le: "2026-10-05T09:00:00Z", date_evenement: "2026-12-12" }),
+    L({ id: "dC", numero: "DEV-2026-0103", client_nom: "Sara autre mail", client_email: "autre@test.ma", client_telephone: "0600112233", titre: "Fiançailles", statut: "envoye", total_ttc: 3000 }),
+    L({ id: "dD", numero: "DEV-2026-0104", client_nom: "Sara Test", client_email: "a_b@test.ma", titre: "Ancien devis", statut: "refuse", total_ttc: 900, archive: true }),
+    L({ id: "dX", numero: "DEV-2026-0105", client_nom: "Leurre", client_email: "axb@test.ma", titre: "Ne doit pas apparaître", statut: "envoye", total_ttc: 100 }),
+    L({ id: "dY", numero: "DEV-2026-0106", client_nom: "Sans lien", client_email: "zz@test.ma", client_telephone: "0700000000", titre: "Autre client", statut: "envoye", total_ttc: 200 }),
+  ];
+  base.factures = [{ id: "fB", devis_id: "dB", devis_numero: "DEV-2026-0102", numero: "FAC-2026-0007", type: "acompte", statut: "payee", total_ttc: 2500, net_a_payer: 2500, devise: "MAD", date_emission: "2026-10-06", client_nom: "Sara Test" }];
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN, { mobile: true });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(1000);
+  await page.getByTestId("devis-cartes").locator("article").filter({ hasText: "DEV-2026-0101" }).getByTestId("ouvrir-devis-carte").click(); await page.waitForTimeout(2000);
+  const bloc = page.getByTestId("autres-documents-client");
+  await bloc.waitFor({ state: "visible", timeout: 5000 });
+  const titre = (await bloc.locator("button").first().innerText()).replace(/\s+/g, " ");
+  verifier(/Déjà 3 devis/i.test(titre) && /e-mail/i.test(titre) && /numéro/i.test(titre), "titre inattendu : " + titre);
+  verifier((await page.getByTestId("autres-documents-liste").count()) === 0, "le bloc doit rester replié au départ");
+  await bloc.locator("button").first().click(); await page.waitForTimeout(500);
+  const liste = await page.getByTestId("autre-devis").allInnerTexts();
+  verifier(liste.length === 3, "3 devis attendus, trouvés " + liste.length);
+  verifier(!liste.join(" ").includes("Ne doit pas apparaître") && !liste.join(" ").includes("Autre client"), "un devis d'un autre client apparaît : « _ » traité comme joker ?");
+  verifier(/archivé/i.test(liste[2]), "l'archivé doit venir en dernier");
+  verifier(/même téléphone/i.test(liste.join(" ")), "le devis retrouvé par téléphone n'est pas signalé");
+  verifier(liste.join(" ").includes("FAC-2026-0007"), "la facture du devis n'est pas affichée");
+  await page.screenshot({ path: `${CAPTURES}/autres-documents-iphone.png` });
+  notes.push("devis ouvert : 3 autres devis (même e-mail en majuscules, même téléphone, archivé en dernier) + facture ; le leurre « axb » écarté");
+  await page.getByTestId("autre-devis").filter({ hasText: "DEV-2026-0102" }).locator("button").first().click(); await page.waitForTimeout(2000);
+  const bloc2 = page.getByTestId("autres-documents-client"); await bloc2.waitFor({ state: "visible", timeout: 5000 });
+  const t2 = (await bloc2.locator("button").first().innerText()).replace(/\s+/g, " ");
+  verifier(/Déjà 2 devis pour cet e-mail/i.test(t2), "après ouverture d'un autre devis : " + t2);
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  notes.push("ouvrir un autre devis depuis le bloc recharge le bloc (2 autres devis pour cet e-mail)");
+  await ctx.close();
+});
+
+// Liste des devis : pastilles avec compteurs, cartes iPhone, recherche, archivage avec raccourci vers les archives
+await scenario("Mes devis (iPhone) : pastilles avec compteurs, cartes, recherche, archiver puis « Voir les archives »", async (notes) => {
+  const base = nouvelleBase();
+  const L = (x) => ({ type: "entreprise", marque: "heavent", remise_globale_pct: 0, taux_tva: 20, acompte_pct: 50, date_emission: "2026-10-01", date_validite: "2099-12-31", relances: 0, devise: "MAD", archive: false, lien_token: crypto.randomUUID(), ...x });
+  base.devis = [
+    L({ id: "e1", numero: "DEV-2026-0201", client_nom: "Atlas Events", titre: "Salon Atlas", statut: "envoye", total_ttc: 9000 }),
+    L({ id: "e2", numero: "DEV-2026-0202", client_nom: "Yasmine Fassi", titre: "Henné", statut: "envoye", total_ttc: 4000 }),
+    L({ id: "e3", numero: "DEV-2026-0203", client_nom: "Hotel Palmeraie", titre: "Séminaire", statut: "accepte", total_ttc: 12000, signe_le: "2026-10-10T09:00:00Z" }),
+    L({ id: "e4", numero: "DEV-2026-0204", client_nom: "Brouillon Client", titre: "À finir", statut: "brouillon", total_ttc: 1000 }),
+    L({ id: "e5", numero: "DEV-2026-0205", client_nom: "Vieux Client", titre: "Ancien", statut: "accepte", total_ttc: 700, signe_le: "2026-09-01T09:00:00Z", archive: true }),
+  ];
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN, { mobile: true });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(1000);
+  const cartes = () => page.getByTestId("devis-cartes").locator("article");
+  const n = async (id) => (await page.getByTestId(id).innerText()).replace(/\s+/g, " ");
+  verifier(/Tous\s*4/.test(await n("filtre-tous")), "compteur « Tous » faux : " + await n("filtre-tous"));
+  verifier(/Envoy[ée]\s*2/.test(await n("filtre-envoye")), "compteur « Envoyé » faux : " + await n("filtre-envoye"));
+  verifier(/Archiv[ée]s\s*1/.test(await n("filtre-archives")), "compteur « Archivés » faux : " + await n("filtre-archives"));
+  verifier((await cartes().count()) === 4, "4 cartes attendues, trouvées " + (await cartes().count()));
+  await page.getByTestId("filtre-envoye").click(); await page.waitForTimeout(500);
+  verifier((await cartes().count()) === 2 && (await page.getByTestId("filtre-envoye").getAttribute("aria-pressed")) === "true", "le filtre « Envoyé » doit montrer 2 cartes");
+  await page.getByTestId("filtre-accepte").click(); await page.waitForTimeout(500);
+  verifier((await cartes().count()) === 1, "le filtre « Accepté » doit montrer 1 carte");
+  await page.getByTestId("filtre-tous").click(); await page.waitForTimeout(500);
+  await page.getByPlaceholder(/Rechercher un client/).fill("atlas"); await page.waitForTimeout(500);
+  verifier(/1 résultat\b/.test(await page.getByTestId("resultats-recherche").innerText()) && (await cartes().count()) === 1, "la recherche « atlas » doit donner 1 résultat");
+  await page.getByPlaceholder(/Rechercher un client/).fill("zzzz"); await page.waitForTimeout(500);
+  verifier(await page.getByText(/Aucun résultat pour « zzzz »/).count(), "message « aucun résultat » absent");
+  await page.getByRole("button", { name: /Effacer la recherche/ }).click(); await page.waitForTimeout(500);
+  verifier((await cartes().count()) === 4, "effacer la recherche doit rendre les 4 cartes");
+  await cartes().filter({ hasText: "DEV-2026-0203" }).getByTestId("archiver-devis-carte").click(); await page.waitForTimeout(900);
+  verifier(base.devis.find((d) => d.id === "e3").archive === true, "le devis n'est pas archivé en base");
+  verifier((await cartes().count()) === 3 && /Tous\s*3/.test(await n("filtre-tous")) && /Archiv[ée]s\s*2/.test(await n("filtre-archives")), "les compteurs ne suivent pas l'archivage");
+  await page.getByRole("button", { name: /Voir les archives/ }).first().click(); await page.waitForTimeout(600);
+  verifier((await page.getByTestId("filtre-archives").getAttribute("aria-pressed")) === "true" && (await cartes().count()) === 2, "« Voir les archives » doit ouvrir les 2 archivés");
+  await page.screenshot({ path: `${CAPTURES}/devis-pastilles-iphone.png` });
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  notes.push("pastilles 4 / 2 / 1, filtres, recherche (1 résultat, 0 résultat), archivage → compteurs à jour → raccourci « Voir les archives » : OK");
+  await ctx.close();
+});
+
+// Recherche globale : une demande choisie s'ouvre dans son onglet, centrée et surlignée (ordinateur et iPhone)
+for (const mobile of [false, true]) await scenario(`Recherche globale : la demande choisie est ouverte et surlignée (${mobile ? "iPhone" : "ordinateur"})`, async (notes) => {
+  const base = nouvelleBase();
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN, { mobile });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.keyboard.press("Control+k"); await page.waitForTimeout(500);
+  if (!(await page.getByTestId("recherche-champ").isVisible().catch(() => false))) await page.getByRole("button", { name: /Recherche|Rechercher/ }).first().click();
+  await page.getByTestId("recherche-champ").fill("TEST2 Tazi"); await page.waitForTimeout(1200);
+  await page.getByRole("option").filter({ hasText: "Demande événement" }).first().click(); await page.waitForTimeout(1800);
+  const vise = page.locator('[data-demande-id="cdb38082"].demande-visee');
+  let visible = 0; for (let k = 0; k < 6 && !visible; k++) { visible = await vise.evaluateAll((els) => els.filter((e) => e.offsetParent !== null).length); if (!visible) await page.waitForTimeout(300); }
+  verifier(visible === 1, "la demande choisie n'est pas surlignée (" + visible + ")");
+  const haut = await vise.evaluateAll((els) => { const e = els.find((x) => x.offsetParent !== null); const r = e.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; });
+  verifier(haut, "la demande surlignée n'est pas entièrement à l'écran");
+  await page.screenshot({ path: `${CAPTURES}/recherche-demande-${mobile ? "iphone" : "bureau"}.png` });
+  await page.waitForTimeout(4300);
+  verifier((await page.locator(".demande-visee").count()) === 0, "le surlignage ne s'efface pas");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  notes.push("recherche → demande ouverte dans Demandes, visible à l'écran, surlignée puis surlignage retiré après 4 s");
+  await ctx.close();
+});
 
 // Appli Mac : « Voir le site » affiche le vrai site avec un bouton pour revenir (au lieu de renvoyer vers le bilan)
 await scenario("Appli Mac : le bouton « Le site » ouvre le site public, avec retour à l'administration", async (notes) => {
