@@ -42,6 +42,7 @@ export default function DepensesAdmin() {
   // Lecture automatique du ticket : champs remplis par la lecture (à vérifier) et champs modifiés à la main (jamais écrasés)
   const [lu, setLu] = useState<Set<string>>(new Set());
   const [lecture, setLecture] = useState<"" | "cours" | "vide" | "indispo" | "limite">("");
+  const [deviseTicket, setDeviseTicket] = useState<{ code: string; montant: string } | null>(null);
   const [proposition, setProposition] = useState<Record<string, string> | null>(null);
   const touches = useRef<Set<string>>(new Set());
   const numeroLecture = useRef(0);
@@ -49,7 +50,7 @@ export default function DepensesAdmin() {
   fRef.current = f;
   const luRef = useRef(lu);
   luRef.current = lu;
-  useEffect(() => { touches.current = new Set(); numeroLecture.current++; setLu(new Set()); setLecture(""); setProposition(null); }, [!!f]);
+  useEffect(() => { touches.current = new Set(); numeroLecture.current++; setLu(new Set()); setLecture(""); setProposition(null); setDeviseTicket(null); }, [!!f]);
   const [facturesMois, setFacturesMois] = useState<FactureCompta[] | null>(null);
   useEffect(() => {
     let annule = false;
@@ -105,7 +106,7 @@ export default function DepensesAdmin() {
   /** Lit un ticket (image). Préremplit ce qui est vide ou déjà « lu » (sauf champ modifié à la main) ; en lecture demandée (explicite), un champ vidé à la main est aussi rempli. Le reste est proposé, jamais imposé. */
   const lireTicket = async (source: Blob, explicite = false) => {
     const n = ++numeroLecture.current;
-    setLecture("cours"); setProposition(null);
+    setLecture("cours"); setProposition(null); setDeviseTicket(null);
     try {
       const image = await versDataUrl(await reduirePhoto(new File([source], "ticket.jpg", { type: source.type || "image/jpeg" }), 1280));
       const reponse = await Promise.race([
@@ -119,14 +120,17 @@ export default function DepensesAdmin() {
       const x = fRef.current;
       if (!x) return;
       const lus: Record<string, string> = {};
-      if (c.montant_ttc != null) lus.montant = String(c.montant_ttc).replace(".", ",");
-      if (c.tva != null) lus.tva = String(c.tva).replace(".", ",");
+      // Ticket qui n'est pas en dirhams : on ne remplit ni montant ni TVA (ils seraient faux), on prévient
+      const etranger = c.devise && c.devise !== "MAD";
+      if (etranger) setDeviseTicket({ code: c.devise, montant: c.montant_ttc != null ? String(c.montant_ttc).replace(".", ",") : "" });
+      if (!etranger && c.montant_ttc != null) lus.montant = String(c.montant_ttc).replace(".", ",");
+      if (!etranger && c.tva != null) lus.tva = String(c.tva).replace(".", ",");
       if (c.date) lus.date = c.date;
       if (c.fournisseur) lus.fournisseur = c.fournisseur;
       if (c.ice) lus.ice = c.ice;
       if (c.identifiant_fiscal) lus.idf = c.identifiant_fiscal;
       if (c.moyen_paiement) lus.moyen = c.moyen_paiement;
-      if (!Object.keys(lus).length) { setLecture("vide"); return; }
+      if (!Object.keys(lus).length) { setLecture(etranger ? "" : "vide"); return; }
       const actuel: Record<string, string> = { montant: x.montant, tva: x.tva, date: x.date === aujourdhuiMaroc() ? "" : x.date, fournisseur: x.fournisseur, ice: x.ice, idf: x.idf, moyen: x.moyen };
       const mis = new Set<string>(); const patch: Record<string, string> = {}; const autres: Record<string, string> = {};
       for (const [k, v] of Object.entries(lus)) {
@@ -367,6 +371,7 @@ export default function DepensesAdmin() {
                 </div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground" aria-live="polite" data-testid="lecture-ticket">
                   {lecture === "cours" ? <span className="inline-flex items-center gap-1.5 text-[#7A5C17]" data-testid="lecture-en-cours"><span aria-hidden className="h-3 w-3 animate-spin rounded-full border border-[#A8933F] border-t-transparent motion-reduce:animate-none" />Lecture du ticket…<button type="button" onClick={() => { numeroLecture.current++; setLecture(""); }} className="ml-1 min-h-11 px-2 underline underline-offset-2 sm:min-h-9" data-testid="saisir-a-la-main">Saisir à la main</button></span>
+                    : deviseTicket ? <span className="text-xs text-foreground" data-testid="ticket-devise"><b>Ticket en {deviseTicket.code === "EUR" ? "euros (€)" : deviseTicket.code === "USD" ? "dollars ($)" : "une autre monnaie"}</b>{deviseTicket.montant ? ` : ${deviseTicket.montant} lus` : ""}. Le montant n'est pas en dirhams : convertis-le en MAD avant d'enregistrer.</span>
                     : lecture === "vide" ? <span>Rien de sûr n'a pu être lu : saisis les informations.</span>
                     : lecture === "limite" ? <span>Trop de lectures pour le moment : saisis les informations à la main.</span>
                     : lecture === "indispo" ? <span>Lecture indisponible pour l'instant : saisis les informations.</span>

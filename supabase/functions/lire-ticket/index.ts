@@ -30,9 +30,10 @@ const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: 
 
 const CONSIGNE = `Tu lis la photo d'un ticket de caisse ou d'une facture (Maroc : textes en français et/ou en arabe, montants en dirhams MAD/DH).
 Réponds UNIQUEMENT avec un objet JSON de cette forme :
-{"date":"AAAA-MM-JJ" ou null,"montant_ttc":nombre ou null,"tva":nombre ou null,"fournisseur":texte ou null,"ice":"15 chiffres" ou null,"identifiant_fiscal":"chiffres" ou null,"moyen_paiement":"especes"|"carte"|"virement"|"cheque"|null}
+{"date":"AAAA-MM-JJ" ou null,"devise":"MAD"|"EUR"|"USD"|"autre"|null,"montant_ttc":nombre ou null,"tva":nombre ou null,"fournisseur":texte ou null,"ice":"15 chiffres" ou null,"identifiant_fiscal":"chiffres" ou null,"moyen_paiement":"especes"|"carte"|"virement"|"cheque"|null}
 Règles :
 - Les dates marocaines s'écrivent JJ/MM/AAAA : convertis-les en AAAA-MM-JJ.
+- devise = la monnaie des montants du ticket : MAD pour dirhams (MAD, DH, DHS), EUR si le ticket est en euros (€, EUR), USD pour dollars, sinon "autre" ; null si on ne sait pas.
 - montant_ttc = le TOTAL À PAYER toutes taxes comprises (pas un sous-total, pas la monnaie rendue, pas l'espèce donnée).
 - tva = le montant de TVA en dirhams s'il est écrit (pas le pourcentage), sinon null.
 - fournisseur = le nom du commerce ou de la société en haut du ticket.
@@ -103,8 +104,9 @@ serve(async (req) => {
     const chiffres = (v: unknown) => String(v ?? "").replace(/\D/g, "");
     const ice = chiffres(brut.ice).length === 15 ? chiffres(brut.ice) : null;
     const idf = /^\d{3,12}$/.test(chiffres(brut.identifiant_fiscal)) ? chiffres(brut.identifiant_fiscal) : null;
+    const devise = typeof brut.devise === "string" && ["MAD", "EUR", "USD", "autre"].includes(brut.devise.toUpperCase() === "AUTRE" ? "autre" : brut.devise.toUpperCase()) ? (brut.devise.toUpperCase() === "AUTRE" ? "autre" : brut.devise.toUpperCase()) : null;
     const moyen = typeof brut.moyen_paiement === "string" && MOYENS.includes(brut.moyen_paiement) ? brut.moyen_paiement : null;
-    return json({ disponible: true, champs: { date, montant_ttc: montant, tva, fournisseur, ice, identifiant_fiscal: idf, moyen_paiement: moyen } });
+    return json({ disponible: true, champs: { devise, date, montant_ttc: montant, tva, fournisseur, ice, identifiant_fiscal: idf, moyen_paiement: moyen } });
   } catch (e) {
     console.error("lire-ticket:", e);
     return json({ disponible: false, raison: "erreur" });
