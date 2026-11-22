@@ -141,6 +141,7 @@ export default function DepensesAdmin() {
   const relire = async () => {
     const c = [...(f?.fichiers ?? [])].reverse().find((x) => !estPdf(x));
     if (!c) return;
+    setLecture("cours"); setProposition(null);
     const { data } = await supabase.storage.from(BUCKET).download(c);
     if (data) await lireTicket(data, true); else setLecture("indispo");
   };
@@ -158,15 +159,20 @@ export default function DepensesAdmin() {
     setOccupe(true);
     const nouveaux: string[] = [];
     let aLire: Blob | null = null;
-    for (const fi of [...fichiers].slice(0, 6)) {
-      const pdf = fi.type === "application/pdf";
-      const chemin = `${mois}/${idAleatoire()}.${pdf ? "pdf" : "jpg"}`;
-      const corps = pdf ? fi : await reduirePhoto(fi, 1800);
-      const { error } = await supabase.storage.from(BUCKET).upload(chemin, corps, { contentType: pdf ? "application/pdf" : "image/jpeg" });
-      if (error) toast({ title: "Fichier non envoyé", description: error.message, variant: "destructive" }); else { nouveaux.push(chemin); if (!pdf && !aLire) aLire = corps; }
+    try {
+      for (const fi of [...fichiers].slice(0, 6)) {
+        try {
+          const pdf = fi.type === "application/pdf";
+          const chemin = `${mois}/${idAleatoire()}.${pdf ? "pdf" : "jpg"}`;
+          const corps = pdf ? fi : await reduirePhoto(fi, 1800);
+          const { error } = await supabase.storage.from(BUCKET).upload(chemin, corps, { contentType: pdf ? "application/pdf" : "image/jpeg" });
+          if (error) toast({ title: "Fichier non envoyé", description: error.message, variant: "destructive" }); else { nouveaux.push(chemin); if (!pdf) aLire = corps; }
+        } catch { toast({ title: "Photo illisible", description: "Ce fichier n'a pas pu être ouvert (essaie une autre photo ou un PDF).", variant: "destructive" }); }
+      }
+    } finally {
+      if (nouveaux.length) setF((x) => (x ? { ...x, fichiers: [...x.fichiers, ...nouveaux] } : x));
+      setOccupe(false);
     }
-    setF((x) => (x ? { ...x, fichiers: [...x.fichiers, ...nouveaux] } : x));
-    setOccupe(false);
     if (entree.current) entree.current.value = "";
     // Chaque nouvelle photo est lue tout de suite (un ticket coupé en deux se complète avec la seconde photo)
     if (aLire) void lireTicket(aLire);
@@ -181,7 +187,12 @@ export default function DepensesAdmin() {
     if (f.tva.trim() && (tva === null || tva < 0)) { toast({ title: "TVA incorrecte", variant: "destructive" }); return; }
     // Garde-fous : montant lu sur le ticket, jamais relu, qui sort de l'ordinaire ; dépense identique déjà saisie
     if (lu.has("montant") && montant >= 5000 && !window.confirm(`Montant inhabituel : ${mad(montant)}, lu sur le ticket. C'est bien ça ?`)) return;
-    const doublon = !f.id && lignes.find((l) => l.date_depense === f.date && Math.round(Number(l.montant_ttc) * 100) === Math.round(montant * 100) && (l.fournisseur ?? "").trim().toLowerCase() === f.fournisseur.trim().toLowerCase());
+    const norme = (t: string | null) => (t ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+    let doublon: Depense | undefined;
+    if (!f.id) {
+      const { data: memeJour } = await (supabase as any).from("depenses").select("*").eq("date_depense", f.date);
+      doublon = ((memeJour ?? []) as Depense[]).find((l) => Math.round(Number(l.montant_ttc) * 100) === Math.round(montant * 100) && norme(l.fournisseur) === norme(f.fournisseur));
+    }
     if (doublon && !window.confirm(`Une dépense identique existe déjà (${jourCourt(doublon.date_depense)}, ${doublon.fournisseur || "sans nom"}, ${mad(Number(doublon.montant_ttc))}). Enregistrer quand même ?`)) return;
     setOccupe(true);
     const ligne = {
@@ -340,7 +351,7 @@ export default function DepensesAdmin() {
                   {f.fichiers.map((c) => (
                     <div key={c} className="relative h-20 w-20 rounded-xl border border-[#EADFC8] overflow-hidden bg-[#FDFBF5] flex items-center justify-center" data-testid="justificatif">
                       {estPdf(c) ? <FileText className="h-7 w-7 text-[#A8933F]" /> : liens[c] ? <a href={liens[c]} target="_blank" rel="noopener noreferrer" className="block h-full w-full" aria-label="Voir le justificatif en grand"><img src={liens[c]} alt="Justificatif" className="h-full w-full object-cover" /></a> : null}
-                      <button type="button" onClick={() => setF({ ...f, fichiers: f.fichiers.filter((x) => x !== c) })} className="absolute top-0 right-0 h-8 w-8 flex items-start justify-end p-1 text-white" aria-label="Retirer ce justificatif"><span className="h-5 w-5 rounded-full bg-black/60 flex items-center justify-center"><X className="h-3 w-3" /></span></button>
+                      <button type="button" onClick={() => setF({ ...f, fichiers: f.fichiers.filter((x) => x !== c) })} className="absolute top-0 right-0 h-11 w-11 flex items-start justify-end p-1.5 text-white" aria-label="Retirer ce justificatif"><span className="h-5 w-5 rounded-full bg-black/60 flex items-center justify-center"><X className="h-3 w-3" /></span></button>
                     </div>
                   ))}
                   <button type="button" onClick={() => entree.current?.click()} disabled={occupe} data-testid="prendre-photo"
@@ -350,11 +361,11 @@ export default function DepensesAdmin() {
                   <input ref={entree} type="file" accept="image/*,application/pdf" multiple className="hidden" data-testid="champ-photo" onChange={(e) => ajouterFichiers(e.target.files)} />
                 </div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground" aria-live="polite" data-testid="lecture-ticket">
-                  {lecture === "cours" ? <span className="inline-flex items-center gap-1.5 text-[#7A5C17]" data-testid="lecture-en-cours"><span aria-hidden className="h-3 w-3 animate-spin rounded-full border border-[#A8933F] border-t-transparent motion-reduce:animate-none" />Lecture du ticket…</span>
+                  {lecture === "cours" ? <span className="inline-flex items-center gap-1.5 text-[#7A5C17]" data-testid="lecture-en-cours"><span aria-hidden className="h-3 w-3 animate-spin rounded-full border border-[#A8933F] border-t-transparent motion-reduce:animate-none" />Lecture du ticket…<button type="button" onClick={() => { numeroLecture.current++; setLecture(""); }} className="ml-1 min-h-11 px-2 underline underline-offset-2 sm:min-h-9" data-testid="saisir-a-la-main">Saisir à la main</button></span>
                     : lecture === "vide" ? <span>Rien de sûr n'a pu être lu : saisis les informations.</span>
                     : lecture === "limite" ? <span>Trop de lectures pour le moment : saisis les informations à la main.</span>
                     : lecture === "indispo" ? <span>Lecture indisponible pour l'instant : saisis les informations.</span>
-                    : proposition ? <span className="text-xs text-foreground" data-testid="lecture-proposition">Le ticket indique {[proposition.montant && `${proposition.montant} MAD`, proposition.tva && `TVA ${proposition.tva}`, proposition.date && proposition.date.split("-").reverse().join("/"), proposition.fournisseur, proposition.moyen && MOYENS[proposition.moyen]].filter(Boolean).join(" · ")}. Tes champs n'ont pas été changés. <button type="button" onClick={appliquerProposition} className="font-semibold text-[#7A5C17] underline underline-offset-2 min-h-8" data-testid="appliquer-lecture">Appliquer</button></span>
+                    : proposition ? <span className="text-xs text-foreground" data-testid="lecture-proposition">Le ticket indique {[proposition.montant && `${proposition.montant} MAD`, proposition.tva && `TVA ${proposition.tva}`, proposition.date && proposition.date.split("-").reverse().join("/"), proposition.fournisseur, proposition.moyen && MOYENS[proposition.moyen]].filter(Boolean).join(" · ")}. Tes champs n'ont pas été changés. <button type="button" onClick={appliquerProposition} className="font-semibold text-[#7A5C17] underline underline-offset-2 min-h-11 px-1 sm:min-h-8" data-testid="appliquer-lecture">Appliquer</button></span>
                     : lu.size ? <span className="inline-flex items-center gap-1.5 text-xs text-foreground"><i aria-hidden className="lu-losange" />Vérifie les champs marqués avant d'enregistrer.</span>
                     : f.fichiers.length > 0 && !f.fichiers.some((x) => !estPdf(x)) ? <span>PDF joint : il n'est pas lu automatiquement, saisis le montant et la date.</span>
                     : <span>Photo ou PDF. Le montant, la date et le commerce sont lus sur la photo ; tu peux toujours corriger.</span>}

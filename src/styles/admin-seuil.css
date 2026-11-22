@@ -369,8 +369,8 @@ nav[aria-label="Navigation principale"] button:active { transform: scale(.94); }
 
 /* Lecture automatique des tickets (Dépenses) : losange en forme, filet or sur le champ lu, apparition échelonnée */
 .lu-losange { display: inline-block; width: 6px; height: 6px; background: #A8933F; transform: rotate(45deg); flex: none; }
-[data-lu="true"] input, [data-lu="true"] button[role="combobox"] { box-shadow: inset 2px 0 0 #A8933F; animation: lu-filet .5s var(--s-courbe, ease-out) both; animation-delay: calc(var(--i, 0) * 70ms); }
+[data-lu="true"] input, [data-lu="true"] button[role="combobox"] { background-image: linear-gradient(#A8933F, #A8933F); background-repeat: no-repeat; background-size: 2px 100%; animation: lu-filet .5s var(--s-courbe, ease-out) both; animation-delay: calc(var(--i, 0) * 70ms); }
 .lu-marque { animation: lu-entre .35s var(--s-courbe, ease-out) both; animation-delay: calc(var(--i, 0) * 70ms); }
 @keyframes lu-entre { from { opacity: 0; translate: -4px 0; } to { opacity: 1; translate: 0 0; } }
-@keyframes lu-filet { from { box-shadow: inset 0 0 0 #A8933F; } to { box-shadow: inset 2px 0 0 #A8933F; } }
+@keyframes lu-filet { from { background-size: 0 100%; } to { background-size: 2px 100%; } }
 @media (prefers-reduced-motion: reduce) { .lu-marque, [data-lu="true"] input, [data-lu="true"] button[role="combobox"] { animation: none !important; } }
