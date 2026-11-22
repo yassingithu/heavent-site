@@ -1912,6 +1912,9 @@ for (const mobile of [false, true]) await scenario(`Accueil : badge des choses u
   await clicOnglet(page, "Agenda"); await page.waitForTimeout(600);
   const txt = (await (mobile ? sur : page.getByRole("tab", { name: /Accueil/ }).first()).innerText()).replace(/\D/g, "");
   verifier(Number(txt) === n, `badge = ${txt || "aucun"}, attendu ${n}`);
+  await (mobile ? page.getByTestId("bas-tableau") : page.getByRole("tab", { name: /Accueil/ }).first()).click(); await page.waitForTimeout(1200);
+  const hautBloc = await page.getByTestId("aj-urgent").evaluate((e) => e.getBoundingClientRect().top);
+  verifier(hautBloc >= 0 && hautBloc < 200, `le bloc Urgent n'est pas en haut de l'écran (${Math.round(hautBloc)} px)`);
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   notes.push(`${n} urgentes sur l'Accueil → même nombre dans le menu depuis l'Agenda, absent sur l'Accueil`);
   await ctx.close();

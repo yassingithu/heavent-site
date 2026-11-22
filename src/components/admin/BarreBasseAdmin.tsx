@@ -121,7 +121,7 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
             <button ref={boutonPlus} onClick={() => setPlusOuvert((o) => !o)} aria-expanded={plusOuvert} aria-haspopup="dialog" data-testid="bas-plus"
               className={`relative w-full min-h-14 flex flex-col items-center justify-center gap-1 text-[11px] font-medium tracking-[0.04em] transition-colors ${plusOuvert || dansPlus ? "text-[#E4D49A]" : "text-[#BDB29C]"}`}>
               <Ellipsis className="h-5 w-5 [stroke-width:1.4]" />Plus
-              {badgeTotal > 0 && !plusOuvert && <span className="absolute top-1 left-1/2 ml-2.5 text-[10.5px] leading-none font-medium tabular-nums text-[#E4D49A]" aria-label={`${badgeTotal} nouvelle(s) demande(s)`}>{badgeTotal}</span>}
+              {badgeTotal > 0 && !plusOuvert && <span className="absolute top-1 left-1/2 ml-2.5 text-[10.5px] leading-none font-medium tabular-nums text-[#E4D49A]" aria-label={`${badgeTotal} à voir`}>{badgeTotal}</span>}
             </button>
           </li>
         </ul>

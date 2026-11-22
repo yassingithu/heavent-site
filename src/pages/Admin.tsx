@@ -3,7 +3,7 @@ import { nePlusCompterCetAppareil } from "@/lib/suivi";
 import Seo from "@/components/Seo";
 import RemarquesCrews from "@/components/admin/equipe/RemarquesCrews";
 import SuiviSignatures from "@/components/admin/equipe/SuiviSignatures";
-import { useState, useEffect, useLayoutEffect, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import { estAdmin, estEspaceNawar } from "@/lib/admin";
 import EspaceNawar from "@/components/admin/accueil/EspaceNawar";
 import { useNavigate } from "react-router-dom";
@@ -1108,6 +1108,18 @@ const Admin = () => {
     return () => { window.removeEventListener("heavent:urgentes", f); window.clearInterval(tic); };
   }, []);
   const urgentes = urgentesVues && Date.now() - urgentesVues.t < 300000 ? urgentesVues.n : 0;
+  // Un clic sur « Accueil » quand le badge est affiché mène droit au bloc « Urgent »
+  const ongletPrecedent = useRef(ongletAdmin);
+  useEffect(() => {
+    const avant = ongletPrecedent.current; ongletPrecedent.current = ongletAdmin;
+    if (ongletAdmin !== "tableau" || avant === "tableau" || !urgentes) return;
+    const t = window.setTimeout(() => {
+      const bloc = document.querySelector('[data-testid="aj-urgent"]');
+      if (bloc) window.scrollTo({ top: Math.max(0, bloc.getBoundingClientRect().top + window.scrollY - 16) });
+    }, 450);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ongletAdmin]);
   const [apercuAOuvrir, setApercuAOuvrir] = useState<string | null>(null);
   const compterCartes = useCallback(async () => {
     try { const { count } = await (supabase as any).from("demandes_cartes").select("id", { count: "exact", head: true }).eq("statut", "nouvelle"); setNouvellesCartes(count ?? 0); } catch { setNouvellesCartes(0); }
