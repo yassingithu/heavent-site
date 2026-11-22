@@ -29,11 +29,7 @@ export const TYPES_FACTURE: Record<Facture["type"], string> = {
   totale: "Facture",
 };
 
-export const STATUTS_FACTURE: Record<Facture["statut"], { label: string; className: string }> = {
-  a_payer: { label: "À payer", className: "bg-[#A8933F]/15 text-[#7A5F1F]" },
-  payee: { label: "Payée", className: "bg-[#1F5A4C]/10 text-[#1F5A4C]" },
-  annulee: { label: "Annulée", className: "bg-[#DCCDAA]/40 text-[#5A5146] line-through" },
-};
+export { STATUTS_FACTURE } from "@/lib/statuts";
 
 export const MODES_PAIEMENT = ["Virement", "Espèces", "Chèque", "Carte bancaire", "Effet de commerce"];
 

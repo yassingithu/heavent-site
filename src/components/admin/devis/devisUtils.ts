@@ -14,13 +14,8 @@ export const UNITES: { value: Unite; label: string; court: string }[] = [
   { value: "personne", label: "Personne", court: "pers." },
 ];
 
-export const STATUTS: Record<string, { label: string; className: string }> = {
-  brouillon: { label: "Brouillon", className: "border-transparent bg-transparent text-[#5A5146]" },
-  envoye: { label: "Envoyé", className: "border-transparent bg-transparent text-[#7A5F1F]" },
-  accepte: { label: "Accepté", className: "border-transparent bg-transparent text-[#1F5A4C]" },
-  refuse: { label: "Refusé", className: "border-transparent bg-transparent text-[#9C4A2C]" },
-  annule: { label: "Annulé", className: "border-transparent bg-transparent text-[#5A5146]" },
-};
+import { STATUTS_DEVIS, clesStatut } from "@/lib/statuts";
+export const STATUTS = STATUTS_DEVIS;
 
 /**
  * Statuts possibles selon l'état du devis : un devis signé ou facturé ne peut plus redevenir brouillon,
@@ -28,7 +23,7 @@ export const STATUTS: Record<string, { label: string; className: string }> = {
  */
 export function statutsPermis(d: { statut: string; signe_le?: string | null; nbFactures?: number }) {
   const verrouille = !!d.signe_le || (d.nbFactures ?? 0) > 0;
-  return Object.keys(STATUTS).filter((k) => !verrouille || k === "accepte" || k === "annule" || k === d.statut);
+  return clesStatut("devis").filter((k) => !verrouille || k === "accepte" || k === "annule" || k === d.statut);
 }
 
 /** Un devis ne se supprime que s'il n'a aucune valeur légale : ni signé, ni facturé, ni contrat signé. */

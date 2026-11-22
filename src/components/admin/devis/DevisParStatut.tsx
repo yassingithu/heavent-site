@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { ExternalLink } from "lucide-react";
-import { STATUTS, dateFr, money } from "./devisUtils";
+import { dateFr, money } from "./devisUtils";
+import { classeStatut, clesStatut, libelleStatut } from "@/lib/statuts";
 
 interface Props {
   titre: string;
@@ -82,8 +83,8 @@ export default function DevisParStatut({ titre, types, statuts, vide }: Props) {
                 <p className="text-[13.5px] text-[#5A5146] mt-0.5 break-words">{TYPES[d.type] ?? d.type}{d.titre ? ` · ${d.titre}` : ""}{d.date_evenement ? ` · ${dateFr(d.date_evenement)}` : ""}</p>
                 <div className="flex items-center justify-between gap-3 mt-2">
                   <Select value={d.statut} onValueChange={(v) => changerStatut(d, v)}>
-                    <SelectTrigger className="h-11 w-auto border-0 p-0 shadow-none bg-transparent" aria-label="Changer le statut"><span className={d.statut === "accepte" || d.statut === "facture" ? "a-st vert" : d.statut === "refuse" ? "a-st terre" : "a-st vide"}>{STATUTS[d.statut]?.label ?? d.statut}</span></SelectTrigger>
-                    <SelectContent>{Object.entries(STATUTS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className="h-11 w-auto border-0 p-0 shadow-none bg-transparent" aria-label="Changer le statut"><span className={d.statut === "accepte" || d.statut === "facture" ? "a-st vert" : d.statut === "refuse" ? "a-st terre" : "a-st vide"}>{libelleStatut("devis", d.statut)}</span></SelectTrigger>
+                    <SelectContent>{clesStatut("devis").map((k) => <SelectItem key={k} value={k}>{libelleStatut("devis", k)}</SelectItem>)}</SelectContent>
                   </Select>
                   <span className="font-serif text-[22px] tabular-nums whitespace-nowrap">{money(d.total_ttc, d.devise)}</span>
                 </div>
@@ -106,8 +107,8 @@ export default function DevisParStatut({ titre, types, statuts, vide }: Props) {
                   <TableCell className="text-right whitespace-nowrap font-medium">{money(d.total_ttc, d.devise)}</TableCell>
                   <TableCell>
                     <Select value={d.statut} onValueChange={(v) => changerStatut(d, v)}>
-                      <SelectTrigger className="h-8 w-[120px] border-0 p-0 shadow-none"><Badge className={STATUTS[d.statut]?.className}>{STATUTS[d.statut]?.label ?? d.statut}</Badge></SelectTrigger>
-                      <SelectContent>{Object.entries(STATUTS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
+                      <SelectTrigger className="h-8 w-[120px] border-0 p-0 shadow-none"><Badge className={classeStatut("devis", d.statut)}>{libelleStatut("devis", d.statut)}</Badge></SelectTrigger>
+                      <SelectContent>{clesStatut("devis").map((k) => <SelectItem key={k} value={k}>{libelleStatut("devis", k)}</SelectItem>)}</SelectContent>
                     </Select>
                   </TableCell>
                   <TableCell className="text-right"><Button size="sm" variant="ghost" onClick={() => ouvrirDevis(d.id)}><ExternalLink className="h-4 w-4 mr-1" /> Ouvrir</Button></TableCell>

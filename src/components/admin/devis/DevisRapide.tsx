@@ -14,8 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Archive, ArchiveRestore, ArrowDown, ChevronsUpDown, ArrowUp, Copy, Download, FileText, Image as ImageIcon, Link2, Plus, Save, Search, Send, Trash2, X } from "lucide-react";
+import { classeStatut, clesStatut, libelleStatut } from "@/lib/statuts";
 import {
-  DevisForm, Ligne, Parametres, Prestation, STATUTS, UNITES, devisSupprimable, statutsPermis,
+  DevisForm, Ligne, Parametres, Prestation, UNITES, devisSupprimable, statutsPermis,
   calculerTotaux, dateFr, dateHeureFr, devisDepuisBase, lienClientDevis, ligneVide, money, nouveauDevis, today, totalLigne,
 } from "./devisUtils";
 import { telechargerDevisPdf } from "./devisPdf";
@@ -534,7 +535,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     if (!form) return;
     const ligne = devisList.find((x) => x.id === form.id);
     if ((v === "annule" || v === "refuse") && ligne?.equipe && !["annule", "refuse"].includes(ligne.statut)
-      && !confirm(`En enregistrant ce devis « ${STATUTS[v].label} », l'équipe prévue (${ligne.equipe} personne${ligne.equipe > 1 ? "s" : ""}) sera libérée : plus de mission, de pointage ni de paie pour cet événement. Continuer ?`)) return;
+      && !confirm(`En enregistrant ce devis « ${libelleStatut("devis", v)} », l'équipe prévue (${ligne.equipe} personne${ligne.equipe > 1 ? "s" : ""}) sera libérée : plus de mission, de pointage ni de paie pour cet événement. Continuer ?`)) return;
     set("statut", v);
     // Le statut choisi est enregistré tout de suite : sinon il se perd si on ferme le devis sans cliquer sur « Enregistrer »
     void enregistrer(v);
@@ -554,7 +555,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
         d.equipe || d.contratsSignes ? `• leurs contrats passeront « annulé » (les contrats signés restent archivés)` : "",
         d.nbFactures ? `• les factures existantes restent valables : annule-les ou encaisse-les dans le devis si besoin` : "",
       ].filter(Boolean);
-      if (consequences.length && !confirm(`Passer le devis ${d.numero ?? ""} en « ${STATUTS[statut].label} » ?\n\n${consequences.join("\n")}`)) return;
+      if (consequences.length && !confirm(`Passer le devis ${d.numero ?? ""} en « ${libelleStatut("devis", statut)} » ?\n\n${consequences.join("\n")}`)) return;
     }
     const { error } = await supabase.from("devis").update({ statut, ...(statut === "envoye" ? { date_envoi: new Date().toISOString() } : {}) }).eq("id", id);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
@@ -668,7 +669,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="tous">Tous les statuts</SelectItem>
-                  {Object.entries(STATUTS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                  {clesStatut("devis").map((k) => <SelectItem key={k} value={k}>{libelleStatut("devis", k)}</SelectItem>)}
                   <SelectItem value="archives">🗄️ Archivés ({devisList.filter((d) => d.archive).length})</SelectItem>
                 </SelectContent>
               </Select>
@@ -701,9 +702,9 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <Select value={d.statut} onValueChange={(v) => changerStatut(d.id, v)}>
                           <SelectTrigger className="h-8 w-[120px] border-0 p-0 shadow-none">
-                            <Badge className={STATUTS[d.statut]?.className}>{d.statut === "en_attente" ? "En attente" : STATUTS[d.statut]?.label ?? d.statut}</Badge>
+                            <Badge className={classeStatut(d.reponseRapide ? "reponse_rapide" : "devis", d.statut)}>{libelleStatut(d.reponseRapide ? "reponse_rapide" : "devis", d.statut)}</Badge>
                           </SelectTrigger>
-                          <SelectContent>{(d.reponseRapide ? ["en_attente", "envoye", "accepte", "refuse"] : statutsPermis(d)).map((k) => <SelectItem key={k} value={k}>{d.reponseRapide && k === "refuse" ? "Refusé / annulé" : k === "en_attente" ? "En attente" : STATUTS[k]?.label ?? k}</SelectItem>)}</SelectContent>
+                          <SelectContent>{(d.reponseRapide ? clesStatut("reponse_rapide") : statutsPermis(d)).map((k) => <SelectItem key={k} value={k}>{libelleStatut(d.reponseRapide ? "reponse_rapide" : "devis", k)}</SelectItem>)}</SelectContent>
                         </Select>
                         {d.archive && <div className="text-[11px] text-muted-foreground mt-0.5">🗄️ archivé</div>}
                       </TableCell>
@@ -917,7 +918,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                     <Label className="text-xs">Statut</Label>
                     <Select value={form.statut} onValueChange={changerStatutEditeur}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{statutsPermis({ statut: form.statut, signe_le: form.signe_le, nbFactures: devisList.find((x) => x.id === form.id)?.nbFactures }).map((k) => <SelectItem key={k} value={k}>{STATUTS[k].label}</SelectItem>)}</SelectContent>
+                      <SelectContent>{statutsPermis({ statut: form.statut, signe_le: form.signe_le, nbFactures: devisList.find((x) => x.id === form.id)?.nbFactures }).map((k) => <SelectItem key={k} value={k}>{libelleStatut("devis", k)}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                 </CardContent>
@@ -958,7 +959,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 </div>
                 <Select value={form.statut} onValueChange={changerStatutEditeur}>
                   <SelectTrigger className="h-10 min-w-[92px] flex-1 px-2 text-xs [&>span]:truncate" aria-label="Statut du devis"><SelectValue /></SelectTrigger>
-                  <SelectContent>{statutsPermis({ statut: form.statut, signe_le: form.signe_le, nbFactures: devisList.find((x) => x.id === form.id)?.nbFactures }).map((k) => <SelectItem key={k} value={k}>{STATUTS[k].label}</SelectItem>)}</SelectContent>
+                  <SelectContent>{statutsPermis({ statut: form.statut, signe_le: form.signe_le, nbFactures: devisList.find((x) => x.id === form.id)?.nbFactures }).map((k) => <SelectItem key={k} value={k}>{libelleStatut("devis", k)}</SelectItem>)}</SelectContent>
                 </Select>
                 <Button className="h-10 px-3" onClick={() => enregistrer()} disabled={saving} data-testid="barre-enregistrer"><Save className="h-4 w-4 sm:mr-1" /><span className="hidden min-[400px]:inline ml-1 sm:ml-0">Enregistrer</span></Button>
                 <Button className="h-10" variant="outline" size="icon" title="Envoyer au client pour signature" aria-label="Envoyer au client pour signature" onClick={envoyerAuClient} disabled={saving || envoiEnCours || !!form.signe_le} data-testid="barre-envoyer"><Send className="h-4 w-4" /></Button>
