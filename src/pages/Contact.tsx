@@ -35,13 +35,18 @@ const Contact = () => {
   const langueRdv = (["en", "ar"].includes(i18n.language?.slice(0, 2)) ? i18n.language.slice(0, 2) : "fr") as "fr" | "en" | "ar";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  type Profil = "evenement" | "mission" | "partenaire";
+  const [profil, setProfil] = useState<Profil>("evenement");
+  const [profilEnvoye, setProfilEnvoye] = useState<Profil>("evenement");
   const { toast } = useToast();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
+    getValues,
+    setValue
   } = useForm<FormData>({
     resolver: zodResolver(formSchema)
   });
@@ -77,8 +82,17 @@ const Contact = () => {
     }
   ];
 
+  const PREFIXES: Record<Profil, string> = { evenement: "", mission: "Candidature — ", partenaire: "Partenaire — " };
+  const choisirProfil = (p: Profil) => {
+    const sujet = getValues("subject") ?? "";
+    const sansPrefixe = Object.values(PREFIXES).filter(Boolean).reduce((acc, pre) => (acc.startsWith(pre) ? acc.slice(pre.length) : acc), sujet);
+    setValue("subject", PREFIXES[p] ? PREFIXES[p] + sansPrefixe : sansPrefixe);
+    setProfil(p);
+  };
+
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
+    setProfilEnvoye(profil);
     
     try {
       const response = await fetch(`${FUNCTIONS_URL}/send-email`, {
@@ -133,6 +147,9 @@ const Contact = () => {
             <Etoile /><Etoile className="bas" />
             <h1 className="s-h3">{x("Message envoyé !")}</h1>
             <p className="s-texte" style={{ marginTop: 14 }}>{x("Votre message a été envoyé avec succès. Notre équipe va l'examiner et vous répondra sous 24h.")}</p>
+            {profilEnvoye === "mission" && (
+              <p className="s-texte s-profil-note" data-testid="contact-merci-candidature">{x("Pour que votre candidature soit étudiée, elle doit aussi être déposée via le formulaire en ligne.")} <Link to="/inscription-staff">{x("Déposer ma candidature")}</Link></p>
+            )}
             <div className="s-actions" style={{ justifyContent: "center", marginTop: 24 }}>
               <button type="button" className="s-btn s-btn-plein s-sombre" onClick={() => setIsSubmitted(false)}>{x("Envoyer un nouveau message")}</button>
             </div>
@@ -150,6 +167,7 @@ const Contact = () => {
           <Bouton href="#rendez-vous" variante="plein" fleche>{{ fr: "Prendre rendez-vous", en: "Book an appointment", ar: "احجز موعداً" }[langueRdv]}</Bouton>
           <Bouton href="https://wa.me/212610939655" variante="filet" externe>{x("Chattez avec nous")} · WhatsApp</Bouton>
         </div>
+        <p className="s-candidat-ligne s-entree-heros" style={{ animationDelay: ".3s" }} data-testid="contact-candidature-haut">{x("Vous cherchez une mission d'hôte ou d'hôtesse ?")} <Link to="/inscription-staff" className="s-lien-or">{x("Faire ma candidature")} <span className="fl" aria-hidden="true">→</span></Link></p>
       </PageTete>
 
       {/* Prise de rendez-vous en ligne */}
@@ -203,6 +221,19 @@ const Contact = () => {
               <div style={{ padding: "26px 18px 22px" }}>
                 <h2 className="s-h3">{x("Envoyez-nous un message")}</h2>
                 <p className="s-texte" style={{ marginTop: 8, marginBottom: 22, fontSize: 15 }}>{x("Remplissez ce formulaire et nous vous répondrons dans les plus brefs délais")}</p>
+                <div className="s-profil" role="radiogroup" aria-label={x("Vous êtes…")}>
+                  <span className="s-profil-t">{x("Vous êtes…")}</span>
+                  {([["evenement", "Un client (événement)"], ["mission", "Hôte ou hôtesse, en recherche de mission"], ["partenaire", "Un prestataire, partenaire potentiel"]] as [Profil, string][]).map(([k, l]) => (
+                    <button key={k} type="button" role="radio" aria-checked={profil === k} data-on={profil === k} className="s-profil-b" onClick={() => choisirProfil(k)} data-testid={`contact-profil-${k}`}>{x(l)}</button>
+                  ))}
+                </div>
+                {profil === "mission" && (
+                  <div className="s-profil-mission" data-testid="contact-panneau-candidature">
+                    <p className="s-texte" style={{ fontSize: 15 }}>{x("Les candidatures se font en ligne : c'est le seul moyen d'être étudiée. Cela prend quelques minutes.")}</p>
+                    <Link to="/inscription-staff" className="s-btn s-btn-or" data-testid="contact-candidature-bouton">{x("Faire ma candidature")}<span className="fl" aria-hidden="true">→</span></Link>
+                    <p className="s-profil-aide">{x("Une question avant de candidater ? Écrivez-nous ci-dessous, le sujet est déjà indiqué « Candidature ».")}</p>
+                  </div>
+                )}
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>

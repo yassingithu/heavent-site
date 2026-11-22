@@ -827,3 +827,20 @@ body.jeu-tiroir .hot-zone { display: none; }
   }
 }
 @keyframes s-reflet-texte { 0%, 74% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+/* Contact : « Vous êtes… » et candidature */
+.s-profil { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 22px; }
+.s-profil-t { flex: 0 0 100%; font: 500 11px/1 var(--s-texte); letter-spacing: .24em; text-transform: uppercase; color: var(--s-laiton-texte); }
+.s-profil-b { min-height: 44px; padding: 10px 16px; border: 1px solid var(--s-filet); background: transparent; color: inherit; font: 400 14px/1.3 var(--s-texte); letter-spacing: .02em; text-align: left; cursor: pointer; transition: border-color .25s var(--s-courbe), background .25s var(--s-courbe); }
+.s-profil-b:hover { border-color: var(--s-laiton); }
+.s-profil-b[data-on="true"] { border-color: var(--s-laiton); background: rgba(168,147,63,.12); box-shadow: inset 0 -2px 0 var(--s-laiton); }
+.s-profil-b:focus-visible { outline: 2px solid var(--s-laiton); outline-offset: 3px; }
+.s-profil-mission { display: grid; gap: 14px; justify-items: start; padding: 18px; margin: 0 0 24px; border: 1px solid var(--s-laiton); background: rgba(168,147,63,.07); }
+.s-btn.s-btn-or { background: var(--s-laiton); color: #141414; }
+.s-btn.s-btn-or .fl { margin-left: 8px; display: inline-block; transition: transform .25s var(--s-courbe); }
+.s-btn.s-btn-or:hover .fl { transform: translateX(3px); }
+.s-profil-aide { font: 400 13px/1.5 var(--s-texte); color: var(--s-texte-2); margin: 0; }
+.s-profil-note { margin-top: 14px; }
+.s-profil-note a, .s-lien-or { color: var(--s-laiton-texte); text-decoration: underline; text-underline-offset: 5px; }
+.s-nuit .s-lien-or { color: var(--s-laiton-clair); }
+@media (prefers-reduced-motion: reduce) { .s-profil-b, .s-btn.s-btn-or .fl { transition: none; } }
