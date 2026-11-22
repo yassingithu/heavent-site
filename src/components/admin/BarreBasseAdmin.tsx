@@ -12,7 +12,7 @@ const PRINCIPAUX: { valeur: string; libelle: string; Icone: Icone }[] = [
   { valeur: "staff", libelle: "Équipe", Icone: Users },
 ];
 /** Rubriques regroupées : « Clients » reste actif sur tous ses sous-onglets. */
-const MEMBRES: Record<string, string[]> = { entreprise: ["entreprise", "mariage", "devis-envoyes", "devis-rapide", "envoyer-devis"], staff: ["staff", "disponibilites"] };
+const MEMBRES: Record<string, string[]> = { entreprise: ["entreprise", "mariage", "devis-envoyes", "messages", "devis-rapide", "envoyer-devis"], staff: ["staff", "disponibilites"] };
 const dans = (v: string, onglet: string) => (MEMBRES[v] ?? [v]).includes(onglet);
 
 /**

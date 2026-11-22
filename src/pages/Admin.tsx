@@ -57,6 +57,7 @@ import FichesPaieMensuelles from "@/components/admin/paie/FichesPaieMensuelles";
 import ContratsManuels from "@/components/admin/equipe/ContratsManuels";
 import ContratsEvenements from "@/components/admin/equipe/ContratsEvenements";
 import DevisParStatut from "@/components/admin/devis/DevisParStatut";
+import MessagesContact from "@/components/admin/MessagesContact";
 import { CartesDemandes, CartesDevisSuivis } from "@/components/admin/CartesDemandes";
 import DoubleAuthentification from "@/components/admin/DoubleAuthentification";
 import "@/styles/admin-seuil.css";
@@ -168,7 +169,7 @@ type EntreeMenu = readonly [string, string, typeof Users, ReadonlyArray<readonly
 const MENU_ADMIN: { titre: string; items: EntreeMenu[] }[] = [
   { titre: "Pilotage", items: [["tableau", "Accueil", House], ["agenda", "Agenda", CalendarDays], ["statistiques", "Statistiques", TrendingUp], ["depenses", "Dépenses", Receipt]] },
   { titre: "Clients", items: [
-    ["entreprise", "Demandes", Inbox, [["entreprise", "Entreprise"], ["mariage", "Événement"], ["devis-envoyes", "Réponses envoyées"]]],
+    ["entreprise", "Demandes", Inbox, [["entreprise", "Entreprise"], ["mariage", "Événement"], ["devis-envoyes", "Réponses envoyées"], ["messages", "Messages"]]],
     ["devis-rapide", "Devis", FileText, [["devis-rapide", "Devis et factures"], ["envoyer-devis", "Réponse rapide"]]],
   ] },
   { titre: "Équipe", items: [
@@ -191,6 +192,7 @@ const TITRES_ADMIN: Record<string, [string, string]> = {
   mariage: ["Demandes événement", "Demandes de mariage, d'événement et du jeu"],
   "devis-rapide": ["Devis", "Créer, envoyer et suivre les devis et factures"],
   "devis-envoyes": ["Devis envoyés", "Réponses des demandes traitées"],
+  messages: ["Messages", "Messages reçus par le formulaire de contact"],
   "envoyer-devis": ["Envoyer un devis", "Répondre rapidement à une demande"],
   staff: ["Personnel", "Profils des hôtesses et hôtes"],
   disponibilites: ["Disponibilités", "Qui est disponible, et quand"],
@@ -1101,6 +1103,8 @@ const Admin = () => {
     try { const { count } = await (supabase as any).from("demandes_cartes").select("id", { count: "exact", head: true }).eq("statut", "nouvelle"); setNouvellesCartes(count ?? 0); } catch { setNouvellesCartes(0); }
   }, []);
   useEffect(() => { compterCartes(); }, [compterCartes, ongletAdmin]);
+  const [messagesATraiter, setMessagesATraiter] = useState(0);
+  useEffect(() => { (supabase as any).from("messages_contact").select("id", { count: "exact", head: true }).eq("traite", false).then(({ count }: any) => setMessagesATraiter(count ?? 0)); }, [isAdmin]);
   const nouvellesEntreprise = devisEntreprise.filter((d: any) => d.statut === "en_attente").length;
   const nouvellesMariage = devisMariage.filter((d: any) => d.statut === "en_attente").length;
 
@@ -1223,7 +1227,7 @@ const Admin = () => {
             {entreeActive.fils.map((f) => (
               <button key={f.valeur} role="tab" aria-selected={f.valeur === ongletAdmin} onClick={() => { setOngletAdmin(f.valeur); window.scrollTo({ top: 0 }); }}
                 className={`-mb-px min-h-11 border-b-2 px-0.5 text-[13.5px] tracking-[0.02em] transition-colors ${f.valeur === ongletAdmin ? "border-[#A8933F] text-[#141414]" : "border-transparent text-[#5A5146] hover:text-[#141414]"}`}>
-                {f.libelle}{f.valeur === "entreprise" && nouvellesEntreprise > 0 ? ` (${nouvellesEntreprise})` : f.valeur === "mariage" && nouvellesMariage > 0 ? ` (${nouvellesMariage})` : f.valeur === "demandes-cartes" && nouvellesCartes > 0 ? ` (${nouvellesCartes})` : ""}
+                {f.libelle}{f.valeur === "entreprise" && nouvellesEntreprise > 0 ? ` (${nouvellesEntreprise})` : f.valeur === "mariage" && nouvellesMariage > 0 ? ` (${nouvellesMariage})` : f.valeur === "messages" && messagesATraiter > 0 ? ` (${messagesATraiter})` : f.valeur === "demandes-cartes" && nouvellesCartes > 0 ? ` (${nouvellesCartes})` : ""}
               </button>
             ))}
           </div>
@@ -2140,6 +2144,8 @@ const Admin = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="messages" className="space-y-4"><MessagesContact onCompte={setMessagesATraiter} /></TabsContent>
 
         {/* Devis Envoyés Tab */}
         <TabsContent value="devis-envoyes" className="space-y-4">

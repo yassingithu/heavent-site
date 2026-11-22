@@ -1,5 +1,5 @@
 import { suivre } from "@/lib/suivi";
-import { FUNCTIONS_URL } from "@/integrations/supabase/client";
+import { FUNCTIONS_URL, supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -90,6 +90,9 @@ const Contact = () => {
     setProfilEnvoye(profil);
     
     try {
+      // Le message est gardé en base avant l'e-mail : s'il se perd dans la messagerie, il reste lisible dans l'admin
+      const sujetComplet = PREFIXES[profil] + data.subject;
+      const { error: erreurBase } = await (supabase as any).from("messages_contact").insert({ nom: data.name.trim().slice(0, 200), email: data.email.trim().slice(0, 320), sujet: sujetComplet.slice(0, 300), message: data.message.trim().slice(0, 5000) });
       const response = await fetch(`${FUNCTIONS_URL}/send-email`, {
         method: 'POST',
         headers: {
@@ -101,7 +104,8 @@ const Contact = () => {
         }),
       });
 
-      if (!response.ok) {
+      // Échec seulement si ni la base ni l'e-mail n'ont reçu le message
+      if (!response.ok && erreurBase) {
         throw new Error('Erreur lors de l\'envoi');
       }
       suivre("demande", "contact");
