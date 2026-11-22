@@ -38,7 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox, Instagram, Mail, Sparkles, Handshake, MapPin, PanelLeftClose, PanelLeftOpen, Receipt } from "lucide-react";
+import { Users, Building, Heart, Plus, FileText, Euro, CalendarIcon, Edit, MessageSquare, LogOut, Shield, Download, Globe, Trash2, Send, CheckCircle, X, BarChart3, TrendingUp, CalendarDays, CalendarCheck, FileSignature, Wallet, Building2, PartyPopper, Inbox, Instagram, Mail, Sparkles, Handshake, MapPin, PanelLeftClose, PanelLeftOpen, Receipt, House } from "lucide-react";
 import DepensesAdmin from "@/components/admin/depenses/DepensesAdmin";
 import BarreBasseAdmin from "@/components/admin/BarreBasseAdmin";
 import NewsletterAdmin from "@/components/admin/newsletter/NewsletterAdmin";
@@ -166,7 +166,7 @@ interface Disponibilite {
 /** Menu de l'administration : 14 rubriques ; celles qui en regroupent plusieurs affichent des sous-onglets en haut de la page. */
 type EntreeMenu = readonly [string, string, typeof Users, ReadonlyArray<readonly [string, string]>?];
 const MENU_ADMIN: { titre: string; items: EntreeMenu[] }[] = [
-  { titre: "Pilotage", items: [["tableau", "Bilan", BarChart3], ["agenda", "Agenda", CalendarDays], ["statistiques", "Statistiques", TrendingUp], ["depenses", "Dépenses", Receipt]] },
+  { titre: "Pilotage", items: [["tableau", "Accueil", House], ["agenda", "Agenda", CalendarDays], ["statistiques", "Statistiques", TrendingUp], ["depenses", "Dépenses", Receipt]] },
   { titre: "Clients", items: [
     ["entreprise", "Demandes", Inbox, [["entreprise", "Entreprise"], ["mariage", "Événement"], ["devis-envoyes", "Réponses envoyées"]]],
     ["devis-rapide", "Devis", FileText, [["devis-rapide", "Devis et factures"], ["envoyer-devis", "Réponse rapide"]]],
@@ -183,7 +183,7 @@ const MENU_ADMIN: { titre: string; items: EntreeMenu[] }[] = [
   { titre: "Réglages", items: [["realisations", "Site web", Globe], ["securite", "Sécurité", Shield]] },
 ];
 const TITRES_ADMIN: Record<string, [string, string]> = {
-  tableau: ["Bilan", "L'essentiel de l'activité en un coup d'œil"],
+  tableau: ["Accueil", "Ce qu'il y a à faire aujourd'hui et l'essentiel de l'activité"],
   statistiques: ["Statistiques du site", "Visites, provenance des visiteurs, clics et demandes"],
   agenda: ["Agenda", "Rendez-vous clients et créneaux proposés"],
   depenses: ["Dépenses", "Tickets et factures en photo, classés par mois pour le comptable"],
