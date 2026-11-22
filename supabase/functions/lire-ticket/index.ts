@@ -18,7 +18,7 @@ async function modelesVision(cle: string): Promise<string[]> {
     const r = await fetch("https://api.groq.com/openai/v1/models", { headers: { Authorization: `Bearer ${cle}` } });
     if (!r.ok) return PREFERES;
     const ids: string[] = ((await r.json())?.data ?? []).map((m: any) => String(m.id));
-    const vision = ids.filter((i) => /llama-4|vision|-vl|pixtral|gemma-3/i.test(i) && !/guard|whisper|tts/i.test(i));
+    const vision = ids.filter((i) => /llama-4|vision|-vl|pixtral|gemma-3|qwen/i.test(i) && !/guard|whisper|tts/i.test(i));
     vision.sort((a, b) => Number(/scout/i.test(b)) - Number(/scout/i.test(a)) || Number(/maverick/i.test(b)) - Number(/maverick/i.test(a)));
     console.log("lire-ticket modèles de vision :", vision.join(", ") || "aucun", "| tous :", ids.join(", "));
     modelesCache = { at: Date.now(), liste: vision.length ? vision : PREFERES };
