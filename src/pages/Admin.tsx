@@ -1153,7 +1153,22 @@ const Admin = () => {
       }),
     }));
   const rubriquesRecherche = groupesVisibles.flatMap((g) => g.items.flatMap((i) => [{ valeur: i.valeur, libelle: i.libelle, groupe: g.titre }, ...(i.fils ?? []).filter((f) => f.valeur !== i.valeur).map((f) => ({ valeur: f.valeur, libelle: f.libelle, groupe: i.libelle }))]));
-  const allerRecherche = (v: string, terme?: string) => { if (v === "staff" && terme) { setRechercheStaff(terme); setFiltreStaff("tous"); setNbStaffAffiches(20); } setOngletAdmin(v); window.scrollTo({ top: 0 }); };
+  // Demande choisie dans la recherche : on ouvre l'onglet, on fait défiler jusqu'à elle (carte ou ligne visible) et on la surligne quelques secondes.
+  const allerRecherche = (v: string, terme?: string, demandeId?: string) => {
+    if (v === "staff" && terme) { setRechercheStaff(terme); setFiltreStaff("tous"); setNbStaffAffiches(20); }
+    setOngletAdmin(v); window.scrollTo({ top: 0 });
+    if (demandeId) {
+      let essais = 0;
+      const viser = () => {
+        const el = Array.from(document.querySelectorAll<HTMLElement>(`[data-demande-id="${CSS.escape(demandeId)}"]`)).find((e) => e.offsetParent !== null);
+        if (!el) { if (++essais < 10) window.setTimeout(viser, 150); return; }
+        el.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+        el.classList.add("demande-visee");
+        window.setTimeout(() => el.classList.remove("demande-visee"), 4000);
+      };
+      window.setTimeout(viser, 150);
+    }
+  };
   const ouvrirDevisRecherche = (id: string) => { (window as any).__heaventDevisAOuvrir = id; setOngletAdmin("devis-rapide"); window.scrollTo({ top: 0 }); window.dispatchEvent(new CustomEvent("heavent:ouvrir-devis", { detail: id })); };
   const entreeActive = groupesVisibles.flatMap((g) => g.items).find((i) => i.valeur === ongletAdmin || i.fils?.some((f) => f.valeur === ongletAdmin));
 
@@ -2058,7 +2073,7 @@ const Admin = () => {
                   </TableHeader>
                 <TableBody>
                   {devisEntreprise.map((devis) => (
-                    <TableRow key={devis.id}>
+                    <TableRow key={devis.id} data-demande-id={devis.id}>
                       <TableCell className="font-medium">
                         {devis.prenom} {devis.nom}
                       </TableCell>
@@ -2105,7 +2120,7 @@ const Admin = () => {
                   </TableHeader>
                 <TableBody>
                   {devisMariage.map((devis) => (
-                    <TableRow key={devis.id}>
+                    <TableRow key={devis.id} data-demande-id={devis.id}>
                       <TableCell className="font-medium">
                         {devis.prenom} {devis.nom}
                       </TableCell>

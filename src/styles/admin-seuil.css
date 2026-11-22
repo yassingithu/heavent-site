@@ -409,3 +409,8 @@ nav[aria-label="Navigation principale"] button:active { transform: scale(.94); }
 .a-msg-neuf { border-inline-start: 2px solid var(--s-laiton); padding-inline-start: 14px; }
 .a-msg-corps { margin-top: 8px; font-size: 15px; line-height: 1.55; max-width: 62ch; white-space: pre-line; overflow-wrap: anywhere; }
 .a-msg-traite .a-msg-corps, .a-msg-traite h3 { opacity: .6; }
+
+/* Demande retrouvée par la recherche : liseré or + fond doré qui s'estompe */
+.demande-visee { outline: 2px solid #A8933F; outline-offset: -2px; background-color: rgba(168,147,63,.16) !important; animation: demande-visee 4s ease-out forwards; }
+@keyframes demande-visee { 0%, 70% { background-color: rgba(168,147,63,.16); outline-color: #A8933F; } 100% { background-color: transparent; outline-color: transparent; } }
+@media (prefers-reduced-motion: reduce) { .demande-visee { animation: none; } }

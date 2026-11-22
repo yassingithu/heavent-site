@@ -52,7 +52,7 @@ export function CartesDemandes({ type, demandes, onChiffrer, onOuvrirDevis, onSt
         const titre = type === "entreprise" ? d.entreprise || `${d.prenom} ${d.nom}` : `${d.prenom} ${d.nom}`;
         const qui = type === "entreprise" ? [`${d.prenom} ${d.nom}`, d.email].filter(Boolean).join(" · ") : d.email;
         return (
-          <article key={d.id} className="a-carte a-entre px-[18px] pt-[18px] pb-2" style={{ ["--r" as string]: `${0.05 + Math.min(i, 6) * 0.07}s` }} data-testid="carte-demande">
+          <article key={d.id} className="a-carte a-entre px-[18px] pt-[18px] pb-2" style={{ ["--r" as string]: `${0.05 + Math.min(i, 6) * 0.07}s` }} data-testid="carte-demande" data-demande-id={d.id}>
             <div className="flex items-center justify-between gap-2.5">
               <span className={`a-ruban ${vieux ? "terre" : ""}`}><img src="/seuil/mono-or.png" alt="" />{type === "entreprise" ? "Entreprise" : d.type_evenement || "Mariage"}</span>
               <span className={`text-[12.5px] whitespace-nowrap ${vieux ? "text-[#9C4A2C] font-medium" : "text-[#5A5146]"}`}>{recu(d.created_at)}</span>

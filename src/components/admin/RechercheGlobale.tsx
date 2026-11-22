@@ -18,7 +18,7 @@ const sansAccent = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toL
 
 export default function RechercheGlobale({ ouvert, onFermer, rubriques, onAller, onOuvrirDevis }: {
   ouvert: boolean; onFermer: () => void; rubriques: RubriqueRecherche[];
-  onAller: (onglet: string, terme?: string) => void; onOuvrirDevis: (id: string) => void;
+  onAller: (onglet: string, terme?: string, demandeId?: string) => void; onOuvrirDevis: (id: string) => void;
 }) {
   const [q, setQ] = useState("");
   const [donnees, setDonnees] = useState<Resultat[]>([]);
@@ -28,7 +28,7 @@ export default function RechercheGlobale({ ouvert, onFermer, rubriques, onAller,
   const champ = useRef<HTMLInputElement>(null);
   const cbs = useRef({ onAller, onOuvrirDevis });
   cbs.current = { onAller, onOuvrirDevis };
-  const allerCb = (o: string, t?: string) => cbs.current.onAller(o, t);
+  const allerCb = (o: string, t?: string, id?: string) => cbs.current.onAller(o, t, id);
   const devisCb = (id: string) => cbs.current.onOuvrirDevis(id);
 
   useEffect(() => { if (!ouvert) { setQ(""); setDonnees([]); setErreur(false); setActif(0); } }, [ouvert]);
@@ -69,8 +69,8 @@ export default function RechercheGlobale({ ouvert, onFermer, rubriques, onAller,
         if (annule) return;
         const r: Resultat[] = [];
         for (const x of d.data ?? []) r.push({ cle: `d${x.id}`, groupe: "Devis", titre: `${x.numero ?? "Devis"} · ${x.client_nom || x.client_societe || "Sans nom"}`, detail: [x.titre, dateLisible(x.date_evenement), libelleStatut("devis", x.statut)].filter(Boolean).join(" · "), action: () => devisCb(x.id) });
-        for (const x of dm.data ?? []) r.push({ cle: `m${x.id}`, groupe: "Demandes", titre: `${[x.prenom, x.nom].filter(Boolean).join(" ")}`, detail: ["Demande événement", dateLisible(x.date_mariage), libelleStatut("reponse_rapide", x.statut), x.email].filter(Boolean).join(" · "), action: () => allerCb("mariage") });
-        for (const x of de.data ?? []) r.push({ cle: `e${x.id}`, groupe: "Demandes", titre: `${x.entreprise || [x.prenom, x.nom].filter(Boolean).join(" ")}`, detail: ["Demande entreprise", dateLisible(x.date_evenement), libelleStatut("reponse_rapide", x.statut), x.email].filter(Boolean).join(" · "), action: () => allerCb("entreprise") });
+        for (const x of dm.data ?? []) r.push({ cle: `m${x.id}`, groupe: "Demandes", titre: `${[x.prenom, x.nom].filter(Boolean).join(" ")}`, detail: ["Demande événement", dateLisible(x.date_mariage), libelleStatut("reponse_rapide", x.statut), x.email].filter(Boolean).join(" · "), action: () => allerCb("mariage", undefined, x.id) });
+        for (const x of de.data ?? []) r.push({ cle: `e${x.id}`, groupe: "Demandes", titre: `${x.entreprise || [x.prenom, x.nom].filter(Boolean).join(" ")}`, detail: ["Demande entreprise", dateLisible(x.date_evenement), libelleStatut("reponse_rapide", x.statut), x.email].filter(Boolean).join(" · "), action: () => allerCb("entreprise", undefined, x.id) });
         for (const x of st.data ?? []) r.push({ cle: `s${x.id}`, groupe: "Personnel", titre: `${[x.prenom, x.nom].filter(Boolean).join(" ")}`, detail: x.email ?? "", action: () => allerCb("staff", [x.prenom, x.nom].filter(Boolean).join(" ")) });
         setDonnees(r); setErreur([d, dm, de, st].every((z: any) => z.error)); setActif(0);
       } catch { if (!annule) { setDonnees([]); setErreur(true); } }
