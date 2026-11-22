@@ -634,11 +634,11 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       <div className="a-actions" data-testid="actions-carte">
         <button type="button" aria-label="Télécharger le PDF" disabled={pdfEnCours} onClick={() => telechargerPdfDepuisListe(d.id)}>PDF</button>
         <button type="button" aria-label="Image à partager (PNG)" disabled={imageEnCours} onClick={() => imageDepuisListe(d.id, "png")} data-testid="image-devis-liste-carte">Image</button>
-        <button type="button" aria-label="Dupliquer ce devis" onClick={() => ouvrir(d.id, true)}>Copier</button>
+        <button type="button" aria-label="Copier ce devis (dupliquer)" onClick={() => ouvrir(d.id, true)}>Copier</button>
         {!devisSupprimable(d) && <button type="button" aria-label={d.archive ? "Ressortir des archives" : "Archiver ce devis"} onClick={() => archiver(d.id, !d.archive)} data-testid="archiver-devis-carte">{d.archive ? "Ressortir" : "Archiver"}</button>}
         {devisSupprimable(d)
           ? <button type="button" className="terre" aria-label="Supprimer ce devis" onClick={() => supprimer(d.id, d.numero)} data-testid="supprimer-devis-carte">Supprimer</button>
-          : <button type="button" className="terre" aria-label="Supprimer définitivement (devis de test)" onClick={() => supprimerTest(d)} data-testid="supprimer-devis-test-carte">Suppr. test</button>}
+          : <button type="button" className="terre" aria-label="Suppr. test : supprimer définitivement ce devis de test" onClick={() => supprimerTest(d)} data-testid="supprimer-devis-test-carte">Suppr. test</button>}
       </div>
     );
   const filtres = devisList.filter((d) => {
@@ -745,8 +745,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   const dom = d.reponseRapide ? "reponse_rapide" : "devis";
                   return (
                     <article key={d.id} className="a-devis-carte">
-                      <p className="a-surtitre">{d.date_evenement ? dateFr(d.date_evenement) : "Date à définir"} · {d.numero}{d.reponseRapide ? " · Réponse rapide" : (d as any).marque === "nawar" ? " · Nawar" : ""}{d.archive ? " · archivé" : ""}</p>
-                      <h3 className="font-serif text-[24px] leading-tight break-words min-w-0 mt-1">{d.reponseRapide ? (d.client_societe || d.client_nom) : <button type="button" className="text-left min-h-11 w-full" onClick={() => ouvrir(d.id)} aria-label={`Ouvrir le devis ${d.numero}`}>{d.client_societe || d.client_nom}</button>}</h3>
+                      <p className="a-devis-date">{d.date_evenement ? dateFr(d.date_evenement) : "Date à définir"} · {d.numero}{d.reponseRapide ? " · Réponse rapide" : (d as any).marque === "nawar" ? " · Nawar" : ""}{d.archive ? " · archivé" : ""}</p>
+                      <h3 className="font-serif text-[24px] leading-tight break-words min-w-0 mt-1">{d.reponseRapide ? (d.client_societe || d.client_nom) : <button type="button" className="text-left min-h-11 w-full" onClick={() => ouvrir(d.id)} aria-label={`${d.client_societe || d.client_nom}, ouvrir le devis ${d.numero}`}>{d.client_societe || d.client_nom}</button>}</h3>
                       {d.titre && <p className="text-[13.5px] text-[#5A5146] break-words">{d.titre}</p>}
                       {(d.signe_le || d.rdv_demande_le || (d.statut === "envoye" && d.relances)) && (
                         <p className={`a-st mt-1.5 ${d.signe_le ? "vert" : ""}`} style={d.rdv_demande_le && !d.signe_le ? { color: "#7A5F1F" } : undefined}>{d.signe_le ? "Signé en ligne" : d.rdv_demande_le ? "RDV demandé avant signature" : `${d.relances} relance${d.relances > 1 ? "s" : ""} auto`}</p>
@@ -758,7 +758,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                         </Select>
                         <span className="font-serif text-[22px] tabular-nums whitespace-nowrap text-[#7A5F1F]">{money(d.total_ttc, d.devise)}</span>
                       </div>
-                      {!d.reponseRapide && <button onClick={() => ouvrir(d.id)} className="s-btn s-btn-plein s-sombre a-btn-grand mt-2" data-testid="ouvrir-devis-carte">Ouvrir</button>}
+                      {!d.reponseRapide && <button type="button" onClick={() => ouvrir(d.id)} className="s-btn s-btn-plein s-sombre a-btn-grand mt-2" data-testid="ouvrir-devis-carte" aria-label={`Ouvrir le devis ${d.numero}`}>Ouvrir</button>}
                       {actionsMobile(d)}
                     </article>
                   );
