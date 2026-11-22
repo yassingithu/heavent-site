@@ -840,6 +840,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 </CardContent>
               </Card>
 
+              <AutresDocumentsClient devisId={form.id} email={form.client_email} telephone={form.client_telephone} ouvrir={(id, dup) => ouvrir(id, dup)} />
+
               <Card>
                 <CardHeader><CardTitle className="text-base">Événement</CardTitle></CardHeader>
                 <CardContent className="grid gap-3 sm:grid-cols-2">
@@ -951,7 +953,6 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 </CardContent>
               </Card>
 
-              {form.id && <AutresDocumentsClient devisId={form.id} email={form.client_email} ouvrir={(id) => ouvrir(id)} />}
               <Card>
                 <CardHeader><CardTitle className="text-base">Conditions et notes</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
