@@ -136,6 +136,10 @@ export async function contexte(navigateur, base, email, { mobile = false, agent 
     if (url.pathname.includes("/functions/v1/")) {
       const nom = url.pathname.split("/").pop(); const corps = req.postData() ? JSON.parse(req.postData()) : {};
       base.appelsFonctions.push({ nom, corps });
+      if (nom === "lire-ticket") { // lecture automatique d'un ticket : réponses préparées par le test, dans l'ordre des appels
+        base.lecturesTicket ??= []; base.lecturesTicket.push(corps);
+        return route.fulfill({ json: base.reponsesTicket?.[base.lecturesTicket.length - 1] ?? { disponible: false } });
+      }
       if (nom === "newsletter") {
         if (corps.action === "guide") return route.fulfill({ json: { ok: true } });
         if (!admin) return route.fulfill({ status: 403, json: { error: "Accès refusé" } });

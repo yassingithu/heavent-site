@@ -171,7 +171,7 @@ export default function DepensesAdmin() {
     if (!fichiers?.length || !f) return;
     setOccupe(true);
     const nouveaux: string[] = [];
-    let aLire: Blob | null = null;
+    const aLire: Blob[] = [];
     try {
       for (const fi of [...fichiers].slice(0, 6)) {
         try {
@@ -179,7 +179,7 @@ export default function DepensesAdmin() {
           const chemin = `${mois}/${idAleatoire()}.${pdf ? "pdf" : "jpg"}`;
           const corps = pdf ? fi : await reduirePhoto(fi, 1800);
           const { error } = await supabase.storage.from(BUCKET).upload(chemin, corps, { contentType: pdf ? "application/pdf" : "image/jpeg" });
-          if (error) toast({ title: "Fichier non envoyé", description: error.message, variant: "destructive" }); else { nouveaux.push(chemin); if (!pdf) aLire = corps; }
+          if (error) toast({ title: "Fichier non envoyé", description: error.message, variant: "destructive" }); else { nouveaux.push(chemin); if (!pdf) aLire.push(corps); }
         } catch { toast({ title: "Photo illisible", description: "Ce fichier n'a pas pu être ouvert (essaie une autre photo ou un PDF).", variant: "destructive" }); }
       }
     } finally {
@@ -187,8 +187,9 @@ export default function DepensesAdmin() {
       setOccupe(false);
     }
     if (entree.current) entree.current.value = "";
-    // Chaque nouvelle photo est lue tout de suite (un ticket coupé en deux se complète avec la seconde photo)
-    if (aLire) void lireTicket(aLire);
+    // Chaque nouvelle photo est lue tout de suite, l'une après l'autre (un ticket coupé en deux se complète avec la seconde photo) ; 3 lectures au plus par envoi
+    if (aLire.length) void (async () => { for (const photo of aLire.slice(0, 3)) await lireTicket(photo); })();
+    if (aLire.length > 3) toast({ title: "Seules les 3 premières photos sont lues", description: "Les autres sont jointes à la dépense ; saisis ce qui manque." });
   };
 
   const enregistrer = async () => {

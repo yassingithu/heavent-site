@@ -1898,6 +1898,36 @@ for (const mobile of [false, true]) await scenario(`Recherche globale : la deman
   await ctx.close();
 });
 
+// Ticket en plusieurs photos : chaque photo est lue, l'une après l'autre (3 au plus), et la seconde complète la première
+await scenario("Dépenses : 2 photos d'un même ticket → les deux sont lues et se complètent ; au-delà de 3 photos, le dire", async (notes) => {
+  const base = nouvelleBase();
+  base.reponsesTicket = [
+    { disponible: true, champs: { fournisseur: "Marjane Californie", montant_ttc: 245.5, devise: "MAD" } },
+    { disponible: true, champs: { date: "2026-11-20", ice: "001234567000089" } },
+    { disponible: true, champs: {} },
+  ];
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN, { mobile: true });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await clicOnglet(page, /Dépenses$/); await page.waitForTimeout(1000);
+  const photo = new URL("./photo-test.jpg", import.meta.url).pathname;
+  await page.getByTestId("ajouter-depense").click(); await page.waitForTimeout(500);
+  await page.getByTestId("champ-photo").setInputFiles([photo, photo]); await page.waitForTimeout(3500);
+  verifier((base.lecturesTicket?.length ?? 0) === 2, "les 2 photos doivent être lues, lectures : " + (base.lecturesTicket?.length ?? 0));
+  verifier((await page.getByTestId("depense-fournisseur").inputValue()) === "Marjane Californie", "le fournisseur de la 1re photo n'est pas rempli");
+  verifier((await page.getByTestId("depense-montant").inputValue()).replace(/\s/g, "") === "245,5", "le montant de la 1re photo n'est pas rempli : " + await page.getByTestId("depense-montant").inputValue());
+  verifier(await page.getByText(/001234567000089/).count() || (await page.locator('input[value="001234567000089"]').count()), "l'ICE lu sur la 2e photo n'est pas rempli");
+  notes.push("2 photos envoyées ensemble : 2 lectures, fournisseur et montant (photo 1) + date et ICE (photo 2) remplis");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400);
+  base.reponsesTicket = [{ disponible: true, champs: {} }, { disponible: true, champs: {} }, { disponible: true, champs: {} }, { disponible: true, champs: {} }]; base.lecturesTicket = [];
+  await page.getByTestId("ajouter-depense").click().catch(() => {}); await page.waitForTimeout(500);
+  await page.getByTestId("champ-photo").setInputFiles([photo, photo, photo, photo]); await page.waitForTimeout(4500);
+  verifier(base.lecturesTicket.length === 3, "au plus 3 lectures par envoi, trouvées " + base.lecturesTicket.length);
+  verifier((await toasts(page)).includes("Seules les 3 premières photos sont lues"), "pas d'avertissement au-delà de 3 photos");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  notes.push("4 photos : 3 lectures et un message qui prévient que la dernière est seulement jointe");
+  await ctx.close();
+});
+
 // Appli Mac : « Voir le site » affiche le vrai site avec un bouton pour revenir (au lieu de renvoyer vers le bilan)
 await scenario("Appli Mac : le bouton « Le site » ouvre le site public, avec retour à l'administration", async (notes) => {
   const base = nouvelleBase();
