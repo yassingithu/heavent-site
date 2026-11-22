@@ -142,6 +142,13 @@ export default function DepensesAdmin() {
       setLu((a) => new Set([...a, ...mis]));
       setProposition(Object.keys(autres).length ? autres : null);
       setLecture("");
+      // Catégorie : reprise du dernier ticket du même commerce, seulement si tu n'as encore rien choisi
+      const nom = (patch.fournisseur ?? x.fournisseur).trim();
+      if (nom && fRef.current?.categorie === "Autres" && !touches.current.has("categorie")) {
+        const { data: prec } = await (supabase as any).from("depenses").select("categorie").ilike("fournisseur", nom.replace(/[\\%_]/g, "\\$&")).neq("categorie", "Autres").order("date_depense", { ascending: false }).limit(1);
+        const cat = prec?.[0]?.categorie as string | undefined;
+        if (cat && n === numeroLecture.current && fRef.current?.categorie === "Autres" && !touches.current.has("categorie")) setF((z) => (z ? { ...z, categorie: cat } : z));
+      }
     } catch { if (n === numeroLecture.current) setLecture("indispo"); }
   };
   const relire = async () => {
@@ -399,7 +406,7 @@ export default function DepensesAdmin() {
                 <div data-lu={lu.has("ice")} style={{ "--i": 3 } as any}><Label className="flex flex-wrap items-baseline">ICE du fournisseur (facultatif)<Lu k="ice" lu={lu} /></Label><Input inputMode="numeric" autoComplete="off" data-testid="depense-ice" value={f.ice} onChange={(e) => saisir("ice", { ice: e.target.value.replace(/[^\d ]/g, "").slice(0, 19) })} /></div>
                 <div data-lu={lu.has("idf")} style={{ "--i": 3 } as any}><Label className="flex flex-wrap items-baseline">Identifiant fiscal, IF (facultatif)<Lu k="idf" lu={lu} /></Label><Input inputMode="numeric" autoComplete="off" data-testid="depense-if" value={f.idf} onChange={(e) => saisir("idf", { idf: e.target.value.replace(/[^\d ]/g, "").slice(0, 14) })} /></div>
                 <div><Label>Catégorie</Label>
-                  <Select value={f.categorie} onValueChange={(v) => setF({ ...f, categorie: v })}>
+                  <Select value={f.categorie} onValueChange={(v) => { touches.current.add("categorie"); setF({ ...f, categorie: v }); }}>
                     <SelectTrigger data-testid="depense-categorie"><SelectValue /></SelectTrigger>
                     <SelectContent>{listeCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
