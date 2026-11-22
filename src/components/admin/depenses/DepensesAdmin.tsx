@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { zipSync, strToU8 } from "fflate";
-import { Camera, ChevronLeft, ScanText, ChevronRight, Download, FileText, Plus, Receipt, Trash2, X } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, Download, FileText, Plus, Receipt, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -323,28 +323,28 @@ export default function DepensesAdmin() {
                   </button>
                   <input ref={entree} type="file" accept="image/*,application/pdf" capture="environment" multiple className="hidden" data-testid="champ-photo" onChange={(e) => ajouterFichiers(e.target.files)} />
                 </div>
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground" aria-live="polite" data-testid="lecture-ticket">
-                  {lecture === "cours" ? <span className="text-[#8C6D22]" data-testid="lecture-en-cours">Lecture du ticket…</span>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground" aria-live="polite" data-testid="lecture-ticket">
+                  {lecture === "cours" ? <span className="text-[#7A5C17]" data-testid="lecture-en-cours">Lecture du ticket…</span>
                     : lecture === "vide" ? <span>Rien de sûr n'a pu être lu : saisis les informations.</span>
                     : lecture === "indispo" ? <span>Lecture indisponible pour l'instant : saisis les informations.</span>
-                    : lu.size ? <span className="text-[#8C6D22]">Lu sur le ticket : vérifie les champs marqués ◆ avant d'enregistrer.</span>
+                    : lu.size ? <span className="inline-flex items-center gap-1.5 text-xs text-foreground"><i aria-hidden className="lu-losange" />Vérifie les champs marqués avant d'enregistrer.</span>
                     : <span>Photo ou PDF. Le montant, la date et le commerce sont lus automatiquement sur la photo.</span>}
                   {f.fichiers.some((x) => !estPdf(x)) && lecture !== "cours" && (
-                    <button type="button" onClick={relire} className="inline-flex min-h-8 items-center gap-1 font-medium text-[#8C6D22] underline underline-offset-2" data-testid="relire-ticket"><ScanText className="h-3.5 w-3.5" />{lu.size || lecture ? "Relire le ticket" : "Lire le ticket"}</button>
+                    <button type="button" onClick={relire} className="inline-flex min-h-11 items-center border border-[#A8933F]/60 px-3 text-xs font-medium text-[#7A5C17] hover:bg-[#FBF6E9] active:bg-[#F4EFE3] sm:min-h-9" data-testid="relire-ticket">{lu.size || lecture ? "Relire le ticket" : "Lire le ticket"}</button>
                   )}
                 </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div><Label>Montant TTC (MAD)<Lu k="montant" lu={lu} /></Label><Input inputMode="decimal" data-testid="depense-montant" value={f.montant} onChange={(e) => saisir("montant", { montant: e.target.value })} /></div>
-                <div><Label>Date<Lu k="date" lu={lu} /></Label><Input type="date" data-testid="depense-date" value={f.date} onChange={(e) => saisir("date", { date: e.target.value })} /></div>
-                <div className="sm:col-span-2"><Label>Fournisseur / commerce<Lu k="fournisseur" lu={lu} /></Label><Input data-testid="depense-fournisseur" value={f.fournisseur} onChange={(e) => saisir("fournisseur", { fournisseur: e.target.value })} /></div>
+                <div data-lu={lu.has("montant")} style={{ "--i": 0 } as any}><Label className="flex flex-wrap items-baseline">Montant TTC (MAD)<Lu k="montant" lu={lu} /></Label><Input inputMode="decimal" data-testid="depense-montant" value={f.montant} onChange={(e) => saisir("montant", { montant: e.target.value })} /></div>
+                <div data-lu={lu.has("date")} style={{ "--i": 1 } as any}><Label className="flex flex-wrap items-baseline">Date<Lu k="date" lu={lu} /></Label><Input type="date" data-testid="depense-date" value={f.date} onChange={(e) => saisir("date", { date: e.target.value })} /></div>
+                <div className="sm:col-span-2" data-lu={lu.has("fournisseur")} style={{ "--i": 2 } as any}><Label className="flex flex-wrap items-baseline">Fournisseur / commerce<Lu k="fournisseur" lu={lu} /></Label><Input data-testid="depense-fournisseur" value={f.fournisseur} onChange={(e) => saisir("fournisseur", { fournisseur: e.target.value })} /></div>
                 <div><Label>Catégorie</Label>
                   <Select value={f.categorie} onValueChange={(v) => setF({ ...f, categorie: v })}>
                     <SelectTrigger data-testid="depense-categorie"><SelectValue /></SelectTrigger>
                     <SelectContent>{listeCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>Payé par<Lu k="moyen" lu={lu} /></Label>
+                <div data-lu={lu.has("moyen")} style={{ "--i": 3 } as any}><Label className="flex flex-wrap items-baseline">Payé par<Lu k="moyen" lu={lu} /></Label>
                   <Select value={f.moyen || "aucun"} onValueChange={(v) => saisir("moyen", { moyen: v === "aucun" ? "" : v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent><SelectItem value="aucun">Non précisé</SelectItem>{Object.entries(MOYENS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
@@ -356,7 +356,7 @@ export default function DepensesAdmin() {
                     <SelectContent><SelectItem value="aucun">Aucun (dépense générale)</SelectItem>{evenements.map((e) => <SelectItem key={e.id} value={e.id}>{e.titre || e.client_nom}{e.numero ? ` · ${e.numero}` : ""}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>TVA lue sur le ticket (facultatif)<Lu k="tva" lu={lu} /></Label><Input inputMode="decimal" value={f.tva} onChange={(e) => saisir("tva", { tva: e.target.value })} /></div>
+                <div data-lu={lu.has("tva")} style={{ "--i": 4 } as any}><Label className="flex flex-wrap items-baseline">TVA (facultatif)<Lu k="tva" lu={lu} /></Label><Input inputMode="decimal" value={f.tva} onChange={(e) => saisir("tva", { tva: e.target.value })} /></div>
                 <div className="sm:col-span-2"><Label>Note</Label><Textarea rows={2} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} /></div>
               </div>
               <div className="flex items-center justify-between gap-2 pt-1">
@@ -391,5 +391,5 @@ export default function DepensesAdmin() {
 
 /** Pastille « lu sur le ticket » à côté d'un champ prérempli par la lecture : disparaît dès que le champ est modifié. */
 function Lu({ k, lu }: { k: string; lu: Set<string> }) {
-  return lu.has(k) ? <span className="ml-1.5 text-[11px] font-normal text-[#8C6D22]" data-testid={`lu-${k}`}>◆ lu sur le ticket</span> : null;
+  return lu.has(k) ? <span className="ml-2 inline-flex items-center gap-1 text-xs font-normal text-[#7A5C17] lu-marque" data-testid={`lu-${k}`}><i aria-hidden className="lu-losange" />lu sur le ticket</span> : null;
 }
