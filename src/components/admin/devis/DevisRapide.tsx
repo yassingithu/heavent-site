@@ -125,6 +125,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   useEffect(() => { etatEnregistre.current = form ? JSON.stringify(form) : ""; }, [form?.id, form === null]); // eslint-disable-line react-hooks/exhaustive-deps
   const ouvrirForm = (f: DevisForm) => { if (!abandonOk()) return; etatEnregistre.current = JSON.stringify(f); setForm(f); };
   const nonEnregistre = () => !!form && JSON.stringify(form) !== etatEnregistre.current;
+  const etatCourant = useRef<{ id?: string; modifie: boolean }>({ modifie: false });
+  etatCourant.current = { id: form?.id, modifie: nonEnregistre() };
   const abandonOk = () => !nonEnregistre() || confirm("Ce devis a des modifications non enregistrées. Les abandonner ?");
   useEffect(() => {
     const avant = (e: BeforeUnloadEvent) => { if (nonEnregistre()) { e.preventDefault(); e.returnValue = ""; } };
@@ -505,7 +507,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     if (!saved?.id) return;
     setEnvoiEnCours(true);
     envoyerAvecAnnulation(toastGlobal, {
-      titre: `Envoi du devis ${saved.numero ?? ""} dans quelques secondes`,
+      titre: `Le devis ${saved.numero ?? ""} part`,
+      cle: `devis-${saved.id}`,
       description: `À ${form?.client_nom ?? ""} <${saved.client_email}>${form?.titre ? ` · ${form.titre}` : ""}. Lien à consulter et signer en ligne, sans pièce jointe.`,
       quandAnnule: () => setEnvoiEnCours(false),
       envoyer: () => expedierDevis(saved),
@@ -518,7 +521,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     setEnvoiEnCours(false);
     if (error || data?.error) { toast({ title: "Devis non envoyé", description: message ?? "Réessaie dans un instant.", variant: "destructive" }); return; }
     const apresEnvoi = { ...saved, statut: saved.statut === "brouillon" ? "envoye" : saved.statut, date_envoi: new Date().toISOString(), relances: 0 };
-    if (!nonEnregistre()) { etatEnregistre.current = JSON.stringify(apresEnvoi); setForm(apresEnvoi); }
+    // Le devis affiché n'est remplacé que si c'est toujours celui-ci et qu'aucune saisie n'a été faite pendant le délai
+    if (etatCourant.current.id === saved.id && !etatCourant.current.modifie) { etatEnregistre.current = JSON.stringify(apresEnvoi); setForm(apresEnvoi); }
     toast({ title: "Devis envoyé ✉️", description: "Le client a reçu son lien de signature. Relances automatiques à J+5 et J+10 s'il ne répond pas." });
     devisModifie(); charger();
   };

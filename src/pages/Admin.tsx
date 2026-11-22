@@ -17,6 +17,7 @@ import { CarteAppTelephone, useAppAdmin } from "@/components/admin/accueil/AppTe
 import { estDemo } from "@/demo/mode";
 import { Search as IconeLoupe } from "lucide-react";
 import RechercheGlobale from "@/components/admin/RechercheGlobale";
+import { BandeauEnvois } from "@/lib/envoiDiffere";
 import { baseDemo, libelleOnglet, ongletMasque, titreOnglet } from "@/demo/serveurDemo";
 import StudioAdmin from "@/components/admin/studio/StudioAdmin";
 import PrestatairesAdmin from "@/components/admin/prestataires/PrestatairesAdmin";
@@ -1200,6 +1201,7 @@ const Admin = () => {
       <BarreBasseAdmin onglet={ongletAdmin} groupes={groupesVisibles.map((g) => ({ titre: g.titre, items: g.items }))} onDeconnexion={handleSignOut}
         onChoisir={(v) => { setOngletAdmin(v); window.scrollTo({ top: 0 }); }} />
 
+      <BandeauEnvois />
       <RechercheGlobale ouvert={rechercheOuverte} onFermer={() => setRechercheOuverte(false)} rubriques={rubriquesRecherche} onAller={allerRecherche} onOuvrirDevis={ouvrirDevisRecherche} />
 
       {accueil?.surprise && accueil.prenom && !surpriseFermee && (

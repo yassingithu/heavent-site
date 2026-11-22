@@ -111,7 +111,8 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
     if (!v.client_email) { toast({ title: x("E-mail du client manquant"), description: x("Ajoute-le dans le devis."), variant: "destructive" }); return; }
     setOccupe("m" + v.id);
     envoyerAvecAnnulation(toastGlobal, {
-      titre: x("Renvoi du devis {numero} dans quelques secondes", { numero: v.numero ?? "" }),
+      titre: x("Le devis {numero} est renvoyé", { numero: v.numero ?? "" }),
+      cle: `renvoi-${v.id}`,
       description: x("À {email}. Les relances automatiques repartent de zéro (J+5, J+10).", { email: v.client_email }),
       quandAnnule: () => setOccupe(null),
       envoyer: async () => {

@@ -39,7 +39,8 @@ export function useActionsFacture(params: Parametres | null, apres: () => void) 
     if (!f.client_email) { toast({ title: "E-mail du client manquant", description: "Ajoute l'e-mail dans le devis : il sera repris sur les prochaines factures.", variant: "destructive" }); return; }
     setOccupe(f.id);
     envoyerAvecAnnulation(toastGlobal, {
-      titre: `Envoi de la facture ${f.numero} dans quelques secondes`,
+      titre: `La facture ${f.numero} part`,
+      cle: `facture-${f.id}`,
       description: `À ${f.client_nom ?? ""} <${f.client_email}>${f.titre ? ` · ${f.titre}` : ""}. Lien vers le PDF, sans pièce jointe.`,
       quandAnnule: () => setOccupe(null),
       envoyer: () => expedierFacture(f),
