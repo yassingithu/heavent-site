@@ -38,6 +38,7 @@ const Contact = () => {
   type Profil = "evenement" | "mission" | "partenaire";
   const [profil, setProfil] = useState<Profil>("evenement");
   const [profilEnvoye, setProfilEnvoye] = useState<Profil>("evenement");
+  const [questionOuverte, setQuestionOuverte] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -45,8 +46,6 @@ const Contact = () => {
     handleSubmit,
     formState: { errors },
     reset,
-    getValues,
-    setValue
   } = useForm<FormData>({
     resolver: zodResolver(formSchema)
   });
@@ -83,12 +82,8 @@ const Contact = () => {
   ];
 
   const PREFIXES: Record<Profil, string> = { evenement: "", mission: "Candidature — ", partenaire: "Partenaire — " };
-  const choisirProfil = (p: Profil) => {
-    const sujet = getValues("subject") ?? "";
-    const sansPrefixe = Object.values(PREFIXES).filter(Boolean).reduce((acc, pre) => (acc.startsWith(pre) ? acc.slice(pre.length) : acc), sujet);
-    setValue("subject", PREFIXES[p] ? PREFIXES[p] + sansPrefixe : sansPrefixe);
-    setProfil(p);
-  };
+  const choisirProfil = (p: Profil) => { setProfil(p); setQuestionOuverte(false); };
+  const exemples: Record<Profil, string> = { evenement: "Ex: Demande d'information, devis événement...", mission: "Ex: ma disponibilité pour une mission", partenaire: "Ex: proposition de partenariat" };
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -102,7 +97,7 @@ const Contact = () => {
         },
         body: JSON.stringify({
           type: 'contact',
-          data: data
+          data: { ...data, subject: PREFIXES[profil] + data.subject }
         }),
       });
 
@@ -146,13 +141,22 @@ const Contact = () => {
           <div className="s-fairepart s-merci">
             <Etoile /><Etoile className="bas" />
             <h1 className="s-h3">{x("Message envoyé !")}</h1>
-            <p className="s-texte" style={{ marginTop: 14 }}>{x("Votre message a été envoyé avec succès. Notre équipe va l'examiner et vous répondra sous 24h.")}</p>
-            {profilEnvoye === "mission" && (
-              <p className="s-texte s-profil-note" data-testid="contact-merci-candidature">{x("Pour que votre candidature soit étudiée, elle doit aussi être déposée via le formulaire en ligne.")} <Link to="/inscription-staff">{x("Déposer ma candidature")}</Link></p>
+            {profilEnvoye === "mission" ? (
+              <>
+                <p className="s-texte" style={{ marginTop: 14 }}>{x("Votre question est bien reçue. Les candidatures se font uniquement en ligne.")}</p>
+                <div className="s-actions" style={{ justifyContent: "center", marginTop: 24 }}>
+                  <Link to="/inscription-staff" className="s-btn s-btn-or" data-testid="contact-merci-candidature">{x("Faire ma candidature")}<span className="fl" aria-hidden="true">→</span></Link>
+                </div>
+                <p className="s-profil-aide" style={{ marginTop: 18 }}><button type="button" className="s-profil-lien" onClick={() => setIsSubmitted(false)}>{x("Envoyer un nouveau message")}</button></p>
+              </>
+            ) : (
+              <>
+                <p className="s-texte" style={{ marginTop: 14 }}>{x("Votre message a été envoyé avec succès. Notre équipe va l'examiner et vous répondra sous 24h.")}</p>
+                <div className="s-actions" style={{ justifyContent: "center", marginTop: 24 }}>
+                  <button type="button" className="s-btn s-btn-plein s-sombre" onClick={() => setIsSubmitted(false)}>{x("Envoyer un nouveau message")}</button>
+                </div>
+              </>
             )}
-            <div className="s-actions" style={{ justifyContent: "center", marginTop: 24 }}>
-              <button type="button" className="s-btn s-btn-plein s-sombre" onClick={() => setIsSubmitted(false)}>{x("Envoyer un nouveau message")}</button>
-            </div>
           </div>
         </div>
       </section>
@@ -197,7 +201,7 @@ const Contact = () => {
                   <span className="s-surtitre" style={{ letterSpacing: ".24em" }}>{info.title}</span>
                   {info.href === "#" ? <b>{info.value}</b> : <a href={info.href} {...(info.href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}><b dir={info.href.startsWith("tel:") ? "ltr" : undefined}>{info.value}</b></a>}
                   <p style={{ gridColumn: 1 }}>{info.description}</p>
-                  {info.href.startsWith("mailto:") && <p className="s-candidat-ligne" style={{ gridColumn: "1 / -1" }} data-testid="contact-candidats">{x("Vous cherchez une mission d'hôte ou d'hôtesse ?")} <Link to="/inscription-staff">{x("Inscrivez-vous ici")}</Link>. {x("Les candidatures se font en ligne, pas par e-mail.")}</p>}
+                  {info.href.startsWith("mailto:") && <p className="s-candidat-ligne" style={{ gridColumn: "1 / -1" }} data-testid="contact-candidats">{x("Vous cherchez une mission d'hôte ou d'hôtesse ?")} <Link to="/inscription-staff">{x("Faire ma candidature")}</Link>. {x("Les candidatures se font en ligne, pas par e-mail.")}</p>}
                 </li>
               ))}
               <li data-revele="" style={{ gridTemplateColumns: "1fr" }}>
@@ -229,12 +233,13 @@ const Contact = () => {
                 </div>
                 {profil === "mission" && (
                   <div className="s-profil-mission" data-testid="contact-panneau-candidature">
-                    <p className="s-texte" style={{ fontSize: 15 }}>{x("Les candidatures se font en ligne : c'est le seul moyen d'être étudiée. Cela prend quelques minutes.")}</p>
+                    <p className="s-texte" style={{ fontSize: 15 }}>{x("Les candidatures se font uniquement en ligne. Cela prend quelques minutes.")}</p>
                     <Link to="/inscription-staff" className="s-btn s-btn-or" data-testid="contact-candidature-bouton">{x("Faire ma candidature")}<span className="fl" aria-hidden="true">→</span></Link>
-                    <p className="s-profil-aide">{x("Une question avant de candidater ? Écrivez-nous ci-dessous, le sujet est déjà indiqué « Candidature ».")}</p>
+                    {!questionOuverte && <p className="s-profil-aide"><button type="button" className="s-profil-lien" onClick={() => setQuestionOuverte(true)} data-testid="contact-question-seulement">{x("J'ai seulement une question")}</button></p>}
                   </div>
                 )}
-                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {profil === "partenaire" && <p className="s-profil-aide" style={{ marginBottom: 18 }}>{x("Présentez votre activité en quelques lignes ; nous vous répondons nous-mêmes.")}</p>}
+                  {(profil !== "mission" || questionOuverte) && <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="name">{x("Nom complet *")}</Label>
@@ -263,12 +268,12 @@ const Contact = () => {
 
                     <div>
                       <Label htmlFor="subject">{x("Sujet *")}</Label>
-                      <Input
+                      <div className="s-sujet">{PREFIXES[profil] && <span className="s-sujet-pre" aria-hidden="true">{PREFIXES[profil].trim()}</span>}<Input
                         id="subject"
-                        placeholder={x("Ex: Demande d'information, devis événement...")}
+                        placeholder={x(exemples[profil])}
                         {...register("subject")}
                         className={errors.subject ? "border-destructive" : ""}
-                      />
+                      /></div>
                       {errors.subject && (
                         <p className="text-sm text-destructive mt-1">{x(String(errors.subject.message ?? ""))}</p>
                       )}
@@ -297,7 +302,7 @@ const Contact = () => {
                       {isSubmitting ? x("Envoi en cours...") : x("Envoyer le message")}
                       <span aria-hidden="true" className="ml-2">→</span>
                     </Button>
-                  </form>
+                  </form>}
               </div>
             </div>
           </div>
