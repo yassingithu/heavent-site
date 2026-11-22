@@ -756,13 +756,13 @@ await scenario("Avis client : notes du service et des crews, avis Google, notes 
   page.on("dialog", (d) => d.accept());
   await connecter(page, BASE, ADMIN, "/admin");
   await clicOnglet(page, /Devis$/); await page.waitForTimeout(800);
-  await page.getByText("Henné Yasmine").first().click(); await page.waitForTimeout(1800);
+  await page.getByText("Henné Yasmine").locator("visible=true").first().click(); await page.waitForTimeout(1800);
   await page.getByTestId("reprendre-equipe-admin").click(); await page.getByRole("option", { name: /DEV-2026-0160/ }).click(); await page.waitForTimeout(2500);
   const nouvelles = base.affectations.filter((a) => a.devis_id === "dv7").map((a) => a.staff_id).sort();
   verifier(nouvelles.length === 2 && nouvelles.join() === [s1.id, s2.id].sort().join(), "l'équipe précédente n'est pas reprise : " + JSON.stringify(nouvelles));
   verifier(await page.getByText("5.0").count() && await page.getByText("4.0").count(), "les notes des crews ne s'affichent pas dans l'équipe");
   await clicOnglet(page, "Mes devis"); await page.waitForTimeout(500);
-  await page.getByText("Mariage Yasmine").first().click(); await page.waitForTimeout(1500);
+  await page.getByText("Mariage Yasmine").locator("visible=true").first().click(); await page.waitForTimeout(1500);
   verifier(/5\/5/.test(await page.getByTestId("avis-client-admin").innerText()) && /même équipe/.test(await page.getByTestId("avis-client-admin").innerText()), "l'avis du client n'apparaît pas dans le devis");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
   await ctx.close();
@@ -852,7 +852,7 @@ await scenario("Espace mariés : check-list, budget, programme, invités qui ré
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
   await clicOnglet(page, /Devis$/); await page.waitForTimeout(800);
-  await page.getByText("Mariage Salma").first().click(); await page.waitForTimeout(1800);
+  await page.getByText("Mariage Salma").locator("visible=true").first().click(); await page.waitForTimeout(1800);
   const vue = await page.getByTestId("espace-maries-admin").innerText();
   verifier(/3\s*personnes confirmées/.test(vue) && /Entrée des mariés/.test(vue) && /allergique/.test(vue), "l'agence ne voit pas l'espace mariés : " + vue.slice(0, 200));
   verifier(!erreurs.length, "erreurs JavaScript (admin) : " + erreurs.join(" ; "));
@@ -957,9 +957,9 @@ await scenario("Cohérence : devis signé/facturé archivable (pas supprimable),
   verifier(!base.devis.some((d) => d.id === "dvB"), "le brouillon n'est pas supprimé");
   // Crew avec fiche de paie : la suppression ne détruit pas contrats ni fiches de paie (obligation légale), elle l'annonce avant
   await clicOnglet(page, /Personnel$/); await page.waitForTimeout(1000);
-  await page.locator("tr", { hasText: s1.nom }).getByRole("button", { name: /Supprimer/ }).first().click(); await page.waitForTimeout(500);
+  await page.locator("tr", { hasText: s1.prenom }).filter({ hasText: s1.nom }).getByRole("button", { name: /Supprimer/ }).first().click(); await page.waitForTimeout(500);
   const fenetre = await page.getByRole("alertdialog").innerText();
-  verifier(/Conservés/.test(fenetre) && /fiches de paie/.test(fenetre) && /Effacer les données/.test(fenetre), "la suppression d'un crew avec fiches de paie n'annonce pas ce qui est conservé");
+  verifier(/Conservés/.test(fenetre) && /fiches de paie/.test(fenetre) && /Effacer les données/.test(fenetre), "la suppression d'un crew avec fiches de paie n'annonce pas ce qui est conservé : " + fenetre.replace(/\s+/g, " ").slice(0, 400));
   await page.keyboard.press("Escape"); await page.waitForTimeout(300);
   verifier(base.staff.some((x) => x.id === s1.id) && base.fiches_paie.length > 0, "le crew ou ses fiches de paie ont disparu sans confirmation");
   verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
