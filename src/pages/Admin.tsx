@@ -1098,6 +1098,12 @@ const Admin = () => {
   const versDevis = () => { setOngletAdmin("devis-rapide"); window.scrollTo({ top: 0 }); };
 
   const [nouvellesCartes, setNouvellesCartes] = useState(0);
+  const [urgentes, setUrgentes] = useState(0);
+  useEffect(() => {
+    const f = (e: Event) => setUrgentes(Number((e as CustomEvent).detail) || 0);
+    window.addEventListener("heavent:urgentes", f);
+    return () => window.removeEventListener("heavent:urgentes", f);
+  }, []);
   const [apercuAOuvrir, setApercuAOuvrir] = useState<string | null>(null);
   const compterCartes = useCallback(async () => {
     try { const { count } = await (supabase as any).from("demandes_cartes").select("id", { count: "exact", head: true }).eq("statut", "nouvelle"); setNouvellesCartes(count ?? 0); } catch { setNouvellesCartes(0); }
@@ -1148,7 +1154,7 @@ const Admin = () => {
           valeur, Icone,
           libelle: estDemo() && !fils ? libelleOnglet(valeur, libelleBase) : libelleBase,
           fils: sousOnglets.length > 1 ? sousOnglets : undefined,
-          badge: valeur === "entreprise" ? nouvellesEntreprise + nouvellesMariage + messagesATraiter : valeur === "invitations" ? nouvellesCartes : 0,
+          badge: valeur === "tableau" ? (ongletAdmin === "tableau" ? 0 : urgentes) : valeur === "entreprise" ? nouvellesEntreprise + nouvellesMariage + messagesATraiter : valeur === "invitations" ? nouvellesCartes : 0,
         };
       }),
     }));

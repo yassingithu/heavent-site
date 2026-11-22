@@ -314,6 +314,8 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
   const urgentes = visibles.filter((l) => l.urgent), suite = visibles.filter((l) => !l.urgent);
   const NOMS: Record<Genre, string> = { relance: x("Relances"), paiement: x("Paiements"), equipe: x("Équipes"), contrat: x("Contrats"), demande: x("Demandes") };
   const nbUrgentes = lignes.filter((l) => l.urgent).length;
+  // Le menu de l'admin affiche ce nombre à côté de « Accueil » quand on est sur une autre rubrique
+  useEffect(() => { if (charge) window.dispatchEvent(new CustomEvent("heavent:urgentes", { detail: nbUrgentes })); }, [charge, nbUrgentes]);
 
   const titre = echec ? x("Impossible de charger tes tâches") : !charge ? null : lignes.length === 0 ? x("Rien d’urgent aujourd’hui") : lignes.length === 1 ? x("1 chose à faire") : x("{n} choses à faire", { n: lignes.length });
   const sousTitre = charge && lignes.length > 0

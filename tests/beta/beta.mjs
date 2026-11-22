@@ -1898,6 +1898,25 @@ for (const mobile of [false, true]) await scenario(`Recherche globale : la deman
   await ctx.close();
 });
 
+// Accueil : le nombre de choses urgentes suit l'administratrice dans le menu quand elle change de rubrique
+for (const mobile of [false, true]) await scenario(`Accueil : badge des choses urgentes dans le menu (${mobile ? "iPhone" : "ordinateur"})`, async (notes) => {
+  const base = nouvelleBase();
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN, { mobile });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await page.getByTestId("aj-ligne").first().waitFor({ state: "visible", timeout: 8000 });
+  const n = await page.locator('[data-testid="aj-ligne"][data-urgent="oui"]:visible').count();
+  verifier(n > 0, "le jeu d'essai n'a aucune ligne urgente");
+  const sur = mobile ? page.getByTestId("badge-urgentes") : page.getByRole("tab", { name: /Accueil/ }).first();
+  if (!mobile) verifier(!/\d/.test(await sur.innerText()), "badge affiché alors qu'on est sur l'Accueil");
+  else verifier((await sur.count()) === 0, "badge affiché alors qu'on est sur l'Accueil");
+  await clicOnglet(page, "Agenda"); await page.waitForTimeout(600);
+  const txt = (await (mobile ? sur : page.getByRole("tab", { name: /Accueil/ }).first()).innerText()).replace(/\D/g, "");
+  verifier(Number(txt) === n, `badge = ${txt || "aucun"}, attendu ${n}`);
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  notes.push(`${n} urgentes sur l'Accueil → même nombre dans le menu depuis l'Agenda, absent sur l'Accueil`);
+  await ctx.close();
+});
+
 // Ticket en plusieurs photos : chaque photo est lue, l'une après l'autre (3 au plus), et la seconde complète la première
 await scenario("Dépenses : 2 photos d'un même ticket → les deux sont lues et se complètent ; au-delà de 3 photos, le dire", async (notes) => {
   const base = nouvelleBase();

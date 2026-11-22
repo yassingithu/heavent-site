@@ -25,7 +25,8 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
   const [plusOuvert, setPlusOuvert] = useState(false);
   const tous = groupes.flatMap((g) => g.items);
   const badgeClients = tous.find((i) => i.valeur === "entreprise")?.badge ?? 0;
-  const badgeTotal = tous.filter((i) => i.valeur !== "entreprise").reduce((t, i) => t + (i.badge ?? 0), 0);
+  const badgeAccueil = tous.find((i) => i.valeur === "tableau")?.badge ?? 0;
+  const badgeTotal = tous.filter((i) => i.valeur !== "entreprise" && i.valeur !== "tableau").reduce((t, i) => t + (i.badge ?? 0), 0);
   const dansPlus = !PRINCIPAUX.some((p) => dans(p.valeur, onglet));
 
   const feuille = useRef<HTMLDivElement>(null);
@@ -110,6 +111,7 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
                 <button onClick={() => choisir(valeur)} aria-current={actif ? "page" : undefined} data-testid={`bas-${valeur}`}
                   className={`relative w-full min-h-14 flex flex-col items-center justify-center gap-1 text-[11px] font-medium tracking-[0.04em] transition-colors ${actif ? "text-[#E4D49A]" : "text-[#BDB29C]"}`}>
                   <Icone className="h-5 w-5 [stroke-width:1.4]" />{libelle}
+                  {valeur === "tableau" && badgeAccueil > 0 && <span className="absolute top-1 left-1/2 ml-2.5 text-[10.5px] leading-none font-medium tabular-nums text-[#E4D49A]" aria-label={`${badgeAccueil} chose(s) urgente(s)`} data-testid="badge-urgentes">{badgeAccueil}</span>}
                   {valeur === "entreprise" && badgeClients > 0 && <span className="absolute top-1 left-1/2 ml-2.5 text-[10.5px] leading-none font-medium tabular-nums text-[#E4D49A]" aria-label={`${badgeClients} nouvelle(s) demande(s)`}>{badgeClients}</span>}
                 </button>
               </li>
