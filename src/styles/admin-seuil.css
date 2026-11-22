@@ -388,3 +388,15 @@ nav[aria-label="Navigation principale"] button:active { transform: scale(.94); }
 @media (max-width: 639px) { .a-filtres { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); } }
 @media (min-width: 640px) { .a-filtres button { min-height: 38px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; } }
 @media (prefers-reduced-motion: reduce) { .a-filtres button { transition: none; } }
+
+/* Cartes de la liste des devis sur iPhone */
+.a-devis-carte { padding: 20px 0; border-top: 1px solid var(--s-filet); }
+.a-devis-carte:last-child { border-bottom: 1px solid var(--s-filet); }
+.a-surtitre { font: 500 10.5px/1.4 var(--s-texte); letter-spacing: .24em; text-transform: uppercase; color: var(--s-laiton-texte); overflow-wrap: anywhere; }
+.a-chevron { width: 7px; height: 7px; margin-top: -3px; border-right: 1.5px solid var(--s-laiton-texte); border-bottom: 1.5px solid var(--s-laiton-texte); transform: rotate(45deg); flex: none; }
+.a-actions { display: flex; margin-top: 12px; border-top: 1px solid var(--s-filet); }
+.a-actions > button { flex: 1; min-height: 44px; padding: 0 4px; background: none; border: 0; border-inline-end: 1px solid var(--s-filet); font: 500 10.5px/1 var(--s-texte); letter-spacing: .12em; text-transform: uppercase; color: var(--s-laiton-texte); }
+.a-actions > button:last-child { border-inline-end: 0; }
+.a-actions > button:active { background: rgba(228,212,154,.28); }
+.a-actions > button:disabled { opacity: .45; }
+.a-actions > .terre { color: var(--s-terre); flex: 0 0 auto; padding: 0 14px; border-inline-start: 1px solid var(--s-filet); }

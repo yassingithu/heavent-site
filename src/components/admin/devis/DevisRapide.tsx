@@ -628,6 +628,19 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                         )}
                         </>}
   </>);
+  const actionsMobile = (d: any) => d.reponseRapide
+    ? <p className="text-[13px] text-[#5A5146] mt-3">E-mail envoyé · détail dans l'onglet Demandes</p>
+    : (
+      <div className="a-actions" data-testid="actions-carte">
+        <button type="button" aria-label="Télécharger le PDF" disabled={pdfEnCours} onClick={() => telechargerPdfDepuisListe(d.id)}>PDF</button>
+        <button type="button" aria-label="Image à partager (PNG)" disabled={imageEnCours} onClick={() => imageDepuisListe(d.id, "png")} data-testid="image-devis-liste-carte">Image</button>
+        <button type="button" aria-label="Dupliquer ce devis" onClick={() => ouvrir(d.id, true)}>Copier</button>
+        {!devisSupprimable(d) && <button type="button" aria-label={d.archive ? "Ressortir des archives" : "Archiver ce devis"} onClick={() => archiver(d.id, !d.archive)} data-testid="archiver-devis-carte">{d.archive ? "Ressortir" : "Archiver"}</button>}
+        {devisSupprimable(d)
+          ? <button type="button" className="terre" aria-label="Supprimer ce devis" onClick={() => supprimer(d.id, d.numero)} data-testid="supprimer-devis-carte">Supprimer</button>
+          : <button type="button" className="terre" aria-label="Supprimer définitivement (devis de test)" onClick={() => supprimerTest(d)} data-testid="supprimer-devis-test-carte">Suppr. test</button>}
+      </div>
+    );
   const filtres = devisList.filter((d) => {
     const q = recherche.trim().toLowerCase();
     const okQ = !q || [d.numero, d.client_nom, d.client_societe, d.titre].some((v) => v?.toLowerCase().includes(q));
@@ -727,30 +740,26 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   : <>Aucun devis « {filtreStatut === "en_attente" ? "En attente" : libelleStatut("devis", filtreStatut)} » pour l'instant. <button type="button" className="underline" onClick={() => setFiltreStatut("tous")}>Voir tous les devis</button></>}
               </p>
             ) : (<>
-              <div className="sm:hidden grid gap-3.5" data-testid="devis-cartes">
+              <div className="sm:hidden grid gap-0" data-testid="devis-cartes">
                 {filtres.map((d) => {
                   const dom = d.reponseRapide ? "reponse_rapide" : "devis";
                   return (
-                    <article key={d.id} className="border-t border-[#DCCDAA] pt-3.5">
-                      <div className="flex justify-between items-baseline gap-3">
-                        <h3 className="font-serif text-[21px] leading-tight break-words min-w-0">{d.client_societe || d.client_nom}</h3>
-                        <span className="text-[10.5px] font-medium tracking-[0.14em] text-[#5A5146] whitespace-nowrap">{d.numero}</span>
-                      </div>
-                      <p className="text-[13.5px] text-[#5A5146] mt-0.5 break-words">{d.titre || "—"}{d.date_evenement ? ` · ${dateFr(d.date_evenement)}` : ""}{d.reponseRapide ? " · Réponse rapide" : (d as any).marque === "nawar" ? " · Nawar" : ""}{d.archive ? " · archivé" : ""}</p>
-                      <div className="flex items-center justify-between gap-3 mt-2">
-                        <Select value={d.statut} onValueChange={(v) => changerStatut(d.id, v)}>
-                          <SelectTrigger className="h-11 w-auto border-0 p-0 shadow-none bg-transparent" aria-label="Changer le statut"><span className={d.statut === "accepte" || d.statut === "facture" ? "a-st vert" : d.statut === "refuse" ? "a-st terre" : "a-st vide"}>{libelleStatut(dom, d.statut)}</span></SelectTrigger>
-                          <SelectContent>{(d.reponseRapide ? clesStatut("reponse_rapide") : statutsPermis(d)).map((k) => <SelectItem key={k} value={k}>{libelleStatut(dom, k)}</SelectItem>)}</SelectContent>
-                        </Select>
-                        <span className="font-serif text-[22px] tabular-nums whitespace-nowrap">{money(d.total_ttc, d.devise)}</span>
-                      </div>
+                    <article key={d.id} className="a-devis-carte">
+                      <p className="a-surtitre">{d.date_evenement ? dateFr(d.date_evenement) : "Date à définir"} · {d.numero}{d.reponseRapide ? " · Réponse rapide" : (d as any).marque === "nawar" ? " · Nawar" : ""}{d.archive ? " · archivé" : ""}</p>
+                      <h3 className="font-serif text-[24px] leading-tight break-words min-w-0 mt-1">{d.reponseRapide ? (d.client_societe || d.client_nom) : <button type="button" className="text-left min-h-11 w-full" onClick={() => ouvrir(d.id)} aria-label={`Ouvrir le devis ${d.numero}`}>{d.client_societe || d.client_nom}</button>}</h3>
+                      {d.titre && <p className="text-[13.5px] text-[#5A5146] break-words">{d.titre}</p>}
                       {(d.signe_le || d.rdv_demande_le || (d.statut === "envoye" && d.relances)) && (
-                        <p className="text-[12.5px] mt-1 text-[#1F5A4C]">{d.signe_le ? "Signé en ligne" : d.rdv_demande_le ? "RDV demandé avant signature" : `${d.relances} relance${d.relances > 1 ? "s" : ""} auto`}</p>
+                        <p className={`a-st mt-1.5 ${d.signe_le ? "vert" : ""}`} style={d.rdv_demande_le && !d.signe_le ? { color: "#7A5F1F" } : undefined}>{d.signe_le ? "Signé en ligne" : d.rdv_demande_le ? "RDV demandé avant signature" : `${d.relances} relance${d.relances > 1 ? "s" : ""} auto`}</p>
                       )}
-                      <div className="flex flex-wrap items-center gap-1 mt-2.5 [&_button]:h-11 [&_button]:w-11">
-                        {!d.reponseRapide && <button onClick={() => ouvrir(d.id)} className="s-btn s-btn-plein s-sombre a-btn-grand !w-auto mr-1" data-testid="ouvrir-devis-carte">Ouvrir</button>}
-                        {actionsDevis(d)}
+                      <div className="flex items-center justify-between gap-3 mt-1">
+                        <Select value={d.statut} onValueChange={(v) => changerStatut(d.id, v)}>
+                          <SelectTrigger className="h-11 w-auto gap-2 border-0 p-0 shadow-none bg-transparent [&>svg]:hidden" aria-label={`Changer le statut (${libelleStatut(d.reponseRapide ? "reponse_rapide" : "devis", d.statut)})`}><span className={d.statut === "accepte" || d.statut === "facture" ? "a-st vert" : d.statut === "refuse" ? "a-st terre" : "a-st vide"}>{libelleStatut(d.reponseRapide ? "reponse_rapide" : "devis", d.statut)}</span><span aria-hidden="true" className="a-chevron" /></SelectTrigger>
+                          <SelectContent>{(d.reponseRapide ? clesStatut("reponse_rapide") : statutsPermis(d)).map((k) => <SelectItem key={k} value={k}>{libelleStatut(d.reponseRapide ? "reponse_rapide" : "devis", k)}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <span className="font-serif text-[22px] tabular-nums whitespace-nowrap text-[#7A5F1F]">{money(d.total_ttc, d.devise)}</span>
                       </div>
+                      {!d.reponseRapide && <button onClick={() => ouvrir(d.id)} className="s-btn s-btn-plein s-sombre a-btn-grand mt-2" data-testid="ouvrir-devis-carte">Ouvrir</button>}
+                      {actionsMobile(d)}
                     </article>
                   );
                 })}
