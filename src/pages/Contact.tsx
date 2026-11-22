@@ -18,10 +18,10 @@ import { useTexte } from "@/i18n/textes";
 import { Phone, Mail, MapPin, Instagram } from "lucide-react";
 
 const formSchema = z.object({
-  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  name: z.string().trim().min(2, "Le nom doit contenir au moins 2 caractères"),
   email: z.string().email("Email invalide"), 
   subject: z.string().min(5, "Le sujet doit contenir au moins 5 caractères"),
-  message: z.string().min(10, "Le message doit contenir au moins 10 caractères"),
+  message: z.string().trim().min(10, "Le message doit contenir au moins 10 caractères"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -93,6 +93,8 @@ const Contact = () => {
       // Le message est gardé en base avant l'e-mail : s'il se perd dans la messagerie, il reste lisible dans l'admin
       const sujetComplet = PREFIXES[profil] + data.subject;
       const { error: erreurBase } = await (supabase as any).from("messages_contact").insert({ nom: data.name.trim().slice(0, 200), email: data.email.trim().slice(0, 320), sujet: sujetComplet.slice(0, 300), message: data.message.trim().slice(0, 5000) });
+      let emailOk = false;
+      try {
       const response = await fetch(`${FUNCTIONS_URL}/send-email`, {
         method: 'POST',
         headers: {
@@ -103,10 +105,12 @@ const Contact = () => {
           data: { ...data, subject: PREFIXES[profil] + data.subject }
         }),
       });
+      emailOk = response.ok;
+      } catch { emailOk = false; }
 
       if (erreurBase) console.error("Message de contact non enregistré en base :", erreurBase.message);
       // Échec seulement si ni la base ni l'e-mail n'ont reçu le message
-      if (!response.ok && erreurBase) {
+      if (!emailOk && erreurBase) {
         throw new Error('Erreur lors de l\'envoi');
       }
       suivre("demande", "contact");

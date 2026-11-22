@@ -11,44 +11,54 @@ export default function MessagesContact({ onCompte }: { onCompte?: (aTraiter: nu
   const { toast } = useToast();
   const [liste, setListe] = useState<Message[] | null>(null);
   const [erreur, setErreur] = useState(false);
+  const [nombre, setNombre] = useState(0);
   const [filtre, setFiltre] = useState<"a_traiter" | "tous">("a_traiter");
   const [recherche, setRecherche] = useState("");
   const [deplies, setDeplies] = useState<Set<string>>(new Set());
 
   const charger = useCallback(async () => {
     setErreur(false);
-    const { data, error } = await (supabase as any).from("messages_contact").select("*").order("cree_le", { ascending: true }).limit(300);
+    const base = (supabase as any).from("messages_contact").select("*");
+    // « À traiter » : les plus anciens d'abord, côté serveur (rien ne disparaît au-delà de 300) ; « Tous » : les plus récents d'abord
+    const { data, error } = await (filtre === "tous" ? base.order("cree_le", { ascending: false }) : base.eq("traite", false).order("cree_le", { ascending: true })).limit(300);
     if (error) { setErreur(true); setListe((l) => l ?? []); return; }
     const l = (data ?? []) as Message[];
     setListe(l);
-    onCompte?.(l.filter((m) => !m.traite).length);
-  }, [onCompte]);
+    const { count } = await (supabase as any).from("messages_contact").select("id", { count: "exact", head: true }).eq("traite", false);
+    setNombre(count ?? l.filter((m) => !m.traite).length);
+    onCompte?.(count ?? l.filter((m) => !m.traite).length);
+  }, [onCompte, filtre]);
   useEffect(() => { charger(); }, [charger]);
+  useEffect(() => {
+    const retour = () => { if (document.visibilityState === "visible") charger(); };
+    document.addEventListener("visibilitychange", retour);
+    return () => document.removeEventListener("visibilitychange", retour);
+  }, [charger]);
 
   const marquer = async (m: Message, traite: boolean, avecAnnuler = true) => {
     const { error } = await (supabase as any).from("messages_contact").update({ traite }).eq("id", m.id);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
-    setListe((l) => {
-      const n = (l ?? []).map((x) => (x.id === m.id ? { ...x, traite } : x));
-      onCompte?.(n.filter((x) => !x.traite).length);
-      return n;
-    });
+    const apres = (liste ?? []).map((x) => (x.id === m.id ? { ...x, traite } : x));
+    setListe(apres);
+    const n = Math.max(0, nombre + (traite ? -1 : 1));
+    setNombre(n); onCompte?.(n);
     toast({ title: traite ? "Message traité" : "Remis à traiter", action: avecAnnuler ? <ToastAction altText="Annuler" onClick={() => marquer(m, !traite, false)}>Annuler</ToastAction> : undefined });
   };
 
   const quand = (iso: string) => new Date(iso).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
   const tous = liste ?? [];
   const aTraiter = tous.filter((m) => !m.traite);
+  const nbATraiter = nombre;
   const q = recherche.trim().toLowerCase();
   const affiches = (filtre === "tous" ? tous : aTraiter).filter((m) => !q || [m.nom, m.email, m.sujet, m.message].some((v) => v?.toLowerCase().includes(q)));
 
   return (
     <section data-testid="messages-contact" aria-labelledby="t-messages">
-      <p className="a-devis-date" id="t-messages">Contact · {aTraiter.length} à traiter</p>
+      <p className="a-devis-date" id="t-messages">Contact · {nbATraiter} à traiter</p>
       <p className="text-[13.5px] text-[var(--s-texte-2,#5A5146)] mt-1">Chaque message arrive aussi par e-mail. Les plus anciens non traités sont en premier. Heure du Maroc.</p>
       <div className="a-filtres mt-3" role="group" aria-label="Filtrer les messages">
-        <button type="button" aria-pressed={filtre === "a_traiter"} onClick={() => setFiltre("a_traiter")} data-testid="msg-filtre-a-traiter">À traiter<span className="a-filtre-n" data-zero={aTraiter.length === 0 ? "oui" : "non"}>{aTraiter.length}</span></button>
-        <button type="button" aria-pressed={filtre === "tous"} onClick={() => setFiltre("tous")} data-testid="msg-filtre-tous">Tous<span className="a-filtre-n">{tous.length}</span></button>
+        <button type="button" aria-pressed={filtre === "a_traiter"} onClick={() => setFiltre("a_traiter")} data-testid="msg-filtre-a-traiter">À traiter<span className="a-filtre-n" data-zero={nbATraiter === 0 ? "oui" : "non"}>{nbATraiter}</span></button>
+        <button type="button" aria-pressed={filtre === "tous"} onClick={() => setFiltre("tous")} data-testid="msg-filtre-tous">Tous<span className="a-filtre-n" style={{ display: filtre === "tous" ? undefined : "none" }}>{tous.length}</span></button>
       </div>
       {tous.length > 8 && <Input className="mt-2" placeholder="Chercher un nom, un e-mail ou un mot" aria-label="Chercher dans les messages" value={recherche} onChange={(e) => setRecherche(e.target.value)} />}
 
