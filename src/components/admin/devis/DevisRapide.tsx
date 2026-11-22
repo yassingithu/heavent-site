@@ -611,8 +611,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   useEffect(() => { rangeeFiltres.current?.querySelector<HTMLElement>('[aria-pressed="true"]')?.scrollIntoView({ inline: "center", block: "nearest" }); }, [filtreStatut]);
   // Compteurs des pastilles (sans tenir compte de la recherche : le chiffre dit ce qui existe, pas ce qui reste affiché)
   const compteurs: Record<string, number> = { tous: devisList.filter((d) => !d.archive).length, archives: devisList.filter((d) => d.archive).length };
-  for (const k of clesStatut("devis")) compteurs[k] = devisList.filter((d) => !d.archive && d.statut === k).length;
-  const pastilles = [["tous", "Tous"], ...clesStatut("devis").map((k) => [k, libelleStatut("devis", k)]), ["archives", "Archivés"]].filter(([k]) => k === "tous" || k === "envoye" || k === "accepte" || k === filtreStatut || compteurs[k] > 0);
+  for (const k of [...clesStatut("devis"), "en_attente"]) compteurs[k] = devisList.filter((d) => !d.archive && d.statut === k).length;
+  const pastilles = [["tous", "Tous"], ...clesStatut("devis").map((k) => [k, libelleStatut("devis", k)]), ["en_attente", "En attente"], ["archives", "Archivés"]].filter(([k]) => k === "tous" || k === "envoye" || k === "accepte" || k === filtreStatut || compteurs[k] > 0);
   const filtres = devisList.filter((d) => {
     const q = recherche.trim().toLowerCase();
     const okQ = !q || [d.numero, d.client_nom, d.client_societe, d.titre].some((v) => v?.toLowerCase().includes(q));
@@ -699,7 +699,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 </button>
               ))}
             </div>
-            {recherche.trim() && <p className="text-sm text-muted-foreground" data-testid="resultats-recherche">{filtres.length} résultat{filtres.length > 1 ? "s" : ""} pour « {recherche.trim()} »</p>}
+            {recherche.trim() && <p className="text-sm text-muted-foreground" role="status" data-testid="resultats-recherche">{filtres.length} résultat{filtres.length > 1 ? "s" : ""} pour « {recherche.trim()} »</p>}
           </CardHeader>
           <CardContent className="overflow-x-auto">
             {filtres.length === 0 ? (
@@ -708,7 +708,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   ? <>Aucun résultat pour « {recherche.trim()} ». <button type="button" className="underline" onClick={() => setRecherche("")}>Effacer la recherche</button></>
                   : filtreStatut === "archives" ? "Aucun devis archivé."
                   : devisList.length === 0 ? "Aucun devis pour l'instant. Clique sur « Nouveau devis » pour commencer."
-                  : <>Aucun devis « {libelleStatut("devis", filtreStatut)} » pour l'instant. <button type="button" className="underline" onClick={() => setFiltreStatut("tous")}>Voir tous les devis</button></>}
+                  : filtreStatut === "tous" ? <>Aucun devis actif. <button type="button" className="underline" onClick={() => setFiltreStatut("archives")}>Voir les archives</button></>
+                  : <>Aucun devis « {filtreStatut === "en_attente" ? "En attente" : libelleStatut("devis", filtreStatut)} » pour l'instant. <button type="button" className="underline" onClick={() => setFiltreStatut("tous")}>Voir tous les devis</button></>}
               </p>
             ) : (
               <Table>
