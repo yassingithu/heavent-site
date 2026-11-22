@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { idAleatoire, reduirePhoto } from "@/lib/photos";
 import { aujourdhuiMaroc } from "@/lib/dateMaroc";
+import { csvFactures, csvPaiements, dansLeMois, type FactureCompta } from "@/lib/recettes";
 import { csvDepenses, moisPrecedentSuivant, nomFichierJustificatif, nombreDepuisTexte, totalDepenses, totauxParCategorie, type Depense } from "@/lib/depenses";
 
 const BUCKET = "depenses";
@@ -129,6 +130,29 @@ export default function DepensesAdmin() {
     const a = document.createElement("a"); a.href = url; a.download = nom; a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
   const exporterCsv = () => telecharger("﻿" + csvDepenses(lignes, nomEvenement), `depenses-${mois}.csv`, "text/csv;charset=utf-8");
+  /** « Pour le comptable » : factures émises et paiements encaissés dans le mois affiché (2 tableaux Excel dans un ZIP). */
+  const exporterRecettes = async () => {
+    setOccupe(true);
+    try {
+      const debut = `${mois}-01`;
+      const suivantMois = moisPrecedentSuivant(mois).suivant;
+      const fin = `${suivantMois}-01`;
+      const { data, error } = await (supabase as any).from("factures")
+        .select("numero, type, date_emission, client_nom, client_societe, client_ice, devis_numero, total_ht, total_tva, total_ttc, deduction_ttc, net_a_payer, statut, payee_le, mode_paiement, devise")
+        .or(`and(date_emission.gte.${debut},date_emission.lt.${fin}),and(payee_le.gte.${debut},payee_le.lt.${fin})`);
+      if (error) throw error;
+      const toutes = dansLeMois((data ?? []) as FactureCompta[], mois);
+      const emises = toutes.filter((x) => x.date_emission?.slice(0, 7) === mois);
+      const payees = toutes.filter((x) => x.payee_le?.slice(0, 7) === mois);
+      if (!emises.length && !payees.length) { toast({ title: "Rien à exporter", description: `Aucune facture émise ni paiement encaissé en ${moisLong(mois)}.` }); setOccupe(false); return; }
+      telecharger(zipSync({
+        [`factures-${mois}.csv`]: strToU8("\uFEFF" + csvFactures(emises)),
+        [`paiements-${mois}.csv`]: strToU8("\uFEFF" + csvPaiements(payees)),
+      }, { level: 0 }), `recettes-${mois}.zip`, "application/zip");
+      toast({ title: "Export prêt", description: `${emises.length} facture${emises.length > 1 ? "s" : ""} émise${emises.length > 1 ? "s" : ""}, ${payees.length} paiement${payees.length > 1 ? "s" : ""} encaissé${payees.length > 1 ? "s" : ""}.` });
+    } catch (e: any) { toast({ title: "Export impossible", description: e?.message, variant: "destructive" }); }
+    setOccupe(false);
+  };
   const exporterZip = async () => {
     setOccupe(true);
     try {
@@ -185,6 +209,7 @@ export default function DepensesAdmin() {
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={exporterCsv} disabled={!lignes.length} data-testid="export-csv"><FileText className="h-4 w-4" /> Tableau (Excel)</Button>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={exporterZip} disabled={!lignes.length || occupe} data-testid="export-zip"><Download className="h-4 w-4" /> Tableau + photos (ZIP)</Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={exporterRecettes} disabled={occupe} data-testid="export-recettes" title="Factures émises et paiements encaissés ce mois-ci, pour le comptable"><FileText className="h-4 w-4" /> Recettes du mois (ZIP)</Button>
           </div>
         </div>
         {parCategorie.length > 0 && (

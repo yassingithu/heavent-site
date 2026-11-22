@@ -30,12 +30,12 @@ export function moisPrecedentSuivant(mois: string) {
 
 const MOYENS: Record<string, string> = { especes: "Espèces", carte: "Carte", virement: "Virement", cheque: "Chèque", autre: "Autre" };
 /** Une cellule CSV : guillemets doublés, et neutralisation des formules (=, +, -, @) que tableurs exécuteraient. */
-const cellule = (v: unknown) => {
+export const cellule = (v: unknown) => {
   let s = String(v ?? "");
   if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
-const nb = (n: number | null | undefined) => (n == null ? "" : n.toFixed(2).replace(".", ","));
+export const nb = (n: number | null | undefined) => (n == null ? "" : n.toFixed(2).replace(".", ","));
 
 /** CSV pour Excel (séparateur « ; », virgule décimale). L'appelant ajoute le BOM UTF-8. */
 export function csvDepenses(l: Depense[], nomEvenement: (id: string | null) => string = () => ""): string {
