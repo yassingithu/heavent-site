@@ -20,7 +20,7 @@ async function modelesVision(cle: string): Promise<string[]> {
     const ids: string[] = ((await r.json())?.data ?? []).map((m: any) => String(m.id));
     const vision = ids.filter((i) => /llama-4|vision|-vl|pixtral|gemma-3/i.test(i) && !/guard|whisper|tts/i.test(i));
     vision.sort((a, b) => Number(/scout/i.test(b)) - Number(/scout/i.test(a)) || Number(/maverick/i.test(b)) - Number(/maverick/i.test(a)));
-    console.log("lire-ticket modèles de vision :", vision.join(", ") || "aucun");
+    console.log("lire-ticket modèles de vision :", vision.join(", ") || "aucun", "| tous :", ids.join(", "));
     modelesCache = { at: Date.now(), liste: vision.length ? vision : PREFERES };
     return modelesCache.liste;
   } catch { return PREFERES; }
