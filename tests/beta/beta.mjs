@@ -1928,6 +1928,54 @@ await scenario("Dépenses : 2 photos d'un même ticket → les deux sont lues et
   await ctx.close();
 });
 
+// Historique des fiches : crew (candidature, accès) et contrat (statut, signatures)
+await scenario("Historique : fiche crew (candidature, bannissement, réactivation) et contrat (statut, signatures)", async (notes) => {
+  const base = nouvelleBase();
+  const il = (h) => new Date(Date.now() - h * 3600e3).toISOString();
+  base.historique_changements = [];
+  let n = 0;
+  for (const st of base.staff) {
+    base.historique_changements.push(
+      { id: ++n, table_name: "staff", ligne_id: st.id, champ: "statut_candidature", avant: "en_attente", apres: "approuve", par_email: ADMIN, created_at: il(72) },
+      { id: ++n, table_name: "staff", ligne_id: st.id, champ: "banni", avant: "false", apres: "true", par_email: "automatique", created_at: il(48) },
+      { id: ++n, table_name: "staff", ligne_id: st.id, champ: "banni", avant: "true", apres: "false", par_email: ADMIN, created_at: il(24) },
+    );
+  }
+  const d1 = new Date(Date.now() + 5 * 864e5).toISOString().slice(0, 10);
+  base.contrats = [{ id: "ctH1", devis_id: null, staff_id: base.staff[0].id, titre: "Hôtesse d'accueil", evenement: "Salon", lieu: "Casablanca", type_contrat: "cdd", taux_horaire: 60, statut: "termine", description: "",
+    dates: [{ date: d1, heure_debut: "10:00", heure_fin: "16:00", heures: 6 }], total_heures: 6, salaire_brut: 360, date_debut: d1, date_fin: d1, created_at: il(100),
+    signe_le: il(90), signature_nom: "Salma TEST1", employeur_signe_le: il(80), employeur_signataire: "Imane CHAIGARI" }];
+  base.historique_changements.push({ id: ++n, table_name: "contrats", ligne_id: "ctH1", champ: "statut", avant: "actif", apres: "termine", par_email: ADMIN, created_at: il(10) });
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN, { mobile: true });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await clicOnglet(page, /Personnel$/); await page.waitForTimeout(1000);
+  await page.locator('button[title="Modifier la fiche / mot de passe"]').first().click(); await page.waitForTimeout(1000);
+  const bloc = page.getByRole("dialog").getByTestId("historique-fiche");
+  await bloc.scrollIntoViewIfNeeded();
+  verifier((await bloc.getByRole("listitem").count()) === 0, "le bloc doit être replié au départ");
+  await bloc.getByRole("button").first().click(); await page.waitForTimeout(900);
+  const lignes = (await bloc.getByRole("listitem").allInnerTexts()).map((t) => t.replace(/\s+/g, " "));
+  verifier(lignes.length === 3, "3 lignes attendues, trouvées " + lignes.length + " : " + lignes.join(" | "));
+  verifier(/Accès/.test(lignes[0]) && /Réactivé/.test(lignes[0]) && /Vous/.test(lignes[0]), "la réactivation se lit mal : " + lignes[0]);
+  verifier(/Banni/.test(lignes[1]) && /Administration/.test(lignes[1]) && !/Automatique/.test(lignes[1]), "le bannissement doit venir de « Administration » : " + lignes[1]);
+  verifier(/Candidature/.test(lignes[2]) && /Approuvé/.test(lignes[2]), "la candidature n'est pas lisible : " + lignes[2]);
+  await page.screenshot({ path: `${CAPTURES}/historique-crew-iphone.png` });
+  notes.push("fiche crew : 3 lignes (réactivé par vous, banni par l'administration, candidature approuvée), dans l'ordre du plus récent");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(500);
+  await clicOnglet(page, /Contrats$/); await page.waitForTimeout(1000);
+  await page.getByRole("button", { name: /Modifier/ }).first().click(); await page.waitForTimeout(1000);
+  const bc = page.getByRole("dialog").getByTestId("historique-fiche");
+  await bc.getByRole("button").first().click(); await page.waitForTimeout(900);
+  const lc = (await bc.getByRole("listitem").allInnerTexts()).map((t) => t.replace(/\s+/g, " "));
+  verifier(lc.length === 3, "3 lignes attendues sur le contrat, trouvées " + lc.length + " : " + lc.join(" | "));
+  verifier(/Actif/.test(lc[0]) && /Terminé/.test(lc[0]), "le statut du contrat est faux : " + lc[0]);
+  verifier(/Contresigné par Imane CHAIGARI/.test(lc[1]) && /Signé par Salma TEST1/.test(lc[2]), "les signatures manquent : " + lc.join(" | "));
+  await page.screenshot({ path: `${CAPTURES}/historique-contrat-iphone.png` });
+  notes.push("contrat : statut terminé, contre-signature de l'employeur, signature du crew");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
 // Appli Mac : « Voir le site » affiche le vrai site avec un bouton pour revenir (au lieu de renvoyer vers le bilan)
 await scenario("Appli Mac : le bouton « Le site » ouvre le site public, avec retour à l'administration", async (notes) => {
   const base = nouvelleBase();

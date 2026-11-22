@@ -144,8 +144,8 @@ export default function EditionContrat({ contratId, onClose, onSaved }: Props) {
               <div className="font-semibold">{totalHeures} h · {mad(brut)} brut</div>
             </div>
           </div>
-          {contratId && contratId !== "nouveau" && <HistoriqueFiche table="contrats" ligneId={contratId} nom="ce contrat" />}
           <div><Label className="text-xs">Remarques (optionnel)</Label><Textarea rows={2} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></div>
+          {contratId && contratId !== "nouveau" && <HistoriqueFiche table="contrats" ligneId={contratId} nom="ce contrat" />}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={onClose}>Annuler</Button>
             <Button onClick={enregistrer} disabled={enCours}>{enCours ? "Enregistrement…" : "Enregistrer"}</Button>

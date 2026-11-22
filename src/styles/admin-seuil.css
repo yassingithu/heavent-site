@@ -414,3 +414,9 @@ nav[aria-label="Navigation principale"] button:active { transform: scale(.94); }
 .demande-visee { outline: 2px solid #A8933F; outline-offset: -2px; background-color: rgba(168,147,63,.16) !important; animation: demande-visee 4s ease-out forwards; }
 @keyframes demande-visee { 0%, 70% { background-color: rgba(168,147,63,.16); outline-color: #A8933F; } 100% { background-color: transparent; outline-color: transparent; } }
 @media (prefers-reduced-motion: reduce) { .demande-visee { animation: none; } }
+
+/* Historique dans les fenêtres (fiche crew, contrat) : même voix que les sections voisines, pleine largeur, statuts neutres en gris chaud */
+.ah.ah-pleine { max-width: none; margin-top: 0; }
+.ah-pleine .ah-t { font-family: inherit; font-weight: 600; font-size: 14px; line-height: 1.2; text-transform: none; letter-spacing: 0; }
+.ah-titre { display: inline-flex; align-items: center; gap: 8px; }
+.ah-pleine .a-st.vide { color: var(--s-texte-2); }
