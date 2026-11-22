@@ -331,8 +331,7 @@ nav[aria-label="Navigation principale"] button:active { transform: scale(.94); }
 .aj-filtres b { font: 400 13px var(--s-texte); font-variant-numeric: tabular-nums; color: var(--s-laiton-texte); margin-inline-start: 6px; }
 
 /* Historique d'une fiche devis : liste à filets, un seul mouvement (ouverture) */
-.ah { margin-top: 2rem; border-top: 1px solid var(--s-filet); max-width: 640px; }
-@media (max-width: 1023px) { .ah { padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px)); } }
+.ah { margin-top: .5rem; border-top: 1px solid var(--s-filet); max-width: 640px; }
 .ah-t { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; padding: 0 2px; background: none; border: 0; cursor: pointer; font: 500 14px/1 var(--s-texte); letter-spacing: .08em; text-transform: uppercase; color: var(--s-nuit); }
 .ah-t b { font-weight: 400; color: var(--s-laiton-texte); font-variant-numeric: tabular-nums; margin-inline-start: 6px; }
 .ah-t:focus-visible, .ah-plus:focus-visible { outline: 2px solid var(--s-laiton-texte); outline-offset: -2px; }

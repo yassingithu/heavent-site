@@ -616,6 +616,13 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
         <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="liste">Mes devis</TabsTrigger>
           <TabsTrigger value="editeur" disabled={!form}>{form?.numero ?? (form ? "Nouveau devis" : "Éditeur")}</TabsTrigger>
+          {form && (
+            <button type="button" className="-ml-1 mr-1 inline-flex h-8 w-8 items-center justify-center rounded text-[#5A5146] hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#7A5F1F]"
+              aria-label={`Fermer le devis ${form.numero ?? ""}`} title="Fermer ce devis" data-testid="fermer-devis-onglet"
+              onClick={() => { if (!abandonOk()) return; setForm(null); setOnglet("liste"); }}>
+              <X className="h-4 w-4" />
+            </button>
+          )}
           <TabsTrigger value="factures" data-testid="onglet-factures">Factures</TabsTrigger>
           <TabsTrigger value="catalogue">Catalogue de prix</TabsTrigger>
           <TabsTrigger value="parametres">Infos agence</TabsTrigger>
@@ -887,6 +894,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   <div><Label>Notes internes (non imprimées)</Label><Textarea rows={3} value={form.notes_internes} onChange={(e) => set("notes_internes", e.target.value)} /></div>
                 </CardContent>
               </Card>
+
+              {form.id && <HistoriqueDevis devisId={form.id} rafraichir={saving} />}
             </div>
 
             {/* Récapitulatif */}
@@ -949,7 +958,6 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 <Button variant="ghost" onClick={() => { if (!abandonOk()) return; setForm(null); setOnglet("liste"); }}>Fermer</Button>
               </div>
               <FacturesDevis devis={form} params={params} avantCreation={() => enregistrer()} />
-              {form.id && <HistoriqueDevis devisId={form.id} rafraichir={saving} />}
             </div>
 
             {/* Barre d'actions toujours visible sur téléphone / tablette (au-dessus de la barre du bas) */}
