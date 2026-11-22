@@ -1098,12 +1098,16 @@ const Admin = () => {
   const versDevis = () => { setOngletAdmin("devis-rapide"); window.scrollTo({ top: 0 }); };
 
   const [nouvellesCartes, setNouvellesCartes] = useState(0);
-  const [urgentes, setUrgentes] = useState(0);
+  // Nombre de choses urgentes (envoyé par l'Accueil) : valable 5 minutes, sinon on n'affiche rien plutôt qu'un chiffre périmé
+  const [urgentesVues, setUrgentesVues] = useState<{ n: number; t: number } | null>(null);
+  const [, setHorloge] = useState(0);
   useEffect(() => {
-    const f = (e: Event) => setUrgentes(Number((e as CustomEvent).detail) || 0);
+    const f = (e: Event) => setUrgentesVues({ n: Number((e as CustomEvent).detail) || 0, t: Date.now() });
     window.addEventListener("heavent:urgentes", f);
-    return () => window.removeEventListener("heavent:urgentes", f);
+    const tic = window.setInterval(() => setHorloge((h) => h + 1), 30000);
+    return () => { window.removeEventListener("heavent:urgentes", f); window.clearInterval(tic); };
   }, []);
+  const urgentes = urgentesVues && Date.now() - urgentesVues.t < 300000 ? urgentesVues.n : 0;
   const [apercuAOuvrir, setApercuAOuvrir] = useState<string | null>(null);
   const compterCartes = useCallback(async () => {
     try { const { count } = await (supabase as any).from("demandes_cartes").select("id", { count: "exact", head: true }).eq("statut", "nouvelle"); setNouvellesCartes(count ?? 0); } catch { setNouvellesCartes(0); }
@@ -1214,7 +1218,7 @@ const Admin = () => {
                 <TabsTrigger key={valeur} value={valeur} data-testid={valeur === "agenda" ? "onglet-agenda" : undefined} title={libelle}
                   className={`${fils?.some((f) => f.valeur === ongletAdmin) && valeur !== ongletAdmin ? "bg-white/[0.06] !text-[#E4D49A] before:!scale-y-100" : ""} relative w-full gap-2.5 rounded-none py-2 text-[13.5px] font-normal tracking-[0.02em] text-[#BDB29C] hover:text-[#FAF6EC] hover:bg-white/[0.05] data-[state=active]:bg-white/[0.06] data-[state=active]:text-[#E4D49A] data-[state=active]:shadow-none before:absolute before:left-0 before:top-2 before:bottom-2 before:w-px before:bg-[#E4D49A] before:origin-top before:scale-y-0 before:transition-transform data-[state=active]:before:scale-y-100 transition-colors ${reduit ? "justify-center px-0" : "justify-start px-3"}`}>
                   <Icone className="h-4 w-4 shrink-0" /><span className={reduit ? "sr-only" : ""}>{libelle}</span>
-                  {badge > 0 && <span className={reduit ? "absolute top-0.5 right-2 min-w-4 h-4 px-1 text-[#E4D49A] text-[10.5px] font-medium tabular-nums inline-flex items-center justify-center" : "ml-auto min-w-5 h-5 px-1.5 border border-[#E4D49A]/40 text-[#E4D49A] text-[11px] font-medium tabular-nums inline-flex items-center justify-center"} aria-hidden title={`${badge} nouvelle(s) demande(s)`}>{badge}</span>}
+                  {badge > 0 && <span className={valeur === "tableau" ? (reduit ? "absolute top-0.5 right-2 min-w-4 h-4 px-1 bg-[#9C4A2C] text-[#FAF6EC] text-[10.5px] font-medium tabular-nums inline-flex items-center justify-center" : "ml-auto min-w-5 h-5 px-1.5 bg-[#9C4A2C] text-[#FAF6EC] text-[11px] font-medium tabular-nums inline-flex items-center justify-center") : reduit ? "absolute top-0.5 right-2 min-w-4 h-4 px-1 text-[#E4D49A] text-[10.5px] font-medium tabular-nums inline-flex items-center justify-center" : "ml-auto min-w-5 h-5 px-1.5 border border-[#E4D49A]/40 text-[#E4D49A] text-[11px] font-medium tabular-nums inline-flex items-center justify-center"} aria-hidden title={valeur === "tableau" ? `${badge} chose(s) urgente(s)` : `${badge} nouvelle(s) demande(s)`}>{badge}</span>}
                 </TabsTrigger>
               ))}
             </div>

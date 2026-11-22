@@ -111,7 +111,7 @@ export default function BarreBasseAdmin({ onglet, onChoisir, groupes, onDeconnex
                 <button onClick={() => choisir(valeur)} aria-current={actif ? "page" : undefined} data-testid={`bas-${valeur}`}
                   className={`relative w-full min-h-14 flex flex-col items-center justify-center gap-1 text-[11px] font-medium tracking-[0.04em] transition-colors ${actif ? "text-[#E4D49A]" : "text-[#BDB29C]"}`}>
                   <Icone className="h-5 w-5 [stroke-width:1.4]" />{libelle}
-                  {valeur === "tableau" && badgeAccueil > 0 && <span className="absolute top-1 left-1/2 ml-2.5 text-[10.5px] leading-none font-medium tabular-nums text-[#E4D49A]" aria-label={`${badgeAccueil} chose(s) urgente(s)`} data-testid="badge-urgentes">{badgeAccueil}</span>}
+                  {valeur === "tableau" && badgeAccueil > 0 && <span className="absolute top-1 left-1/2 ml-2 min-w-4 h-4 px-1 inline-flex items-center justify-center bg-[#9C4A2C] text-[#FAF6EC] text-[10.5px] leading-none font-medium tabular-nums" aria-label={`${badgeAccueil} chose(s) urgente(s)`} data-testid="badge-urgentes">{badgeAccueil}</span>}
                   {valeur === "entreprise" && badgeClients > 0 && <span className="absolute top-1 left-1/2 ml-2.5 text-[10.5px] leading-none font-medium tabular-nums text-[#E4D49A]" aria-label={`${badgeClients} nouvelle(s) demande(s)`}>{badgeClients}</span>}
                 </button>
               </li>
