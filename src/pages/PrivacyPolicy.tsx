@@ -56,6 +56,9 @@ const PrivacyPolicy = () => {
                 <p id="assistant-imane">
                   <strong>{x("Salma, l'assistante virtuelle.")}</strong> {x("Si vous écrivez une question à Salma, ce texte (320 caractères au maximum, sans adresse e-mail ni numéro de téléphone, retirés avant l'envoi) est transmis à un service d'intelligence artificielle situé hors du Maroc, uniquement pour préparer la réponse. Nous ne conservons pas votre message. Les boutons de choix ne transmettent rien. Ne saisissez ni coordonnées, ni pièce d'identité, ni données de santé.")}
                 </p>
+                <p id="justificatifs-depenses">
+                  <strong>{x("Tickets et factures de dépenses.")}</strong> {x("Quand l'équipe de l'agence photographie un ticket ou une facture pour enregistrer une dépense, l'image est transmise à un service d'intelligence artificielle (Groq) situé hors du Maroc, uniquement pour lire la date, le montant, le commerce et ses numéros d'identification. Le résultat est toujours vérifié par la personne qui enregistre la dépense. Cela ne concerne pas les photos que vous nous envoyez.")}
+                </p>
                 <p id="suppression-des-donnees">
                   <strong>{x("Instagram et suppression de vos données.")}</strong> {x("Si vous commentez « GUIDE » sous une de nos publications Instagram, nous recevons votre nom d'utilisateur et votre commentaire, uniquement pour vous envoyer le guide en message privé. Pour faire supprimer toutes vos données (Instagram, guides, newsletter, demandes de devis), écrivez à i.chaigari@heaventagency.com en indiquant votre e-mail ou votre nom d'utilisateur Instagram : la suppression est faite sous 30 jours.")}
                 </p>
