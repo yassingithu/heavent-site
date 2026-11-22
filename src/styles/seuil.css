@@ -850,3 +850,17 @@ body.jeu-tiroir .hot-zone { display: none; }
 .s-sujet-pre { flex: none; font: 500 12px/1 var(--s-texte); letter-spacing: .14em; text-transform: uppercase; color: var(--s-laiton-texte); }
 .s-sujet .s-sujet-pre + input { flex: 1; min-width: 0; }
 @media (max-width: 640px) { .s-profil-b { flex: 1 1 100%; } }
+/* Contact : mouvement du choix « Vous êtes… » */
+.s-profil-b { position: relative; }
+.s-profil-b::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--s-laiton); transform: scaleX(0); transform-origin: left; transition: transform .22s var(--s-courbe); pointer-events: none; }
+.s-profil-b[data-on="true"]::after { transform: scaleX(1); }
+.s-profil-b[data-on="true"] { box-shadow: none; }
+.s-profil-b:active { transform: translateY(1px); }
+@keyframes s-profil-ouvre { from { opacity: 0; clip-path: inset(100% 0 0 0); transform: translateY(8px); } to { opacity: 1; clip-path: inset(0 0 0 0); transform: none; } }
+@keyframes s-profil-monte { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.s-profil-mission { animation: s-profil-ouvre .6s var(--s-courbe) both; }
+.s-profil-mission > * { animation: s-profil-monte .45s var(--s-courbe) both; }
+.s-profil-mission > :nth-child(1) { animation-delay: .12s; }
+.s-profil-mission > :nth-child(2) { animation-delay: .21s; }
+.s-profil-mission > :nth-child(3) { animation-delay: .30s; }
+@media (prefers-reduced-motion: reduce) { .s-profil-b::after { transition: none; } .s-profil-b:active { transform: none; } .s-profil-mission, .s-profil-mission > * { animation: none; } }
