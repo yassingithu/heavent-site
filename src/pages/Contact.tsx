@@ -201,7 +201,7 @@ const Contact = () => {
                   <span className="s-surtitre" style={{ letterSpacing: ".24em" }}>{info.title}</span>
                   {info.href === "#" ? <b>{info.value}</b> : <a href={info.href} {...(info.href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}><b dir={info.href.startsWith("tel:") ? "ltr" : undefined}>{info.value}</b></a>}
                   <p style={{ gridColumn: 1 }}>{info.description}</p>
-                  {info.href.startsWith("mailto:") && <p className="s-candidat-ligne" style={{ gridColumn: "1 / -1" }} data-testid="contact-candidats">{x("Vous cherchez une mission d'hôte ou d'hôtesse ?")} <Link to="/inscription-staff">{x("Faire ma candidature")}</Link>. {x("Les candidatures se font en ligne, pas par e-mail.")}</p>}
+                  {info.href.startsWith("mailto:") && <p className="s-candidat-ligne" style={{ gridColumn: "1 / -1" }} data-testid="contact-candidats">{x("Vous cherchez une mission d'hôte ou d'hôtesse ?")} <Link to="/inscription-staff">{x("Faire ma candidature")}</Link>. {x("Candidatures en ligne uniquement.")}</p>}
                 </li>
               ))}
               <li data-revele="" style={{ gridTemplateColumns: "1fr" }}>
@@ -227,13 +227,13 @@ const Contact = () => {
                 <p className="s-texte" style={{ marginTop: 8, marginBottom: 22, fontSize: 15 }}>{x("Remplissez ce formulaire et nous vous répondrons dans les plus brefs délais")}</p>
                 <div className="s-profil" role="radiogroup" aria-label={x("Vous êtes…")}>
                   <span className="s-profil-t">{x("Vous êtes…")}</span>
-                  {([["evenement", "Un client (événement)"], ["mission", "Hôte ou hôtesse, en recherche de mission"], ["partenaire", "Un prestataire, partenaire potentiel"]] as [Profil, string][]).map(([k, l]) => (
+                  {([["evenement", "Client, pour un événement"], ["mission", "Hôte ou hôtesse, pour une mission"], ["partenaire", "Prestataire partenaire"]] as [Profil, string][]).map(([k, l]) => (
                     <button key={k} type="button" role="radio" aria-checked={profil === k} data-on={profil === k} className="s-profil-b" onClick={() => choisirProfil(k)} data-testid={`contact-profil-${k}`}>{x(l)}</button>
                   ))}
                 </div>
                 {profil === "mission" && (
                   <div className="s-profil-mission" data-testid="contact-panneau-candidature">
-                    <p className="s-texte" style={{ fontSize: 15 }}>{x("Les candidatures se font uniquement en ligne. Cela prend quelques minutes.")}</p>
+                    <p className="s-texte" style={{ fontSize: 15, color: "var(--s-nuit)" }}>{x("Les candidatures se font uniquement en ligne. Cela prend quelques minutes.")}</p>
                     <Link to="/inscription-staff" className="s-btn s-btn-or" data-testid="contact-candidature-bouton">{x("Faire ma candidature")}<span className="fl" aria-hidden="true">→</span></Link>
                     {!questionOuverte && <p className="s-profil-aide"><button type="button" className="s-profil-lien" onClick={() => setQuestionOuverte(true)} data-testid="contact-question-seulement">{x("J'ai seulement une question")}</button></p>}
                   </div>

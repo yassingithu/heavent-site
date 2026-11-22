@@ -864,3 +864,24 @@ body.jeu-tiroir .hot-zone { display: none; }
 .s-profil-mission > :nth-child(2) { animation-delay: .21s; }
 .s-profil-mission > :nth-child(3) { animation-delay: .30s; }
 @media (prefers-reduced-motion: reduce) { .s-profil-b::after { transition: none; } .s-profil-b:active { transform: none; } .s-profil-mission, .s-profil-mission > * { animation: none; } }
+/* Contact : revue du designer (choix en lignes à losange, bouton or, panneau à filet) */
+.s-profil { display: grid; grid-template-columns: 1fr; gap: 0; margin: 0 0 24px; }
+.s-profil-t { display: flex; align-items: center; gap: 14px; flex: none; padding-bottom: 14px; font: 500 12px/1 var(--s-texte); letter-spacing: .24em; text-transform: uppercase; color: var(--s-laiton-texte); }
+.s-profil-t::after { content: ""; flex: 1; max-width: 220px; height: 1px; background: linear-gradient(90deg, var(--s-laiton), rgba(168,147,63,.2)); }
+.s-profil-b { display: flex; align-items: center; gap: 14px; flex: none; min-height: 56px; padding: 12px 8px 12px 2px; border: 0; border-top: 1px solid #CDBE98; background: none; color: var(--s-nuit); font: 400 15px/1.3 var(--s-texte); text-align: start; cursor: pointer; transition: background .3s var(--s-courbe); }
+.s-profil-b:last-of-type { border-bottom: 1px solid #CDBE98; }
+.s-profil-b::after { display: none; }
+.s-profil-b::before { content: ""; flex: none; width: 9px; height: 9px; transform: rotate(45deg); border: 1px solid var(--s-laiton-texte); transition: background .25s var(--s-courbe); }
+.s-profil-b:hover { background: linear-gradient(90deg, rgba(168,147,63,.07), transparent 70%); border-color: #CDBE98; }
+.s-profil-b[data-on="true"] { font-weight: 500; box-shadow: none; background: linear-gradient(90deg, rgba(168,147,63,.14), transparent 75%); border-color: #CDBE98; }
+.s-profil-b[data-on="true"]::before { background: var(--s-laiton); }
+@media (min-width: 900px) { .s-profil { grid-template-columns: repeat(3, 1fr); column-gap: 24px; } .s-profil-t { grid-column: 1 / -1; } .s-profil-b, .s-profil-b:last-of-type { border-bottom: 1px solid #CDBE98; } }
+.s-btn.s-btn-or { background: #C9B26A; color: #141414; font-weight: 600; transition: background .25s var(--s-courbe); }
+.s-btn.s-btn-or:hover { background: var(--s-laiton-clair); }
+.s-btn.s-btn-or .fl { margin-left: 0; }
+.s-profil-mission { justify-items: stretch; padding: 18px 18px 18px 22px; border: 0; border-left: 2px solid var(--s-laiton); background: linear-gradient(90deg, rgba(168,147,63,.12), rgba(168,147,63,0) 85%); }
+.s-profil-mission .s-btn { width: 100%; }
+@media (min-width: 640px) { .s-profil-mission .s-btn { width: auto; min-width: 280px; justify-self: start; } }
+.s-nuit .s-candidat-ligne[data-testid="contact-candidature-haut"] { margin-top: 28px; padding-top: 18px; border-top: 1px solid rgba(228,212,154,.18); max-width: 520px; }
+@media (max-width: 599px) { .s-candidat-ligne[data-testid="contact-candidature-haut"] a { display: flex; width: fit-content; } }
+@media (max-width: 640px) { .s-profil-b { flex: none; } }
