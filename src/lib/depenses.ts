@@ -1,7 +1,7 @@
 /** Logique pure des dépenses (testée à part) : totaux, mois, export pour le comptable. */
 export interface Depense {
   id: string; date_depense: string; fournisseur: string | null; montant_ttc: number; tva: number | null; categorie: string;
-  moyen_paiement: string | null; devis_id: string | null; note: string | null; justificatifs: string[]; cree_par?: string;
+  fournisseur_ice?: string | null; fournisseur_if?: string | null; moyen_paiement: string | null; devis_id: string | null; note: string | null; justificatifs: string[]; cree_par?: string;
 }
 
 /** « 1 200,50 », « 12.5 », « 85 MAD » → nombre ; null si illisible. Jamais d'exception. */
@@ -39,13 +39,15 @@ export const nb = (n: number | null | undefined) => (n == null ? "" : n.toFixed(
 
 /** CSV pour Excel (séparateur « ; », virgule décimale). L'appelant ajoute le BOM UTF-8. */
 export function csvDepenses(l: Depense[], nomEvenement: (id: string | null) => string = () => ""): string {
-  const tete = ["Date", "Fournisseur", "Catégorie", "Montant TTC (MAD)", "TVA (MAD)", "Payé par", "Événement", "Note", "Justificatifs"];
+  const tete = ["Date", "Fournisseur", "ICE fournisseur", "IF fournisseur", "Catégorie", "Montant TTC (MAD)", "TVA (MAD)", "Payé par", "Événement", "Note", "Justificatifs"];
   const lignes = [...l].sort((a, b) => a.date_depense.localeCompare(b.date_depense)).map((x) => [
-    x.date_depense.split("-").reverse().join("/"), x.fournisseur ?? "", x.categorie, nb(x.montant_ttc), nb(x.tva), x.moyen_paiement ? MOYENS[x.moyen_paiement] ?? x.moyen_paiement : "",
+    x.date_depense.split("-").reverse().join("/"), x.fournisseur ?? "", x.fournisseur_ice ?? "", x.fournisseur_if ?? "", x.categorie, nb(x.montant_ttc), nb(x.tva), x.moyen_paiement ? MOYENS[x.moyen_paiement] ?? x.moyen_paiement : "",
     nomEvenement(x.devis_id), x.note ?? "", (x.justificatifs ?? []).map((c, i) => nomFichierJustificatif(x, i, c)).join(" | "),
   ]);
-  const total = ["", "", "TOTAL", nb(totalDepenses(l)), "", "", "", "", ""];
-  return [tete, ...lignes, total].map((r) => r.map(cellule).join(";")).join("\r\n") + "\r\n";
+  const total = ["", "", "", "", "TOTAL", nb(totalDepenses(l)), "", "", "", "", ""];
+  // ICE et IF : uniquement des chiffres (validés à la saisie) ; forcés en texte pour qu'Excel garde les 15 chiffres et les zéros du début
+  const texteExcel = (v: unknown) => (/^\d{3,15}$/.test(String(v ?? "")) ? `"=""${v}"""` : cellule(v));
+  return [tete, ...lignes, total].map((r) => r.map((v, i) => (i === 2 || i === 3 ? texteExcel(v) : cellule(v))).join(";")).join("\r\n") + "\r\n";
 }
 
 /** Nom lisible du justificatif dans le ZIP : 2026-10-25_Fournisseur_85.00_1.jpg */

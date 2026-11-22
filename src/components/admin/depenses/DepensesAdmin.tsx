@@ -23,7 +23,7 @@ const versDataUrl = (b: Blob) => new Promise<string>((ok, ko) => { const r = new
 const estPdf = (chemin: string) => chemin.toLowerCase().endsWith(".pdf");
 
 interface Evenement { id: string; numero: string | null; titre: string | null; client_nom: string }
-const vide = () => ({ id: "", date: aujourdhuiMaroc(), fournisseur: "", montant: "", tva: "", categorie: "Autres", moyen: "", devis: "", note: "", fichiers: [] as string[] });
+const vide = () => ({ id: "", date: aujourdhuiMaroc(), fournisseur: "", ice: "", idf: "", montant: "", tva: "", categorie: "Autres", moyen: "", devis: "", note: "", fichiers: [] as string[] });
 
 /** Dépenses de l'agence : photo du ticket ou de la facture, classement par mois et catégorie, export pour le comptable. */
 export default function DepensesAdmin() {
@@ -123,9 +123,11 @@ export default function DepensesAdmin() {
       if (c.tva != null) lus.tva = String(c.tva).replace(".", ",");
       if (c.date) lus.date = c.date;
       if (c.fournisseur) lus.fournisseur = c.fournisseur;
+      if (c.ice) lus.ice = c.ice;
+      if (c.identifiant_fiscal) lus.idf = c.identifiant_fiscal;
       if (c.moyen_paiement) lus.moyen = c.moyen_paiement;
       if (!Object.keys(lus).length) { setLecture("vide"); return; }
-      const actuel: Record<string, string> = { montant: x.montant, tva: x.tva, date: x.date === aujourdhuiMaroc() ? "" : x.date, fournisseur: x.fournisseur, moyen: x.moyen };
+      const actuel: Record<string, string> = { montant: x.montant, tva: x.tva, date: x.date === aujourdhuiMaroc() ? "" : x.date, fournisseur: x.fournisseur, ice: x.ice, idf: x.idf, moyen: x.moyen };
       const mis = new Set<string>(); const patch: Record<string, string> = {}; const autres: Record<string, string> = {};
       for (const [k, v] of Object.entries(lus)) {
         const vide = !actuel[k].trim(); const dejaLu = luRef.current.has(k); const touche = touches.current.has(k);
@@ -185,6 +187,9 @@ export default function DepensesAdmin() {
     if (!f.date) { toast({ title: "Date manquante", variant: "destructive" }); return; }
     const tva = f.tva.trim() ? nombreDepuisTexte(f.tva) : null;
     if (f.tva.trim() && (tva === null || tva < 0)) { toast({ title: "TVA incorrecte", variant: "destructive" }); return; }
+    const iceChiffres = f.ice.replace(/\D/g, ""), ifChiffres = f.idf.replace(/\D/g, "");
+    if (iceChiffres && iceChiffres.length !== 15) { toast({ title: "ICE incorrect", description: "L'ICE comporte 15 chiffres.", variant: "destructive" }); return; }
+    if (ifChiffres && (ifChiffres.length < 3 || ifChiffres.length > 12)) { toast({ title: "Identifiant fiscal incorrect", description: "Entre uniquement les chiffres de l'IF.", variant: "destructive" }); return; }
     // Garde-fous : montant lu sur le ticket, jamais relu, qui sort de l'ordinaire ; dépense identique déjà saisie
     if (lu.has("montant") && montant >= 5000 && !window.confirm(`Montant inhabituel : ${mad(montant)}, lu sur le ticket. C'est bien ça ?`)) return;
     const norme = (t: string | null) => (t ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -196,7 +201,7 @@ export default function DepensesAdmin() {
     if (doublon && !window.confirm(`Une dépense identique existe déjà (${jourCourt(doublon.date_depense)}, ${doublon.fournisseur || "sans nom"}, ${mad(Number(doublon.montant_ttc))}). Enregistrer quand même ?`)) return;
     setOccupe(true);
     const ligne = {
-      date_depense: f.date, fournisseur: f.fournisseur.trim() || null, montant_ttc: montant, tva, categorie: f.categorie || "Autres",
+      date_depense: f.date, fournisseur: f.fournisseur.trim() || null, fournisseur_ice: f.ice.replace(/\D/g, "") || null, fournisseur_if: f.idf.replace(/\D/g, "") || null, montant_ttc: montant, tva, categorie: f.categorie || "Autres",
       moyen_paiement: f.moyen || null, devis_id: f.devis || null, note: f.note.trim() || null, justificatifs: f.fichiers,
     };
     const { error } = f.id ? await (supabase as any).from("depenses").update(ligne).eq("id", f.id) : await (supabase as any).from("depenses").insert(ligne);
@@ -221,7 +226,7 @@ export default function DepensesAdmin() {
   };
 
   const ouvrir = (l: Depense) => setF({
-    id: l.id, date: l.date_depense, fournisseur: l.fournisseur ?? "", montant: String(l.montant_ttc), tva: l.tva == null ? "" : String(l.tva),
+    id: l.id, date: l.date_depense, fournisseur: l.fournisseur ?? "", ice: l.fournisseur_ice ?? "", idf: l.fournisseur_if ?? "", montant: String(l.montant_ttc), tva: l.tva == null ? "" : String(l.tva),
     categorie: l.categorie, moyen: l.moyen_paiement ?? "", devis: l.devis_id ?? "", note: l.note ?? "", fichiers: l.justificatifs ?? [],
   });
 
@@ -365,7 +370,7 @@ export default function DepensesAdmin() {
                     : lecture === "vide" ? <span>Rien de sûr n'a pu être lu : saisis les informations.</span>
                     : lecture === "limite" ? <span>Trop de lectures pour le moment : saisis les informations à la main.</span>
                     : lecture === "indispo" ? <span>Lecture indisponible pour l'instant : saisis les informations.</span>
-                    : proposition ? <span className="text-xs text-foreground" data-testid="lecture-proposition">Le ticket indique {[proposition.montant && `${proposition.montant} MAD`, proposition.tva && `TVA ${proposition.tva}`, proposition.date && proposition.date.split("-").reverse().join("/"), proposition.fournisseur, proposition.moyen && MOYENS[proposition.moyen]].filter(Boolean).join(" · ")}. Tes champs n'ont pas été changés. <button type="button" onClick={appliquerProposition} className="font-semibold text-[#7A5C17] underline underline-offset-2 min-h-11 px-1 sm:min-h-8" data-testid="appliquer-lecture">Appliquer</button></span>
+                    : proposition ? <span className="text-xs text-foreground" data-testid="lecture-proposition">Le ticket indique {[proposition.montant && `${proposition.montant} MAD`, proposition.tva && `TVA ${proposition.tva}`, proposition.date && proposition.date.split("-").reverse().join("/"), proposition.fournisseur, proposition.ice && `ICE ${proposition.ice}`, proposition.idf && `IF ${proposition.idf}`, proposition.moyen && MOYENS[proposition.moyen]].filter(Boolean).join(" · ")}. Tes champs n'ont pas été changés. <button type="button" onClick={appliquerProposition} className="font-semibold text-[#7A5C17] underline underline-offset-2 min-h-11 px-1 sm:min-h-8" data-testid="appliquer-lecture">Appliquer</button></span>
                     : lu.size ? <span className="inline-flex items-center gap-1.5 text-xs text-foreground"><i aria-hidden className="lu-losange" />Vérifie les champs marqués avant d'enregistrer.</span>
                     : f.fichiers.length > 0 && !f.fichiers.some((x) => !estPdf(x)) ? <span>PDF joint : il n'est pas lu automatiquement, saisis le montant et la date.</span>
                     : <span>Photo ou PDF. Le montant, la date et le commerce sont lus sur la photo ; tu peux toujours corriger.</span>}
@@ -379,6 +384,8 @@ export default function DepensesAdmin() {
                 <div data-lu={lu.has("tva")} style={{ "--i": 4 } as any}><Label className="flex flex-wrap items-baseline">TVA (facultatif)<Lu k="tva" lu={lu} /></Label><Input inputMode="decimal" value={f.tva} onChange={(e) => saisir("tva", { tva: e.target.value })} /></div>
                 <div data-lu={lu.has("date")} style={{ "--i": 1 } as any}><Label className="flex flex-wrap items-baseline">Date<Lu k="date" lu={lu} /></Label><Input type="date" className="min-w-0 w-full max-w-full appearance-none text-left" data-testid="depense-date" value={f.date} onChange={(e) => saisir("date", { date: e.target.value })} /></div>
                 <div className="sm:col-span-2" data-lu={lu.has("fournisseur")} style={{ "--i": 2 } as any}><Label className="flex flex-wrap items-baseline">Fournisseur / commerce<Lu k="fournisseur" lu={lu} /></Label><Input data-testid="depense-fournisseur" value={f.fournisseur} onChange={(e) => saisir("fournisseur", { fournisseur: e.target.value })} /></div>
+                <div data-lu={lu.has("ice")} style={{ "--i": 3 } as any}><Label className="flex flex-wrap items-baseline">ICE du fournisseur (facultatif)<Lu k="ice" lu={lu} /></Label><Input inputMode="numeric" autoComplete="off" data-testid="depense-ice" value={f.ice} onChange={(e) => saisir("ice", { ice: e.target.value.replace(/[^\d ]/g, "").slice(0, 19) })} /></div>
+                <div data-lu={lu.has("idf")} style={{ "--i": 3 } as any}><Label className="flex flex-wrap items-baseline">Identifiant fiscal, IF (facultatif)<Lu k="idf" lu={lu} /></Label><Input inputMode="numeric" autoComplete="off" data-testid="depense-if" value={f.idf} onChange={(e) => saisir("idf", { idf: e.target.value.replace(/[^\d ]/g, "").slice(0, 14) })} /></div>
                 <div><Label>Catégorie</Label>
                   <Select value={f.categorie} onValueChange={(v) => setF({ ...f, categorie: v })}>
                     <SelectTrigger data-testid="depense-categorie"><SelectValue /></SelectTrigger>

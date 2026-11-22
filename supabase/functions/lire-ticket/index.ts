@@ -30,12 +30,13 @@ const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: 
 
 const CONSIGNE = `Tu lis la photo d'un ticket de caisse ou d'une facture (Maroc : textes en français et/ou en arabe, montants en dirhams MAD/DH).
 Réponds UNIQUEMENT avec un objet JSON de cette forme :
-{"date":"AAAA-MM-JJ" ou null,"montant_ttc":nombre ou null,"tva":nombre ou null,"fournisseur":texte ou null,"moyen_paiement":"especes"|"carte"|"virement"|"cheque"|null}
+{"date":"AAAA-MM-JJ" ou null,"montant_ttc":nombre ou null,"tva":nombre ou null,"fournisseur":texte ou null,"ice":"15 chiffres" ou null,"identifiant_fiscal":"chiffres" ou null,"moyen_paiement":"especes"|"carte"|"virement"|"cheque"|null}
 Règles :
 - Les dates marocaines s'écrivent JJ/MM/AAAA : convertis-les en AAAA-MM-JJ.
 - montant_ttc = le TOTAL À PAYER toutes taxes comprises (pas un sous-total, pas la monnaie rendue, pas l'espèce donnée).
 - tva = le montant de TVA en dirhams s'il est écrit (pas le pourcentage), sinon null.
 - fournisseur = le nom du commerce ou de la société en haut du ticket.
+- ice = l'ICE (Identifiant Commun de l'Entreprise, 15 chiffres) du commerce, écrit « ICE » sur le ticket ; identifiant_fiscal = l'IF (identifiant fiscal), écrit « IF » ou « I.F. » ; ne confonds pas avec RC, patente, CNSS ou numéro de téléphone.
 - moyen_paiement seulement s'il est écrit (ESPECES, CB, CARTE, CHEQUE, VIREMENT), sinon null.
 - Si une information est illisible ou absente, mets null. Ne devine jamais, n'invente jamais.`;
 
@@ -71,7 +72,7 @@ serve(async (req) => {
         rep = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST", signal: ctrl.signal, headers: { Authorization: `Bearer ${cle}`, "content-type": "application/json" },
           body: JSON.stringify({
-            model: modele, temperature: 0, max_completion_tokens: 300, response_format: { type: "json_object" },
+            model: modele, temperature: 0, max_completion_tokens: 400, response_format: { type: "json_object" },
             messages: [{ role: "user", content: [{ type: "text", text: CONSIGNE }, { type: "image_url", image_url: { url: img } }] }],
           }),
         });
@@ -99,8 +100,11 @@ serve(async (req) => {
       else { const taux = tva / (montant - tva); if (![0.2, 0.14, 0.1, 0.07].some((t) => Math.abs(taux - t) <= 0.01)) tva = null; }
     }
     const fournisseur = typeof brut.fournisseur === "string" ? brut.fournisseur.replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 80) || null : null;
+    const chiffres = (v: unknown) => String(v ?? "").replace(/\D/g, "");
+    const ice = chiffres(brut.ice).length === 15 ? chiffres(brut.ice) : null;
+    const idf = /^\d{3,12}$/.test(chiffres(brut.identifiant_fiscal)) ? chiffres(brut.identifiant_fiscal) : null;
     const moyen = typeof brut.moyen_paiement === "string" && MOYENS.includes(brut.moyen_paiement) ? brut.moyen_paiement : null;
-    return json({ disponible: true, champs: { date, montant_ttc: montant, tva, fournisseur, moyen_paiement: moyen } });
+    return json({ disponible: true, champs: { date, montant_ttc: montant, tva, fournisseur, ice, identifiant_fiscal: idf, moyen_paiement: moyen } });
   } catch (e) {
     console.error("lire-ticket:", e);
     return json({ disponible: false, raison: "erreur" });
