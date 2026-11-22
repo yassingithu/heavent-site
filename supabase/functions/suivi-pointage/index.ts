@@ -26,15 +26,17 @@ serve(async (req) => {
   const essai = new URL(req.url).searchParams.get("essai") === "1";
   const resend = new Resend(Deno.env.get("RESEND_API_KEY") ?? "");
   const maintenant = new Date();
-  const h = maintenant.getUTCHours(), mn = maintenant.getUTCMinutes();
-  const aujourdhui = maintenant.toISOString().slice(0, 10);
-  const demain = new Date(maintenant.getTime() + JOUR).toISOString().slice(0, 10);
-  const dans3 = new Date(maintenant.getTime() + 3 * JOUR).toISOString().slice(0, 10);
+  const jourMaroc = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Casablanca" }).format(d);
+  const hm = new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Casablanca", hourCycle: "h23", hour: "2-digit", minute: "2-digit" }).format(maintenant).split(":");
+  const h = Number(hm[0]), mn = Number(hm[1]);
+  const aujourdhui = jourMaroc(maintenant);
+  const demain = jourMaroc(new Date(maintenant.getTime() + JOUR));
+  const dans3 = jourMaroc(new Date(maintenant.getTime() + 3 * JOUR));
   const rapport = { confirmations: [] as string[], nonConfirmes: [] as string[], retards: [] as string[] };
 
   const { data: missions } = await db.from("affectations")
     .select("*, devis(numero, titre, lieu), staff(prenom, nom, email, telephone, banni)")
-    .eq("statut", "confirme").gte("date_jour", new Date(maintenant.getTime() - JOUR).toISOString().slice(0, 10)).lte("date_jour", dans3);
+    .eq("statut", "confirme").gte("date_jour", jourMaroc(new Date(maintenant.getTime() - JOUR))).lte("date_jour", dans3);
 
   // 1. Confirmation de présence (une seule demande par journée de mission)
   if (h >= 8 && h < 20) {
