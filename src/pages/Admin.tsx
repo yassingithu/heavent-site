@@ -15,6 +15,8 @@ import { CarteAccueil, Celebrations, SurpriseBienvenue, useAccueil } from "@/com
 import BilanMois from "@/components/admin/accueil/BilanMois";
 import { CarteAppTelephone, useAppAdmin } from "@/components/admin/accueil/AppTelephone";
 import { estDemo } from "@/demo/mode";
+import { Search as IconeLoupe } from "lucide-react";
+import RechercheGlobale from "@/components/admin/RechercheGlobale";
 import { baseDemo, libelleOnglet, ongletMasque, titreOnglet } from "@/demo/serveurDemo";
 import StudioAdmin from "@/components/admin/studio/StudioAdmin";
 import PrestatairesAdmin from "@/components/admin/prestataires/PrestatairesAdmin";
@@ -301,6 +303,12 @@ const Admin = () => {
     confirmPassword: ""
   });
 
+  const [rechercheOuverte, setRechercheOuverte] = useState(false);
+  useEffect(() => {
+    const f = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setRechercheOuverte((o) => !o); } };
+    window.addEventListener("keydown", f);
+    return () => window.removeEventListener("keydown", f);
+  }, []);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [ongletAdmin, setOngletAdmin] = useState(() => { try { return new URLSearchParams(window.location.search).get("crew") || sessionStorage.getItem("heavent-crew") ? "staff" : "tableau"; } catch { return "tableau"; } });
   // Trait doré des sous-onglets : glisse sous l'onglet choisi
@@ -1132,6 +1140,9 @@ const Admin = () => {
         };
       }),
     }));
+  const rubriquesRecherche = groupesVisibles.flatMap((g) => g.items.flatMap((i) => [{ valeur: i.valeur, libelle: i.libelle, groupe: g.titre }, ...(i.fils ?? []).filter((f) => f.valeur !== i.valeur).map((f) => ({ valeur: f.valeur, libelle: f.libelle, groupe: i.libelle }))]));
+  const allerRecherche = (v: string) => { setOngletAdmin(v); window.scrollTo({ top: 0 }); };
+  const ouvrirDevisRecherche = (id: string) => { (window as any).__heaventDevisAOuvrir = id; setOngletAdmin("devis-rapide"); window.scrollTo({ top: 0 }); window.dispatchEvent(new CustomEvent("heavent:ouvrir-devis", { detail: id })); };
   const entreeActive = groupesVisibles.flatMap((g) => g.items).find((i) => i.valeur === ongletAdmin || i.fils?.some((f) => f.valeur === ongletAdmin));
 
   return (
@@ -1154,6 +1165,7 @@ const Admin = () => {
             {reduit ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           </button>
           <div className="flex items-center gap-2 lg:hidden">
+            <button onClick={() => setRechercheOuverte(true)} className="h-11 w-11 rounded-full border border-[#E4D49A]/25 flex items-center justify-center text-[#E4D49A] hover:bg-white/10" aria-label="Rechercher" data-testid="recherche-ouvrir-mobile"><IconeLoupe className="h-4 w-4" /></button>
             <a href="/?depuis-admin=1" target="_blank" rel="noreferrer" className="h-11 w-11 rounded-full border border-[#E4D49A]/25 flex items-center justify-center text-[#E4D49A] hover:bg-white/10" aria-label="Voir le site"><Globe className="h-4 w-4" /></a>
             <button onClick={handleSignOut} className="h-11 w-11 rounded-full border border-[#E4D49A]/25 flex items-center justify-center text-[#E4D49A] hover:bg-white/10" aria-label="Déconnexion"><LogOut className="h-4 w-4" /></button>
           </div>
@@ -1177,6 +1189,8 @@ const Admin = () => {
         </TabsList>
         <div className={`hidden lg:block border-t border-white/10 ${reduit ? "p-2" : "p-4"} space-y-2`}>
           {!reduit && <div className="flex items-center gap-2 text-xs text-white/50 min-w-0"><Shield className="h-3.5 w-3.5 shrink-0 text-[#E4D49A]" /><span className="truncate">{user?.email}</span><span className="ml-auto shrink-0 opacity-50" title="Version du site chargée dans cette fenêtre" data-testid="version-admin">v{(typeof document !== "undefined" && [...document.scripts].map((x) => x.src).find((x) => /\/assets\/index-/.test(x))?.match(/index-([\w-]{4})/)?.[1]) || "dev"}</span></div>}
+          <button onClick={() => setRechercheOuverte(true)} title="Rechercher (Ctrl ou ⌘ + K)" aria-label="Rechercher" data-testid="recherche-ouvrir"
+            className={`inline-flex items-center justify-center gap-2 rounded-full border border-[#E4D49A]/30 min-h-9 text-xs text-[#E4D49A] hover:bg-white/10 ${reduit ? "w-9" : "w-full"}`}><IconeLoupe className="h-3.5 w-3.5" />{!reduit && <>Rechercher<span className="ml-auto pr-3 text-white/40">⌘K</span></>}</button>
           <div className={`flex gap-2 ${reduit ? "flex-col items-center" : ""}`}>
             <a href="/?depuis-admin=1" target="_blank" rel="noreferrer" title="Voir le site" aria-label="Voir le site" className={`inline-flex items-center justify-center gap-1.5 rounded-full border border-white/15 min-h-9 text-xs hover:bg-white/10 ${reduit ? "w-9" : "flex-1"}`}><Globe className="h-3.5 w-3.5" />{!reduit && " Le site"}</a>
             <button onClick={handleSignOut} title="Déconnexion" aria-label="Déconnexion" className={`inline-flex items-center justify-center gap-1.5 rounded-full bg-white/10 min-h-9 text-xs hover:bg-white/20 ${reduit ? "w-9" : "flex-1"}`}><LogOut className="h-3.5 w-3.5" />{!reduit && " Déconnexion"}</button>
@@ -1185,6 +1199,8 @@ const Admin = () => {
       </aside>
       <BarreBasseAdmin onglet={ongletAdmin} groupes={groupesVisibles.map((g) => ({ titre: g.titre, items: g.items }))} onDeconnexion={handleSignOut}
         onChoisir={(v) => { setOngletAdmin(v); window.scrollTo({ top: 0 }); }} />
+
+      <RechercheGlobale ouvert={rechercheOuverte} onFermer={() => setRechercheOuverte(false)} rubriques={rubriquesRecherche} onAller={allerRecherche} onOuvrirDevis={ouvrirDevisRecherche} />
 
       {accueil?.surprise && accueil.prenom && !surpriseFermee && (
         <SurpriseBienvenue surprise={accueil.surprise} prenom={accueil.prenom} onFermer={() => { setSurpriseFermee(true); rechargerAccueil(); }} />
