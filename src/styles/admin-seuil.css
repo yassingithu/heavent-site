@@ -375,12 +375,16 @@ nav[aria-label="Navigation principale"] button:active { transform: scale(.94); }
 @keyframes lu-filet { from { background-size: 0 100%; } to { background-size: 2px 100%; } }
 @media (prefers-reduced-motion: reduce) { .lu-marque, [data-lu="true"] input, [data-lu="true"] button[role="combobox"] { animation: none !important; } }
 
-/* Pastilles de filtre (Mes devis) : une rangée qui défile sur iPhone, chiffre à droite du mot */
-.a-filtres { display: flex; gap: 8px; overflow-x: auto; margin-inline: -4px; padding: 2px 4px 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+/* Pastilles de filtre (Mes devis) : forme Seuil (biseau, filet laiton), une rangée qui défile sur iPhone */
+.a-filtres { display: flex; gap: 6px; overflow-x: auto; margin-block: -2px; padding: 4px 4px 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
 .a-filtres::-webkit-scrollbar { display: none; }
-.a-filtres button { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid #DCCDAA; background: transparent; color: #5A5146; font: 500 14px/1 var(--s-texte, inherit); white-space: nowrap; cursor: pointer; }
-.a-filtres button[aria-pressed="true"] { background: #141414; border-color: #141414; color: #F7F3E8; }
-.a-filtres button:focus-visible { outline: 2px solid #7A5F1F; outline-offset: 2px; }
-.a-filtre-n { font-variant-numeric: tabular-nums; font-size: 12.5px; color: #7A5F1F; }
-.a-filtres button[aria-pressed="true"] .a-filtre-n { color: #C6AD62; }
-@media (min-width: 640px) { .a-filtres button { min-height: 36px; } }
+.a-filtres button { position: relative; flex: none; scroll-snap-align: start; display: inline-flex; align-items: center; gap: 9px; min-height: 44px; padding: 0 16px; border: 0; background: rgba(228,212,154,.2); color: var(--s-texte-2); font: 500 14px/1 var(--s-texte); white-space: nowrap; cursor: pointer; clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); transition: background-color .2s var(--s-courbe), color .2s var(--s-courbe); }
+.a-filtres button:not([aria-pressed="true"]):hover { background: rgba(228,212,154,.36); }
+.a-filtres button[aria-pressed="true"] { background: var(--s-nuit); color: var(--s-papier); }
+.a-filtres button:focus-visible { outline: 2px solid var(--s-laiton-texte); outline-offset: 1px; clip-path: none; }
+.a-filtre-n { padding-inline-start: 9px; border-inline-start: 1px solid currentColor; font: 400 17px/1 var(--s-titre); letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--s-laiton-texte); }
+.a-filtre-n[data-zero="oui"] { opacity: .35; }
+.a-filtres button[aria-pressed="true"] .a-filtre-n { color: var(--s-laiton-clair); }
+@media (max-width: 639px) { .a-filtres { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); } }
+@media (min-width: 640px) { .a-filtres button { min-height: 38px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; } }
+@media (prefers-reduced-motion: reduce) { .a-filtres button { transition: none; } }

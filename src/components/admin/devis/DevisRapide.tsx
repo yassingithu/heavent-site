@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ToastAction } from "@/components/ui/toast";
 import { estDemo } from "@/demo/mode";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast, toast as toastGlobal } from "@/hooks/use-toast";
@@ -601,15 +602,17 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   const archiver = async (id: string, archive: boolean) => {
     const { error } = await (supabase as any).from("devis").update({ archive }).eq("id", id);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
-    toast({ title: archive ? "Devis archivé" : "Devis ressorti des archives", description: archive ? "Il reste consultable dans le filtre « Archivés »." : undefined });
+    toast({ title: archive ? "Devis archivé" : "Devis ressorti des archives", description: archive ? "Il reste consultable dans le filtre « Archivés »." : undefined, action: archive ? <ToastAction altText="Voir les devis archivés" onClick={() => setFiltreStatut("archives")}>Voir les archives</ToastAction> : undefined });
     charger();
   };
 
   // ---------- rendu ----------
+  const rangeeFiltres = useRef<HTMLDivElement>(null);
+  useEffect(() => { rangeeFiltres.current?.querySelector<HTMLElement>('[aria-pressed="true"]')?.scrollIntoView({ inline: "center", block: "nearest" }); }, [filtreStatut]);
   // Compteurs des pastilles (sans tenir compte de la recherche : le chiffre dit ce qui existe, pas ce qui reste affiché)
   const compteurs: Record<string, number> = { tous: devisList.filter((d) => !d.archive).length, archives: devisList.filter((d) => d.archive).length };
   for (const k of clesStatut("devis")) compteurs[k] = devisList.filter((d) => !d.archive && d.statut === k).length;
-  const pastilles = [["tous", "Tous"], ...clesStatut("devis").map((k) => [k, libelleStatut("devis", k)]), ["archives", "Archivés"]].filter(([k]) => k === "tous" || k === filtreStatut || compteurs[k] > 0);
+  const pastilles = [["tous", "Tous"], ...clesStatut("devis").map((k) => [k, libelleStatut("devis", k)]), ["archives", "Archivés"]].filter(([k]) => k === "tous" || k === "envoye" || k === "accepte" || k === filtreStatut || compteurs[k] > 0);
   const filtres = devisList.filter((d) => {
     const q = recherche.trim().toLowerCase();
     const okQ = !q || [d.numero, d.client_nom, d.client_societe, d.titre].some((v) => v?.toLowerCase().includes(q));
@@ -689,18 +692,23 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 <Input className="pl-8" placeholder="Rechercher un client, un numéro…" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
               </div>
             </div>
-            <div className="a-filtres" role="group" aria-label="Filtrer par statut" data-testid="filtres-statut">
+            <div className="a-filtres" ref={rangeeFiltres} role="group" aria-label="Filtrer par statut" data-testid="filtres-statut">
               {pastilles.map(([k, l]) => (
                 <button key={k} type="button" aria-pressed={filtreStatut === k} onClick={() => setFiltreStatut(k)} data-testid={`filtre-${k}`}>
-                  {l}<span className="a-filtre-n" aria-hidden="true">{compteurs[k] ?? 0}</span><span className="sr-only"> ({compteurs[k] ?? 0})</span>
+                  {l}<span className="a-filtre-n" data-zero={(compteurs[k] ?? 0) === 0 ? "oui" : "non"} aria-hidden="true">{compteurs[k] ?? 0}</span><span className="sr-only"> ({compteurs[k] ?? 0})</span>
                 </button>
               ))}
             </div>
+            {recherche.trim() && <p className="text-sm text-muted-foreground" data-testid="resultats-recherche">{filtres.length} résultat{filtres.length > 1 ? "s" : ""} pour « {recherche.trim()} »</p>}
           </CardHeader>
           <CardContent className="overflow-x-auto">
             {filtres.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">
-                {filtreStatut === "archives" ? "Aucun devis archivé." : devisList.length ? "Aucun devis ne correspond à ta recherche." : "Aucun devis pour l'instant. Clique sur « Nouveau devis » pour commencer."}
+                {recherche.trim()
+                  ? <>Aucun résultat pour « {recherche.trim()} ». <button type="button" className="underline" onClick={() => setRecherche("")}>Effacer la recherche</button></>
+                  : filtreStatut === "archives" ? "Aucun devis archivé."
+                  : devisList.length === 0 ? "Aucun devis pour l'instant. Clique sur « Nouveau devis » pour commencer."
+                  : <>Aucun devis « {libelleStatut("devis", filtreStatut)} » pour l'instant. <button type="button" className="underline" onClick={() => setFiltreStatut("tous")}>Voir tous les devis</button></>}
               </p>
             ) : (
               <Table>
