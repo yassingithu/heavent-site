@@ -606,6 +606,10 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   };
 
   // ---------- rendu ----------
+  // Compteurs des pastilles (sans tenir compte de la recherche : le chiffre dit ce qui existe, pas ce qui reste affiché)
+  const compteurs: Record<string, number> = { tous: devisList.filter((d) => !d.archive).length, archives: devisList.filter((d) => d.archive).length };
+  for (const k of clesStatut("devis")) compteurs[k] = devisList.filter((d) => !d.archive && d.statut === k).length;
+  const pastilles = [["tous", "Tous"], ...clesStatut("devis").map((k) => [k, libelleStatut("devis", k)]), ["archives", "Archivés"]].filter(([k]) => k === "tous" || k === filtreStatut || compteurs[k] > 0);
   const filtres = devisList.filter((d) => {
     const q = recherche.trim().toLowerCase();
     const okQ = !q || [d.numero, d.client_nom, d.client_societe, d.titre].some((v) => v?.toLowerCase().includes(q));
@@ -684,14 +688,13 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 <Search className="h-4 w-4 absolute left-2 top-3 text-muted-foreground" />
                 <Input className="pl-8" placeholder="Rechercher un client, un numéro…" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
               </div>
-              <Select value={filtreStatut} onValueChange={setFiltreStatut}>
-                <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tous">Tous les statuts</SelectItem>
-                  {clesStatut("devis").map((k) => <SelectItem key={k} value={k}>{libelleStatut("devis", k)}</SelectItem>)}
-                  <SelectItem value="archives">🗄️ Archivés ({devisList.filter((d) => d.archive).length})</SelectItem>
-                </SelectContent>
-              </Select>
+            </div>
+            <div className="a-filtres" role="group" aria-label="Filtrer par statut" data-testid="filtres-statut">
+              {pastilles.map(([k, l]) => (
+                <button key={k} type="button" aria-pressed={filtreStatut === k} onClick={() => setFiltreStatut(k)} data-testid={`filtre-${k}`}>
+                  {l}<span className="a-filtre-n" aria-hidden="true">{compteurs[k] ?? 0}</span><span className="sr-only"> ({compteurs[k] ?? 0})</span>
+                </button>
+              ))}
             </div>
           </CardHeader>
           <CardContent className="overflow-x-auto">

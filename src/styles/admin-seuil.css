@@ -374,3 +374,13 @@ nav[aria-label="Navigation principale"] button:active { transform: scale(.94); }
 @keyframes lu-entre { from { opacity: 0; translate: -4px 0; } to { opacity: 1; translate: 0 0; } }
 @keyframes lu-filet { from { background-size: 0 100%; } to { background-size: 2px 100%; } }
 @media (prefers-reduced-motion: reduce) { .lu-marque, [data-lu="true"] input, [data-lu="true"] button[role="combobox"] { animation: none !important; } }
+
+/* Pastilles de filtre (Mes devis) : une rangée qui défile sur iPhone, chiffre à droite du mot */
+.a-filtres { display: flex; gap: 8px; overflow-x: auto; margin-inline: -4px; padding: 2px 4px 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.a-filtres::-webkit-scrollbar { display: none; }
+.a-filtres button { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid #DCCDAA; background: transparent; color: #5A5146; font: 500 14px/1 var(--s-texte, inherit); white-space: nowrap; cursor: pointer; }
+.a-filtres button[aria-pressed="true"] { background: #141414; border-color: #141414; color: #F7F3E8; }
+.a-filtres button:focus-visible { outline: 2px solid #7A5F1F; outline-offset: 2px; }
+.a-filtre-n { font-variant-numeric: tabular-nums; font-size: 12.5px; color: #7A5F1F; }
+.a-filtres button[aria-pressed="true"] .a-filtre-n { color: #C6AD62; }
+@media (min-width: 640px) { .a-filtres button { min-height: 36px; } }
