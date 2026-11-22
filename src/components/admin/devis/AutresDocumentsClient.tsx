@@ -25,13 +25,14 @@ export default function AutresDocumentsClient({ devisId, email, telephone, ouvri
   useEffect(() => {
     let annule = false;
     const valide = mail.includes("@") || !!tel;
+    setDevis(null); setOuvert(false);
     if (!valide) { setDevis([]); setFactures([]); setErreur(false); return; }
     // on attend la fin de la frappe : pas de recherche à chaque lettre
     const minuteur = window.setTimeout(async () => {
       try {
         const trouves = new Map<string, Doc>();
         if (mail.includes("@")) {
-          const motif = mail.replace(/[\\%_]/g, "\\$&"); // ilike sans joker = égalité sans tenir compte des majuscules
+          const motif = mail.replace(/[\\%_]/g, "\\$&").replace(/\*/g, "_"); // ilike sans joker = égalité sans tenir compte des majuscules
           let q = (supabase as any).from("devis").select(COLS).ilike("client_email", motif).order("date_emission", { ascending: false }).limit(20);
           if (devisId) q = q.neq("id", devisId);
           const { data, error } = await q; if (error) throw error;
@@ -61,7 +62,7 @@ export default function AutresDocumentsClient({ devisId, email, telephone, ouvri
   const archives = devis.filter((d) => d.archive), actifs = devis.filter((d) => !d.archive);
   const ordre = [...actifs, ...archives];
   const n = devis.length;
-  const classe = (s: string) => (s === "accepte" || s === "facture" ? "vert" : s === "refuse" ? "terre" : "vide");
+  const classe = (s: string) => (s === "accepte" ? "vert" : s === "refuse" || s === "annule" ? "terre" : "vide");
   const nomFacture = (f: Fac) => `${f.type === "acompte" ? "Acompte" : f.type === "solde" ? "Solde" : "Facture"} ${f.numero}`;
 
   return (
@@ -75,8 +76,8 @@ export default function AutresDocumentsClient({ devisId, email, telephone, ouvri
           {ordre.map((d) => {
             const fs = factures.filter((f) => f.devis_numero === d.numero);
             return (
-              <div key={d.id} className={`py-3 border-t border-[var(--s-filet,#DCCDAA)] ${d.archive ? "a-msg-traite" : ""}`} data-testid="autre-devis">
-                <button type="button" onClick={() => ouvrir(d.id)} className="w-full min-h-11 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#7A5F1F]" aria-label={`Ouvrir le devis ${d.numero}`}>
+              <div key={d.id} className={`py-3 border-t border-[var(--s-filet,#DCCDAA)] ${d.archive ? "opacity-60" : ""}`} data-testid="autre-devis">
+                <button type="button" onClick={() => ouvrir(d.id)} className="w-full min-h-11 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#7A5F1F]" >
                   <span className="flex justify-between items-baseline gap-3">
                     <span className="font-serif text-[18px] leading-tight break-words min-w-0">{d.titre || (d.date_evenement ? dateFr(d.date_evenement) : d.numero)}</span>
                     <span className="tabular-nums whitespace-nowrap text-[#7A5F1F]">{money(d.total_ttc, d.devise ?? undefined)}</span>
@@ -87,15 +88,15 @@ export default function AutresDocumentsClient({ devisId, email, telephone, ouvri
                 {fs.length > 0 && (
                   <ul className="mt-1 ms-3 ps-3 border-s border-[var(--s-filet,#DCCDAA)]">
                     {fs.map((f) => (
-                      <li key={f.numero}><span className={`a-st ${f.statut === "payee" ? "vert" : f.statut === "annulee" ? "terre" : "vide"}`}>{nomFacture(f)} · {f.statut === "payee" ? "payée" : f.statut === "annulee" ? "annulée" : f.statut === "brouillon" ? "brouillon" : "à payer"}</span></li>
+                      <li key={f.numero}><span className={`a-st ${f.statut === "payee" ? "vert" : f.statut === "annulee" ? "terre" : "vide"}`}>{nomFacture(f)} · {f.statut === "payee" ? "payée" : f.statut === "annulee" ? "annulée" : "à payer"}</span></li>
                     ))}
                   </ul>
                 )}
-                <button type="button" className="underline text-[13px] min-h-11 sm:min-h-8" onClick={() => ouvrir(d.id, true)} data-testid="reprendre-devis">Reprendre ce devis</button>
+                <button type="button" className="underline text-[13px] min-h-11 sm:min-h-8" onClick={() => ouvrir(d.id, true)} aria-label={`Reprendre le devis ${d.numero}`} data-testid="reprendre-devis">Reprendre ce devis</button>
               </div>
             );
           })}
-          {n >= 20 && <p className="text-[12.5px] text-[#5A5146]">Les 20 devis les plus récents sont affichés.</p>}
+          {n >= 20 && <p className="text-[12.5px] text-[#5A5146]">La recherche s'arrête aux devis les plus récents : un ancien devis peut ne pas apparaître ici.</p>}
         </div>
       )}
     </section>

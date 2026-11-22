@@ -840,7 +840,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 </CardContent>
               </Card>
 
-              <AutresDocumentsClient devisId={form.id} email={form.client_email} telephone={form.client_telephone} ouvrir={(id, dup) => ouvrir(id, dup)} />
+              <AutresDocumentsClient devisId={form.id} email={form.client_email} telephone={form.client_telephone} ouvrir={(id, dup) => { void ouvrir(id, dup); try { window.scrollTo({ top: 0, behavior: "auto" }); } catch { /* */ } }} />
 
               <Card>
                 <CardHeader><CardTitle className="text-base">Événement</CardTitle></CardHeader>
