@@ -26,7 +26,7 @@ const formSchema = z.object({
   nom: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   prenom: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
   email: z.string().email("Email invalide"),
-  password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
+  password: z.string().min(10, "Le mot de passe doit contenir au moins 10 caractères"),
   confirmPassword: z.string(),
   telephone: z.string().regex(/^(\+\d{1,4}\d{8,15}|00\d{1,4}\d{8,15})$/, "Le téléphone doit commencer par un indicatif pays (ex: +212, +32, +33, 00212, 0032)"),
   age: z.string().min(1, "L'âge est requis").refine((v) => !(Number(v) < 18), "L'inscription est réservée aux personnes de 18 ans ou plus."),
@@ -188,7 +188,7 @@ const StaffRegistration = () => {
       if (error.message.includes("already registered") || error.message.includes("existe déjà")) {
         errorMessage = x("Un compte avec cet email existe déjà. Essayez de vous connecter ou utilisez un autre email.");
       } else if (error.message.includes("Password")) {
-        errorMessage = x("Le mot de passe doit contenir au moins 8 caractères avec des lettres et des chiffres.");
+        errorMessage = x("Le mot de passe doit contenir au moins 10 caractères avec des lettres et des chiffres.");
       } else if (error.message.includes("Email")) {
         errorMessage = x("L'adresse email n'est pas valide. Vérifiez le format.");
       } else if (error.message.includes("Network")) {
@@ -268,7 +268,7 @@ const StaffRegistration = () => {
       // Validation spéciale pour confirmPassword
       if (field === 'confirmPassword') {
         const password = formData.password;
-        if (!value || value !== password || value.length < 8) {
+        if (!value || value !== password || value.length < 10) {
           missingFields.push('confirmation du mot de passe');
         }
         continue;
@@ -1018,7 +1018,7 @@ const StaffRegistration = () => {
                         <p className="text-sm text-destructive mt-1">{x(String(errors.password.message ?? ""))}</p>
                       )}
                       <p className="text-xs text-muted-foreground mt-1">
-                        {x("Minimum 8 caractères")}
+                        {x("Minimum 10 caractères")}
                       </p>
                     </div>
                     

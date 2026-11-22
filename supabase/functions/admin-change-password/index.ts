@@ -39,7 +39,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (action === "password") {
-      if (!newPassword || String(newPassword).length < 8) return json({ error: "Le mot de passe doit faire au moins 8 caractères" }, 400);
+      if (!newPassword || String(newPassword).length < 10) return json({ error: "Le mot de passe doit faire au moins 10 caractères" }, 400);
       if (compte) {
         const { error } = await admin.auth.admin.updateUserById(compte.id, { password: newPassword, email_confirm: true });
         if (error) return json({ error: "Erreur : " + error.message }, 500);

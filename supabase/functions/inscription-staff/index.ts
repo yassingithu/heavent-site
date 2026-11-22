@@ -30,7 +30,7 @@ const handler = async (req: Request): Promise<Response> => {
     const email = String(d.email ?? "").trim().toLowerCase();
     const password = String(d.password ?? "");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "L'adresse email n'est pas valide." }, 400);
-    if (password.length < 8) return json({ error: "Le mot de passe doit contenir au moins 8 caractères." }, 400);
+    if (password.length < 10) return json({ error: "Le mot de passe doit contenir au moins 10 caractères." }, 400);
     if (!txt(d.nom) || !txt(d.prenom)) return json({ error: "Nom et prénom requis." }, 400);
     // Réservé aux majeurs : date de naissance obligatoire et 18 ans révolus (vérifié aussi côté serveur)
     const naissance = date(d.date_naissance);

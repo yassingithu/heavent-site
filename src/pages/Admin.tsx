@@ -941,10 +941,10 @@ const Admin = () => {
       return;
     }
 
-    if (passwordForm.newPassword.length < 8) {
+    if (passwordForm.newPassword.length < 10) {
       toast({
         title: "Erreur",
-        description: "Le mot de passe doit faire au moins 8 caractères",
+        description: "Le mot de passe doit faire au moins 10 caractères",
         variant: "destructive",
       });
       return;
@@ -2409,7 +2409,7 @@ const Admin = () => {
                       type="password"
                       value={passwordForm.newPassword}
                       onChange={(e) => setPasswordForm(prev => ({...prev, newPassword: e.target.value}))}
-                      placeholder="Minimum 6 caractères"
+                      placeholder="Minimum 10 caractères"
                     />
                   </div>
 
@@ -2447,7 +2447,7 @@ const Admin = () => {
                   <h4 className="font-semibold mb-3">Instructions</h4>
                   <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
                     <li>Sélectionnez le membre du personnel concerné</li>
-                    <li>Saisissez un nouveau mot de passe (minimum 6 caractères)</li>
+                    <li>Saisissez un nouveau mot de passe (minimum 10 caractères)</li>
                     <li>Confirmez le mot de passe</li>
                     <li>Cliquez sur "Changer le mot de passe"</li>
                     <li>Informez la personne de son nouveau mot de passe</li>

@@ -89,7 +89,7 @@ export default function EditionStaff({ staffId, onClose, onSaved }: Props) {
   };
 
   const changerMotDePasse = async () => {
-    if (mdp.a.length < 8) { toast({ title: "Mot de passe trop court", description: "8 caractères minimum", variant: "destructive" }); return; }
+    if (mdp.a.length < 10) { toast({ title: "Mot de passe trop court", description: "10 caractères minimum", variant: "destructive" }); return; }
     if (mdp.a !== mdp.b) { toast({ title: "Les deux mots de passe ne correspondent pas", variant: "destructive" }); return; }
     setEnCours(true);
     const r = await compte({ newPassword: mdp.a });
