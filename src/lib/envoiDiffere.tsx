@@ -51,7 +51,7 @@ export function BandeauEnvois() {
   }, [liste.length]);
   if (!liste.length) return null;
   return (
-    <div className="fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-[70] flex flex-col gap-2 lg:inset-x-auto lg:bottom-5 lg:right-5 lg:w-[26rem]" role="status" aria-live="polite" data-testid="bandeau-envois">
+    <div className="fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-[70] flex flex-col gap-2 lg:inset-x-auto lg:bottom-auto lg:top-5 lg:right-5 lg:w-[26rem]" role="status" aria-live="polite" data-testid="bandeau-envois">
       {liste.map((a) => {
         const reste = Math.max(0, Math.ceil((a.fin - Date.now()) / 1000));
         return (

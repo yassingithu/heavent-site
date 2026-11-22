@@ -404,7 +404,7 @@ await scenario("Devis envoyé au client → signature en ligne sur smartphone �
   await page.getByTestId("envoyer-client").click(); await page.waitForTimeout(800);
   verifier(/E-mail du client manquant/.test(await toasts(page)), "l'envoi sans e-mail n'est pas refusé");
   await page.locator('input[type="email"]').first().fill("salma@example.com");
-  await page.getByTestId("envoyer-client").click(); await page.waitForTimeout(1500);
+  await page.getByTestId("envoyer-client").click(); await page.waitForTimeout(11500); // 10 s pour annuler avant l'envoi
   const appel = base.appelsFonctions.find((a) => a.nom === "envoyer-devis");
   verifier(appel?.corps?.devisId === base.devis[0]?.id, "la fonction d'envoi n'a pas reçu le bon devis");
   verifier(base.devis[0].statut === "envoye", "le devis n'est pas passé en « Envoyé »");
@@ -571,7 +571,7 @@ await scenario("Factures : acompte payé, solde avec acompte déduit, PDF, envoi
   const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 40000 }), bloc.getByTestId("facture-pdf").nth(1).click()]);
   verifier(/^Facture-FAC-2026-0002-Atlas-Events-SARL\.pdf$/.test(dl.suggestedFilename()), "nom du PDF inattendu : " + dl.suggestedFilename());
   await dl.saveAs(`${CAPTURES}/facture-solde.pdf`);
-  await bloc.getByTestId("facture-envoyer").nth(1).click(); await page.waitForTimeout(1000);
+  await bloc.getByTestId("facture-envoyer").nth(1).click(); await page.waitForTimeout(11500); // 10 s pour annuler avant l'envoi
   verifier(base.factures[1].envoyee_le && base.appelsFonctions.some((a) => a.nom === "envoyer-facture" && a.corps.factureId === solde.id), "la facture n'est pas envoyée au client");
   await page.screenshot({ path: `${CAPTURES}/13-devis-factures.png`, fullPage: true });
 

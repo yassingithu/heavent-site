@@ -112,7 +112,7 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
     setOccupe("m" + v.id);
     envoyerAvecAnnulation(toastGlobal, {
       titre: x("Le devis {numero} est renvoyé", { numero: v.numero ?? "" }),
-      cle: `renvoi-${v.id}`,
+      cle: `devis-${v.id}`,
       description: x("À {email}. Les relances automatiques repartent de zéro (J+5, J+10).", { email: v.client_email }),
       quandAnnule: () => setOccupe(null),
       envoyer: async () => {
