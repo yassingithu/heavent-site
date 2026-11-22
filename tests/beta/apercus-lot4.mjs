@@ -70,7 +70,7 @@ const ok = (cond, msg) => { verifs.push([!!cond, msg]); console.log(cond ? "✅"
   await page.getByTestId("bas-plus").click(); await page.waitForTimeout(500);
   await page.screenshot({ path: `${DOSSIER}/7-iphone-plus.png` });
   const rubriques = await page.getByRole("dialog").getByRole("button").allInnerTexts();
-  for (const attendu of ["Bilan", "Demandes entreprise", "Demandes événement", "Devis", "Devis envoyés", "Envoyer un devis", "Personnel", "Disponibilités", "Contrats", "Paie", "Prestataires", "Salles & palais", "Instagram", "Newsletter", "Site web", "Sécurité", "Statistiques", "Agenda"])
+  for (const attendu of ["Accueil", "Demandes entreprise", "Demandes événement", "Devis", "Devis envoyés", "Envoyer un devis", "Personnel", "Disponibilités", "Contrats", "Paie", "Prestataires", "Salles & palais", "Instagram", "Newsletter", "Site web", "Sécurité", "Statistiques", "Agenda"])
     ok(rubriques.some((r) => r.trim().startsWith(attendu)), `Plus contient « ${attendu} »`);
   await page.getByTestId("plus-fiches").click(); await page.waitForTimeout(900);
   ok(await page.getByTestId("titre-section").innerText() === "Paie", "iPhone : Plus → Paie ouvre la rubrique");

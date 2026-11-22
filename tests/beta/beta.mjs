@@ -472,7 +472,7 @@ await scenario("Admin : bilan de l'activité, puis réalisations en photos publi
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   page.on("dialog", (d) => d.accept());
   await connecter(page, BASE, ADMIN, "/admin");
-  await clicOnglet(page, /Bilan/); await page.waitForTimeout(1200);
+  await clicOnglet(page, /Accueil/); await page.waitForTimeout(1200);
   const bilan = await page.getByTestId("tableau-de-bord").innerText();
   verifier(/Demandes ce mois-ci\s*2/i.test(bilan), "les 2 demandes du mois ne sont pas comptées");
   verifier(bilan.replace(/\s/g, "").includes("60000MAD"), "le chiffre signé du mois (60 000 MAD) n'apparaît pas");
@@ -554,7 +554,7 @@ await scenario("Factures : acompte payé, solde avec acompte déduit, PDF, envoi
   page.on("dialog", (d) => d.accept());
   await connecter(page, BASE, ADMIN, "/admin");
   await clicOnglet(page, /Devis$/); await page.waitForTimeout(800);
-  await page.getByText("Atlas Events SARL").first().click(); await page.waitForTimeout(1500);
+  await page.getByText("Atlas Events SARL").locator("visible=true").first().click(); await page.waitForTimeout(1500);
   const bloc = page.getByTestId("bloc-factures");
   verifier(await bloc.getByTestId("facture-ligne").count() === 1, "la facture d'acompte n'apparaît pas dans le devis");
   await bloc.getByTestId("facture-payee").click(); await page.waitForTimeout(500);
@@ -709,7 +709,7 @@ await scenario("Pointage : confirmation, fiche mission, arrivée sur le lieu ave
 
   const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN);
   await connecter(page, BASE, ADMIN, "/admin");
-  await clicOnglet(page, /Bilan/).catch(() => {}); await page.waitForTimeout(1200);
+  await clicOnglet(page, /Accueil/).catch(() => {}); await page.waitForTimeout(1200);
   const suivi = await page.getByTestId("missions-du-jour").innerText();
   verifier(/Arrivée/.test(suivi) && /hors lieu/.test(suivi) && /1 pointage à vérifier/.test(suivi), "le suivi du jour est incomplet : " + suivi);
   await page.screenshot({ path: `${CAPTURES}/19-suivi-pointage.png`, fullPage: true });
