@@ -613,6 +613,21 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
   const compteurs: Record<string, number> = { tous: devisList.filter((d) => !d.archive).length, archives: devisList.filter((d) => d.archive).length };
   for (const k of [...clesStatut("devis"), "en_attente"]) compteurs[k] = devisList.filter((d) => !d.archive && d.statut === k).length;
   const pastilles = [["tous", "Tous"], ...clesStatut("devis").map((k) => [k, libelleStatut("devis", k)]), ["en_attente", "En attente"], ["archives", "Archivés"]].filter(([k]) => k === "tous" || k === "envoye" || k === "accepte" || k === filtreStatut || compteurs[k] > 0);
+  const actionsDevis = (d: any) => (<>
+                        {d.reponseRapide ? <span className="text-[11px] text-muted-foreground">E-mail envoyé · détail dans Demandes</span> : <>
+                        <Button size="icon" variant="ghost" title="Télécharger le PDF" disabled={pdfEnCours} onClick={() => telechargerPdfDepuisListe(d.id)}><Download className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" title="Image à partager (PNG)" disabled={imageEnCours} onClick={() => imageDepuisListe(d.id, "png")} data-testid="image-devis-liste"><ImageIcon className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" title="Dupliquer" onClick={() => ouvrir(d.id, true)}><Copy className="h-4 w-4" /></Button>
+                        {devisSupprimable(d)
+                          ? <Button size="icon" variant="ghost" title="Supprimer" onClick={() => supprimer(d.id, d.numero)} data-testid="supprimer-devis"><Trash2 className="h-4 w-4 text-[#9C4A2C]" /></Button>
+                          : <Button size="icon" variant="ghost" data-testid="archiver-devis"
+                              title={d.archive ? "Ressortir des archives" : `Archiver (${d.signe_le ? "devis signé" : d.nbFactures ? "devis facturé" : "contrats signés"} : il ne peut pas être supprimé, mais tu peux le retirer de la liste)`}
+                              onClick={() => archiver(d.id, !d.archive)}>{d.archive ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}</Button>}
+                        {!devisSupprimable(d) && (
+                          <Button size="icon" variant="ghost" title="Supprimer définitivement (devis de test)" onClick={() => supprimerTest(d)} data-testid="supprimer-devis-test"><Trash2 className="h-4 w-4 text-[#9C4A2C]" /></Button>
+                        )}
+                        </>}
+  </>);
   const filtres = devisList.filter((d) => {
     const q = recherche.trim().toLowerCase();
     const okQ = !q || [d.numero, d.client_nom, d.client_societe, d.titre].some((v) => v?.toLowerCase().includes(q));
@@ -711,8 +726,36 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   : filtreStatut === "tous" ? <>Aucun devis actif. <button type="button" className="underline" onClick={() => setFiltreStatut("archives")}>Voir les archives</button></>
                   : <>Aucun devis « {filtreStatut === "en_attente" ? "En attente" : libelleStatut("devis", filtreStatut)} » pour l'instant. <button type="button" className="underline" onClick={() => setFiltreStatut("tous")}>Voir tous les devis</button></>}
               </p>
-            ) : (
-              <Table>
+            ) : (<>
+              <div className="sm:hidden grid gap-3.5" data-testid="devis-cartes">
+                {filtres.map((d) => {
+                  const dom = d.reponseRapide ? "reponse_rapide" : "devis";
+                  return (
+                    <article key={d.id} className="border-t border-[#DCCDAA] pt-3.5">
+                      <div className="flex justify-between items-baseline gap-3">
+                        <h3 className="font-serif text-[21px] leading-tight break-words min-w-0">{d.client_societe || d.client_nom}</h3>
+                        <span className="text-[10.5px] font-medium tracking-[0.14em] text-[#5A5146] whitespace-nowrap">{d.numero}</span>
+                      </div>
+                      <p className="text-[13.5px] text-[#5A5146] mt-0.5 break-words">{d.titre || "—"}{d.date_evenement ? ` · ${dateFr(d.date_evenement)}` : ""}{d.reponseRapide ? " · Réponse rapide" : (d as any).marque === "nawar" ? " · Nawar" : ""}{d.archive ? " · archivé" : ""}</p>
+                      <div className="flex items-center justify-between gap-3 mt-2">
+                        <Select value={d.statut} onValueChange={(v) => changerStatut(d.id, v)}>
+                          <SelectTrigger className="h-11 w-auto border-0 p-0 shadow-none bg-transparent" aria-label="Changer le statut"><span className={d.statut === "accepte" || d.statut === "facture" ? "a-st vert" : d.statut === "refuse" ? "a-st terre" : "a-st vide"}>{libelleStatut(dom, d.statut)}</span></SelectTrigger>
+                          <SelectContent>{(d.reponseRapide ? clesStatut("reponse_rapide") : statutsPermis(d)).map((k) => <SelectItem key={k} value={k}>{libelleStatut(dom, k)}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <span className="font-serif text-[22px] tabular-nums whitespace-nowrap">{money(d.total_ttc, d.devise)}</span>
+                      </div>
+                      {(d.signe_le || d.rdv_demande_le || (d.statut === "envoye" && d.relances)) && (
+                        <p className="text-[12.5px] mt-1 text-[#1F5A4C]">{d.signe_le ? "Signé en ligne" : d.rdv_demande_le ? "RDV demandé avant signature" : `${d.relances} relance${d.relances > 1 ? "s" : ""} auto`}</p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-1 mt-2.5 [&_button]:h-11 [&_button]:w-11">
+                        {!d.reponseRapide && <button onClick={() => ouvrir(d.id)} className="s-btn s-btn-plein s-sombre a-btn-grand !w-auto mr-1" data-testid="ouvrir-devis-carte">Ouvrir</button>}
+                        {actionsDevis(d)}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+              <Table className="hidden sm:table">
                 <TableHeader>
                   <TableRow>
                     <TableHead>N°</TableHead><TableHead>Client</TableHead><TableHead>Événement</TableHead>
@@ -740,25 +783,13 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                         {d.archive && <div className="text-[11px] text-muted-foreground mt-0.5">🗄️ archivé</div>}
                       </TableCell>
                       <TableCell className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        {d.reponseRapide ? <span className="text-[11px] text-muted-foreground">E-mail envoyé · détail dans Demandes</span> : <>
-                        <Button size="icon" variant="ghost" title="Télécharger le PDF" disabled={pdfEnCours} onClick={() => telechargerPdfDepuisListe(d.id)}><Download className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" title="Image à partager (PNG)" disabled={imageEnCours} onClick={() => imageDepuisListe(d.id, "png")} data-testid="image-devis-liste"><ImageIcon className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" title="Dupliquer" onClick={() => ouvrir(d.id, true)}><Copy className="h-4 w-4" /></Button>
-                        {devisSupprimable(d)
-                          ? <Button size="icon" variant="ghost" title="Supprimer" onClick={() => supprimer(d.id, d.numero)} data-testid="supprimer-devis"><Trash2 className="h-4 w-4 text-[#9C4A2C]" /></Button>
-                          : <Button size="icon" variant="ghost" data-testid="archiver-devis"
-                              title={d.archive ? "Ressortir des archives" : `Archiver (${d.signe_le ? "devis signé" : d.nbFactures ? "devis facturé" : "contrats signés"} : il ne peut pas être supprimé, mais tu peux le retirer de la liste)`}
-                              onClick={() => archiver(d.id, !d.archive)}>{d.archive ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}</Button>}
-                        {!devisSupprimable(d) && (
-                          <Button size="icon" variant="ghost" title="Supprimer définitivement (devis de test)" onClick={() => supprimerTest(d)} data-testid="supprimer-devis-test"><Trash2 className="h-4 w-4 text-[#9C4A2C]" /></Button>
-                        )}
-                        </>}
+                        {actionsDevis(d)}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            )}
+            </>)}
           </CardContent>
         </Card>
       </TabsContent>
