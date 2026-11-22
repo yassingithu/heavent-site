@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { jourMarocPlus } from "@/lib/dateMaroc";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Plus } from "lucide-react";
@@ -22,7 +23,7 @@ function creneauSuivant(iso: string) {
   else { r.setUTCDate(r.getUTCDate() + 1); r.setUTCHours(CRENEAUX[0].h, CRENEAUX[0].m, 0, 0); }
   return r.toISOString();
 }
-const demain = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); };
+const demain = () => jourMarocPlus(1);
 
 export default function AjouterPost({ compte, posts, famille = false, onFermer, onCree }: { compte: Compte; posts: PostMin[]; famille?: boolean; onFermer: () => void; onCree: (id: string) => void }) {
   const { toast } = useToast();

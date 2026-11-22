@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { instantMaroc, aujourdhuiMaroc, jourMarocPlus } from "@/lib/dateMaroc";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,13 +19,13 @@ export interface Mission {
 }
 
 const hhmm = (t?: string | null) => (t ? t.slice(0, 5) : "");
-const heure = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
+const heure = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { timeZone: "Africa/Casablanca", hour: "2-digit", minute: "2-digit" });
 const jourLong = (d: string) => new Date(d + "T12:00:00Z").toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
 
-/** Début / fin prévus (heure du Maroc = GMT). */
+/** Début / fin prévus (heures saisies à l'heure du Maroc). */
 export function horaires(m: Pick<Mission, "date_jour" | "heure_debut" | "heure_fin" | "heures">) {
-  const debut = new Date(`${m.date_jour}T${hhmm(m.heure_debut) || "00:00"}:00Z`);
-  let fin = m.heure_fin ? new Date(`${m.date_jour}T${hhmm(m.heure_fin)}:00Z`) : new Date(debut.getTime() + Number(m.heures || 8) * 3600e3);
+  const debut = instantMaroc(m.date_jour, hhmm(m.heure_debut) || "00:00");
+  let fin = m.heure_fin ? instantMaroc(m.date_jour, hhmm(m.heure_fin)) : new Date(debut.getTime() + Number(m.heures || 8) * 3600e3);
   if (fin <= debut) fin = new Date(fin.getTime() + 864e5);
   return { debut, fin };
 }
@@ -74,9 +75,9 @@ async function appeler(body: Record<string, unknown>) {
 }
 
 const quand = (iso: string) => {
-  const d = new Date(iso), j = iso.slice(0, 10), auj = new Date().toISOString().slice(0, 10), hier = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
-  const h = d.toLocaleTimeString("fr-FR", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" }).replace(":", " h ");
-  return j === auj ? `aujourd'hui à ${h}` : j === hier ? `hier à ${h}` : `le ${d.toLocaleDateString("fr-FR", { timeZone: "UTC", day: "numeric", month: "long" })} à ${h}`;
+  const d = new Date(iso), j = aujourdhuiMaroc(d), auj = aujourdhuiMaroc(), hier = jourMarocPlus(-1);
+  const h = d.toLocaleTimeString("fr-FR", { timeZone: "Africa/Casablanca", hour: "2-digit", minute: "2-digit" }).replace(":", " h ");
+  return j === auj ? `aujourd'hui à ${h}` : j === hier ? `hier à ${h}` : `le ${d.toLocaleDateString("fr-FR", { timeZone: "Africa/Casablanca", day: "numeric", month: "long" })} à ${h}`;
 };
 
 export default function MesMissions() {
@@ -260,7 +261,7 @@ export default function MesMissions() {
       {visibles.map((m: any) => {
         const { debut, fin } = horaires(m);
         const fenetre = maintenant.getTime() >= debut.getTime() - 3 * 3600e3 && maintenant.getTime() <= fin.getTime() + 4 * 3600e3;
-        const aujourdHui = m.date_jour === maintenant.toISOString().slice(0, 10);
+        const aujourdHui = m.date_jour === aujourdhuiMaroc(maintenant);
         const f = m.fiche;
         const carte = f?.latitude != null && f?.longitude != null
           ? `https://www.google.com/maps/search/?api=1&query=${f.latitude},${f.longitude}`

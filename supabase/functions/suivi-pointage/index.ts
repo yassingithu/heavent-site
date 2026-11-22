@@ -14,7 +14,7 @@ const ADMIN_EMAIL = "i.chaigari@heaventagency.com";
 const FROM = "Heavent People Agency <noreply@heaventagency.com>";
 const ESPACE = "https://heaventagency.com/staff-dashboard";
 const e = (v: unknown) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
-const heure = (d: Date | string) => new Date(d).toLocaleTimeString("fr-FR", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
+const heure = (d: Date | string) => new Date(d).toLocaleTimeString("fr-FR", { timeZone: "Africa/Casablanca", hour: "2-digit", minute: "2-digit" });
 const jour = (d: string) => new Date(d + "T12:00:00Z").toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const JOUR = 864e5;

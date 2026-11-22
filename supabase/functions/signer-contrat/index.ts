@@ -1,3 +1,4 @@
+import { instantMaroc } from "../_shared/pointage.ts";
 import { getCaller, deny, corsHeaders } from "../_shared/auth.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
@@ -17,12 +18,12 @@ const FROM = "Heavent People Agency <noreply@heaventagency.com>";
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...corsHeaders } });
 
-/** Début de la mission (heure du Maroc = GMT depuis le 20/09/2026) */
+/** Début de la mission (heures saisies à l'heure du Maroc) */
 export function debutMission(dates: any[], dateDebut: string): Date {
   const premiere = [...(dates ?? [])].sort((a, b) => String(a.date).localeCompare(String(b.date)))[0];
   const jour = premiere?.date ?? dateDebut;
   const heure = (premiere?.heure_debut ?? "00:00").slice(0, 5);
-  return new Date(`${jour}T${heure}:00Z`);
+  return instantMaroc(jour, heure);
 }
 
 /** Dernier moment pour signer : fin du mois de la dernière date (23:59 heure du Maroc) */
@@ -89,7 +90,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (cle) {
       await new Resend(cle).emails.send({
         from: FROM, to: [ADMIN_EMAIL], subject: `Contrat signé — ${c.staff?.prenom} ${c.staff?.nom}`,
-        html: `<p><b>${c.staff?.prenom} ${c.staff?.nom}</b> a signé son contrat « ${c.evenement ?? c.titre} » le ${new Date(signeLe).toLocaleString("fr-FR", { timeZone: "UTC" })}${Date.now() > limite.getTime() ? " (en retard : après le délai de 24 h avant la mission)" : ""}, avec les conditions de la mission.</p><p>Le contrat a été contresigné automatiquement par l'employeur (Imane CHAIGARI, CEO).</p>`,
+        html: `<p><b>${c.staff?.prenom} ${c.staff?.nom}</b> a signé son contrat « ${c.evenement ?? c.titre} » le ${new Date(signeLe).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" })}${Date.now() > limite.getTime() ? " (en retard : après le délai de 24 h avant la mission)" : ""}, avec les conditions de la mission.</p><p>Le contrat a été contresigné automatiquement par l'employeur (Imane CHAIGARI, CEO).</p>`,
       }).catch(() => {});
     }
     return json({ success: true, signe_le: signeLe });

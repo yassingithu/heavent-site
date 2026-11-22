@@ -212,7 +212,7 @@ export default function Aujourdhui({ demandesMariage, demandesEntreprise, bullet
         </> });
     }
     // 2b. Devis accepté dont la facture d'acompte ou de solde n'existe pas encore (mêmes règles que l'automatisation)
-    const ilYa2j = new Date(Date.now() - 2 * MS_JOUR).toISOString().slice(0, 10);
+    const ilYa2j = jourMarocPlus(-2);
     for (const v of donnees.devis) {
       if (v.statut !== "accepte" || !(Number(v.total_ttc) > 0)) continue;
       const actives = (v.factures ?? []).filter((f: any) => f.statut !== "annulee");

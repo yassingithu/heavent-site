@@ -1,3 +1,4 @@
+import { instantMaroc } from "../_shared/pointage.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 import { Resend } from "npm:resend@2.0.0";
 
@@ -7,7 +8,7 @@ import { Resend } from "npm:resend@2.0.0";
  */
 const FROM = "Heavent People Agency <noreply@heaventagency.com>";
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
-const heure = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
+const heure = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { timeZone: "Africa/Casablanca", hour: "2-digit", minute: "2-digit" });
 
 Deno.serve(async (req) => {
   const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -26,7 +27,7 @@ Deno.serve(async (req) => {
   const [{ data: profils }, { data: mot }, { data: rdv }, { data: evts }, { data: dm }, { data: de }, { data: equipes }, { data: signes }, { data: nouveauxCrews }] = await Promise.all([
     db.from("admin_profils").select("email, prenom, recoit_mots").eq("recoit_resume", true).eq("espace", "admin"),
     db.rpc("_mot_du_jour", { p_jour: jour, p_pour: "imane" }),
-    db.from("rendez_vous").select("debut, client_nom, type").eq("statut", "confirme").gte("debut", `${jour}T00:00:00Z`).lte("debut", `${jour}T23:59:59Z`).order("debut"),
+    db.from("rendez_vous").select("debut, client_nom, type").eq("statut", "confirme").gte("debut", instantMaroc(jour, "00:00").toISOString()).lte("debut", instantMaroc(jour, "23:59").toISOString()).order("debut"),
     db.from("devis").select("id, titre, client_nom, client_societe, lieu").eq("statut", "accepte").eq("date_evenement", jour),
     db.from("devis_mariage").select("nom, prenom, type_evenement, nb_invites").gte("created_at", hier),
     db.from("devis_entreprise").select("entreprise, nom, nb_personnes").gte("created_at", hier),

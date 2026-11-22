@@ -1,11 +1,19 @@
-// Règles communes du pointage des crews (heure du Maroc = GMT).
+// Règles communes du pointage des crews (heures saisies à l'heure du Maroc, Africa/Casablanca).
+
+/** Instant réel d'une date + heure du Maroc. */
+export function instantMaroc(date: string, hhmm = "00:00"): Date {
+  const base = new Date(`${date}T${hhmm.slice(0, 5)}:00Z`);
+  const p = new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Casablanca", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(base);
+  const g = (t: string) => Number(p.find((x) => x.type === t)!.value);
+  return new Date(base.getTime() - (Date.UTC(g("year"), g("month") - 1, g("day"), g("hour"), g("minute"), g("second")) - base.getTime()));
+}
 
 /** Début et fin prévus d'une journée de mission (une fin avant le début = le lendemain). */
 export function horairesMission(a: { date_jour: string; heure_debut?: string | null; heure_fin?: string | null; heures?: number | null }) {
   const hd = (a.heure_debut ?? "").slice(0, 5);
   const hf = (a.heure_fin ?? "").slice(0, 5);
-  const debut = new Date(`${a.date_jour}T${hd || "00:00"}:00Z`);
-  let fin = hf ? new Date(`${a.date_jour}T${hf}:00Z`) : new Date(debut.getTime() + Number(a.heures ?? 8) * 3600_000);
+  const debut = instantMaroc(a.date_jour, hd || "00:00");
+  let fin = hf ? instantMaroc(a.date_jour, hf) : new Date(debut.getTime() + Number(a.heures ?? 8) * 3600_000);
   if (fin <= debut) fin = new Date(fin.getTime() + 86400_000);
   return { debut, fin, horaireConnu: !!hd };
 }

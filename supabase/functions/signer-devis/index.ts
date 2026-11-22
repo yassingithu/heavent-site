@@ -106,7 +106,7 @@ serve(async (req) => {
         from: FROM, to: [ADMIN_EMAIL], reply_to: d.client_email || undefined,
         subject: `✅ Devis ${d.numero} accepté et signé — ${d.client_nom}`,
         html: `<p><b>${e(d.client_nom)}</b>${d.client_societe ? ` (${e(d.client_societe)})` : ""} a signé en ligne le devis <b>${e(d.numero)}</b> « ${e(d.titre ?? "")} »
-          le ${new Date(signeLe).toLocaleString("fr-FR", { timeZone: "UTC" })}.</p>
+          le ${new Date(signeLe).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca" })}.</p>
           <p>Total TTC : <b>${mad(d.total_ttc)}</b>${acompte ? ` · acompte attendu : <b>${mad(acompte)}</b>` : ""}</p>
           ${acompteExistant ? `<p>🔁 Devis signé à nouveau après modification : la facture d'acompte <b>${e(acompteExistant.numero)}</b> existante est conservée, le solde sera calculé sur le nouveau total.</p>` : ""}
           ${facture ? `<p>🧾 La facture d'acompte <b>${e(facture.numero)}</b> a été créée et envoyée au client. Pense à la marquer « payée » à réception du virement (onglet Devis → Factures).</p>` : ""}

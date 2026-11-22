@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { instantMaroc } from "@/lib/dateMaroc";
 import { Camera } from "lucide-react";
 
 /** État d'une journée de mission côté admin : confirmation, arrivée, départ, heures à valider. */
@@ -13,13 +14,13 @@ export interface Pointage {
   depart_le?: string | null; depart_verifie?: boolean | null; heures_pointees?: number | null; heures_validees?: number | null; pointage_a_verifier?: boolean;
   pointage_hors_ligne?: boolean; pointage_recu_le?: string | null; pointage_tardif?: boolean;
 }
-const heure = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
-const jourFr = (s: string) => new Date(s + "T12:00:00Z").toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" });
+const heure = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { timeZone: "Africa/Casablanca", hour: "2-digit", minute: "2-digit" });
+const jourFr = (s: string) => new Date(s + "T12:00:00Z").toLocaleDateString("fr-FR", { timeZone: "Africa/Casablanca", weekday: "short", day: "numeric", month: "short" });
 const puce = (classe: string, texte: string, titre?: string) => <span title={titre} className={`text-[11px] font-medium rounded-full px-2 py-0.5 ${classe}`}>{texte}</span>;
 
 export function retardMinutes(a: Pointage) {
   if (!a.arrivee_le || !a.heure_debut) return 0;
-  return Math.max(0, Math.round((new Date(a.arrivee_le).getTime() - new Date(`${a.date_jour}T${a.heure_debut.slice(0, 5)}:00Z`).getTime()) / 60000));
+  return Math.max(0, Math.round((new Date(a.arrivee_le).getTime() - instantMaroc(a.date_jour, a.heure_debut).getTime()) / 60000));
 }
 
 export default function EtatPointage({ a, plusieursJours, onChange }: { a: Pointage; plusieursJours?: boolean; onChange: () => void }) {
@@ -51,7 +52,7 @@ export default function EtatPointage({ a, plusieursJours, onChange }: { a: Point
         dist != null ? `À ${dist} m du lieu` : a.arrivee_position ? "Position enregistrée (lieu non localisé)" : "Sans position")
         : passe && !a.empechement_le ? puce("bg-[#DCCDAA]/40 text-[#5A5146]", "Pas de pointage") : null}
       {a.pointage_hors_ligne && puce("bg-[#2A2420]/10 text-[#2A2420]", a.pointage_tardif ? "Sans réseau · heure du téléphone, reçu tard, à vérifier" : "Sans réseau · heure du téléphone, à vérifier",
-        `Pointé sans réseau : heure relevée par le téléphone (falsifiable)${a.pointage_recu_le ? `, reçue par le serveur à ${heure(a.pointage_recu_le)} le ${new Date(a.pointage_recu_le).toLocaleDateString("fr-FR", { timeZone: "UTC", day: "numeric", month: "short" })}` : ""}${a.pointage_tardif ? ". Reçu plus de 24 h après." : "."} Vérifiez avec la cheffe d'équipe.`)}
+        `Pointé sans réseau : heure relevée par le téléphone (falsifiable)${a.pointage_recu_le ? `, reçue par le serveur à ${heure(a.pointage_recu_le)} le ${new Date(a.pointage_recu_le).toLocaleDateString("fr-FR", { timeZone: "Africa/Casablanca", day: "numeric", month: "short" })}` : ""}${a.pointage_tardif ? ". Reçu plus de 24 h après." : "."} Vérifiez avec la cheffe d'équipe.`)}
       {a.arrivee_photo && <button onClick={voirPhoto} className="inline-flex items-center gap-0.5 text-[#8C6D22] underline" title="Voir le selfie"><Camera className="h-3 w-3" /> photo</button>}
       {a.depart_le && puce("bg-[#1F5A4C]/10 text-[#1F5A4C]", `Départ ${heure(a.depart_le)} · ${a.heures_pointees} h`)}
       {a.heures_validees != null && !a.pointage_a_verifier && puce("bg-[#F4E9CF] text-[#7A5F1E]", `Payé : ${a.heures_validees} h`)}
