@@ -228,7 +228,15 @@ const Contact = () => {
                 <div className="s-profil" role="radiogroup" aria-label={x("Vous êtes…")}>
                   <span className="s-profil-t">{x("Vous êtes…")}</span>
                   {([["evenement", "Client, pour un événement"], ["mission", "Hôte ou hôtesse, pour une mission"], ["partenaire", "Prestataire partenaire"]] as [Profil, string][]).map(([k, l]) => (
-                    <button key={k} type="button" role="radio" aria-checked={profil === k} data-on={profil === k} className="s-profil-b" onClick={() => choisirProfil(k)} data-testid={`contact-profil-${k}`}>{x(l)}</button>
+                    <button key={k} type="button" role="radio" aria-checked={profil === k} tabIndex={profil === k ? 0 : -1} onKeyDown={(e) => {
+                      const ordre: Profil[] = ["evenement", "mission", "partenaire"];
+                      const d = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+                      if (!d) return;
+                      e.preventDefault();
+                      const n = ordre[(ordre.indexOf(k) + d + ordre.length) % ordre.length];
+                      choisirProfil(n);
+                      (e.currentTarget.parentElement?.querySelector(`[data-testid="contact-profil-${n}"]`) as HTMLElement | null)?.focus();
+                    }} data-on={profil === k} className="s-profil-b" onClick={() => choisirProfil(k)} data-testid={`contact-profil-${k}`}>{x(l)}</button>
                   ))}
                 </div>
                 {profil === "mission" && (
