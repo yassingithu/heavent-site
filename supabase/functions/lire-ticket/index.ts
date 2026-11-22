@@ -5,7 +5,7 @@ import { getCaller, deny, corsHeaders } from "../_shared/auth.ts";
  * Lecture d'un ticket ou d'une facture (photo) pour préremplir une dépense : date, montant TTC, TVA, fournisseur, moyen de paiement.
  * - Réservé aux administrateurs connectés (getCaller) ;
  * - fournisseur : Groq, modèle de vision (secret GROQ_API_KEY ; modèle changeable avec LIRE_TICKET_MODELE) ;
- * - ne devine jamais : un champ illisible reste vide (null) et le site demande toujours une vérification avant d'enregistrer ;
+ * - ne devine jamais : un champ illisible reste vide (null) ; le site marque les champs lus et demande une vérification (confirmation en plus si le montant est inhabituel) ;
  * - Groq saturé ou en panne : { disponible: false }, la saisie à la main reste possible, rien n'est bloqué.
  */
 const MODELE = Deno.env.get("LIRE_TICKET_MODELE") ?? "meta-llama/llama-4-scout-17b-16e-instruct";
@@ -68,8 +68,13 @@ serve(async (req) => {
     const aujourdhui = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Casablanca" }).format(new Date());
     const limiteBasse = `${Number(aujourdhui.slice(0, 4)) - 2}${aujourdhui.slice(4)}`;
     const date = typeof brut.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(brut.date) && brut.date <= aujourdhui && brut.date >= limiteBasse ? brut.date : null;
-    let montant = nombre(brut.montant_ttc); if (montant !== null && (montant <= 0 || montant > 1_000_000)) montant = null;
+    let montant = nombre(brut.montant_ttc); if (montant !== null && (montant <= 0 || montant > 200_000)) montant = null;
     let tva = nombre(brut.tva); if (tva !== null && (tva < 0 || (montant !== null && tva >= montant))) tva = null;
+    // TVA marocaine : 20 %, 14 %, 10 % ou 7 % du hors-taxe ; sinon la valeur lue est écartée plutôt que proposée
+    if (tva !== null) {
+      if (montant === null) tva = null;
+      else { const taux = tva / (montant - tva); if (![0.2, 0.14, 0.1, 0.07].some((t) => Math.abs(taux - t) <= 0.01)) tva = null; }
+    }
     const fournisseur = typeof brut.fournisseur === "string" ? brut.fournisseur.replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 80) || null : null;
     const moyen = typeof brut.moyen_paiement === "string" && MOYENS.includes(brut.moyen_paiement) ? brut.moyen_paiement : null;
     return json({ disponible: true, champs: { date, montant_ttc: montant, tva, fournisseur, moyen_paiement: moyen } });
