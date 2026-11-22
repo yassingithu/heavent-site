@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { aujourdhuiMaroc } from "@/lib/dateMaroc";
 
 /**
  * Mode hors ligne de l'espace staff (jour J).
@@ -54,7 +55,7 @@ export function pourCache(m: any): MissionCache {
 
 /** Garde les missions utiles sur le terrain : d'hier à après-demain. */
 export function enregistrerMissions(missions: any[], maintenant = new Date()): Cache | null {
-  const jour = (dec: number) => new Date(maintenant.getTime() + dec * 864e5).toISOString().slice(0, 10);
+  const jour = (dec: number) => aujourdhuiMaroc(new Date(maintenant.getTime() + dec * 864e5));
   const utiles = missions.filter((m) => m.date_jour >= jour(-1) && m.date_jour <= jour(2)).map(pourCache);
   if (!utiles.length) { try { localStorage.removeItem(CLE_CACHE); } catch { /* */ } prevenir(); return null; }
   const c: Cache = { synchro: maintenant.toISOString(), missions: utiles };

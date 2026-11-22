@@ -51,7 +51,7 @@ export default function DepensesAdmin() {
     return () => { annule = true; };
   }, [mois]);
   const emisesMois = (facturesMois ?? []).filter((x) => x.date_emission?.slice(0, 7) === mois);
-  const payeesMois = (facturesMois ?? []).filter((x) => x.payee_le?.slice(0, 7) === mois);
+  const payeesMois = (facturesMois ?? []).filter((x) => x.statut === "payee" && x.payee_le?.slice(0, 7) === mois);
 
   const charger = useCallback(async () => {
     setChargement(true);
@@ -213,7 +213,7 @@ export default function DepensesAdmin() {
         </div>
         <div className="mt-4 border-t border-[#EADFC8] pt-4" data-testid="pour-le-comptable">
           <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-[#8C6D22]">Pour le comptable</p>
-          <Button variant="outline" className="mt-2 h-11 gap-2 sm:h-9" onClick={exporterRecettes} disabled={!facturesMois || (!emisesMois.length && !payeesMois.length)} data-testid="export-recettes"><Receipt className="h-4 w-4" /> Factures et paiements de {moisLong(mois)} (ZIP)</Button>
+          <Button variant="outline" className="mt-2 h-auto min-h-11 w-full justify-start gap-2 whitespace-normal py-2 text-left sm:h-9 sm:min-h-0 sm:w-auto sm:whitespace-nowrap sm:py-0" onClick={exporterRecettes} disabled={!facturesMois || (!emisesMois.length && !payeesMois.length)} data-testid="export-recettes"><Receipt className="h-4 w-4" /> Factures et paiements de {moisLong(mois)} (ZIP)</Button>
           <p className="mt-1.5 text-xs text-muted-foreground" data-testid="export-recettes-aide">{!facturesMois ? "Chargement…" : emisesMois.length || payeesMois.length ? `${emisesMois.length} facture${emisesMois.length > 1 ? "s" : ""} émise${emisesMois.length > 1 ? "s" : ""} · ${payeesMois.length} paiement${payeesMois.length > 1 ? "s" : ""} encaissé${payeesMois.length > 1 ? "s" : ""}. 2 tableaux Excel dans un ZIP.` : "Aucune facture émise ni paiement encaissé ce mois-ci. Change de mois avec les flèches."}</p>
         </div>
         {parCategorie.length > 0 && (
