@@ -71,7 +71,7 @@ export default function HistoriqueFiche({ table, ligneId, nom }: { table: "contr
         // Dans une fenêtre qui défile (iPhone), la liste se déploie sous le bord : on la ramène à l'écran une fois l'animation faite
         if (ouvre) window.setTimeout(() => racine.current?.scrollIntoView({ block: "nearest", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }), 280);
       }}>
-        <span className="ah-titre"><History className="h-4 w-4" aria-hidden="true" />Historique{typeof n === "number" ? <b>({n})</b> : null}</span>
+        <span className="ah-titre"><History className="h-4 w-4" aria-hidden="true" />Historique{typeof n === "number" ? <b>({n})</b> : null}{!ouvert && lignes && lignes.length > 0 && <span className="ah-dernier">· dernier : {quand(lignes[0].created_at)}</span>}</span>
         <svg className="ah-chev" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </button>
       <div id={idCorps} className={`ah-corps${ouvert ? " ouvert" : ""}`}>

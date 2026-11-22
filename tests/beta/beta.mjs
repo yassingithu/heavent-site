@@ -1975,6 +1975,7 @@ await scenario("Historique : fiche crew (candidature, bannissement, réactivatio
   const bloc = page.getByRole("dialog").getByTestId("historique-fiche");
   await bloc.scrollIntoViewIfNeeded();
   verifier((await bloc.getByRole("listitem").count()) === 0, "le bloc doit être replié au départ");
+  verifier(/dernier\s*:/.test(await bloc.innerText()), "le titre replié doit dire quand a eu lieu le dernier changement");
   await bloc.getByRole("button").first().click(); await page.waitForTimeout(900);
   const lignes = (await bloc.getByRole("listitem").allInnerTexts()).map((t) => t.replace(/\s+/g, " "));
   verifier(lignes.length === 3, "3 lignes attendues, trouvées " + lignes.length + " : " + lignes.join(" | "));
