@@ -28,10 +28,33 @@ export const STATUTS_FACTURE: Record<"a_payer" | "payee" | "annulee", StatutDef>
   annulee: { label: "Annulée", className: "bg-[#DCCDAA]/40 text-[#5A5146] line-through" },
 };
 
+/** Contrats des crews (colonne statut de la table contrats). */
+export const STATUTS_CONTRAT: Record<string, StatutDef> = {
+  actif: { label: "Actif", className: "border-transparent bg-transparent text-[#1F5A4C]" },
+  termine: { label: "Terminé", className: "border-transparent bg-transparent text-[#5A5146]" },
+  annule: { label: "Annulé (non payé)", className: "border-transparent bg-transparent text-[#9C4A2C]" },
+};
+
+/** Candidature d'un crew (colonne statut_candidature de la table staff). */
+export const STATUTS_CANDIDATURE: Record<string, StatutDef> = {
+  en_attente: { label: "En attente", className: "border-transparent bg-transparent text-[#5A5146]" },
+  approuve: { label: "Approuvé", className: "border-transparent bg-transparent text-[#1F5A4C]" },
+  refuse: { label: "Refusé", className: "border-transparent bg-transparent text-[#9C4A2C]" },
+};
+
+/** Accès d'un crew (colonne banni de la table staff, lue comme « true » / « false » dans l'historique). */
+export const STATUTS_ACCES: Record<string, StatutDef> = {
+  false: { label: "Actif", className: "border-transparent bg-transparent text-[#1F5A4C]" },
+  true: { label: "Banni", className: "border-transparent bg-transparent text-[#9C4A2C]" },
+};
+
 export const REGISTRE_STATUTS = {
   devis: STATUTS_DEVIS,
   reponse_rapide: STATUTS_REPONSE_RAPIDE,
   facture: STATUTS_FACTURE as Record<string, StatutDef>,
+  contrat: STATUTS_CONTRAT,
+  candidature: STATUTS_CANDIDATURE,
+  acces: STATUTS_ACCES,
 } as const;
 
 export type DomaineStatut = keyof typeof REGISTRE_STATUTS;

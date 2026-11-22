@@ -15,7 +15,7 @@ const DOMAINES: Record<string, DomaineStatut> = { devis: "devis", factures: "fac
 interface Ligne { id: number; table_name: string; libelle: string | null; avant: string | null; apres: string | null; par_email: string | null; created_at: string }
 
 /** Classe de losange `a-st` (couleur et plein/vide) selon le statut final. */
-const classeLosange = (cle: string | null) =>
+export const classeLosange = (cle: string | null) =>
   cle === "accepte" || cle === "payee" ? "vert"
     : cle === "refuse" ? "terre"
     : cle === "annule" || cle === "annulee" || cle === "brouillon" || cle === "en_attente" ? "vide"
@@ -29,7 +29,7 @@ const statutLisible = (table: string, cle: string | null) => {
 };
 
 /** « Aujourd'hui 08:30 », « Hier 17:12 », « 12 nov. 14:05 » (+ année si ce n'est pas l'année en cours), heure du Maroc. */
-function quand(iso: string): string {
+export function quand(iso: string): string {
   const d = new Date(iso);
   const jour = (x: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: FUSEAU }).format(x);
   const heure = new Intl.DateTimeFormat("fr-FR", { timeZone: FUSEAU, hour: "2-digit", minute: "2-digit" }).format(d);
@@ -42,7 +42,7 @@ function quand(iso: string): string {
 }
 
 /** Nom affiché : « Vous », « Automatique », sinon l'adresse mise en forme (jamais l'e-mail brut). */
-function qui(par: string | null, moi: string | null): { texte: string; auto: boolean } {
+export function qui(par: string | null, moi: string | null): { texte: string; auto: boolean } {
   if (!par || par === "automatique") return { texte: "Automatique", auto: true };
   if (moi && par.toLowerCase() === moi) return { texte: "Vous", auto: false };
   const nom = par.split("@")[0].split(/[._-]+/).filter(Boolean).map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(" ");

@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Ban, KeyRound, Save, UserCheck } from "lucide-react";
 import { avertissementsNumero, cleComparaison } from "@/lib/cnss";
+import HistoriqueFiche from "@/components/admin/HistoriqueFiche";
 
 export const LANGUES = ["Arabe", "Darija", "Amazigh", "Français", "Anglais", "Espagnol", "Allemand", "Italien", "Portugais", "Chinois", "Russe", "Turc"];
 
@@ -165,6 +166,8 @@ export default function EditionStaff({ staffId, onClose, onSaved }: Props) {
                 <Button variant="outline" onClick={changerMotDePasse} disabled={enCours || !mdp.a}>Changer le mot de passe</Button>
               </div>
             </div>
+
+            <HistoriqueFiche table="staff" ligneId={s.id} nom={`${s.prenom} ${s.nom}`.trim() || "ce crew"} />
 
             <div className={`border-t pt-4 ${s.banni ? "bg-[#9C4A2C]/10 -mx-6 px-6 pb-4" : ""}`}>
               <div className="text-sm font-semibold mb-1 flex items-center gap-2"><Ban className="h-4 w-4" /> {s.banni ? "Crew banni" : "Bannir ce crew"}</div>
