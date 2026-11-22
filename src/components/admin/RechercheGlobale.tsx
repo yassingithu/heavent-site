@@ -92,7 +92,7 @@ export default function RechercheGlobale({ ouvert, onFermer, rubriques, onAller,
   const touche = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") { e.preventDefault(); setActif((a) => Math.min(a + 1, Math.max(tous.length - 1, 0))); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setActif((a) => Math.max(a - 1, 0)); }
-    else if (e.key === "Enter" && tous[actif]) { e.preventDefault(); choisir(tous[actif]); }
+    else if (e.key === "Enter" && tous[actif] && !(chargement && nettoyer(q).length >= 2)) { e.preventDefault(); choisir(tous[actif]); }
   };
   const groupes = [...new Set(tous.map((r) => r.groupe))];
   const terme = nettoyer(q);

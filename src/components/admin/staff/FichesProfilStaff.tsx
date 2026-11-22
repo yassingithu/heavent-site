@@ -155,11 +155,12 @@ export async function telechargerFichesProfil(ids: string[]) {
   await telechargerPdf(pages, cssFiche, nom);
 }
 
-export default function FichesProfilStaff() {
+export default function FichesProfilStaff({ rechercheExterne }: { rechercheExterne?: string } = {}) {
   const { toast } = useToast();
   const [staff, setStaff] = useState<StaffComplet[]>([]);
   const [selection, setSelection] = useState<Set<string>>(new Set());
-  const [recherche, setRecherche] = useState("");
+  const [recherche, setRecherche] = useState(rechercheExterne ?? "");
+  useEffect(() => { if (rechercheExterne !== undefined) setRecherche(rechercheExterne); }, [rechercheExterne]);
   const [enCours, setEnCours] = useState(false);
   const [edition, setEdition] = useState<string | null>(null);
   const [consulte, setConsulte] = useState<StaffComplet | null>(null);

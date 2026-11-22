@@ -1563,7 +1563,7 @@ const Admin = () => {
 
         {/* Personnel Tab */}
         <TabsContent value="staff" className="space-y-4">
-          <FichesProfilStaff />
+          <FichesProfilStaff rechercheExterne={rechercheStaff} />
           {/* Recherche par date */}
           <Card>
             <CardHeader>
