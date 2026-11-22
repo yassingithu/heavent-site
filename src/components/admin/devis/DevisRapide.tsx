@@ -28,6 +28,7 @@ import ParametresAgence from "./ParametresAgence";
 import EspaceMariesAdmin from "./EspaceMariesAdmin";
 import EquipeEvenement from "@/components/admin/equipe/EquipeEvenement";
 import { devisModifie } from "./DevisParStatut";
+import AutresDocumentsClient from "./AutresDocumentsClient";
 import { FacturesDevis, ListeFactures } from "./Factures";
 import HistoriqueDevis from "./HistoriqueDevis";
 import ReponsesWhatsApp from "@/components/admin/ReponsesWhatsApp";
@@ -950,6 +951,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 </CardContent>
               </Card>
 
+              {form.id && <AutresDocumentsClient devisId={form.id} email={form.client_email} ouvrir={(id) => ouvrir(id)} />}
               <Card>
                 <CardHeader><CardTitle className="text-base">Conditions et notes</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
