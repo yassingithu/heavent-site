@@ -24,7 +24,8 @@ Deno.serve(async (req) => {
   if (!essai && heureMaroc !== 7) return new Response(JSON.stringify({ envoyes: 0, raison: "pas l'heure" }));
   const jour = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Casablanca" }).format(maintenant);
   const hier = new Date(Date.now() - 864e5).toISOString();
-  const [{ data: profils }, { data: mot }, { data: rdv }, { data: evts }, { data: dm }, { data: de }, { data: equipes }, { data: signes }, { data: nouveauxCrews }] = await Promise.all([
+  const il7j = new Date(Date.now() - 7 * 864e5).toISOString();
+  const [{ data: profils }, { data: mot }, { data: rdv }, { data: evts }, { data: dm }, { data: de }, { data: equipes }, { data: signes }, { data: nouveauxCrews }, { data: messages }, { data: sansReponse }, { data: aPayer }] = await Promise.all([
     db.from("admin_profils").select("email, prenom, recoit_mots").eq("recoit_resume", true).eq("espace", "admin"),
     db.rpc("_mot_du_jour", { p_jour: jour, p_pour: "imane" }),
     db.from("rendez_vous").select("debut, client_nom, type").eq("statut", "confirme").gte("debut", instantMaroc(jour, "00:00").toISOString()).lte("debut", instantMaroc(jour, "23:59").toISOString()).order("debut"),
@@ -34,6 +35,10 @@ Deno.serve(async (req) => {
     db.from("affectations").select("devis_id").eq("date_jour", jour).neq("statut", "annule"),
     db.from("devis").select("client_nom, client_societe, total_ttc").gte("signe_le", hier).neq("statut", "annule"),
     db.from("staff").select("id, prenom, nom, ville, admin_notifie_le").gte("created_at", hier).order("created_at"),
+    // Ce qui attend une action : messages de contact non traités, devis envoyés sans réponse depuis 7 jours, factures à payer
+    db.from("messages_contact").select("cree_le").eq("traite", false).order("cree_le").limit(200),
+    db.from("devis").select("numero, client_nom, client_societe, total_ttc, devise, date_envoi").eq("statut", "envoye").eq("archive", false).lte("date_envoi", il7j).order("date_envoi").limit(30),
+    db.from("factures").select("numero, client_nom, client_societe, net_a_payer, devise, date_emission").eq("statut", "a_payer").order("date_emission").limit(50),
   ]);
   if (!profils?.length) return new Response(JSON.stringify({ envoyes: 0, raison: "personne" }));
   // Limites des comptes (stockage, base, e-mails, IA) : seulement les alertes nouvelles ou à rappeler (jamais en « essai »).
@@ -51,7 +56,14 @@ Deno.serve(async (req) => {
     <h3 style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#8C6D22;margin:24px 0 8px">${titre}</h3>
     ${lignes.length ? `<ul style="margin:0;padding-left:18px;line-height:1.7">${lignes.map((l) => `<li>${l}</li>`).join("")}</ul>` : `<p style="margin:0;color:#8a8070">${vide}</p>`}`;
   const lienCrew = (c: any) => `<a href="https://heaventagency.com/admin?crew=${encodeURIComponent(c.id)}" style="color:#8C6D22">${esc(`${c.prenom ?? ""} ${c.nom ?? ""}`.trim())}</a>${c.ville ? ` · ${esc(c.ville)}` : ""}${c.admin_notifie_le ? "" : " · <i>alerte non reçue</i>"}`;
-  const calme = !(nouveauxCrews?.length || rdv?.length || evts?.length || demandes.length || signes?.length);
+  const jours = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 864e5));
+  const montant = (n: unknown, d?: string | null) => `${Math.round(Number(n || 0)).toLocaleString("fr-FR")} ${d && d !== "MAD" ? esc(d) : "MAD"}`;
+  const msgLignes = messages?.length ? [`<b>${messages.length}</b> message${messages.length > 1 ? "s" : ""} du formulaire de contact à traiter · le plus ancien date de ${jours((messages as any[])[0].cree_le)} j`] : [];
+  const sansRep = (sansReponse ?? []) as any[];
+  const sansRepLignes = sansRep.slice(0, 5).map((d) => `<b>${esc(d.client_societe || d.client_nom)}</b> · ${esc(d.numero)} · ${montant(d.total_ttc, d.devise)} · envoyé il y a ${jours(d.date_envoi)} j`).concat(sansRep.length > 5 ? [`… et ${sansRep.length - 5} autre${sansRep.length - 5 > 1 ? "s" : ""}`] : []);
+  const impayees = (aPayer ?? []) as any[];
+  const impayeesLignes = impayees.slice(0, 5).map((f) => `<b>${esc(f.client_societe || f.client_nom)}</b> · ${esc(f.numero)} · ${montant(f.net_a_payer, f.devise)} · émise il y a ${jours(f.date_emission)} j`).concat(impayees.length > 5 ? [`… et ${impayees.length - 5} autre${impayees.length - 5 > 1 ? "s" : ""}`] : []);
+  const calme = !(msgLignes.length || sansRepLignes.length || impayeesLignes.length || nouveauxCrews?.length || rdv?.length || evts?.length || demandes.length || signes?.length);
 
   const envoyes: string[] = [];
   const resend = new Resend(Deno.env.get("RESEND_API_KEY") ?? "");
@@ -70,6 +82,9 @@ Deno.serve(async (req) => {
           ${bloc("Rendez-vous", (rdv ?? []).map((r: any) => `<b>${heure(r.debut)}</b> · ${esc(r.client_nom)}${r.type ? ` · ${esc(r.type)}` : ""}`), "Aucun rendez-vous.")}
           ${nouveauxCrews?.length ? bloc(`Nouveaux crews (${nouveauxCrews.length})`, (nouveauxCrews as any[]).map(lienCrew), "") : ""}
           ${bloc("Nouvelles demandes (24 h)", demandes, "Aucune nouvelle demande.")}
+          ${msgLignes.length ? bloc("Messages à lire", msgLignes, "") : ""}
+          ${sansRepLignes.length ? bloc(`Devis sans réponse depuis 7 jours (${sansRep.length})`, sansRepLignes, "") : ""}
+          ${impayeesLignes.length ? bloc(`Factures à payer (${impayees.length})`, impayeesLignes, "") : ""}
           ${sig && Number(sig.nb) > 0 ? bloc("Photos à examiner", [`<b>${Number(sig.nb)}</b> demande${Number(sig.nb) > 1 ? "s" : ""} de retrait de photos souvenirs${Number(sig.nb_mineurs) > 0 ? ` dont <b>${Number(sig.nb_mineurs)} concernant un mineur</b> (à traiter en priorité)` : ""} : Admin → Devis → le mariage → Livre souvenir.`], "") : ""}
           ${quotas?.length ? bloc("Limites des comptes", (quotas as any[]).map((q) => `<b>${esc(q.libelle)}</b> · ${esc(q.texte)}`), "") : ""}
           ${calme ? `<p style="margin-top:20px;color:#5E554A">Une journée calme : profites-en pour souffler un peu. Tu le mérites.</p>` : ""}
