@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { zipSync, strToU8 } from "fflate";
-import { Camera, ChevronLeft, ChevronRight, Download, FileText, Plus, Receipt, Trash2, X } from "lucide-react";
+import { Camera, ChevronLeft, ScanText, ChevronRight, Download, FileText, Plus, Receipt, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,6 +19,7 @@ const MOYENS: Record<string, string> = { especes: "Espèces", carte: "Carte", vi
 const mad = (n: number) => `${new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(n) || 0)} MAD`;
 const jourCourt = (d: string) => new Date(d + "T12:00:00Z").toLocaleDateString("fr-FR", { timeZone: "UTC", day: "numeric", month: "short" });
 const moisLong = (m: string) => new Date(m + "-15T12:00:00Z").toLocaleDateString("fr-FR", { timeZone: "UTC", month: "long", year: "numeric" });
+const versDataUrl = (b: Blob) => new Promise<string>((ok, ko) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => ko(r.error); r.readAsDataURL(b); });
 const estPdf = (chemin: string) => chemin.toLowerCase().endsWith(".pdf");
 
 interface Evenement { id: string; numero: string | null; titre: string | null; client_nom: string }
@@ -38,6 +39,16 @@ export default function DepensesAdmin() {
   const [nouvelleCategorie, setNouvelleCategorie] = useState("");
   const [gererCategories, setGererCategories] = useState(false);
   const entree = useRef<HTMLInputElement>(null);
+  // Lecture automatique du ticket : champs remplis par la lecture (à vérifier) et champs modifiés à la main (jamais écrasés)
+  const [lu, setLu] = useState<Set<string>>(new Set());
+  const [lecture, setLecture] = useState<"" | "cours" | "vide" | "indispo">("");
+  const touches = useRef<Set<string>>(new Set());
+  const numeroLecture = useRef(0);
+  const fRef = useRef<typeof f>(null);
+  fRef.current = f;
+  const luRef = useRef(lu);
+  luRef.current = lu;
+  useEffect(() => { touches.current = new Set(); numeroLecture.current++; setLu(new Set()); setLecture(""); }, [!!f]);
   const [facturesMois, setFacturesMois] = useState<FactureCompta[] | null>(null);
   useEffect(() => {
     let annule = false;
@@ -84,20 +95,59 @@ export default function DepensesAdmin() {
   const parCategorie = totauxParCategorie(lignes);
   const { precedent, suivant } = moisPrecedentSuivant(mois);
 
+  const saisir = (k: string, v: Partial<NonNullable<typeof f>>) => {
+    touches.current.add(k);
+    setLu((a) => { if (!a.has(k)) return a; const b = new Set(a); b.delete(k); return b; });
+    setF((x) => (x ? { ...x, ...v } : x));
+  };
+
+  /** Lit un ticket (image) et préremplit seulement ce qui est vide et que tu n'as pas touché. */
+  const lireTicket = async (source: Blob) => {
+    const n = ++numeroLecture.current;
+    setLecture("cours");
+    try {
+      const image = await versDataUrl(await reduirePhoto(new File([source], "ticket.jpg", { type: source.type || "image/jpeg" }), 1280));
+      const { data, error } = await supabase.functions.invoke("lire-ticket", { body: { image } });
+      if (n !== numeroLecture.current) return;
+      if (error || !data?.disponible) { setLecture("indispo"); return; }
+      const c = data.champs ?? {};
+      const x = fRef.current;
+      if (!x) return;
+      const mis = new Set<string>(); const y = { ...x }; const libre = (k: string) => !touches.current.has(k); const videOuLu = (k: string, v: string) => !v.trim() || luRef.current.has(k);
+      if (c.montant_ttc != null && libre("montant") && videOuLu("montant", x.montant)) { y.montant = String(c.montant_ttc).replace(".", ","); mis.add("montant"); }
+      if (c.date && libre("date") && (x.date === aujourdhuiMaroc() || luRef.current.has("date"))) { y.date = c.date; mis.add("date"); }
+      if (c.fournisseur && libre("fournisseur") && videOuLu("fournisseur", x.fournisseur)) { y.fournisseur = c.fournisseur; mis.add("fournisseur"); }
+      if (c.tva != null && libre("tva") && videOuLu("tva", x.tva)) { y.tva = String(c.tva).replace(".", ","); mis.add("tva"); }
+      if (c.moyen_paiement && libre("moyen") && (!x.moyen || luRef.current.has("moyen"))) { y.moyen = c.moyen_paiement; mis.add("moyen"); }
+      setF((z) => (z ? { ...z, montant: y.montant, date: y.date, fournisseur: y.fournisseur, tva: y.tva, moyen: y.moyen } : z));
+      setLu((a) => new Set([...a, ...mis]));
+      setLecture(mis.size ? "" : "vide");
+    } catch { if (n === numeroLecture.current) setLecture("indispo"); }
+  };
+  const relire = async () => {
+    const c = f?.fichiers.find((x) => !estPdf(x));
+    if (!c) return;
+    const { data } = await supabase.storage.from(BUCKET).download(c);
+    if (data) await lireTicket(data); else setLecture("indispo");
+  };
+
   const ajouterFichiers = async (fichiers: FileList | null) => {
     if (!fichiers?.length || !f) return;
     setOccupe(true);
     const nouveaux: string[] = [];
+    let aLire: Blob | null = null;
     for (const fi of [...fichiers].slice(0, 6)) {
       const pdf = fi.type === "application/pdf";
       const chemin = `${mois}/${idAleatoire()}.${pdf ? "pdf" : "jpg"}`;
       const corps = pdf ? fi : await reduirePhoto(fi, 1800);
       const { error } = await supabase.storage.from(BUCKET).upload(chemin, corps, { contentType: pdf ? "application/pdf" : "image/jpeg" });
-      if (error) toast({ title: "Fichier non envoyé", description: error.message, variant: "destructive" }); else nouveaux.push(chemin);
+      if (error) toast({ title: "Fichier non envoyé", description: error.message, variant: "destructive" }); else { nouveaux.push(chemin); if (!pdf && !aLire) aLire = corps; }
     }
     setF((x) => (x ? { ...x, fichiers: [...x.fichiers, ...nouveaux] } : x));
     setOccupe(false);
     if (entree.current) entree.current.value = "";
+    // Première photo d'une nouvelle dépense sans montant : on lit le ticket tout de suite
+    if (aLire && !f.fichiers.some((x) => !estPdf(x)) && !f.montant.trim()) void lireTicket(aLire);
   };
 
   const enregistrer = async () => {
@@ -273,20 +323,29 @@ export default function DepensesAdmin() {
                   </button>
                   <input ref={entree} type="file" accept="image/*,application/pdf" capture="environment" multiple className="hidden" data-testid="champ-photo" onChange={(e) => ajouterFichiers(e.target.files)} />
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-1">Photo (appareil de l'iPhone) ou PDF. La lecture automatique du montant n'est pas encore active : tu saisis les informations.</p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground" aria-live="polite" data-testid="lecture-ticket">
+                  {lecture === "cours" ? <span className="text-[#8C6D22]" data-testid="lecture-en-cours">Lecture du ticket…</span>
+                    : lecture === "vide" ? <span>Rien de sûr n'a pu être lu : saisis les informations.</span>
+                    : lecture === "indispo" ? <span>Lecture indisponible pour l'instant : saisis les informations.</span>
+                    : lu.size ? <span className="text-[#8C6D22]">Lu sur le ticket : vérifie les champs marqués ◆ avant d'enregistrer.</span>
+                    : <span>Photo ou PDF. Le montant, la date et le commerce sont lus automatiquement sur la photo.</span>}
+                  {f.fichiers.some((x) => !estPdf(x)) && lecture !== "cours" && (
+                    <button type="button" onClick={relire} className="inline-flex min-h-8 items-center gap-1 font-medium text-[#8C6D22] underline underline-offset-2" data-testid="relire-ticket"><ScanText className="h-3.5 w-3.5" />{lu.size || lecture ? "Relire le ticket" : "Lire le ticket"}</button>
+                  )}
+                </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div><Label>Montant TTC (MAD)</Label><Input inputMode="decimal" data-testid="depense-montant" value={f.montant} onChange={(e) => setF({ ...f, montant: e.target.value })} /></div>
-                <div><Label>Date</Label><Input type="date" data-testid="depense-date" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></div>
-                <div className="sm:col-span-2"><Label>Fournisseur / commerce</Label><Input data-testid="depense-fournisseur" value={f.fournisseur} onChange={(e) => setF({ ...f, fournisseur: e.target.value })} /></div>
+                <div><Label>Montant TTC (MAD)<Lu k="montant" lu={lu} /></Label><Input inputMode="decimal" data-testid="depense-montant" value={f.montant} onChange={(e) => saisir("montant", { montant: e.target.value })} /></div>
+                <div><Label>Date<Lu k="date" lu={lu} /></Label><Input type="date" data-testid="depense-date" value={f.date} onChange={(e) => saisir("date", { date: e.target.value })} /></div>
+                <div className="sm:col-span-2"><Label>Fournisseur / commerce<Lu k="fournisseur" lu={lu} /></Label><Input data-testid="depense-fournisseur" value={f.fournisseur} onChange={(e) => saisir("fournisseur", { fournisseur: e.target.value })} /></div>
                 <div><Label>Catégorie</Label>
                   <Select value={f.categorie} onValueChange={(v) => setF({ ...f, categorie: v })}>
                     <SelectTrigger data-testid="depense-categorie"><SelectValue /></SelectTrigger>
                     <SelectContent>{listeCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>Payé par</Label>
-                  <Select value={f.moyen || "aucun"} onValueChange={(v) => setF({ ...f, moyen: v === "aucun" ? "" : v })}>
+                <div><Label>Payé par<Lu k="moyen" lu={lu} /></Label>
+                  <Select value={f.moyen || "aucun"} onValueChange={(v) => saisir("moyen", { moyen: v === "aucun" ? "" : v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent><SelectItem value="aucun">Non précisé</SelectItem>{Object.entries(MOYENS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                   </Select>
@@ -297,7 +356,7 @@ export default function DepensesAdmin() {
                     <SelectContent><SelectItem value="aucun">Aucun (dépense générale)</SelectItem>{evenements.map((e) => <SelectItem key={e.id} value={e.id}>{e.titre || e.client_nom}{e.numero ? ` · ${e.numero}` : ""}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>TVA lue sur le ticket (facultatif)</Label><Input inputMode="decimal" value={f.tva} onChange={(e) => setF({ ...f, tva: e.target.value })} /></div>
+                <div><Label>TVA lue sur le ticket (facultatif)<Lu k="tva" lu={lu} /></Label><Input inputMode="decimal" value={f.tva} onChange={(e) => saisir("tva", { tva: e.target.value })} /></div>
                 <div className="sm:col-span-2"><Label>Note</Label><Textarea rows={2} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} /></div>
               </div>
               <div className="flex items-center justify-between gap-2 pt-1">
@@ -328,4 +387,9 @@ export default function DepensesAdmin() {
       </Dialog>
     </div>
   );
+}
+
+/** Pastille « lu sur le ticket » à côté d'un champ prérempli par la lecture : disparaît dès que le champ est modifié. */
+function Lu({ k, lu }: { k: string; lu: Set<string> }) {
+  return lu.has(k) ? <span className="ml-1.5 text-[11px] font-normal text-[#8C6D22]" data-testid={`lu-${k}`}>◆ lu sur le ticket</span> : null;
 }
