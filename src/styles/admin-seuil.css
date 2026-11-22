@@ -401,3 +401,11 @@ nav[aria-label="Navigation principale"] button:active { transform: scale(.94); }
 .a-actions > button:active { background: rgba(228,212,154,.28); }
 .a-actions > button:disabled { opacity: .45; }
 .a-actions > .terre { color: var(--s-terre); flex: 0 1 auto; padding: 0 12px; border-inline-start: 1px solid var(--s-filet); }
+
+/* Messages de contact : liseré laiton pour les messages neufs, texte atténué (jamais les boutons) pour les traités */
+.a-actions > a { flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 0 10px; display: flex; align-items: center; justify-content: center; border-inline-end: 1px solid var(--s-filet); font: 500 11px/1 var(--s-texte); letter-spacing: .1em; text-transform: uppercase; color: var(--s-laiton-texte); text-decoration: none; }
+.a-actions > a:active { background: rgba(228,212,154,.28); }
+.a-actions > a:focus-visible { outline: 2px solid var(--s-laiton-texte); outline-offset: -2px; }
+.a-msg-neuf { border-inline-start: 2px solid var(--s-laiton); padding-inline-start: 14px; }
+.a-msg-corps { margin-top: 8px; font-size: 15px; line-height: 1.55; max-width: 62ch; white-space: pre-line; overflow-wrap: anywhere; }
+.a-msg-traite .a-msg-corps, .a-msg-traite h3 { opacity: .6; }

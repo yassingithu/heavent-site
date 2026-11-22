@@ -1104,7 +1104,14 @@ const Admin = () => {
   }, []);
   useEffect(() => { compterCartes(); }, [compterCartes, ongletAdmin]);
   const [messagesATraiter, setMessagesATraiter] = useState(0);
-  useEffect(() => { (supabase as any).from("messages_contact").select("id", { count: "exact", head: true }).eq("traite", false).then(({ count }: any) => setMessagesATraiter(count ?? 0)); }, [isAdmin]);
+  useEffect(() => {
+    if (!isAdmin) return;
+    const compter = () => (supabase as any).from("messages_contact").select("id", { count: "exact", head: true }).eq("traite", false).then(({ count, error }: any) => { if (!error) setMessagesATraiter(count ?? 0); });
+    compter();
+    const retour = () => { if (document.visibilityState === "visible") compter(); };
+    document.addEventListener("visibilitychange", retour);
+    return () => document.removeEventListener("visibilitychange", retour);
+  }, [isAdmin]);
   const nouvellesEntreprise = devisEntreprise.filter((d: any) => d.statut === "en_attente").length;
   const nouvellesMariage = devisMariage.filter((d: any) => d.statut === "en_attente").length;
 
@@ -1141,7 +1148,7 @@ const Admin = () => {
           valeur, Icone,
           libelle: estDemo() && !fils ? libelleOnglet(valeur, libelleBase) : libelleBase,
           fils: sousOnglets.length > 1 ? sousOnglets : undefined,
-          badge: valeur === "entreprise" ? nouvellesEntreprise + nouvellesMariage : valeur === "invitations" ? nouvellesCartes : 0,
+          badge: valeur === "entreprise" ? nouvellesEntreprise + nouvellesMariage + messagesATraiter : valeur === "invitations" ? nouvellesCartes : 0,
         };
       }),
     }));

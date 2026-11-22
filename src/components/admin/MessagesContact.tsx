@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ToastAction } from "@/components/ui/toast";
+import { Input } from "@/components/ui/input";
 
 interface Message { id: string; cree_le: string; nom: string; email: string; sujet: string | null; message: string; traite: boolean }
 
@@ -9,51 +10,75 @@ interface Message { id: string; cree_le: string; nom: string; email: string; suj
 export default function MessagesContact({ onCompte }: { onCompte?: (aTraiter: number) => void }) {
   const { toast } = useToast();
   const [liste, setListe] = useState<Message[] | null>(null);
-  const [voirTraites, setVoirTraites] = useState(false);
+  const [erreur, setErreur] = useState(false);
+  const [filtre, setFiltre] = useState<"a_traiter" | "tous">("a_traiter");
+  const [recherche, setRecherche] = useState("");
+  const [deplies, setDeplies] = useState<Set<string>>(new Set());
 
   const charger = useCallback(async () => {
-    const { data, error } = await (supabase as any).from("messages_contact").select("*").order("cree_le", { ascending: false }).limit(200);
-    if (error) { toast({ title: "Messages non chargés", description: error.message, variant: "destructive" }); setListe([]); return; }
-    setListe((data ?? []) as Message[]);
-    onCompte?.(((data ?? []) as Message[]).filter((m) => !m.traite).length);
-  }, [toast, onCompte]);
+    setErreur(false);
+    const { data, error } = await (supabase as any).from("messages_contact").select("*").order("cree_le", { ascending: true }).limit(300);
+    if (error) { setErreur(true); setListe((l) => l ?? []); return; }
+    const l = (data ?? []) as Message[];
+    setListe(l);
+    onCompte?.(l.filter((m) => !m.traite).length);
+  }, [onCompte]);
   useEffect(() => { charger(); }, [charger]);
 
-  const basculer = async (m: Message) => {
-    const { error } = await (supabase as any).from("messages_contact").update({ traite: !m.traite }).eq("id", m.id);
+  const marquer = async (m: Message, traite: boolean, avecAnnuler = true) => {
+    const { error } = await (supabase as any).from("messages_contact").update({ traite }).eq("id", m.id);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
-    charger();
+    setListe((l) => {
+      const n = (l ?? []).map((x) => (x.id === m.id ? { ...x, traite } : x));
+      onCompte?.(n.filter((x) => !x.traite).length);
+      return n;
+    });
+    toast({ title: traite ? "Message traité" : "Remis à traiter", action: avecAnnuler ? <ToastAction altText="Annuler" onClick={() => marquer(m, !traite, false)}>Annuler</ToastAction> : undefined });
   };
 
   const quand = (iso: string) => new Date(iso).toLocaleString("fr-FR", { timeZone: "Africa/Casablanca", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
-  const aTraiter = (liste ?? []).filter((m) => !m.traite);
-  const affiches = voirTraites ? (liste ?? []) : aTraiter;
+  const tous = liste ?? [];
+  const aTraiter = tous.filter((m) => !m.traite);
+  const q = recherche.trim().toLowerCase();
+  const affiches = (filtre === "tous" ? tous : aTraiter).filter((m) => !q || [m.nom, m.email, m.sujet, m.message].some((v) => v?.toLowerCase().includes(q)));
 
   return (
-    <Card data-testid="messages-contact">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-base">Messages du formulaire de contact ({aTraiter.length} à traiter)</CardTitle>
-        <p className="text-sm text-muted-foreground">Chaque message arrive aussi par e-mail. Heure du Maroc.</p>
-        {(liste ?? []).length > aTraiter.length && (
-          <button type="button" className="text-sm underline self-start min-h-11 sm:min-h-8" onClick={() => setVoirTraites((v) => !v)} aria-pressed={voirTraites}>{voirTraites ? "Masquer les messages traités" : "Voir aussi les messages traités"}</button>
-        )}
-      </CardHeader>
-      <CardContent className="grid gap-0">
-        {liste === null ? <p className="text-sm text-muted-foreground py-3">Chargement…</p>
-          : affiches.length === 0 ? <p className="text-sm text-muted-foreground py-3">Aucun message à traiter.</p>
-          : affiches.map((m) => (
-            <article key={m.id} className="border-t border-[#DCCDAA] py-4 first:border-t-0" data-testid="message-contact">
-              <p className="text-[11px] tracking-[0.18em] uppercase text-[#7A5F1F]">{quand(m.cree_le)}{m.traite ? " · traité" : ""}</p>
-              <h3 className="font-serif text-[20px] leading-tight mt-1 break-words">{m.nom}</h3>
-              <p className="text-sm text-[#5A5146] break-words">{m.sujet || "Sans sujet"}</p>
-              <p className="text-[15px] mt-2 whitespace-pre-line break-words">{m.message}</p>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
-                <span className="text-sm select-all break-all">{m.email}</span>
-                <button type="button" className="text-sm underline min-h-11 sm:min-h-8" onClick={() => basculer(m)} data-testid="message-traite">{m.traite ? "Remettre à traiter" : "Marquer comme traité"}</button>
-              </div>
-            </article>
-          ))}
-      </CardContent>
-    </Card>
+    <section data-testid="messages-contact" aria-labelledby="t-messages">
+      <p className="a-devis-date" id="t-messages">Contact · {aTraiter.length} à traiter</p>
+      <p className="text-[13.5px] text-[var(--s-texte-2,#5A5146)] mt-1">Chaque message arrive aussi par e-mail. Les plus anciens non traités sont en premier. Heure du Maroc.</p>
+      <div className="a-filtres mt-3" role="group" aria-label="Filtrer les messages">
+        <button type="button" aria-pressed={filtre === "a_traiter"} onClick={() => setFiltre("a_traiter")} data-testid="msg-filtre-a-traiter">À traiter<span className="a-filtre-n" data-zero={aTraiter.length === 0 ? "oui" : "non"}>{aTraiter.length}</span></button>
+        <button type="button" aria-pressed={filtre === "tous"} onClick={() => setFiltre("tous")} data-testid="msg-filtre-tous">Tous<span className="a-filtre-n">{tous.length}</span></button>
+      </div>
+      {tous.length > 8 && <Input className="mt-2" placeholder="Chercher un nom, un e-mail ou un mot" aria-label="Chercher dans les messages" value={recherche} onChange={(e) => setRecherche(e.target.value)} />}
+
+      {erreur ? (
+        <div className="py-4" role="alert" data-testid="messages-erreur">
+          <p className="text-sm">Impossible de charger les messages. Vérifie la connexion.</p>
+          <button type="button" className="underline min-h-11 sm:min-h-8" onClick={charger}>Réessayer</button>
+        </div>
+      ) : liste === null ? <p className="text-sm text-muted-foreground py-4" role="status">Chargement…</p>
+        : affiches.length === 0 ? <p className="font-serif text-[20px] py-4" role="status">{q ? "Aucun message ne correspond." : filtre === "tous" ? "Aucun message pour l'instant." : "Rien en attente."}</p>
+        : <div className="grid gap-0 mt-2" aria-live="polite">
+          {affiches.map((m) => {
+            const long = m.message.length > 280, ouvert = deplies.has(m.id);
+            return (
+              <article key={m.id} className={`a-devis-carte ${m.traite ? "a-msg-traite" : "a-msg-neuf"}`} data-testid="message-contact">
+                <p className="a-devis-date">{quand(m.cree_le)}</p>
+                <h3 className="font-serif text-[24px] leading-tight break-words mt-1">{m.nom}</h3>
+                <p className="text-[13.5px] text-[var(--s-texte-2,#5A5146)] break-words">{m.sujet || "(aucun sujet)"}</p>
+                <p className={`a-msg-corps ${long && !ouvert ? "line-clamp-4" : ""}`}>{m.message}</p>
+                {long && <button type="button" className="underline text-sm min-h-11 sm:min-h-8" onClick={() => setDeplies((d) => { const n = new Set(d); ouvert ? n.delete(m.id) : n.add(m.id); return n; })} aria-expanded={ouvert}>{ouvert ? "Réduire" : "Lire la suite"}</button>}
+                <p className={`a-st mt-1 ${m.traite ? "vert vide" : ""}`}>{m.traite ? "Traité" : "À traiter"}</p>
+                <p className="text-sm select-all break-all mt-1">{m.email}</p>
+                <div className="a-actions">
+                  <a href={`mailto:${m.email}?subject=${encodeURIComponent("Re : " + (m.sujet || "votre message"))}`} data-testid="message-repondre">Répondre</a>
+                  <button type="button" onClick={() => marquer(m, !m.traite)} data-testid="message-traite">{m.traite ? "Remettre à traiter" : "Marquer comme traité"}</button>
+                </div>
+              </article>
+            );
+          })}
+        </div>}
+    </section>
   );
 }

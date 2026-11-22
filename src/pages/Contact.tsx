@@ -104,6 +104,7 @@ const Contact = () => {
         }),
       });
 
+      if (erreurBase) console.error("Message de contact non enregistré en base :", erreurBase.message);
       // Échec seulement si ni la base ni l'e-mail n'ont reçu le message
       if (!response.ok && erreurBase) {
         throw new Error('Erreur lors de l\'envoi');
