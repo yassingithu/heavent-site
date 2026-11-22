@@ -329,3 +329,31 @@ nav[aria-label="Navigation principale"] button:active { transform: scale(.94); }
 .aj-filtres button[aria-pressed="true"] { background: rgba(228,212,154,.32); }
 .aj-filtres button[aria-pressed="true"]::after { content: ""; position: absolute; inset-inline: 14px; bottom: -1px; height: 2px; background: var(--s-laiton); }
 .aj-filtres b { font: 400 13px var(--s-texte); font-variant-numeric: tabular-nums; color: var(--s-laiton-texte); margin-inline-start: 6px; }
+
+/* Historique d'une fiche devis : liste à filets, un seul mouvement (ouverture) */
+.ah { margin-top: 2rem; border-top: 1px solid var(--s-filet); max-width: 640px; }
+@media (max-width: 1023px) { .ah { padding-bottom: 7rem; } }
+.ah-t { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; padding: 0 2px; background: none; border: 0; cursor: pointer; font: 500 14px/1 var(--s-texte); letter-spacing: .08em; text-transform: uppercase; color: var(--s-nuit); }
+.ah-t b { font-weight: 400; color: var(--s-laiton-texte); font-variant-numeric: tabular-nums; margin-inline-start: 6px; }
+.ah-t:focus-visible, .ah-plus:focus-visible { outline: 2px solid var(--s-laiton-texte); outline-offset: 2px; }
+.ah-chev { color: var(--s-laiton-texte); transition: transform .2s var(--s-courbe); }
+.ah-t[aria-expanded="true"] .ah-chev { transform: rotate(180deg); }
+.ah-corps { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .24s var(--s-courbe), visibility 0s linear .24s; }
+.ah-corps.ouvert { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows .24s var(--s-courbe), visibility 0s; }
+.ah-int { overflow: hidden; min-height: 0; opacity: 0; transition: opacity .2s; }
+.ah-corps.ouvert .ah-int { opacity: 1; }
+.ah ol { list-style: none; margin: 0; padding: 0; }
+.ah li { padding: 11px 2px 12px; border-top: 1px solid var(--s-filet); overflow-wrap: anywhere; }
+.ah li:first-child { border-top: 0; }
+.ah-l1 { font: 500 14.5px/1.35 var(--s-texte); color: var(--s-nuit); }
+.ah-pre { font-weight: 500; }
+.ah-avant { font-weight: 400; color: var(--s-texte-2); }
+.ah-fl { color: var(--s-laiton-texte); margin: 0 6px; }
+.ah .a-st { font-size: 14.5px; }
+.ah-l2 { margin-top: 2px; font: 400 12.5px/1.4 var(--s-texte); color: var(--s-texte-2); font-variant-numeric: tabular-nums; }
+.ah-auto { font-style: italic; }
+.ah-note, .ah-vide { margin: 12px 2px 0; font: 400 12px/1.5 var(--s-texte); color: var(--s-texte-2); }
+.ah-vide { font-size: 13.5px; margin: 14px 2px; }
+.ah-plus { display: block; min-height: 44px; padding: 0 2px; background: none; border: 0; cursor: pointer; font: 500 13.5px/1 var(--s-texte); color: var(--s-laiton-texte); }
+.ah-plus:hover { text-decoration: underline; }
+@media (prefers-reduced-motion: reduce) { .ah-chev, .ah-corps, .ah-corps.ouvert, .ah-int { transition: none; } }

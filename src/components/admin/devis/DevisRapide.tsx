@@ -27,6 +27,7 @@ import EspaceMariesAdmin from "./EspaceMariesAdmin";
 import EquipeEvenement from "@/components/admin/equipe/EquipeEvenement";
 import { devisModifie } from "./DevisParStatut";
 import { FacturesDevis, ListeFactures } from "./Factures";
+import HistoriqueDevis from "./HistoriqueDevis";
 import ReponsesWhatsApp from "@/components/admin/ReponsesWhatsApp";
 
 const nomEvenement = (type?: string | null) => { const t = (type || "").trim().toLowerCase(); return !t ? "votre événement" : t.startsWith("mariage") ? "votre mariage" : `votre ${t}`; };
@@ -948,6 +949,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 <Button variant="ghost" onClick={() => { if (!abandonOk()) return; setForm(null); setOnglet("liste"); }}>Fermer</Button>
               </div>
               <FacturesDevis devis={form} params={params} avantCreation={() => enregistrer()} />
+              {form.id && <HistoriqueDevis devisId={form.id} rafraichir={saving} />}
             </div>
 
             {/* Barre d'actions toujours visible sur téléphone / tablette (au-dessus de la barre du bas) */}
