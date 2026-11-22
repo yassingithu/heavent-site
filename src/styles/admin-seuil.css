@@ -332,10 +332,10 @@ nav[aria-label="Navigation principale"] button:active { transform: scale(.94); }
 
 /* Historique d'une fiche devis : liste à filets, un seul mouvement (ouverture) */
 .ah { margin-top: 2rem; border-top: 1px solid var(--s-filet); max-width: 640px; }
-@media (max-width: 1023px) { .ah { padding-bottom: 7rem; } }
+@media (max-width: 1023px) { .ah { padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px)); } }
 .ah-t { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; padding: 0 2px; background: none; border: 0; cursor: pointer; font: 500 14px/1 var(--s-texte); letter-spacing: .08em; text-transform: uppercase; color: var(--s-nuit); }
 .ah-t b { font-weight: 400; color: var(--s-laiton-texte); font-variant-numeric: tabular-nums; margin-inline-start: 6px; }
-.ah-t:focus-visible, .ah-plus:focus-visible { outline: 2px solid var(--s-laiton-texte); outline-offset: 2px; }
+.ah-t:focus-visible, .ah-plus:focus-visible { outline: 2px solid var(--s-laiton-texte); outline-offset: -2px; }
 .ah-chev { color: var(--s-laiton-texte); transition: transform .2s var(--s-courbe); }
 .ah-t[aria-expanded="true"] .ah-chev { transform: rotate(180deg); }
 .ah-corps { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .24s var(--s-courbe), visibility 0s linear .24s; }
@@ -354,6 +354,7 @@ nav[aria-label="Navigation principale"] button:active { transform: scale(.94); }
 .ah-auto { font-style: italic; }
 .ah-note, .ah-vide { margin: 12px 2px 0; font: 400 12px/1.5 var(--s-texte); color: var(--s-texte-2); }
 .ah-vide { font-size: 13.5px; margin: 14px 2px; }
-.ah-plus { display: block; min-height: 44px; padding: 0 2px; background: none; border: 0; cursor: pointer; font: 500 13.5px/1 var(--s-texte); color: var(--s-laiton-texte); }
+.ah-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ah-plus { display: block; margin-left: 3px; min-height: 44px; padding: 0 2px; background: none; border: 0; cursor: pointer; font: 500 13.5px/1 var(--s-texte); color: var(--s-laiton-texte); }
 .ah-plus:hover { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) { .ah-chev, .ah-corps, .ah-corps.ouvert, .ah-int { transition: none; } }

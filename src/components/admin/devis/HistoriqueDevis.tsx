@@ -61,12 +61,17 @@ export default function HistoriqueDevis({ devisId, rafraichir }: { devisId: stri
     supabase.auth.getSession().then(({ data }) => setMoi(data.session?.user?.email?.toLowerCase() ?? null)).catch(() => {});
   }, []);
 
+  useEffect(() => { setLignes(null); setErreur(false); setVisibles(PAR_PAGE); setOuvert(false); }, [devisId]);
+
   useEffect(() => {
+    // Relu à chaque ouverture du bloc (les envois, signatures et paiements se font hors du bouton Enregistrer)
+    if (!ouvert && lignes !== null) return;
     let annule = false;
     (async () => {
       try {
         const db = supabase as any;
-        const { data: facs } = await db.from("factures").select("id").eq("devis_id", devisId);
+        const { data: facs, error: ef } = await db.from("factures").select("id").eq("devis_id", devisId);
+        if (ef) throw new Error("factures");
         const idsFactures = (facs ?? []).map((f: { id: string }) => f.id);
         const requetes = [db.from("historique_changements").select("id, table_name, libelle, avant, apres, par_email, created_at")
           .eq("table_name", "devis").eq("ligne_id", devisId).order("created_at", { ascending: false }).limit(100)];
@@ -75,14 +80,15 @@ export default function HistoriqueDevis({ devisId, rafraichir }: { devisId: stri
         const resultats = await Promise.all(requetes);
         if (resultats.some((r: any) => r.error)) throw new Error("lecture");
         const toutes: Ligne[] = resultats.flatMap((r: any) => r.data ?? []);
-        toutes.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+        toutes.sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : b.id - a.id));
         if (!annule) { setLignes(toutes); setErreur(false); }
       } catch {
         if (!annule) setErreur(true);
       }
     })();
     return () => { annule = true; };
-  }, [devisId, rafraichir]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [devisId, rafraichir, ouvert]);
 
   const n = lignes?.length;
   return (
@@ -105,7 +111,7 @@ export default function HistoriqueDevis({ devisId, rafraichir }: { devisId: stri
                     <li key={l.id}>
                       <div className="ah-l1">
                         {facture && <span className="ah-pre">Facture {l.libelle ?? ""} · </span>}
-                        {l.avant ? <><span className="ah-avant">{statutLisible(l.table_name, l.avant)}</span><span className="ah-fl" aria-hidden="true">→</span></> : <span className="ah-avant">Création · </span>}
+                        {l.avant ? <><span className="ah-avant">{statutLisible(l.table_name, l.avant)}</span><span className="ah-fl" aria-hidden="true">→</span><span className="ah-sr"> devenu </span></> : <span className="ah-avant">Création · </span>}
                         <span className={`a-st ${classeLosange(l.apres)}`}>{statutLisible(l.table_name, l.apres)}</span>
                       </div>
                       <div className="ah-l2">{quand(l.created_at)} · <span className={p.auto ? "ah-auto" : undefined}>{p.texte}</span></div>
@@ -115,7 +121,7 @@ export default function HistoriqueDevis({ devisId, rafraichir }: { devisId: stri
               </ol>
             )}
           {lignes && lignes.length > visibles && (
-            <button type="button" className="ah-plus" onClick={() => setVisibles((v) => v + PAR_PAGE)}>Voir les {Math.min(PAR_PAGE, lignes.length - visibles)} suivantes</button>
+            <button type="button" className="ah-plus" onClick={() => setVisibles((v) => v + PAR_PAGE)}>{lignes.length - visibles === 1 ? "Voir la suivante" : `Voir les ${Math.min(PAR_PAGE, lignes.length - visibles)} suivantes`}</button>
           )}
           {lignes && !erreur && <p className="ah-note">L'historique commence le {DEBUT}.</p>}
         </div>

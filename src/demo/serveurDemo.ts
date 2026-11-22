@@ -342,6 +342,7 @@ async function repondre(url: URL, methode: string, init: RequestInit | undefined
   if (methode === "PATCH") {
     const b = await lireCorps(init); const r = base[t].filter((x: any) => correspond(x, params));
     if (t === "factures" && r.some((x: any) => x.statut === "annulee") && b.statut && b.statut !== "annulee") return json({ message: "Une facture annulée ne peut pas être rétablie." }, 400);
+    if ((t === "devis" || t === "factures") && b.statut) r.forEach((x: any) => { if (x.statut !== b.statut) (base["historique_changements"] ??= []).push({ id: Date.now() + Math.random(), table_name: t, ligne_id: x.id, libelle: x.numero ?? null, champ: "statut", avant: x.statut, apres: b.statut, par_email: "demo@heavent.ma", created_at: new Date().toISOString() }); });
     r.forEach((x: any) => Object.assign(x, b));
     if (t === "devis") r.forEach((d: any) => recalculer(d.id));
     if (t === "devis_lignes") new Set(r.map((l: any) => l.devis_id)).forEach((id) => recalculer(id as string));
