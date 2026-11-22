@@ -374,10 +374,10 @@ export default function DepensesAdmin() {
                   )}
                 </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&>div]:min-w-0">
                 <div data-lu={lu.has("montant")} style={{ "--i": 0 } as any}><Label className="flex flex-wrap items-baseline">Montant TTC (MAD)<Lu k="montant" lu={lu} /></Label><Input inputMode="decimal" data-testid="depense-montant" value={f.montant} onChange={(e) => saisir("montant", { montant: e.target.value })} /></div>
                 <div data-lu={lu.has("tva")} style={{ "--i": 4 } as any}><Label className="flex flex-wrap items-baseline">TVA (facultatif)<Lu k="tva" lu={lu} /></Label><Input inputMode="decimal" value={f.tva} onChange={(e) => saisir("tva", { tva: e.target.value })} /></div>
-                <div data-lu={lu.has("date")} style={{ "--i": 1 } as any}><Label className="flex flex-wrap items-baseline">Date<Lu k="date" lu={lu} /></Label><Input type="date" data-testid="depense-date" value={f.date} onChange={(e) => saisir("date", { date: e.target.value })} /></div>
+                <div data-lu={lu.has("date")} style={{ "--i": 1 } as any}><Label className="flex flex-wrap items-baseline">Date<Lu k="date" lu={lu} /></Label><Input type="date" className="min-w-0 w-full max-w-full appearance-none text-left" data-testid="depense-date" value={f.date} onChange={(e) => saisir("date", { date: e.target.value })} /></div>
                 <div className="sm:col-span-2" data-lu={lu.has("fournisseur")} style={{ "--i": 2 } as any}><Label className="flex flex-wrap items-baseline">Fournisseur / commerce<Lu k="fournisseur" lu={lu} /></Label><Input data-testid="depense-fournisseur" value={f.fournisseur} onChange={(e) => saisir("fournisseur", { fournisseur: e.target.value })} /></div>
                 <div><Label>Catégorie</Label>
                   <Select value={f.categorie} onValueChange={(v) => setF({ ...f, categorie: v })}>
