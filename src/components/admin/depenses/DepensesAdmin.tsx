@@ -12,18 +12,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { idAleatoire, reduirePhoto } from "@/lib/photos";
 import { aujourdhuiMaroc } from "@/lib/dateMaroc";
 import { csvFactures, csvPaiements, dansLeMois, type FactureCompta } from "@/lib/recettes";
-import { csvDepenses, moisPrecedentSuivant, nomFichierJustificatif, nombreDepuisTexte, totalDepenses, totauxParCategorie, type Depense } from "@/lib/depenses";
+import { csvDepenses, moisPrecedentSuivant, nomFichierJustificatif, nombreDepuisTexte, totalDepenses, totauxEtrangers, totauxParCategorie, type Depense } from "@/lib/depenses";
 
 const BUCKET = "depenses";
 const MOYENS: Record<string, string> = { especes: "Espèces", carte: "Carte", virement: "Virement", cheque: "Chèque", autre: "Autre" };
-const mad = (n: number) => `${new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(n) || 0)} MAD`;
+const SYMBOLE: Record<string, string> = { MAD: "MAD", EUR: "€", USD: "$" };
+const mad = (n: number, devise: string | null | undefined = "MAD") => `${new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(n) || 0)} ${SYMBOLE[devise ?? "MAD"] ?? devise}`;
 const jourCourt = (d: string) => new Date(d + "T12:00:00Z").toLocaleDateString("fr-FR", { timeZone: "UTC", day: "numeric", month: "short" });
 const moisLong = (m: string) => new Date(m + "-15T12:00:00Z").toLocaleDateString("fr-FR", { timeZone: "UTC", month: "long", year: "numeric" });
 const versDataUrl = (b: Blob) => new Promise<string>((ok, ko) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => ko(r.error); r.readAsDataURL(b); });
 const estPdf = (chemin: string) => chemin.toLowerCase().endsWith(".pdf");
 
 interface Evenement { id: string; numero: string | null; titre: string | null; client_nom: string }
-const vide = () => ({ id: "", date: aujourdhuiMaroc(), fournisseur: "", ice: "", idf: "", montant: "", tva: "", categorie: "Autres", moyen: "", devis: "", note: "", fichiers: [] as string[] });
+const vide = () => ({ id: "", date: aujourdhuiMaroc(), fournisseur: "", ice: "", idf: "", devise: "MAD", montant: "", tva: "", categorie: "Autres", moyen: "", devis: "", note: "", fichiers: [] as string[] });
 
 /** Dépenses de l'agence : photo du ticket ou de la facture, classement par mois et catégorie, export pour le comptable. */
 export default function DepensesAdmin() {
@@ -42,7 +43,6 @@ export default function DepensesAdmin() {
   // Lecture automatique du ticket : champs remplis par la lecture (à vérifier) et champs modifiés à la main (jamais écrasés)
   const [lu, setLu] = useState<Set<string>>(new Set());
   const [lecture, setLecture] = useState<"" | "cours" | "vide" | "indispo" | "limite">("");
-  const [deviseTicket, setDeviseTicket] = useState<{ code: string; montant: string } | null>(null);
   const [proposition, setProposition] = useState<Record<string, string> | null>(null);
   const touches = useRef<Set<string>>(new Set());
   const numeroLecture = useRef(0);
@@ -50,7 +50,7 @@ export default function DepensesAdmin() {
   fRef.current = f;
   const luRef = useRef(lu);
   luRef.current = lu;
-  useEffect(() => { touches.current = new Set(); numeroLecture.current++; setLu(new Set()); setLecture(""); setProposition(null); setDeviseTicket(null); }, [!!f]);
+  useEffect(() => { touches.current = new Set(); numeroLecture.current++; setLu(new Set()); setLecture(""); setProposition(null); }, [!!f]);
   const [facturesMois, setFacturesMois] = useState<FactureCompta[] | null>(null);
   useEffect(() => {
     let annule = false;
@@ -95,6 +95,7 @@ export default function DepensesAdmin() {
 
   const total = totalDepenses(lignes);
   const parCategorie = totauxParCategorie(lignes);
+  const etrangers = totauxEtrangers(lignes);
   const { precedent, suivant } = moisPrecedentSuivant(mois);
 
   const saisir = (k: string, v: Partial<NonNullable<typeof f>>) => {
@@ -106,7 +107,7 @@ export default function DepensesAdmin() {
   /** Lit un ticket (image). Préremplit ce qui est vide ou déjà « lu » (sauf champ modifié à la main) ; en lecture demandée (explicite), un champ vidé à la main est aussi rempli. Le reste est proposé, jamais imposé. */
   const lireTicket = async (source: Blob, explicite = false) => {
     const n = ++numeroLecture.current;
-    setLecture("cours"); setProposition(null); setDeviseTicket(null);
+    setLecture("cours"); setProposition(null);
     try {
       const image = await versDataUrl(await reduirePhoto(new File([source], "ticket.jpg", { type: source.type || "image/jpeg" }), 1280));
       const reponse = await Promise.race([
@@ -120,18 +121,17 @@ export default function DepensesAdmin() {
       const x = fRef.current;
       if (!x) return;
       const lus: Record<string, string> = {};
-      // Ticket qui n'est pas en dirhams : on ne remplit ni montant ni TVA (ils seraient faux), on prévient
-      const etranger = c.devise && c.devise !== "MAD";
-      if (etranger) setDeviseTicket({ code: c.devise, montant: c.montant_ttc != null ? String(c.montant_ttc).replace(".", ",") : "" });
-      if (!etranger && c.montant_ttc != null) lus.montant = String(c.montant_ttc).replace(".", ",");
-      if (!etranger && c.tva != null) lus.tva = String(c.tva).replace(".", ",");
+      // Devise lue sur le ticket (MAD par défaut) : le montant est rempli tel qu'il est écrit, avec sa devise
+      if (c.devise && ["MAD", "EUR", "USD"].includes(c.devise)) lus.devise = c.devise;
+      if (c.montant_ttc != null) lus.montant = String(c.montant_ttc).replace(".", ",");
+      if (c.tva != null) lus.tva = String(c.tva).replace(".", ",");
       if (c.date) lus.date = c.date;
       if (c.fournisseur) lus.fournisseur = c.fournisseur;
       if (c.ice) lus.ice = c.ice;
       if (c.identifiant_fiscal) lus.idf = c.identifiant_fiscal;
       if (c.moyen_paiement) lus.moyen = c.moyen_paiement;
-      if (!Object.keys(lus).length) { setLecture(etranger ? "" : "vide"); return; }
-      const actuel: Record<string, string> = { montant: x.montant, tva: x.tva, date: x.date === aujourdhuiMaroc() ? "" : x.date, fournisseur: x.fournisseur, ice: x.ice, idf: x.idf, moyen: x.moyen };
+      if (!Object.keys(lus).length) { setLecture("vide"); return; }
+      const actuel: Record<string, string> = { montant: x.montant, tva: x.tva, date: x.date === aujourdhuiMaroc() ? "" : x.date, fournisseur: x.fournisseur, ice: x.ice, idf: x.idf, moyen: x.moyen, devise: x.devise === "MAD" ? "" : x.devise };
       const mis = new Set<string>(); const patch: Record<string, string> = {}; const autres: Record<string, string> = {};
       for (const [k, v] of Object.entries(lus)) {
         const vide = !actuel[k].trim(); const dejaLu = luRef.current.has(k); const touche = touches.current.has(k);
@@ -195,23 +195,23 @@ export default function DepensesAdmin() {
     if (iceChiffres && iceChiffres.length !== 15) { toast({ title: "ICE incorrect", description: "L'ICE comporte 15 chiffres.", variant: "destructive" }); return; }
     if (ifChiffres && (ifChiffres.length < 3 || ifChiffres.length > 12)) { toast({ title: "Identifiant fiscal incorrect", description: "Entre uniquement les chiffres de l'IF.", variant: "destructive" }); return; }
     // Garde-fous : montant lu sur le ticket, jamais relu, qui sort de l'ordinaire ; dépense identique déjà saisie
-    if (lu.has("montant") && montant >= 5000 && !window.confirm(`Montant inhabituel : ${mad(montant)}, lu sur le ticket. C'est bien ça ?`)) return;
+    if (lu.has("montant") && montant >= 5000 && !window.confirm(`Montant inhabituel : ${mad(montant, f.devise)}, lu sur le ticket. C'est bien ça ?`)) return;
     const norme = (t: string | null) => (t ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
     let doublon: Depense | undefined;
     if (!f.id) {
       const { data: memeJour } = await (supabase as any).from("depenses").select("*").eq("date_depense", f.date);
-      doublon = ((memeJour ?? []) as Depense[]).find((l) => Math.round(Number(l.montant_ttc) * 100) === Math.round(montant * 100) && norme(l.fournisseur) === norme(f.fournisseur));
+      doublon = ((memeJour ?? []) as Depense[]).find((l) => Math.round(Number(l.montant_ttc) * 100) === Math.round(montant * 100) && (l.devise ?? "MAD") === (f.devise || "MAD") && norme(l.fournisseur) === norme(f.fournisseur));
     }
-    if (doublon && !window.confirm(`Une dépense identique existe déjà (${jourCourt(doublon.date_depense)}, ${doublon.fournisseur || "sans nom"}, ${mad(Number(doublon.montant_ttc))}). Enregistrer quand même ?`)) return;
+    if (doublon && !window.confirm(`Une dépense identique existe déjà (${jourCourt(doublon.date_depense)}, ${doublon.fournisseur || "sans nom"}, ${mad(Number(doublon.montant_ttc), doublon.devise)}). Enregistrer quand même ?`)) return;
     setOccupe(true);
     const ligne = {
-      date_depense: f.date, fournisseur: f.fournisseur.trim() || null, fournisseur_ice: f.ice.replace(/\D/g, "") || null, fournisseur_if: f.idf.replace(/\D/g, "") || null, montant_ttc: montant, tva, categorie: f.categorie || "Autres",
+      date_depense: f.date, fournisseur: f.fournisseur.trim() || null, fournisseur_ice: f.ice.replace(/\D/g, "") || null, fournisseur_if: f.idf.replace(/\D/g, "") || null, montant_ttc: montant, devise: f.devise || "MAD", tva, categorie: f.categorie || "Autres",
       moyen_paiement: f.moyen || null, devis_id: f.devis || null, note: f.note.trim() || null, justificatifs: f.fichiers,
     };
     const { error } = f.id ? await (supabase as any).from("depenses").update(ligne).eq("id", f.id) : await (supabase as any).from("depenses").insert(ligne);
     setOccupe(false);
     if (error) { toast({ title: "Dépense non enregistrée", description: error.message, variant: "destructive" }); return; }
-    toast({ title: f.id ? "Dépense modifiée" : "Dépense enregistrée", description: `${mad(montant)} · ${f.categorie}` });
+    toast({ title: f.id ? "Dépense modifiée" : "Dépense enregistrée", description: `${mad(montant, f.devise)} · ${f.categorie}` });
     const moisLigne = f.date.slice(0, 7);
     setF(null);
     if (moisLigne !== mois) setMois(moisLigne); else charger();
@@ -230,7 +230,7 @@ export default function DepensesAdmin() {
   };
 
   const ouvrir = (l: Depense) => setF({
-    id: l.id, date: l.date_depense, fournisseur: l.fournisseur ?? "", ice: l.fournisseur_ice ?? "", idf: l.fournisseur_if ?? "", montant: String(l.montant_ttc), tva: l.tva == null ? "" : String(l.tva),
+    id: l.id, date: l.date_depense, fournisseur: l.fournisseur ?? "", ice: l.fournisseur_ice ?? "", idf: l.fournisseur_if ?? "", devise: l.devise ?? "MAD", montant: String(l.montant_ttc), tva: l.tva == null ? "" : String(l.tva),
     categorie: l.categorie, moyen: l.moyen_paiement ?? "", devis: l.devis_id ?? "", note: l.note ?? "", fichiers: l.justificatifs ?? [],
   });
 
@@ -300,7 +300,7 @@ export default function DepensesAdmin() {
           <div>
             <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-[#8C6D22]">Total du mois (TTC)</p>
             <p className="font-serif text-3xl" data-testid="depenses-total">{mad(total)}</p>
-            <p className="text-xs text-muted-foreground">{lignes.length} dépense{lignes.length > 1 ? "s" : ""}</p>
+            <p className="text-xs text-muted-foreground">{lignes.length} dépense{lignes.length > 1 ? "s" : ""}{etrangers.length ? ` · hors total : ${etrangers.map(([d, t]) => mad(t, d)).join(", ")}` : ""}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" className="h-11 gap-1.5 sm:h-9" onClick={exporterCsv} disabled={!lignes.length} data-testid="export-csv"><FileText className="h-4 w-4" /> Tableau (Excel)</Button>
@@ -339,7 +339,7 @@ export default function DepensesAdmin() {
                   <span className="block text-xs text-muted-foreground truncate">{l.categorie}{l.devis_id && nomEvenement(l.devis_id) ? ` · ${nomEvenement(l.devis_id)}` : ""}{l.note ? ` · ${l.note}` : ""}</span>
                 </span>
                 {(l.justificatifs ?? []).length > 0 && <Camera className="h-4 w-4 text-[#A8933F] shrink-0" aria-label="Justificatif joint" />}
-                <span className="font-serif text-base tabular-nums whitespace-nowrap">{mad(l.montant_ttc)}</span>
+                <span className="font-serif text-base tabular-nums whitespace-nowrap">{mad(l.montant_ttc, l.devise)}</span>
               </button>
             </li>
           ))}
@@ -371,11 +371,10 @@ export default function DepensesAdmin() {
                 </div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground" aria-live="polite" data-testid="lecture-ticket">
                   {lecture === "cours" ? <span className="inline-flex items-center gap-1.5 text-[#7A5C17]" data-testid="lecture-en-cours"><span aria-hidden className="h-3 w-3 animate-spin rounded-full border border-[#A8933F] border-t-transparent motion-reduce:animate-none" />Lecture du ticket…<button type="button" onClick={() => { numeroLecture.current++; setLecture(""); }} className="ml-1 min-h-11 px-2 underline underline-offset-2 sm:min-h-9" data-testid="saisir-a-la-main">Saisir à la main</button></span>
-                    : deviseTicket ? <span className="text-sm text-foreground" data-testid="ticket-devise"><b>{deviseTicket.montant ? `${deviseTicket.montant} ${deviseTicket.code === "EUR" ? "€" : deviseTicket.code === "USD" ? "$" : deviseTicket.code}` : deviseTicket.code === "EUR" ? "Ticket en euros" : deviseTicket.code === "USD" ? "Ticket en dollars" : "Autre monnaie"}</b></span>
                     : lecture === "vide" ? <span>Rien de sûr n'a pu être lu : saisis les informations.</span>
                     : lecture === "limite" ? <span>Trop de lectures pour le moment : saisis les informations à la main.</span>
                     : lecture === "indispo" ? <span>Lecture indisponible pour l'instant : saisis les informations.</span>
-                    : proposition ? <span className="text-xs text-foreground" data-testid="lecture-proposition">Le ticket indique {[proposition.montant && `${proposition.montant} MAD`, proposition.tva && `TVA ${proposition.tva}`, proposition.date && proposition.date.split("-").reverse().join("/"), proposition.fournisseur, proposition.ice && `ICE ${proposition.ice}`, proposition.idf && `IF ${proposition.idf}`, proposition.moyen && MOYENS[proposition.moyen]].filter(Boolean).join(" · ")}. Tes champs n'ont pas été changés. <button type="button" onClick={appliquerProposition} className="font-semibold text-[#7A5C17] underline underline-offset-2 min-h-11 px-1 sm:min-h-8" data-testid="appliquer-lecture">Appliquer</button></span>
+                    : proposition ? <span className="text-xs text-foreground" data-testid="lecture-proposition">Le ticket indique {[proposition.montant && `${proposition.montant} ${SYMBOLE[proposition.devise || f?.devise || "MAD"]}`, proposition.tva && `TVA ${proposition.tva}`, proposition.date && proposition.date.split("-").reverse().join("/"), proposition.fournisseur, proposition.ice && `ICE ${proposition.ice}`, proposition.idf && `IF ${proposition.idf}`, proposition.moyen && MOYENS[proposition.moyen]].filter(Boolean).join(" · ")}. Tes champs n'ont pas été changés. <button type="button" onClick={appliquerProposition} className="font-semibold text-[#7A5C17] underline underline-offset-2 min-h-11 px-1 sm:min-h-8" data-testid="appliquer-lecture">Appliquer</button></span>
                     : lu.size ? <span className="inline-flex items-center gap-1.5 text-xs text-foreground"><i aria-hidden className="lu-losange" />Vérifie les champs marqués avant d'enregistrer.</span>
                     : f.fichiers.length > 0 && !f.fichiers.some((x) => !estPdf(x)) ? <span>PDF joint : il n'est pas lu automatiquement, saisis le montant et la date.</span>
                     : <span>Photo ou PDF. Le montant, la date et le commerce sont lus sur la photo ; tu peux toujours corriger.</span>}
@@ -385,7 +384,15 @@ export default function DepensesAdmin() {
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&>div]:min-w-0">
-                <div data-lu={lu.has("montant")} style={{ "--i": 0 } as any}><Label className="flex flex-wrap items-baseline">Montant TTC (MAD)<Lu k="montant" lu={lu} /></Label><Input inputMode="decimal" data-testid="depense-montant" value={f.montant} onChange={(e) => saisir("montant", { montant: e.target.value })} /></div>
+                <div data-lu={lu.has("montant")} style={{ "--i": 0 } as any}><Label className="flex flex-wrap items-baseline">Montant TTC<Lu k="montant" lu={lu} /></Label>
+                  <div className="flex gap-2">
+                    <Input inputMode="decimal" className="min-w-0 flex-1" data-testid="depense-montant" value={f.montant} onChange={(e) => saisir("montant", { montant: e.target.value })} />
+                    <select aria-label="Devise" data-testid="depense-devise" value={f.devise} onChange={(e) => saisir("devise", { devise: e.target.value })} className="h-10 w-24 shrink-0 rounded-md border border-input bg-background px-2 text-sm">
+                      <option value="MAD">MAD</option><option value="EUR">€ euro</option><option value="USD">$ dollar</option>
+                    </select>
+                  </div>
+                  {f.devise !== "MAD" && <p className="mt-1 text-xs text-muted-foreground" data-testid="aide-devise">Ticket en {f.devise === "EUR" ? "euros" : "dollars"} : ce montant n'entre pas dans le total en dirhams du mois.</p>}
+                </div>
                 <div data-lu={lu.has("tva")} style={{ "--i": 4 } as any}><Label className="flex flex-wrap items-baseline">TVA (facultatif)<Lu k="tva" lu={lu} /></Label><Input inputMode="decimal" value={f.tva} onChange={(e) => saisir("tva", { tva: e.target.value })} /></div>
                 <div data-lu={lu.has("date")} style={{ "--i": 1 } as any}><Label className="flex flex-wrap items-baseline">Date<Lu k="date" lu={lu} /></Label><Input type="date" className="min-w-0 w-full max-w-full appearance-none text-left" data-testid="depense-date" value={f.date} onChange={(e) => saisir("date", { date: e.target.value })} /></div>
                 <div className="sm:col-span-2" data-lu={lu.has("fournisseur")} style={{ "--i": 2 } as any}><Label className="flex flex-wrap items-baseline">Fournisseur / commerce<Lu k="fournisseur" lu={lu} /></Label><Input data-testid="depense-fournisseur" value={f.fournisseur} onChange={(e) => saisir("fournisseur", { fournisseur: e.target.value })} /></div>
@@ -413,7 +420,7 @@ export default function DepensesAdmin() {
               </div>
               <div className="flex items-center justify-between gap-2 pt-1">
                 {f.id ? <Button variant="ghost" className="text-[#9C4A2C] gap-1.5" onClick={supprimer} disabled={occupe} data-testid="supprimer-depense"><Trash2 className="h-4 w-4" /> Supprimer</Button> : <span />}
-                <Button onClick={enregistrer} disabled={occupe || lecture === "cours"} data-testid="enregistrer-depense">{lecture === "cours" ? "Lecture en cours…" : nombreDepuisTexte(f.montant) ? `Enregistrer ${mad(nombreDepuisTexte(f.montant)!)}` : "Enregistrer"}</Button>
+                <Button onClick={enregistrer} disabled={occupe || lecture === "cours"} data-testid="enregistrer-depense">{lecture === "cours" ? "Lecture en cours…" : nombreDepuisTexte(f.montant) ? `Enregistrer ${mad(nombreDepuisTexte(f.montant)!, f.devise)}` : "Enregistrer"}</Button>
               </div>
             </div>
           )}

@@ -1,7 +1,7 @@
 /** Logique pure des dépenses (testée à part) : totaux, mois, export pour le comptable. */
 export interface Depense {
   id: string; date_depense: string; fournisseur: string | null; montant_ttc: number; tva: number | null; categorie: string;
-  fournisseur_ice?: string | null; fournisseur_if?: string | null; moyen_paiement: string | null; devis_id: string | null; note: string | null; justificatifs: string[]; cree_par?: string;
+  fournisseur_ice?: string | null; fournisseur_if?: string | null; devise?: string | null; moyen_paiement: string | null; devis_id: string | null; note: string | null; justificatifs: string[]; cree_par?: string;
 }
 
 /** « 1 200,50 », « 12.5 », « 85 MAD » → nombre ; null si illisible. Jamais d'exception. */
@@ -13,12 +13,19 @@ export function nombreDepuisTexte(t: string | number | null | undefined): number
 }
 
 /** Somme exacte au centime (évite 0,1 + 0,2). */
-export const totalDepenses = (l: Pick<Depense, "montant_ttc">[]) => Math.round(l.reduce((t, x) => t + Math.round(Number(x.montant_ttc || 0) * 100), 0)) / 100;
+/** Seules les dépenses en dirhams comptent dans le total en MAD ; les autres monnaies sont totalisées à part (totauxEtrangers). */
+const enMad = (x: { devise?: string | null }) => !x.devise || x.devise === "MAD";
+export const totalDepenses = (l: Pick<Depense, "montant_ttc" | "devise">[]) => Math.round(l.filter(enMad).reduce((t, x) => t + Math.round(Number(x.montant_ttc || 0) * 100), 0)) / 100;
+export function totauxEtrangers(l: Pick<Depense, "montant_ttc" | "devise">[]): [string, number][] {
+  const m = new Map<string, number>();
+  for (const x of l) if (!enMad(x)) m.set(x.devise!, (m.get(x.devise!) ?? 0) + Math.round(Number(x.montant_ttc || 0) * 100));
+  return [...m.entries()].map(([d, v]) => [d, v / 100] as [string, number]);
+}
 
 /** Totaux par catégorie, du plus gros au plus petit. */
-export function totauxParCategorie(l: Pick<Depense, "montant_ttc" | "categorie">[]): [string, number][] {
+export function totauxParCategorie(l: Pick<Depense, "montant_ttc" | "categorie" | "devise">[]): [string, number][] {
   const m = new Map<string, number>();
-  for (const x of l) m.set(x.categorie, (m.get(x.categorie) ?? 0) + Math.round(Number(x.montant_ttc || 0) * 100));
+  for (const x of l.filter(enMad)) m.set(x.categorie, (m.get(x.categorie) ?? 0) + Math.round(Number(x.montant_ttc || 0) * 100));
   return [...m.entries()].map(([c, v]) => [c, v / 100] as [string, number]).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "fr"));
 }
 
@@ -39,12 +46,12 @@ export const nb = (n: number | null | undefined) => (n == null ? "" : n.toFixed(
 
 /** CSV pour Excel (séparateur « ; », virgule décimale). L'appelant ajoute le BOM UTF-8. */
 export function csvDepenses(l: Depense[], nomEvenement: (id: string | null) => string = () => ""): string {
-  const tete = ["Date", "Fournisseur", "ICE fournisseur", "IF fournisseur", "Catégorie", "Montant TTC (MAD)", "TVA (MAD)", "Payé par", "Événement", "Note", "Justificatifs"];
+  const tete = ["Date", "Fournisseur", "ICE fournisseur", "IF fournisseur", "Catégorie", "Montant TTC", "Devise", "TVA", "Payé par", "Événement", "Note", "Justificatifs"];
   const lignes = [...l].sort((a, b) => a.date_depense.localeCompare(b.date_depense)).map((x) => [
-    x.date_depense.split("-").reverse().join("/"), x.fournisseur ?? "", x.fournisseur_ice ?? "", x.fournisseur_if ?? "", x.categorie, nb(x.montant_ttc), nb(x.tva), x.moyen_paiement ? MOYENS[x.moyen_paiement] ?? x.moyen_paiement : "",
+    x.date_depense.split("-").reverse().join("/"), x.fournisseur ?? "", x.fournisseur_ice ?? "", x.fournisseur_if ?? "", x.categorie, nb(x.montant_ttc), x.devise ?? "MAD", nb(x.tva), x.moyen_paiement ? MOYENS[x.moyen_paiement] ?? x.moyen_paiement : "",
     nomEvenement(x.devis_id), x.note ?? "", (x.justificatifs ?? []).map((c, i) => nomFichierJustificatif(x, i, c)).join(" | "),
   ]);
-  const total = ["", "", "", "", "TOTAL", nb(totalDepenses(l)), "", "", "", "", ""];
+  const total = ["", "", "", "", "TOTAL", nb(totalDepenses(l)), "MAD", "", "", "", "", ""];
   // ICE et IF : uniquement des chiffres (validés à la saisie) ; forcés en texte pour qu'Excel garde les 15 chiffres et les zéros du début
   const texteExcel = (v: unknown) => (/^\d{3,15}$/.test(String(v ?? "")) ? `"=""${v}"""` : cellule(v));
   return [tete, ...lignes, total].map((r) => r.map((v, i) => (i === 2 || i === 3 ? texteExcel(v) : cellule(v))).join(";")).join("\r\n") + "\r\n";
