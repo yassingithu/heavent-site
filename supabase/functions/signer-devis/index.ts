@@ -75,7 +75,7 @@ serve(async (req) => {
     if (!d || d.statut === "annule") return json({ error: "Ce devis n'est plus disponible. Contactez-nous." }, 404);
     if (d.signe_le) return json({ error: "Ce devis a déjà été signé." }, 409);
     if (d.statut === "refuse") return json({ error: "Ce devis a été refusé. Contactez-nous pour une nouvelle proposition." }, 409);
-    const aujourdhui = new Date().toISOString().slice(0, 10); // heure du Maroc
+    const aujourdhui = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Casablanca" }).format(new Date());
     if (d.date_validite && d.date_validite < aujourdhui) return json({ error: "Ce devis a expiré. Contactez-nous pour le renouveler." }, 410);
 
     const { data: lignes } = await db.from("devis_lignes").select("designation, quantite, duree, unite, prix_unitaire, remise_pct").eq("devis_id", d.id).order("ordre");

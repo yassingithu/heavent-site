@@ -32,7 +32,7 @@ export function finSignature(dates: any[], dateFin: string): Date {
   const jour = ds[ds.length - 1]?.date ?? dateFin;
   const [a, m] = String(jour).split("-").map(Number);
   const suivant = m === 12 ? `${a + 1}-01` : `${a}-${String(m + 1).padStart(2, "0")}`;
-  return new Date(new Date(`${suivant}-01T00:00:00Z`).getTime() - 60 * 1000);
+  return new Date(instantMaroc(`${suivant}-01`, "00:00").getTime() - 60 * 1000);
 }
 
 async function empreinte(texte: string) {

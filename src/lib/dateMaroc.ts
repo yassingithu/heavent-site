@@ -15,7 +15,7 @@ export const heureMaroc = (d: Date = new Date()) => Number(new Intl.DateTimeForm
 export const dateLongueMaroc = (d: Date = new Date()) => new Intl.DateTimeFormat("fr-FR", { timeZone: FUSEAU, weekday: "long", day: "numeric", month: "long" }).format(d);
 
 /** AAAA-MM-JJ du jour au Maroc, décalé de n jours. */
-export const jourMarocPlus = (n: number) => aujourdhuiMaroc(new Date(Date.now() + n * 864e5));
+export const jourMarocPlus = (n: number) => { const d = new Date(`${aujourdhuiMaroc()}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
 /** Instant réel d'une date + heure saisies à l'heure du Maroc (+01 la plupart de l'année, +00 pendant le Ramadan). */
 export const instantMaroc = (date: string, hhmm = "00:00"): Date => {
