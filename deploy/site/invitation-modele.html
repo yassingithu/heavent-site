@@ -16,6 +16,9 @@
     <link rel="preconnect" href="https://mapiwnsjsluiwmnulhqk.supabase.co" crossorigin>
     <meta name="author" content="Heavent People Agency" />
     
+    <!-- Ouverture de l'accueil : le masque et la vidéo du rideau sont demandés dès le début -->
+    <link rel="preload" as="fetch" href="/ouvertures/rideau-masque.json" crossorigin>
+    <link rel="preload" as="video" href="/ouvertures/rideau.mp4" type="video/mp4">
     <!-- Polices du site public, servies en local (direction « Seuil ») -->
     <link rel="preload" as="font" type="font/woff2" href="/polices/gloock-latin-400-normal.woff2" crossorigin>
     <link rel="preload" as="font" type="font/woff2" href="/polices/jost-latin-400-normal.woff2" crossorigin>
@@ -60,7 +63,7 @@
             setTimeout(window.finOuverture, 3600);
           };
           // Rideau en vidéo : vraie étoffe filmée, découpée image par image (fond transparent : la page se découvre derrière).
-          // Si la vidéo n'est pas prête en 1,6 s, ne démarre pas, ou si l'économie de données est active : on garde le rideau en CSS.
+          // Si la vidéo n'est pas prête en 3,2 s, ne démarre pas, ou si l'économie de données est active : on garde le rideau en CSS.
           var video = !/[?&]ouverture=css/.test(location.search) && !(navigator.connection && navigator.connection.saveData);
           var lancerVideo = function () {
             var cv = document.querySelector(".s-rideau-toile"), ctx = cv && cv.getContext && cv.getContext("2d"), v = document.createElement("video");
@@ -120,7 +123,7 @@
             v.addEventListener("loadeddata", demarre); v.addEventListener("canplay", demarre);
             v.src = src; v.load();
             document.body.appendChild(v); v.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-9px;top:-9px";
-            setTimeout(function () { if (!parti) { parti = true; lancerCSS(); } }, 1600);
+            setTimeout(function () { if (!parti) { parti = true; lancerCSS(); } }, 3200);
             setTimeout(window.finOuverture, 7000);
             return true;
           };
