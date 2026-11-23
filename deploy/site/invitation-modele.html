@@ -65,14 +65,32 @@
           // Rideau en vidéo : vraie étoffe filmée, découpée image par image (fond transparent : la page se découvre derrière).
           // Si la vidéo n'est pas prête en 3,2 s, ne démarre pas, ou si l'économie de données est active : on garde le rideau en CSS.
           var video = !/[?&]ouverture=css/.test(location.search) && !(navigator.connection && navigator.connection.saveData);
+          var journal = window.__ouvJournal = [];
+          var note = function (m) { journal.push(Math.round(performance.now()) + " ms  " + m); };
+          // Vidéo et masque sont demandés tout de suite (avant même que la page soit lue) ; le dessin attend le canevas.
+          var V = null, M = null, fn = null;
+          if (video) {
+            try {
+              V = document.createElement("video");
+              V.muted = true; V.defaultMuted = true; V.playsInline = true; V.preload = "auto";
+              V.setAttribute("muted", ""); V.setAttribute("playsinline", ""); V.setAttribute("aria-hidden", "true");
+              var mp4 = V.canPlayType('video/mp4; codecs="avc1.4D401E"'), webm = V.canPlayType('video/webm; codecs="vp9"');
+              note("mp4=" + (mp4 || "non") + " webm=" + (webm || "non"));
+              var src = mp4 ? "/ouvertures/rideau.mp4" : webm ? "/ouvertures/rideau.webm" : "";
+              if (src) {
+                ["loadstart", "loadedmetadata", "loadeddata", "canplay", "playing", "stalled", "suspend", "abort", "ended"].forEach(function (n) { V.addEventListener(n, function () { note("video:" + n + " (état " + V.readyState + ")"); if (fn && (n === "loadeddata" || n === "canplay")) fn(); }); });
+                V.addEventListener("error", function () { note("video:ERREUR code " + (V.error && V.error.code)); });
+                V.src = src; V.load();
+                fetch("/ouvertures/rideau-masque.json").then(function (r) { return r.json(); }).then(function (j) { M = j; note("masque ok"); if (fn) fn(); }).catch(function (e) { note("masque ERREUR " + e); });
+              } else video = false;
+            } catch (e) { note("préparation ERREUR " + e); video = false; }
+          }
+          if (video) d.classList.add("ouv-attente");
           var lancerVideo = function () {
-            var cv = document.querySelector(".s-rideau-toile"), ctx = cv && cv.getContext && cv.getContext("2d"), v = document.createElement("video");
-            if (!ctx) return false;
-            v.muted = true; v.defaultMuted = true; v.playsInline = true; v.preload = "auto";
-            v.setAttribute("muted", ""); v.setAttribute("playsinline", ""); v.setAttribute("aria-hidden", "true");
-            var src = v.canPlayType('video/mp4; codecs="avc1.4D401E"') ? "/ouvertures/rideau.mp4" : v.canPlayType('video/webm; codecs="vp9"') ? "/ouvertures/rideau.webm" : "";
-            if (!src) return false;
-            var m = null, parti = false, fini = false, ech = 1.45;
+            var cv = document.querySelector(".s-rideau-toile"), ctx = cv && cv.getContext && cv.getContext("2d"), v = V;
+            if (!ctx || !v) { note("pas de canevas"); return false; }
+            document.body.appendChild(v); v.style.cssText = "position:fixed;width:2px;height:2px;opacity:.01;pointer-events:none;left:0;top:0";
+            var parti = false, ech = 1.45;
             var taille = function () { var k = Math.min(window.devicePixelRatio || 1, 1.5, 1400 / innerWidth); cv.width = Math.round(innerWidth * k); cv.height = Math.round(innerHeight * k); };
             taille(); addEventListener("resize", taille);
             var courbe = function (c, pts) {
@@ -81,26 +99,24 @@
               c.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
             };
             var dessiner = function () {
-              var W = cv.width, H = cv.height, vw = v.videoWidth, vh = v.videoHeight; if (!vw) return;
-              var dpr = W / innerWidth, K = H / vh, large = W / H > 0.8, a = 0.3, sw = vw * a * K, mid = W - 2 * sw;
-              var sx = W / vw, k = sx < K ? K : sx, lw = vw * k, ox = (W - lw) / 2;
-              // Écran large : les deux bords du rideau gardent leurs vraies proportions, seule la bande du milieu s'étire.
-              var X = function (u) { return large ? (u < a ? u * vw * K : u > 1 - a ? W - (1 - u) * vw * K : sw + ((u - a) / (1 - 2 * a)) * mid) : ox + u * lw; };
+              var m = M, W = cv.width, H = cv.height, vw = v.videoWidth, vh = v.videoHeight; if (!vw) return;
+              var dpr = W / innerWidth, k0 = Math.max(W / vw, H / vh), large = W / H > 0.8;
+              // Téléphone : le film couvre l'écran sans déformation. Écran large : étiré en largeur, mais doucement (au plus 1,67 fois), pour garder des plis naturels.
+              var sx = large ? W / vw : k0, sy = large ? Math.max(H / vh, sx * 0.6) : k0, lw = vw * sx, lh = vh * sy, ox = (W - lw) / 2;
+              var X = function (u) { return ox + u * lw; };
               var f = Math.max(0, Math.min(m.n - 1.001, v.currentTime * m.fps)), i = Math.floor(f), t = f - i, n = m.L[0].length, r, g, pl = [], pr = [];
               for (r = 0; r < n; r++) {
-                var l0 = m.L[i][r] * (1 - t) + m.L[i + 1][r] * t, r0 = m.R[i][r] * (1 - t) + m.R[i + 1][r] * t, ouvert = r0 - l0 > 20, y = (r / (n - 1)) * H;
+                var l0 = m.L[i][r] * (1 - t) + m.L[i + 1][r] * t, r0 = m.R[i][r] * (1 - t) + m.R[i + 1][r] * t, ouvert = r0 - l0 > 20, y = (r / (n - 1)) * lh;
                 pl.push([X(l0 / 1000) + (ouvert ? -2.5 * dpr : 1), y]); pr.push([X(r0 / 1000) + (ouvert ? 2.5 * dpr : -1), y]);
               }
-              var cl = new Path2D(), cr = new Path2D(), tl = new Path2D(), tr = new Path2D();
-              cl.moveTo(-20, 0); courbe(cl, pl); cl.lineTo(-20, H); cl.closePath(); cr.moveTo(W + 20, 0); courbe(cr, pr); cr.lineTo(W + 20, H); cr.closePath();
+              var cl = new Path2D(), cr = new Path2D();
+              cl.moveTo(-20, 0); courbe(cl, pl); cl.lineTo(-20, lh); cl.closePath(); cr.moveTo(W + 20, 0); courbe(cr, pr); cr.lineTo(W + 20, lh); cr.closePath();
               ctx.clearRect(0, 0, W, H);
               [cl, cr].forEach(function (c) {
                 ctx.save(); ctx.clip(c);
-                if (large) { ctx.drawImage(v, 0, 0, vw * a, vh, 0, 0, sw, H); ctx.drawImage(v, vw * (1 - a), 0, vw * a, vh, W - sw, 0, sw, H); ctx.drawImage(v, vw * a, 0, vw * (1 - 2 * a), vh, sw, 0, mid, H); }
-                else ctx.drawImage(v, ox, 0, lw, H);
+                ctx.drawImage(v, ox, 0, lw, lh);
                 ctx.restore();
               });
-              // fin liseré doré le long du bord qui s'ouvre (signature Heavent, masque aussi les défauts du détourage)
               if (pr[0][0] - pl[0][0] > 6 * dpr) {
                 ctx.lineWidth = 1.2 * dpr; ctx.strokeStyle = "rgba(228,212,154,.5)"; ctx.lineJoin = "round";
                 [pl, pr].forEach(function (pts) { var c = new Path2D(); c.moveTo(pts[0][0], pts[0][1]); for (g = 0; g < pts.length - 1; g++) c.quadraticCurveTo(pts[g][0], pts[g][1], (pts[g][0] + pts[g + 1][0]) / 2, (pts[g][1] + pts[g + 1][1]) / 2); ctx.stroke(c); });
@@ -112,23 +128,26 @@
               if (v.currentTime >= 2.8 || v.ended) { d.classList.add("ouv-sortie"); setTimeout(window.finOuverture, 800); return; }
               requestAnimationFrame(boucle);
             };
-            var demarre = function () {
-              if (parti || !m || v.readyState < 2) return; parti = true; fini = true;
+            var repli = function (pourquoi) { note("REPLI sur le rideau CSS : " + pourquoi); if (parti === "css") return; parti = "css"; d.classList.remove("ouv-video", "ouv-pret", "ouv-attente"); lancerCSS(); };
+            fn = function () {
+              if (parti || !M || v.readyState < 2) return; parti = true;
               d.classList.add("ouv-video", "ouv-pret"); v.defaultPlaybackRate = ech; v.playbackRate = ech;
-              var p = v.play();
-              var ok = function () { requestAnimationFrame(boucle); };
-              if (p && p.then) p.then(ok, function () { d.classList.remove("ouv-video", "ouv-pret"); lancerCSS(); }); else ok();
+              var p = v.play(), ok = function () { note("lecture lancée"); requestAnimationFrame(boucle); };
+              if (p && p.then) p.then(ok, function (e) { repli("lecture refusée (" + (e && e.name) + ")"); }); else ok();
             };
-            fetch("/ouvertures/rideau-masque.json").then(function (r) { return r.json(); }).then(function (j) { m = j; demarre(); }).catch(function () {});
-            v.addEventListener("loadeddata", demarre); v.addEventListener("canplay", demarre);
-            v.src = src; v.load();
-            document.body.appendChild(v); v.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-9px;top:-9px";
-            setTimeout(function () { if (!parti) { parti = true; lancerCSS(); } }, 3200);
-            setTimeout(window.finOuverture, 7000);
+            fn();
+            setTimeout(function () { if (!parti) repli("vidéo pas prête après 4 s"); }, 4000);
+            setTimeout(window.finOuverture, 8000);
+            // ?ouverture=diag : affiche le journal à l'écran (pour comprendre un problème sur un navigateur précis)
+            if (/[?&]ouverture=diag/.test(location.search)) {
+              var box = document.createElement("pre");
+              box.style.cssText = "position:fixed;left:8px;top:8px;z-index:99999;margin:0;padding:8px;max-width:90vw;background:rgba(0,0,0,.85);color:#9f9;font:11px/1.35 monospace;white-space:pre-wrap;pointer-events:none";
+              document.body.appendChild(box); setInterval(function () { box.textContent = journal.join("\n"); }, 250);
+            }
             return true;
           };
           // le script est dans <head> : le canevas n'existe qu'une fois la page lue
-          var demarrer = function () { if (!(video && lancerVideo())) lancerCSS(); };
+          var demarrer = function () { if (!(video && lancerVideo())) { d.classList.remove("ouv-attente"); lancerCSS(); } };
           if (document.body) demarrer(); else document.addEventListener("DOMContentLoaded", demarrer);
         } catch (e) { /* navigation privée : pas d'ouverture */ }
       })();
@@ -146,11 +165,11 @@
     <meta name="twitter:image" content="https://heaventagency.com/invitation-og.jpg" />
     
     <!-- Balise Google : chargée seulement après consentement (voir src/lib/audience.ts) -->
-    <script type="module" crossorigin src="/assets/index-Hu2OS3k8.js"></script>
+    <script type="module" crossorigin src="/assets/index-BJ9EjUjJ.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/react-CEfzfvak.js">
     <link rel="modulepreload" crossorigin href="/assets/supabase-BLuESGw6.js">
     <link rel="modulepreload" crossorigin href="/assets/ui-Zy9RkNrH.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-Cj6yuIdH.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-C2fbxRfJ.css">
   </head>
 
   <body>
