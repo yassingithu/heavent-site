@@ -44,19 +44,89 @@
           posee(); document.addEventListener("DOMContentLoaded", posee);
           // onglet masqué puis revenu après la fin prévue : on retire le rideau tout de suite
           var t0 = Date.now();
-          document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible" && Date.now() - t0 > 2300) window.finOuverture(true); });
+          document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible" && Date.now() - t0 > 3000) window.finOuverture(true); });
           if (!rideau) { setTimeout(window.finOuverture, 1500); return; }
-          // Le tissu est préparé (deux images légères) avant de bouger ; sans lui, un tissu dégradé le remplace. Garde-fou : jamais plus de 3,6 s.
-          var prets = 0, lance = false;
-          var go = function (sans) { if (lance) return; lance = true; if (sans) d.classList.add("ouv-sans-texture"); d.classList.add("ouv-pret"); setTimeout(window.finOuverture, 2300); };
-          ["g", "d"].forEach(function (c) {
-            var im = new Image();
-            im.onload = function () { if (++prets === 2) go(false); };
-            im.onerror = function () { go(true); };
-            im.src = "/ouvertures/site-rideau-" + c + ".webp";
-          });
-          setTimeout(function () { go(prets < 2); }, 700);
-          setTimeout(window.finOuverture, 3600);
+          // Rideau en CSS (secours) : le tissu est préparé (deux images légères) avant de bouger ; sans lui, un tissu dégradé le remplace. Jamais plus de 3,6 s.
+          var lancerCSS = function () {
+            var prets = 0, lance = false;
+            var go = function (sans) { if (lance) return; lance = true; if (sans) d.classList.add("ouv-sans-texture"); d.classList.add("ouv-pret"); setTimeout(window.finOuverture, 2300); };
+            ["g", "d"].forEach(function (c) {
+              var im = new Image();
+              im.onload = function () { if (++prets === 2) go(false); };
+              im.onerror = function () { go(true); };
+              im.src = "/ouvertures/site-rideau-" + c + ".webp";
+            });
+            setTimeout(function () { go(prets < 2); }, 700);
+            setTimeout(window.finOuverture, 3600);
+          };
+          // Rideau en vidéo : vraie étoffe filmée, découpée image par image (fond transparent : la page se découvre derrière).
+          // Si la vidéo n'est pas prête en 1,6 s, ne démarre pas, ou si l'économie de données est active : on garde le rideau en CSS.
+          var video = !/[?&]ouverture=css/.test(location.search) && !(navigator.connection && navigator.connection.saveData);
+          var lancerVideo = function () {
+            var cv = document.querySelector(".s-rideau-toile"), ctx = cv && cv.getContext && cv.getContext("2d"), v = document.createElement("video");
+            if (!ctx) return false;
+            v.muted = true; v.defaultMuted = true; v.playsInline = true; v.preload = "auto";
+            v.setAttribute("muted", ""); v.setAttribute("playsinline", ""); v.setAttribute("aria-hidden", "true");
+            var src = v.canPlayType('video/mp4; codecs="avc1.4D401E"') ? "/ouvertures/rideau.mp4" : v.canPlayType('video/webm; codecs="vp9"') ? "/ouvertures/rideau.webm" : "";
+            if (!src) return false;
+            var m = null, parti = false, fini = false, ech = 1.45;
+            var taille = function () { var k = Math.min(window.devicePixelRatio || 1, 1.5, 1400 / innerWidth); cv.width = Math.round(innerWidth * k); cv.height = Math.round(innerHeight * k); };
+            taille(); addEventListener("resize", taille);
+            var courbe = function (c, pts) {
+              c.lineTo(pts[0][0], pts[0][1]);
+              for (var q = 0; q < pts.length - 1; q++) c.quadraticCurveTo(pts[q][0], pts[q][1], (pts[q][0] + pts[q + 1][0]) / 2, (pts[q][1] + pts[q + 1][1]) / 2);
+              c.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+            };
+            var dessiner = function () {
+              var W = cv.width, H = cv.height, vw = v.videoWidth, vh = v.videoHeight; if (!vw) return;
+              var dpr = W / innerWidth, K = H / vh, large = W / H > 0.8, a = 0.3, sw = vw * a * K, mid = W - 2 * sw;
+              var sx = W / vw, k = sx < K ? K : sx, lw = vw * k, ox = (W - lw) / 2;
+              // Écran large : les deux bords du rideau gardent leurs vraies proportions, seule la bande du milieu s'étire.
+              var X = function (u) { return large ? (u < a ? u * vw * K : u > 1 - a ? W - (1 - u) * vw * K : sw + ((u - a) / (1 - 2 * a)) * mid) : ox + u * lw; };
+              var f = Math.max(0, Math.min(m.n - 1.001, v.currentTime * m.fps)), i = Math.floor(f), t = f - i, n = m.L[0].length, r, g, pl = [], pr = [];
+              for (r = 0; r < n; r++) {
+                var l0 = m.L[i][r] * (1 - t) + m.L[i + 1][r] * t, r0 = m.R[i][r] * (1 - t) + m.R[i + 1][r] * t, ouvert = r0 - l0 > 20, y = (r / (n - 1)) * H;
+                pl.push([X(l0 / 1000) + (ouvert ? -2.5 * dpr : 1), y]); pr.push([X(r0 / 1000) + (ouvert ? 2.5 * dpr : -1), y]);
+              }
+              var cl = new Path2D(), cr = new Path2D(), tl = new Path2D(), tr = new Path2D();
+              cl.moveTo(-20, 0); courbe(cl, pl); cl.lineTo(-20, H); cl.closePath(); cr.moveTo(W + 20, 0); courbe(cr, pr); cr.lineTo(W + 20, H); cr.closePath();
+              ctx.clearRect(0, 0, W, H);
+              [cl, cr].forEach(function (c) {
+                ctx.save(); ctx.clip(c);
+                if (large) { ctx.drawImage(v, 0, 0, vw * a, vh, 0, 0, sw, H); ctx.drawImage(v, vw * (1 - a), 0, vw * a, vh, W - sw, 0, sw, H); ctx.drawImage(v, vw * a, 0, vw * (1 - 2 * a), vh, sw, 0, mid, H); }
+                else ctx.drawImage(v, ox, 0, lw, H);
+                ctx.restore();
+              });
+              // fin liseré doré le long du bord qui s'ouvre (signature Heavent, masque aussi les défauts du détourage)
+              if (pr[0][0] - pl[0][0] > 6 * dpr) {
+                ctx.lineWidth = 1.2 * dpr; ctx.strokeStyle = "rgba(228,212,154,.5)"; ctx.lineJoin = "round";
+                [pl, pr].forEach(function (pts) { var c = new Path2D(); c.moveTo(pts[0][0], pts[0][1]); for (g = 0; g < pts.length - 1; g++) c.quadraticCurveTo(pts[g][0], pts[g][1], (pts[g][0] + pts[g + 1][0]) / 2, (pts[g][1] + pts[g + 1][1]) / 2); ctx.stroke(c); });
+              }
+            };
+            var boucle = function () {
+              if (d.classList.contains("ouverture-finie")) return;
+              dessiner();
+              if (v.currentTime >= 2.8 || v.ended) { d.classList.add("ouv-sortie"); setTimeout(window.finOuverture, 800); return; }
+              requestAnimationFrame(boucle);
+            };
+            var demarre = function () {
+              if (parti || !m || v.readyState < 2) return; parti = true; fini = true;
+              d.classList.add("ouv-video", "ouv-pret"); v.defaultPlaybackRate = ech; v.playbackRate = ech;
+              var p = v.play();
+              var ok = function () { requestAnimationFrame(boucle); };
+              if (p && p.then) p.then(ok, function () { d.classList.remove("ouv-video", "ouv-pret"); lancerCSS(); }); else ok();
+            };
+            fetch("/ouvertures/rideau-masque.json").then(function (r) { return r.json(); }).then(function (j) { m = j; demarre(); }).catch(function () {});
+            v.addEventListener("loadeddata", demarre); v.addEventListener("canplay", demarre);
+            v.src = src; v.load();
+            document.body.appendChild(v); v.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-9px;top:-9px";
+            setTimeout(function () { if (!parti) { parti = true; lancerCSS(); } }, 1600);
+            setTimeout(window.finOuverture, 7000);
+            return true;
+          };
+          // le script est dans <head> : le canevas n'existe qu'une fois la page lue
+          var demarrer = function () { if (!(video && lancerVideo())) lancerCSS(); };
+          if (document.body) demarrer(); else document.addEventListener("DOMContentLoaded", demarrer);
         } catch (e) { /* navigation privée : pas d'ouverture */ }
       })();
     </script>
@@ -73,11 +143,11 @@
     <meta name="twitter:image" content="https://heaventagency.com/invitation-og.jpg" />
     
     <!-- Balise Google : chargée seulement après consentement (voir src/lib/audience.ts) -->
-    <script type="module" crossorigin src="/assets/index-BWo_3Dtf.js"></script>
+    <script type="module" crossorigin src="/assets/index-Hu2OS3k8.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/react-CEfzfvak.js">
     <link rel="modulepreload" crossorigin href="/assets/supabase-BLuESGw6.js">
     <link rel="modulepreload" crossorigin href="/assets/ui-Zy9RkNrH.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-CyfQmbVN.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-Cj6yuIdH.css">
   </head>
 
   <body>
@@ -87,9 +157,10 @@
     </div>
     <div class="s-rideau" aria-hidden="true" onclick="window.finOuverture && window.finOuverture(true)">
       <div class="s-rideau-scene"><img class="s-rideau-mono" src="/seuil/mono-or.png" alt="" width="158" height="212"></div>
+      <canvas class="s-rideau-toile"></canvas>
       <div class="s-pan g"><i class="rf"></i></div><div class="s-pan d"><i class="rf"></i></div>
     </div>
-    <button class="s-passer" type="button" onclick="window.finOuverture && window.finOuverture(true)">Passer →</button>
+    <button class="s-passer" type="button" aria-label="Passer l'animation d'ouverture" onclick="window.finOuverture && window.finOuverture(true)">Passer →</button>
     <div id="root"></div>
   </body>
 </html>
