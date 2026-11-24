@@ -391,6 +391,38 @@ await scenario("Admin : devis rapide (formule Mariage, quantités auto, mise à 
   await ctx.close();
 });
 
+// 3 ter bis. Mail d'accompagnement du devis : texte adapté, options, copie
+await scenario("Admin : mail d'accompagnement du devis (modèles, frais, délai, texte modifiable)", async (notes) => {
+  const base = nouvelleBase();
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN, { mobile: true });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(800);
+  await page.getByRole("button", { name: /Nouveau devis/ }).click(); await page.waitForTimeout(600);
+  await page.getByText("Nom du contact").locator("..").locator("input").fill("Aissam El Hassani");
+  await page.getByText("Nombre d'invités / participants").locator("..").locator("input").fill("140");
+  await page.getByTestId("formule-entreprise").click(); await page.waitForTimeout(400);
+  await page.getByTestId("mail-devis").click(); await page.waitForTimeout(500);
+  const texte = async () => page.getByTestId("mail-texte").inputValue();
+  let t = await texte();
+  verifier(t.startsWith("Bonjour Aissam,"), "le prénom n'est pas repris");
+  verifier(/Ce qui n'est pas inclus|déjà chiffré/.test(t), "le bloc des frais manque");
+  verifier(/hôtesses, ou un mélange/.test(t), "la question hôtesses / hôtes manque");
+  verifier(/confirmation/.test(t), "le délai de confirmation manque");
+  await page.getByTestId("mail-frais").uncheck(); await page.waitForTimeout(300);
+  t = await texte();
+  verifier(!/Ce qui n'est pas inclus|déjà chiffré/.test(t), "le bloc des frais reste après décochage");
+  await page.getByTestId("mail-modele-nawar").click(); await page.waitForTimeout(300);
+  t = await texte();
+  verifier(/Nawar/.test(t) && /pour vos 140 invités/.test(t) && !/compose son parfum/i.test(t), "le texte Nawar est incorrect");
+  await page.getByTestId("mail-texte").fill("Texte retouché"); await page.waitForTimeout(200);
+  verifier(await page.getByTestId("mail-retouche").count(), "pas d'avertissement quand le texte est retouché");
+  verifier((await page.getByTestId("mail-objet").innerText()).startsWith("Devis"), "objet absent");
+  await page.screenshot({ path: `${CAPTURES}/6-mail-devis-iphone.png`, fullPage: true });
+  notes.push("mail : prénom, frais, question équipe, délai, modèle Nawar, avertissement de retouche OK");
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
 // 3 ter ter. Devis à plusieurs événements (dates / villes différentes) : groupes, sous-totaux, duplication, enregistrement
 await scenario("Admin : devis à plusieurs événements (groupes, sous-totaux, duplication)", async (notes) => {
   const base = nouvelleBase();

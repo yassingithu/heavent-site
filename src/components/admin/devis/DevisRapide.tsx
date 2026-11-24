@@ -23,6 +23,7 @@ import {
   calculerTotaux, dateFr, dateHeureFr, devisDepuisBase, lienClientDevis, ligneVide, money, nouveauDevis, sousTotalGroupe, today, totalLigne,
 } from "./devisUtils";
 import { telechargerDevisPdf } from "./devisPdf";
+import MailDevis from "./MailDevis";
 import { telechargerImageDevis, FormatImage } from "./devisImage";
 import CataloguePrestations from "./CataloguePrestations";
 import ParametresAgence from "./ParametresAgence";
@@ -1232,6 +1233,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                     {form.rdv_message && <div className="mt-1 whitespace-pre-line">{form.rdv_message}</div>}
                   </div>
                 )}
+                <MailDevis devis={form} catalogue={catalogue} tauxTva={Number(form.taux_tva)} devise={devise} marquerEnvoye={() => enregistrer("envoye")} />
                 <Button variant="outline" onClick={envoyerAuClient} disabled={saving || envoiEnCours || !!form.signe_le} data-testid="envoyer-client">
                   <Send className="h-4 w-4 mr-1" /> {envoiEnCours ? "Envoi…" : form.date_envoi ? "Renvoyer au client pour signature" : "Envoyer au client pour signature"}
                 </Button>
