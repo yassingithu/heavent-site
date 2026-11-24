@@ -43,6 +43,17 @@ async function abonner(jeton: string, pageId?: string, p = "") {
   await enregistrer(p + "instagram_abonne_le", new Date().toISOString());
 }
 
+/** Copie une image dans le stockage Supabase (adresse publique stable) : Instagram n'arrive pas toujours à télécharger celles du site */
+async function heberger(url: string, postId: string, i: number): Promise<string> {
+  const r = await fetch(url);
+  const type = r.headers.get("content-type") ?? "";
+  if (!r.ok || !type.startsWith("image/")) throw new Error(`le site renvoie ${r.status} ${type} pour ${url}`);
+  const chemin = `instagram/carrousels/${postId}/${i + 1}.jpg`;
+  const { error } = await db.storage.from("assets").upload(chemin, new Uint8Array(await r.arrayBuffer()), { contentType: "image/jpeg", upsert: true });
+  if (error) throw new Error(`copie de l'image impossible : ${error.message}`);
+  return `${db.storage.from("assets").getPublicUrl(chemin).data.publicUrl}?v=${Date.now()}`;
+}
+
 /** Attend qu'Instagram ait fini de préparer un média (image, vidéo ou carrousel) */
 async function attendre(id: string, jeton: string, essais: number, refus: string) {
   for (let i = 0; i < essais; i++) {
@@ -72,7 +83,7 @@ async function publier(post: any, jeton: string, compte: string, mode?: string) 
       let id = "";
       for (let essai = 1; essai <= 2 && !id; essai++) {
         try {
-          const e = await appel(`${API}/${compte}/media`, { method: "POST", body: new URLSearchParams({ image_url: url, is_carousel_item: "true", access_token: jeton }) });
+          const e = await appel(`${API}/${compte}/media`, { method: "POST", body: new URLSearchParams({ image_url: await heberger(url, post.id, i), is_carousel_item: "true", access_token: jeton }) });
           await attendre(e.id, jeton, 10, "Instagram a refusé l'image");
           id = e.id;
         } catch (err) {
