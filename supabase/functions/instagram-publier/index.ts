@@ -65,10 +65,22 @@ async function publier(post: any, jeton: string, compte: string, mode?: string) 
   } else if (Array.isArray(post.diapositives) && post.diapositives.length > 1) {
     // Carrousel : une image enfant par diapositive (2 à 10), puis le carrousel
     const enfants: string[] = [];
-    for (const url of post.diapositives.slice(0, 10)) {
-      const e = await appel(`${API}/${compte}/media`, { method: "POST", body: new URLSearchParams({ image_url: url, is_carousel_item: "true", access_token: jeton }) });
-      await attendre(e.id, jeton, 10, "Instagram a refusé une image du carrousel");
-      enfants.push(e.id);
+    const urls: string[] = post.diapositives.slice(0, 10);
+    for (let i = 0; i < urls.length; i++) {
+      const url = urls[i];
+      // Instagram télécharge lui-même chaque image : on réessaie une fois si ce téléchargement échoue
+      let id = "";
+      for (let essai = 1; essai <= 2 && !id; essai++) {
+        try {
+          const e = await appel(`${API}/${compte}/media`, { method: "POST", body: new URLSearchParams({ image_url: url, is_carousel_item: "true", access_token: jeton }) });
+          await attendre(e.id, jeton, 10, "Instagram a refusé l'image");
+          id = e.id;
+        } catch (err) {
+          if (essai === 2) throw new Error(`Image ${i + 1}/${urls.length} du carrousel refusée (${url.split("/").pop()}) : ${(err as Error).message}`);
+          await pause(5000);
+        }
+      }
+      enfants.push(id);
     }
     conteneur = await appel(`${API}/${compte}/media`, { method: "POST", body: new URLSearchParams({ media_type: "CAROUSEL", children: enfants.join(","), caption: legende, access_token: jeton }) });
     await attendre(conteneur.id, jeton, 10, "Instagram a refusé le carrousel");
