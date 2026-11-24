@@ -2,13 +2,13 @@
   "nav": {
     "realisations": "Réalisations",
     "home": "Accueil",
-    "staffRegistration": "Inscription Staff",
+    "staffRegistration": "Inscription hôtes",
     "business": "Entreprises",
     "weddings": "Événement",
     "about": "À propos",
     "contact": "Contact",
     "joinTeam": "Rejoindre l'équipe",
-    "staffSpace": "Espace Staff"
+    "staffSpace": "Espace hôtes"
   },
   "home": {
     "heroTitle": "Événements d'Exception",
@@ -260,7 +260,7 @@
     "request_quote": "Demander un devis"
   },
   "dashboard": {
-    "staff_space": "Espace Staff",
+    "staff_space": "Espace hôtes",
     "logout": "Déconnexion",
     "loading": "Chargement...",
     "contracts_tab": "Contrats",
@@ -326,10 +326,10 @@
       "delete_error": "Impossible de supprimer le créneau"
     },
     "account_not_found": "Compte non trouvé",
-    "register_first": "Votre email n'est pas enregistré comme staff. Veuillez vous inscrire d'abord."
+    "register_first": "Votre email n'est pas enregistré comme hôte ou hôtesse. Veuillez vous inscrire d'abord."
   },
   "auth": {
-    "staff_login": "Connexion Staff",
+    "staff_login": "Connexion hôtes",
     "admin_login": "Connexion Administrateur",
     "connect_to_space": "Connectez-vous à votre espace personnel",
     "connect_admin_space": "Accès à l'interface d'administration",
@@ -341,7 +341,7 @@
     "sign_in": "Se connecter",
     "forgot_password": "Mot de passe oublié ?",
     "no_account": "Vous n'avez pas encore de compte ?",
-    "register_as_staff": "S'inscrire comme staff",
+    "register_as_staff": "S'inscrire comme hôte ou hôtesse",
     "password_recovery": "Récupération de mot de passe",
     "enter_email_reset": "Entrez votre email pour recevoir un lien de réinitialisation",
     "sending": "Envoi...",

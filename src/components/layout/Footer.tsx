@@ -18,7 +18,7 @@ const Footer = () => {
           <Link to="/" aria-label={x("Heavent People Agency, accueil")}>
             <img src="/seuil/logo-heavent-or.webp" alt="Heavent People Agency" className="s-logo-pied" width={520} height={153} loading="lazy" />
           </Link>
-          <p style={{ marginTop: 22, maxWidth: "38ch" }}>{x("Hôtesses, staff événementiel et mariages, de Rabat à Marrakech et partout au Maroc.")}</p>
+          <p style={{ marginTop: 22, maxWidth: "38ch" }}>{x("Hôtes et hôtesses, service événementiel et mariages, de Rabat à Marrakech et partout au Maroc.")}</p>
         </div>
 
         <div>

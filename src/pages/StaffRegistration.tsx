@@ -176,7 +176,7 @@ const StaffRegistration = () => {
       // Connexion automatique à l'espace staff
       await supabase.auth.signInWithPassword({ email: data.email.trim().toLowerCase(), password: data.password });
 
-      toast({ title: x("Inscription réussie !"), description: x("Votre espace staff est prêt.") });
+      toast({ title: x("Inscription réussie !"), description: x("Votre espace hôte est prêt.") });
       setStep(6);
 
     } catch (error: any) {
@@ -315,11 +315,11 @@ const StaffRegistration = () => {
             <div className="inline-block text-xs uppercase tracking-widest bg-primary/15 text-[#7A5F1F] font-semibold rounded-full px-3 py-1 mb-3">{x("Badge débloqué · Membre de la team Heavent")}</div>
             <h2 className="text-2xl font-bold mb-4">{x("Bienvenue dans l'équipe !")}</h2>
             <p className="text-muted-foreground mb-6">
-              {x("Votre compte est créé et déjà actif. Vous pouvez dès maintenant indiquer vos disponibilités dans votre espace staff. Un email de bienvenue vous a été envoyé.")}
+              {x("Votre compte est créé et déjà actif. Vous pouvez dès maintenant indiquer vos disponibilités dans votre espace hôte. Un email de bienvenue vous a été envoyé.")}
             </p>
             <div className="space-y-3">
               <Button onClick={() => navigate("/staff-dashboard")} className="w-full">
-                {x("Accéder à mon espace staff")}
+                {x("Accéder à mon espace hôte")}
               </Button>
               <Button variant="outline" onClick={() => navigate("/")} className="w-full">
                 {x("Retour à l'accueil")}

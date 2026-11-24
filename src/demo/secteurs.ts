@@ -35,7 +35,7 @@ export const SECTEURS: Record<Secteur, ConfigSecteur> = {
     site: {
       accroche: "Agence événementielle", titre: "Des événements inoubliables, organisés dans les moindres détails",
       texte: "Mariages, fiançailles, baby showers, séminaires et salons : une équipe passionnée pour faire de chaque moment un souvenir.",
-      services: [["Mariages", "Organisation complète ou partielle, coordination du jour J."], ["Hôtesses & accueil", "Des équipes formées, bilingues, pour vos invités."], ["Événements d'entreprise", "Séminaires, salons, lancements et galas."], ["Décoration", "Scénographie, fleurs et mise en lumière sur mesure."]],
+      services: [["Mariages", "Organisation complète ou partielle, coordination du jour J."], ["Hôtes & hôtesses d'accueil", "Des équipes formées, bilingues, pour vos invités."], ["Événements d'entreprise", "Séminaires, salons, lancements et galas."], ["Décoration", "Scénographie, fleurs et mise en lumière sur mesure."]],
       cta: "Demander un devis gratuit", formulaire: "Parlez-nous de votre événement", typeDemande: ["Mariage", "Fiançailles", "Baby shower", "Anniversaire", "Événement d'entreprise"],
     },
   },

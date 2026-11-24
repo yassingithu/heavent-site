@@ -147,7 +147,7 @@ const StaffDashboard = () => {
         console.error("Erreur staff:", staffError);
         toast({
           title: "Compte non trouvé",
-          description: "Votre email n'est pas enregistré comme staff. Veuillez vous inscrire d'abord.",
+          description: "Votre email n'est pas enregistré comme hôte ou hôtesse. Veuillez vous inscrire d'abord.",
           variant: "destructive",
         });
         return;

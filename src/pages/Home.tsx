@@ -29,8 +29,8 @@ const Home = () => {
   }, [t0]);
 
   const metiers = [
-    { num: "I", titre: x("Hôtesses & accueil"), texte: x("Congrès, salons, galas, ambassades : l'accueil qui donne le ton dès la porte."), lien: "/hotesses-salons-congres" },
-    { num: "II", titre: x("Staff événementiel"), texte: x("Maîtres d'hôtel, serveurs, vestiaire, voituriers : une équipe en tenue, coordonnée sur place."), lien: "/staff-evenementiel" },
+    { num: "I", titre: x("Hôtes & hôtesses d'accueil"), texte: x("Congrès, salons, galas, ambassades : l'accueil qui donne le ton dès la porte."), lien: "/hotesses-salons-congres" },
+    { num: "II", titre: x("Service événementiel"), texte: x("Maîtres d'hôtel, serveurs, vestiaire, voituriers : une équipe en tenue, coordonnée sur place."), lien: "/staff-evenementiel" },
     { num: "III", titre: x("Mariages"), texte: x("Du henné au dernier invité, chaque soirée orchestrée sans que personne ne vous voie courir."), lien: "/organisation-mariage" },
     { num: "IV", titre: "Nawar", texte: x("Le bar à parfums : des parfums choisis par les mariés pour leurs invités, servis au flacon."), lien: "/nawar" },
   ];
@@ -41,7 +41,7 @@ const Home = () => {
   ];
   const etapes = [
     ["16h00", x("Mise en place"), x("La salle est vérifiée, l'équipe s'habille, chacun connaît sa place.")],
-    ["19h30", x("Accueil des invités"), x("Hôtesses au seuil, vestiaire, placement à table.")],
+    ["19h30", x("Accueil des invités"), x("Hôtes et hôtesses au seuil, vestiaire, placement à table.")],
     ["21h00", x("Entrée des mariés"), x("Le signal est donné à la musique et au service, à la seconde.")],
     ["23h00", x("Dîner et soirée"), x("Le service suit le rythme de la piste, pas l'inverse.")],
     ["03h00", x("Dernier invité"), x("On raccompagne, on range ; vous partez les mains libres.")],
@@ -65,12 +65,12 @@ const Home = () => {
             <span className="s-ligne s-l2 s-l3"><span>{x("souvenir.")}</span></span>
           </h1>
           <div className="s-chapo-zone">
-            <p className="s-chapo s-entree-heros">{x("Hôtesses, staff et mariages orchestrés de Rabat à Marrakech, par une équipe qui connaît chaque palais, chaque protocole et chaque détail.")}</p>
+            <p className="s-chapo s-entree-heros">{x("Hôtes et hôtesses, service et mariages orchestrés de Rabat à Marrakech, par une équipe qui connaît chaque palais, chaque protocole et chaque détail.")}</p>
             <div className="s-actions s-entree-heros">
               <a ref={cta} className="s-btn s-btn-plein" href="#devis" data-testid="accueil-devis">{x("Demander un devis")} <span className="fl" aria-hidden="true">→</span></a>
               <Bouton to="/cree-ton-evenement" variante="filet">{x("Imaginer mon événement")}</Bouton>
             </div>
-            <div className="s-staff-zone s-entree-heros"><span className="s-staff-etiquette">{x("Vous cherchez une mission ?")}</span> <Link className="s-btn s-btn-staff" to="/inscription-staff" data-testid="accueil-candidats">{x("Devenir hôtesse / staff")} <span className="fl" aria-hidden="true">→</span></Link></div>
+            <div className="s-staff-zone s-entree-heros"><span className="s-staff-etiquette">{x("Vous cherchez une mission ?")}</span> <Link className="s-btn s-btn-staff" to="/inscription-staff" data-testid="accueil-candidats">{x("Devenir hôte ou hôtesse")} <span className="fl" aria-hidden="true">→</span></Link></div>
           </div>
           <Photo prioritaire nom="table-honneur" l={900} h={1204} legende={x("Table d'honneur · gypsophile suspendue")}
             alt={x("Table d'honneur d'un mariage devant de grandes verrières en arche, un nuage de gypsophile suspendu au-dessus de la nappe ivoire")} />

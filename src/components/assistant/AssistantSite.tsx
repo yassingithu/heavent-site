@@ -30,7 +30,7 @@ const ecrire = (c: string, v: string) => { try { sessionStorage.setItem(c, v); }
 const LIENS: Record<LienId, { chemin?: string; label: string; externe?: boolean }> = {
   "devis-mariage": { chemin: "/devis-mariage", label: "Demander mon devis mariage ou fête" },
   "devis-entreprise": { chemin: "/devis-entreprise", label: "Demander un devis entreprise" },
-  "inscription-staff": { chemin: "/inscription-staff", label: "M'inscrire comme hôtesse ou staff" },
+  "inscription-staff": { chemin: "/inscription-staff", label: "M'inscrire comme hôte ou hôtesse" },
   "espace-staff": { chemin: "/auth", label: "Me connecter à mon espace" },
   prestataires: { chemin: "/prestataires", label: "Devenir prestataire partenaire" },
   nawar: { chemin: "/nawar", label: "Découvrir Nawar" },
@@ -42,7 +42,7 @@ const LIENS: Record<LienId, { chemin?: string; label: string; externe?: boolean 
 const PROFILS: { id: Profil; label: string }[] = [
   { id: "maries", label: "Mariage ou fête" },
   { id: "entreprise", label: "Entreprise" },
-  { id: "crew", label: "Hôtesse ou staff" },
+  { id: "crew", label: "Hôte ou hôtesse" },
   { id: "prestataire", label: "Prestataire" },
   { id: "nawar", label: "Parfums Nawar" },
 ];
@@ -56,11 +56,11 @@ const LOCAL: Record<Exclude<Profil, "autre">, { liens: LienId[]; texte: Record<"
     en: "For a wedding, henna night or party, the simplest is to request your quote: share the city, the period and what you need. The team replies within 24 hours.",
     ar: "للأعراس والحنّاء والحفلات، الأبسط أن تطلبوا عرضكم: اذكروا المدينة والفترة وما تحتاجونه. يردّ الفريق خلال 24 ساعة." } },
   entreprise: { liens: ["devis-entreprise", "whatsapp"], texte: {
-    fr: "Pour un salon, un séminaire ou un congrès, demandez un devis entreprise : hôtesses, staff ou organisation complète. L'équipe répond sous 24 h.",
+    fr: "Pour un salon, un séminaire ou un congrès, demandez un devis entreprise : hôtes et hôtesses, service ou organisation complète. L'équipe répond sous 24 h.",
     en: "For a trade show, seminar or conference, request a business quote: hostesses, staff or full organisation. The team replies within 24 hours.",
     ar: "للمعارض والندوات والمؤتمرات، اطلبوا عرضاً للشركات: مضيفات أو طاقم أو تنظيم كامل. يردّ الفريق خلال 24 ساعة." } },
   crew: { liens: ["inscription-staff", "espace-staff"], texte: {
-    fr: "Pour travailler avec nous comme hôtesse ou staff, inscrivez-vous (18 ans ou plus). L'inscription ne garantit pas de mission, mais elle vous met dans notre équipe. Déjà inscrite ? Connectez-vous à votre espace.",
+    fr: "Pour travailler avec nous comme hôte ou hôtesse, inscrivez-vous (18 ans ou plus). L'inscription ne garantit pas de mission, mais elle vous met dans notre équipe. Déjà inscrite ? Connectez-vous à votre espace.",
     en: "To work with us as a hostess or staff member, register (18 or over). Registering doesn't guarantee a mission, but it puts you in our team. Already registered? Sign in to your space.",
     ar: "للعمل معنا كمضيفة أو ضمن الطاقم، سجّلوا (18 سنة فما فوق). التسجيل لا يضمن مهمة لكنه يضعكم ضمن فريقنا. مسجّلة من قبل؟ ادخلوا إلى فضائكم." } },
   prestataire: { liens: ["prestataires"], texte: {

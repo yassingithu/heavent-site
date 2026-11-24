@@ -8,7 +8,7 @@ export const ETAPES = [
   { emoji: "🪪", titre: "Les infos pour ton contrat", court: "Contrat", minutes: 2, bravo: "Super départ, tu es lancé(e) !" },
   { emoji: "✨", titre: "Ton style et ton expérience", court: "Profil", minutes: 2, bravo: "La moitié est faite, continue !" },
   { emoji: "📅", titre: "Tes disponibilités et tes photos", court: "Dispos", minutes: 1, bravo: "Plus qu'une étape !" },
-  { emoji: "🔐", titre: "Ton accès à l'espace staff", court: "Accès", minutes: 1, bravo: "Dernière ligne droite 🎉" },
+  { emoji: "🔐", titre: "Ton accès à ton espace hôte", court: "Accès", minutes: 1, bravo: "Dernière ligne droite 🎉" },
 ];
 
 interface Props {

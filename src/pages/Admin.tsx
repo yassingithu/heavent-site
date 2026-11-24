@@ -786,8 +786,8 @@ const Admin = () => {
       if (staffIds.length === 0) {
         setAvailableStaff([]);
         toast({
-          title: "Aucun staff disponible",
-          description: `Aucun staff n'est disponible le ${format(date, 'dd/MM/yyyy', { locale: fr })}`,
+          title: "Aucun hôte disponible",
+          description: `Aucun hôte n'est disponible le ${format(date, 'dd/MM/yyyy', { locale: fr })}`,
         });
         return;
       }
@@ -803,7 +803,7 @@ const Admin = () => {
       setAvailableStaff(staffData || []);
       toast({
         title: "Recherche terminée",
-        description: `${staffData?.length || 0} staff disponible(s) le ${format(date, 'dd/MM/yyyy', { locale: fr })}`,
+        description: `${staffData?.length || 0} hôte(s) disponible(s) le ${format(date, 'dd/MM/yyyy', { locale: fr })}`,
       });
     } catch (error) {
       console.error('Erreur recherche:', error);
@@ -965,7 +965,7 @@ const Admin = () => {
       // Trouver l'email du staff sélectionné
       const selectedStaff = staff.find(s => s.id === passwordForm.selectedStaffId);
       if (!selectedStaff) {
-        throw new Error("Staff non trouvé");
+        throw new Error("Hôte non trouvé");
       }
 
       // Appeler l'edge function pour changer le mot de passe
@@ -1083,7 +1083,7 @@ const Admin = () => {
 
   const getStaffName = (staffId: string) => {
     const person = staff.find(s => s.id === staffId);
-    return person ? `${person.prenom} ${person.nom}` : "Staff inconnu";
+    return person ? `${person.prenom} ${person.nom}` : "Hôte inconnu";
   };
 
   const { infos: accueil, recharger: rechargerAccueil } = useAccueil();
@@ -1354,7 +1354,7 @@ const Admin = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="whitespace-nowrap min-w-[120px]">Staff</TableHead>
+                      <TableHead className="whitespace-nowrap min-w-[120px]">Hôtes</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[100px]">Date</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[100px]">Créneau</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[100px]">Disponible</TableHead>
@@ -1495,7 +1495,7 @@ const Admin = () => {
 
                 {emailForm.type === "entreprise" && (
                   <div className="space-y-2">
-                    <Label>Nombre de staff</Label>
+                    <Label>Nombre d'hôtes</Label>
                     <Input
                       type="number"
                       value={emailForm.nb_staff}
@@ -1617,7 +1617,7 @@ const Admin = () => {
           {/* Recherche par date */}
           <Card>
             <CardHeader>
-              <CardTitle>🔍 Rechercher staff disponible par date</CardTitle>
+              <CardTitle>🔍 Rechercher des hôtes disponibles par date</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center space-x-4">
@@ -1652,7 +1652,7 @@ const Admin = () => {
               
               {availableStaff.length > 0 && (
                 <div className="mt-6">
-                  <h4 className="font-semibold mb-3">Staff disponible le {searchDate && format(searchDate, "dd MMMM yyyy", { locale: fr })} :</h4>
+                  <h4 className="font-semibold mb-3">Hôtes disponibles le {searchDate && format(searchDate, "dd MMMM yyyy", { locale: fr })} :</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {availableStaff.map((person) => (
                       <Card key={person.id} className="p-4">
@@ -2088,7 +2088,7 @@ const Admin = () => {
                       <TableHead className="whitespace-nowrap min-w-[150px]">Email</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[100px]">Date Événement</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[100px]">Nb Personnes</TableHead>
-                      <TableHead className="whitespace-nowrap min-w-[100px]">Nb Staff</TableHead>
+                      <TableHead className="whitespace-nowrap min-w-[100px]">Nb hôtes</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[120px]">Lieu</TableHead>
                       <TableHead className="whitespace-nowrap min-w-[100px]">Date Demande</TableHead>
                     </TableRow>

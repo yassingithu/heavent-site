@@ -144,7 +144,7 @@ export const GUIDES: Guide[] = [
       { titre: "Assurez le suivi après l'événement",
         texte: "Remerciements aux participants, envoi des photos et des présentations, rappel des contacts sous 48 heures, bilan avec vos équipes : c'est là que l'événement devient rentable." },
     ],
-    conclusion: "Un événement d'entreprise réussi se prépare, se vit et se suit. Pour l'accueil, les hôtesses et le staff, notre équipe est à vos côtés partout au Maroc.",
+    conclusion: "Un événement d'entreprise réussi se prépare, se vit et se suit. Pour l'accueil, les hôtes et hôtesses, notre équipe est à vos côtés partout au Maroc.",
     cta: { texte: "Demander mon devis entreprise", lien: "/devis-entreprise" },
   },
 ];
