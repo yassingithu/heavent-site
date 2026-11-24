@@ -110,8 +110,8 @@ export const infoFolklore = (id: string) => FOLKLORES.find((f) => f.id === id);
 
 export const ACCUEILS: (InfoOption & { id: AccueilId })[] = traduit([
   { id: "discret", nom: "Accueil simple", phrase: "Un comptoir de bienvenue, sans équipe dédiée" },
-  { id: "hotesses", nom: "Hôtesses d'accueil", phrase: "Accueil, placement et orientation", catalogue: "hotesse" },
-  { id: "maitre_hotel", nom: "Maître d'hôtel et hôtesses", phrase: "Une équipe qui coordonne tout le service", catalogue: "maitre_hotel" },
+  { id: "hotesses", nom: "Hôtes et hôtesses d'accueil", phrase: "Accueil, placement et orientation", catalogue: "hotesse" },
+  { id: "maitre_hotel", nom: "Maître d'hôtel, hôtes et hôtesses", phrase: "Une équipe qui coordonne tout le service", catalogue: "maitre_hotel" },
   { id: "the", nom: "Thé de bienvenue", phrase: "Thé à la menthe et pâtisseries à l'arrivée", catalogue: "the" },
 ]);
 
@@ -169,7 +169,7 @@ export interface Mission { id: string; titre: string; message: string; reponses:
 const M_ACCUEIL = (message: string): Mission => ({
   id: "accueil", titre: "L'arrivée des invités", message,
   reponses: [
-    { id: "equipe", nom: "Une équipe pour les guider", phrase: "Des hôtesses à l'entrée", ajoute: [], accueil: "hotesses", effet: "Deux hôtesses se placent à l'entrée." },
+    { id: "equipe", nom: "Une équipe pour les guider", phrase: "Des hôtes et hôtesses à l'entrée", ajoute: [], accueil: "hotesses", effet: "Deux hôtes ou hôtesses se placent à l'entrée." },
     { id: "the", nom: "Un thé de bienvenue", phrase: "On les accueille avec douceur", ajoute: [], accueil: "the", effet: "Un plateau de thé apparaît à l'entrée." },
     { id: "simple", nom: "Un comptoir simple", phrase: "Sobre, sans équipe dédiée", ajoute: [], accueil: "discret", effet: "Un comptoir de bienvenue sobre est installé." },
   ],

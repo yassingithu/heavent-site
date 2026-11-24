@@ -333,7 +333,7 @@ export function configurationAdmin(c: Choix): { elements: Record<string, number>
     const n = id === "hotesses" ? Math.max(2, Math.ceil(c.invites / 60))
       : id === "maitre_hotel" ? Math.max(2, Math.ceil(c.invites / 60)) : id === "micros" || id === "lanternes" || id === "chaleureuse" || id === "guirlandes" || id === "etoilee" || id === "bougies" || id === "candelabres" ? 2 : 1;
     mettre(o.catalogue, n); nom[o.catalogue] = o.nom;
-    if (id === "maitre_hotel") { mettre("hotesse", n); nom.hotesse = "Hôtesses d'accueil"; el.maitre_hotel = 1; }
+    if (id === "maitre_hotel") { mettre("hotesse", n); nom.hotesse = "Hôtes et hôtesses d'accueil"; el.maitre_hotel = 1; }
   }
   return { elements: el, libelles: nom };
 }

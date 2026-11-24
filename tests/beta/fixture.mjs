@@ -9,8 +9,8 @@ export const catalogue = [
   cat('mariage','Photographe mariage','forfait',8000,'Couverture complète de la soirée, retouches, galerie en ligne'),
   cat('mariage','Vidéaste mariage','forfait',10000,'Film de la soirée, teaser, prises de vue drone'),
   cat('mariage','Transport des invités (navette)','unite',3000,'Autocar ou minibus avec chauffeur, aller-retour'),
-  cat('staff','Hôtesse d\'accueil','jour',900,'Journée de 8 h — français / arabe'),
-  cat('staff','Hôtesse bilingue','jour',1200,'Journée de 8 h — français / anglais / arabe'),
+  cat('staff','Hôte / hôtesse d\'accueil','jour',700,'Journée de 8 h — bilingue, tenue comprise'),
+  cat('staff','Hôte / hôtesse premium trilingue','jour',1300,'Journée de 8 h — tenue comprise, profil expérimenté, 3 langues'),
 ];
 export const param = [{ id:1, raison_sociale:'Heavent People Agency', adresse:'Rue Dakar, Imm. N°5, Apt N°1, Océan', ville:'Rabat', telephone:'+212 6 10 93 96 55', email:'i.chaigari@heaventagency.com', site_web:'www.heaventagency.com', ice:'003617071000041', rc:'183001 (Tribunal de Rabat)', taux_tva:20, devise:'MAD', validite_jours:30, conditions:'Acompte de 50 % à la signature, solde à la fin de la prestation.', cgv:null, conditions_contrat:null }];
 export const dem = [{ id:'cdb38082', nom:'TEST2 Tazi', prenom:'TEST2 Idrissi', email:'youtusel26@gmail.com', telephone:'+212600000000', type_evenement:'Mariage', date_mariage:'2026-10-15', lieu:'Marrakech', nb_invites:300,

@@ -126,7 +126,7 @@ export const CATALOGUE: DefElement[] = [
   { id: "gateau", categorie: "gourmand", nom: "Pièce montée", description: "Gâteau à étages présenté sur sa table.", w: 1, h: 1, prix: 600, prixParInvite: 20, couleur: "fleurs" },
   { id: "lounge", categorie: "detente", nom: "Espace lounge", description: "Canapés, poufs et table basse pour se poser.", w: 2, h: 2, prix: 3000, couleur: "deco", role: "convivial" },
   { id: "nawar", categorie: "animation", nom: "Bar à parfums Nawar", description: "Les mariés choisissent les parfums, chaque invité repart avec son flacon. 50 parfums minimum.", w: 2, h: 1, prix: 0, prixParInvite: 80, minimumInvites: 50, role: "convivial" },
-  { id: "hotesse", categorie: "personnel", nom: "Hôtesse d'accueil", description: "Accueil et placement des invités, vestiaire, orientation. Journée de 8 h.", w: 1, h: 1, prix: 900, couleur: "deco" },
+  { id: "hotesse", categorie: "personnel", nom: "Hôte / hôtesse d'accueil", description: "Accueil et placement des invités, vestiaire, orientation. Bilingue, tenue comprise, journée de 8 h.", w: 1, h: 1, prix: 700, couleur: "deco" },
   { id: "serveur", categorie: "personnel", nom: "Serveur / serveuse", description: "Service à table, cocktail et débarrassage. Journée de 8 h.", w: 1, h: 1, prix: 700, couleur: "deco" },
   { id: "maitre_hotel", categorie: "personnel", nom: "Maître d'hôtel", description: "Coordonne le service et l'équipe le jour J. Journée de 8 h.", w: 1, h: 1, prix: 1200, couleur: "deco" },
   // Ajouts (toujours en fin de liste : l'ordre sert aux liens de partage)

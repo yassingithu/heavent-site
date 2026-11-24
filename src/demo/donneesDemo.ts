@@ -26,14 +26,14 @@ export function creerBaseDemo(cfg: ConfigDemo): BaseDemo {
 
   const catalogue_prestations = [
     cat("mariage", "Organisation complète du mariage", "forfait", 25000, "Wedding planning de A à Z"),
-    cat("mariage", "Hôtesses d'accueil invités (mariage)", "jour", 900, "Accueil, vestiaire, placement"),
+    cat("mariage", "Hôtes et hôtesses d'accueil invités (mariage)", "jour", 700, "Accueil, vestiaire, placement — bilingue, tenue comprise"),
     cat("mariage", "Traiteur mariage (menu complet)", "personne", 450, "Cocktail, entrées, plats, pâtisseries, service à table"),
     cat("mariage", "DJ / animation musicale", "forfait", 12000, "DJ, sonorisation et éclairage de piste"),
     cat("mariage", "Décoration et art floral", "forfait", 30000, "Scénographie, fleurs, centres de table"),
     cat("mariage", "Photographe", "forfait", 8000, "Couverture complète, retouches, galerie en ligne"),
     cat("mariage", "Vidéaste", "forfait", 10000, "Film de la soirée, teaser, drone"),
-    cat("staff", "Hôtesse d'accueil", "jour", 900, "Journée de 8 h — français / arabe"),
-    cat("staff", "Hôtesse bilingue", "jour", 1200, "Journée de 8 h — français / anglais / arabe"),
+    cat("staff", "Hôte / hôtesse d'accueil", "jour", 700, "Journée de 8 h — bilingue, tenue comprise"),
+    cat("staff", "Hôte / hôtesse premium trilingue", "jour", 1300, "Journée de 8 h — tenue comprise, profil expérimenté, 3 langues"),
     cat("staff", "Steward / agent d'accueil", "jour", 900, "Journée de 8 h"),
   ];
 
@@ -62,10 +62,10 @@ export function creerBaseDemo(cfg: ConfigDemo): BaseDemo {
   const ligne = (devis_id: string, ordre: number, designation: string, unite: string, quantite: number, duree: number, prix_unitaire: number, description = "") =>
     ({ id: uuid(), devis_id, ordre, designation, description, unite, quantite, duree, prix_unitaire, remise_pct: 0, total_ht: r2(quantite * duree * prix_unitaire), created_at: ilYa(100) });
   const devis_lignes = [
-    ligne(d1, 0, "Hôtesse bilingue", "jour", 6, 2, 1200, "Journée de 8 h — français / anglais / arabe"),
+    ligne(d1, 0, "Hôte / hôtesse premium trilingue", "jour", 6, 2, 1300, "Journée de 8 h — tenue comprise, 3 langues"),
     ligne(d1, 1, "Coordination sur place", "forfait", 1, 1, 3500),
     ligne(d2, 0, "Décoration et art floral", "forfait", 1, 1, 30000), ligne(d2, 1, "DJ / animation musicale", "forfait", 1, 1, 12000),
-    ligne(d2, 2, "Hôtesses d'accueil invités (mariage)", "jour", 4, 1, 900), ligne(d2, 3, "Traiteur mariage (menu complet)", "personne", 300, 1, 450),
+    ligne(d2, 2, "Hôtes et hôtesses d'accueil invités (mariage)", "jour", 4, 1, 700), ligne(d2, 3, "Traiteur mariage (menu complet)", "personne", 300, 1, 450),
   ];
 
   const parametres_agence = [{ id: 1, raison_sociale: agence, adresse: "Boulevard principal", ville, telephone: "+212 6 00 00 00 00", email: "contact@votre-agence.ma",

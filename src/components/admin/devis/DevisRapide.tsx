@@ -152,7 +152,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       quantite: 50, duree: 1, unite: "unite", prix_unitaire: 80 };
     ouvrirForm({
       ...f, type: "evenement", marque: "nawar", titre: "Bar à parfums Nawar", acompte_pct: 50,
-      lignes: [parfums, cat("Animateur / animatrice promotionnel(le)", 2) ?? cat("Hôtesse d'accueil", 2), cat("Transport du staff (même ville)", 2)]
+      lignes: [parfums, cat("Animateur / animatrice promotionnel(le)", 2) ?? cat("Hôte / hôtesse d'accueil", 2), cat("Transport du staff (même ville)", 2)]
         .filter(Boolean) as Ligne[],
     });
     setOnglet("editeur");
@@ -196,7 +196,8 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       const nb = (re: RegExp) => Number(texte.match(re)?.[1] ?? 0);
       const hotesses = nb(/(\d+)\s*h[oô]tesses?/), hotes = nb(/(\d+)\s*(?:stewards?|h[oô]tes\b)/);
       const bilingue = /bilingue|trilingue|fran[cç]ais.*arabe|arabe.*fran[cç]ais|anglais/.test(texte);
-      const modele = bilingue ? "Hôtesse bilingue" : "Hôtesses d'accueil invités (mariage)";
+      const trilingue = /trilingue|premium/.test(texte);
+      const modele = trilingue ? "Hôte / hôtesse premium trilingue" : bilingue ? "Hôte / hôtesse d'accueil" : "Hôtes et hôtesses d'accueil invités (mariage)";
       if (hotesses || hotes) {
         if (hotesses) ajouter(modele, hotesses, 1, bilingue ? "Hôtesses d'accueil bilingues pour l'accueil et le placement des invités" : undefined);
         if (hotes) { ajouter(modele, hotes, 1, `Stewards${bilingue ? " bilingues" : ""} — accueil, orientation et placement des invités`); res[res.length - 1].designation = `Steward${bilingue ? " bilingue" : ""}`; }
@@ -928,7 +929,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                   {form.lignes.map((l, i) => (
                     <div key={i} className="border rounded-md p-3 space-y-2">
                       <div className="flex gap-2">
-                        <Input className="font-medium min-w-0" placeholder="Désignation (ex. Hôtesse d'accueil bilingue)" value={l.designation} onChange={(e) => setLigne(i, { designation: e.target.value })} />
+                        <Input className="font-medium min-w-0" placeholder="Désignation (ex. Hôte / hôtesse d'accueil bilingue)" value={l.designation} onChange={(e) => setLigne(i, { designation: e.target.value })} />
                         <Button size="icon" variant="ghost" onClick={() => deplacer(i, -1)} disabled={i === 0}><ArrowUp className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" onClick={() => deplacer(i, 1)} disabled={i === form.lignes.length - 1}><ArrowDown className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" onClick={() => supprimerLigne(i)}><X className="h-4 w-4" /></Button>
