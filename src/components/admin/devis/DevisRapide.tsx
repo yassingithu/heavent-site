@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ToastAction } from "@/components/ui/toast";
 import { estDemo } from "@/demo/mode";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,12 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Archive, ArchiveRestore, ArrowDown, ChevronsUpDown, ArrowUp, Copy, Download, FileText, Image as ImageIcon, Link2, Plus, Save, Search, Send, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowDown, CalendarPlus, ChevronsUpDown, ArrowUp, Copy, Download, FileText, Image as ImageIcon, Link2, MoreVertical, Plus, Save, Search, Send, Trash2, X } from "lucide-react";
 import { classeStatut, clesStatut, libelleStatut } from "@/lib/statuts";
 import {
   DevisForm, Ligne, Parametres, Prestation, UNITES, devisSupprimable, statutsPermis,
-  calculerTotaux, dateFr, dateHeureFr, devisDepuisBase, lienClientDevis, ligneVide, money, nouveauDevis, today, totalLigne,
+  calculerTotaux, dateFr, dateHeureFr, devisDepuisBase, lienClientDevis, ligneVide, money, nouveauDevis, sousTotalGroupe, today, totalLigne,
 } from "./devisUtils";
 import { telechargerDevisPdf } from "./devisPdf";
 import { telechargerImageDevis, FormatImage } from "./devisImage";
@@ -321,8 +322,85 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     setForm((f) => {
       if (!f) return f;
       // remplace la première ligne si elle est encore vide
-      const lignes = f.lignes.length === 1 && !f.lignes[0].designation.trim() ? [l] : [...f.lignes, l];
+      const vide = f.lignes.length === 1 && !f.lignes[0].designation.trim();
+      // une nouvelle ligne rejoint l'événement de la dernière ligne (s'il y en a)
+      const groupe = l.groupe ?? (vide ? "" : f.lignes[f.lignes.length - 1]?.groupe ?? "");
+      const lignes = vide ? [{ ...l, groupe }] : [...f.lignes, { ...l, groupe }];
       return { ...f, lignes };
+    });
+  const groupesDuDevis = (lignes: Ligne[]) => [...new Set(lignes.map((l) => (l.groupe ?? "").trim()).filter(Boolean))];
+  const renommerGroupe = (ancien: string, nouveau: string) => {
+    const propre = nouveau.trim();
+    if (!propre || propre === ancien) return false;
+    setForm((f) => {
+      if (!f) return f;
+      // nom déjà pris par un autre événement : on ajoute un suffixe pour ne pas les fusionner
+      const pris = new Set(groupesDuDevis(f.lignes).filter((g) => g !== ancien));
+      let nom = propre; let k = 2;
+      while (pris.has(nom)) nom = `${propre} (${k++})`;
+      return { ...f, lignes: f.lignes.map((l) => ((l.groupe ?? "") === ancien ? { ...l, groupe: nom } : l)) };
+    });
+    return true;
+  };
+  /** Nouvel événement : les lignes existantes deviennent « Événement 1 », puis une ligne vide ouvre « Événement 2 ». */
+  const ajouterEvenement = () =>
+    setForm((f) => {
+      if (!f) return f;
+      let lignes = f.lignes;
+      const existants = groupesDuDevis(lignes);
+      if (!existants.length) lignes = lignes.map((l) => ({ ...l, groupe: "Événement 1" }));
+      const avecContenu = lignes.some((l) => l.designation.trim());
+      const n = avecContenu ? Math.max(1, existants.length) + 1 : 1;
+      return { ...f, lignes: [...(avecContenu ? lignes : []), { ...ligneVide(), groupe: `Événement ${n}` }] };
+    });
+  /** Copie un événement `fois` fois, à la fin du devis. Les noms « Événement N » continuent la numérotation (plus grand numéro + 1). */
+  const dupliquerEvenement = (groupe: string, fois = 1) => {
+    if (!form) return;
+    const idx = form.lignes.map((l, i) => ((l.groupe ?? "") === groupe ? i : -1)).filter((i) => i >= 0);
+    if (!idx.length) return;
+    const noms = groupesDuDevis(form.lignes);
+    const numero = (g: string) => Number(g.match(/^\s*[ÉEé]v[ée]nement\s+(\d+)/i)?.[1] ?? 0);
+    let prochain = Math.max(0, ...noms.map(numero)) + 1;
+    const estNumerote = numero(groupe) > 0;
+    const crees: string[] = [];
+    const blocs: Ligne[] = [];
+    for (let c = 0; c < fois; c++) {
+      let nom = estNumerote ? groupe.replace(/^(\s*[ÉEé]v[ée]nement\s+)\d+/i, `$1${prochain++}`) : `${groupe} (copie ${c + 1})`;
+      while (noms.includes(nom) || crees.includes(nom)) nom += " bis";
+      crees.push(nom);
+      blocs.push(...idx.map((i) => ({ ...form.lignes[i], id: undefined, groupe: nom })));
+    }
+    setForm((f) => (f ? { ...f, lignes: [...f.lignes, ...blocs] } : f));
+    toast({ title: fois > 1 ? `${fois} événements ajoutés` : "Événement ajouté", description: crees.join(" · ") });
+    setTimeout(() => { try { document.querySelector(`[data-evenement="${CSS.escape(crees[0])}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }); } catch { /* */ } }, 150);
+  };
+  const supprimerEvenement = (groupe: string) => {
+    if (!form) return;
+    const avant = form.lignes;
+    const nb = avant.filter((l) => (l.groupe ?? "") === groupe).length;
+    const reste = avant.filter((l) => (l.groupe ?? "") !== groupe);
+    setForm((f) => (f ? { ...f, lignes: reste.length ? reste : [ligneVide()] } : f));
+    toast({
+      title: "Événement supprimé", description: `${groupe} et ses ${nb} ligne${nb > 1 ? "s" : ""}`,
+      action: <ToastAction altText="Annuler la suppression" onClick={() => setForm((f) => (f ? { ...f, lignes: avant } : f))}>Annuler</ToastAction>,
+    });
+  };
+  /** Ajoute une ligne vide à la fin d'un événement précis. */
+  const ajouterLigneDansEvenement = (groupe: string) =>
+    setForm((f) => {
+      if (!f) return f;
+      let fin = -1; f.lignes.forEach((l, i) => { if ((l.groupe ?? "") === groupe) fin = i; });
+      if (fin < 0) return f;
+      return { ...f, lignes: [...f.lignes.slice(0, fin + 1), { ...ligneVide(), groupe }, ...f.lignes.slice(fin + 1)] };
+    });
+  /** Passe une ligne dans un autre événement (placée à la fin de celui-ci). */
+  const deplacerVersEvenement = (i: number, groupe: string) =>
+    setForm((f) => {
+      if (!f) return f;
+      const l = { ...f.lignes[i], groupe };
+      const sans = f.lignes.filter((_, j) => j !== i);
+      let fin = -1; sans.forEach((x, k) => { if ((x.groupe ?? "") === groupe) fin = k; });
+      return { ...f, lignes: [...sans.slice(0, fin + 1), l, ...sans.slice(fin + 1)] };
     });
   const supprimerLigne = (i: number) =>
     setForm((f) => (f ? { ...f, lignes: f.lignes.length > 1 ? f.lignes.filter((_, j) => j !== i) : [ligneVide()] } : f));
@@ -340,14 +418,93 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
     const n = Math.round((new Date(form.date_fin_evenement).getTime() - new Date(form.date_evenement).getTime()) / 86400000) + 1;
     return n > 0 ? n : 1;
   };
+  // Quantités calculées : « par personne » = invités ; hôtes = 1 pour 50 invités (2 au minimum) ; forfait = 1.
+  const estHote = (d: string) => /h[ôo]te(?!l)|steward|serveu|agent d'accueil/i.test(d);
+  const estTransportStaff = (d: string) => /transport du staff/i.test(d);
+  const estHeureSup = (d: string) => /suppl[ée]mentaire/i.test(d);
+  const hotesAuto = (invites: number) => (invites > 0 ? Math.max(2, Math.ceil(invites / 50)) : 1);
+  const nbHotes = (lignes: Ligne[]) => lignes.filter((l) => estHote(l.designation) && l.unite !== "heure").reduce((t, l) => t + (Number(l.quantite) || 0), 0);
+  const quantiteAuto = (designation: string, unite: string, lignes: Ligne[], invites: number) => {
+    if (unite === "forfait") return 1;
+    if (unite === "personne" && estTransportStaff(designation)) return nbHotes(lignes) || 1;
+    if (unite === "personne") return invites > 0 ? invites : 1;
+    if (estHote(designation) && unite === "jour") return hotesAuto(invites);
+    if (unite === "heure" && estHeureSup(designation)) return nbHotes(lignes) || 1;
+    return 1;
+  };
   const ajouterDuCatalogue = (p: Prestation) =>
     ajouterLigne({
       designation: p.designation, description: p.description ?? "",
-      // quantité = nombre de personnes de la ligne précédente, durée = nombre de jours de l'événement
-      quantite: p.unite === "forfait" ? 1 : (form?.lignes.filter((l) => l.designation.trim()).slice(-1)[0]?.quantite || 1),
-      duree: p.unite === "jour" || p.unite === "personne" ? joursEvenement() : 1,
+      quantite: quantiteAuto(p.designation, p.unite, form?.lignes ?? [], Number(form?.nb_personnes) || 0),
+      // durée = nombre de jours de l'événement ; une heure supplémentaire compte 2 h par hôte par défaut
+      duree: p.unite === "heure" && estHeureSup(p.designation) ? 2 : p.unite === "jour" || p.unite === "personne" ? joursEvenement() : 1,
       unite: p.unite as Ligne["unite"], prix_unitaire: Number(p.prix_unitaire), remise_pct: 0,
     });
+
+  /** Recalcule les quantités qui dépendent des invités (traiteur, hôtes, transport, heures sup.). */
+  const lignesRecalculees = (f: DevisForm): Ligne[] => {
+    const inv = Number(f.nb_personnes) || 0;
+    if (!inv) return f.lignes;
+    let lignes = f.lignes.map((l) => (l.unite === "personne" && !estTransportStaff(l.designation)) || (estHote(l.designation) && l.unite === "jour")
+      ? { ...l, quantite: quantiteAuto(l.designation, l.unite, [], inv) } : l);
+    const h = nbHotes(lignes) || 1;
+    lignes = lignes.map((l) => (l.unite === "personne" && estTransportStaff(l.designation)) || (l.unite === "heure" && estHeureSup(l.designation)) ? { ...l, quantite: h } : l);
+    return lignes;
+  };
+  const nbQuantitesAChanger = form ? (() => { const n = lignesRecalculees(form); return form.lignes.filter((l, i) => l.quantite !== n[i].quantite).length; })() : 0;
+
+  /** Formule en un tap : génère les lignes d'un devis depuis le type d'événement et le nombre d'invités. */
+  const appliquerFormule = (kind: "mariage" | "entreprise" | "nawar") => {
+    if (!form) return;
+    const inv = Number(form.nb_personnes) || 0;
+    if (kind !== "nawar" && !inv) {
+      toast({ title: "Indique d'abord le nombre d'invités", description: "Il est en haut, dans « Événement » : les quantités se calculent avec." });
+      return;
+    }
+    const cat = (designation: string, quantite: number, duree = 1): Ligne | null => {
+      const c = catalogue.find((x) => x.actif && x.designation === designation);
+      return c ? { ...ligneVide(), designation: c.designation, description: c.description ?? "", quantite, duree,
+        unite: c.unite as Ligne["unite"], prix_unitaire: Number(c.prix_unitaire) } : null;
+    };
+    let lignes: Ligne[] = [];
+    let patch: Partial<DevisForm> = {};
+    if (kind === "mariage") {
+      lignes = lignesDepuisDemandeMariage({ services: "Hôtesses, Traiteur, DJ, Décoration, Photographe", remarques: "", nb_invites: inv } as unknown as DemandeMariage)
+        .filter((l) => l.designation.trim());
+      const hs = cat("Heure supplémentaire", nbHotes(lignes) || 1, 2);
+      if (hs) lignes.push(hs);
+      patch = { type: "mariage" };
+    } else if (kind === "entreprise") {
+      const h = hotesAuto(inv);
+      lignes = [cat("Hôte / hôtesse d'accueil", h, joursEvenement()), cat("Transport du staff (même ville)", h, joursEvenement())].filter(Boolean) as Ligne[];
+      patch = { type: "entreprise" };
+    } else {
+      const h = hotesAuto(inv);
+      const parfums: Ligne = { ...ligneVide(), designation: "Parfums — bar à parfums Nawar", description: "Prix par parfum", quantite: 50, duree: 1, unite: "unite", prix_unitaire: 80 };
+      lignes = [parfums, cat("Animateur / animatrice promotionnel(le)", 2) ?? cat("Hôte / hôtesse d'accueil", 2), cat("Transport du staff (même ville)", 2)].filter(Boolean) as Ligne[];
+      patch = { type: "evenement", marque: "nawar", acompte_pct: 50, ...(form.titre.trim() ? {} : { titre: "Bar à parfums Nawar" }) };
+    }
+    if (!lignes.length) { toast({ title: "Catalogue incomplet", description: "Les prestations de cette formule ne sont pas dans ton catalogue de prix.", variant: "destructive" }); return; }
+    setForm((f) => (f ? { ...f, ...patch, lignes } : f));
+    toast({ title: "Lignes ajoutées", description: "Vérifie les quantités et les prix, tout reste modifiable." });
+  };
+
+  const supprimerAvecAnnuler = (i: number) => {
+    if (!form) return;
+    const l = form.lignes[i];
+    supprimerLigne(i);
+    toast({
+      title: "Ligne supprimée", description: l.designation || undefined,
+      action: <ToastAction altText="Annuler la suppression" onClick={() => setForm((f) => {
+        if (!f) return f;
+        const vide = f.lignes.length === 1 && !f.lignes[0].designation.trim();
+        const lignes = vide ? [l] : [...f.lignes.slice(0, i), l, ...f.lignes.slice(i)];
+        return { ...f, lignes };
+      })}>Annuler</ToastAction>,
+    });
+  };
+  const dupliquerLigne = (i: number) =>
+    setForm((f) => (f ? { ...f, lignes: [...f.lignes.slice(0, i + 1), { ...f.lignes[i], id: undefined }, ...f.lignes.slice(i + 1)] } : f));
 
   // ---------- enregistrement ----------
   const enregistrer = async (statut?: string): Promise<DevisForm | null> => {
@@ -367,9 +524,9 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
       dejaFacture = (count ?? 0) > 0;
       const [{ data: avant }, { data: lignesAvant }] = await Promise.all([
         supabase.from("devis").select("titre, date_evenement, date_fin_evenement, lieu, nb_personnes, remise_globale_pct, taux_tva, acompte_pct, devise, conditions, client_nom, client_societe, client_adresse, client_ice").eq("id", form.id).single(),
-        supabase.from("devis_lignes").select("designation, description, quantite, duree, unite, prix_unitaire, remise_pct").eq("devis_id", form.id).order("ordre"),
+        supabase.from("devis_lignes").select("designation, description, quantite, duree, unite, prix_unitaire, remise_pct, groupe").eq("devis_id", form.id).order("ordre"),
       ]);
-      const cle = (l: any) => [String(l.designation ?? "").trim(), l.description || "", Number(l.quantite || 0), Number(l.duree || 0), l.unite ?? "", Number(l.prix_unitaire || 0), Number(l.remise_pct || 0)].join("|");
+      const cle = (l: any) => [String(l.designation ?? "").trim(), l.description || "", Number(l.quantite || 0), Number(l.duree || 0), l.unite ?? "", Number(l.prix_unitaire || 0), Number(l.remise_pct || 0), String(l.groupe || "").trim()].join("|");
       lignesIdentiques = !!lignesAvant && lignesAvant.length === lignes.length && lignesAvant.every((l: any, i: number) => cle(l) === cle(lignes[i]));
       const t = (v: any) => String(v ?? "");
       const n = (v: any) => String(Number(v || 0));
@@ -426,6 +583,7 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
         lignes.map((l, i) => ({
           devis_id: id!, ordre: i, designation: l.designation.trim(), description: l.description || null,
           quantite: l.quantite || 0, duree: l.duree || 0, unite: l.unite, prix_unitaire: l.prix_unitaire || 0, remise_pct: l.remise_pct || 0,
+          groupe: (l.groupe ?? "").trim() || null,
         })),
       );
       if (lErr) throw lErr;
@@ -846,11 +1004,19 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
               <Card>
                 <CardHeader><CardTitle className="text-base">Événement</CardTitle></CardHeader>
                 <CardContent className="grid gap-3 sm:grid-cols-2">
-                  <div className="sm:col-span-2"><Label>Intitulé</Label><Input placeholder="Ex. Salon Auto Expo — accueil stand" value={form.titre} onChange={(e) => set("titre", e.target.value)} /></div>
                   <div><Label>Date de début</Label><Input type="date" value={form.date_evenement} onChange={(e) => set("date_evenement", e.target.value)} /></div>
-                  <div><Label>Date de fin (si plusieurs jours)</Label><Input type="date" value={form.date_fin_evenement} onChange={(e) => set("date_fin_evenement", e.target.value)} /></div>
+                  <div><Label>Nombre d'invités / participants</Label><Input type="number" min={0} inputMode="numeric" value={form.nb_personnes} onChange={(e) => set("nb_personnes", e.target.value)} /></div>
+                  {nbQuantitesAChanger > 0 && (
+                    <div className="sm:col-span-2">
+                      <Button type="button" variant="ghost" className="w-full h-auto min-h-11 justify-start rounded-sm border-0 border-l-2 border-l-[#A8933F] bg-[#A8933F]/10 text-[#5E4A17] hover:bg-[#A8933F]/20 hover:text-[#5E4A17] py-2 text-left" data-testid="maj-quantites"
+                        onClick={() => { setForm((f) => (f ? { ...f, lignes: lignesRecalculees(f) } : f)); toast({ title: "Quantités mises à jour", description: "Traiteur, hôtes, transport et heures sup. suivent le nombre d'invités." }); }}>
+                        <span className="flex flex-col items-start"><span>Recalculer les quantités pour {form.nb_personnes} invités</span><span className="text-xs font-normal opacity-80">Traiteur, hôtes, transport, heures sup.</span></span>
+                      </Button>
+                    </div>
+                  )}
+                  <div className="sm:col-span-2"><Label>Intitulé</Label><Input placeholder="Ex. Salon Auto Expo — accueil stand" value={form.titre} onChange={(e) => set("titre", e.target.value)} /></div>
                   <div><Label>Lieu</Label><Input value={form.lieu} onChange={(e) => set("lieu", e.target.value)} /></div>
-                  <div><Label>Nombre d'invités / participants</Label><Input type="number" min={0} value={form.nb_personnes} onChange={(e) => set("nb_personnes", e.target.value)} /></div>
+                  <div><Label>Date de fin (si plusieurs jours)</Label><Input type="date" value={form.date_fin_evenement} onChange={(e) => set("date_fin_evenement", e.target.value)} /></div>
                 </CardContent>
               </Card>
 
@@ -870,6 +1036,17 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
               <Card>
                 <CardHeader className="space-y-3">
                   <CardTitle className="text-base">Prestations</CardTitle>
+                  {form.lignes.length === 1 && !form.lignes[0].designation.trim() && catalogue.length > 0 && (
+                    <div className="rounded-sm border border-[#A8933F]/40 bg-[#A8933F]/10 p-3 space-y-2" data-testid="formules">
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-[#7A5F1F] font-medium">Partir d'une formule</p>
+                      <p className="text-xs text-muted-foreground">{form.nb_personnes ? `Les lignes se remplissent avec les ${form.nb_personnes} invités ci-dessus. Tout reste modifiable.` : "Indique d'abord les invités ci-dessus : les lignes se remplissent avec. Tout reste modifiable."}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button type="button" variant="outline" className="h-11 flex-1 min-w-[7rem] rounded-sm border-[#A8933F]/60 text-[#141414] hover:bg-[#A8933F]/10" onClick={() => appliquerFormule("mariage")} data-testid="formule-mariage">Mariage</Button>
+                        <Button type="button" variant="outline" className="h-11 flex-1 min-w-[7rem] rounded-sm border-[#A8933F]/60 text-[#141414] hover:bg-[#A8933F]/10" onClick={() => appliquerFormule("entreprise")} data-testid="formule-entreprise">Entreprise</Button>
+                        {!estDemo() && <Button type="button" variant="outline" className="h-11 flex-1 min-w-[7rem] rounded-sm border-[#A8933F]/60 text-[#141414] hover:bg-[#A8933F]/10" onClick={() => appliquerFormule("nawar")} data-testid="formule-nawar">Nawar</Button>}
+                      </div>
+                    </div>
+                  )}
                   {form.marque === "nawar" && (() => {
                     const nb = form.lignes.filter((l) => /parfum/i.test(l.designation)).reduce((t, l) => t + (Number(l.quantite) || 0), 0);
                     return nb < 50 ? <p className="text-xs rounded-md border border-[#A8933F]/40 bg-[#A8933F]/15 text-[#7A5F1F] p-2" data-testid="minimum-nawar">⚠️ {nb} parfum(s) au devis : le minimum facturé est de 50 parfums (conditions Nawar, article 2).</p> : null;
@@ -927,12 +1104,43 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {form.lignes.map((l, i) => (
-                    <div key={i} className="border rounded-md p-3 space-y-2">
+                    <Fragment key={i}>
+                    {(l.groupe ?? "").trim() && (l.groupe ?? "") !== (form.lignes[i - 1]?.groupe ?? "") && (
+                      <div className="grid grid-cols-[1fr_auto_auto] sm:flex sm:flex-wrap gap-2 items-center rounded-sm border-l-4 border-l-[#A8933F] bg-[#A8933F]/10 p-2 mt-2" data-testid="entete-evenement">
+                        <Input key={l.groupe} className="h-11 col-span-3 sm:col-span-1 sm:flex-1 min-w-0 sm:min-w-[10rem] font-semibold bg-white" aria-label="Nom de l'événement" placeholder="Événement 1 — ville — date"
+                          defaultValue={l.groupe ?? ""} data-evenement={l.groupe ?? ""}
+                          onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                          onBlur={(e) => { if (!renommerGroupe(l.groupe ?? "", e.target.value)) e.target.value = l.groupe ?? ""; }} />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button type="button" variant="outline" className="h-11 rounded-sm border-[#A8933F]/60 text-[#5E4A17]" data-testid="dupliquer-evenement"><Copy className="h-4 w-4 sm:mr-1" /><span className="sr-only sm:not-sr-only">Dupliquer</span></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-[#FBF6E9] border-[#EADFC8] z-[60]">
+                            {[1, 2, 4].map((n) => <DropdownMenuItem key={n} className="h-11" data-testid={`dupliquer-x${n}`} onSelect={() => dupliquerEvenement(l.groupe ?? "", n)}>{n === 1 ? "1 copie" : `${n} copies`}</DropdownMenuItem>)}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-sm border-[#EADFC8] text-red-700" aria-label="Supprimer l'événement" data-testid="supprimer-evenement"
+                          onClick={() => supprimerEvenement(l.groupe ?? "")}><Trash2 className="h-4 w-4" /></Button>
+                      </div>
+                    )}
+                    <div className="border rounded-sm p-3 space-y-2">
                       <div className="flex gap-2">
-                        <Input className="font-medium min-w-0" placeholder="Désignation (ex. Hôte / hôtesse d'accueil bilingue)" value={l.designation} onChange={(e) => setLigne(i, { designation: e.target.value })} />
-                        <Button size="icon" variant="ghost" onClick={() => deplacer(i, -1)} disabled={i === 0}><ArrowUp className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => deplacer(i, 1)} disabled={i === form.lignes.length - 1}><ArrowDown className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => supprimerLigne(i)}><X className="h-4 w-4" /></Button>
+                        <Input className="font-medium min-w-0 h-11" placeholder="Désignation (ex. Hôte / hôtesse d'accueil bilingue)" value={l.designation} onChange={(e) => setLigne(i, { designation: e.target.value })} />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="outline" className="h-11 w-11 shrink-0 rounded-sm border-[#EADFC8] text-[#7A5F1F]" aria-label="Actions sur la ligne" data-testid="actions-ligne"><MoreVertical className="h-5 w-5" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-[#FBF6E9] border-[#EADFC8] z-[60]">
+                            <DropdownMenuItem className="h-11" disabled={i === 0} onSelect={() => deplacer(i, -1)}><ArrowUp className="h-4 w-4 mr-2" /> Monter</DropdownMenuItem>
+                            <DropdownMenuItem className="h-11" disabled={i === form.lignes.length - 1} onSelect={() => deplacer(i, 1)}><ArrowDown className="h-4 w-4 mr-2" /> Descendre</DropdownMenuItem>
+                            <DropdownMenuItem className="h-11" onSelect={() => dupliquerLigne(i)}><Copy className="h-4 w-4 mr-2" /> Dupliquer la ligne</DropdownMenuItem>
+                            {groupesDuDevis(form.lignes).filter((g) => g !== (l.groupe ?? "")).map((g) => (
+                              <DropdownMenuItem key={g} className="h-11" onSelect={() => deplacerVersEvenement(i, g)}><CalendarPlus className="h-4 w-4 mr-2" /> Passer à « {g.length > 28 ? g.slice(0, 27) + "…" : g} »</DropdownMenuItem>
+                            ))}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="h-11 text-red-700" onSelect={() => supprimerAvecAnnuler(i)}><Trash2 className="h-4 w-4 mr-2" /> Supprimer</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                       <Textarea rows={1} className="min-h-[38px]" placeholder="Détail (facultatif)" value={l.description} onChange={(e) => setLigne(i, { description: e.target.value })} />
                       <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 items-end">
@@ -949,8 +1157,18 @@ export default function DevisRapide({ demandesEntreprise, demandesMariage, onDem
                         <div className="text-right text-sm font-semibold pb-2 whitespace-nowrap">{money(totalLigne(l), devise)}</div>
                       </div>
                     </div>
+                    {(l.groupe ?? "").trim() && (l.groupe ?? "") !== (form.lignes[i + 1]?.groupe ?? "") && (
+                      <div className="flex flex-wrap gap-y-1 justify-between text-sm px-3 py-1.5 text-[#5E4A17]" data-testid="sous-total-evenement">
+                        <button type="button" className="text-[#8C6D22] font-medium text-left min-h-11" data-testid="ligne-dans-evenement" onClick={() => ajouterLigneDansEvenement(l.groupe ?? "")}>+ Ligne dans cet événement</button>
+                        <span className="self-center text-right">Sous-total HT : <span className="font-semibold whitespace-nowrap">{money(sousTotalGroupe(form.lignes, i), devise)}</span></span>
+                      </div>
+                    )}
+                    </Fragment>
                   ))}
-                  <Button variant="outline" onClick={() => ajouterLigne()}><Plus className="h-4 w-4 mr-1" /> Ajouter une ligne</Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" className="h-11 rounded-sm" onClick={() => ajouterLigne()}><Plus className="h-4 w-4 mr-1" /> Ajouter une ligne{groupesDuDevis(form.lignes).length > 0 ? " (dernier événement)" : ""}</Button>
+                    <Button className="h-11 rounded-sm bg-[#141414] text-[#E4D49A] hover:bg-[#141414]/90" data-testid="ajouter-evenement" onClick={ajouterEvenement}><CalendarPlus className="h-4 w-4 mr-1" /> Ajouter un événement</Button>
+                  </div>
                 </CardContent>
               </Card>
 

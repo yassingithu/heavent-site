@@ -358,6 +358,80 @@ await scenario("Crew : remarque « heures en plus » sur un contrat → l'admin 
   notes.push("heures en plus + frais envoyés par le crew, vus et acceptés par l'admin, réponse visible côté crew");
 });
 
+// 3 ter bis. Devis rapide : formule en un tap, quantités selon les invités, mise à jour en un bouton, suppression annulable
+await scenario("Admin : devis rapide (formule Mariage, quantités auto, mise à jour des invités, annulation de suppression)", async (notes) => {
+  const base = nouvelleBase();
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN, { mobile: true });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(800);
+  await page.getByRole("button", { name: /Nouveau devis/ }).click(); await page.waitForTimeout(600);
+  await page.getByTestId("formule-mariage").click(); await page.waitForTimeout(300);
+  verifier(await page.getByText("Indique d'abord le nombre d'invités").count(), "pas de message quand les invités manquent");
+  await page.getByText("Nombre d'invités / participants").locator("..").locator("input").fill("150"); await page.waitForTimeout(200);
+  await page.getByTestId("formule-mariage").click(); await page.waitForTimeout(500);
+  const qte = async (desig) => page.locator(".border.rounded-sm.p-3").filter({ has: page.locator(`input[value^="${desig}"]`) }).first().locator("input[type=number]").nth(0).inputValue();
+  verifier((await qte("Traiteur")) === "150", "le traiteur ne prend pas les 150 invités");
+  verifier((await qte("Hôtes et hôtesses")) === "3", "les hôtes ne sont pas calculés (150 invités → 3)");
+  verifier((await qte("Heure supplémentaire")) === "3", "les heures sup. ne suivent pas le nombre d'hôtes");
+  verifier(!(await page.getByTestId("maj-quantites").count()), "le bouton de mise à jour apparaît alors que tout est à jour");
+  await page.getByText("Nombre d'invités / participants").locator("..").locator("input").fill("200"); await page.waitForTimeout(300);
+  verifier(await page.getByTestId("maj-quantites").count(), "pas de bouton de mise à jour après changement des invités");
+  await page.getByTestId("maj-quantites").click(); await page.waitForTimeout(300);
+  verifier((await qte("Traiteur")) === "200" && (await qte("Hôtes et hôtesses")) === "4" && (await qte("Heure supplémentaire")) === "4", "mise à jour des quantités incorrecte (200 invités → 200 / 4 / 4)");
+  const avant = await page.getByPlaceholder(/Désignation/).count();
+  await page.getByTestId("actions-ligne").first().click(); await page.getByRole("menuitem", { name: /Supprimer/ }).click(); await page.waitForTimeout(300);
+  verifier(await page.getByPlaceholder(/Désignation/).count() === avant - 1, "la ligne n'est pas supprimée");
+  await page.getByRole("button", { name: "Annuler", exact: true }).first().click(); await page.waitForTimeout(300);
+  verifier(await page.getByPlaceholder(/Désignation/).count() === avant, "l'annulation ne restaure pas la ligne");
+  await page.getByTestId("actions-ligne").first().click(); await page.getByRole("menuitem", { name: /Dupliquer la ligne/ }).click(); await page.waitForTimeout(300);
+  verifier(await page.getByPlaceholder(/Désignation/).count() === avant + 1, "la ligne n'est pas dupliquée");
+  await page.screenshot({ path: `${CAPTURES}/5-devis-rapide-iphone.png`, fullPage: true });
+  notes.push(`formule Mariage en 1 tap : ${avant} lignes ; 150 invités → traiteur 150, 3 hôtes ; 200 invités → 4 hôtes en 1 bouton ; annulation et duplication OK`);
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
+// 3 ter ter. Devis à plusieurs événements (dates / villes différentes) : groupes, sous-totaux, duplication, enregistrement
+await scenario("Admin : devis à plusieurs événements (groupes, sous-totaux, duplication)", async (notes) => {
+  const base = nouvelleBase();
+  const { page, ctx, erreurs } = await contexte(navigateur, base, ADMIN, { mobile: true });
+  await connecter(page, BASE, ADMIN, "/admin");
+  await clicOnglet(page, /Devis$/); await page.waitForTimeout(800);
+  await page.getByRole("button", { name: /Nouveau devis/ }).click(); await page.waitForTimeout(600);
+  await page.getByText("Nom du contact").locator("..").locator("input").fill("GRADUS test");
+  await page.getByText("Nombre d'invités / participants").locator("..").locator("input").fill("140");
+  await page.getByTestId("formule-entreprise").click(); await page.waitForTimeout(400);
+  verifier(!(await page.getByTestId("entete-evenement").count()), "des en-têtes d'événement apparaissent sans événement");
+  await page.getByTestId("ajouter-evenement").click(); await page.waitForTimeout(300);
+  verifier(await page.getByTestId("entete-evenement").count() === 2, "« Ajouter un événement » doit créer Événement 1 (lignes existantes) et Événement 2");
+  const lire = async () => page.getByTestId("entete-evenement").locator("input").evaluateAll((els) => els.map((e) => e.value));
+  await page.getByTestId("dupliquer-evenement").first().click(); await page.getByTestId("dupliquer-x1").click(); await page.waitForTimeout(300);
+  let noms = await lire();
+  verifier(JSON.stringify(noms) === JSON.stringify(["Événement 1", "Événement 2", "Événement 3"]), `duplication ×1 : en-têtes ${JSON.stringify(noms)}`);
+  await page.getByTestId("dupliquer-evenement").first().click(); await page.getByTestId("dupliquer-x2").click(); await page.waitForTimeout(300);
+  noms = await lire();
+  verifier(noms.length === 5 && noms[3] === "Événement 4" && noms[4] === "Événement 5", `duplication ×2 : en-têtes ${JSON.stringify(noms)}`);
+  verifier(await page.getByTestId("sous-total-evenement").count() >= 4, "pas de sous-total par événement");
+  const avantLigne = await page.getByPlaceholder(/Désignation/).count();
+  await page.getByTestId("ligne-dans-evenement").first().click(); await page.waitForTimeout(200);
+  verifier(await page.getByPlaceholder(/Désignation/).count() === avantLigne + 1, "« + Ligne dans cet événement » n'ajoute pas de ligne");
+  await page.getByTestId("supprimer-evenement").last().click(); await page.waitForTimeout(300);
+  verifier((await lire()).length === 4, "l'événement n'est pas supprimé");
+  await page.getByRole("button", { name: "Annuler", exact: true }).first().click(); await page.waitForTimeout(300);
+  verifier((await lire()).length === 5, "l'annulation ne ramène pas l'événement");
+  await page.getByTestId("supprimer-evenement").last().click(); await page.waitForTimeout(200);
+  await page.getByTestId("supprimer-evenement").last().click(); await page.waitForTimeout(200);
+  verifier((await lire()).length === 3, "suppression de deux événements");
+  await page.getByTestId("entete-evenement").first().locator("input").fill("Événement 1 — Casablanca — à confirmer"); await page.getByTestId("entete-evenement").first().locator("input").blur(); await page.waitForTimeout(200);
+  await page.getByRole("button", { name: "Enregistrer", exact: true }).first().click(); await page.waitForTimeout(1200);
+  const groupes = [...new Set(base.devis_lignes.map((l) => l.groupe).filter(Boolean))];
+  verifier(groupes.includes("Événement 1 — Casablanca — à confirmer") && groupes.includes("Événement 3") && groupes.length === 2, `groupes enregistrés : ${JSON.stringify(groupes)}`);
+  await page.screenshot({ path: `${CAPTURES}/5-devis-evenements-iphone.png`, fullPage: true });
+  notes.push(`événements : ${groupes.length} groupes enregistrés, duplication et sous-totaux OK`);
+  verifier(!erreurs.length, "erreurs JavaScript : " + erreurs.join(" ; "));
+  await ctx.close();
+});
+
 // 3 quinquies. Devis spécial Nawar Perfumes (parfums à 80 MAD, prix ajustable, personnel + transport)
 await scenario("Admin : devis Nawar bar à parfums (logo Nawar, 80 MAD par parfum ajustable)", async (notes) => {
   const base = nouvelleBase();
@@ -370,7 +444,7 @@ await scenario("Admin : devis Nawar bar à parfums (logo Nawar, 80 MAD par parfu
   verifier((await desig.first().inputValue()) === "Parfums — bar à parfums Nawar", "la ligne parfums n'est pas en tête");
   verifier(await desig.count() >= 2, "personnel / transport non pré-ajoutés");
   const prix = page.locator("input[type=number]").filter({ has: page.locator("xpath=.") });
-  const ligne1 = page.locator(".border.rounded-md.p-3").filter({ has: page.locator('input[value="Parfums — bar à parfums Nawar"]') }).first();
+  const ligne1 = page.locator(".border.rounded-sm.p-3").filter({ has: page.locator('input[value="Parfums — bar à parfums Nawar"]') }).first();
   const champs = ligne1.locator("input[type=number]");
   verifier((await champs.nth(2).inputValue()) === "80", "le prix par parfum n'est pas 80");
   verifier((await champs.nth(0).inputValue()) === "50", "le devis Nawar ne démarre pas au minimum de 50 parfums");

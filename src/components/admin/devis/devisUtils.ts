@@ -39,6 +39,8 @@ export interface Ligne {
   unite: Unite;
   prix_unitaire: number;
   remise_pct: number;
+  /** Événement auquel appartient la ligne (devis à plusieurs dates ou villes) ; vide = pas de regroupement */
+  groupe?: string | null;
 }
 
 export interface Prestation {
@@ -137,6 +139,7 @@ export function devisDepuisBase(d: any, lignes: any[]): DevisForm {
     lignes: (lignes ?? []).map((l) => ({
       designation: l.designation, description: l.description ?? "", quantite: Number(l.quantite),
       duree: Number(l.duree), unite: l.unite as Ligne["unite"], prix_unitaire: Number(l.prix_unitaire), remise_pct: Number(l.remise_pct) || 0,
+      groupe: l.groupe ?? "",
     })),
     lien_token: d.lien_token ?? null, date_envoi: d.date_envoi ?? null, relances: d.relances ?? 0,
     signe_le: d.signe_le ?? null, signature_nom: d.signature_nom ?? null, signature_image: d.signature_image ?? null,
@@ -153,6 +156,14 @@ export const r2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 export const totalLigne = (l: Ligne) =>
   r2((Number(l.quantite) || 0) * (Number(l.duree) || 0) * (Number(l.prix_unitaire) || 0) * (1 - (Number(l.remise_pct) || 0) / 100));
+
+/** Sous-total HT d'un événement : les lignes consécutives qui partagent le groupe de la ligne `i`. */
+export function sousTotalGroupe(lignes: Ligne[], i: number): number {
+  const g = lignes[i]?.groupe ?? "";
+  let a = i; while (a > 0 && (lignes[a - 1].groupe ?? "") === g) a--;
+  let b = i; while (b < lignes.length - 1 && (lignes[b + 1].groupe ?? "") === g) b++;
+  return Math.round(lignes.slice(a, b + 1).reduce((s, l) => s + totalLigne(l), 0) * 100) / 100;
+}
 
 /** Même formule que la fonction SQL devis_recalculer, pour un affichage immédiat. */
 export function calculerTotaux(lignes: Ligne[], remiseGlobalePct: number, tauxTva: number, acomptePct = 0) {
@@ -247,6 +258,10 @@ export function cssDevis() {
   .devis-doc tbody tr:nth-child(even) td { background: ${creme}; }
   .devis-doc tr { page-break-inside: avoid; }
   .devis-doc .n { text-align: right; white-space: nowrap; }
+  .devis-doc tr.grp td { background: #F6F0DE; color: #141414; font-weight: 700; border-top: 2px solid #A8933F; padding: 12px 10px 6px; font-size: 12px; letter-spacing: .6px; }
+  .devis-doc tr.sgrp td { text-align: right; font-weight: 600; color: #141414; border-top: 1px solid #A8933F; padding: 6px 10px 14px; font-size: 12px; }
+  .devis-doc tr.grp, .devis-doc tr.sgrp { break-inside: avoid; }
+  .devis-doc tr.grp { break-after: avoid; }
   .devis-doc .des { font-weight: 600; color: ${noir}; }
   .devis-doc .desc { color: #777; font-size: 10.5px; margin-top: 2px; white-space: pre-line; }
   .devis-doc .bas { display: flex; gap: 22px; margin-top: 18px; align-items: flex-start; page-break-inside: avoid; }
@@ -294,17 +309,20 @@ export function devisMarkup(d: DevisForm, p: Parametres | null, logoUrl: string)
     p?.patente && `Patente ${p.patente}`,
   ].filter(Boolean).map(esc).join(" · ");
 
-  const rows = d.lignes
-    .filter((l) => l.designation.trim())
+  const lignesDoc = d.lignes.filter((l) => l.designation.trim());
+  const avecGroupes = lignesDoc.some((l) => (l.groupe ?? "").trim());
+  const rows = lignesDoc
     .map(
-      (l) => `<tr>
+      (l, i) => `${avecGroupes && (l.groupe ?? "") !== (lignesDoc[i - 1]?.groupe ?? "") && (l.groupe ?? "").trim()
+        ? `<tr class="grp"><td colspan="6">${esc(l.groupe)}</td></tr>` : ""}<tr>
         <td><div class="des">${esc(l.designation)}</div>${l.description ? `<div class="desc">${esc(l.description)}</div>` : ""}</td>
         <td class="n">${esc(l.quantite)}</td>
         <td class="n">${l.unite === "forfait" ? "—" : `${esc(l.duree)} ${esc(uniteCourt(l.unite))}`}</td>
         <td class="n">${money(l.prix_unitaire, devise)}</td>
         <td class="n">${l.remise_pct ? `${esc(l.remise_pct)} %` : ""}</td>
         <td class="n">${money(totalLigne(l), devise)}</td>
-      </tr>`
+      </tr>${avecGroupes && (l.groupe ?? "").trim() && (l.groupe ?? "") !== (lignesDoc[i + 1]?.groupe ?? "")
+        ? `<tr class="sgrp"><td colspan="5">Sous-total — ${esc(l.groupe)}</td><td class="n">${money(sousTotalGroupe(lignesDoc, i), devise)}</td></tr>` : ""}`
     )
     .join("");
 

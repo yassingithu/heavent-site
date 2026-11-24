@@ -587,6 +587,7 @@ export type Database = {
           created_at: string
           description: string | null
           designation: string
+          groupe: string | null
           devis_id: string
           duree: number
           id: string
@@ -601,6 +602,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           designation: string
+          groupe?: string | null
           devis_id: string
           duree?: number
           id?: string
@@ -615,6 +617,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           designation?: string
+          groupe?: string | null
           devis_id?: string
           duree?: number
           id?: string

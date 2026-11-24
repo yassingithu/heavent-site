@@ -1,7 +1,7 @@
 const cat = (categorie, designation, unite, prix_unitaire, description='') => ({ id: 'c_'+designation, categorie, designation, unite, prix_unitaire, actif: true, ordre: 0, description });
 export const catalogue = [
   cat('mariage','Organisation complète du mariage','forfait',25000,'Wedding planning de A à Z'),
-  cat('mariage','Hôtesses d\'accueil invités (mariage)','jour',900,'Accueil, vestiaire, placement — soirée jusqu\'à 8 h'),
+  cat('mariage','Hôtes et hôtesses d\'accueil invités (mariage)','jour',700,'Accueil, vestiaire, placement — bilingue, tenue comprise, 8 h'),
   cat('mariage','Traiteur mariage (menu complet)','personne',450,'Cocktail de bienvenue, entrées, plats, pâtisseries marocaines, pièce montée, service à table'),
   cat('mariage','Négafa','forfait',25000,'Tenues traditionnelles, bijoux et accompagnement de la mariée'),
   cat('mariage','DJ / animation musicale','forfait',12000,'DJ, sonorisation et éclairage de piste pour la soirée'),
@@ -10,6 +10,7 @@ export const catalogue = [
   cat('mariage','Vidéaste mariage','forfait',10000,'Film de la soirée, teaser, prises de vue drone'),
   cat('mariage','Transport des invités (navette)','unite',3000,'Autocar ou minibus avec chauffeur, aller-retour'),
   cat('staff','Hôte / hôtesse d\'accueil','jour',700,'Journée de 8 h — bilingue, tenue comprise'),
+  cat('staff','Heure supplémentaire','heure',120,'Au-delà de 8 h, par personne'),
   cat('staff','Hôte / hôtesse premium trilingue','jour',1300,'Journée de 8 h — tenue comprise, profil expérimenté, 3 langues'),
 ];
 export const param = [{ id:1, raison_sociale:'Heavent People Agency', adresse:'Rue Dakar, Imm. N°5, Apt N°1, Océan', ville:'Rabat', telephone:'+212 6 10 93 96 55', email:'i.chaigari@heaventagency.com', site_web:'www.heaventagency.com', ice:'003617071000041', rc:'183001 (Tribunal de Rabat)', taux_tva:20, devise:'MAD', validite_jours:30, conditions:'Acompte de 50 % à la signature, solde à la fin de la prestation.', cgv:null, conditions_contrat:null }];

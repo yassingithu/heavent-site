@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
@@ -6,7 +6,7 @@ import ZoneSignature, { ZoneSignatureRef } from "@/components/contrat/ZoneSignat
 import { NUMERO_WHATSAPP } from "@/components/BoutonWhatsApp";
 import { CGV_DEFAUT, CGV_NAWAR_DEFAUT } from "@/lib/conditions";
 import {
-  DevisForm, MENTION_MONTANT_EVOLUTIF, Parametres, calculerTotaux, dateFr, dateHeureFr, devisDepuisBase, money, totalLigne, uniteCourt,
+  DevisForm, MENTION_MONTANT_EVOLUTIF, Parametres, calculerTotaux, dateFr, dateHeureFr, devisDepuisBase, money, sousTotalGroupe, totalLigne, uniteCourt,
 } from "@/components/admin/devis/devisUtils";
 import { telechargerDevisPdf, telechargerFacturePdf } from "@/components/admin/devis/devisPdf";
 import { Facture, TYPES_FACTURE } from "@/components/admin/devis/factureUtils";
@@ -134,7 +134,11 @@ export default function MonDevis() {
           </div>
           <ul className="divide-y divide-[#F1ECDD]">
             {lignes.map((l, i) => (
-              <li key={i} className="px-5 sm:px-7 py-3 flex items-start justify-between gap-4">
+              <Fragment key={i}>
+              {(l.groupe ?? "").trim() && (l.groupe ?? "") !== (lignes[i - 1]?.groupe ?? "") && (
+                <li className="px-5 sm:px-7 pt-5 pb-2 border-t-2 border-t-[#A8933F] text-[#141414] font-serif text-base sm:text-lg font-medium" data-testid="groupe-devis">{l.groupe}</li>
+              )}
+              <li className="px-5 sm:px-7 py-3 flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="font-medium text-[#141414]">{l.designation}</div>
                   {l.description && <div className="text-xs text-[#6B6155] whitespace-pre-line">{l.description}</div>}
@@ -145,6 +149,12 @@ export default function MonDevis() {
                 </div>
                 <div className="font-medium whitespace-nowrap">{money(totalLigne(l), devise)}</div>
               </li>
+              {(l.groupe ?? "").trim() && (l.groupe ?? "") !== (lignes[i + 1]?.groupe ?? "") && (
+                <li className="px-5 sm:px-7 pt-2 pb-4 flex justify-between gap-4 text-sm text-[#141414] border-t border-t-[#A8933F]/40">
+                  <span>Sous-total</span><span className="font-semibold whitespace-nowrap">{money(sousTotalGroupe(lignes, i), devise)}</span>
+                </li>
+              )}
+              </Fragment>
             ))}
           </ul>
           <div className="bg-[#FAF7EE] border-t border-[#EADFC8] px-5 sm:px-7 py-4 space-y-1.5 text-sm">
