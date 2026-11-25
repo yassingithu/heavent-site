@@ -16,7 +16,6 @@
     
     <!-- Ouverture de l'accueil : le masque et la vidéo du rideau sont demandés dès le début -->
     <link rel="preload" as="fetch" href="/ouvertures/rideau-masque.json" crossorigin="">
-    <link rel="preload" as="video" href="/ouvertures/rideau.mp4" type="video/mp4">
     <!-- Polices du site public, servies en local (direction « Seuil ») -->
     <link rel="preload" as="font" type="font/woff2" href="/polices/gloock-latin-400-normal.woff2" crossorigin="">
     <link rel="preload" as="font" type="font/woff2" href="/polices/jost-latin-400-normal.woff2" crossorigin="">
@@ -27,12 +26,14 @@
       // (ancienne ouverture à deux battants) ou ajouter ?ouverture=seuil à l'adresse. Le contenu est chargé derrière : rien ne bloque la page.
       (function () {
         var VARIANTE = "rideau";
+        // Ouverture désactivée (25/11/2026) : pour la remettre, mettre OUVERTURE_ACTIVE = true (et remettre le preload de /ouvertures/rideau.mp4)
+        var OUVERTURE_ACTIVE = false;
         var d = document.documentElement;
         d.classList.remove("s-anime", "ouverture-finie", "avec-ouverture", "ouv-rideau", "ouv-seuil", "ouv-pret", "ouv-sans-texture");
         try {
           var ok = location.pathname === "/" && !sessionStorage.getItem("heavent-splash-vu") && navigator.userAgent.indexOf("HeaventAdminApp") < 0
             && !matchMedia("(prefers-reduced-motion: reduce)").matches && !/[?&]sans-ouverture/.test(location.search);
-          if (!ok) return;
+          if (!ok || !OUVERTURE_ACTIVE) return;
           sessionStorage.setItem("heavent-splash-vu", "1");
           var rideau = (/[?&]ouverture=seuil/.test(location.search) ? "seuil" : VARIANTE) === "rideau";
           d.classList.add("avec-ouverture", rideau ? "ouv-rideau" : "ouv-seuil");
