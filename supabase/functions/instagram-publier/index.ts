@@ -99,7 +99,15 @@ async function publier(post: any, jeton: string, compte: string, mode?: string) 
     conteneur = await appel(`${API}/${compte}/media`, { method: "POST", body: new URLSearchParams({ image_url: post.visuel_url, caption: legende, access_token: jeton }) });
     await attendre(conteneur.id, jeton, 10, "Instagram a refusé l'image");
   }
-  const media = await appel(`${API}/${compte}/media_publish`, { method: "POST", body: new URLSearchParams({ creation_id: conteneur.id, access_token: jeton }) });
+  // « Media ID is not available » : Instagram n'a pas encore fini de préparer le média, on réessaie quelques fois
+  let media: any;
+  for (let essai = 1; ; essai++) {
+    try { media = await appel(`${API}/${compte}/media_publish`, { method: "POST", body: new URLSearchParams({ creation_id: conteneur.id, access_token: jeton }) }); break; }
+    catch (e) {
+      if (essai >= 4 || !/not available|not ready|pas pr/i.test((e as Error).message)) throw e;
+      await pause(5000);
+    }
+  }
   await db.from("posts_instagram").update({ statut: "publie", publie_le: new Date().toISOString(), ig_media_id: media.id, erreur: null }).eq("id", post.id);
   return media.id as string;
 }
